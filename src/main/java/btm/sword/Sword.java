@@ -1,5 +1,6 @@
 package btm.sword;
 
+import btm.sword.listeners.ItemUseListener;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public final class Sword extends JavaPlugin {
@@ -9,11 +10,17 @@ public final class Sword extends JavaPlugin {
 	public void onEnable() {
 		instance = this;
 		
-		getLogger().info("~ Sword Plugin starting up ~");
+		getServer().getPluginManager().registerEvents(new ItemUseListener(), this);
+		
+		getLogger().info("~ Sword Plugin has been enabled ~");
 	}
 	
 	@Override
 	public void onDisable() {
 		getLogger().info("~ Sword Plugin has been disabled ~");
+	}
+	
+	public static Sword getInstance() {
+		return instance;
 	}
 }
