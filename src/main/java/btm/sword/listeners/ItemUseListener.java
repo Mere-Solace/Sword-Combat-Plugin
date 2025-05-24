@@ -1,6 +1,5 @@
 package btm.sword.listeners;
 
-import btm.sword.Sword;
 import btm.sword.combat.CombatManager;
 import btm.sword.combat.attack.AttackType;
 import org.bukkit.Material;

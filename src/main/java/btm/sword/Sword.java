@@ -12,6 +12,8 @@ public final class Sword extends JavaPlugin {
 		
 		getServer().getPluginManager().registerEvents(new ItemUseListener(), this);
 		
+
+		
 		getLogger().info("~ Sword Plugin has been enabled ~");
 	}
 	

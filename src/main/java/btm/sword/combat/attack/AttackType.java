@@ -3,7 +3,7 @@ package btm.sword.combat.attack;
 import btm.sword.effectshape.EffectShape;
 import btm.sword.effectshape.LineShape;
 import btm.sword.visualeffect.LineVisual;
-import btm.sword.visualeffect.PointVisual;
+import btm.sword.visualeffect.DirectionalPointVisual;
 import btm.sword.visualeffect.TargetVisual;
 import btm.sword.visualeffect.VisualEffect;
 import org.bukkit.Location;
@@ -23,13 +23,13 @@ public enum AttackType {
 			List.of(
 				new LineVisual(
 				List.of(Particle.WHITE_ASH),
-				3, .01, .25),
+				1, .01, .25),
 				new TargetVisual(
 				List.of(Particle.ENCHANTED_HIT, Particle.CRIT),
-				7, .05),
-				new PointVisual(
-				List.of(Particle.POOF),
-				2, 0)),
+				20, .5),
+				new DirectionalPointVisual(
+				List.of(Particle.POOF, Particle.CAMPFIRE_SIGNAL_SMOKE),
+				10, 0, new Vector(0,-0.5,1.5))),
 			50.0,
 			2.0);
 	
