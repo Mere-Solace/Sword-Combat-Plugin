@@ -7,6 +7,6 @@ import org.bukkit.util.Vector;
 
 import java.util.Collection;
 
-public abstract class EffectShape {
+public abstract class EffectHitbox {
 	public abstract Collection<LivingEntity> getTargets(Player player, Location origin, Vector direction, double range);
 }

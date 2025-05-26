@@ -8,7 +8,7 @@ import org.bukkit.util.Vector;
 import java.util.Collection;
 import java.util.HashSet;
 
-public class LineShape extends EffectShape {
+public class LineHitbox extends EffectHitbox {
 	public Collection<LivingEntity> getTargets(Player player, Location origin, Vector direction, double range) {
 		Collection<LivingEntity> targets = new HashSet<>();
 		

@@ -17,8 +17,11 @@ public class ItemUseListener implements Listener {
 		Player player = event.getPlayer();
 		ItemStack item  = player.getInventory().getItemInMainHand();
 		
-		if (item.getType() == Material.IRON_SHOVEL) {
-			CombatManager.executeAttack(player, AttackType.GUNSHOT);
+		Material itemType = item.getType();
+		switch(itemType) {
+			case IRON_SHOVEL, DIAMOND_HOE -> CombatManager.executeAttack(player, AttackType.GUNSHOT);
+			case NETHERITE_SWORD -> CombatManager.executeAttack(player, AttackType.SWORD_SLASH);
+			default -> { }
 		}
 	}
 }

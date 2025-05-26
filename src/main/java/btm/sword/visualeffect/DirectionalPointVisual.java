@@ -18,12 +18,13 @@ public class DirectionalPointVisual extends VisualEffect {
 	
 	@Override
 	public void drawEffect(Location origin, Vector direction, double range, HashSet<LivingEntity> targets) {
-		Vector forward = direction.clone().normalize();
-		Vector upReference = new Vector(0,1,0);
-		if (Math.abs(forward.dot(upReference)) > 0.999) {
-			upReference = new Vector(1,0,0);  // forward is too vertical, switch reference
+		Vector forward = direction.clone();
+		Vector ref = new Vector(0,1,0);
+		if (Math.abs(forward.dot(ref)) > 0.999) {
+			double yaw = Math.toRadians(origin.getYaw());
+			ref = new Vector(-Math.sin(yaw),0,Math.cos(yaw));
 		}
-		Vector right = upReference.clone().crossProduct(forward).normalize();
+		Vector right = ref.clone().crossProduct(forward).normalize();
 		Vector up = forward.clone().crossProduct(right).normalize();
 		
 		Vector worldOffset = right.clone().multiply(positionOffset.getX())

@@ -16,15 +16,13 @@ public class CombatManager {
 		double damage = attack.calculateDamage();
 		double range = attack.calculateRange(5.0);
 		
-		Location origin = player.getEyeLocation();
+		Location origin = player.getEyeLocation().add(new Vector(0,-0.1,0));
 		Vector dir = origin.getDirection();
 		
 		HashSet<LivingEntity> targets = attack.getTargets(player, origin, dir, range);
 		
 		Bukkit.getScheduler().runTaskAsynchronously(Sword.getInstance(), () -> attack.drawEffects(origin, dir, range, targets));
-		
-		attack.drawEffects(origin, dir, range, targets);
-		
+
 		for (LivingEntity target : targets) {
 			target.damage(damage, player);
 		}
