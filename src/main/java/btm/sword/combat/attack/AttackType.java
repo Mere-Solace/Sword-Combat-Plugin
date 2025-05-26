@@ -3,6 +3,7 @@ package btm.sword.combat.attack;
 import btm.sword.effectshape.EffectHitbox;
 import btm.sword.effectshape.LineHitbox;
 import btm.sword.visualeffect.*;
+import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.entity.LivingEntity;
@@ -19,17 +20,20 @@ public enum AttackType {
 				new LineHitbox()),
 			List.of(
 				new LineVisual(
-					List.of(Particle.WHITE_ASH),
+					List.of(
+							new ParticleData(Particle.WHITE_ASH),
+							new ParticleData(Particle.DUST, new Particle.DustOptions(Color.SILVER, 0.5f))),
 					2, .01, .25),
 				new TargetVisual(
-					List.of(Particle.CRIMSON_SPORE, Particle.CRIT),
+					List.of(
+							new ParticleData(Particle.CRIMSON_SPORE),
+							new ParticleData(Particle.CRIT)),
 					20, 1),
 				new DirectionalPointVisual(
-					List.of(Particle.POOF, Particle.DRIPPING_OBSIDIAN_TEAR),
-					15, 0, new Vector(0,-0.5,3)),
-				new DirectionalPointVisual(
-					List.of(Particle.DRIPPING_OBSIDIAN_TEAR),
-					3, 0, new Vector(4,-0.5,3))),
+					List.of(
+							new ParticleData(Particle.POOF),
+							new ParticleData(Particle.SMOKE)),
+					15, 0, new Vector(0,-0.5,3))),
 			50.0,
 			2.0),
 	
@@ -38,12 +42,23 @@ public enum AttackType {
 				new LineHitbox()),
 			List.of(
 				new ArcVisual(
-					List.of(Particle.DRIPPING_OBSIDIAN_TEAR),
-					2, .02, 75, 45),
+					List.of(
+							new ParticleData(Particle.DUST, new Particle.DustOptions(Color.SILVER, 0.75f))
+					),
+					12, .25, 180, 45, 4.0),
 				new ArcVisual(
-					List.of(Particle.DRIPPING_LAVA),
-					2, .02, 75, -45)
-			),
+					List.of(
+							new ParticleData(Particle.DRIPPING_LAVA)),
+					12, .25, 90, -45, 6.0),
+				new TargetVisual(
+					List.of(
+							new ParticleData(Particle.FLAME),
+							new ParticleData(Particle.DRAGON_BREATH)),
+					12, .5),
+				new TargetVisual(
+					List.of(
+							new ParticleData(Particle.FLASH)),
+					2, .5)),
 			7.0,
 			2.0);
 	
@@ -86,7 +101,6 @@ public enum AttackType {
 		for (EffectHitbox hitBox : effectHitboxes) {
 			targets.addAll(hitBox.getTargets(player, origin, direction, range));
 		}
-		
 		return targets;
 	}
 	

@@ -2,6 +2,7 @@ package btm.sword.visualeffect;
 
 import org.bukkit.Location;
 import org.bukkit.Particle;
+import org.bukkit.World;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.util.Vector;
 
@@ -11,13 +12,15 @@ import java.util.List;
 public class DirectionalPointVisual extends VisualEffect {
 	Vector positionOffset;
 	
-	public DirectionalPointVisual(List<Particle> particles, int count, double offset, Vector positionOffset) {
+	public DirectionalPointVisual(List<ParticleData> particles, int count, double offset, Vector positionOffset) {
 		super(particles, count, offset);
 		this.positionOffset = positionOffset;
 	}
 	
 	@Override
 	public void drawEffect(Location origin, Vector direction, double range, HashSet<LivingEntity> targets) {
+		World world = origin.getWorld();
+		
 		Vector forward = direction.clone();
 		Vector ref = new Vector(0,1,0);
 		if (Math.abs(forward.dot(ref)) > 0.999) {
@@ -33,8 +36,13 @@ public class DirectionalPointVisual extends VisualEffect {
 		
 		Location l = origin.add(worldOffset);
 		
-		for (Particle p : particles) {
-			origin.getWorld().spawnParticle(p, l, count, offset, offset, offset);
+		for (ParticleData p : particles) {
+			if (p.getOptions() != null) {
+				world.spawnParticle(p.getParticle(), l, count, offset, offset, offset, 0, p.getOptions());
+			}
+			else {
+				world.spawnParticle(p.getParticle(), l, count, offset, offset, offset);
+			}
 		}
 	}
 }

@@ -9,11 +9,11 @@ import java.util.HashSet;
 import java.util.List;
 
 public abstract class VisualEffect {
-	List<Particle> particles;
+	List<ParticleData> particles;
 	int count;
 	double offset;
 	
-	public VisualEffect(List<Particle> particles, int count, double offset) {
+	public VisualEffect(List<ParticleData> particles, int count, double offset) {
 		this.particles = particles;
 		this.count = count;
 		this. offset = offset;

@@ -1,7 +1,6 @@
 package btm.sword.visualeffect;
 
 import org.bukkit.Location;
-import org.bukkit.Particle;
 import org.bukkit.World;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.util.Vector;
@@ -12,7 +11,7 @@ import java.util.List;
 public class LineVisual extends VisualEffect {
 	double spacing;
 	
-	public LineVisual(List<Particle> particles, int count, double offset, double spacing) {
+	public LineVisual(List<ParticleData> particles, int count, double offset, double spacing) {
 		super(particles, count, offset);
 		this.spacing = spacing;
 	}
@@ -25,8 +24,13 @@ public class LineVisual extends VisualEffect {
 		Location cur = origin.clone();
 		
 		for (double i = 0; i < range; i += spacing) {
-			for (Particle p : particles) {
-				world.spawnParticle(p, cur, count, offset, offset, offset);
+			for (ParticleData p : particles) {
+				if (p.getOptions() != null) {
+					world.spawnParticle(p.getParticle(), cur, count, offset, offset, offset, 0, p.getOptions());
+				}
+				else {
+					world.spawnParticle(p.getParticle(), cur, count, offset, offset, offset);
+				}
 			}
 			
 			cur = cur.add(step);
