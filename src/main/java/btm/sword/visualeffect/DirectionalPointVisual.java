@@ -1,6 +1,5 @@
 package btm.sword.visualeffect;
 
-import btm.sword.Sword;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.entity.LivingEntity;

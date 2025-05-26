@@ -25,10 +25,10 @@ public enum AttackType {
 				List.of(Particle.WHITE_ASH),
 				1, .01, .25),
 				new TargetVisual(
-				List.of(Particle.ENCHANTED_HIT, Particle.CRIT),
-				20, .5),
+				List.of(Particle.CRIMSON_SPORE, Particle.CRIT),
+				20, 1),
 				new DirectionalPointVisual(
-				List.of(Particle.POOF, Particle.CAMPFIRE_SIGNAL_SMOKE),
+				List.of(Particle.POOF, Particle.CHERRY_LEAVES),
 				10, 0, new Vector(0,-0.5,1.5))),
 			50.0,
 			2.0);
