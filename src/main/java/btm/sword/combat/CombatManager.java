@@ -23,7 +23,7 @@ public class CombatManager {
 		// sequentially for attacks that require that structure
 		HashSet<LivingEntity> targets = attack.getTargets(player, origin, dir, range);
 		
-		Bukkit.getScheduler().runTaskAsynchronously(Sword.getInstance(), () -> attack.drawEffects(origin, dir, range, targets));
+		Bukkit.getScheduler().runTaskAsynchronously(Sword.getInstance(), () -> attack.drawEffects(dir, origin));
 
 		for (LivingEntity target : targets) {
 			target.damage(damage, player);
