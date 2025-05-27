@@ -1,22 +1,20 @@
 package btm.sword.shape;
 
-import org.bukkit.Location;
 import org.bukkit.util.Vector;
 
 public class LineShape extends Shape {
 	double length;
 	double frequency;
 	
-	public LineShape(Vector forward, Location o, double length, double frequency) {
-		super(forward, o);
+	public LineShape(double length, double frequency) {
 		this.length = length;
 		this.frequency = frequency;
 	}
 	
 	@Override
-	void generateVectors() {
+	void genBasisPointVectors() {
 		double x = length/(length*frequency);
-		Vector v = forward.clone();
+		Vector v = new Vector(0, 0, 1);
 		for (double i = 0; i < length; i+=x) {
 			basisPointVectors.add(v.clone());
 			v.multiply(i);

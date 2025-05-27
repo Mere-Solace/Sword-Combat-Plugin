@@ -21,17 +21,26 @@ public abstract class Shape {
 		forward = new Vector (0, 0, 1);
 		right = new Vector (1, 0, 0);
 		
-		generateVectors();
+		genBasisPointVectors();
 	}
 	
-	public Shape(Vector forward, Location o) {
-		basisPointVectors = new ArrayList<>();
-		cachedPointVectors = null;
+	abstract void genBasisPointVectors();
+
+	public Collection<Location> generatePoints(Vector forward, Location o) {
 		setForward(forward, o);
-		generateVectors();
+		
+		if (cachedPointVectors == null) {
+			calcPointVectors();
+		}
+		
+		Collection<Location> points = new ArrayList<>(cachedPointVectors.size());
+		
+		for (Vector u : cachedPointVectors) {
+			points.add(o.clone().add(u));
+		}
+		
+		return points;
 	}
-	
-	abstract void generateVectors();
 	
 	public void setForward(Vector e, Location o) {
 		if (forward.dot(e) > .999) return;
@@ -58,24 +67,11 @@ public abstract class Shape {
 		
 		for (Vector u : basisPointVectors) {
 			cachedPointVectors.add(
-				right.clone().multiply(u.getX())
-				.add(up.clone().multiply(u.getY()))
-				.add(forward.clone().multiply(u.getZ()))
+					right.clone().multiply(u.getX())
+							.add(up.clone().multiply(u.getY()))
+							.add(forward.clone().multiply(u.getZ()))
 			);
 		}
 	}
 	
-	public Collection<Location> generatePoints(Location o) {
-		if (cachedPointVectors == null) {
-			calcPointVectors();
-		}
-		
-		Collection<Location> points = new ArrayList<>(cachedPointVectors.size());
-		
-		for (Vector u : cachedPointVectors) {
-			points.add(o.clone().add(u));
-		}
-		
-		return points;
-	}
 }
