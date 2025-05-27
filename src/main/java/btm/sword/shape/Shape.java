@@ -26,8 +26,8 @@ public abstract class Shape {
 	
 	abstract void genBasisPointVectors();
 
-	public Collection<Location> generatePoints(Vector forward, Location o) {
-		setForward(forward, o);
+	public Collection<Location> generatePoints(Vector e, Location o) {
+		setForward(e, o);
 		
 		if (cachedPointVectors == null) {
 			calcPointVectors();
@@ -42,7 +42,7 @@ public abstract class Shape {
 		return points;
 	}
 	
-	public void setForward(Vector e, Location o) {
+	private void setForward(Vector e, Location o) {
 		if (forward.dot(e) > .999) return;
 		
 		cachedPointVectors = null;
@@ -68,10 +68,9 @@ public abstract class Shape {
 		for (Vector u : basisPointVectors) {
 			cachedPointVectors.add(
 					right.clone().multiply(u.getX())
-							.add(up.clone().multiply(u.getY()))
-							.add(forward.clone().multiply(u.getZ()))
+						.add(up.clone().multiply(u.getY()))
+						.add(forward.clone().multiply(u.getZ()))
 			);
 		}
 	}
-	
 }

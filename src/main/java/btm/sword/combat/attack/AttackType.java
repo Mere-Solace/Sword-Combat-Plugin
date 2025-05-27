@@ -2,6 +2,8 @@ package btm.sword.combat.attack;
 
 import btm.sword.effectshape.EffectHitbox;
 import btm.sword.effectshape.LineHitbox;
+import btm.sword.shape.ArcShape;
+import btm.sword.shape.LineShape;
 import btm.sword.visualeffect.*;
 import org.bukkit.Color;
 import org.bukkit.Location;
@@ -19,48 +21,53 @@ public enum AttackType {
 			List.of(
 				new LineHitbox()),
 			List.of(
-				new LineVisual(
+				new VisualEffect(
+					new LineShape(50, 4),
 					List.of(
 							new ParticleData(Particle.WHITE_ASH),
-							new ParticleData(Particle.DUST, new Particle.DustOptions(Color.SILVER, 0.5f))),
-					2, .01, .25),
-				new TargetVisual(
-					List.of(
-							new ParticleData(Particle.CRIMSON_SPORE),
-							new ParticleData(Particle.CRIT)),
-					20, 1),
-				new DirectionalPointVisual(
-					List.of(
-							new ParticleData(Particle.POOF),
-							new ParticleData(Particle.SMOKE)),
-					15, 0, new Vector(0,-0.5,3))),
-			50.0,
-			2.0),
-	
-	SWORD_SLASH(7,
-			List.of(
-				new LineHitbox()),
-			List.of(
-				new ArcVisual(
+							new ParticleData(Particle.DUST, new Particle.DustOptions(Color.SILVER, 0.5f))
+					),
+					2, .01),
+				new VisualEffect(
+					new ArcShape(7.0, 95.0, 0.0, 0.0, 0.0, 3),
 					List.of(
 							new ParticleData(Particle.DUST, new Particle.DustOptions(Color.SILVER, 0.75f))
 					),
-					12, .25, 180, 45, 4.0),
-				new ArcVisual(
-					List.of(
-							new ParticleData(Particle.DRIPPING_LAVA)),
-					12, .25, 90, -45, 6.0),
-				new TargetVisual(
-					List.of(
-							new ParticleData(Particle.FLAME),
-							new ParticleData(Particle.DRAGON_BREATH)),
-					12, .5),
-				new TargetVisual(
-					List.of(
-							new ParticleData(Particle.FLASH)),
-					2, .5)),
-			7.0,
-			2.0);
+					3, .02)
+			),
+			50,
+			2);
+//				new VisualEffect(
+//					List.of(
+//							new ParticleData(Particle.POOF),
+//							new ParticleData(Particle.SMOKE)),
+//					15, 0, new Vector(0,-0.5,3))),
+	
+//	SWORD_SLASH(7,
+//			List.of(
+//				new LineHitbox()),
+//			List.of(
+//				new ArcVisual(
+//					List.of(
+//							new ParticleData(Particle.DUST, new Particle.DustOptions(Color.SILVER, 0.75f))
+//					),
+//					12, .25, 180, 45, 4.0),
+//				new ArcVisual(
+//					List.of(
+//							new ParticleData(Particle.DRIPPING_LAVA)),
+//					12, .25, 90, -45, 6.0),
+//				new TargetVisual(
+//					List.of(
+//							new ParticleData(Particle.FLAME),
+//							new ParticleData(Particle.DRAGON_BREATH)),
+//					12, .5),
+//				new TargetVisual(
+//					List.of(
+//							new ParticleData(Particle.FLASH)),
+//					2, .5)),
+//			),
+//			7.0,
+//			2.0);
 	
 	private final double damage;
 	private final List<EffectHitbox> effectHitboxes;
@@ -104,9 +111,9 @@ public enum AttackType {
 		return targets;
 	}
 	
-	public void drawEffects(Location origin, Vector direction, double range, HashSet<LivingEntity> targets) {
+	public void drawEffects(Vector direction, Location origin) {
 		for (VisualEffect visual : visualEffects) {
-			visual.drawEffect(origin, direction, range, targets);
+			visual.drawEffect(direction, origin);
 		}
 	}
 }
