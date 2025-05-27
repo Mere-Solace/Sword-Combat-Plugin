@@ -19,6 +19,8 @@ public class CombatManager {
 		Location origin = player.getEyeLocation().add(new Vector(0,-0.1,0));
 		Vector dir = origin.getDirection();
 		
+		// these two lines should be wrapped into attack.execute, so that targets can be gathered and animations played
+		// sequentially for attacks that require that structure
 		HashSet<LivingEntity> targets = attack.getTargets(player, origin, dir, range);
 		
 		Bukkit.getScheduler().runTaskAsynchronously(Sword.getInstance(), () -> attack.drawEffects(origin, dir, range, targets));
