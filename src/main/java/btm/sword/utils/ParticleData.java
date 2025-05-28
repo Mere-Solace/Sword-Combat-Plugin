@@ -1,4 +1,4 @@
-package btm.sword.visualeffect;
+package btm.sword.utils;
 
 import org.bukkit.Particle;
 

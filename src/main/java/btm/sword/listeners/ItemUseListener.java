@@ -1,7 +1,6 @@
 package btm.sword.listeners;
 
 import btm.sword.combat.CombatManager;
-import btm.sword.combat.attack.AttackType;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -19,8 +18,8 @@ public class ItemUseListener implements Listener {
 		
 		Material itemType = item.getType();
 		switch(itemType) {
-			case IRON_SHOVEL, DIAMOND_HOE -> CombatManager.executeAttack(player, AttackType.GUNSHOT);
-//			case NETHERITE_SWORD -> CombatManager.executeAttack(player, AttackType.SWORD_SLASH);
+			case IRON_SHOVEL, DIAMOND_HOE -> CombatManager.executeAttack(player);
+//			case NETHERITE_SWORD -> CombatManager.executeAttack(player);
 			default -> { }
 		}
 	}
