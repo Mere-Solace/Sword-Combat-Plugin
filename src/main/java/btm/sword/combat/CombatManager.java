@@ -1,8 +1,10 @@
 package btm.sword.combat;
 
+import btm.sword.Sword;
 import btm.sword.effect.EffectExecutionType;
 import btm.sword.effect.LineShape;
 import btm.sword.utils.ParticleWrapper;
+import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.entity.Player;
@@ -47,10 +49,15 @@ public class CombatManager {
 		player.sendMessage("generating points:\n");
 		LineShape line = new LineShape(EffectExecutionType.ITERATIVE,
 				List.of(
-						new ParticleWrapper(Particle.DRIPPING_OBSIDIAN_TEAR)
+						new ParticleWrapper(Particle.DRIPPING_OBSIDIAN_TEAR, 4, .25, .25, .25),
+						new ParticleWrapper(Particle.DUST, new Particle.DustOptions(Color.BLACK, 1.25f))
 				),
 				4, 5, 10);
 		List<List<Location>> points = line.generatePoints(player.getEyeLocation(), player.getEyeLocation().getDirection());
+		
+		Sword.getInstance().getLogger().info("Printing Points: ");
+		line.printPoints(points);
+		line.displayAllParticles(points);
 		
 		player.getWorld().spawnParticle(
 				Particle.SOUL_FIRE_FLAME,

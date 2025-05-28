@@ -31,7 +31,28 @@ public abstract class EffectShape {
 	
 	public abstract List<List<Location>> generatePoints(Location origin, Vector direction);
 	
-	protected void printPoints(List<List<Location>> points) {
+	public void displaySectionOfParticles(List<Location> points) {
+		for (int i = 0; i < points.size(); i++) {
+			if (i > particles.size()-1)
+				particles.getLast().display(points.get(i));
+			else
+				particles.get(i).display(points.get(i));
+		}
+	}
+	
+	public void displayAllParticles(List<List<Location>> points) {
+		for (List<Location> section : points) {
+			for (int i = 0; i < section.size(); i++) {
+				if (i > particles.size()-1)
+					particles.getLast().display(section.get(i));
+				else
+					particles.get(i).display(section.get(i));
+			}
+		}
+	}
+	
+	public void printPoints(List<List<Location>> points) {
+		Sword.getInstance().getLogger().info("\nEffect info:\n" + "Partitions: " + partitions);
 		Sword.getInstance().getLogger().info("\nEffect Locations:");
 		for (List<Location> section : points) {
 			Sword.getInstance().getLogger().info("New Section:");

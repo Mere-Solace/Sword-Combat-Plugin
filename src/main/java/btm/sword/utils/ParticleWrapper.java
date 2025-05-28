@@ -20,6 +20,17 @@ public class ParticleWrapper {
 		this.transition = null;
 	}
 	
+	public ParticleWrapper(Particle particle, int count, double xOffset, double yOffset, double zOffset) {
+		this.particle = particle;
+		this.options = null;
+		this.transition = null;
+		this.count = count;
+		this.xOffset = xOffset;
+		this.yOffset = yOffset;
+		this.zOffset = zOffset;
+		speed = -1;
+	}
+	
 	public ParticleWrapper(Particle particle, int count, double xOffset, double yOffset, double zOffset, double speed) {
 		this.particle = particle;
 		this.options = null;
@@ -57,14 +68,14 @@ public class ParticleWrapper {
 	
 	public void display(Location origin) {
 		World world = origin.getWorld();
-		if (particle.getDataType() != Particle.DustOptions.class) {
-			world.spawnParticle(particle, origin, count, xOffset, yOffset, zOffset, speed);
-		}
-		else if (options == null) {
+		if (particle.getDataType() != Particle.DustOptions.class)
+			if (speed == -1)
+				world.spawnParticle(particle, origin, count, xOffset, yOffset, zOffset);
+			else
+				world.spawnParticle(particle, origin, count, xOffset, yOffset, zOffset, speed);
+		else if (options == null)
 			world.spawnParticle(particle, origin, count, transition);
-		}
-		else {
+		else
 			world.spawnParticle(particle, origin, count, options);
-		}
 	}
 }
