@@ -1,18 +1,12 @@
 package btm.sword.combat;
 
-import btm.sword.Sword;
 import btm.sword.effect.EffectExecutionType;
 import btm.sword.effect.LineShape;
-import btm.sword.utils.ParticleData;
-import org.bukkit.Bukkit;
+import btm.sword.utils.ParticleWrapper;
 import org.bukkit.Location;
 import org.bukkit.Particle;
-import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
-import org.bukkit.util.Vector;
 
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 
 public class CombatManager {
@@ -53,10 +47,15 @@ public class CombatManager {
 		player.sendMessage("generating points:\n");
 		LineShape line = new LineShape(EffectExecutionType.ITERATIVE,
 				List.of(
-						new ParticleData(Particle.DRIPPING_OBSIDIAN_TEAR)
+						new ParticleWrapper(Particle.DRIPPING_OBSIDIAN_TEAR)
 				),
-				4, 0.25, 0, 4, 5, 10);
+				4, 5, 10);
 		List<List<Location>> points = line.generatePoints(player.getEyeLocation(), player.getEyeLocation().getDirection());
 		
+		player.getWorld().spawnParticle(
+				Particle.SOUL_FIRE_FLAME,
+				player.getEyeLocation().add(player.getEyeLocation().getDirection().multiply(3)),
+				10, 1, 1, 1, 0
+		);
 	}
 }
