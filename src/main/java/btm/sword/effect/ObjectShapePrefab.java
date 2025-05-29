@@ -12,8 +12,8 @@ public enum ObjectShapePrefab {
 	BUSTER_SWORD(BusterSwordShape.generate(),
 			List.of(
 					List.of(
-						new ParticleWrapper(Particle.DUST, new Particle.DustOptions(Color.BLACK, 3f)),
-						new ParticleWrapper(Particle.WHITE_ASH, 3, .2, .2, .2)
+						new ParticleWrapper(Particle.DUST, new Particle.DustOptions(Color.BLACK, 5f)),
+						new ParticleWrapper(Particle.SMALL_FLAME, 3, .2, .2, .2, 0)
 					),
 					List.of(
 						new ParticleWrapper(Particle.DUST, new Particle.DustOptions(Color.GRAY, 5f)),
