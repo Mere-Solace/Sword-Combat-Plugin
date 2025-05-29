@@ -11,12 +11,12 @@ import java.util.List;
 public class LineShape extends EffectShape {
 	double length;
 	
-	public LineShape(EffectExecutionType executionType, List<ParticleWrapper> particles, double resolution, int partitions, double length) {
+	public LineShape(EffectExecutionType executionType, List<List<ParticleWrapper>> particles, double resolution, int partitions, double length) {
 		super(executionType, particles, resolution, partitions);
 		this.length = length;
 	}
 	
-	public LineShape(List<ParticleWrapper> particles, double resolution, double length) {
+	public LineShape(List<List<ParticleWrapper>> particles, double resolution, double length) {
 		super(particles, resolution);
 		this.length = length;
 	}

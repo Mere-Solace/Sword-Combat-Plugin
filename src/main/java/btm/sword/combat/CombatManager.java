@@ -3,6 +3,9 @@ package btm.sword.combat;
 import btm.sword.Sword;
 import btm.sword.effect.EffectExecutionType;
 import btm.sword.effect.LineShape;
+import btm.sword.effect.ObjectShape;
+import btm.sword.effect.ObjectShapePrefab;
+import btm.sword.effect.objectshapes.BusterSwordShape;
 import btm.sword.utils.ParticleWrapper;
 import org.bukkit.Color;
 import org.bukkit.Location;
@@ -49,8 +52,12 @@ public class CombatManager {
 		player.sendMessage("generating points:\n");
 		LineShape line = new LineShape(EffectExecutionType.ITERATIVE,
 				List.of(
-						new ParticleWrapper(Particle.DRIPPING_OBSIDIAN_TEAR, 4, .25, .25, .25),
-						new ParticleWrapper(Particle.DUST, new Particle.DustOptions(Color.BLACK, 1.25f))
+						List.of(
+							new ParticleWrapper(Particle.LANDING_OBSIDIAN_TEAR, 4, .25, .25, .25)
+						),
+						List.of(
+							new ParticleWrapper(Particle.DUST, new Particle.DustOptions(Color.BLACK, 1.25f))
+						)
 				),
 				4, 5, 10);
 		List<List<Location>> points = line.generatePoints(player.getEyeLocation(), player.getEyeLocation().getDirection());
@@ -64,5 +71,17 @@ public class CombatManager {
 				player.getEyeLocation().add(player.getEyeLocation().getDirection().multiply(3)),
 				10, 1, 1, 1, 0
 		);
+	}
+	
+	public static void test(Player player) {
+		ObjectShape busterSword = new ObjectShape(
+				ObjectShapePrefab.BUSTER_SWORD.getPoints(),
+				EffectExecutionType.INSTANT,
+				ObjectShapePrefab.BUSTER_SWORD.getParticles(),
+				1,
+				1);
+		
+		List<List<Location>> points =  busterSword.generatePoints(player.getEyeLocation(), player.getEyeLocation().getDirection());
+		busterSword.displayAllParticles(points);
 	}
 }

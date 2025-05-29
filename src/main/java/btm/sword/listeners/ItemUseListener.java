@@ -19,7 +19,7 @@ public class ItemUseListener implements Listener {
 		Material itemType = item.getType();
 		switch(itemType) {
 			case IRON_SHOVEL, DIAMOND_HOE -> CombatManager.executeAttack(player);
-//			case NETHERITE_SWORD -> CombatManager.executeAttack(player);
+			case NETHERITE_SWORD -> CombatManager.test(player);
 			default -> { }
 		}
 	}

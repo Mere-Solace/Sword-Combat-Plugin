@@ -9,20 +9,20 @@ import java.util.List;
 
 public abstract class EffectShape {
 	protected EffectExecutionType executionType = EffectExecutionType.INSTANT;
-	protected List<ParticleWrapper> particles;
+	protected List<List<ParticleWrapper>> particles;
 	protected double resolution = 3;
 	protected int partitions = 1;
 	
-	public EffectShape(List<ParticleWrapper> particles) {
+	public EffectShape(List<List<ParticleWrapper>> particles) {
 		this.particles = particles;
 	}
 	
-	public EffectShape(List<ParticleWrapper> particles, double resolution) {
+	public EffectShape(List<List<ParticleWrapper>> particles, double resolution) {
 		this.particles = particles;
 		this.resolution = resolution;
 	}
 	
-	public EffectShape(EffectExecutionType executionType, List<ParticleWrapper> particles, double resolution, int partitions) {
+	public EffectShape(EffectExecutionType executionType, List<List<ParticleWrapper>> particles, double resolution, int partitions) {
 		this.executionType = executionType;
 		this.particles = particles;
 		this.resolution = resolution;
@@ -34,9 +34,11 @@ public abstract class EffectShape {
 	public void displaySectionOfParticles(List<Location> points) {
 		for (int i = 0; i < points.size(); i++) {
 			if (i > particles.size()-1)
-				particles.getLast().display(points.get(i));
+				for (ParticleWrapper p : particles.getLast())
+					p.display(points.get(i));
 			else
-				particles.get(i).display(points.get(i));
+				for (ParticleWrapper p : particles.get(i))
+					p.display(points.get(i));
 		}
 	}
 	
@@ -44,18 +46,20 @@ public abstract class EffectShape {
 		for (List<Location> section : points) {
 			for (int i = 0; i < section.size(); i++) {
 				if (i > particles.size()-1)
-					particles.getLast().display(section.get(i));
+					for (ParticleWrapper p : particles.getLast())
+						p.display(section.get(i));
 				else
-					particles.get(i).display(section.get(i));
+					for (ParticleWrapper p : particles.get(i))
+						p.display(section.get(i));
 			}
 		}
 	}
 	
 	public void printPoints(List<List<Location>> points) {
-		Sword.getInstance().getLogger().info("\nEffect info:\n" + "Partitions: " + partitions);
-		Sword.getInstance().getLogger().info("\nEffect Locations:");
+		Sword.getInstance().getLogger().info("~~~~ Effect info:" + "Partitions: " + partitions);
+		Sword.getInstance().getLogger().info("~~~ Effect Locations:");
 		for (List<Location> section : points) {
-			Sword.getInstance().getLogger().info("New Section:");
+			Sword.getInstance().getLogger().info("~~ New Section:");
 			for (int i = 0; i < section.size(); i++) {
 				Sword.getInstance().getLogger().info("Point " + i +  " " + section.get(i).toString());
 			}
