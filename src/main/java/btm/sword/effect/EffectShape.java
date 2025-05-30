@@ -8,6 +8,7 @@ import org.bukkit.util.Vector;
 import java.util.List;
 
 public abstract class EffectShape {
+	protected EffectUsageType usageType = EffectUsageType.BOTH;
 	protected EffectExecutionType executionType = EffectExecutionType.INSTANT;
 	protected List<List<ParticleWrapper>> particles;
 	protected double resolution = 3;

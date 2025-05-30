@@ -1,10 +1,7 @@
 package btm.sword.combat;
 
 import btm.sword.Sword;
-import btm.sword.effect.EffectExecutionType;
-import btm.sword.effect.LineShape;
-import btm.sword.effect.ObjectShape;
-import btm.sword.effect.ObjectShapePrefab;
+import btm.sword.effect.*;
 import btm.sword.effect.objectshapes.BusterSwordShape;
 import btm.sword.utils.ParticleWrapper;
 import org.bukkit.Color;
@@ -80,12 +77,12 @@ public class CombatManager {
 		player.getWorld().spawnParticle(
 				Particle.SOUL_FIRE_FLAME,
 				player.getEyeLocation().add(player.getEyeLocation().getDirection().multiply(3)),
-				10, 1, 1, 1, 0
+				10, 1, 1, 1, 5
 		);
 		player.getWorld().spawnParticle(
 				Particle.POOF,
 				player.getEyeLocation().add(player.getEyeLocation().getDirection().multiply(2)),
-				10, 1, 1, 1, 0
+				10, 1, 1, 1, 5
 		);
 	}
 	
@@ -112,5 +109,21 @@ public class CombatManager {
 		}
 		
 		player.isBlocking();
+	}
+	
+	public static void arcTest(Player player) {
+		ArcShape arc = new ArcShape(
+				EffectExecutionType.INSTANT,
+				List.of(
+						List.of(
+								new ParticleWrapper(Particle.DUST, new Particle.DustOptions(Color.GRAY, 3)
+								)
+						)
+				),
+				2, 4, 6, 4,
+				45, 45, 45,
+				110);
+		
+		arc.generatePoints(player.getEyeLocation().add(new Vector(0, -1, 0)), player.getEyeLocation().getDirection());
 	}
 }
