@@ -15,12 +15,14 @@ public enum ObjectShapePrefab {
 						new ParticleWrapper(Particle.DUST, new Particle.DustOptions(Color.SILVER, 1.5f))
 					),
 					List.of(
-						new ParticleWrapper(Particle.DUST, new Particle.DustOptions(Color.GRAY, 2f)),
-						new ParticleWrapper(Particle.FLAME, 5, .1, .1, .1, 0)
+						new ParticleWrapper(Particle.DUST, new Particle.DustOptions(Color.GRAY, 2f))
+//						new ParticleWrapper(Particle.FLAME, 1, .1, .1, .1, 0.001)
 					),
 					List.of(
-						new ParticleWrapper(Particle.SOUL_FIRE_FLAME, 1, .1, .1, .1, 0),
-						new ParticleWrapper(Particle.DUST, new Particle.DustOptions(Color.SILVER, 0.75f))
+						new ParticleWrapper(Particle.SOUL_FIRE_FLAME, 1, .1, .1, .1, 2),
+						new ParticleWrapper(Particle.DUST, new Particle.DustOptions(Color.SILVER, 1.5f)),
+						new ParticleWrapper(Particle.DUST, new Particle.DustTransition(Color.BLUE, Color.BLACK, 2f))
+			
 					)
 			)
 	);

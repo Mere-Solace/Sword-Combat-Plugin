@@ -110,5 +110,7 @@ public class CombatManager {
 		for (LivingEntity target : hit) {
 			target.damage(10, player);
 		}
+		
+		player.isBlocking();
 	}
 }
