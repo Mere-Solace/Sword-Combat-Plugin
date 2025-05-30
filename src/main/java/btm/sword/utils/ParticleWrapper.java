@@ -12,7 +12,7 @@ public class ParticleWrapper {
 	private double xOffset = 0;
 	private double yOffset = 0;
 	private double zOffset = 0;
-	private double speed = 0;
+	private double speed = -1;
 	
 	public ParticleWrapper(Particle particle) {
 		this.particle = particle;

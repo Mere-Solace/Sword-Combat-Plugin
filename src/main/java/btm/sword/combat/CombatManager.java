@@ -10,8 +10,12 @@ import btm.sword.utils.ParticleWrapper;
 import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.Particle;
+import org.bukkit.block.data.type.Bed;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
+import org.bukkit.util.Vector;
 
+import java.util.HashSet;
 import java.util.List;
 
 public class CombatManager {
@@ -49,26 +53,38 @@ public class CombatManager {
 //	}
 	
 	public static void executeAttack(Player player) {
-		player.sendMessage("generating points:\n");
 		LineShape line = new LineShape(EffectExecutionType.ITERATIVE,
 				List.of(
 						List.of(
-							new ParticleWrapper(Particle.LANDING_OBSIDIAN_TEAR, 4, .25, .25, .25)
-						),
-						List.of(
-							new ParticleWrapper(Particle.DUST, new Particle.DustOptions(Color.BLACK, 1.25f))
+							new ParticleWrapper(Particle.DUST, new Particle.DustOptions(Color.SILVER, 1f)),
+							new ParticleWrapper(Particle.WHITE_ASH, 10, .2, .2, .2)
 						)
 				),
-				4, 5, 10);
+				4, 5, 25);
 		List<List<Location>> points = line.generatePoints(player.getEyeLocation(), player.getEyeLocation().getDirection());
 		
-		Sword.getInstance().getLogger().info("Printing Points: ");
-		line.printPoints(points);
+//		line.printPoints(points);
 		line.displayAllParticles(points);
+		
+		HashSet<LivingEntity> hit = new HashSet<>();
+		for (List<Location> sections : points) {
+			for (Location l : sections) {
+				hit.addAll(l.getNearbyLivingEntities(0.1));
+			}
+		}
+		hit.remove(player);
+		for (LivingEntity target : hit) {
+			target.damage(5, player);
+		}
 		
 		player.getWorld().spawnParticle(
 				Particle.SOUL_FIRE_FLAME,
 				player.getEyeLocation().add(player.getEyeLocation().getDirection().multiply(3)),
+				10, 1, 1, 1, 0
+		);
+		player.getWorld().spawnParticle(
+				Particle.POOF,
+				player.getEyeLocation().add(player.getEyeLocation().getDirection().multiply(2)),
 				10, 1, 1, 1, 0
 		);
 	}
@@ -81,7 +97,18 @@ public class CombatManager {
 				1,
 				1);
 		
-		List<List<Location>> points =  busterSword.generatePoints(player.getEyeLocation(), player.getEyeLocation().getDirection());
+		List<List<Location>> points =  busterSword.generatePoints(player.getEyeLocation().add(new Vector(0, -1, 0)), player.getEyeLocation().getDirection());
 		busterSword.displayAllParticles(points);
+		
+		HashSet<LivingEntity> hit = new HashSet<>();
+		for (List<Location> sections : points) {
+			for (Location l : sections) {
+				hit.addAll(l.getNearbyLivingEntities(0.1));
+			}
+		}
+		hit.remove(player);
+		for (LivingEntity target : hit) {
+			target.damage(10, player);
+		}
 	}
 }

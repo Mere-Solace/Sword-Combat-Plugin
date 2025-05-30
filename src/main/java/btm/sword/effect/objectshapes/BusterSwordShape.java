@@ -13,7 +13,7 @@ public class BusterSwordShape {
 		List<Vector> handle = new ArrayList<>();
 		double handleWidth = 0.1;
 		double[] handleHeights = {0.1, 0, -.1};
-		double[] handleZs = {0, .25, .5, 1, 1.25};
+		double[] handleZs = {.25, .5, 1, 1.25};
 		
 		for (double z : handleZs) {
 			for (double y : handleHeights) {

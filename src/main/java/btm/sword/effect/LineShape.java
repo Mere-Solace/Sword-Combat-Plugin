@@ -1,6 +1,5 @@
 package btm.sword.effect;
 
-import btm.sword.Sword;
 import btm.sword.utils.ParticleWrapper;
 import org.bukkit.Location;
 import org.bukkit.util.Vector;
@@ -38,8 +37,7 @@ public class LineShape extends EffectShape {
 			}
 			points.add(section);
 		}
-	
-		Sword.getInstance().getLogger().info(points.toString());
+		
 		return points;
 	}
 }

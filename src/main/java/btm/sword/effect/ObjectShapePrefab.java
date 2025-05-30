@@ -12,16 +12,15 @@ public enum ObjectShapePrefab {
 	BUSTER_SWORD(BusterSwordShape.generate(),
 			List.of(
 					List.of(
-						new ParticleWrapper(Particle.DUST, new Particle.DustOptions(Color.BLACK, 5f)),
-						new ParticleWrapper(Particle.SMALL_FLAME, 3, .2, .2, .2, 0)
+						new ParticleWrapper(Particle.DUST, new Particle.DustOptions(Color.SILVER, 1.5f))
 					),
 					List.of(
-						new ParticleWrapper(Particle.DUST, new Particle.DustOptions(Color.GRAY, 5f)),
+						new ParticleWrapper(Particle.DUST, new Particle.DustOptions(Color.GRAY, 2f)),
 						new ParticleWrapper(Particle.FLAME, 5, .1, .1, .1, 0)
 					),
 					List.of(
-						new ParticleWrapper(Particle.SOUL_FIRE_FLAME, 2, .1, .1, .1, 0),
-						new ParticleWrapper(Particle.DUST, new Particle.DustOptions(Color.SILVER, 2.5f))
+						new ParticleWrapper(Particle.SOUL_FIRE_FLAME, 1, .1, .1, .1, 0),
+						new ParticleWrapper(Particle.DUST, new Particle.DustOptions(Color.SILVER, 0.75f))
 					)
 			)
 	);
