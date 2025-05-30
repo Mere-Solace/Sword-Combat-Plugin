@@ -15,8 +15,8 @@ public class Utils {
 			ref = new Vector(-Math.sin(yaw),0,Math.cos(yaw));
 		}
 		
-		Vector right = ref.getCrossProduct(dir).normalize();
-		Vector up = dir.getCrossProduct(right).normalize();
+		Vector right = dir.getCrossProduct(ref).normalize();
+		Vector up = right.getCrossProduct(dir).normalize();
 		
 		ArrayList<Vector> basis = new ArrayList<>(3);
 		
@@ -27,36 +27,12 @@ public class Utils {
 		return basis;
 	}
 	
-	public static void rotateBasis(List<Vector> basis, double radiansAroundRight, double radiansAroundUp, double radiansAroundForward) {
-		double cosYZ = Math.cos(radiansAroundRight);
-		double sinYZ = Math.sin(radiansAroundRight);
+	public static void rotateBasis(List<Vector> basis, double roll, double pitch) {
+		basis.get(1).rotateAroundAxis(basis.getLast(), -roll);
+		basis.getFirst().rotateAroundAxis(basis.getLast(), -roll);
 		
-		double cosXZ = Math.cos(radiansAroundUp);
-		double sinXZ = Math.sin(radiansAroundUp);
-		
-		double cosXY = Math.cos(radiansAroundForward);
-		double sinXY = Math.sin(radiansAroundForward);
-		
-		double[][] R = new double[3][3];
-		R[0][0] = cosXZ * cosXY;
-		R[0][1] = cosXY * sinYZ * sinXZ - cosYZ * sinXY;
-		R[0][2] = cosYZ * cosXY * sinXZ + sinYZ * sinXY;
-		
-		R[1][0] = cosXZ * sinXY;
-		R[1][1] = cosYZ * cosXY + sinYZ * sinXZ * sinXY;
-		R[1][2] = -cosXY * sinYZ + cosYZ * sinXZ * sinXY;
-		
-		R[2][0] = -sinXZ;
-		R[2][1] = cosXZ * sinYZ;
-		R[2][2] = cosYZ * cosXZ;
-
-		for (int i = 0; i < basis.size(); i++) {
-			Vector v = basis.get(i);
-			double x = R[0][0] * v.getX() + R[0][1] * v.getY() + R[0][2] * v.getZ();
-			double y = R[1][0] * v.getX() + R[1][1] * v.getY() + R[1][2] * v.getZ();
-			double z = R[2][0] * v.getX() + R[2][1] * v.getY() + R[2][2] * v.getZ();
-			basis.set(i, new Vector(x, y, z));
-		}
+		basis.getLast().rotateAroundAxis(basis.getFirst(), pitch);
+		basis.get(1).rotateAroundAxis(basis.getFirst(), pitch);
 	}
 	
 	public static Vector transformWithNewBasis(ArrayList<Vector> basis, Vector v) {

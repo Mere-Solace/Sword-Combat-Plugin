@@ -12,7 +12,7 @@ public class ParticleWrapper {
 	private double xOffset = 0;
 	private double yOffset = 0;
 	private double zOffset = 0;
-	private double speed = -1;
+	private double data = -1;
 	
 	public ParticleWrapper(Particle particle) {
 		this.particle = particle;
@@ -28,7 +28,6 @@ public class ParticleWrapper {
 		this.xOffset = xOffset;
 		this.yOffset = yOffset;
 		this.zOffset = zOffset;
-		speed = -1;
 	}
 	
 	public ParticleWrapper(Particle particle, int count, double xOffset, double yOffset, double zOffset, double speed) {
@@ -39,7 +38,7 @@ public class ParticleWrapper {
 		this.xOffset = xOffset;
 		this.yOffset = yOffset;
 		this.zOffset = zOffset;
-		this.speed = speed;
+		this.data = speed;
 	}
 	
 	public ParticleWrapper(Particle particle, Particle.DustOptions options) {
@@ -48,10 +47,15 @@ public class ParticleWrapper {
 		this.transition = null;
 	}
 	
-	public ParticleWrapper(Particle particle, Particle.DustTransition transition) {
+	public ParticleWrapper(Particle particle, int count, double offset, double data, Particle.DustTransition transition) {
 		this.particle = particle;
 		this.options = null;
 		this.transition = transition;
+		this.count = count;
+		this.xOffset = offset;
+		this.yOffset = offset;
+		this.zOffset = offset;
+		this.data = data;
 	}
 	
 	public Particle getParticle() {
@@ -68,13 +72,13 @@ public class ParticleWrapper {
 	
 	public void display(Location origin) {
 		World world = origin.getWorld();
-		if (particle.getDataType() != Particle.DustOptions.class)
-			if (speed == -1)
+		if (transition == null && options == null)
+			if (data == -1)
 				world.spawnParticle(particle, origin, count, xOffset, yOffset, zOffset);
 			else
-				world.spawnParticle(particle, origin, count, xOffset, yOffset, zOffset, speed);
+				world.spawnParticle(particle, origin, count, xOffset, yOffset, zOffset, data);
 		else if (options == null)
-			world.spawnParticle(particle, origin, count, transition);
+			world.spawnParticle(particle, origin, count, xOffset, yOffset, zOffset, data, transition);
 		else
 			world.spawnParticle(particle, origin, count, options);
 	}

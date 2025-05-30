@@ -3,80 +3,63 @@ package btm.sword.effect;
 import btm.sword.utils.ParticleWrapper;
 import btm.sword.utils.Utils;
 import org.bukkit.Location;
-import org.bukkit.Particle;
 import org.bukkit.util.Vector;
 
-import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 public class ArcShape extends EffectShape {
 	double outerRadius;
 	double innerRadius;
-	double xyRotation;
-	double xzRotation;
-	double yzRotation;
-	double maxArcDegrees;
+	double yawOffset;
+	double pitchOffset;
+	double maxAngle;
+	boolean clockwise = false;
 	
-	public ArcShape(EffectExecutionType executionType, List<List<ParticleWrapper>> particles, double resolution, int partitions,
-	                double outerRadius, double innerRadius, double xyRotation, double xzRotation, double yzRotation, double maxArcDegrees) {
-		super(executionType, particles, resolution, partitions);
+	public ArcShape(EffectExecutionType executionType, List<List<ParticleWrapper>> particles, double resolution, int partitions, float period,
+	                double outerRadius, double innerRadius, double yawOffset, double pitchOffset, double maxAngle) {
+		super(executionType, particles, resolution, partitions, period);
 		this.outerRadius = outerRadius;
 		this.innerRadius = innerRadius;
-		this.xyRotation = xyRotation;
-		this.xzRotation = xzRotation;
-		this.yzRotation = yzRotation;
-		this.maxArcDegrees = maxArcDegrees;
+		this.yawOffset = Math.toRadians(yawOffset);
+		this.pitchOffset = Math.toRadians(pitchOffset);
+		this.maxAngle = Math.toRadians(maxAngle);
 	}
 	
 	@Override
 	public List<List<Location>> generatePoints(Location origin, Vector direction) {
 		List<Vector> basis = Utils.getBasis(origin, direction);
-		List<Vector> newBasis = new ArrayList<>(3);
-		for (Vector v : basis) {
-			newBasis.add(v.clone());
-		}
-		Utils.rotateBasis(basis, Math.toRadians(xyRotation), Math.toRadians(xzRotation), Math.toRadians(yzRotation));
+		Utils.rotateBasis(basis, yawOffset, pitchOffset);
 		
-		LineShape rotatedVectors = new LineShape(
-				List.of(
-						List.of(
-								new ParticleWrapper(Particle.SOUL_FIRE_FLAME, 1, 0, 0, 0, 0)
-						)
-				),
-				2.0, 2.0);
-		
-		LineShape norms = new LineShape(
-				List.of(
-						List.of(
-								new ParticleWrapper(Particle.FLAME, 1, 0, 0, 0, 0)
-						)
-				),
-				2.0, 2.0);
-		
-		for (Vector b : basis) {
-			rotatedVectors.displayAllParticles(rotatedVectors.generatePoints(origin, b));
-		}
-		for (Vector rb : newBasis) {
-			norms.displayAllParticles(norms.generatePoints(origin, rb));
-		}
-		
-		List<List<Location>> points = new ArrayList<>((int) (maxArcDegrees*Math.pow(resolution, 2)));
+		List<List<Location>> points = new LinkedList<>();
 		
 		Vector up = basis.get(1);
 		
-		double maxRads = Math.toRadians(maxArcDegrees);
-		Vector curDir = basis.getFirst().clone().rotateAroundAxis(up, -((Math.PI/2)-(maxRads/2)));
+		double startAngle = -1*(maxAngle/2);
+		double angleInc = 1/(resolution);
+		if (clockwise) {
+			startAngle*=-1;
+			angleInc*=-1;
+		}
 		
-		double spacing;
+		Vector cur = basis.getLast().clone().rotateAroundAxis(up, startAngle).normalize();
 		
-		for (int i = 0; i < maxArcDegrees * resolution; i++) {
-			for (int j = 0; j < 10; j++) {
-				List<Location> section = new ArrayList<>(10);
-				for (double k = innerRadius; k <= outerRadius; k += (outerRadius-innerRadius)/resolution) {
-					section.add(origin.add(curDir.clone().multiply(k)));
+		double maxAnglePerPart = maxAngle/partitions;
+		
+		for (int i = 0; i < partitions; i++) {
+			List<Location> section = new LinkedList<>();
+			for (double t = 0; t <= maxAnglePerPart; t += Math.abs(angleInc)) {
+				if (innerRadius == outerRadius) {
+					section.add(origin.clone().add(cur.clone().multiply(outerRadius)));
+				} else {
+					for (double x = innerRadius; x < outerRadius; x += (outerRadius - innerRadius) / resolution) {
+						section.add(origin.clone().add(cur.clone().multiply(x)));
+					}
 				}
-				curDir.rotateAroundAxis(up, maxRads/10);
+				
+				cur.rotateAroundAxis(up, angleInc);
 			}
+			points.add(section);
 		}
 		
 		return points;

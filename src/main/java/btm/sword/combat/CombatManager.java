@@ -61,7 +61,7 @@ public class CombatManager {
 		List<List<Location>> points = line.generatePoints(player.getEyeLocation(), player.getEyeLocation().getDirection());
 		
 //		line.printPoints(points);
-		line.displayAllParticles(points);
+//		line.displayAllParticles(points);
 		
 		HashSet<LivingEntity> hit = new HashSet<>();
 		for (List<Location> sections : points) {
@@ -74,15 +74,22 @@ public class CombatManager {
 			target.damage(5, player);
 		}
 		
+//		player.getWorld().spawnParticle(
+//				Particle.SOUL_FIRE_FLAME,
+//				player.getEyeLocation().add(player.getEyeLocation().getDirection().multiply(3)),
+//				10, 1, 1, 1, 5
+//		);
+//		player.getWorld().spawnParticle(
+//				Particle.POOF,
+//				player.getEyeLocation().add(player.getEyeLocation().getDirection().multiply(2)),
+//				10, 1, 1, 1, 5
+//		);
+		
 		player.getWorld().spawnParticle(
-				Particle.SOUL_FIRE_FLAME,
+				Particle.DUST_COLOR_TRANSITION,
 				player.getEyeLocation().add(player.getEyeLocation().getDirection().multiply(3)),
-				10, 1, 1, 1, 5
-		);
-		player.getWorld().spawnParticle(
-				Particle.POOF,
-				player.getEyeLocation().add(player.getEyeLocation().getDirection().multiply(2)),
-				10, 1, 1, 1, 5
+				10, 1, 1, 1, 1,
+				new Particle.DustTransition(Color.fromRGB(228, 222, 75), Color.fromRGB(245, 171, 60), 2f)
 		);
 	}
 	
@@ -113,17 +120,36 @@ public class CombatManager {
 	
 	public static void arcTest(Player player) {
 		ArcShape arc = new ArcShape(
-				EffectExecutionType.INSTANT,
+				EffectExecutionType.ITERATIVE,
 				List.of(
 						List.of(
-								new ParticleWrapper(Particle.DUST, new Particle.DustOptions(Color.GRAY, 3)
-								)
+								new ParticleWrapper(Particle.DUST, new Particle.DustOptions(Color.WHITE, 0.75f))
 						)
 				),
-				2, 4, 6, 4,
-				45, 45, 45,
-				110);
+				20, 5, .05f, 5, 1,
+				-45, 0,
+				190);
 		
-		arc.generatePoints(player.getEyeLocation().add(new Vector(0, -1, 0)), player.getEyeLocation().getDirection());
+		ArcShape arc2 = new ArcShape(
+				EffectExecutionType.ITERATIVE,
+				List.of(
+						List.of(
+								new ParticleWrapper(Particle.DUST, new Particle.DustOptions(Color.RED, 4f)),
+								new ParticleWrapper(Particle.FLAME, 4, .5, .5, .5, 0)
+						)
+				),
+				20, 5, .05f, 5.25, 5.25,
+				-45, 0,
+				190);
+		
+		Location l = player.getEyeLocation();
+		Vector e = l.getDirection();
+		l.add(e.clone().multiply(2));
+		
+		List<List<Location>> points = arc.generatePoints(l, e);
+		List<List<Location>> points2 = arc2.generatePoints(l, e);
+		
+		arc.display(points);
+		arc2.display(points2);
 	}
 }

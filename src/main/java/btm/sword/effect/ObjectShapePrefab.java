@@ -19,10 +19,10 @@ public enum ObjectShapePrefab {
 //						new ParticleWrapper(Particle.FLAME, 1, .1, .1, .1, 0.001)
 					),
 					List.of(
-						new ParticleWrapper(Particle.SOUL_FIRE_FLAME, 1, .1, .1, .1, 2),
-						new ParticleWrapper(Particle.DUST, new Particle.DustOptions(Color.SILVER, 1.5f)),
-						new ParticleWrapper(Particle.DUST, new Particle.DustTransition(Color.BLUE, Color.BLACK, 2f))
-			
+						new ParticleWrapper(Particle.CRIT, 1, .1, .1, .1, 3),
+						new ParticleWrapper(Particle.DUST, new Particle.DustOptions(Color.SILVER, 0.75f)),
+						new ParticleWrapper(Particle.DUST_COLOR_TRANSITION, 4, 0.1, 1,
+								new Particle.DustTransition(Color.fromRGB(246, 255, 102), Color.fromRGB(222, 169, 22), 2f))
 					)
 			)
 	);
