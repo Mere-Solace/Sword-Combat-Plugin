@@ -1,56 +1,26 @@
 package btm.sword.combat;
 
 import btm.sword.Sword;
-import btm.sword.effect.*;
-import btm.sword.effect.objectshapes.BusterSwordShape;
+import btm.sword.effectshape.*;
 import btm.sword.utils.ParticleWrapper;
+import btm.sword.utils.VectorUtils;
 import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.Particle;
-import org.bukkit.block.data.type.Bed;
+import org.bukkit.Sound;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
+import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.util.BoundingBox;
 import org.bukkit.util.Vector;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
 public class CombatManager {
-//	public static void executeAttack(Player player, AttackType attack) {
-//		double damage = attack.calculateDamage();
-//		double range = attack.calculateRange(5.0);
-//
-//		Location origin = player.getEyeLocation().add(new Vector(0,-0.1,0));
-//		Vector dir = origin.getDirection();
-//
-//		// these two lines should be wrapped into attack.execute, so that targets can be gathered and animations played
-//		// sequentially for attacks that require that structure
-//		HashSet<LivingEntity> targets = attack.getTargets(player, origin, dir, range);
-//
-//		Bukkit.getScheduler().runTaskAsynchronously(Sword.getInstance(), () -> attack.drawEffects(origin, dir, range, targets));
-//
-//		for (LivingEntity target : targets) {
-//			target.damage(damage, player);
-//		}
-//
-//		if (!targets.isEmpty()) {
-//			StringBuilder attackReport = new StringBuilder("[Targets Hit:\n");
-//			Iterator<LivingEntity> i = targets.iterator();
-//			while (i.hasNext()) {
-//				LivingEntity target = i.next();
-//				attackReport.append("  ").append(target);
-//				if (i.hasNext()) {
-//					attackReport.append(",");
-//				}
-//				attackReport.append("\n");
-//			}
-//			attackReport.append("  ").append("For ").append(damage).append(" Damage]");
-//			player.sendMessage(attackReport.toString());
-//		}
-//	}
-	
 	public static void executeAttack(Player player) {
-		LineShape line = new LineShape(EffectExecutionType.ITERATIVE,
+		LineShape line = new LineShape(
 				List.of(
 						List.of(
 							new ParticleWrapper(Particle.DUST, new Particle.DustOptions(Color.SILVER, 1f)),
@@ -58,13 +28,12 @@ public class CombatManager {
 						)
 				),
 				4, 5, 25);
-		List<List<Location>> points = line.generatePoints(player.getEyeLocation(), player.getEyeLocation().getDirection());
+		line.generatePoints(player.getEyeLocation(), player.getEyeLocation().getDirection());
 		
-//		line.printPoints(points);
-//		line.displayAllParticles(points);
+		line.display(EffectExecutionType.INSTANT);
 		
 		HashSet<LivingEntity> hit = new HashSet<>();
-		for (List<Location> sections : points) {
+		for (List<Location> sections : line.getPoints()) {
 			for (Location l : sections) {
 				hit.addAll(l.getNearbyLivingEntities(0.1));
 			}
@@ -73,17 +42,6 @@ public class CombatManager {
 		for (LivingEntity target : hit) {
 			target.damage(5, player);
 		}
-		
-//		player.getWorld().spawnParticle(
-//				Particle.SOUL_FIRE_FLAME,
-//				player.getEyeLocation().add(player.getEyeLocation().getDirection().multiply(3)),
-//				10, 1, 1, 1, 5
-//		);
-//		player.getWorld().spawnParticle(
-//				Particle.POOF,
-//				player.getEyeLocation().add(player.getEyeLocation().getDirection().multiply(2)),
-//				10, 1, 1, 1, 5
-//		);
 		
 		player.getWorld().spawnParticle(
 				Particle.DUST_COLOR_TRANSITION,
@@ -96,16 +54,15 @@ public class CombatManager {
 	public static void test(Player player) {
 		ObjectShape busterSword = new ObjectShape(
 				ObjectShapePrefab.BUSTER_SWORD.getPoints(),
-				EffectExecutionType.INSTANT,
 				ObjectShapePrefab.BUSTER_SWORD.getParticles(),
 				1,
 				1);
 		
-		List<List<Location>> points =  busterSword.generatePoints(player.getEyeLocation().add(new Vector(0, -1, 0)), player.getEyeLocation().getDirection());
-		busterSword.displayAllParticles(points);
+		busterSword.generatePoints(player.getEyeLocation().add(new Vector(0, -1, 0)), player.getEyeLocation().getDirection());
+		busterSword.display(EffectExecutionType.INSTANT);
 		
 		HashSet<LivingEntity> hit = new HashSet<>();
-		for (List<Location> sections : points) {
+		for (List<Location> sections : busterSword.getPoints()) {
 			for (Location l : sections) {
 				hit.addAll(l.getNearbyLivingEntities(0.1));
 			}
@@ -113,6 +70,7 @@ public class CombatManager {
 		hit.remove(player);
 		for (LivingEntity target : hit) {
 			target.damage(10, player);
+			BoundingBox boundingBox = target.getBoundingBox();
 		}
 		
 		player.isBlocking();
@@ -120,36 +78,95 @@ public class CombatManager {
 	
 	public static void arcTest(Player player) {
 		ArcShape arc = new ArcShape(
-				EffectExecutionType.ITERATIVE,
 				List.of(
+						List.of(
+								new ParticleWrapper(Particle.DUST, new Particle.DustOptions(Color.WHITE, 0.75f))
+						),
+						List.of(
+								new ParticleWrapper(Particle.DUST, new Particle.DustOptions(Color.BLACK, 0.75f))
+						),
+						List.of(
+								new ParticleWrapper(Particle.SOUL_FIRE_FLAME, 2, 0, 0, 0, 0)
+						),
 						List.of(
 								new ParticleWrapper(Particle.DUST, new Particle.DustOptions(Color.WHITE, 0.75f))
 						)
 				),
-				20, 5, .05f, 5, 1,
+				20, 5, 1, 5, 2.5,
 				-45, 0,
-				190);
+				100);
 		
 		ArcShape arc2 = new ArcShape(
-				EffectExecutionType.ITERATIVE,
 				List.of(
 						List.of(
-								new ParticleWrapper(Particle.DUST, new Particle.DustOptions(Color.RED, 4f)),
-								new ParticleWrapper(Particle.FLAME, 4, .5, .5, .5, 0)
+								new ParticleWrapper(Particle.DUST, new Particle.DustOptions(Color.RED, 4f))
 						)
 				),
-				20, 5, .05f, 5.25, 5.25,
+				20, 5, 1, 5.25, 5.25,
 				-45, 0,
-				190);
+				105);
 		
-		Location l = player.getEyeLocation();
+		Location l = player.getEyeLocation().add(0, -.5, 0);
 		Vector e = l.getDirection();
 		l.add(e.clone().multiply(2));
 		
-		List<List<Location>> points = arc.generatePoints(l, e);
-		List<List<Location>> points2 = arc2.generatePoints(l, e);
+		arc.generatePoints(l, e);
+		arc2.generatePoints(l, e);
 		
-		arc.display(points);
-		arc2.display(points2);
+		arc.display(EffectExecutionType.ITERATIVE);
+		arc2.display(EffectExecutionType.ITERATIVE);
+		
+//		List<LivingEntity> hit = new ArrayList<>(l.add(e.multiply(2.75)).getNearbyLivingEntities(2.75));
+		
+//		List<LivingEntity> hit = new ArrayList<>(l.add(e.multiply(2)).getNearbyLivingEntities(3.5));
+		
+		
+		// hitbox class
+		List<LivingEntity> hit = new ArrayList<>(l.getNearbyLivingEntities(5.25));
+		hit.remove(player);
+		List<Vector> basis = VectorUtils.getBasis(l, e);
+		VectorUtils.rotateBasis(basis, -45, 0);
+		
+		ParticleWrapper p = new ParticleWrapper(Particle.FLASH, 2, 0.1, 0.1, 0.1, 0.5);
+		ParticleWrapper w = new ParticleWrapper(Particle.CRIT, 10, 0, 0, 0);
+		
+		boolean tipper = false;
+		
+		for (LivingEntity target : hit) {
+			Vector toTarget = target.getEyeLocation().subtract(l).toVector();
+			
+			double forwardDist = toTarget.dot(basis.getLast());
+			double sideOffset = toTarget.dot(basis.getFirst());
+			double upOffset = toTarget.dot(basis.get(1));
+			
+			// Define thresholds (tweak as needed)
+			double tipMin = 3;      // Start of tip zone
+			double tipMax = 5.5;      // End of tip zone
+			double sideMax = 5.5;     // Width of tip
+			double upMax = 1;       // Vertical thickness
+			
+			if (forwardDist >= tipMin && forwardDist <= tipMax &&
+					Math.abs(sideOffset) <= sideMax &&
+					Math.abs(upOffset) <= upMax) {
+				tipper = true;
+				// This target is in the tip region!
+				target.damage(12, player);
+				p.display(target.getEyeLocation());
+				player.getWorld().playSound(target.getLocation(), Sound.BLOCK_CHAIN_HIT, 5f, 1.44f);
+				player.sendMessage("Tipper!");
+			}
+		}
+		
+		// should go in apply self effects of an attack... Maybe attack should just be an interface
+		if (tipper) {
+			for (int i = 0; i < 3; i++) {
+				new BukkitRunnable() {
+					@Override
+					public void run() {
+						player.setVelocity(player.getVelocity().add(new Vector(0, .25, 0)));
+					}
+				}.runTaskLater(Sword.getInstance(), i);
+			}
+		}
 	}
 }

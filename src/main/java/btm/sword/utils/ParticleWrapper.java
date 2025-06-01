@@ -58,28 +58,16 @@ public class ParticleWrapper {
 		this.data = data;
 	}
 	
-	public Particle getParticle() {
-		return particle;
-	}
-	
-	public Particle.DustOptions getOptions() {
-		return options;
-	}
-	
-	public Particle.DustTransition getTransition() {
-		return transition;
-	}
-	
-	public void display(Location origin) {
-		World world = origin.getWorld();
+	public void display(Location location) {
+		World world = location.getWorld();
 		if (transition == null && options == null)
 			if (data == -1)
-				world.spawnParticle(particle, origin, count, xOffset, yOffset, zOffset);
+				world.spawnParticle(particle, location, count, xOffset, yOffset, zOffset);
 			else
-				world.spawnParticle(particle, origin, count, xOffset, yOffset, zOffset, data);
+				world.spawnParticle(particle, location, count, xOffset, yOffset, zOffset, data);
 		else if (options == null)
-			world.spawnParticle(particle, origin, count, xOffset, yOffset, zOffset, data, transition);
+			world.spawnParticle(particle, location, count, xOffset, yOffset, zOffset, data, transition);
 		else
-			world.spawnParticle(particle, origin, count, options);
+			world.spawnParticle(particle, location, count, options);
 	}
 }

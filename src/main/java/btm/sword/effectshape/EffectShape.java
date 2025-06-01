@@ -1,4 +1,4 @@
-package btm.sword.effect;
+package btm.sword.effectshape;
 
 import btm.sword.Sword;
 import btm.sword.utils.ParticleWrapper;
@@ -9,13 +9,12 @@ import org.bukkit.util.Vector;
 import java.util.List;
 
 public abstract class EffectShape {
-	protected EffectUsageType usageType = EffectUsageType.BOTH;
-	protected EffectExecutionType executionType = EffectExecutionType.INSTANT;
 	protected List<List<ParticleWrapper>> particles;
 	protected double resolution = 3;
 	protected int partitions = 1;
-	protected double duration = -1;
-	protected float period = 0.5f;
+	protected int delayTicks = 5;
+	
+	public List<List<Location>> points;
 	
 	public EffectShape(List<List<ParticleWrapper>> particles) {
 		this.particles = particles;
@@ -26,36 +25,29 @@ public abstract class EffectShape {
 		this.resolution = resolution;
 	}
 	
-	public EffectShape(EffectExecutionType executionType, List<List<ParticleWrapper>> particles, double resolution, int partitions) {
-		this.executionType = executionType;
+	public EffectShape(List<List<ParticleWrapper>> particles, double resolution, int partitions) {
 		this.particles = particles;
 		this.resolution = resolution;
 		this.partitions = partitions;
-		
-		if (executionType.equals(EffectExecutionType.INSTANT)) {
-			period = 0;
-		}
 	}
 	
-	public EffectShape(EffectExecutionType executionType, List<List<ParticleWrapper>> particles, double resolution, int partitions, float period) {
-		this.executionType = executionType;
+	public EffectShape(List<List<ParticleWrapper>> particles, double resolution, int partitions, int delayTicks) {
 		this.particles = particles;
 		this.resolution = resolution;
 		this.partitions = partitions;
-		this.period = period;
+		this.delayTicks = delayTicks;
 	}
 	
-	public abstract List<List<Location>> generatePoints(Location origin, Vector direction);
+	public abstract void generatePoints(Location origin, Vector direction);
 	
-	public void display(List<List<Location>> points) {
+	public void display(EffectExecutionType executionType) {
 		if (executionType.equals(EffectExecutionType.INSTANT)) {
 			displayAllParticles(points);
 		}
 		else if (executionType.equals(EffectExecutionType.ITERATIVE)) {
-			displaySectionOfParticles(points.getFirst());
-			for (int i = 1; i < points.size(); i++) {
+			for (int i = 0; i < points.size(); i++) {
 				final int finalI = i;
-				long delay = Math.max(1, (long) (20*period*i));
+				long delay = Math.max(1, delayTicks*i);
 				new BukkitRunnable() {
 					@Override
 					public void run() {
@@ -90,14 +82,7 @@ public abstract class EffectShape {
 		}
 	}
 	
-	public void printPoints(List<List<Location>> points) {
-		Sword.getInstance().getLogger().info("~~~~ Effect info:" + "Partitions: " + partitions);
-		Sword.getInstance().getLogger().info("~~~ Effect Locations:");
-		for (List<Location> section : points) {
-			Sword.getInstance().getLogger().info("~~ New Section:");
-			for (int i = 0; i < section.size(); i++) {
-				Sword.getInstance().getLogger().info("Point " + i +  " " + section.get(i).toString());
-			}
-		}
+	public List<List<Location>> getPoints() {
+		return points;
 	}
 }

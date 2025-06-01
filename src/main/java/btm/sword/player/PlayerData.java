@@ -1,7 +1,15 @@
 package btm.sword.player;
 
-import org.bukkit.entity.Player;
+import java.util.UUID;
 
 public class PlayerData {
-	Player player;
+	private final UUID uuid;
+	
+	public PlayerData(UUID uuid) {
+		this.uuid = uuid;
+	}
+	
+	public UUID getUUID() {
+		return uuid;
+	}
 }

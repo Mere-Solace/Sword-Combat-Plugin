@@ -1,7 +1,7 @@
-package btm.sword.effect;
+package btm.sword.effectshape;
 
 import btm.sword.utils.ParticleWrapper;
-import btm.sword.utils.Utils;
+import btm.sword.utils.VectorUtils;
 import org.bukkit.Location;
 import org.bukkit.util.Vector;
 
@@ -11,9 +11,11 @@ import java.util.List;
 public class ObjectShape extends EffectShape {
 	final List<List<Vector>> objectParts;
 	
-	public ObjectShape(List<List<Vector>> objectParts, EffectExecutionType executionType, List<List<ParticleWrapper>> particles, double resolution, int partitions) {
-		super(executionType, particles, resolution, partitions);
+	public ObjectShape(List<List<Vector>> objectParts, List<List<ParticleWrapper>> particles, double resolution, int partitions) {
+		super(particles, resolution, partitions);
 		this.objectParts = objectParts;
+		
+		points = new ArrayList<>(objectParts.size());
 	}
 	
 	@Override
@@ -29,17 +31,15 @@ public class ObjectShape extends EffectShape {
 	}
 	
 	@Override
-	public List<List<Location>> generatePoints(Location origin, Vector direction) {
-		ArrayList<Vector> basis = Utils.getBasis(origin, direction);
+	public void generatePoints(Location origin, Vector direction) {
+		ArrayList<Vector> basis = VectorUtils.getBasis(origin, direction);
 		
-		List<List<Location>> points = new ArrayList<>();
 		for (List<Vector> part : objectParts) {
 			List<Location> section = new ArrayList<>(part.size());
 			for (Vector v : part) {
-				section.add(origin.clone().add(Utils.transformWithNewBasis(basis, v)));
+				section.add(origin.clone().add(VectorUtils.transformWithNewBasis(basis, v)));
 			}
 			points.add(section);
 		}
-		return points;
 	}
 }

@@ -1,11 +1,11 @@
-package btm.sword.effect.objectshapes;
+package btm.sword.effectshape.objectshapes;
 
 import org.bukkit.util.Vector;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class BusterSwordShape {
+public class BigSwordShapeGenerator {
 	public static List<List<Vector>> generate() {
 		List<List<Vector>> layers = new ArrayList<>();
 		

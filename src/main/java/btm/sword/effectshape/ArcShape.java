@@ -1,7 +1,7 @@
-package btm.sword.effect;
+package btm.sword.effectshape;
 
 import btm.sword.utils.ParticleWrapper;
-import btm.sword.utils.Utils;
+import btm.sword.utils.VectorUtils;
 import org.bukkit.Location;
 import org.bukkit.util.Vector;
 
@@ -16,22 +16,22 @@ public class ArcShape extends EffectShape {
 	double maxAngle;
 	boolean clockwise = false;
 	
-	public ArcShape(EffectExecutionType executionType, List<List<ParticleWrapper>> particles, double resolution, int partitions, float period,
+	public ArcShape(List<List<ParticleWrapper>> particles, double resolution, int partitions, int delayTicks,
 	                double outerRadius, double innerRadius, double yawOffset, double pitchOffset, double maxAngle) {
-		super(executionType, particles, resolution, partitions, period);
+		super(particles, resolution, partitions, delayTicks);
 		this.outerRadius = outerRadius;
 		this.innerRadius = innerRadius;
 		this.yawOffset = Math.toRadians(yawOffset);
 		this.pitchOffset = Math.toRadians(pitchOffset);
 		this.maxAngle = Math.toRadians(maxAngle);
+		
+		points = new LinkedList<>();
 	}
 	
 	@Override
-	public List<List<Location>> generatePoints(Location origin, Vector direction) {
-		List<Vector> basis = Utils.getBasis(origin, direction);
-		Utils.rotateBasis(basis, yawOffset, pitchOffset);
-		
-		List<List<Location>> points = new LinkedList<>();
+	public void generatePoints(Location origin, Vector direction) {
+		List<Vector> basis = VectorUtils.getBasis(origin, direction);
+		VectorUtils.rotateBasis(basis, yawOffset, pitchOffset);
 		
 		Vector up = basis.get(1);
 		
@@ -61,7 +61,5 @@ public class ArcShape extends EffectShape {
 			}
 			points.add(section);
 		}
-		
-		return points;
 	}
 }

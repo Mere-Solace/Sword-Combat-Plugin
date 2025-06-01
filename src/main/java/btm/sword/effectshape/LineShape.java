@@ -1,4 +1,4 @@
-package btm.sword.effect;
+package btm.sword.effectshape;
 
 import btm.sword.utils.ParticleWrapper;
 import org.bukkit.Location;
@@ -10,20 +10,22 @@ import java.util.List;
 public class LineShape extends EffectShape {
 	double length;
 	
-	public LineShape(EffectExecutionType executionType, List<List<ParticleWrapper>> particles, double resolution, int partitions, double length) {
-		super(executionType, particles, resolution, partitions);
+	public LineShape(List<List<ParticleWrapper>> particles, double resolution, int partitions, double length) {
+		super(particles, resolution, partitions);
 		this.length = length;
+		
+		points = new ArrayList<>((int) (length*resolution));
 	}
 	
 	public LineShape(List<List<ParticleWrapper>> particles, double resolution, double length) {
 		super(particles, resolution);
 		this.length = length;
+		
+		points = new ArrayList<>((int) (length*resolution));
 	}
 	
 	@Override
-	public List<List<Location>> generatePoints(Location origin, Vector direction) {
-		List<List<Location>> points = new ArrayList<>((int) (length*resolution));
-		
+	public void generatePoints(Location origin, Vector direction) {
 		int pointsPerPartition = (int) ((length*resolution)/partitions);
 		
 		Vector step = direction.clone().normalize().multiply(1/resolution);
@@ -37,7 +39,5 @@ public class LineShape extends EffectShape {
 			}
 			points.add(section);
 		}
-		
-		return points;
 	}
 }
