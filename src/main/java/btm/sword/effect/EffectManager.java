@@ -16,7 +16,7 @@ public class EffectManager {
 	private final Plugin plugin;
 	private final ParticleSpawner spawner;
 	
-	private HashMap<Effect, BukkitTask> effects;
+	private final HashMap<Effect, BukkitTask> effects = new HashMap<>();
 	
 	public EffectManager(ParticleSpawner spawner) {
 		this(Sword.getInstance(), spawner);

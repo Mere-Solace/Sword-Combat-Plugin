@@ -10,8 +10,10 @@ import btm.sword.combat.attack.attacktypes.LaserAttack;
 import btm.sword.effect.EffectExecutionType;
 import btm.sword.effect.EffectManager;
 import btm.sword.effect.effects.Line;
+import btm.sword.player.PlayerData;
 import btm.sword.util.ParticleSpawner;
 import btm.sword.util.ParticleWrapper;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Particle;
@@ -29,34 +31,37 @@ import java.util.List;
 public class ItemUseListener implements Listener {
 	AttackManager attackManager = new AttackManager(new EffectManager(new ParticleSpawner(50)));
 	
-	Attack gun = new Attack(attackManager,
-			List.of(
-					new LaserAttack(
-							List.of(
-									new BounceEffect(3, 2),
-									new DamageEffect(7)
-							)
-					)
-			),
-			
-			List.of(
-					new Line(
-							attackManager.getEffectManager(),
-							EffectExecutionType.INSTANT,
-							List.of(
-									new ParticleWrapper(
-											Particle.FLAME,
-											3, 0.05, 0.05, 0.05, 0)
-							),
-					4.0, 25.0
-					)
-			),
-			2
-	);
+	PlayerData bladeSworn = new PlayerData(Bukkit.getPlayerUniqueId("BladeSworn"));
 	
 	@EventHandler
 	public void onPlayerInteract(PlayerInteractEvent event) {
 		if (!event.getAction().isRightClick()) return;
+		
+		Attack gun = new Attack(attackManager,
+				bladeSworn,
+				List.of(
+						new LaserAttack(
+								List.of(
+										new BounceEffect(2, 1),
+										new DamageEffect(7)
+								)
+						)
+				),
+				
+				List.of(
+						new Line(
+								attackManager.getEffectManager(),
+								EffectExecutionType.INSTANT,
+								List.of(
+										new ParticleWrapper(
+												Particle.FLAME,
+												3, 0.05, 0.05, 0.05, 0)
+								),
+								4.0, 25.0
+						)
+				),
+				2
+		);
 		
 		Player player = event.getPlayer();
 		Location l = player.getEyeLocation();

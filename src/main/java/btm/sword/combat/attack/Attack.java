@@ -3,6 +3,7 @@ package btm.sword.combat.attack;
 import btm.sword.Sword;
 import btm.sword.effect.Effect;
 import btm.sword.player.PlayerData;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -12,6 +13,7 @@ import java.util.List;
 
 public class Attack extends BukkitRunnable {
 	private final AttackManager attackManager;
+	private final PlayerData playerData;
 	private final List<AttackType> attackTypes;
 	private final List<Effect> effects;
 	private final int durationTicks;
@@ -19,25 +21,25 @@ public class Attack extends BukkitRunnable {
 	
 	private Attack next = null;
 	
-	private PlayerData playerData;
 	private Player executor;
 	
 	private HashSet<LivingEntity> hit = null;
 	
-	public Attack(AttackManager attackManager, List<AttackType> attackTypes, List<Effect> effects, int durationTicks) {
+	public Attack(AttackManager attackManager, PlayerData playerData, List<AttackType> attackTypes, List<Effect> effects, int durationTicks) {
 		this.attackManager = attackManager;
+		this.playerData = playerData;
 		this.attackTypes = attackTypes;
 		this.effects = effects;
 		this.durationTicks = durationTicks;
 		
-//		executor = Bukkit.getPlayer(playerData.getUUID());
+		executor = Bukkit.getPlayer(playerData.getUUID());
 	}
 	
-	public Attack(AttackManager attackManager, List<AttackType> attackTypes, List<Effect> effects, int durationTicks, int delayTicks) {
-		this(attackManager, attackTypes, effects, durationTicks);
+	public Attack(AttackManager attackManager, PlayerData playerData, List<AttackType> attackTypes, List<Effect> effects, int durationTicks, int delayTicks) {
+		this(attackManager, playerData, attackTypes, effects, durationTicks);
 		this.delayTicks = delayTicks;
 
-//		executor = Bukkit.getPlayer(playerData.getUUID());
+		executor = Bukkit.getPlayer(playerData.getUUID());
 	}
 	
 	public void add(Attack nextAttack) {
@@ -51,9 +53,23 @@ public class Attack extends BukkitRunnable {
 	public void hit() {
 		hit = new HashSet<>(executor.getLocation().getNearbyLivingEntities(25).size());
 		HashSet<LivingEntity> targets;
+		
+		
+		executor.sendMessage("Checking for targets!");
+		
+		
 		for (AttackType at : attackTypes) {
 			targets = at.getTargets(executor);
+			
+			
+			executor.sendMessage(targets.toString());
+			
+			
 			targets.removeAll(hit);
+			
+			
+			executor.sendMessage("Applying Effects!");
+			
 			
 			at.applyEffects(playerData, targets);
 			hit.addAll(targets);
@@ -66,7 +82,7 @@ public class Attack extends BukkitRunnable {
 		
 		for (Effect effect : effects) {
 			if (effect.usesTargets()) effect.setTargets(hit);
-			effect.setLocation(executor.getLocation());
+			effect.setLocation(executor.getEyeLocation());
 			attackManager.runAttackEffect(effect);
 		}
 		

@@ -24,11 +24,15 @@ public class Line extends Effect {
 	
 	@Override
 	public void onRun() {
+		if (location == null)
+			return;
+		if (direction == null)
+			setDirection(location.getDirection());
 		
 		Vector step = direction.clone().normalize().multiply(1/resolution);
 		
 		for (int x = 0; x < length*resolution; x++) {
-			points.add(location.add(step));
+			points.add(location.clone().add(step.clone().multiply(x)));
 		}
 	}
 }

@@ -3,7 +3,6 @@ package btm.sword.effect;
 import btm.sword.Sword;
 import btm.sword.util.ParticleWrapper;
 import org.bukkit.Location;
-import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
@@ -27,6 +26,7 @@ public abstract class Effect implements Runnable {
 	protected int period = 1;
 	protected int iterations = 1;
 	protected boolean usesTargets = false;
+	protected Vector originOffset = null;
 	protected HashSet<LivingEntity> targets = null;
 	
 	protected Location location = null;
@@ -41,6 +41,21 @@ public abstract class Effect implements Runnable {
 	public Effect(EffectManager effectManager) {
 		this.effectManager = effectManager;
 		points = new LinkedList<>();
+	}
+	
+	public Effect(EffectManager effectManager, List<ParticleWrapper> particles) {
+		this(effectManager);
+		this.particles = particles;
+	}
+	
+	public Effect(EffectManager effectManager, List<ParticleWrapper> particles, boolean usesTargets) {
+		this(effectManager, particles);
+		this.usesTargets = usesTargets;
+	}
+	
+	public Effect(EffectManager effectManager, List<ParticleWrapper> particles, Vector originOffset) {
+		this(effectManager, particles);
+		this.originOffset = originOffset;
 	}
 	
 	public Effect(EffectManager effectManager, EffectExecutionType type) {
@@ -71,16 +86,6 @@ public abstract class Effect implements Runnable {
 	public Effect(EffectManager effectManager, EffectExecutionType type, List<ParticleWrapper> particles, double resolution, int partitions, int delayTicks, int period) {
 		this(effectManager, type, particles, resolution, partitions, delayTicks);
 		this.period = period;
-	}
-	
-	public Effect(EffectManager effectManager, List<ParticleWrapper> particles) {
-		this(effectManager);
-		this.particles = particles;
-	}
-	
-	public Effect(EffectManager effectManager, List<ParticleWrapper> particles, boolean usesTargets) {
-		this(effectManager, particles);
-		this.usesTargets = usesTargets;
 	}
 	
 	public abstract void onRun();
@@ -156,6 +161,10 @@ public abstract class Effect implements Runnable {
 	
 	public boolean usesTargets() {
 		return usesTargets;
+	}
+	
+	public void setOriginOffset(Vector originOffset) {
+		this.originOffset = originOffset;
 	}
 	
 	public void setTargets(HashSet<LivingEntity> targets) {

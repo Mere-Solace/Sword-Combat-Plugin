@@ -1,5 +1,6 @@
 package btm.sword.combat.attack.attacktypes;
 
+import btm.sword.Sword;
 import btm.sword.combat.appliedEffect.AppliedEffect;
 import btm.sword.combat.attack.AttackType;
 import org.bukkit.Location;
@@ -27,16 +28,17 @@ public class LaserAttack extends AttackType {
 	
 	@Override
 	public HashSet<LivingEntity> getTargets(Player executor) {
-		Location o = executor.getEyeLocation();
+		Location o = executor.getEyeLocation().add(0,-1,0);
 		Vector e = o.getDirection();
 		
 		HashSet<LivingEntity> hit = new HashSet<>();
 		
-		for (float i = 0; i < maxRange; i += (float) (maxRange / thickness)) {
+		for (double i = 0; i < maxRange; i += thickness) {
 			hit.addAll(o.clone().add(e.clone().multiply(i)).getNearbyLivingEntities(thickness));
 		}
 		hit.removeIf(Entity::isDead);
 		hit.remove(executor);
+		Sword.getInstance().getLogger().info(hit.toString());
 		return hit;
 	}
 }
