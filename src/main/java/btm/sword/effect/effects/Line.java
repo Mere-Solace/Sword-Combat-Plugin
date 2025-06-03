@@ -1,6 +1,8 @@
 package btm.sword.effect.effects;
 
 import btm.sword.effect.Effect;
+import btm.sword.effect.EffectExecutionType;
+import btm.sword.effect.EffectManager;
 import btm.sword.util.ParticleWrapper;
 import org.bukkit.Location;
 import org.bukkit.util.Vector;
@@ -9,29 +11,23 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Line extends Effect {
-	double length;
+	double length = 10;
 	
-	public Line(List<List<ParticleWrapper>> particles, double resolution, int partitions, double length) {
-		super(particles, resolution, partitions);
-		this.length = length;
-		
-		points = new ArrayList<>((int) (length*resolution));
+	public Line(EffectManager effectManager) {
+		super(effectManager);
 	}
 	
-	public Line(List<List<ParticleWrapper>> particles, double resolution, double length) {
-		super(particles, resolution);
+	public Line(EffectManager effectManager, EffectExecutionType type, List<ParticleWrapper> particles, double resolution, double length) {
+		super(effectManager, type, particles, resolution);
 		this.length = length;
-		
-		points = new ArrayList<>((int) (length*resolution));
 	}
 	
 	@Override
 	public void onRun() {
-		int pointsPerPartition = (int) ((length*resolution)/partitions);
 		
 		Vector step = direction.clone().normalize().multiply(1/resolution);
 		
-		for (int x = 0; x < pointsPerPartition; x++) {
+		for (int x = 0; x < length*resolution; x++) {
 			points.add(location.add(step));
 		}
 	}

@@ -6,22 +6,20 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 
 import java.util.HashSet;
-import java.util.Stack;
+import java.util.List;
 
 public abstract class AttackType {
-	private float baseDamage;
-	private final Stack<AppliedEffect> appliedEffects;
+	private final List<AppliedEffect> appliedEffects;
 	
-	public AttackType(float baseDamage, Stack<AppliedEffect> appliedEffects) {
-		this.baseDamage = baseDamage;
+	public AttackType(List<AppliedEffect> appliedEffects) {
 		this.appliedEffects = appliedEffects;
 	}
 	
 	public abstract HashSet<LivingEntity> getTargets(Player executor);
 	
 	public void applyEffects(PlayerData executorData, HashSet<LivingEntity> targets) {
-		while (!appliedEffects.empty()) {
-			appliedEffects.pop().applyEffect(executorData, targets);
+		for (AppliedEffect effect : appliedEffects) {
+			effect.applyEffect(executorData, targets);
 		}
 	}
 }

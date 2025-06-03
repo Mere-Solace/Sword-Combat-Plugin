@@ -10,7 +10,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 import java.util.HashSet;
 import java.util.List;
 
-public abstract class Attack extends BukkitRunnable {
+public class Attack extends BukkitRunnable {
 	private final AttackManager attackManager;
 	private final List<AttackType> attackTypes;
 	private final List<Effect> effects;

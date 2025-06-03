@@ -40,7 +40,7 @@ public class EffectManager {
 		
 		BukkitScheduler s = Bukkit.getScheduler();
 		
-		BukkitTask task = s.runTaskTimer(plugin, effect, 0, 20);
+		BukkitTask task = s.runTaskTimer(plugin, effect, 0, 1);
 		
 		effects.put(effect, task);
 	}

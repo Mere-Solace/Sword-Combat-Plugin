@@ -1,4 +1,4 @@
-package btm.sword.effect.objectshapes;
+package btm.sword.effect.shapes;
 
 import btm.sword.util.ParticleWrapper;
 import org.bukkit.Color;
@@ -7,7 +7,7 @@ import org.bukkit.util.Vector;
 
 import java.util.List;
 
-public enum ObjectShapePrefab {
+public enum ShapePrefab {
 	BUSTER_SWORD(BigSwordShapeGenerator.generate(),
 			List.of(
 					List.of(
@@ -29,7 +29,7 @@ public enum ObjectShapePrefab {
 	private final List<List<Vector>> points;
 	private final List<List<ParticleWrapper>> particles;
 	
-	ObjectShapePrefab(List<List<Vector>> points, List<List<ParticleWrapper>> particles) {
+	ShapePrefab(List<List<Vector>> points, List<List<ParticleWrapper>> particles) {
 		this.points = points;
 		this.particles = particles;
 	}

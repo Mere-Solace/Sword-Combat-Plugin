@@ -1,6 +1,5 @@
-package btm.sword.effect.objectshapes;
+package btm.sword.effect.shapes;
 
-import org.bukkit.Location;
 import org.bukkit.util.Vector;
 
 import java.util.List;
