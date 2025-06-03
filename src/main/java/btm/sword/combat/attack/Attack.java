@@ -1,50 +1,83 @@
 package btm.sword.combat.attack;
 
-import btm.sword.effectshape.EffectShape;
+import btm.sword.Sword;
+import btm.sword.effect.Effect;
 import btm.sword.player.PlayerData;
-import org.bukkit.Bukkit;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.HashSet;
 import java.util.List;
-import java.util.Stack;
 
 public abstract class Attack extends BukkitRunnable {
-	private final PlayerData playerData;
-	private final Stack<AttackType> hitboxes;
-	private List<EffectShape> effectShapes;
-	private int delayTicks;
+	private final AttackManager attackManager;
+	private final List<AttackType> attackTypes;
+	private final List<Effect> effects;
+	private final int durationTicks;
+	private int delayTicks = 0;
 	
 	private Attack next = null;
 	
-	private HashSet<LivingEntity> hit;
+	private PlayerData playerData;
+	private Player executor;
 	
-	public Attack(PlayerData playerData, Stack<AttackType> hitboxes, List<EffectShape> effectShapes) {
-		this.playerData = playerData;
-		this.hitboxes = hitboxes;
-		this.effectShapes = effectShapes;
+	private HashSet<LivingEntity> hit = null;
+	
+	public Attack(AttackManager attackManager, List<AttackType> attackTypes, List<Effect> effects, int durationTicks) {
+		this.attackManager = attackManager;
+		this.attackTypes = attackTypes;
+		this.effects = effects;
+		this.durationTicks = durationTicks;
+		
+//		executor = Bukkit.getPlayer(playerData.getUUID());
+	}
+	
+	public Attack(AttackManager attackManager, List<AttackType> attackTypes, List<Effect> effects, int durationTicks, int delayTicks) {
+		this(attackManager, attackTypes, effects, durationTicks);
+		this.delayTicks = delayTicks;
+
+//		executor = Bukkit.getPlayer(playerData.getUUID());
 	}
 	
 	public void add(Attack nextAttack) {
 		next = nextAttack;
 	}
 	
-	public void getHit() {
-		Player executor = Bukkit.getPlayer(playerData.getUUID());
-		
-		while (!hitboxes.empty()) {
-			AttackType type = hitboxes.pop();
+	public int getDelayTicks() {
+		return delayTicks;
+	}
+	
+	public void hit() {
+		hit = new HashSet<>(executor.getLocation().getNearbyLivingEntities(25).size());
+		HashSet<LivingEntity> targets;
+		for (AttackType at : attackTypes) {
+			targets = at.getTargets(executor);
+			targets.removeAll(hit);
+			
+			at.applyEffects(playerData, targets);
+			hit.addAll(targets);
 		}
 	}
 	
 	@Override
 	public void run() {
+		hit();
 		
+		for (Effect effect : effects) {
+			if (effect.usesTargets()) effect.setTargets(hit);
+			effect.setLocation(executor.getLocation());
+			attackManager.runAttackEffect(effect);
+		}
 		
 		if (next == null)
 			return;
-		next.run();
+		
+		new BukkitRunnable() {
+			@Override
+			public void run() {
+				next.run();
+			}
+		}.runTaskLater(Sword.getInstance(), next.getDelayTicks()+durationTicks);
 	}
 }

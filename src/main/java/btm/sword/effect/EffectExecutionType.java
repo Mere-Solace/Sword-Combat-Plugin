@@ -1,7 +1,7 @@
-package btm.sword.effectshape;
+package btm.sword.effect;
 
 public enum EffectExecutionType {
 	INSTANT,
-	ITERATIVE,
+	SEQUENTIAL,
 	REPEATING
 }

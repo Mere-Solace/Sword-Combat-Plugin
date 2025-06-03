@@ -2,7 +2,9 @@ package btm.sword.listeners;
 
 import btm.sword.Sword;
 import btm.sword.combat.CombatManager;
+import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.Particle;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -18,6 +20,7 @@ public class ItemUseListener implements Listener {
 		if (!event.getAction().isRightClick()) return;
 		
 		Player player = event.getPlayer();
+		Location l = player.getEyeLocation();
 		ItemStack item  = player.getInventory().getItemInMainHand();
 		
 		Material itemType = item.getType();
@@ -25,6 +28,15 @@ public class ItemUseListener implements Listener {
 			case IRON_SHOVEL, DIAMOND_HOE -> CombatManager.executeAttack(player);
 			case NETHERITE_SWORD -> CombatManager.test(player);
 			case DIAMOND_AXE -> CombatManager.arcTest(player);
+			case WOODEN_SWORD -> player.getWorld().spawnParticle(
+					Particle.CLOUD,
+					l.clone().add(l.getDirection().multiply(4)),
+					3, l.getDirection().getX(), l.getDirection().getY(), l.getDirection().getZ(), 1);
+			case BOW -> player.getWorld().spawnParticle(
+					Particle.END_ROD,
+					l.clone().add(l.getDirection().multiply(4)),
+					0, l.getDirection().getX(), l.getDirection().getY(), l.getDirection().getZ(), 0.5);
+			case STONE_AXE -> CombatManager.test(player);
 			default -> { }
 		}
 	}

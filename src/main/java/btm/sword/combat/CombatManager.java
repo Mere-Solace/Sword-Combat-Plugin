@@ -1,9 +1,13 @@
 package btm.sword.combat;
 
 import btm.sword.Sword;
-import btm.sword.effectshape.*;
-import btm.sword.utils.ParticleWrapper;
-import btm.sword.utils.VectorUtils;
+import btm.sword.effect.*;
+import btm.sword.effect.effects.Object;
+import btm.sword.effect.effects.Arc;
+import btm.sword.effect.effects.Line;
+import btm.sword.effect.objectshapes.ObjectShapePrefab;
+import btm.sword.util.ParticleWrapper;
+import btm.sword.util.VectorUtils;
 import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.Particle;
@@ -20,7 +24,7 @@ import java.util.List;
 
 public class CombatManager {
 	public static void executeAttack(Player player) {
-		LineShape line = new LineShape(
+		Line line = new Line(
 				List.of(
 						List.of(
 							new ParticleWrapper(Particle.DUST, new Particle.DustOptions(Color.SILVER, 1f)),
@@ -52,7 +56,7 @@ public class CombatManager {
 	}
 	
 	public static void test(Player player) {
-		ObjectShape busterSword = new ObjectShape(
+		Object busterSword = new Object(
 				ObjectShapePrefab.BUSTER_SWORD.getPoints(),
 				ObjectShapePrefab.BUSTER_SWORD.getParticles(),
 				1,
@@ -77,7 +81,7 @@ public class CombatManager {
 	}
 	
 	public static void arcTest(Player player) {
-		ArcShape arc = new ArcShape(
+		Arc arc = new Arc(
 				List.of(
 						List.of(
 								new ParticleWrapper(Particle.DUST, new Particle.DustOptions(Color.WHITE, 0.75f))
@@ -96,7 +100,7 @@ public class CombatManager {
 				-45, 0,
 				100);
 		
-		ArcShape arc2 = new ArcShape(
+		Arc arc2 = new Arc(
 				List.of(
 						List.of(
 								new ParticleWrapper(Particle.DUST, new Particle.DustOptions(Color.RED, 4f))
@@ -113,8 +117,8 @@ public class CombatManager {
 		arc.generatePoints(l, e);
 		arc2.generatePoints(l, e);
 		
-		arc.display(EffectExecutionType.ITERATIVE);
-		arc2.display(EffectExecutionType.ITERATIVE);
+		arc.display(EffectExecutionType.SEQUENTIAL);
+		arc2.display(EffectExecutionType.SEQUENTIAL);
 		
 //		List<LivingEntity> hit = new ArrayList<>(l.add(e.multiply(2.75)).getNearbyLivingEntities(2.75));
 		

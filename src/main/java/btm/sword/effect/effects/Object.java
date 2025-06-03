@@ -1,17 +1,18 @@
-package btm.sword.effectshape;
+package btm.sword.effect.effects;
 
-import btm.sword.utils.ParticleWrapper;
-import btm.sword.utils.VectorUtils;
+import btm.sword.effect.Effect;
+import btm.sword.util.ParticleWrapper;
+import btm.sword.util.VectorUtils;
 import org.bukkit.Location;
 import org.bukkit.util.Vector;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class ObjectShape extends EffectShape {
+public class Object extends Effect {
 	final List<List<Vector>> objectParts;
 	
-	public ObjectShape(List<List<Vector>> objectParts, List<List<ParticleWrapper>> particles, double resolution, int partitions) {
+	public Object(List<List<Vector>> objectParts, List<List<ParticleWrapper>> particles, double resolution, int partitions) {
 		super(particles, resolution, partitions);
 		this.objectParts = objectParts;
 		

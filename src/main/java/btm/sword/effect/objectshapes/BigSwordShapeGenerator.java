@@ -1,4 +1,4 @@
-package btm.sword.effectshape.objectshapes;
+package btm.sword.effect.objectshapes;
 
 import org.bukkit.util.Vector;
 

@@ -1,10 +1,12 @@
 package btm.sword.combat.appliedEffect;
 
+import btm.sword.player.PlayerData;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.LivingEntity;
 
-import java.util.Stack;
+import java.util.HashSet;
 
-public class DamageEffect extends AppliedEffect{
+public class DamageEffect extends AppliedEffect {
 	private final float damage;
 	
 	public DamageEffect(float damage) {
@@ -12,9 +14,9 @@ public class DamageEffect extends AppliedEffect{
 	}
 	
 	@Override
-	public void applyEffect(LivingEntity executor, Stack<LivingEntity> targets) {
-		while (!targets.empty()) {
-			targets.pop().damage(damage, executor);
+	public void applyEffect(PlayerData executorData, HashSet<LivingEntity> targets) {
+		for (LivingEntity target : targets) {
+			target.damage(damage, Bukkit.getPlayer(executorData.getUUID()));
 		}
 	}
 }

@@ -1,7 +1,6 @@
-package btm.sword.effectshape;
+package btm.sword.effect.objectshapes;
 
-import btm.sword.effectshape.objectshapes.BigSwordShapeGenerator;
-import btm.sword.utils.ParticleWrapper;
+import btm.sword.util.ParticleWrapper;
 import org.bukkit.Color;
 import org.bukkit.Particle;
 import org.bukkit.util.Vector;
@@ -21,7 +20,7 @@ public enum ObjectShapePrefab {
 					List.of(
 						new ParticleWrapper(Particle.CRIT, 1, .1, .1, .1, 3),
 						new ParticleWrapper(Particle.DUST, new Particle.DustOptions(Color.SILVER, 0.75f)),
-						new ParticleWrapper(Particle.DUST_COLOR_TRANSITION, 4, 0.1, 1,
+						new ParticleWrapper(Particle.DUST_COLOR_TRANSITION, 4, 0.1, 0.1, 0.1, 1,
 								new Particle.DustTransition(Color.fromRGB(246, 255, 102), Color.fromRGB(222, 169, 22), 2f))
 					)
 			)

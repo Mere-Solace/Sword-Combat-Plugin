@@ -1,6 +1,7 @@
 package btm.sword.combat.attack;
 
 import btm.sword.combat.appliedEffect.AppliedEffect;
+import btm.sword.player.PlayerData;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 
@@ -18,7 +19,9 @@ public abstract class AttackType {
 	
 	public abstract HashSet<LivingEntity> getTargets(Player executor);
 	
-	public Stack<AppliedEffect> getAppliedEffects() {
-		return appliedEffects;
+	public void applyEffects(PlayerData executorData, HashSet<LivingEntity> targets) {
+		while (!appliedEffects.empty()) {
+			appliedEffects.pop().applyEffect(executorData, targets);
+		}
 	}
 }

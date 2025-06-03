@@ -1,4 +1,4 @@
-package btm.sword.utils;
+package btm.sword.util;
 
 import org.bukkit.Location;
 import org.bukkit.util.Vector;
