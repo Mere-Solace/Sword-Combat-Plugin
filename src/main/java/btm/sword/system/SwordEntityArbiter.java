@@ -8,10 +8,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 public class SwordEntityArbiter {
 	private static final HashMap<UUID, SwordNPC> existingSwordNPCs = new HashMap<>();
@@ -20,6 +17,7 @@ public class SwordEntityArbiter {
 	public static void register(LivingEntity entity) {
 		UUID entityUUID = entity.getUniqueId();
 		if (entity instanceof Player) {
+			Objects.requireNonNull(Bukkit.getPlayer(entityUUID)).sendMessage("You're being registered as online.");
 			PlayerDataManager.register(entityUUID);
 			onlineSwordPlayers.put(entityUUID, new SwordPlayer(entity, PlayerDataManager.getPlayerData(entityUUID)));
 		} else if (!entity.isDead()) {

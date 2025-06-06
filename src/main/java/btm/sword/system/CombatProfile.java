@@ -1,5 +1,11 @@
 package btm.sword.system;
 
+import btm.sword.combat.AttackTriggerType;
+import btm.sword.combat.attack.Attack;
+import org.bukkit.Material;
+
+import java.util.HashMap;
+
 public class CombatProfile {
 	int shards = 5;
 	int toughness = 20;
@@ -13,6 +19,8 @@ public class CombatProfile {
 	int fortitude = 1;
 	int celerity = 1;
 	int willpower = 1;
+	
+	HashMap<Material, HashMap<AttackTriggerType, Attack>> itemAttackMapPairing = new HashMap<>();
 	
 	public CombatProfile() { }
 	
@@ -29,5 +37,14 @@ public class CombatProfile {
 		this.fortitude = fortitude;
 		this.celerity = celerity;
 		this.willpower = willpower;
+	}
+	
+	public Attack getAttack(Material item, AttackTriggerType trigger) {
+		return itemAttackMapPairing.get(item).get(trigger);
+	}
+	
+	public void setAttack(Material item, AttackTriggerType trigger, Attack attack) {
+		itemAttackMapPairing.putIfAbsent(item, new HashMap<>());
+		itemAttackMapPairing.get(item).put(trigger, attack);
 	}
 }

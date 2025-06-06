@@ -18,17 +18,7 @@ public class SwordPlayer extends SwordEntity implements Combatant{
 	
 	@Override
 	public void performAbility(Material itemType, AttackTriggerType trigger) {
-		if (itemType.toString().toLowerCase().contains("sword")) {
-			switch(trigger) {
-				case LEFT -> associatedEntity.sendMessage("Attack with SWORD!");
-				case RIGHT -> associatedEntity.sendMessage("Perform skill with SWORD!");
-			}
-		}
-		if (itemType.toString().toLowerCase().contains("axe")) {
-			switch(trigger) {
-				case LEFT -> associatedEntity.sendMessage("Attack with AXE!");
-				case RIGHT -> associatedEntity.sendMessage("Perform skill with AXE!");
-			}
-		}
+		
+		combatProfile.getAttack(itemType, trigger).run();
 	}
 }

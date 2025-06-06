@@ -1,5 +1,6 @@
 package btm.sword.listeners;
 
+import btm.sword.Sword;
 import btm.sword.system.SwordEntityArbiter;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -10,10 +11,12 @@ public class PlayerListener implements Listener {
 	@EventHandler
 	public void onPlayerJoin(PlayerJoinEvent event) {
 		SwordEntityArbiter.register(event.getPlayer());
+		event.getPlayer().sendMessage("Hello!");
 	}
 	
 	@EventHandler
 	public void onPlayerLeave(PlayerQuitEvent event) {
 		SwordEntityArbiter.remove(event.getPlayer().getUniqueId());
+		Sword.getInstance().getLogger().info(event.getPlayer().getName() + " has left the server ;(");
 	}
 }

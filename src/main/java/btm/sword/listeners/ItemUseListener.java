@@ -17,13 +17,14 @@ public class ItemUseListener implements Listener {
 	
 	@EventHandler
 	public void onPlayerInteract(PlayerInteractEvent event) {
-		SwordPlayer player = (SwordPlayer) SwordEntityArbiter.get(event.getPlayer().getUniqueId());
-		
+		SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.get(event.getPlayer().getUniqueId());
+		Player player = (Player) swordPlayer.getAssociatedEntity();
+
 		if (event.getAction().isLeftClick()) {
-			player.performAbility(player.getAssociatedEntity().getActiveItem().getType(), AttackTriggerType.LEFT);
+			swordPlayer.performAbility(player.getInventory().getItemInMainHand().getType(), AttackTriggerType.LEFT);
 		}
 		else if (event.getAction().isRightClick()) {
-			player.performAbility(player.getAssociatedEntity().getActiveItem().getType(), AttackTriggerType.RIGHT);
+			swordPlayer.performAbility(player.getInventory().getItemInMainHand().getType(), AttackTriggerType.RIGHT);
 		}
 	}
 	
@@ -34,11 +35,13 @@ public class ItemUseListener implements Listener {
 		
 		Player player = event.getPlayer();
 		
+		double m = player.isSneaking() ? -0.75 : 0.75;
+		
 		for (int i = 0; i < 2; i++) {
 			new BukkitRunnable() {
 				@Override
 				public void run() {
-					player.setVelocity(player.getEyeLocation().getDirection().multiply(0.1).add(new Vector(0, .25, 0)));
+					player.setVelocity(player.getEyeLocation().getDirection().multiply(m).add(new Vector(0, .4, 0)));
 				}
 			}.runTaskLater(Sword.getInstance(), i);
 		}
