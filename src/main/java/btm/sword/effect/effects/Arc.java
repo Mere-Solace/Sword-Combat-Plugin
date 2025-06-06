@@ -5,6 +5,7 @@ import btm.sword.effect.EffectExecutionType;
 import btm.sword.effect.EffectManager;
 import btm.sword.util.ParticleWrapper;
 import btm.sword.util.VectorUtils;
+import org.bukkit.Particle;
 import org.bukkit.util.Vector;
 
 import java.util.List;
@@ -13,21 +14,30 @@ public class Arc extends Effect {
 	double outerRadius = 5;
 	double innerRadius = 3;
 	double yawOffset = 0;
-	double pitchOffset = 90;
+	double rollOffset = 90;
 	double maxAngle = 120;
 	boolean clockwise = false;
 	
 	public Arc(EffectManager effectManager) {
-		super(effectManager);
+		super(effectManager, List.of(new ParticleWrapper(Particle.FLAME, 1, 0, 0,0, 0)));
+	}
+	
+	public Arc(EffectManager effectManager, double outerRadius, double innerRadius, double yawOffset, double rollOffset, double maxAngle) {
+		this(effectManager);
+		this.outerRadius = outerRadius;
+		this.innerRadius = innerRadius;
+		this.yawOffset = Math.toRadians(yawOffset);
+		this.rollOffset = Math.toRadians(rollOffset);
+		this.maxAngle = Math.toRadians(maxAngle);
 	}
 	
 	public Arc(EffectManager effectManager, EffectExecutionType type, List<ParticleWrapper> particles, double resolution, int partitions, int delayTicks, int period,
-	           double outerRadius, double innerRadius, double yawOffset, double pitchOffset, double maxAngle) {
+	           double outerRadius, double innerRadius, double yawOffset, double rollOffset, double maxAngle) {
 		super(effectManager, type, particles, resolution, partitions, delayTicks, period);
 		this.outerRadius = outerRadius;
 		this.innerRadius = innerRadius;
 		this.yawOffset = Math.toRadians(yawOffset);
-		this.pitchOffset = Math.toRadians(pitchOffset);
+		this.rollOffset = Math.toRadians(rollOffset);
 		this.maxAngle = Math.toRadians(maxAngle);
 	}
 	
@@ -40,7 +50,7 @@ public class Arc extends Effect {
 			setDirection(location.getDirection());
 		
 		List<Vector> basis = VectorUtils.getBasis(location, direction);
-		VectorUtils.rotateBasis(basis, yawOffset, pitchOffset);
+		VectorUtils.rotateBasis(basis, yawOffset, rollOffset);
 		
 		Vector up = basis.get(1);
 		

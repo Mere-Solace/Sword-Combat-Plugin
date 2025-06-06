@@ -3,10 +3,12 @@ package btm.sword.effect;
 import btm.sword.Sword;
 import btm.sword.util.ParticleWrapper;
 import org.bukkit.Location;
+import org.bukkit.Particle;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -35,17 +37,21 @@ public abstract class Effect implements Runnable {
 	protected int step = 0;
 	protected boolean done = false;
 	protected boolean playing = false;
-	public List<Location> points;
-	private int numPoints;
+	public List<Location> points = new LinkedList<>();
+	public int numPoints = 0;
+	public Runnable callback = null;
 	
 	public Effect(EffectManager effectManager) {
 		this.effectManager = effectManager;
-		points = new LinkedList<>();
+		particles = new ArrayList<>();
 	}
 	
 	public Effect(EffectManager effectManager, List<ParticleWrapper> particles) {
 		this(effectManager);
-		this.particles = particles;
+		if (particles == null)
+			this.particles.add(new ParticleWrapper(Particle.FLAME, 1, 0, 0, 0, 0));
+		else
+			this.particles.addAll(particles);
 	}
 	
 	public Effect(EffectManager effectManager, List<ParticleWrapper> particles, boolean usesTargets) {
@@ -96,6 +102,8 @@ public abstract class Effect implements Runnable {
 			effectManager.removeEffect(this);
 		}
 		
+		playing = true;
+		
 		onRun();
 		
 		display();
@@ -120,7 +128,7 @@ public abstract class Effect implements Runnable {
 					public void run() {
 						displaySection();
 					}
-				}.runTaskLater(Sword.getInstance(), delayTicks+((long) period *i));
+				}.runTaskLater(Sword.getInstance(), delayTicks+((long) period*i));
 			}
 		}
 	}
@@ -135,8 +143,15 @@ public abstract class Effect implements Runnable {
 	public void displayAllPoints() {
 		for (Location l : points) {
 			effectManager.display(particles, l);
-			step++;
 		}
+	}
+	
+	public int getDelayTicks() {
+		return delayTicks;
+	}
+	
+	public int getPeriod() {
+		return period;
 	}
 	
 	public List<Location> getPoints() {
@@ -178,7 +193,7 @@ public abstract class Effect implements Runnable {
 	private void done() {
 		playing = false;
 		done = true;
-//		effectManager.done(this);
+		effectManager.done(this);
 		onDone();
 	}
 	

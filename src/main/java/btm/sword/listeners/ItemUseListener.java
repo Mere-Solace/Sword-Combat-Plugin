@@ -1,19 +1,7 @@
 package btm.sword.listeners;
 
 import btm.sword.Sword;
-import btm.sword.combat.CombatManager;
-import btm.sword.combat.appliedEffect.BounceEffect;
-import btm.sword.combat.appliedEffect.DamageEffect;
-import btm.sword.combat.attack.Attack;
-import btm.sword.combat.attack.AttackManager;
-import btm.sword.combat.attack.attacktypes.LaserAttack;
-import btm.sword.effect.EffectExecutionType;
-import btm.sword.effect.EffectManager;
-import btm.sword.effect.effects.Line;
-import btm.sword.player.PlayerData;
-import btm.sword.util.ParticleSpawner;
-import btm.sword.util.ParticleWrapper;
-import org.bukkit.Bukkit;
+import btm.sword.player.PlayerManager;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Particle;
@@ -26,51 +14,24 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
-import java.util.List;
-
 public class ItemUseListener implements Listener {
-	AttackManager attackManager = new AttackManager(new EffectManager(new ParticleSpawner(50)));
-	
-	PlayerData bladeSworn = new PlayerData(Bukkit.getPlayerUniqueId("BladeSworn"));
 	
 	@EventHandler
 	public void onPlayerInteract(PlayerInteractEvent event) {
 		if (!event.getAction().isRightClick()) return;
 		
-		Attack gun = new Attack(attackManager,
-				bladeSworn,
-				List.of(
-						new LaserAttack(
-								List.of(
-										new BounceEffect(2, 1),
-										new DamageEffect(7)
-								)
-						)
-				),
-				
-				List.of(
-						new Line(
-								attackManager.getEffectManager(),
-								EffectExecutionType.INSTANT,
-								List.of(
-										new ParticleWrapper(
-												Particle.FLAME,
-												3, 0.05, 0.05, 0.05, 0)
-								),
-								4.0, 25.0
-						)
-				),
-				2
-		);
-		
 		Player player = event.getPlayer();
+		
+		Sword.getInstance().getLogger().info(player.toString());
+		Sword.getInstance().getLogger().info(PlayerManager.getPlayerData(player.getUniqueId()).toString());
+		
 		Location l = player.getEyeLocation();
 		ItemStack item  = player.getInventory().getItemInMainHand();
 		
 		Material itemType = item.getType();
 		switch(itemType) {
-			case IRON_SHOVEL, DIAMOND_HOE -> attackManager.start(gun);
-			case NETHERITE_SWORD -> {}
+//			case IRON_SHOVEL, DIAMOND_HOE -> attackManager.start();
+//			case NETHERITE_SWORD -> Sword.getAttackManager().start(PlayerManager.getPlayerData(player.getUniqueId()), AttackSequencePrefab.ARC_ARC_LINE);
 			case DIAMOND_AXE -> {}
 			case WOODEN_SWORD ->
 					player.getWorld().spawnParticle(

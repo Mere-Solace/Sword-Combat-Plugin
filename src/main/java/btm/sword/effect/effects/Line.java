@@ -17,6 +17,11 @@ public class Line extends Effect {
 		super(effectManager);
 	}
 	
+	public Line(EffectManager effectManager, double length) {
+		super(effectManager);
+		this.length = length;
+	}
+	
 	public Line(EffectManager effectManager, EffectExecutionType type, List<ParticleWrapper> particles, double resolution, double length) {
 		super(effectManager, type, particles, resolution);
 		this.length = length;

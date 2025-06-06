@@ -27,12 +27,12 @@ public class VectorUtils {
 		return basis;
 	}
 	
-	public static void rotateBasis(List<Vector> basis, double roll, double pitch) {
+	public static void rotateBasis(List<Vector> basis, double roll, double yaw) {
 		basis.get(1).rotateAroundAxis(basis.getLast(), -roll);
 		basis.getFirst().rotateAroundAxis(basis.getLast(), -roll);
 		
-		basis.getLast().rotateAroundAxis(basis.getFirst(), pitch);
-		basis.get(1).rotateAroundAxis(basis.getFirst(), pitch);
+		basis.getLast().rotateAroundAxis(basis.get(1), yaw);
+		basis.getFirst().rotateAroundAxis(basis.get(1), yaw);
 	}
 	
 	public static Vector transformWithNewBasis(ArrayList<Vector> basis, Vector v) {

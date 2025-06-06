@@ -1,99 +1,124 @@
 package btm.sword.combat.attack;
 
 import btm.sword.Sword;
+import btm.sword.combat.appliedEffect.AppliedEffect;
 import btm.sword.effect.Effect;
+import btm.sword.effect.EffectManager;
 import btm.sword.player.PlayerData;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
-import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 
-public class Attack extends BukkitRunnable {
+public abstract class Attack implements Runnable, Cloneable {
 	private final AttackManager attackManager;
-	private final PlayerData playerData;
-	private final List<AttackType> attackTypes;
-	private final List<Effect> effects;
-	private final int durationTicks;
+	private final EffectManager effectManager;
+	protected List<Effect> effects = new LinkedList<>();
+	protected List<AppliedEffect> appliedEffects = new LinkedList<>();
 	private int delayTicks = 0;
+	private int periodTicks = 20;
+	private int iterations = 1;
+	public boolean requiresTargets = false;
 	
+	private boolean done = false;
+	private boolean running = false;
+	private boolean runNext = true;
 	private Attack next = null;
 	
-	private Player executor;
+	protected PlayerData playerData;
+	protected Player executor;
 	
-	private HashSet<LivingEntity> hit = null;
+	protected HashSet<LivingEntity> targets = null;
 	
-	public Attack(AttackManager attackManager, PlayerData playerData, List<AttackType> attackTypes, List<Effect> effects, int durationTicks) {
+	public Attack(AttackManager attackManager) {
 		this.attackManager = attackManager;
-		this.playerData = playerData;
-		this.attackTypes = attackTypes;
-		this.effects = effects;
-		this.durationTicks = durationTicks;
-		
-		executor = Bukkit.getPlayer(playerData.getUUID());
+		effectManager = attackManager.getEffectManager();
 	}
 	
-	public Attack(AttackManager attackManager, PlayerData playerData, List<AttackType> attackTypes, List<Effect> effects, int durationTicks, int delayTicks) {
-		this(attackManager, playerData, attackTypes, effects, durationTicks);
+	public Attack(AttackManager attackManager, int delayTicks) {
+		this(attackManager);
 		this.delayTicks = delayTicks;
-
+	}
+	
+	public Attack(AttackManager attackManager, int delayTicks, int periodTicks) {
+		this(attackManager, delayTicks);
+		this.periodTicks = periodTicks;
+	}
+	
+	public Attack(AttackManager attackManager, int delayTicks, int periodTicks, int iterations) {
+		this(attackManager, delayTicks, periodTicks);
+		this.iterations = iterations;
+	}
+	
+	public Attack(AttackManager attackManager, int delayTicks, int periodTicks, int iterations, PlayerData playerData) {
+		this(attackManager, delayTicks, periodTicks, iterations);
+		this.playerData = playerData;
 		executor = Bukkit.getPlayer(playerData.getUUID());
 	}
 	
 	public void add(Attack nextAttack) {
-		next = nextAttack;
+		if (next == null) next = nextAttack;
+		else this.next.add(nextAttack);
+	}
+	
+	public void setPlayerData(PlayerData playerData) {
+		this.playerData = playerData;
+		executor = Bukkit.getPlayer(playerData.getUUID());
+		if (next == null) return;
+		next.setPlayerData(playerData);
 	}
 	
 	public int getDelayTicks() {
 		return delayTicks;
 	}
 	
-	public void hit() {
-		hit = new HashSet<>(executor.getLocation().getNearbyLivingEntities(25).size());
-		HashSet<LivingEntity> targets;
-		
-		
-		executor.sendMessage("Checking for targets!");
-		
-		
-		for (AttackType at : attackTypes) {
-			targets = at.getTargets(executor);
-			
-			
-			executor.sendMessage(targets.toString());
-			
-			
-			targets.removeAll(hit);
-			
-			
-			executor.sendMessage("Applying Effects!");
-			
-			
-			at.applyEffects(playerData, targets);
-			hit.addAll(targets);
-		}
+	public int getPeriodTicks() {
+		return periodTicks;
 	}
+	
+	public void setTargets(HashSet<LivingEntity> targets) {
+		this.targets = targets;
+	}
+
+	public abstract void onRun();
 	
 	@Override
 	public void run() {
-		hit();
-		
-		for (Effect effect : effects) {
-			if (effect.usesTargets()) effect.setTargets(hit);
-			effect.setLocation(executor.getEyeLocation());
-			attackManager.runAttackEffect(effect);
+		Sword.getInstance().getLogger().info("Attack Run Method");
+		Sword.getInstance().getLogger().info("done = " + done);
+		if (done) {
+			Sword.getInstance().getLogger().info("Attack done");
+			attackManager.removeAttack(this);
+			return;
 		}
+		Sword.getInstance().getLogger().info("done = " + done);
+		running = true;
 		
-		if (next == null)
+		onRun();
+		
+		iterations--;
+		if (iterations < 1) done();
+	}
+	
+	public void done() {
+		done = true;
+		running = false;
+		attackManager.done(this);
+		onDone();
+	}
+	
+	public void onDone() {
+		if (next == null || !runNext)
 			return;
 		
-		new BukkitRunnable() {
-			@Override
-			public void run() {
-				next.run();
-			}
-		}.runTaskLater(Sword.getInstance(), next.getDelayTicks()+durationTicks);
+		if (next.requiresTargets)
+			next.setTargets(targets);
+		
+		next.setPlayerData(playerData);
+		
+		attackManager.start(next);
 	}
 }

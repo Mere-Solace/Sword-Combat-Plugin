@@ -40,7 +40,7 @@ public class EffectManager {
 		
 		BukkitScheduler s = Bukkit.getScheduler();
 		
-		BukkitTask task = s.runTaskTimer(plugin, effect, 0, 1);
+		BukkitTask task = s.runTaskTimer(plugin, effect, effect.getDelayTicks(), effect.getPeriod());
 		
 		effects.put(effect, task);
 	}
@@ -51,5 +51,12 @@ public class EffectManager {
 		if (existingTask != null) existingTask.cancel();
 		
 		effects.remove(effect);
+	}
+	
+	public void done(Effect effect) {
+		synchronized (this) {
+			removeEffect(effect);
+			if (effect.callback != null) Bukkit.getScheduler().runTask(plugin, effect.callback);
+		}
 	}
 }
