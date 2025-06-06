@@ -1,5 +1,5 @@
 package btm.sword.statemachine;
 
-public abstract class StateMachine {
+public class StateMachine {
 
 }

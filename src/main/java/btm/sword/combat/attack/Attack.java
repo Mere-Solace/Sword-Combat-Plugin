@@ -1,23 +1,17 @@
 package btm.sword.combat.attack;
 
 import btm.sword.Sword;
-import btm.sword.combat.appliedEffect.AppliedEffect;
-import btm.sword.effect.Effect;
 import btm.sword.effect.EffectManager;
-import btm.sword.player.PlayerData;
+import btm.sword.system.playerdata.PlayerData;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 
 import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
 
 public abstract class Attack implements Runnable, Cloneable {
 	private final AttackManager attackManager;
 	private final EffectManager effectManager;
-	protected List<Effect> effects = new LinkedList<>();
-	protected List<AppliedEffect> appliedEffects = new LinkedList<>();
 	private int delayTicks = 0;
 	private int periodTicks = 20;
 	private int iterations = 1;
@@ -78,10 +72,6 @@ public abstract class Attack implements Runnable, Cloneable {
 	public int getPeriodTicks() {
 		return periodTicks;
 	}
-	
-	public void setTargets(HashSet<LivingEntity> targets) {
-		this.targets = targets;
-	}
 
 	public abstract void onRun();
 	
@@ -111,14 +101,6 @@ public abstract class Attack implements Runnable, Cloneable {
 	}
 	
 	public void onDone() {
-		if (next == null || !runNext)
-			return;
-		
-		if (next.requiresTargets)
-			next.setTargets(targets);
-		
-		next.setPlayerData(playerData);
-		
-		attackManager.start(next);
+
 	}
 }

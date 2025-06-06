@@ -1,6 +1,6 @@
 package btm.sword.combat.appliedEffect;
 
-import btm.sword.player.PlayerData;
+import btm.sword.system.playerdata.PlayerData;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.LivingEntity;
 
