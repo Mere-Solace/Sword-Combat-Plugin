@@ -18,29 +18,8 @@ public class AttackManager {
 		plugin = Sword.getInstance();
 		this.effectManager = effectManager;
 	}
-	
-	public void start(Attack attack) {
-		Sword.getInstance().getLogger().info("Starting attack: " + attack.toString());
-		BukkitScheduler s = Bukkit.getScheduler();
-		
-		BukkitTask task = s.runTaskTimer(plugin, attack, attack.getDelayTicks(), attack.getPeriodTicks());
-		
-		attacks.put(attack, task);
-	}
-	
-	public void removeAttack(Attack attack) {
-		BukkitTask existingAttackTask = attacks.get(attack);
-		
-		if (existingAttackTask != null) existingAttackTask.cancel();
-		
-		attacks.remove(attack);
-	}
-	
+
 	public EffectManager getEffectManager() {
 		return effectManager;
-	}
-	
-	public void done(Attack attack) {
-		removeAttack(attack);
 	}
 }

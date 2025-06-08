@@ -1,5 +1,7 @@
 package btm.sword.combat.appliedEffect;
 
+import btm.sword.system.entity.Combatant;
+import btm.sword.system.entity.SwordEntity;
 import btm.sword.system.playerdata.PlayerData;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.LivingEntity;
@@ -14,9 +16,9 @@ public class DamageEffect extends AppliedEffect {
 	}
 	
 	@Override
-	public void applyEffect(PlayerData executorData, HashSet<LivingEntity> targets) {
-		for (LivingEntity target : targets) {
-			target.damage(damage, Bukkit.getPlayer(executorData.getUUID()));
+	public void applyEffect(SwordEntity executor, HashSet<SwordEntity> targets) {
+		for (SwordEntity target : targets) {
+			target.getAssociatedEntity().damage(damage, executor.getAssociatedEntity());
 		}
 	}
 }

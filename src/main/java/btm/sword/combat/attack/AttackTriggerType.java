@@ -1,4 +1,4 @@
-package btm.sword.combat;
+package btm.sword.combat.attack;
 
 public enum AttackTriggerType {
 	LEFT,

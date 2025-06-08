@@ -1,8 +1,7 @@
 package btm.sword.combat.appliedEffect;
 
 import btm.sword.Sword;
-import btm.sword.system.playerdata.PlayerData;
-import org.bukkit.entity.LivingEntity;
+import btm.sword.system.entity.SwordEntity;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
@@ -18,13 +17,13 @@ public class BounceEffect extends AppliedEffect {
 	}
 	
 	@Override
-	public void applyEffect(PlayerData executorData, HashSet<LivingEntity> targets) {
-		for (LivingEntity target : targets) {
+	public void applyEffect(SwordEntity executor, HashSet<SwordEntity> targets) {
+		for (SwordEntity target : targets) {
 			for (int i = 0; i < durationTicks; i++) {
 				new BukkitRunnable() {
 					@Override
 					public void run() {
-						target.setVelocity(new Vector(0,1,0).multiply(bounceStrength));
+						target.getAssociatedEntity().setVelocity(new Vector(0,1,0).multiply(bounceStrength));
 					}
 				}.runTaskLater(Sword.getInstance(), 1);
 			}

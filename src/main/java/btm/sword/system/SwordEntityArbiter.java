@@ -1,8 +1,6 @@
 package btm.sword.system;
 
-import btm.sword.system.entity.SwordEntity;
-import btm.sword.system.entity.SwordNPC;
-import btm.sword.system.entity.SwordPlayer;
+import btm.sword.system.entity.*;
 import btm.sword.system.playerdata.PlayerDataManager;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.LivingEntity;
@@ -21,7 +19,7 @@ public class SwordEntityArbiter {
 			PlayerDataManager.register(entityUUID);
 			onlineSwordPlayers.put(entityUUID, new SwordPlayer(entity, PlayerDataManager.getPlayerData(entityUUID)));
 		} else if (!entity.isDead()) {
-			existingSwordNPCs.putIfAbsent(entityUUID, new SwordNPC(entity));
+			existingSwordNPCs.putIfAbsent(entityUUID, initializeNPC(entity));
 		}
 	}
 	
@@ -52,5 +50,21 @@ public class SwordEntityArbiter {
 			swordEntities.add(getOrAdd(le.getUniqueId()));
 		}
 		return swordEntities;
+	}
+	
+	public static HashSet<LivingEntity> convertToLivingEntities(List<SwordEntity> swordEntities) {
+		HashSet<LivingEntity> livingEntities = new HashSet<>();
+		for (SwordEntity se : swordEntities) {
+			livingEntities.add(se.getAssociatedEntity());
+		}
+		return livingEntities;
+	}
+	
+	public static SwordNPC initializeNPC(LivingEntity entity) {
+		switch (entity.getType()) {
+			case ZOMBIE, SKELETON -> { return new Hostile(entity); }
+			case VILLAGER, COW -> {return new Passive(entity); }
+			default -> { return new SwordNPC(entity); }
+		}
 	}
 }

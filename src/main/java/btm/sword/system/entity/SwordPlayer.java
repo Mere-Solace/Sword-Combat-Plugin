@@ -1,12 +1,13 @@
 package btm.sword.system.entity;
 
-import btm.sword.combat.AttackTriggerType;
-import btm.sword.system.CombatProfile;
+import btm.sword.combat.attack.Attack;
+import btm.sword.combat.attack.AttackTriggerType;
+import btm.sword.combat.CombatProfile;
 import btm.sword.system.playerdata.PlayerData;
 import org.bukkit.Material;
 import org.bukkit.entity.LivingEntity;
 
-public class SwordPlayer extends SwordEntity implements Combatant{
+public class SwordPlayer extends SwordEntity implements Combatant {
 	PlayerData data;
 	CombatProfile combatProfile;
 	
@@ -18,7 +19,9 @@ public class SwordPlayer extends SwordEntity implements Combatant{
 	
 	@Override
 	public void performAbility(Material itemType, AttackTriggerType trigger) {
+		Attack attack = combatProfile.getAttack(itemType, trigger, this);
+		if (attack == null) return;
 		
-		combatProfile.getAttack(itemType, trigger).run();
+		attack.run();
 	}
 }

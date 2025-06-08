@@ -1,10 +1,11 @@
 package btm.sword.listeners;
 
 import btm.sword.Sword;
-import btm.sword.combat.AttackTriggerType;
+import btm.sword.combat.attack.AttackTriggerType;
 import btm.sword.system.SwordEntityArbiter;
 import btm.sword.system.entity.SwordPlayer;
 
+import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -19,12 +20,14 @@ public class ItemUseListener implements Listener {
 	public void onPlayerInteract(PlayerInteractEvent event) {
 		SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.get(event.getPlayer().getUniqueId());
 		Player player = (Player) swordPlayer.getAssociatedEntity();
+		
+		Material itemType = player.getInventory().getItemInMainHand().getType();
 
 		if (event.getAction().isLeftClick()) {
-			swordPlayer.performAbility(player.getInventory().getItemInMainHand().getType(), AttackTriggerType.LEFT);
+			swordPlayer.performAbility(itemType, AttackTriggerType.LEFT);
 		}
 		else if (event.getAction().isRightClick()) {
-			swordPlayer.performAbility(player.getInventory().getItemInMainHand().getType(), AttackTriggerType.RIGHT);
+			swordPlayer.performAbility(itemType, AttackTriggerType.RIGHT);
 		}
 	}
 	

@@ -1,7 +1,7 @@
 package btm.sword.system.entity;
 
-import btm.sword.combat.AttackTriggerType;
-import btm.sword.system.CombatProfile;
+import btm.sword.combat.attack.AttackTriggerType;
+import btm.sword.combat.CombatProfile;
 
 import org.bukkit.Material;
 import org.bukkit.entity.LivingEntity;

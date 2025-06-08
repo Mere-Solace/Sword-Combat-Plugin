@@ -1,0 +1,16 @@
+package btm.sword.system;
+
+public enum StatType {
+	SHARDS,
+	TOUGHNESS,
+	SOULFIRE,
+	FORM,
+	MIGHT,
+	RESOLVE,
+	FINESSE,
+	PROWESS,
+	ARMOR,
+	FORTITUDE,
+	CELERITY,
+	WILLPOWER
+}
