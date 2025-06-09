@@ -13,6 +13,9 @@ public class BasicSwordAttack extends Attack {
 	
 	@Override
 	public void onRun() {
+		
+		
+		
 		executor.getAssociatedEntity().sendMessage("Performed a Basic Sword Attack.");
 	}
 }

@@ -18,6 +18,7 @@ public final class Sword extends JavaPlugin {
 	@Override
 	public void onEnable() {
 		instance = this;
+		
 		attackManager = new AttackManager(new EffectManager(new ParticleSpawner(60)));
 		
 		getServer().getPluginManager().registerEvents(new ItemUseListener(), this);
@@ -41,6 +42,7 @@ public final class Sword extends JavaPlugin {
 	public static Sword getInstance() {
 		return instance;
 	}
+	
 	public static AttackManager getAttackManager() {
 		return attackManager;
 	}

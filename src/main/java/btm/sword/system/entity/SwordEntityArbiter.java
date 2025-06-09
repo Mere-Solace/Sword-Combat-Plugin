@@ -1,6 +1,5 @@
-package btm.sword.system;
+package btm.sword.system.entity;
 
-import btm.sword.system.entity.*;
 import btm.sword.system.playerdata.PlayerDataManager;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.LivingEntity;

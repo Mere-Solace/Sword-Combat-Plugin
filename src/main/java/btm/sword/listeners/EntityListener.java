@@ -1,6 +1,6 @@
 package btm.sword.listeners;
 
-import btm.sword.system.SwordEntityArbiter;
+import btm.sword.system.entity.SwordEntityArbiter;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.EventHandler;
