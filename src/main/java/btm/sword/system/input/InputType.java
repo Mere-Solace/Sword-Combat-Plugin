@@ -5,4 +5,5 @@ public enum InputType {
 	RIGHT,
 	SHIFT,
 	DROP,
+	SWAP;
 }

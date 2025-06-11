@@ -14,6 +14,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerSwapHandItemsEvent;
 import org.bukkit.event.player.PlayerToggleSneakEvent;
 import org.bukkit.scheduler.BukkitRunnable;
 
@@ -21,11 +22,14 @@ public class AbilityInputListener implements Listener {
 	
 	@EventHandler
 	public void onNormalAttackEvent(PrePlayerAttackEntityEvent event) {
-		SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.get(event.getPlayer().getUniqueId());
-		Player player = (Player) swordPlayer.getAssociatedEntity();
-		Material itemType = player.getInventory().getItemInMainHand().getType();
+		// could just cancel whole thing?
+		event.setCancelled(true);
 		
-		swordPlayer.takeInput(InputType.LEFT, itemType);
+//		SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.get(event.getPlayer().getUniqueId());
+//		Player player = (Player) swordPlayer.getAssociatedEntity();
+//		Material itemType = player.getInventory().getItemInMainHand().getType();
+//
+//		swordPlayer.takeInput(InputType.LEFT, itemType);
 	}
 	
 	@EventHandler
@@ -75,5 +79,14 @@ public class AbilityInputListener implements Listener {
 		if (event.isSneaking()) {
 			swordPlayer.takeInput(InputType.SHIFT, itemType);
 		}
+	}
+	
+	@EventHandler
+	public void onSwapEvent(PlayerSwapHandItemsEvent event) {
+		SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.get(event.getPlayer().getUniqueId());
+		Player player = (Player) swordPlayer.getAssociatedEntity();
+		Material itemType = player.getInventory().getItemInMainHand().getType();
+		
+		swordPlayer.takeInput(InputType.SWAP, itemType);
 	}
 }
