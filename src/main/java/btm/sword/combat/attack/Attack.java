@@ -2,9 +2,6 @@ package btm.sword.combat.attack;
 
 import btm.sword.effect.EffectManager;
 import btm.sword.system.entity.SwordEntity;
-import org.bukkit.Bukkit;
-
-import java.util.Objects;
 
 public abstract class Attack implements Runnable {
 	private final AttackManager attackManager;

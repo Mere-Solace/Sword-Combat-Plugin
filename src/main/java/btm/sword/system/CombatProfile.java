@@ -2,19 +2,21 @@ package btm.sword.system;
 
 import btm.sword.combat.attack.Attack;
 import btm.sword.combat.attack.AttackFactory;
-import btm.sword.combat.attack.AttackTriggerType;
+import btm.sword.system.input.InputType;
 import btm.sword.combat.attack.AttackOptions;
 import btm.sword.system.entity.SwordEntity;
 import org.bukkit.Material;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Objects;
 
 public class CombatProfile {
 	SwordClassType swordClass;
 	
 	HashMap<StatType, Integer> stats = new HashMap<>();
-	HashMap<Material, HashMap<AttackTriggerType, AttackOptions>> specialAttackTriggerMap = new HashMap<>();
+	HashMap<Material, HashMap<List<InputType>, AttackOptions>> specialAttackTriggerMap = new HashMap<>();
 	
 	public CombatProfile() {
 		swordClass = SwordClassType.LOSAH;
@@ -51,8 +53,20 @@ public class CombatProfile {
 		return stats.getOrDefault(type, -1);
 	}
 	
-	public Attack getAttack(Material item, AttackTriggerType trigger, SwordEntity executor) {
-		HashMap<AttackTriggerType, AttackOptions> pair = specialAttackTriggerMap.getOrDefault(item, null);
+	public List<List<InputType>> getAllBoundSequences() {
+		List<List<InputType>> boundInputSequences = new ArrayList<>();
+		specialAttackTriggerMap.forEach((item, inputAttackPair) -> {
+			inputAttackPair.forEach((inputSequence, attackOption) -> {
+				if (!boundInputSequences.contains(inputSequence))
+					boundInputSequences.add(List.copyOf(inputSequence));
+			});
+		});
+		
+		return  boundInputSequences;
+	}
+	
+	public Attack getAttack(Material item, List<InputType> trigger, SwordEntity executor) {
+		HashMap<List<InputType>, AttackOptions> pair = specialAttackTriggerMap.getOrDefault(item, null);
 		AttackOptions options;
 		if (pair == null) {
 			options = DefaultAttackMap.getClassAttackOption(swordClass, item, trigger);
@@ -67,7 +81,7 @@ public class CombatProfile {
 		return AttackFactory.create(options, executor);
 	}
 	
-	public void setAttack(Material item, AttackTriggerType trigger, AttackOptions attackOptions) {
+	public void setAttack(Material item, List<InputType> trigger, AttackOptions attackOptions) {
 		if (Objects.equals(DefaultAttackMap.getBasicAttackOption(item, trigger), attackOptions)) return;
 		
 		specialAttackTriggerMap.putIfAbsent(item, new HashMap<>());

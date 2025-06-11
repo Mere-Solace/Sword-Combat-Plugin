@@ -1,4 +1,4 @@
-package btm.sword.statemachine;
+package btm.sword.system.entity.statemachine;
 
 public interface IState {
 	void onEnter();

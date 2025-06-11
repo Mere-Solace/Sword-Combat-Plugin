@@ -1,9 +1,11 @@
 package btm.sword.system.entity;
 
-import btm.sword.combat.attack.AttackTriggerType;
+import btm.sword.system.input.InputType;
 import org.bukkit.Material;
+
+import java.util.List;
 
 public interface Combatant {
 	
-	void performAbility(Material itemType, AttackTriggerType trigger);
+	void performAbility(Material itemType, List<InputType> trigger);
 }

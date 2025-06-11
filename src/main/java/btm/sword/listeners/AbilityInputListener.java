@@ -1,7 +1,6 @@
 package btm.sword.listeners;
 
 import btm.sword.Sword;
-import btm.sword.combat.attack.AttackTriggerType;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.SwordPlayer;
 
@@ -17,21 +16,31 @@ import org.bukkit.event.player.PlayerToggleSneakEvent;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
-public class ItemUseListener implements Listener {
+public class AbilityInputListener implements Listener {
 	
 	@EventHandler
 	public void onPlayerInteract(PlayerInteractEvent event) {
 		SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.get(event.getPlayer().getUniqueId());
+		
 		Player player = (Player) swordPlayer.getAssociatedEntity();
 		
 		Action action = event.getAction();
 		
 		Material itemType = player.getInventory().getItemInMainHand().getType();
 		
+		player.sendMessage("performed drop (before)?: " + swordPlayer.hasPerformedDropAction());
+		
 		Bukkit.getCurrentTick();
 		
+		
+		if ((action == Action.LEFT_CLICK_AIR || action == Action.LEFT_CLICK_BLOCK) && !swordPlayer.hasPerformedDropAction()) {
+			player.sendMessage("You Left clicked!");
+		}
+		
+		player.sendMessage("performed drop (after)?: " + swordPlayer.hasPerformedDropAction());
+		
 		if (action == Action.LEFT_CLICK_AIR || action == Action.LEFT_CLICK_BLOCK) {
-			swordPlayer.performAbility(itemType, AttackTriggerType.LEFT);
+
 			
 			
 			swordPlayer.setCancelRightClick(true);
@@ -40,7 +49,6 @@ public class ItemUseListener implements Listener {
 				player.sendMessage("Attempted to throw weapon!");
 		}
 		else if (action == Action.RIGHT_CLICK_AIR || action == Action.RIGHT_CLICK_BLOCK) {
-			swordPlayer.performAbility(itemType, AttackTriggerType.RIGHT);
 			
 			
 			if (!swordPlayer.isHoldingRightClick()) {
@@ -50,15 +58,22 @@ public class ItemUseListener implements Listener {
 		}
 	}
 	
-	// Dash IN REAL LIFE :D
 	@EventHandler
 	public void onPlayerDropEvent(PlayerDropItemEvent event) {
+		SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.get(event.getPlayer().getUniqueId());
+		Player player = (Player) swordPlayer.getAssociatedEntity();
 		
-		event.setCancelled(true);
+		swordPlayer.setPerformedDropAction(true);
+		new BukkitRunnable() {
+			@Override
+			public void run() {
+				swordPlayer.setPerformedDropAction(false);
+			}
+		}.runTaskLater(Sword.getInstance(), 1);
 		
-		Player player = event.getPlayer();
-		player.sendMessage("Dashing!");
-//		if (player.getOpenInventory().getType() != InventoryType.CRAFTING) return;
+		
+		player.sendMessage("Type of Inventory: " + player.getOpenInventory().getType());
+		player.sendMessage("TopInventory: " + player.getOpenInventory().getTopInventory());
 		
 		double dashPower = 1;
 		double m = player.isSneaking() ? -dashPower : dashPower;
@@ -71,6 +86,8 @@ public class ItemUseListener implements Listener {
 				}
 			}.runTaskLater(Sword.getInstance(), i);
 		}
+		
+		event.setCancelled(true);
 	}
 	
 	@EventHandler
@@ -81,5 +98,21 @@ public class ItemUseListener implements Listener {
 		if (event.isSneaking()) {
 			swordPlayer.setCancelRightClick(true);
 		}
+	}
+	
+	private void rightClickHandler() {
+	
+	}
+	
+	private void leftClickHandler() {
+	
+	}
+	
+	private void dropHandler() {
+	
+	}
+	
+	private void sneakHandler() {
+	
 	}
 }

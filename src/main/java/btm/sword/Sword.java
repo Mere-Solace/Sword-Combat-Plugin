@@ -4,7 +4,7 @@ import btm.sword.combat.attack.AttackManager;
 import btm.sword.commands.CommandManager;
 import btm.sword.effect.EffectManager;
 import btm.sword.listeners.EntityListener;
-import btm.sword.listeners.ItemUseListener;
+import btm.sword.listeners.AbilityInputListener;
 import btm.sword.listeners.PlayerListener;
 import btm.sword.system.playerdata.PlayerDataManager;
 
@@ -21,7 +21,7 @@ public final class Sword extends JavaPlugin {
 		
 		attackManager = new AttackManager(new EffectManager(new ParticleSpawner(60)));
 		
-		getServer().getPluginManager().registerEvents(new ItemUseListener(), this);
+		getServer().getPluginManager().registerEvents(new AbilityInputListener(), this);
 		getServer().getPluginManager().registerEvents(new PlayerListener(), this);
 		getServer().getPluginManager().registerEvents(new EntityListener(), this);
 
