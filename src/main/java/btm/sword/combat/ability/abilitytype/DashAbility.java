@@ -2,6 +2,7 @@ package btm.sword.combat.ability.abilitytype;
 
 import btm.sword.Sword;
 import btm.sword.combat.ability.Ability;
+import btm.sword.combat.ability.AbilityOptions;
 import btm.sword.system.entity.SwordEntity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -9,8 +10,8 @@ import org.bukkit.util.Vector;
 
 public class DashAbility extends Ability {
 	
-	public DashAbility(SwordEntity executor) {
-		super(executor);
+	public DashAbility(AbilityOptions options, SwordEntity executor) {
+		super(options, executor);
 	}
 	
 	@Override

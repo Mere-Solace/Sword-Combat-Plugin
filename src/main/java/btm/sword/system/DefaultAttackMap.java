@@ -1,50 +1,50 @@
 package btm.sword.system;
 
-import btm.sword.combat.attack.AttackOptions;
+import btm.sword.combat.ability.AbilityOptions;
+import btm.sword.combat.ability.abilitytype.AbilityType;
 import btm.sword.system.input.InputType;
-import btm.sword.combat.attack.attacktype.AttackType;
 import org.bukkit.Material;
 
 import java.util.*;
 
 public class DefaultAttackMap {
 	
-	public static final HashMap<Material, HashMap<List<InputType>, AttackOptions>> basicAttackMapping;
+	public static final HashMap<Material, HashMap<List<InputType>, AbilityOptions>> basicAttackMapping;
 	
-	public static final HashMap<SwordClassType, HashMap<Material, HashMap<List<InputType>, AttackOptions>>> classAttackMapping;
+	public static final HashMap<SwordClassType, HashMap<Material, HashMap<List<InputType>, AbilityOptions>>> classAttackMapping;
 	
 	static {
 		basicAttackMapping = new HashMap<>();
 		for (Material item : Material.values()) {
 			if (item.name().endsWith("AIR")) {
 				basicAttackMapping.put(item, new HashMap<>());
-				basicAttackMapping.get(item).put(List.of(InputType.LEFT),  new AttackOptions().attackType(AttackType.BASIC_FIST));
+				basicAttackMapping.get(item).put(List.of(InputType.LEFT),  new AbilityOptions().type(AbilityType.BASIC_FIST_1));
 			}
 			else if (item.name().endsWith("_SWORD")) {
 				basicAttackMapping.put(item, new HashMap<>());
-				basicAttackMapping.get(item).put(List.of(InputType.LEFT), new AttackOptions().attackType(AttackType.BASIC_SWORD));
+				basicAttackMapping.get(item).put(List.of(InputType.LEFT), new AbilityOptions().type(AbilityType.BASIC_SWORD_1));
 			}
 			else if (item.name().endsWith("_AXE")) {
 				basicAttackMapping.put(item, new HashMap<>());
-				basicAttackMapping.get(item).put(List.of(InputType.LEFT), new AttackOptions().attackType(AttackType.BASIC_AXE));
+				basicAttackMapping.get(item).put(List.of(InputType.LEFT), new AbilityOptions().type(AbilityType.BASIC_AXE_1));
 			}
 		}
 		
 		classAttackMapping = new HashMap<>();
 	}
 	
-	public static AttackOptions getBasicAttackOption(Material item, List<InputType> trigger) {
-		HashMap<List<InputType>, AttackOptions> inputAttackPair = basicAttackMapping.getOrDefault(item, null);
+	public static AbilityOptions getBasicAttackOption(Material item, List<InputType> trigger) {
+		HashMap<List<InputType>, AbilityOptions> inputAttackPair = basicAttackMapping.getOrDefault(item, null);
 		if (inputAttackPair == null) return null;
 		
 		return inputAttackPair.getOrDefault(trigger, null);
 	}
 	
-	public static AttackOptions getClassAttackOption(SwordClassType swordClass, Material item, List<InputType> trigger) {
-		HashMap<Material, HashMap<List<InputType>, AttackOptions>> itemMapPair = classAttackMapping.getOrDefault(swordClass, null);
+	public static AbilityOptions getClassAttackOption(SwordClassType swordClass, Material item, List<InputType> trigger) {
+		HashMap<Material, HashMap<List<InputType>, AbilityOptions>> itemMapPair = classAttackMapping.getOrDefault(swordClass, null);
 		if (itemMapPair == null) return null;
 		
-		HashMap<List<InputType>, AttackOptions> inputAttackPair = itemMapPair.getOrDefault(item, null);
+		HashMap<List<InputType>, AbilityOptions> inputAttackPair = itemMapPair.getOrDefault(item, null);
 		if (inputAttackPair == null) return null;
 		
 		return inputAttackPair.getOrDefault(trigger, null);

@@ -5,27 +5,23 @@ import btm.sword.system.entity.SwordEntity;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 
-public abstract class Ability {
+public abstract class Ability implements Runnable{
 	protected SwordEntity executor;
-	private int delayTicks = 0;
+	private final int delayTicks;
 	
-	public Ability(SwordEntity executor) {
+	public Ability(AbilityOptions options, SwordEntity executor) {
 		this.executor = executor;
-	}
-	
-	public BukkitTask returnRunnable() {
-		return new BukkitRunnable() {
-			@Override
-			public void run() {
-				onRun();
-			}
-		}.runTaskLater(Sword.getInstance(), delayTicks);
+		delayTicks = options.getDelayTicks();
 	}
 	
 	public abstract void onRun();
 	
+	@Override
+	public void run() {
+		onRun();
+	}
 	
-	public void setDelayTicks(int delayTicks) {
-		this.delayTicks = delayTicks;
+	public int getDelayTicks() {
+		return delayTicks;
 	}
 }

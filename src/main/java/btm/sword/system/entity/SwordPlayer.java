@@ -1,21 +1,32 @@
 package btm.sword.system.entity;
 
 import btm.sword.Sword;
+import btm.sword.combat.ability.Ability;
 import btm.sword.system.input.InputExecutionTree;
-import btm.sword.combat.attack.Attack;
 import btm.sword.system.input.InputType;
 import btm.sword.system.CombatProfile;
 import btm.sword.system.playerdata.PlayerData;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
+import net.kyori.adventure.title.Title;
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitScheduler;
+import org.bukkit.scheduler.BukkitTask;
 
+import java.time.Duration;
 import java.util.List;
 
 public class SwordPlayer extends SwordEntity implements Combatant {
 	private final CombatProfile combatProfile;
 	
 	private final InputExecutionTree inputExecutionTree;
+	private Material itemInUse = Material.AIR;
+	
+//	private final HashMap<Ability, BukkitTask> runningAbilities = new HashMap<>();
 	
 	// Utility attributes
 	private int ticksRightClick = 0;
@@ -23,6 +34,7 @@ public class SwordPlayer extends SwordEntity implements Combatant {
 	private boolean cancelRightClick = false;
 	
 	private boolean performedDropAction = false;
+	
 	
 	public SwordPlayer(LivingEntity associatedEntity, PlayerData data) {
 		super(associatedEntity);
@@ -32,14 +44,44 @@ public class SwordPlayer extends SwordEntity implements Combatant {
 	
 	@Override
 	public void performAbility(Material itemType, List<InputType> trigger) {
-		Attack attack = combatProfile.getAttack(itemType, trigger, this);
-		if (attack == null) {
-//			associatedEntity.sendMessage("You can't perform an attack with a " + itemType);
+		Ability ability = combatProfile.getAbility(itemType, trigger, this);
+		if (ability == null) return;
+		
+		BukkitScheduler s = Bukkit.getScheduler();
+		BukkitTask abilityTask = s.runTaskLater(Sword.getInstance(), ability,  ability.getDelayTicks());
+//		runningAbilities.put(ability, abilityTask);
+	}
+	
+	public void takeInput(InputType input, Material itemUsed) {
+		if (itemUsed != itemInUse) {
+			associatedEntity.sendMessage("Item used: " + itemUsed);
+			associatedEntity.sendMessage("Item that was in use: " + itemInUse);
+			inputExecutionTree.reset();
+			itemInUse = itemUsed;
+		}
+		
+		if (!inputExecutionTree.takeInput(input)) {
+			inputExecutionTree.reset();
 			return;
 		}
 		
-		// TODO keep track of the attack for cancellation
-		attack.run();
+		if (inputExecutionTree.inExecutionState()) {
+			performAbility(itemUsed, inputExecutionTree.getSequence());
+		}
+		
+		associatedEntity.showTitle(Title.title(
+				Component.text(""),
+				Component.text(inputExecutionTree.toString(), NamedTextColor.GRAY, TextDecoration.ITALIC),
+				Title.Times.times(
+						Duration.ofMillis(1),
+						Duration.ofMillis(350),
+						Duration.ofMillis(100)
+				)
+		));
+		
+		if (inputExecutionTree.noChildren()) {
+			inputExecutionTree.reset();
+		}
 	}
 	
 	public int getTicksRightClick() {

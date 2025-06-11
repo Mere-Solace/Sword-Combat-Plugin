@@ -1,10 +1,6 @@
 package btm.sword.combat.appliedEffect;
 
-import btm.sword.system.entity.Combatant;
 import btm.sword.system.entity.SwordEntity;
-import btm.sword.system.playerdata.PlayerData;
-import org.bukkit.Bukkit;
-import org.bukkit.entity.LivingEntity;
 
 import java.util.HashSet;
 
