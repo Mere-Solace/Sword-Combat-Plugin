@@ -1,6 +1,6 @@
 package btm.sword.system.entity.statemachine;
 
-public interface IState {
+public interface State {
 	void onEnter();
 	void onExit();
 }

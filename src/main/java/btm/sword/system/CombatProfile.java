@@ -1,22 +1,11 @@
 package btm.sword.system;
 
-import btm.sword.combat.ability.Ability;
-import btm.sword.combat.ability.AbilityFactory;
-import btm.sword.combat.ability.AbilityOptions;
-import btm.sword.system.input.InputType;
-import btm.sword.system.entity.SwordEntity;
-import org.bukkit.Material;
-
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
-import java.util.Objects;
 
 public class CombatProfile {
 	SwordClassType swordClass;
 	
 	HashMap<StatType, Integer> stats = new HashMap<>();
-	HashMap<Material, HashMap<List<InputType>, AbilityOptions>> specialAttackTriggerMap = new HashMap<>();
 	
 	public CombatProfile() {
 		swordClass = SwordClassType.LOSAH;
@@ -51,40 +40,5 @@ public class CombatProfile {
 	
 	public int getStat(StatType type) {
 		return stats.getOrDefault(type, -1);
-	}
-	
-	public List<List<InputType>> getAllBoundSequences() {
-		List<List<InputType>> boundInputSequences = new ArrayList<>();
-		specialAttackTriggerMap.forEach((item, inputAttackPair) -> {
-			inputAttackPair.forEach((inputSequence, attackOption) -> {
-				if (!boundInputSequences.contains(inputSequence))
-					boundInputSequences.add(List.copyOf(inputSequence));
-			});
-		});
-		
-		return  boundInputSequences;
-	}
-	
-	public Ability getAbility(Material item, List<InputType> trigger, SwordEntity executor) {
-		HashMap<List<InputType>, AbilityOptions> pair = specialAttackTriggerMap.getOrDefault(item, null);
-		AbilityOptions options;
-		if (pair == null) {
-			options = DefaultAttackMap.getClassAttackOption(swordClass, item, trigger);
-			if (options == null)
-				options = DefaultAttackMap.getBasicAttackOption(item, trigger);
-		}
-		else {
-			options = pair.get(trigger);
-		}
-		if (options == null) return null;
-		
-		return AbilityFactory.create(options, executor);
-	}
-	
-	public void setAttack(Material item, List<InputType> trigger, AbilityOptions options) {
-		if (Objects.equals(DefaultAttackMap.getBasicAttackOption(item, trigger), options)) return;
-		
-		specialAttackTriggerMap.putIfAbsent(item, new HashMap<>());
-		specialAttackTriggerMap.get(item).put(trigger, options);
 	}
 }

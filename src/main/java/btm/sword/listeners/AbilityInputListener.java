@@ -5,6 +5,7 @@ import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.SwordPlayer;
 
 import btm.sword.system.input.InputType;
+import io.papermc.paper.event.player.PrePlayerAttackEntityEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -19,13 +20,20 @@ import org.bukkit.scheduler.BukkitRunnable;
 public class AbilityInputListener implements Listener {
 	
 	@EventHandler
+	public void onNormalAttackEvent(PrePlayerAttackEntityEvent event) {
+		SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.get(event.getPlayer().getUniqueId());
+		Player player = (Player) swordPlayer.getAssociatedEntity();
+		Material itemType = player.getInventory().getItemInMainHand().getType();
+		
+		swordPlayer.takeInput(InputType.LEFT, itemType);
+	}
+	
+	@EventHandler
 	public void onPlayerInteract(PlayerInteractEvent event) {
 		SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.get(event.getPlayer().getUniqueId());
 		Player player = (Player) swordPlayer.getAssociatedEntity();
-		Action action = event.getAction();
 		Material itemType = player.getInventory().getItemInMainHand().getType();
-		
-		Bukkit.getCurrentTick();
+		Action action = event.getAction();
 		
 		if ((action == Action.LEFT_CLICK_AIR || action == Action.LEFT_CLICK_BLOCK) && !swordPlayer.hasPerformedDropAction()) {
 			swordPlayer.takeInput(InputType.LEFT, itemType);
@@ -33,6 +41,8 @@ public class AbilityInputListener implements Listener {
 		else if (action == Action.RIGHT_CLICK_AIR || action == Action.RIGHT_CLICK_BLOCK) {
 			swordPlayer.takeInput(InputType.RIGHT, itemType);
 		}
+		
+		Bukkit.getCurrentTick();
 	}
 	
 	@EventHandler
@@ -41,11 +51,9 @@ public class AbilityInputListener implements Listener {
 		Player player = (Player) swordPlayer.getAssociatedEntity();
 		Material itemType = event.getItemDrop().getItemStack().getType();
 		
+		swordPlayer.takeInput(InputType.DROP, itemType);
 		
 		swordPlayer.setPerformedDropAction(true);
-		
-		
-		swordPlayer.takeInput(InputType.DROP, itemType);
 		
 		new BukkitRunnable() {
 			@Override

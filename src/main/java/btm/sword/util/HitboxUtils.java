@@ -3,41 +3,13 @@ package btm.sword.util;
 import org.bukkit.Location;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
-import org.bukkit.entity.Player;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
 
 import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
 
 public class HitboxUtils {
-	public static HashSet<LivingEntity> arc(Player executor, Location o, Vector e,
-	                                        double maxRange, double minRange, double thickness, double maxAngle, double roll, double yaw) {
-		HashSet<LivingEntity> hit = new HashSet<>(o.getNearbyLivingEntities(maxRange));
-		Iterator<LivingEntity> it = hit.iterator();
-		List<Vector> basis = VectorUtils.getBasis(o, e);
-		VectorUtils.rotateBasis(basis, roll, yaw);
-		LivingEntity target;
-		while (it.hasNext()) {
-			target = it.next();
-			Vector toTarget = target.getEyeLocation().subtract(0,0.25,0).subtract(o).toVector();
-			
-			double forwardDist = toTarget.dot(basis.getLast());
-			double sideOffset = Math.abs(toTarget.dot(basis.getFirst()));
-			double upOffset = Math.abs(toTarget.dot(basis.get(1)));
-			
-			if (target.isDead() ||
-					forwardDist < minRange ||
-					sideOffset > maxRange * Math.abs(Math.cos(Math.min(0, (Math.PI/2) - Math.toRadians(maxAngle/2)))) ||
-					upOffset > thickness)
-				it.remove();
-		}
-		hit.remove(executor);
-		return hit;
-	}
-	
-	public static HashSet<LivingEntity> line(Player executor, Location o, Vector e, double maxRange, double thickness) {
+	public static HashSet<LivingEntity> line(LivingEntity executor, Location o, Vector e, double maxRange, double thickness) {
 		HashSet<LivingEntity> hit = new HashSet<>();
 		
 		for (double i = 0; i < maxRange; i += maxRange / thickness) {
@@ -48,14 +20,14 @@ public class HitboxUtils {
 		return hit;
 	}
 	
-	public static HashSet<LivingEntity> sphere(Player executor, Location o, double radius) {
+	public static HashSet<LivingEntity> sphere(LivingEntity executor, Location o, double radius) {
 		HashSet<LivingEntity> hit = new HashSet<>(o.getNearbyLivingEntities(radius));
 		hit.removeIf(Entity::isDead);
 		hit.remove(executor);
 		return hit;
 	}
 	
-	public static LivingEntity rayTrace(Player executor, double maxRange) {
+	public static LivingEntity rayTrace(LivingEntity executor, double maxRange) {
 		RayTraceResult result = executor.rayTraceEntities((int) Math.round(maxRange));
 		if (result == null)
 			return null;
@@ -66,7 +38,7 @@ public class HitboxUtils {
 		return null;
 	}
 	
-	public static HashSet<LivingEntity> sphereAtRayHit(Player executor, double maxRange, double radius, Vector offsetFromHit) {
+	public static HashSet<LivingEntity> sphereAtRayHit(LivingEntity executor, double maxRange, double radius, Vector offsetFromHit) {
 		HashSet<LivingEntity> hit = new HashSet<>();
 		
 		LivingEntity origin = rayTrace(executor, maxRange);
