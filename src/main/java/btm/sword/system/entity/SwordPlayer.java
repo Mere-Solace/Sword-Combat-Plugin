@@ -14,6 +14,7 @@ import net.kyori.adventure.title.Title;
 
 import org.bukkit.Material;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.scheduler.BukkitTask;
 
 import java.time.Duration;
 import java.util.List;
@@ -26,7 +27,10 @@ public class SwordPlayer extends SwordEntity {
 	
 	// Utility attributes
 	private boolean performedDropAction = false;
+	private boolean isGrabbing = false;
 	
+	private BukkitTask grabTask;
+	private SwordEntity grabbedEntity;
 	
 	public SwordPlayer(LivingEntity associatedEntity, PlayerData data) {
 		super(associatedEntity);
@@ -40,6 +44,9 @@ public class SwordPlayer extends SwordEntity {
 	}
 	
 	public void takeInput(InputType input, Material itemUsed) {
+		if (isGrabbing) {
+			return;
+		}
 		
 		if (!inputExecutionTree.takeInput(input, itemUsed, itemInUse)) {
 			inputExecutionTree.reset();
@@ -68,6 +75,30 @@ public class SwordPlayer extends SwordEntity {
 	
 	public void setPerformedDropAction(boolean performedDropAction) {
 		this.performedDropAction = performedDropAction;
+	}
+	
+	public boolean isGrabbing() {
+		return isGrabbing;
+	}
+	
+	public void setGrabbing(boolean isGrabbing) {
+		this.isGrabbing = isGrabbing;
+	}
+	
+	public BukkitTask getGrabTask() {
+		return grabTask;
+	}
+	
+	public void setGrabTask(BukkitTask grabTask) {
+		this.grabTask = grabTask;
+	}
+	
+	public SwordEntity getGrabbedEntity() {
+		return grabbedEntity;
+	}
+	
+	public void setGrabbedEntity(SwordEntity grabbedEntity) {
+		this.grabbedEntity = grabbedEntity;
 	}
 	
 	public void initializeInputTree() {

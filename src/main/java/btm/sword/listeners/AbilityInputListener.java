@@ -1,6 +1,7 @@
 package btm.sword.listeners;
 
 import btm.sword.Sword;
+import btm.sword.system.action.MovementAction;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.SwordPlayer;
 
@@ -22,14 +23,11 @@ public class AbilityInputListener implements Listener {
 	
 	@EventHandler
 	public void onNormalAttackEvent(PrePlayerAttackEntityEvent event) {
-		// could just cancel whole thing?
-		event.setCancelled(true);
-		
-//		SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.get(event.getPlayer().getUniqueId());
-//		Player player = (Player) swordPlayer.getAssociatedEntity();
-//		Material itemType = player.getInventory().getItemInMainHand().getType();
-//
-//		swordPlayer.takeInput(InputType.LEFT, itemType);
+		SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.get(event.getPlayer().getUniqueId());
+		Player player = (Player) swordPlayer.getAssociatedEntity();
+		Material itemType = player.getInventory().getItemInMainHand().getType();
+
+		swordPlayer.takeInput(InputType.LEFT, itemType);
 	}
 	
 	@EventHandler
@@ -55,7 +53,16 @@ public class AbilityInputListener implements Listener {
 		Player player = (Player) swordPlayer.getAssociatedEntity();
 		Material itemType = event.getItemDrop().getItemStack().getType();
 		
-		swordPlayer.takeInput(InputType.DROP, itemType);
+		if (swordPlayer.isGrabbing()) {
+			swordPlayer.getGrabTask().cancel();
+			swordPlayer.setGrabbing(false);
+			
+			Bukkit.getScheduler().runTaskLater(Sword.getInstance(), MovementAction.toss(swordPlayer, swordPlayer.getGrabbedEntity()), 2);
+			event.setCancelled(true);
+			return;
+		}
+		else
+			swordPlayer.takeInput(InputType.DROP, itemType);
 		
 		swordPlayer.setPerformedDropAction(true);
 		
