@@ -1,6 +1,6 @@
 package btm.sword.system.entity;
 
-import btm.sword.system.CombatProfile;
+import btm.sword.system.playerdata.CombatProfile;
 
 import org.bukkit.Material;
 import org.bukkit.entity.LivingEntity;

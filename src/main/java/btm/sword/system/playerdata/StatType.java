@@ -1,4 +1,4 @@
-package btm.sword.system;
+package btm.sword.system.playerdata;
 
 public enum StatType {
 	SHARDS,

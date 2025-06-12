@@ -5,8 +5,8 @@ import org.bukkit.entity.LivingEntity;
 import java.util.UUID;
 
 public abstract class SwordEntity {
-	LivingEntity associatedEntity;
-	UUID uuid;
+	protected LivingEntity associatedEntity;
+	private UUID uuid;
 	
 	public SwordEntity(LivingEntity associatedEntity) {
 		this.associatedEntity = associatedEntity;
@@ -19,5 +19,9 @@ public abstract class SwordEntity {
 	
 	public LivingEntity getAssociatedEntity() {
 		return associatedEntity;
+	}
+	
+	public void setAssociatedEntity(LivingEntity entity) {
+		this.associatedEntity = entity;
 	}
 }

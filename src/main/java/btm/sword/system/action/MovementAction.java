@@ -1,7 +1,7 @@
 package btm.sword.system.action;
 
 import btm.sword.Sword;
-import btm.sword.system.StatType;
+import btm.sword.system.playerdata.StatType;
 import btm.sword.system.entity.SwordEntity;
 import btm.sword.system.entity.SwordPlayer;
 import org.bukkit.entity.LivingEntity;

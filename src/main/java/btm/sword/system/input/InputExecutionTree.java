@@ -16,7 +16,7 @@ public class InputExecutionTree {
 	private InputNode currentNode = root;
 	private StringBuilder sequenceToDisplay = new StringBuilder();
 	private BukkitTask timeoutTimer = null;
-	
+
 	private final BukkitScheduler s = Bukkit.getScheduler();
 	private final Plugin plugin = Sword.getInstance();
 	
@@ -47,7 +47,7 @@ public class InputExecutionTree {
 				public void run() {
 					reset();
 				}
-			}.runTaskLater(plugin, 10);
+			}.runTaskLater(plugin, 12);
 		}
 		
 		return true;

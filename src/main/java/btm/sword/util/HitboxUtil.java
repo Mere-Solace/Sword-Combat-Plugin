@@ -8,7 +8,7 @@ import org.bukkit.util.Vector;
 
 import java.util.HashSet;
 
-public class HitboxUtils {
+public class HitboxUtil {
 	public static HashSet<LivingEntity> line(LivingEntity executor, Location o, Vector e, double maxRange, double thickness) {
 		HashSet<LivingEntity> hit = new HashSet<>();
 		

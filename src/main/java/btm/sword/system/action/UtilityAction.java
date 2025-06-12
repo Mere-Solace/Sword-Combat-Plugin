@@ -1,11 +1,11 @@
 package btm.sword.system.action;
 
 import btm.sword.Sword;
-import btm.sword.system.StatType;
+import btm.sword.system.playerdata.StatType;
 import btm.sword.system.entity.SwordEntity;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.SwordPlayer;
-import btm.sword.util.HitboxUtils;
+import btm.sword.util.HitboxUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.potion.PotionEffect;
@@ -32,7 +32,7 @@ public class UtilityAction extends SwordAction {
 					public void run() {
 						LivingEntity ex = executor.getAssociatedEntity();
 						double range = executor instanceof SwordPlayer ? 2.5 + (0.1*((SwordPlayer) executor).getCombatProfile().getStat(StatType.MIGHT)) : 2.5;
-						LivingEntity target = HitboxUtils.rayTrace(ex, range);
+						LivingEntity target = HitboxUtil.rayTrace(ex, range);
 						
 						if (target == null) {
 							ex.sendMessage("Miss");

@@ -66,4 +66,12 @@ public class SwordEntityArbiter {
 			default -> { return new SwordNPC(entity); }
 		}
 	}
+	
+	public static void reassign(LivingEntity entity) {
+		if (entity instanceof Player)
+			onlineSwordPlayers.get(entity.getUniqueId()).setAssociatedEntity(entity);
+		else
+			if (existingSwordNPCs.get(entity.getUniqueId()) != null)
+				existingSwordNPCs.get(entity.getUniqueId()).setAssociatedEntity(entity);
+	}
 }

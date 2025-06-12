@@ -6,7 +6,7 @@ import org.bukkit.util.Vector;
 import java.util.ArrayList;
 import java.util.List;
 
-public class VectorUtils {
+public class VectorUtil {
 	public static ArrayList<Vector> getBasis(Location origin, Vector dir) {
 		Vector ref = new Vector(0,1,0);
 		

@@ -1,11 +1,11 @@
 package btm.sword.system.entity;
 
-import btm.sword.system.StatType;
+import btm.sword.system.playerdata.StatType;
 import btm.sword.system.action.MovementAction;
 import btm.sword.system.action.UtilityAction;
 import btm.sword.system.input.InputExecutionTree;
 import btm.sword.system.input.InputType;
-import btm.sword.system.CombatProfile;
+import btm.sword.system.playerdata.CombatProfile;
 import btm.sword.system.playerdata.PlayerData;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -21,14 +21,13 @@ import java.util.List;
 
 public class SwordPlayer extends SwordEntity {
 	private final CombatProfile combatProfile;
-	
 	private final InputExecutionTree inputExecutionTree;
+	
 	private Material itemInUse = Material.AIR;
 	
-	// Utility attributes
 	private boolean performedDropAction = false;
-	private boolean isGrabbing = false;
 	
+	private boolean isGrabbing = false;
 	private BukkitTask grabTask;
 	private SwordEntity grabbedEntity;
 	
@@ -47,7 +46,7 @@ public class SwordPlayer extends SwordEntity {
 		if (isGrabbing) {
 			return;
 		}
-		
+		// the takeInput call in this if-statement is where the runnable associated with the node is run.
 		if (!inputExecutionTree.takeInput(input, itemUsed, itemInUse)) {
 			inputExecutionTree.reset();
 			if (itemUsed != itemInUse) itemInUse = itemUsed;
@@ -126,13 +125,6 @@ public class SwordPlayer extends SwordEntity {
 				true);
 		
 		set(List.of(InputType.LEFT, InputType.LEFT, InputType.LEFT), null,
-				true);
-		
-		// heavy attack sequence
-		set(List.of(InputType.RIGHT, InputType.LEFT), null,
-				true);
-		
-		set(List.of(InputType.RIGHT, InputType.LEFT, InputType.LEFT), null,
 				true);
 		
 		// skills

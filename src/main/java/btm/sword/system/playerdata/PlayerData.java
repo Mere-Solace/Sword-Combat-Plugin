@@ -1,7 +1,5 @@
 package btm.sword.system.playerdata;
 
-import btm.sword.system.CombatProfile;
-
 import java.util.Date;
 import java.util.UUID;
 
