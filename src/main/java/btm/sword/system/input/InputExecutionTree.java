@@ -1,6 +1,7 @@
 package btm.sword.system.input;
 
 import btm.sword.Sword;
+import btm.sword.system.entity.SwordPlayer;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.plugin.Plugin;
@@ -22,7 +23,7 @@ public class InputExecutionTree {
 	
 	public InputExecutionTree() { }
 	
-	public boolean takeInput(InputType input, Material itemUsed, Material itemInUse) {
+	public boolean takeInput(InputType input, Material itemUsed, SwordPlayer executor) {
 		if (timeoutTimer != null) timeoutTimer.cancel();
 		
 		if (currentNode.noChild(input)) {
@@ -30,13 +31,22 @@ public class InputExecutionTree {
 			return false;
 		}
 		
-		if (currentNode.getChild(input).sameItemRequired && itemUsed != itemInUse) {
+		if (currentNode.getChild(input).sameItemRequired && itemUsed != executor.getItemLastUsed()) {
 			reset();
 		}
 		
 		currentNode = currentNode.getChild(input);
 		
+		if (currentNode.getAction() != null &&
+				(!currentNode.getAction().isUsable(executor)
+				|| currentNode.getAction().calcCooldown(executor) >= System.currentTimeMillis() - currentNode.getTimeLastExecuted())) {
+			executor.getAssociatedEntity().sendMessage("This action is on cooldown my lad!");
+			reset();
+			return false;
+		}
+		
 		if (inActionState()) performAction();
+		currentNode.setTimeLastExecuted(System.currentTimeMillis());
 		
 		sequenceToDisplay.append(inputToString(input));
 		if (!noChildren()) {
@@ -58,7 +68,7 @@ public class InputExecutionTree {
 		sequenceToDisplay = new StringBuilder();
 	}
 	
-	public void add(List<InputType> inputSequence, Runnable action, boolean sameItemRequired) {
+	public void add(List<InputType> inputSequence, InputAction action, boolean sameItemRequired) {
 		InputNode dummy = root;
 		for (InputType input : inputSequence) {
 			if (dummy.noChild(input)) {
@@ -79,19 +89,21 @@ public class InputExecutionTree {
 	}
 	
 	public void performAction() {
-		s.runTask(plugin, currentNode.getAction());
+		s.runTask(plugin, currentNode.getAction().getRunnable());
 	}
 	
 	public static class InputNode {
 		private final HashMap<InputType, InputNode> children = new HashMap<>();
-		private Runnable action;
+		private InputAction action;
 		private boolean sameItemRequired = false;
 		
-		public InputNode(Runnable action) {
+		private long timeLastExecuted;
+		
+		public InputNode(InputAction action) {
 			this.action = action;
 		}
 		
-		public void addChild(InputType input, Runnable action) {
+		public void addChild(InputType input, InputAction action) {
 			children.put(input, new InputNode(action));
 		}
 		
@@ -103,16 +115,24 @@ public class InputExecutionTree {
 			return children.get(input);
 		}
 		
-		public Runnable getAction() {
+		public InputAction getAction() {
 			return action;
 		}
 		
-		public void setAction(Runnable action) {
+		public void setAction(InputAction action) {
 			this.action = action;
 		}
 		
 		public void setSameItemRequired(boolean sameItemRequired) {
 			this.sameItemRequired = sameItemRequired;
+		}
+		
+		public long getTimeLastExecuted() {
+			return timeLastExecuted;
+		}
+		
+		public void setTimeLastExecuted(long time) {
+			timeLastExecuted = time;
 		}
 	}
 	

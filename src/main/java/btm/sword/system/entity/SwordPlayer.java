@@ -1,5 +1,6 @@
 package btm.sword.system.entity;
 
+import btm.sword.system.input.InputAction;
 import btm.sword.system.playerdata.StatType;
 import btm.sword.system.action.MovementAction;
 import btm.sword.system.action.UtilityAction;
@@ -23,7 +24,7 @@ public class SwordPlayer extends SwordEntity {
 	private final CombatProfile combatProfile;
 	private final InputExecutionTree inputExecutionTree;
 	
-	private Material itemInUse = Material.AIR;
+	private Material itemLastUsed = Material.AIR;
 	
 	private boolean performedDropAction = false;
 	
@@ -46,14 +47,15 @@ public class SwordPlayer extends SwordEntity {
 		if (isGrabbing) {
 			return;
 		}
+		
 		// the takeInput call in this if-statement is where the runnable associated with the node is run.
-		if (!inputExecutionTree.takeInput(input, itemUsed, itemInUse)) {
+		if (!inputExecutionTree.takeInput(input, itemUsed, this)) {
 			inputExecutionTree.reset();
-			if (itemUsed != itemInUse) itemInUse = itemUsed;
+			if (itemUsed != itemLastUsed) itemLastUsed = itemUsed;
 			return;
 		}
 		
-		if (itemUsed != itemInUse) itemInUse = itemUsed;
+		if (itemUsed != itemLastUsed) itemLastUsed = itemUsed;
 		
 		associatedEntity.showTitle(Title.title(
 				Component.text(""),
@@ -66,6 +68,10 @@ public class SwordPlayer extends SwordEntity {
 		));
 		
 		if (inputExecutionTree.noChildren()) inputExecutionTree.reset();
+	}
+	
+	public Material getItemLastUsed() {
+		return itemLastUsed;
 	}
 	
 	public boolean hasPerformedDropAction() {
@@ -104,16 +110,25 @@ public class SwordPlayer extends SwordEntity {
 			// Item independent actions:
 		// dodge forward, dodge backward
 		set(List.of(InputType.DROP, InputType.DROP),
-				MovementAction.dash(this, true),
+				new InputAction(
+						MovementAction.dash(this, true),
+						executor -> 1000L - (executor.getCombatProfile().getStat(StatType.CELERITY) * 10L),
+						executor -> !executor.isGrabbing()),
 				false);
 		
 		set(List.of(InputType.SHIFT, InputType.DROP),
-				MovementAction.dash(this, false),
+				new InputAction(
+						MovementAction.dash(this, false),
+						executor -> 1000L - (executor.getCombatProfile().getStat(StatType.CELERITY) * 10L),
+						executor -> !executor.isGrabbing()),
 				false);
 		
 		// grab
 		set(List.of(InputType.SHIFT, InputType.RIGHT),
+				new InputAction(
 				UtilityAction.grab(this),
+						executor -> Math.max(100L, 400L - (executor.getCombatProfile().getStat(StatType.FORTITUDE) * 10L)),
+						executor -> !executor.isGrabbing()),
 				false);
 		
 			// Item dependent actions:
@@ -138,7 +153,7 @@ public class SwordPlayer extends SwordEntity {
 				true);
 	}
 	
-	public void set(List<InputType> sequence, Runnable action, boolean sameItemRequired) {
+	public void set(List<InputType> sequence, InputAction action, boolean sameItemRequired) {
 		inputExecutionTree.add(sequence, action, sameItemRequired);
 	}
 	

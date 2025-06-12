@@ -6,7 +6,7 @@ import java.util.UUID;
 
 public abstract class SwordEntity {
 	protected LivingEntity associatedEntity;
-	private UUID uuid;
+	private final UUID uuid;
 	
 	public SwordEntity(LivingEntity associatedEntity) {
 		this.associatedEntity = associatedEntity;

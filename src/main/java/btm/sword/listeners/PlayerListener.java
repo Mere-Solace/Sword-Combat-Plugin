@@ -30,5 +30,7 @@ public class PlayerListener implements Listener {
 	@EventHandler
 	public void onPlayerRespawn(PlayerRespawnEvent event) {
 		SwordEntityArbiter.reassign(event.getPlayer());
+		event.getPlayer().sendMessage("You've been reassigned to your SwordPlayer object!");
+		event.getPlayer().sendMessage("You: " + SwordEntityArbiter.get(event.getPlayer().getUniqueId()));
 	}
 }
