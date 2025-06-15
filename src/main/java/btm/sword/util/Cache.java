@@ -34,9 +34,9 @@ public class Cache {
 				0.86, 2.13, 2.3, 0.87
 		));
 		
-		testFlameParticle = new ParticleWrapper(Particle.FLAME, 1, 0, 0, 0, 0);
-		testSoulFlameParticle = new ParticleWrapper(Particle.SOUL_FIRE_FLAME, 1, 0, 0, 0, 0);
-		testObsidianTearParticle = new ParticleWrapper(Particle.DRIPPING_OBSIDIAN_TEAR, 1, 0, 0, 0, 0.5);
-		testLavaDripParticle = new ParticleWrapper(Particle.DRIPPING_LAVA, 1, 0, 0, 0, 0.5);
+		testFlameParticle = new ParticleWrapper(Particle.FLAME, 5, 0.025, 0.025, 0.025, 0);
+		testSoulFlameParticle = new ParticleWrapper(Particle.SOUL_FIRE_FLAME, 5, 0.025, 0.025, 0.025, 0);
+		testObsidianTearParticle = new ParticleWrapper(Particle.DRIPPING_OBSIDIAN_TEAR, 5, 0.025, 0.025, 0.025, 0);
+		testLavaDripParticle = new ParticleWrapper(Particle.FALLING_LAVA, 5, 0.025, 0.025, 0.025, 0);
 	}
 }

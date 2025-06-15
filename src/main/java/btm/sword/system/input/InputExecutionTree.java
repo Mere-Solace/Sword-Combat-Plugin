@@ -43,7 +43,7 @@ public class InputExecutionTree {
 				reset();
 				return false;
 			}
-			else if ( currentNode.getAction().calcCooldown(executor) >= System.currentTimeMillis() - currentNode.getTimeLastExecuted()) {
+			else if (currentNode.getAction().calcCooldown(executor) >= System.currentTimeMillis() - currentNode.getTimeLastExecuted()) {
 				executor.getAssociatedEntity().sendMessage("This action is on cooldown my lad!");
 				reset();
 				return false;
@@ -62,7 +62,7 @@ public class InputExecutionTree {
 				public void run() {
 					reset();
 				}
-			}.runTaskLater(plugin, 12);
+			}.runTaskLater(plugin, 20);
 		}
 		
 		return true;

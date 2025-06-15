@@ -8,6 +8,8 @@ import btm.sword.system.action.UtilityAction;
 import btm.sword.system.input.InputExecutionTree;
 import btm.sword.system.input.InputType;
 import btm.sword.system.playerdata.PlayerData;
+import net.kyori.adventure.key.Key;
+import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -34,7 +36,6 @@ public class SwordPlayer extends Combatant {
 	}
 	
 	public void takeInput(InputType input, Material itemUsed) {
-		associatedEntity.sendMessage(itemUsed.toString());
 		itemInUse = itemUsed;
 		
 		// the takeInput call in this if-statement is where the runnable associated with the node is run.
@@ -46,9 +47,10 @@ public class SwordPlayer extends Combatant {
 					Component.text("/*~*#*~*/", NamedTextColor.DARK_GRAY, TextDecoration.BOLD),
 					Title.Times.times(
 							Duration.ofMillis(0),
-							Duration.ofMillis(500),
+							Duration.ofMillis(1000),
 							Duration.ofMillis(100))
 			));
+		
 			return;
 		}
 		
@@ -56,10 +58,10 @@ public class SwordPlayer extends Combatant {
 		
 		associatedEntity.showTitle(Title.title(
 				Component.text(""),
-				Component.text("| " + inputExecutionTree + " |", NamedTextColor.DARK_RED, TextDecoration.ITALIC),
+				Component.text(inputExecutionTree.toString(), NamedTextColor.DARK_RED, TextDecoration.ITALIC),
 				Title.Times.times(
 						Duration.ofMillis(0),
-						Duration.ofMillis(500),
+						Duration.ofMillis(1000),
 						Duration.ofMillis(100))
 		));
 		

@@ -51,20 +51,17 @@ public class AbilityInputListener implements Listener {
 	public void onPlayerDropEvent(PlayerDropItemEvent event) {
 		SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId());
 		Material itemType = event.getItemDrop().getItemStack().getType();
+		swordPlayer.setPerformedDropAction(true);
 		
 		if (swordPlayer.isGrabbing()) {
 			swordPlayer.getGrabTask().cancel();
 			swordPlayer.setGrabbing(false);
 			
 			Bukkit.getScheduler().runTaskLater(Sword.getInstance(), MovementAction.toss(swordPlayer, swordPlayer.getGrabbedEntity()), 2);
-			swordPlayer.setPerformedDropAction(true);
 			event.setCancelled(true);
-			return;
 		}
 		else
 			swordPlayer.takeInput(InputType.DROP, itemType);
-		
-		swordPlayer.setPerformedDropAction(true);
 		
 		new BukkitRunnable() {
 			@Override
