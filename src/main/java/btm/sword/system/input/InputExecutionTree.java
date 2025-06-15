@@ -37,12 +37,17 @@ public class InputExecutionTree {
 		
 		currentNode = currentNode.getChild(input);
 		
-		if (currentNode.getAction() != null &&
-				(!currentNode.getAction().isUsable(executor)
-				|| currentNode.getAction().calcCooldown(executor) >= System.currentTimeMillis() - currentNode.getTimeLastExecuted())) {
-			executor.getAssociatedEntity().sendMessage("This action is on cooldown my lad!");
-			reset();
-			return false;
+		if (currentNode.getAction() != null) {
+			if (!currentNode.getAction().isUsable(executor)) {
+				executor.getAssociatedEntity().sendMessage("You cannot use this rn patriot! You'll be back in it soon!");
+				reset();
+				return false;
+			}
+			else if ( currentNode.getAction().calcCooldown(executor) >= System.currentTimeMillis() - currentNode.getTimeLastExecuted()) {
+				executor.getAssociatedEntity().sendMessage("This action is on cooldown my lad!");
+				reset();
+				return false;
+			}
 		}
 		
 		if (inActionState()) performAction();

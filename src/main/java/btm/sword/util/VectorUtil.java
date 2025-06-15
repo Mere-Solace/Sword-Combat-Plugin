@@ -12,11 +12,31 @@ public class VectorUtil {
 		
 		if (Math.abs(dir.dot(ref)) > 0.999) {
 			double yaw = Math.toRadians(origin.getYaw());
-			ref = new Vector(-Math.sin(yaw),0,Math.cos(yaw));
+			ref = new Vector(-Math.sin(yaw), 0, Math.cos(yaw));
 		}
 		
 		Vector right = dir.getCrossProduct(ref).normalize();
 		Vector up = right.getCrossProduct(dir).normalize();
+		
+		ArrayList<Vector> basis = new ArrayList<>(3);
+		
+		basis.add(right);
+		basis.add(up);
+		basis.add(dir);
+		
+		return basis;
+	}
+	
+	public static ArrayList<Vector> getBasisWithoutPitch(Location origin) {
+		Vector up = new Vector(0,1,0);
+		double yaw = Math.toRadians(origin.getYaw());
+		Vector dir = new Vector(-Math.sin(yaw), 0, Math.cos(yaw));
+		
+		Vector right = dir.getCrossProduct(up).normalize();
+		
+		Cache.testSoulFlameParticles.display(origin.clone().add(up.clone().multiply(1.5)));
+		Cache.testSoulFlameParticles.display(origin.clone().add(dir.clone().multiply(1.5)));
+		Cache.testSoulFlameParticles.display(origin.clone().add(right.clone().multiply(1.5)));
 		
 		ArrayList<Vector> basis = new ArrayList<>(3);
 		

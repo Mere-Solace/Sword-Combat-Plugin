@@ -23,7 +23,7 @@ public class AbilityInputListener implements Listener {
 	
 	@EventHandler
 	public void onNormalAttackEvent(PrePlayerAttackEntityEvent event) {
-		SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.get(event.getPlayer().getUniqueId());
+		SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId());
 		Player player = (Player) swordPlayer.getAssociatedEntity();
 		Material itemType = player.getInventory().getItemInMainHand().getType();
 
@@ -32,7 +32,7 @@ public class AbilityInputListener implements Listener {
 	
 	@EventHandler
 	public void onPlayerInteract(PlayerInteractEvent event) {
-		SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.get(event.getPlayer().getUniqueId());
+		SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId());
 		Player player = (Player) swordPlayer.getAssociatedEntity();
 		Material itemType = player.getInventory().getItemInMainHand().getType();
 		Action action = event.getAction();
@@ -49,8 +49,7 @@ public class AbilityInputListener implements Listener {
 	
 	@EventHandler
 	public void onPlayerDropEvent(PlayerDropItemEvent event) {
-		SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.get(event.getPlayer().getUniqueId());
-		Player player = (Player) swordPlayer.getAssociatedEntity();
+		SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId());
 		Material itemType = event.getItemDrop().getItemStack().getType();
 		
 		if (swordPlayer.isGrabbing()) {
@@ -58,6 +57,7 @@ public class AbilityInputListener implements Listener {
 			swordPlayer.setGrabbing(false);
 			
 			Bukkit.getScheduler().runTaskLater(Sword.getInstance(), MovementAction.toss(swordPlayer, swordPlayer.getGrabbedEntity()), 2);
+			swordPlayer.setPerformedDropAction(true);
 			event.setCancelled(true);
 			return;
 		}
@@ -78,7 +78,7 @@ public class AbilityInputListener implements Listener {
 	
 	@EventHandler
 	public void onSneakEvent(PlayerToggleSneakEvent event) {
-		SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.get(event.getPlayer().getUniqueId());
+		SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId());
 		Player player = (Player) swordPlayer.getAssociatedEntity();
 		Material itemType = player.getInventory().getItemInMainHand().getType();
 		
@@ -90,7 +90,7 @@ public class AbilityInputListener implements Listener {
 	
 	@EventHandler
 	public void onSwapEvent(PlayerSwapHandItemsEvent event) {
-		SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.get(event.getPlayer().getUniqueId());
+		SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId());
 		Player player = (Player) swordPlayer.getAssociatedEntity();
 		Material itemType = player.getInventory().getItemInMainHand().getType();
 		

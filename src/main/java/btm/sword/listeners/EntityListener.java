@@ -25,6 +25,6 @@ public class EntityListener implements Listener {
 	
 	@EventHandler
 	public void entityDamageEvent(EntityDamageEvent event) {
-		event.setCancelled(true);
+//		event.setCancelled(true);
 	}
 }

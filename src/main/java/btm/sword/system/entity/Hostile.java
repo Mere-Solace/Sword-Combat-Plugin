@@ -7,13 +7,13 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.inventory.ItemStack;
 
-public class Hostile extends SwordNPC{
-	CombatProfile combatProfile;
+public class Hostile extends Combatant {
+	
 	ItemStack itemInLeftHand = new ItemStack(Material.IRON_AXE);
 	ItemStack itemInRightHand = new ItemStack(Material.SHIELD);
 	
-	public Hostile(LivingEntity associatedEntity) {
-		super(associatedEntity);
+	public Hostile(LivingEntity associatedEntity, CombatProfile combatProfile) {
+		super(associatedEntity, combatProfile);
 		EntityEquipment equipment = associatedEntity.getEquipment();
 		if (equipment != null) {
 			equipment.setItemInMainHand(itemInLeftHand);

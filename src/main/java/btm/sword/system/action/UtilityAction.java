@@ -1,8 +1,8 @@
 package btm.sword.system.action;
 
 import btm.sword.Sword;
-import btm.sword.system.playerdata.StatType;
 import btm.sword.system.entity.SwordEntity;
+import btm.sword.system.playerdata.StatType;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.SwordPlayer;
 import btm.sword.util.HitboxUtil;
@@ -30,26 +30,23 @@ public class UtilityAction extends SwordAction {
 				Runnable grabRunnable = new BukkitRunnable() {
 					@Override
 					public void run() {
-						LivingEntity ex = executor.getAssociatedEntity();
-						double range = executor instanceof SwordPlayer ? 2.5 + (0.1*((SwordPlayer) executor).getCombatProfile().getStat(StatType.MIGHT)) : 2.5;
-						LivingEntity target = HitboxUtil.rayTrace(ex, range);
+						int baseDuration = 60;
+						final int duration = executor instanceof SwordPlayer ? baseDuration + (int)(0.2*((SwordPlayer) executor).getCombatProfile().getStat(StatType.MIGHT)) : baseDuration;
+						double baseGrabRange = 3;
+						double range = executor instanceof SwordPlayer ? baseGrabRange + (0.1*((SwordPlayer) executor).getCombatProfile().getStat(StatType.MIGHT)) : baseGrabRange;
 						
+						LivingEntity ex = executor.getAssociatedEntity();
+						LivingEntity target = HitboxUtil.rayTrace(ex, range);
 						if (target == null) {
-							ex.sendMessage("Miss");
+
 							return;
 						}
-						
 						SwordEntity swordTarget = SwordEntityArbiter.get(target.getUniqueId());
-						
-						ex.sendMessage(ex + " grabbed " + target);
 						
 						if (executor instanceof SwordPlayer) {
 							((SwordPlayer) executor).setGrabbing(true);
 							((SwordPlayer) executor).setGrabbedEntity(swordTarget);
 						}
-						
-						int baseDuration = 60;
-						final int duration = executor instanceof SwordPlayer ? baseDuration + (int)(0.2*((SwordPlayer) executor).getCombatProfile().getStat(StatType.MIGHT)) : baseDuration;
 						
 						final int[] ticks = {0};
 						new BukkitRunnable() {
@@ -65,11 +62,10 @@ public class UtilityAction extends SwordAction {
 								else if (executor instanceof SwordPlayer && !((SwordPlayer) executor).isGrabbing()) {
 									cancel();
 								}
-								ticks[0]++;
 								
-								
+								ex.setVelocity(new Vector(0, 0, 0));
 								ex.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 1, 6));
-								
+
 								target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 1, 10));
 								
 								Vector direction = ex.getLocation().toVector().add(ex.getEyeLocation().getDirection().multiply(1.5)).subtract(target.getLocation().toVector());
@@ -84,6 +80,8 @@ public class UtilityAction extends SwordAction {
 										target.setVelocity(velocity);
 									}
 								}
+								
+								ticks[0]++;
 							}
 						}.runTaskTimer(Sword.getInstance(), 0, 1);
 					}
@@ -94,6 +92,15 @@ public class UtilityAction extends SwordAction {
 				if (executor instanceof SwordPlayer) {
 					((SwordPlayer) executor).setGrabTask(grabTask);
 				}
+			}
+		};
+	}
+	
+	public static Runnable noOp(SwordEntity executor) {
+		return new BukkitRunnable() {
+			@Override
+			public void run() {
+				executor.getAssociatedEntity().sendMessage("Safely performing no operation");
 			}
 		};
 	}

@@ -9,7 +9,7 @@ import org.bukkit.util.Vector;
 import java.util.HashSet;
 
 public class HitboxUtil {
-	public static HashSet<LivingEntity> line(LivingEntity executor, Location o, Vector e, double maxRange, double thickness) {
+	public static HashSet<LivingEntity> lineKnownLength(LivingEntity executor, Location o, Vector e, double maxRange, double thickness) {
 		HashSet<LivingEntity> hit = new HashSet<>();
 		
 		for (double i = 0; i < maxRange; i += maxRange / thickness) {
@@ -17,6 +17,30 @@ public class HitboxUtil {
 		}
 		hit.removeIf(Entity::isDead);
 		hit.remove(executor);
+		return hit;
+	}
+	
+	public static HashSet<LivingEntity> line(LivingEntity executor, Location origin, Location end, double thickness) {
+		HashSet<LivingEntity> hit = new HashSet<>();
+		
+		Vector direction = end.clone().subtract(origin).toVector();
+		int steps = (int) (direction.length() / (thickness));
+		if (steps == 0) steps = 1;
+		
+		Vector step = direction.clone().normalize().multiply(thickness);
+		Location cur = origin.clone();
+		
+		for (int i = 0; i <= steps; i++) {
+			for (Entity e : cur.getNearbyLivingEntities(thickness)) {
+				if (e instanceof LivingEntity entity &&
+						!entity.isDead() &&
+						!entity.equals(executor)) {
+					hit.add(entity);
+				}
+			}
+			cur.add(step);
+		}
+		
 		return hit;
 	}
 	

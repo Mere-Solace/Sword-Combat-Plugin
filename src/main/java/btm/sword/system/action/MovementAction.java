@@ -1,8 +1,8 @@
 package btm.sword.system.action;
 
 import btm.sword.Sword;
-import btm.sword.system.playerdata.StatType;
 import btm.sword.system.entity.SwordEntity;
+import btm.sword.system.playerdata.StatType;
 import btm.sword.system.entity.SwordPlayer;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -50,21 +50,21 @@ public class MovementAction extends SwordAction {
 		};
 	}
 	
-	public static Runnable toss(SwordEntity tosser, SwordEntity tossee) {
+	public static Runnable toss(SwordEntity executor, SwordEntity target) {
 		return new BukkitRunnable() {
 			@Override
 			public void run() {
-				LivingEntity bTosser = tosser.getAssociatedEntity();
-				LivingEntity bTossee = tossee.getAssociatedEntity();
+				LivingEntity ex = executor.getAssociatedEntity();
+				LivingEntity t = target.getAssociatedEntity();
 				
 				double baseForce = 1.5;
-				double force = tosser instanceof SwordPlayer ? baseForce + (int)(0.25*((SwordPlayer) tosser).getCombatProfile().getStat(StatType.MIGHT)) : baseForce;
+				double force = executor instanceof SwordPlayer ? baseForce + (int)(0.25*((SwordPlayer) executor).getCombatProfile().getStat(StatType.MIGHT)) : baseForce;
 				
 				for (int i = 0; i < 2; i++) {
 					new BukkitRunnable() {
 						@Override
 						public void run() {
-							bTossee.setVelocity(new Vector(0,.35,0));
+							t.setVelocity(new Vector(0,.25,0));
 						}
 					}.runTaskLater(Sword.getInstance(), i);
 				}
@@ -73,7 +73,7 @@ public class MovementAction extends SwordAction {
 					new BukkitRunnable() {
 						@Override
 						public void run() {
-							bTossee.setVelocity(bTosser.getEyeLocation().getDirection().multiply(force));
+							t.setVelocity(ex.getEyeLocation().getDirection().multiply(force));
 						}
 					}.runTaskLater(Sword.getInstance(), i);
 				}

@@ -15,7 +15,7 @@ public class CombatProfile {
 				case SHARDS -> stats.put(stat, 5);
 				case TOUGHNESS -> stats.put(stat, 20);
 				case SOULFIRE -> stats.put(stat, 50);
-				case FORM, MIGHT, RESOLVE, FINESSE, PROWESS, ARMOR, FORTITUDE, CELERITY, WILLPOWER -> stats.put(stat, 1);
+				default -> stats.put(stat, 1);
 			}
 		}
 		// replace item material type with a specific item metadata in the future
