@@ -16,8 +16,14 @@ public class SwordEntityArbiter {
 		UUID entityUUID = entity.getUniqueId();
 		if (entity instanceof Player) {
 			Objects.requireNonNull(Bukkit.getPlayer(entityUUID)).sendMessage("You're being registered as online.");
+			
 			PlayerDataManager.register(entityUUID);
-			onlineSwordPlayers.put(entityUUID, new SwordPlayer(entity, PlayerDataManager.getPlayerData(entityUUID)));
+			if (onlineSwordPlayers.getOrDefault(entityUUID, null) == null) {
+				onlineSwordPlayers.put(entityUUID, new SwordPlayer(entity, PlayerDataManager.getPlayerData(entityUUID)));
+			}
+			else {
+				onlineSwordPlayers.get(entityUUID).setAssociatedEntity(entity);
+			}
 		} else if (!entity.isDead()) {
 			existingSwordNPCs.putIfAbsent(entityUUID, initializeNPC(entity));
 		}
@@ -53,13 +59,5 @@ public class SwordEntityArbiter {
 				return new Passive(entity);
 			}
 		}
-	}
-	
-	public static void reassign(LivingEntity entity) {
-		if (entity instanceof Player)
-			onlineSwordPlayers.get(entity.getUniqueId()).setAssociatedEntity(entity);
-		else
-			if (existingSwordNPCs.get(entity.getUniqueId()) != null)
-				existingSwordNPCs.get(entity.getUniqueId()).setAssociatedEntity(entity);
 	}
 }

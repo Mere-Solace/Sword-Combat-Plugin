@@ -12,8 +12,10 @@ public class Cache {
 	public static final List<Vector> dragonKillerArc;
 	public static final List<Double> dragonKillerArcRatios;
 	
-	public static final ParticleWrapper testFlameParticles;
-	public static final ParticleWrapper testSoulFlameParticles;
+	public static final ParticleWrapper testFlameParticle;
+	public static final ParticleWrapper testSoulFlameParticle;
+	public static final ParticleWrapper testObsidianTearParticle;
+	public static final ParticleWrapper testLavaDripParticle;
 	
 	static {
 		forwardSwordSlash1 = new ArrayList<>(List.of(
@@ -32,7 +34,9 @@ public class Cache {
 				0.86, 2.13, 2.3, 0.87
 		));
 		
-		testFlameParticles = new ParticleWrapper(Particle.FLAME, 5, 0.1, 0.1, 0.1, 0);
-		testSoulFlameParticles = new ParticleWrapper(Particle.SOUL_FIRE_FLAME, 5, 0.1, 0.1, 0.1, 0);
+		testFlameParticle = new ParticleWrapper(Particle.FLAME, 1, 0, 0, 0, 0);
+		testSoulFlameParticle = new ParticleWrapper(Particle.SOUL_FIRE_FLAME, 1, 0, 0, 0, 0);
+		testObsidianTearParticle = new ParticleWrapper(Particle.DRIPPING_OBSIDIAN_TEAR, 1, 0, 0, 0, 0.5);
+		testLavaDripParticle = new ParticleWrapper(Particle.DRIPPING_LAVA, 1, 0, 0, 0, 0.5);
 	}
 }

@@ -58,15 +58,17 @@ public class AttackAction {
 		return new BukkitRunnable() {
 			@Override
 			public void run() {
-				double rangeMultiplier = 1.6;
-				
 				LivingEntity ex = executor.getAssociatedEntity();
+				
+				double rangeMultiplier;
 				ArrayList<Vector> basis;
 				List<Vector> controlVectors;
 				List<Double> bezierRatios;
 				List<Vector> bezierVectors;
+				
 				switch (stage) {
 					case 1 -> {
+						rangeMultiplier = 2.0;
 						basis = VectorUtil.getBasisWithoutPitch(ex.getEyeLocation());
 						controlVectors = new ArrayList<>(Cache.dragonKillerArc);
 						bezierRatios = new ArrayList<>(Cache.dragonKillerArcRatios);
@@ -79,6 +81,7 @@ public class AttackAction {
 					}
 					// basic 0:
 					default -> {
+						rangeMultiplier = 0.8;
 						basis = VectorUtil.getBasis(ex.getEyeLocation(), ex.getEyeLocation().getDirection());
 						controlVectors = new ArrayList<>(Cache.forwardSwordSlash1);
 						List<Vector> transformedControlVectors = controlVectors.stream()
@@ -89,7 +92,6 @@ public class AttackAction {
 								30);
 					}
 				}
-				
 				
 				int duration = 5;
 				int period = 1;
@@ -109,7 +111,7 @@ public class AttackAction {
 								break;
 							}
 							
-							ex.setVelocity(new Vector(0, 0, 0));
+							ex.setVelocity(new Vector(ex.getVelocity().getX() * 0.2, ex.getVelocity().getY() * 0.3, ex.getVelocity().getZ() * 0.2));
 							ex.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 1, 6));
 							
 							Vector v = bezierVectors.get(step[0]);
@@ -118,16 +120,16 @@ public class AttackAction {
 							double spread = 0.25 + ((1.5* i) / 5);
 							Vector offset = v.clone().normalize().multiply(spread);
 							
-							Location behind = o.clone().add(v).subtract(offset);
-							Location behind2 = o.clone().add(v).subtract(offset.clone().multiply(1.5));
-							Location exact = o.clone().add(v);
-							Location ahead = o.clone().add(v).add(offset);
+							Location behind = l.clone().subtract(offset);
+							Location exact = l.clone().add(v);
+							Location ahead = l.clone().add(v).add(offset);
 							
-							Cache.testSoulFlameParticles.display(behind);
-							Cache.testFlameParticles.display(exact);
-							Cache.testSoulFlameParticles.display(ahead);
+							Cache.testSoulFlameParticle.display(behind);
+							Cache.testObsidianTearParticle.display(exact);
+							Cache.testSoulFlameParticle.display(ahead);
 							if (step[0] > size/2) {
-								Cache.testFlameParticles.display(behind2);
+								Location behind2 = l.clone().subtract(offset.clone().multiply(1.5));
+								Cache.testLavaDripParticle.display(behind2);
 							}
 							
 							HashSet<LivingEntity> curHit = HitboxUtil.line(ex, o, l, 0.4);

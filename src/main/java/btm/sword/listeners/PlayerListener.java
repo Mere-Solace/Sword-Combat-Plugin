@@ -30,7 +30,7 @@ public class PlayerListener implements Listener {
 		new BukkitRunnable() {
 			@Override
 			public void run() {
-				SwordEntityArbiter.reassign(event.getPlayer());
+				SwordEntityArbiter.register(event.getPlayer());
 				event.getPlayer().sendMessage("You've been reassigned to your SwordPlayer object!");
 				event.getPlayer().sendMessage("You: " + SwordEntityArbiter.get(event.getPlayer().getUniqueId()));
 			}
@@ -40,15 +40,8 @@ public class PlayerListener implements Listener {
 	@EventHandler
 	public void onPlayerRespawn(PlayerRespawnEvent event) {
 		Sword.getInstance().getLogger().info("Respawn event runs");
-		SwordEntityArbiter.reassign(event.getPlayer());
+		SwordEntityArbiter.register(event.getPlayer());
 		event.getPlayer().sendMessage("You've been reassigned to your SwordPlayer object!");
 		event.getPlayer().sendMessage("You: " + SwordEntityArbiter.get(event.getPlayer().getUniqueId()));
-	}
-	// TODO make it getOrAdd in reassign, and also when reassigning upload the player data
-	@EventHandler
-	public void onPlayerChat(AsyncChatEvent event) {
-		SwordEntityArbiter.reassign(event.getPlayer());
-		
-		event.getPlayer().setGliding(true);
 	}
 }
