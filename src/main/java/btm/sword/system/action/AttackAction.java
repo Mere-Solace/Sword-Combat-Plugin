@@ -3,19 +3,19 @@ package btm.sword.system.action;
 import btm.sword.Sword;
 import btm.sword.system.entity.Combatant;
 import btm.sword.system.entity.SwordPlayer;
-import btm.sword.util.BezierUtil;
-import btm.sword.util.Cache;
-import btm.sword.util.HitboxUtil;
-import btm.sword.util.VectorUtil;
+import btm.sword.util.*;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.Particle;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
 
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 
 public class AttackAction {
 	
@@ -134,9 +134,22 @@ public class AttackAction {
 							
 							HashSet<LivingEntity> curHit = HitboxUtil.line(ex, o, l, 0.4);
 							for (LivingEntity target : curHit)
-								if (!hit.contains(target))
+								if (!hit.contains(target)) {
 									target.damage(damage, ex);
+									Cache.basicSwordHit1.display(target.getLocation());
+									Cache.basicSwordHit2.display(target.getLocation());
+								}
 							hit.addAll(curHit);
+							
+							if (step[0] < size-1) {
+								Vector direction = bezierVectors.get(step[0] + 1).clone().subtract(v);
+								RayTraceResult result = ex.getWorld().rayTraceBlocks(l, direction, 0.3);
+								if (result != null) {
+									new ParticleWrapper(Particle.BLOCK, 10, 0.5, 0.5, 0.5, Objects.requireNonNull(result.getHitBlock()).getBlockData()).display(l);
+									Cache.basicSwordEnterGround.display(l);
+								}
+							}
+							
 							step[0]++;
 						}
 					}

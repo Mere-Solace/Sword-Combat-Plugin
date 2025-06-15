@@ -21,25 +21,28 @@ public class Cache {
 	public static final ParticleWrapper testLavaDripParticle;
 	
 	public static final ParticleWrapper basicSwordBlueTransitionParticle;
+	public static final ParticleWrapper basicSwordHit1;
+	public static final ParticleWrapper basicSwordHit2;
+	public static final ParticleWrapper basicSwordEnterGround;
 	
 	public static final ParticleWrapper grabCloudParticle;
 	
 	static {
 		basicSword1 = new ArrayList<>(List.of(
-				new Vector(-2.06, -1.2, -0.5),
-				new Vector(3.26, 0.85, -0.4),
-				new Vector(-2.3, -0.1,3),
-				new Vector(1.9, 0.27, 5)));
+				new Vector(-2.06, -1.26, -0.5),
+				new Vector(3.26, 0.79, -0.4),
+				new Vector(-2.3, -0.16,3),
+				new Vector(1.9, 0.21, 5)));
 		basicSword2 = new ArrayList<>(List.of(
-				new Vector(2.6, -1.15, -1.2),
-				new Vector(-1.47, 2.05, 0),
-				new Vector(1.6, -0.05, 7),
-				new Vector(-3.66, 1.85, 0.32)));
+				new Vector(2.6, -1.21, -1.2),
+				new Vector(-1.47, 1.99, 0),
+				new Vector(1.6, -0.11, 7),
+				new Vector(-3.66, 0.26, 1.85)));
 		basicSword3 = new ArrayList<>(List.of(
-				new Vector(-0.15, 2.8, -1.5),
-				new Vector(-1.1, -2.2, 1.1),
-				new Vector(1.57, 1.96, 3),
-				new Vector(0, 0.27, 5)));
+				new Vector(-0.15,2.8,-1.5),
+				new Vector(-1.1,-2.2,-0.9),
+				new Vector(1.74,1.96,4.3),
+				new Vector(-1.1,-1.77,5)));
 //		forwardSwordSlash1 = new ArrayList<>(List.of(
 //				new Vector(-5.487, 0.209, -0.177),
 //				new Vector(3.4515, -4.1275, -8.2482),
@@ -63,7 +66,13 @@ public class Cache {
 		
 		basicSwordBlueTransitionParticle = new ParticleWrapper(Particle.DUST_COLOR_TRANSITION, 5, 0.025, 0.025, 0.025, 1,
 				new Particle.DustTransition(Color.fromRGB(14, 107, 207), Color.fromRGB(162, 226, 255), 0.85f));
+		basicSwordHit1 = new ParticleWrapper(Particle.SOUL_FIRE_FLAME, 30, 0.5, 0.5, 0.5, 0.1);
+		basicSwordHit2 = new ParticleWrapper(Particle.ENCHANTED_HIT, 20, 0.5, 0.5, 0.5, 0.3);
+		basicSwordEnterGround = new ParticleWrapper(Particle.CRIT, 30, 0.1, 0.1, 0.1, 0.5);
+		
 		
 		grabCloudParticle = new ParticleWrapper(Particle.POOF, 20, 0.5, 0.5, 0.5, 0.1);
+		
+		
 	}
 }

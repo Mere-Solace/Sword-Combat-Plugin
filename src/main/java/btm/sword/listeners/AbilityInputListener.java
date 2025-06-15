@@ -22,7 +22,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 public class AbilityInputListener implements Listener {
 	
 	@EventHandler
-	public void onNormalAttackEvent(PrePlayerAttackEntityEvent event) {
+	public void onNormalAttack(PrePlayerAttackEntityEvent event) {
 		SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId());
 		Player player = (Player) swordPlayer.getAssociatedEntity();
 		Material itemType = player.getInventory().getItemInMainHand().getType();
@@ -35,14 +35,21 @@ public class AbilityInputListener implements Listener {
 	public void onPlayerInteract(PlayerInteractEvent event) {
 		SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId());
 		Player player = (Player) swordPlayer.getAssociatedEntity();
-		Material itemType = player.getInventory().getItemInMainHand().getType();
+		Material mainItemType = player.getInventory().getItemInMainHand().getType();
+		Material offItemType = player.getInventory().getItemInOffHand().getType();
 		Action action = event.getAction();
 		
-		if ((action == Action.LEFT_CLICK_AIR || action == Action.LEFT_CLICK_BLOCK) && !swordPlayer.hasPerformedDropAction()) {
-			swordPlayer.takeInput(InputType.LEFT, itemType);
+		if (swordPlayer.hasPerformedDropAction()) return;
+		
+		if ((action == Action.LEFT_CLICK_AIR || action == Action.LEFT_CLICK_BLOCK)) {
+			swordPlayer.takeInput(InputType.LEFT, mainItemType);
 		}
 		else if (action == Action.RIGHT_CLICK_AIR || action == Action.RIGHT_CLICK_BLOCK) {
-			swordPlayer.takeInput(InputType.RIGHT, itemType);
+			swordPlayer.takeInput(InputType.RIGHT, mainItemType);
+		}
+		else if (!offItemType.isAir() && !mainItemType.isAir()) {
+			player.sendMessage("Doing some other interact action rn while holding: " + offItemType + " in off hand, and " + mainItemType + " in main.");
+			swordPlayer.takeInput(InputType.RIGHT, mainItemType);
 		}
 		
 		Bukkit.getCurrentTick();

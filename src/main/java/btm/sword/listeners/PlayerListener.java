@@ -26,20 +26,11 @@ public class PlayerListener implements Listener {
 	
 	@EventHandler
 	public void onPlayerDeath(PlayerDeathEvent event) {
-		Sword.getInstance().getLogger().info("Death event runs");
-		new BukkitRunnable() {
-			@Override
-			public void run() {
-				SwordEntityArbiter.register(event.getPlayer());
-				event.getPlayer().sendMessage("You've been reassigned to your SwordPlayer object!");
-				event.getPlayer().sendMessage("You: " + SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId()));
-			}
-		}.runTaskLater(Sword.getInstance(), 20);
+
 	}
 	
 	@EventHandler
 	public void onPlayerRespawn(PlayerRespawnEvent event) {
-		Sword.getInstance().getLogger().info("Respawn event runs");
 		SwordEntityArbiter.register(event.getPlayer());
 		event.getPlayer().sendMessage("You've been reassigned to your SwordPlayer object!");
 		event.getPlayer().sendMessage("You: " + SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId()));

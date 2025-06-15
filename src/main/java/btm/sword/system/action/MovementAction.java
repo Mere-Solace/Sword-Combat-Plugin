@@ -74,20 +74,23 @@ public class MovementAction extends SwordAction {
 						@Override
 						public void run() {
 							t.setVelocity(ex.getEyeLocation().getDirection().multiply(force));
-							
-							if (t.getWorld().rayTraceBlocks(t.getLocation(), t.getVelocity(), 0.2) != null) {
-								t.getWorld().createExplosion(t, 2);
-							}
-							new BukkitRunnable() {
-								@Override
-								public void run() {
-									if (t.getWorld().rayTraceBlocks(t.getLocation(), t.getVelocity(), 0.2) != null) {
-										t.getWorld().createExplosion(t, 2);
-									}
-								}
-							}.runTaskLater(Sword.getInstance(), 2);
 						}
 					}.runTaskLater(Sword.getInstance(), i+2);
+				}
+				
+				boolean[] check = {true};
+				for (int i = 0; i < 15; i++) {
+					if (!check[0]) break;
+					
+					new BukkitRunnable() {
+						@Override
+						public void run() {
+							if (t.getWorld().rayTraceBlocks(t.getLocation(), t.getVelocity().normalize(), 0.7) != null) {
+								t.getWorld().createExplosion(t.getEyeLocation().add(t.getVelocity().normalize()), 2, false, false);
+								check[0] = false;
+							}
+						}
+					}.runTaskLater(Sword.getInstance(), i);
 				}
 			}
 		};

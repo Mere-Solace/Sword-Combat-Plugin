@@ -1,6 +1,7 @@
 package btm.sword.system.input;
 
 import btm.sword.Sword;
+import btm.sword.system.entity.Combatant;
 import btm.sword.system.entity.SwordPlayer;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -26,7 +27,7 @@ public class InputExecutionTree {
 	public boolean takeInput(InputType input, Material itemUsed, SwordPlayer executor) {
 		if (timeoutTimer != null) timeoutTimer.cancel();
 		
-		if (currentNode.noChild(input)) {
+		if (currentNode == null || currentNode.noChild(input)) {
 			reset();
 			return false;
 		}
@@ -50,7 +51,9 @@ public class InputExecutionTree {
 			}
 		}
 		
-		if (inActionState()) performAction();
+		if (inActionState()) {
+			executor.setAbilityTask(performAction());
+		}
 		currentNode.setTimeLastExecuted(System.currentTimeMillis());
 		
 		sequenceToDisplay.append(inputToString(input));
@@ -93,8 +96,8 @@ public class InputExecutionTree {
 		return currentNode.action != null;
 	}
 	
-	public void performAction() {
-		s.runTask(plugin, currentNode.getAction().getRunnable());
+	public BukkitTask performAction() {
+		return s.runTask(plugin, currentNode.getAction().getRunnable());
 	}
 	
 	public static class InputNode {
