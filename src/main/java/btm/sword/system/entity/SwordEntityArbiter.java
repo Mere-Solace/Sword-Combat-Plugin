@@ -10,7 +10,7 @@ import java.util.*;
 
 public class SwordEntityArbiter {
 	private static final HashMap<UUID, SwordEntity> existingSwordNPCs = new HashMap<>();
-	private static final HashMap<UUID, SwordPlayer> onlineSwordPlayers = new HashMap<>();
+	private static final HashMap<UUID, SwordEntity> onlineSwordPlayers = new HashMap<>();
 	
 	public static void register(LivingEntity entity) {
 		UUID entityUUID = entity.getUniqueId();
@@ -18,7 +18,7 @@ public class SwordEntityArbiter {
 			Objects.requireNonNull(Bukkit.getPlayer(entityUUID)).sendMessage("You're being registered as online.");
 			
 			PlayerDataManager.register(entityUUID);
-			if (onlineSwordPlayers.getOrDefault(entityUUID, null) == null) {
+			if (onlineSwordPlayers.get(entityUUID) == null) {
 				onlineSwordPlayers.put(entityUUID, new SwordPlayer(entity, PlayerDataManager.getPlayerData(entityUUID)));
 			}
 			else {
@@ -35,8 +35,7 @@ public class SwordEntityArbiter {
 	}
 	
 	public static SwordEntity get(UUID uuid) {
-		SwordEntity entity = onlineSwordPlayers.get(uuid);
-		return entity != null ? entity : existingSwordNPCs.get(uuid);
+		return onlineSwordPlayers.getOrDefault(uuid, existingSwordNPCs.get(uuid));
 	}
 	
 	public static SwordEntity getOrAdd(UUID uuid) {

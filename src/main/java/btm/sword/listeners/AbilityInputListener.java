@@ -28,6 +28,7 @@ public class AbilityInputListener implements Listener {
 		Material itemType = player.getInventory().getItemInMainHand().getType();
 
 		swordPlayer.takeInput(InputType.LEFT, itemType);
+		event.setCancelled(true);
 	}
 	
 	@EventHandler
@@ -58,7 +59,6 @@ public class AbilityInputListener implements Listener {
 			swordPlayer.setGrabbing(false);
 			
 			Bukkit.getScheduler().runTaskLater(Sword.getInstance(), MovementAction.toss(swordPlayer, swordPlayer.getGrabbedEntity()), 2);
-			event.setCancelled(true);
 		}
 		else
 			swordPlayer.takeInput(InputType.DROP, itemType);

@@ -7,6 +7,8 @@ import org.bukkit.scheduler.BukkitTask;
 public abstract class Combatant extends SwordEntity {
 	CombatProfile combatProfile;
 	
+	private BukkitTask abilityTask;
+	
 	private boolean isGrabbing = false;
 	private BukkitTask grabTask;
 	private SwordEntity grabbedEntity;
@@ -18,6 +20,18 @@ public abstract class Combatant extends SwordEntity {
 	
 	public CombatProfile getCombatProfile() {
 		return combatProfile;
+	}
+	
+	public BukkitTask getAbilityTask() {
+		return abilityTask;
+	}
+	
+	public void setAbilityTask(BukkitTask abilityTask) {
+		this.abilityTask = abilityTask;
+	}
+	
+	public boolean isAbilityTaskFinished() {
+		return abilityTask == null;
 	}
 	
 	public boolean isGrabbing() {

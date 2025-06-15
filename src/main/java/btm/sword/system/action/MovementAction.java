@@ -58,7 +58,7 @@ public class MovementAction extends SwordAction {
 				LivingEntity t = target.getAssociatedEntity();
 				
 				double baseForce = 1.5;
-				double force = executor instanceof SwordPlayer ? baseForce + (int)(0.25*((SwordPlayer) executor).getCombatProfile().getStat(StatType.MIGHT)) : baseForce;
+				double force = baseForce + (int)(0.25*((SwordPlayer) executor).getCombatProfile().getStat(StatType.MIGHT));
 				
 				for (int i = 0; i < 2; i++) {
 					new BukkitRunnable() {
@@ -74,8 +74,20 @@ public class MovementAction extends SwordAction {
 						@Override
 						public void run() {
 							t.setVelocity(ex.getEyeLocation().getDirection().multiply(force));
+							
+							if (t.getWorld().rayTraceBlocks(t.getLocation(), t.getVelocity(), 0.2) != null) {
+								t.getWorld().createExplosion(t, 2);
+							}
+							new BukkitRunnable() {
+								@Override
+								public void run() {
+									if (t.getWorld().rayTraceBlocks(t.getLocation(), t.getVelocity(), 0.2) != null) {
+										t.getWorld().createExplosion(t, 2);
+									}
+								}
+							}.runTaskLater(Sword.getInstance(), 2);
 						}
-					}.runTaskLater(Sword.getInstance(), i);
+					}.runTaskLater(Sword.getInstance(), i+2);
 				}
 			}
 		};

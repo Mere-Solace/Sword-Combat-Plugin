@@ -1,7 +1,7 @@
 package btm.sword.system.action;
 
 import btm.sword.Sword;
-import btm.sword.system.entity.SwordEntity;
+import btm.sword.system.entity.Combatant;
 import btm.sword.system.entity.SwordPlayer;
 import btm.sword.util.BezierUtil;
 import btm.sword.util.Cache;
@@ -19,7 +19,7 @@ import java.util.List;
 
 public class AttackAction {
 	
-	public static Runnable basic(SwordEntity executor, int stage) {
+	public static Runnable basic(Combatant executor, int stage) {
 		return new BukkitRunnable() {
 			@Override
 			public void run() {
@@ -42,7 +42,9 @@ public class AttackAction {
 		};
 	}
 	
-	public static Runnable basicSword(SwordEntity executor, int stage, Material swordType) {
+	public static Runnable basicSword(Combatant executor, int stage, Material swordType) {
+		executor.getAssociatedEntity().sendMessage("On ground?: " + executor.onGround());
+		
 		double damage;
 		switch (swordType) {
 			case NETHERITE_SWORD -> damage = 15;
@@ -56,39 +58,34 @@ public class AttackAction {
 			@Override
 			public void run() {
 				LivingEntity ex = executor.getAssociatedEntity();
+				ArrayList<Vector> basis = VectorUtil.getBasis(ex.getEyeLocation(), ex.getEyeLocation().getDirection());
 				
 				double rangeMultiplier;
-				ArrayList<Vector> basis;
 				List<Vector> controlVectors;
-				List<Double> bezierRatios;
 				List<Vector> bezierVectors;
 				
 				switch (stage) {
 					case 1 -> {
-						rangeMultiplier = 1.25;
-						basis = VectorUtil.getBasisWithoutPitch(ex.getEyeLocation());
-						controlVectors = new ArrayList<>(Cache.dragonKillerArc);
-						bezierRatios = new ArrayList<>(Cache.dragonKillerArcRatios);
-						List<Vector> transformedControlVectors = controlVectors.stream()
-								.map(v -> VectorUtil.transformWithNewBasis(basis, v).multiply(rangeMultiplier))
-								.toList();
-						
-						bezierVectors = BezierUtil.cubicBezierRational3D(transformedControlVectors.getFirst(),transformedControlVectors.get(1), transformedControlVectors.get(2), transformedControlVectors.getLast(),
-								bezierRatios.getFirst(), bezierRatios.get(1), bezierRatios.get(2), bezierRatios.getLast(), 30);
+						rangeMultiplier = 1;
+						controlVectors = new ArrayList<>(Cache.basicSword2);
+					}
+					case 2 -> {
+						rangeMultiplier = 1;
+						controlVectors = new ArrayList<>(Cache.basicSword3);
 					}
 					// basic 0:
 					default -> {
 						rangeMultiplier = 1;
-						basis = VectorUtil.getBasis(ex.getEyeLocation(), ex.getEyeLocation().getDirection());
-						controlVectors = new ArrayList<>(Cache.forwardSwordSlash1);
-						List<Vector> transformedControlVectors = controlVectors.stream()
-								.map(v -> VectorUtil.transformWithNewBasis(basis, v).multiply(rangeMultiplier))
-								.toList();
-						
-						bezierVectors = BezierUtil.cubicBezier3D(transformedControlVectors.getFirst(),transformedControlVectors.get(1), transformedControlVectors.get(2), transformedControlVectors.getLast(),
-								30);
+						controlVectors = new ArrayList<>(Cache.basicSword1);
 					}
 				}
+				
+				List<Vector> transformedControlVectors = controlVectors.stream()
+						.map(v -> VectorUtil.transformWithNewBasis(basis, v).multiply(rangeMultiplier))
+						.toList();
+				
+				bezierVectors = BezierUtil.cubicBezier3D(transformedControlVectors.getFirst(),transformedControlVectors.get(1), transformedControlVectors.get(2), transformedControlVectors.getLast(),
+						30);
 				
 				int duration = 3;
 				int period = 1;
@@ -108,22 +105,153 @@ public class AttackAction {
 								break;
 							}
 							
+							ex.setVelocity(new Vector(ex.getVelocity().getX() * 0.2, ex.getVelocity().getY() * 0.4, ex.getVelocity().getZ() * 0.2));
+							
+							Vector v = bezierVectors.get(step[0]);
+							Location l = o.clone().add(v);
+							
+							double offset = 0.1 + ((double) step[0] / (size*3));
+							Vector vOff = v.clone().normalize().multiply(offset);
+							Vector vOff2 = vOff.clone().multiply(1/2);
+							Location lOff = l.clone().subtract(vOff);
+							Location lOff2 = l.clone().subtract(vOff2);
+							
+							Cache.basicSwordBlueTransitionParticle.display(l);
+							Cache.testSoulFlameParticle.display(l);
+							Cache.basicSwordBlueTransitionParticle.display(lOff);
+							Cache.testSoulFlameParticle.display(lOff);
+							Cache.basicSwordBlueTransitionParticle.display(lOff2);
+							Cache.testSoulFlameParticle.display(lOff2);
+							
+							if (step[0] > size * (0.3)) {
+								Location p = l.clone().subtract(vOff.clone().multiply(1.2));
+								Cache.basicSwordBlueTransitionParticle.display(p);
+							}
+							if (step[0] > size * (0.6)) {
+								Location p = l.clone().subtract(vOff.clone().multiply(1.5));
+								Cache.basicSwordBlueTransitionParticle.display(p);
+							}
+							
+							HashSet<LivingEntity> curHit = HitboxUtil.line(ex, o, l, 0.4);
+							for (LivingEntity target : curHit)
+								if (!hit.contains(target))
+									target.damage(damage, ex);
+							hit.addAll(curHit);
+							step[0]++;
+						}
+					}
+				}.runTaskTimer(Sword.getInstance(), 0, period);
+			}
+		};
+	}
+	
+	public static Runnable heavy(Combatant executor, int stage) {
+		return new BukkitRunnable() {
+			@Override
+			public void run() {
+				Material item;
+				if (executor instanceof SwordPlayer) {
+					item = ((SwordPlayer) executor).getItemInUse();
+				}
+				else {
+					UtilityAction.noOp(executor).run();
+					return;
+				}
+				
+				if (item.name().endsWith("_SWORD")) {
+					heavySword(executor, stage, item).run();
+					return;
+				}
+				
+				UtilityAction.noOp(executor).run();
+			}
+		};
+	}
+	
+	public static Runnable heavySword(Combatant executor, int stage, Material swordType) {
+		double damage;
+		switch (swordType) {
+			case NETHERITE_SWORD -> damage = 20;
+			case DIAMOND_SWORD -> damage = 15;
+			case IRON_SWORD -> damage = 12;
+			case GOLDEN_SWORD -> damage = 10;
+			default -> damage = 7;
+		}
+		
+		return new BukkitRunnable() {
+			@Override
+			public void run() {
+				LivingEntity ex = executor.getAssociatedEntity();
+				ArrayList<Vector> basis = VectorUtil.getBasisWithoutPitch(ex.getEyeLocation());
+				
+				double rangeMultiplier;
+				List<Vector> controlVectors;
+				List<Double> bezierRatios;
+				List<Vector> bezierVectors;
+				
+				switch (stage) {
+					case 1 -> {
+						rangeMultiplier = 2;
+						controlVectors = new ArrayList<>(Cache.dragonKillerArc);
+						bezierRatios = new ArrayList<>(Cache.dragonKillerArcRatios);
+					}
+					case 2 -> {
+						rangeMultiplier = 3;
+						controlVectors = new ArrayList<>(Cache.dragonKillerArc);
+						bezierRatios = new ArrayList<>(Cache.dragonKillerArcRatios);
+					}
+					default -> {
+						rangeMultiplier = 1.5;
+						controlVectors = new ArrayList<>(Cache.dragonKillerArc);
+						bezierRatios = new ArrayList<>(Cache.dragonKillerArcRatios);
+					}
+				}
+				
+				List<Vector> transformedControlVectors = controlVectors.stream()
+						.map(v -> VectorUtil.transformWithNewBasis(basis, v).multiply(rangeMultiplier))
+						.toList();
+				
+				bezierVectors = BezierUtil.cubicBezierRational3D(transformedControlVectors.getFirst(),transformedControlVectors.get(1), transformedControlVectors.get(2), transformedControlVectors.getLast(),
+						bezierRatios.getFirst(), bezierRatios.get(1), bezierRatios.get(2), bezierRatios.getLast(), 30);
+				
+				int duration = 5;
+				int period = 2;
+				int[] step = {0};
+				int size = bezierVectors.size();
+				int perIteration = bezierVectors.size()/duration;
+				
+				HashSet<LivingEntity> hit = new HashSet<>();
+				Location o = ex.getEyeLocation();
+				Location b = ex.getLocation();
+				
+				new BukkitRunnable() {
+					@Override
+					public void run() {
+						for (int i = 0; i < perIteration; i++) {
+							if (step[0] >= size) {
+								cancel();
+								break;
+							}
+
 //							ex.setVelocity(new Vector(ex.getVelocity().getX() * 0.2, ex.getVelocity().getY() * 0.3, ex.getVelocity().getZ() * 0.2));
 							
 							Vector v = bezierVectors.get(step[0]);
-							Vector v2 = v.clone().multiply(1.1);
-							Location l = o.clone().add(v);
-							Location l2 = o.clone().add(v2);
-							Location l3 = l.clone().subtract(v.clone().normalize());
-
-							Cache.testObsidianTearParticle.display(l);
-							Cache.testSoulFlameParticle.display(l2);
-							Cache.testFlameParticle.display(l3);
+							Location l = b.clone().add(v).add(new Vector(0, 1.5, 0));
 							
-							if (step[0] > size/2) {
-								Vector v3 = v.clone().multiply(0.7);
-								Location l4 = o.clone().add(v3);
+							double offset = 0.1 + ((double) step[0] / 15);
+							Vector vOff = v.clone().normalize().multiply(offset);
+							Location lOff = l.clone().subtract(vOff);
+							
+							Cache.testObsidianTearParticle.display(l);
+							Cache.testObsidianTearParticle.display(lOff);
+							
+							if (step[0] > size/1.75) {
+								Vector v3 = v.clone().multiply(0.875);
+								Location l4 = b.clone().add(v3);
 								Cache.testSoulFlameParticle.display(l4);
+								
+								Location lOff2 = l.clone().subtract(vOff.clone().multiply(1.1));
+								Cache.testObsidianTearParticle.display(lOff2);
 							}
 							
 							HashSet<LivingEntity> curHit = HitboxUtil.line(ex, o, l, 0.4);

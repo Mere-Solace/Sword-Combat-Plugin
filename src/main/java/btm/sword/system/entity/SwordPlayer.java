@@ -41,17 +41,17 @@ public class SwordPlayer extends Combatant {
 		// the takeInput call in this if-statement is where the runnable associated with the node is run.
 		if (!inputExecutionTree.takeInput(input, itemUsed, this)) {
 			inputExecutionTree.reset();
-			itemLastUsed = itemUsed;
+			
 			associatedEntity.showTitle(Title.title(
 					Component.text(""),
-					Component.text("/*~*#*~*/", NamedTextColor.DARK_GRAY, TextDecoration.BOLD),
+					Component.text("-*~*#*~*-", NamedTextColor.DARK_GRAY, TextDecoration.BOLD),
 					Title.Times.times(
 							Duration.ofMillis(0),
 							Duration.ofMillis(1000),
 							Duration.ofMillis(100))
 			));
 		
-			return;
+			inputExecutionTree.takeInput(input, itemUsed, this);
 		}
 		
 		itemLastUsed = itemUsed;
@@ -118,10 +118,17 @@ public class SwordPlayer extends Combatant {
 						Combatant::cannotPerformAction),
 				true);
 		
-		set(List.of(InputType.LEFT, InputType.LEFT), null,
+		set(List.of(InputType.LEFT, InputType.LEFT),
+				new InputAction(
+						AttackAction.basic(this, 1),
+						executor -> executor.calcCooldown(200L, 1000L, StatType.FORM, 10),
+						Combatant::cannotPerformAction),
 				true);
 		
-		set(List.of(InputType.LEFT, InputType.LEFT, InputType.LEFT), null,
+		set(List.of(InputType.LEFT, InputType.LEFT, InputType.LEFT), new InputAction(
+						AttackAction.basic(this, 2),
+						executor -> executor.calcCooldown(200L, 1000L, StatType.FORM, 10),
+						Combatant::cannotPerformAction),
 				true);
 		
 		// skills
@@ -133,8 +140,8 @@ public class SwordPlayer extends Combatant {
 		
 		set(List.of(InputType.DROP, InputType.RIGHT, InputType.LEFT),
 				new InputAction(
-						AttackAction.basic(this, 1),
-						executor -> executor.calcCooldown(200L, 1000L, StatType.FORM, 10),
+						AttackAction.heavy(this, 1),
+						executor -> executor.calcCooldown(400L, 1000L, StatType.FORM, 10),
 						Combatant::cannotPerformAction),
 				true);
 	}

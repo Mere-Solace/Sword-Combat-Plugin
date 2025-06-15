@@ -32,7 +32,7 @@ public class PlayerListener implements Listener {
 			public void run() {
 				SwordEntityArbiter.register(event.getPlayer());
 				event.getPlayer().sendMessage("You've been reassigned to your SwordPlayer object!");
-				event.getPlayer().sendMessage("You: " + SwordEntityArbiter.get(event.getPlayer().getUniqueId()));
+				event.getPlayer().sendMessage("You: " + SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId()));
 			}
 		}.runTaskLater(Sword.getInstance(), 20);
 	}
@@ -42,6 +42,6 @@ public class PlayerListener implements Listener {
 		Sword.getInstance().getLogger().info("Respawn event runs");
 		SwordEntityArbiter.register(event.getPlayer());
 		event.getPlayer().sendMessage("You've been reassigned to your SwordPlayer object!");
-		event.getPlayer().sendMessage("You: " + SwordEntityArbiter.get(event.getPlayer().getUniqueId()));
+		event.getPlayer().sendMessage("You: " + SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId()));
 	}
 }

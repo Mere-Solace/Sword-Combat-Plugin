@@ -34,9 +34,9 @@ public class VectorUtil {
 		
 		Vector right = dir.getCrossProduct(up).normalize();
 		
-		Cache.testSoulFlameParticle.display(origin.clone().add(up.clone().multiply(1.5)));
-		Cache.testSoulFlameParticle.display(origin.clone().add(dir.clone().multiply(1.5)));
-		Cache.testSoulFlameParticle.display(origin.clone().add(right.clone().multiply(1.5)));
+//		Cache.testSoulFlameParticle.display(origin.clone().add(up.clone().multiply(1.5)));
+//		Cache.testSoulFlameParticle.display(origin.clone().add(dir.clone().multiply(1.5)));
+//		Cache.testSoulFlameParticle.display(origin.clone().add(right.clone().multiply(1.5)));
 		
 		ArrayList<Vector> basis = new ArrayList<>(3);
 		

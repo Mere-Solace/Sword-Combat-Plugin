@@ -6,18 +6,34 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 
 public class HitboxUtil {
 	public static HashSet<LivingEntity> lineKnownLength(LivingEntity executor, Location o, Vector e, double maxRange, double thickness) {
 		HashSet<LivingEntity> hit = new HashSet<>();
 		
-		for (double i = 0; i < maxRange; i += maxRange / thickness) {
+		for (double i = 0; i < maxRange; i += thickness) {
 			hit.addAll(o.clone().add(e.clone().multiply(i)).getNearbyLivingEntities(thickness));
 		}
 		hit.removeIf(Entity::isDead);
 		hit.remove(executor);
 		return hit;
+	}
+	
+	public static LivingEntity firstInLineKnownLength(LivingEntity executor, Location o, Vector e, double maxRange, double thickness) {
+		for (double i = 0; i < maxRange; i += thickness) {
+			List<LivingEntity> hits = new ArrayList<>(o.clone().add(e.clone().multiply(i)).getNearbyLivingEntities(thickness));
+
+			for (LivingEntity t : hits) {
+				if (!t.isDead() && !t.equals(executor)) {
+					return t;
+				}
+			}
+		}
+		
+		return null;
 	}
 	
 	public static HashSet<LivingEntity> line(LivingEntity executor, Location origin, Location end, double thickness) {
@@ -57,6 +73,33 @@ public class HitboxUtil {
 			return null;
 		
 		if (result.getHitEntity() instanceof LivingEntity target && !target.isDead())
+			return target;
+		
+		return null;
+	}
+	
+	// plus shaped, in to out (for now)
+	public static LivingEntity multipleRayTrace(LivingEntity executor, double maxRange, int numberExtraRays, double spacingWidth) {
+		int range = (int) Math.round(maxRange);
+		RayTraceResult result = executor.rayTraceEntities(range);
+		Location o = executor.getEyeLocation();
+		Vector e = o.getDirection();
+		List<Vector> basis = VectorUtil.getBasis(o , e);
+		Vector rightStep = basis.getFirst().normalize().multiply(spacingWidth);
+		Vector upStep = basis.get(1).normalize().multiply(spacingWidth);
+		
+		int i = 0;
+		while (result == null && i < numberExtraRays) {
+			result = executor.getWorld().rayTraceEntities(o.clone().add(rightStep.clone().multiply(i+1)) , e, range);
+			if (result == null)
+				result = executor.getWorld().rayTraceEntities(o.clone().add(rightStep.clone().multiply(-1*(i+1))) , e, range);
+			if (result == null)
+				result = executor.getWorld().rayTraceEntities(o.clone().add(upStep.clone().multiply(i+1)) , e, range);
+			if (result == null)
+				result = executor.getWorld().rayTraceEntities(o.clone().add(upStep.clone().multiply(-1*(i+1))) , e, range);
+		}
+		
+		if (result != null && result.getHitEntity() instanceof LivingEntity target && !target.isDead())
 			return target;
 		
 		return null;
