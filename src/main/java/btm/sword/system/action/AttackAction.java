@@ -233,8 +233,8 @@ public class AttackAction {
 				bezierVectors = BezierUtil.cubicBezierRational3D(transformedControlVectors.getFirst(),transformedControlVectors.get(1), transformedControlVectors.get(2), transformedControlVectors.getLast(),
 						bezierRatios.getFirst(), bezierRatios.get(1), bezierRatios.get(2), bezierRatios.getLast(), 40);
 				
-				int duration = 5;
-				int period = 2;
+				int duration = 4;
+				int period = 1;
 				int[] step = {0};
 				int size = bezierVectors.size();
 				int perIteration = bezierVectors.size()/duration;
@@ -254,7 +254,7 @@ public class AttackAction {
 
 							ex.setVelocity(new Vector(
 									ex.getVelocity().getX() * 0,
-									ex.getVelocity().getY() * 0.2,
+									ex.getVelocity().getY() * 0,
 									ex.getVelocity().getZ() * 0));
 							
 							Vector v = bezierVectors.get(step[0]).add(new Vector(0, 1.5, 0));
@@ -365,7 +365,7 @@ public class AttackAction {
 								return;
 							}
 							
-							if (step[0] < size * 0.3) {
+							if (step[0] < size * 0.1) {
 								Vector dashVelocity = right ? r.clone().add(new Vector(0, 0.2, 0)) : r.clone().multiply(-1).add(new Vector(0, 0.2, 0));
 								ex.setVelocity(dashVelocity);
 							}

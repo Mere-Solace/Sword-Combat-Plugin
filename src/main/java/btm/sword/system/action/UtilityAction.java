@@ -70,7 +70,7 @@ public class UtilityAction extends SwordAction {
 									cancel();
 								}
 								
-								ex.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 1, 6));
+								ex.setVelocity(new Vector(0,0,0));
 								
 								double holdDist = 2;
 								Vector direction = ex.getLocation().toVector().add(ex.getEyeLocation().getDirection().multiply(holdDist)).subtract(target.getLocation().toVector());

@@ -41,24 +41,16 @@ public class SwordPlayer extends Combatant {
 		
 		// the takeInput call in this if-statement is where the runnable associated with the node is run.
 		if (!inputExecutionTree.takeInput(input, itemUsed, this)) {
-			associatedEntity.showTitle(Title.title(
-					Component.text(""),
-					Component.text(inputExecutionTree + " #~", NamedTextColor.GRAY, TextDecoration.ITALIC),
-					Title.Times.times(
-							Duration.ofMillis(0),
-							Duration.ofMillis(1000),
-							Duration.ofMillis(100))
-			));
+			inputExecutionTree.reset();
 			
 			try {
-				Sound anvilBreak = Sound.sound(Key.key("block.anvil.land"), Sound.Source.PLAYER, 0.3f, 1f);
+				Sound anvilBreak = Sound.sound(Key.key("block.chain.break"), Sound.Source.PLAYER, 0.2f, 1f);
 				associatedEntity.playSound(anvilBreak, Sound.Emitter.self());
 			} catch (Exception e) {
 				Sword.getInstance().getLogger().info(e.getMessage());
 			}
-			itemLastUsed = itemUsed;
-			inputExecutionTree.reset();
-			return;
+			
+			inputExecutionTree.takeInput(input, itemUsed, this);
 		}
 		
 		itemLastUsed = itemUsed;
@@ -99,14 +91,14 @@ public class SwordPlayer extends Combatant {
 						MovementAction.dash(this, true),
 						executor -> executor.calcCooldown(200L, 1000L, StatType.CELERITY, 10),
 						Combatant::cannotPerformAction),
-				false);
+				false, false);
 		
 		set(List.of(InputType.SHIFT, InputType.DROP),
 				new InputAction(
 						MovementAction.dash(this, false),
 						executor -> executor.calcCooldown(200L, 1000L, StatType.CELERITY, 10),
 						Combatant::cannotPerformAction),
-				false);
+				false, false);
 		
 		// grab
 		set(List.of(InputType.SHIFT, InputType.RIGHT),
@@ -114,7 +106,7 @@ public class SwordPlayer extends Combatant {
 				UtilityAction.grab(this),
 						executor -> executor.calcCooldown(200L, 1000L, StatType.FORTITUDE, 10),
 						Combatant::cannotPerformAction),
-				false);
+				false, true);
 		
 			// Item dependent actions:
 		// basic attack sequence
@@ -123,52 +115,52 @@ public class SwordPlayer extends Combatant {
 						AttackAction.basic(this, 0),
 						executor -> executor.calcCooldown(200L, 1000L, StatType.FORM, 10),
 						Combatant::cannotPerformAction),
-				true);
+				true, true);
 		
 		set(List.of(InputType.LEFT, InputType.LEFT),
 				new InputAction(
 						AttackAction.basic(this, 1),
 						executor -> executor.calcCooldown(200L, 1000L, StatType.FORM, 10),
 						Combatant::cannotPerformAction),
-				true);
+				true, true);
 		
 		set(List.of(InputType.LEFT, InputType.LEFT, InputType.LEFT),
 				new InputAction(
 						AttackAction.basic(this, 2),
 						executor -> executor.calcCooldown(200L, 1000L, StatType.FORM, 10),
 						Combatant::cannotPerformAction),
-				true);
+				true, true);
 		
 		// side step attacks
 		set(List.of(InputType.SWAP, InputType.RIGHT),
 				new InputAction(AttackAction.sideStep(this, true),
 						executor -> executor.calcCooldown(300L, 600L, StatType.CELERITY, 10),
 						Combatant::cannotPerformAction),
-				true);
+				true, true);
 		
 		set(List.of(InputType.SWAP, InputType.LEFT),
 				new InputAction(AttackAction.sideStep(this, false),
 						executor -> executor.calcCooldown(300L, 600L, StatType.CELERITY, 10),
 						Combatant::cannotPerformAction),
-				true);
+				true, true);
 		
 		// skills
 		set(List.of(InputType.DROP, InputType.RIGHT, InputType.SHIFT), null,
-				true);
+				true, true);
 		
 		set(List.of(InputType.DROP, InputType.RIGHT, InputType.DROP), null,
-				true);
+				true, true);
 		
 		set(List.of(InputType.DROP, InputType.RIGHT, InputType.LEFT),
 				new InputAction(
 						AttackAction.heavy(this, 1),
 						executor -> executor.calcCooldown(400L, 1000L, StatType.FORM, 10),
 						Combatant::cannotPerformAction),
-				true);
+				true, true);
 	}
 	
-	public void set(List<InputType> sequence, InputAction action, boolean sameItemRequired) {
-		inputExecutionTree.add(sequence, action, sameItemRequired);
+	public void set(List<InputType> sequence, InputAction action, boolean sameItemRequired, boolean exclusive) {
+		inputExecutionTree.add(sequence, action, sameItemRequired, exclusive);
 	}
 	
 	public long calcCooldown(long min, long base, StatType stat, double multiplier) {

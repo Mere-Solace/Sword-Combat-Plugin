@@ -52,8 +52,12 @@ public class InputExecutionTree {
 		}
 		
 		if (inActionState()) {
-			executor.setAbilityTask(performAction());
+			if (currentNode.exclusive)
+				executor.setAbilityTask(performAction());
+			else
+				performAction();
 		}
+		
 		currentNode.setTimeLastExecuted(System.currentTimeMillis());
 		
 		sequenceToDisplay.append(inputToString(input));
@@ -76,12 +80,13 @@ public class InputExecutionTree {
 		sequenceToDisplay = new StringBuilder();
 	}
 	
-	public void add(List<InputType> inputSequence, InputAction action, boolean sameItemRequired) {
+	public void add(List<InputType> inputSequence, InputAction action, boolean sameItemRequired, boolean exclusive) {
 		InputNode dummy = root;
 		for (InputType input : inputSequence) {
 			if (dummy.noChild(input)) {
 				dummy.addChild(input, null);
 				dummy.setSameItemRequired(sameItemRequired);
+				dummy.setExclusive(exclusive);
 			}
 			dummy = dummy.getChild(input);
 		}
@@ -104,6 +109,7 @@ public class InputExecutionTree {
 		private final HashMap<InputType, InputNode> children = new HashMap<>();
 		private InputAction action;
 		private boolean sameItemRequired = false;
+		private boolean exclusive = false;
 		
 		private long timeLastExecuted;
 		
@@ -133,6 +139,10 @@ public class InputExecutionTree {
 		
 		public void setSameItemRequired(boolean sameItemRequired) {
 			this.sameItemRequired = sameItemRequired;
+		}
+		
+		public void setExclusive(boolean exclusive) {
+			this.exclusive = exclusive;
 		}
 		
 		public long getTimeLastExecuted() {
