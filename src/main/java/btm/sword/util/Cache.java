@@ -12,6 +12,9 @@ public class Cache {
 	public static final List<Vector> basicSword2;
 	public static final List<Vector> basicSword3;
 	
+	public static final List<Vector> sideStepSwordR;
+	public static final List<Vector> sideStepSwordL;
+	
 	public static final List<Vector> dragonKillerArc;
 	public static final List<Double> dragonKillerArcRatios;
 	
@@ -43,11 +46,17 @@ public class Cache {
 				new Vector(-1.1,-2.2,-0.9),
 				new Vector(1.74,1.96,4.3),
 				new Vector(-1.1,-1.77,5)));
-//		forwardSwordSlash1 = new ArrayList<>(List.of(
-//				new Vector(-5.487, 0.209, -0.177),
-//				new Vector(3.4515, -4.1275, -8.2482),
-//				new Vector(-4.5312, 0.6692,12.39),
-//				new Vector(8.7792, -1.2778, 4.956)));
+
+		sideStepSwordR = new ArrayList<>(List.of(
+				new Vector(-2.17,1.03,2),
+				new Vector(3.47,1.03,-1.9),
+				new Vector(-5,-1.73,1.7),
+				new Vector(2,-0.93,7)));
+		sideStepSwordL = new ArrayList<>(List.of(
+				new Vector(2.17,1.03,2),
+				new Vector(-3.47,1.03,-1.9),
+				new Vector(5,-1.73,1.7),
+				new Vector(-2,-0.93,7)));
 		
 		dragonKillerArc = new ArrayList<>(List.of(
 				new Vector(0.26, 2.23, -2.5),

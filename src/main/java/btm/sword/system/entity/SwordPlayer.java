@@ -1,5 +1,6 @@
 package btm.sword.system.entity;
 
+import btm.sword.Sword;
 import btm.sword.system.action.AttackAction;
 import btm.sword.system.input.InputAction;
 import btm.sword.system.playerdata.StatType;
@@ -40,18 +41,24 @@ public class SwordPlayer extends Combatant {
 		
 		// the takeInput call in this if-statement is where the runnable associated with the node is run.
 		if (!inputExecutionTree.takeInput(input, itemUsed, this)) {
-			inputExecutionTree.reset();
-			
 			associatedEntity.showTitle(Title.title(
 					Component.text(""),
-					Component.text("-*~*#*~*-", NamedTextColor.DARK_GRAY, TextDecoration.BOLD),
+					Component.text(inputExecutionTree + " #~", NamedTextColor.GRAY, TextDecoration.ITALIC),
 					Title.Times.times(
 							Duration.ofMillis(0),
 							Duration.ofMillis(1000),
 							Duration.ofMillis(100))
 			));
-		
-			inputExecutionTree.takeInput(input, itemUsed, this);
+			
+			try {
+				Sound anvilBreak = Sound.sound(Key.key("block.anvil.land"), Sound.Source.PLAYER, 0.3f, 1f);
+				associatedEntity.playSound(anvilBreak, Sound.Emitter.self());
+			} catch (Exception e) {
+				Sword.getInstance().getLogger().info(e.getMessage());
+			}
+			itemLastUsed = itemUsed;
+			inputExecutionTree.reset();
+			return;
 		}
 		
 		itemLastUsed = itemUsed;
@@ -125,9 +132,23 @@ public class SwordPlayer extends Combatant {
 						Combatant::cannotPerformAction),
 				true);
 		
-		set(List.of(InputType.LEFT, InputType.LEFT, InputType.LEFT), new InputAction(
+		set(List.of(InputType.LEFT, InputType.LEFT, InputType.LEFT),
+				new InputAction(
 						AttackAction.basic(this, 2),
 						executor -> executor.calcCooldown(200L, 1000L, StatType.FORM, 10),
+						Combatant::cannotPerformAction),
+				true);
+		
+		// side step attacks
+		set(List.of(InputType.SWAP, InputType.RIGHT),
+				new InputAction(AttackAction.sideStep(this, true),
+						executor -> executor.calcCooldown(300L, 600L, StatType.CELERITY, 10),
+						Combatant::cannotPerformAction),
+				true);
+		
+		set(List.of(InputType.SWAP, InputType.LEFT),
+				new InputAction(AttackAction.sideStep(this, false),
+						executor -> executor.calcCooldown(300L, 600L, StatType.CELERITY, 10),
 						Combatant::cannotPerformAction),
 				true);
 		

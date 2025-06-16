@@ -28,6 +28,7 @@ public class AbilityInputListener implements Listener {
 		Material itemType = player.getInventory().getItemInMainHand().getType();
 
 		swordPlayer.takeInput(InputType.LEFT, itemType);
+		player.sendMessage("Taking Left Input from a Normal Attack");
 		event.setCancelled(true);
 	}
 	
@@ -43,9 +44,11 @@ public class AbilityInputListener implements Listener {
 		
 		if ((action == Action.LEFT_CLICK_AIR || action == Action.LEFT_CLICK_BLOCK)) {
 			swordPlayer.takeInput(InputType.LEFT, mainItemType);
+			player.sendMessage("Taking Left Input from an interact event");
 		}
 		else if (action == Action.RIGHT_CLICK_AIR || action == Action.RIGHT_CLICK_BLOCK) {
 			swordPlayer.takeInput(InputType.RIGHT, mainItemType);
+			player.sendMessage("Taking Right Input from an interact event");
 		}
 		else if (!offItemType.isAir() && !mainItemType.isAir()) {
 			player.sendMessage("Doing some other interact action rn while holding: " + offItemType + " in off hand, and " + mainItemType + " in main.");
@@ -67,8 +70,11 @@ public class AbilityInputListener implements Listener {
 			
 			Bukkit.getScheduler().runTaskLater(Sword.getInstance(), MovementAction.toss(swordPlayer, swordPlayer.getGrabbedEntity()), 2);
 		}
-		else
+		else {
+			swordPlayer.getAssociatedEntity().sendMessage("Taking Left Input from an interact event");
 			swordPlayer.takeInput(InputType.DROP, itemType);
+		}
+		
 		
 		new BukkitRunnable() {
 			@Override
@@ -99,5 +105,7 @@ public class AbilityInputListener implements Listener {
 		Material itemType = player.getInventory().getItemInMainHand().getType();
 		
 		swordPlayer.takeInput(InputType.SWAP, itemType);
+		
+		event.setCancelled(true);
 	}
 }
