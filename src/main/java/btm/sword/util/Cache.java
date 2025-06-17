@@ -24,6 +24,7 @@ public class Cache {
 	public static final ParticleWrapper testLavaDripParticle;
 	
 	public static final ParticleWrapper basicSwordBlueTransitionParticle;
+	public static final ParticleWrapper basicSwordWhiteTransitionParticle;
 	public static final ParticleWrapper basicSwordHit1;
 	public static final ParticleWrapper basicSwordHit2;
 	public static final ParticleWrapper basicSwordEnterGround;
@@ -74,7 +75,9 @@ public class Cache {
 		testLavaDripParticle = new ParticleWrapper(Particle.FALLING_LAVA, 2, 0.025, 0.025, 0.025, 0);
 		
 		basicSwordBlueTransitionParticle = new ParticleWrapper(Particle.DUST_COLOR_TRANSITION, 5, 0.025, 0.025, 0.025, 1,
-				new Particle.DustTransition(Color.fromRGB(14, 107, 207), Color.fromRGB(162, 226, 255), 0.85f));
+				new Particle.DustTransition(Color.fromRGB(14, 107, 207), Color.fromRGB(162, 226, 255), 0.9f));
+		basicSwordWhiteTransitionParticle = new ParticleWrapper(Particle.DUST_COLOR_TRANSITION, 5, 0.025, 0.025, 0.025, 1,
+				new Particle.DustTransition(Color.fromRGB(235, 243, 255), Color.fromRGB(120, 121, 255), 0.85f));
 		basicSwordHit1 = new ParticleWrapper(Particle.SOUL_FIRE_FLAME, 30, 0.5, 0.5, 0.5, 0.1);
 		basicSwordHit2 = new ParticleWrapper(Particle.ENCHANTED_HIT, 20, 0.5, 0.5, 0.5, 0.3);
 		basicSwordEnterGround = new ParticleWrapper(Particle.CRIT, 30, 0.1, 0.1, 0.1, 0.5);

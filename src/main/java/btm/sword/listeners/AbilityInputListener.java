@@ -44,7 +44,8 @@ public class AbilityInputListener implements Listener {
 			if (swordPlayer.atRoot()) {
 				swordPlayer.performBasicAttack();
 			}
-			swordPlayer.act(InputType.LEFT, mainItemType);
+			else
+				swordPlayer.act(InputType.LEFT, mainItemType);
 		}
 		else if (action == Action.RIGHT_CLICK_AIR || action == Action.RIGHT_CLICK_BLOCK) {
 			swordPlayer.act(InputType.RIGHT, mainItemType);
@@ -59,11 +60,9 @@ public class AbilityInputListener implements Listener {
 		Material itemType = event.getItemDrop().getItemStack().getType();
 		swordPlayer.setPerformedDropAction(true);
 		
-		if (swordPlayer.isGrabbing())
-			swordPlayer.throwGrabbedEntity();
-		else
-			swordPlayer.act(InputType.DROP, itemType);
+		if (swordPlayer.isGrabbing()) swordPlayer.setGrabbing(false);
 		
+		else swordPlayer.act(InputType.DROP, itemType);
 		
 		new BukkitRunnable() {
 			@Override

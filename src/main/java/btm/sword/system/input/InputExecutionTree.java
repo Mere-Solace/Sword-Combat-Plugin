@@ -34,6 +34,8 @@ public class InputExecutionTree {
 	}
 	
 	public void takeInput(InputType input, Material itemUsed, SwordPlayer executor) {
+		if (timeoutTimer != null) timeoutTimer.cancel();
+		
 		if (currentNode == null) {
 			executor.entity().sendMessage("Current node was null for some reason");
 			return;
@@ -43,7 +45,7 @@ public class InputExecutionTree {
 		if (next == null) {
 			executor.entity().sendMessage("No input sequence that way");
 			if (currentNode != root) {
-				sequenceToDisplay.append("~#*");
+				sequenceToDisplay.append("~");
 				executor.displayInputSequence();
 				reset();
 				SoundUtils.playSound(executor.entity(), SoundType.BLOCK_GRINDSTONE_USE, 0.6f, 1f);
@@ -136,7 +138,7 @@ public class InputExecutionTree {
 	}
 	
 	public void initializeInputTree(SwordPlayer swordPlayer) {
-		// Item independent actions:
+			// Item independent actions:
 		// dodge forward, dodge backward
 		add(List.of(InputType.DROP, InputType.DROP),
 				new InputAction(
@@ -160,29 +162,7 @@ public class InputExecutionTree {
 						Combatant::cannotPerformAction,
 						true), false);
 		
-		// Item dependent actions:
-		// basic attack sequence
-		add(List.of(InputType.LEFT),
-				new InputAction(
-						AttackAction.basic(swordPlayer, 0),
-						executor -> executor.calcCooldown(200L, 1000L, StatType.FORM, 10),
-						Combatant::cannotPerformAction,
-						false), true);
-		
-		add(List.of(InputType.LEFT, InputType.LEFT),
-				new InputAction(
-						AttackAction.basic(swordPlayer, 1),
-						executor -> executor.calcCooldown(200L, 1000L, StatType.FORM, 10),
-						Combatant::cannotPerformAction,
-						false), true);
-		
-		add(List.of(InputType.LEFT, InputType.LEFT, InputType.LEFT),
-				new InputAction(
-						AttackAction.basic(swordPlayer, 2),
-						executor -> executor.calcCooldown(200L, 1000L, StatType.FORM, 10),
-						Combatant::cannotPerformAction,
-						false), true);
-		
+			// Item dependent actions:
 		// side step attacks
 		add(List.of(InputType.SWAP, InputType.RIGHT),
 				new InputAction(AttackAction.sideStep(swordPlayer, true),

@@ -96,9 +96,11 @@ public class SwordPlayer extends Combatant {
 	}
 	
 	public void displayCooldown(long timeLeft) {
+		double timeToDisplay = timeLeft > 1000L ? (double)timeLeft/1000 : timeLeft;
+		String unit = timeLeft > 1000L ? "s" : "ms";
 		associatedEntity.showTitle(Title.title(
 				Component.text(""),
-				Component.text("on cooldown: " + (double) timeLeft*(1/1000), NamedTextColor.GRAY, TextDecoration.ITALIC),
+				Component.text("on cooldown: " + timeToDisplay + " " + unit, NamedTextColor.GRAY, TextDecoration.ITALIC),
 				Title.Times.times(
 						Duration.ofMillis(0),
 						Duration.ofMillis(inputTimeoutMillis),

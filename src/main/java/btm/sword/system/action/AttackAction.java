@@ -128,13 +128,17 @@ public class AttackAction extends SwordAction {
 							Cache.basicSwordBlueTransitionParticle.display(lOff2);
 							Cache.testSoulFlameParticle.display(lOff2);
 							
-							if (step[0] > size * (0.3)) {
-								Location p = l.clone().subtract(vOff.clone().multiply(1.2));
-								Cache.basicSwordBlueTransitionParticle.display(p);
+							if (step[0] > size * (0.2)) {
+								Location p = l.clone().subtract(vOff.clone().multiply(0.5 + ((double) size /16000)*step[0]*step[0]));
+								Cache.basicSwordWhiteTransitionParticle.display(p);
+							}
+							if (step[0] > size * (0.4)) {
+								Location p = l.clone().subtract(vOff.clone().multiply(0.75 + ((double) size /14500)*step[0]*step[0]));
+								Cache.basicSwordWhiteTransitionParticle.display(p);
 							}
 							if (step[0] > size * (0.6)) {
-								Location p = l.clone().subtract(vOff.clone().multiply(1.5));
-								Cache.basicSwordBlueTransitionParticle.display(p);
+								Location p = l.clone().subtract(vOff.clone().multiply(0.75 + ((double) size /10000)*step[0]*step[0]));
+								Cache.basicSwordWhiteTransitionParticle.display(p);
 							}
 							
 							HashSet<LivingEntity> curHit = HitboxUtil.line(ex, o, l, 0.4);
@@ -249,6 +253,7 @@ public class AttackAction extends SwordAction {
 					public void run() {
 						for (int i = 0; i < perIteration; i++) {
 							if (step[0] >= size) {
+								endTask(executor);
 								cancel();
 								break;
 							}
@@ -367,7 +372,7 @@ public class AttackAction extends SwordAction {
 								return;
 							}
 							
-							if (step[0] < size * 0.1) {
+							if (step[0] < size * 0.15) {
 								Vector dashVelocity = right ? r.clone().add(new Vector(0, 0.2, 0)) : r.clone().multiply(-1).add(new Vector(0, 0.2, 0));
 								ex.setVelocity(dashVelocity);
 							}
@@ -388,13 +393,17 @@ public class AttackAction extends SwordAction {
 							Cache.basicSwordBlueTransitionParticle.display(lOff2);
 							Cache.testSoulFlameParticle.display(lOff2);
 							
-							if (step[0] > size * (0.3)) {
-								Location p = l.clone().subtract(vOff.clone().multiply(1.2));
-								Cache.basicSwordBlueTransitionParticle.display(p);
+							if (step[0] > size * (0.2)) {
+								Location p = l.clone().subtract(vOff.clone().multiply(0.5 + ((double) size /24000)*step[0]*step[0]));
+								Cache.basicSwordWhiteTransitionParticle.display(p);
+							}
+							if (step[0] > size * (0.4)) {
+								Location p = l.clone().subtract(vOff.clone().multiply(0.75 + ((double) size /19000)*step[0]*step[0]));
+								Cache.basicSwordWhiteTransitionParticle.display(p);
 							}
 							if (step[0] > size * (0.6)) {
-								Location p = l.clone().subtract(vOff.clone().multiply(1.5));
-								Cache.basicSwordBlueTransitionParticle.display(p);
+								Location p = l.clone().subtract(vOff.clone().multiply(0.8 + ((double) size /15000)*step[0]*step[0]));
+								Cache.basicSwordWhiteTransitionParticle.display(p);
 							}
 							
 							HashSet<LivingEntity> curHit = HitboxUtil.line(ex, o, l, 0.4);

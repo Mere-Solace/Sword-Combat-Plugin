@@ -43,8 +43,10 @@ public class InputAction {
 		}
 		setTimeLastExecuted();
 		BukkitTask abilityTask = s.runTask(plugin, runnable);
-		if (dominantAbility)
+		if (dominantAbility) {
 			executor.setAbilityTask(abilityTask);
+			executor.entity().sendMessage("Setting ability task as: " + abilityTask);
+		}
 		return true;
 	}
 	
