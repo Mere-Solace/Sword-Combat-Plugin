@@ -29,14 +29,12 @@ public class SwordPlayer extends Combatant {
 		inputExecutionTree.initializeInputTree(this);
 	}
 	
-	public void takeInput(InputType input, Material itemUsed) {
+	public void act(InputType input, Material itemUsed) {
 		itemInUse = itemUsed;
-		// the takeInput call in this if-statement is where the runnable associated with the node is run.
-		inputExecutionTree.takeInput(input, itemUsed, this);
 		
-		itemLastUsed = itemUsed;
+		giveInput(input, itemUsed);
 		
-		if (inputExecutionTree.noChildren()) inputExecutionTree.reset();
+		itemLastUsed = itemInUse;
 	}
 	
 	public Material getItemInUse() {
@@ -53,6 +51,10 @@ public class SwordPlayer extends Combatant {
 	
 	public void setPerformedDropAction(boolean performedDropAction) {
 		this.performedDropAction = performedDropAction;
+	}
+	
+	public void giveInput(InputType input, Material itemUsed) {
+		inputExecutionTree.takeInput(input, itemUsed, this);
 	}
 	
 	public boolean atRoot() {
@@ -73,10 +75,20 @@ public class SwordPlayer extends Combatant {
 						Duration.ofMillis(100))));
 	}
 	
+	public void displayMistake() {
+		associatedEntity.showTitle(Title.title(
+				Component.text(""),
+				Component.text("~*#*~", NamedTextColor.DARK_GRAY, TextDecoration.ITALIC),
+				Title.Times.times(
+						Duration.ofMillis(0),
+						Duration.ofMillis(inputTimeoutMillis),
+						Duration.ofMillis(100))));
+	}
+	
 	public void displayDisablingEffect() {
 		associatedEntity.showTitle(Title.title(
 				Component.text(""),
-				Component.text("hah ur disabled", NamedTextColor.DARK_GRAY, TextDecoration.ITALIC),
+				Component.text("ur disabled", NamedTextColor.DARK_GRAY, TextDecoration.ITALIC),
 				Title.Times.times(
 						Duration.ofMillis(0),
 						Duration.ofMillis(inputTimeoutMillis),

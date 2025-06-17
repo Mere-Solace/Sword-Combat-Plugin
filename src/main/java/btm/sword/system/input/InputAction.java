@@ -3,6 +3,7 @@ package btm.sword.system.input;
 import btm.sword.system.entity.SwordPlayer;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitScheduler;
+import org.bukkit.scheduler.BukkitTask;
 
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -10,48 +11,49 @@ import java.util.function.Predicate;
 public class InputAction {
 	private final Runnable runnable;
 	private final Function<SwordPlayer, Long> cooldownCalculation; // this function should return time in milliseconds
-	private final Predicate<SwordPlayer> usable;
+	private final Predicate<SwordPlayer> cannotPerform;
+	private final boolean dominantAbility;
 	
-	private final boolean sameItemRequired;
 	private long timeLastExecuted;
 	
 	public InputAction(Runnable runnable,
 	                   Function<SwordPlayer, Long> cooldownCalculation,
-	                   Predicate<SwordPlayer> usable,
-	                   boolean sameItemRequired) {
+	                   Predicate<SwordPlayer> cannotPerform,
+	                   boolean dominantAbility) {
 		this.runnable = runnable;
 		this.cooldownCalculation = cooldownCalculation;
-		this.usable = usable;
-		this.sameItemRequired = sameItemRequired;
+		this.cannotPerform = cannotPerform;
+		this.dominantAbility = dominantAbility;
 	}
 	
-	public void execute(SwordPlayer executor, BukkitScheduler s, Plugin plugin) {
-		long cur = System.currentTimeMillis();
-		long time = cur - getTimeLastExecuted();
+	public boolean execute(SwordPlayer executor, BukkitScheduler s, Plugin plugin) {
+		long currentTime = System.currentTimeMillis();
+		long deltaTime = currentTime - getTimeLastExecuted();
 		long cooldown = calcCooldown(executor);
-		if (!isUsable(executor)) {
+		
+		executor.cannotPerformAction();
+		
+		if (cannotPerform(executor)) {
 			executor.displayDisablingEffect();
+			return false;
 		}
-		else if (time <= cooldown) {
-			executor.displayCooldown(Math.max(0, cooldown - (cur - getTimeLastExecuted())));
+		if (deltaTime <= cooldown) {
+			executor.displayCooldown(Math.max(0, cooldown - (currentTime - getTimeLastExecuted())));
+			return false;
 		}
-		else {
-			executor.setAbilityTask(s.runTask(plugin, runnable));
-			setTimeLastExecuted();
-			executor.displayInputSequence();
-		}
+		setTimeLastExecuted();
+		BukkitTask abilityTask = s.runTask(plugin, runnable);
+		if (dominantAbility)
+			executor.setAbilityTask(abilityTask);
+		return true;
 	}
 	
 	public long calcCooldown(SwordPlayer executor) {
 		return cooldownCalculation != null ? cooldownCalculation.apply(executor) : 0;
 	}
 	
-	public boolean isUsable(SwordPlayer executor) {
-		return usable == null || usable.test(executor);
-	}
-	
-	public boolean isSameItemRequired() {
-		return sameItemRequired;
+	public boolean cannotPerform(SwordPlayer executor) {
+		return cannotPerform == null || cannotPerform.test(executor);
 	}
 	
 	public long getTimeLastExecuted() {

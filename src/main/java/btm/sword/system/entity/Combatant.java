@@ -52,13 +52,26 @@ public abstract class Combatant extends SwordEntity {
 		this.grabbedEntity = grabbedEntity;
 	}
 	
+	// if the player is grabbing, is being grabbed, or is currently casting an ability,
+	// return true, that they CANNOT perform an action
 	public boolean cannotPerformAction() {
-		return !isGrabbing && !isGrabbed();
+		boolean cannotPerform = false;
+		if (isGrabbing) {
+			entity().sendMessage("You're grabbing sum1 rn lad");
+			cannotPerform = true;
+		}
+		if (isGrabbed()) {
+			entity().sendMessage("You're being pulled off bro!");
+			cannotPerform = true;
+		}
+		if (abilityTask != null) {
+			entity().sendMessage("You're already casting something rn: " + abilityTask.toString());
+			cannotPerform = true;
+		}
+		return cannotPerform;
 	}
 	// for every runnable, must reset task to null when finished.
-	public boolean cannotPerformExclusiveAction() {
-		return cannotPerformAction() && abilityTask != null;
-	}
+
 	
 	public void performBasicAttack() {
 	
@@ -67,6 +80,6 @@ public abstract class Combatant extends SwordEntity {
 	public void throwGrabbedEntity() {
 		abilityTask.cancel();
 		isGrabbing = false;
-		Bukkit.getScheduler().runTaskLater(Sword.getInstance(), MovementAction.toss(this, grabbedEntity), 2);
+		Bukkit.getScheduler().runTaskLater(Sword.getInstance(), MovementAction.toss(this, grabbedEntity), 1);
 	}
 }

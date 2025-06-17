@@ -17,7 +17,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 
-public class AttackAction {
+public class AttackAction extends SwordAction {
 	
 	public static BukkitRunnable basic(Combatant executor, int stage) {
 		return new BukkitRunnable() {
@@ -103,6 +103,7 @@ public class AttackAction {
 						for (int i = 0; i < perIteration; i++) {
 							if (step[0] >= size) {
 								cancel();
+								endTask(executor);
 								break;
 							}
 							
@@ -362,6 +363,7 @@ public class AttackAction {
 						for (int i = 0; i < perIteration; i++) {
 							if (step[0] >= size) {
 								cancel();
+								endTask(executor);
 								return;
 							}
 							

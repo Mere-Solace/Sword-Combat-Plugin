@@ -30,42 +30,61 @@ public class InputExecutionTree {
 	private final long timeoutTicks;
 	
 	public InputExecutionTree(long timeoutMillis) {
-		this.timeoutTicks = (long) (timeoutMillis * (0.02));
+		this.timeoutTicks = (long) (timeoutMillis * (0.02)); // 1/50 (or 0.02) is the conversion from milliseconds to ticks
 	}
 	
 	public void takeInput(InputType input, Material itemUsed, SwordPlayer executor) {
-		if (currentNode == null || currentNode.noChild(input)) {
+		if (currentNode == null) {
+			executor.entity().sendMessage("Current node was null for some reason");
+			return;
+		}
+		InputNode next = currentNode.getChild(input);
+		
+		if (next == null) {
+			executor.entity().sendMessage("No input sequence that way");
 			if (currentNode != root) {
+				sequenceToDisplay.append("~#*");
+				executor.displayInputSequence();
 				reset();
-				SoundUtils.playSound(executor.entity(), SoundType.BLOCK_GRINDSTONE_USE, 0.5f, 1f);
+				SoundUtils.playSound(executor.entity(), SoundType.BLOCK_GRINDSTONE_USE, 0.6f, 1f);
+				executor.entity().sendMessage("  Resetting the tree cuz you messed up an input sequence");
 			}
-			
-			takeInput(input, itemUsed, executor);
 			return;
 		}
 		
-		if (timeoutTimer != null) timeoutTimer.cancel();
-		
-		InputNode next = currentNode.getChild(input);
-		InputAction action = next.getAction();
-		
-		if (action.isSameItemRequired() && itemUsed != executor.getItemLastUsed()) reset();
-		
 		currentNode = next;
-		
-		if (inActionState()) action.execute(executor, s, plugin);
-		
 		sequenceToDisplay.append(inputToString(input));
 		
-		if (!noChildren()) {
+		if (itemUsed != executor.getItemLastUsed() && currentNode.isSameItemRequired()) {
+			executor.entity().sendMessage("Resetting cuz you changed items in the middle of a sequence that requires the same item");
+			executor.displayMistake();
+			reset();
+			return;
+		}
+		
+		boolean noChildren = noChildren();
+		
+		if (!noChildren) {
 			sequenceToDisplay.append(" + ");
-			
 			timeoutTimer = new BukkitRunnable() {
 				@Override
 				public void run() {
 					reset();
 				}
 			}.runTaskLater(plugin, timeoutTicks);
+		}
+		
+		if (inActionState()) {
+			if (!currentNode.action.execute(executor, s, plugin)) {
+				reset();
+				return;
+			}
+		}
+		
+		executor.displayInputSequence();
+		
+		if (noChildren) {
+			reset();
 		}
 	}
 	
@@ -78,7 +97,7 @@ public class InputExecutionTree {
 		return currentNode.equals(root);
 	}
 	
-	public void add(List<InputType> inputSequence, InputAction action) {
+	public void add(List<InputType> inputSequence, InputAction action, boolean sameItemRequired) {
 		InputNode dummy = root;
 		for (InputType input : inputSequence) {
 			if (dummy.noChild(input)) {
@@ -87,6 +106,7 @@ public class InputExecutionTree {
 			dummy = dummy.getChild(input);
 		}
 		dummy.setAction(action);
+		dummy.setSameItemRequired(sameItemRequired);
 	}
 	
 	public boolean noChildren() {
@@ -122,20 +142,23 @@ public class InputExecutionTree {
 				new InputAction(
 						MovementAction.dash(swordPlayer, true),
 						executor -> executor.calcCooldown(200L, 1000L, StatType.CELERITY, 10),
-						Combatant::cannotPerformAction, false));
+						Combatant::cannotPerformAction,
+						false), false);
 		
 		add(List.of(InputType.SHIFT, InputType.DROP),
 				new InputAction(
 						MovementAction.dash(swordPlayer, false),
 						executor -> executor.calcCooldown(200L, 1000L, StatType.CELERITY, 10),
-						Combatant::cannotPerformAction, false));
+						Combatant::cannotPerformAction,
+						false), false);
 		
 		// grab
 		add(List.of(InputType.SHIFT, InputType.RIGHT),
 				new InputAction(
 						UtilityAction.grab(swordPlayer),
 						executor -> executor.calcCooldown(200L, 1000L, StatType.FORTITUDE, 10),
-						Combatant::cannotPerformAction, false));
+						Combatant::cannotPerformAction,
+						true), false);
 		
 		// Item dependent actions:
 		// basic attack sequence
@@ -143,46 +166,53 @@ public class InputExecutionTree {
 				new InputAction(
 						AttackAction.basic(swordPlayer, 0),
 						executor -> executor.calcCooldown(200L, 1000L, StatType.FORM, 10),
-						Combatant::cannotPerformAction, true));
+						Combatant::cannotPerformAction,
+						false), true);
 		
 		add(List.of(InputType.LEFT, InputType.LEFT),
 				new InputAction(
 						AttackAction.basic(swordPlayer, 1),
 						executor -> executor.calcCooldown(200L, 1000L, StatType.FORM, 10),
-						Combatant::cannotPerformAction, true));
+						Combatant::cannotPerformAction,
+						false), true);
 		
 		add(List.of(InputType.LEFT, InputType.LEFT, InputType.LEFT),
 				new InputAction(
 						AttackAction.basic(swordPlayer, 2),
 						executor -> executor.calcCooldown(200L, 1000L, StatType.FORM, 10),
-						Combatant::cannotPerformAction, true));
+						Combatant::cannotPerformAction,
+						false), true);
 		
 		// side step attacks
 		add(List.of(InputType.SWAP, InputType.RIGHT),
 				new InputAction(AttackAction.sideStep(swordPlayer, true),
 						executor -> executor.calcCooldown(300L, 600L, StatType.CELERITY, 10),
-						Combatant::cannotPerformAction, true));
+						Combatant::cannotPerformAction,
+						true), true);
 		
 		add(List.of(InputType.SWAP, InputType.LEFT),
 				new InputAction(AttackAction.sideStep(swordPlayer, false),
 						executor -> executor.calcCooldown(300L, 600L, StatType.CELERITY, 10),
-						Combatant::cannotPerformAction, true));
+						Combatant::cannotPerformAction,
+						true), true);
 		
 		// skills
-		add(List.of(InputType.DROP, InputType.RIGHT, InputType.SHIFT), null);
+		add(List.of(InputType.DROP, InputType.RIGHT, InputType.SHIFT), null, true);
 		
-		add(List.of(InputType.DROP, InputType.RIGHT, InputType.DROP), null);
+		add(List.of(InputType.DROP, InputType.RIGHT, InputType.DROP), null, true);
 		
 		add(List.of(InputType.DROP, InputType.RIGHT, InputType.LEFT),
 				new InputAction(
 						AttackAction.heavy(swordPlayer, 1),
 						executor -> executor.calcCooldown(400L, 1000L, StatType.FORM, 10),
-						Combatant::cannotPerformAction, true));
+						Combatant::cannotPerformAction,
+						true), true);
 	}
 	
 	private static class InputNode {
 		private InputAction action;
 		private final HashMap<InputType, InputNode> children = new HashMap<>();
+		private boolean sameItemRequired;
 		
 		public InputNode(InputAction action) {
 			this.action = action;
@@ -206,6 +236,14 @@ public class InputExecutionTree {
 		
 		public void setAction(InputAction action) {
 			this.action = action;
+		}
+		
+		public void setSameItemRequired(boolean sameItemRequired) {
+			this.sameItemRequired = sameItemRequired;
+		}
+		
+		public boolean isSameItemRequired() {
+			return sameItemRequired;
 		}
 	}
 }

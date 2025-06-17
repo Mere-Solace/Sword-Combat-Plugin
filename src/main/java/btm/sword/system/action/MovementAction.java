@@ -50,7 +50,7 @@ public class MovementAction extends SwordAction {
 		};
 	}
 	
-	public static BukkitRunnable toss(SwordEntity executor, SwordEntity target) {
+	public static Runnable toss(SwordEntity executor, SwordEntity target) {
 		return new BukkitRunnable() {
 			@Override
 			public void run() {

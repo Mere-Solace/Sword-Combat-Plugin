@@ -26,7 +26,7 @@ public class AbilityInputListener implements Listener {
 		Player player = (Player) swordPlayer.entity();
 		Material itemType = player.getInventory().getItemInMainHand().getType();
 
-		swordPlayer.takeInput(InputType.LEFT, itemType);
+		swordPlayer.act(InputType.LEFT, itemType);
 		event.setCancelled(true);
 	}
 	
@@ -44,10 +44,10 @@ public class AbilityInputListener implements Listener {
 			if (swordPlayer.atRoot()) {
 				swordPlayer.performBasicAttack();
 			}
-			swordPlayer.takeInput(InputType.LEFT, mainItemType);
+			swordPlayer.act(InputType.LEFT, mainItemType);
 		}
 		else if (action == Action.RIGHT_CLICK_AIR || action == Action.RIGHT_CLICK_BLOCK) {
-			swordPlayer.takeInput(InputType.RIGHT, mainItemType);
+			swordPlayer.act(InputType.RIGHT, mainItemType);
 		}
 		
 		Bukkit.getCurrentTick();
@@ -62,7 +62,7 @@ public class AbilityInputListener implements Listener {
 		if (swordPlayer.isGrabbing())
 			swordPlayer.throwGrabbedEntity();
 		else
-			swordPlayer.takeInput(InputType.DROP, itemType);
+			swordPlayer.act(InputType.DROP, itemType);
 		
 		
 		new BukkitRunnable() {
@@ -83,7 +83,7 @@ public class AbilityInputListener implements Listener {
 		
 		
 		if (event.isSneaking()) {
-			swordPlayer.takeInput(InputType.SHIFT, itemType);
+			swordPlayer.act(InputType.SHIFT, itemType);
 		}
 	}
 	
@@ -93,7 +93,7 @@ public class AbilityInputListener implements Listener {
 		Player player = (Player) swordPlayer.entity();
 		Material itemType = player.getInventory().getItemInMainHand().getType();
 		
-		swordPlayer.takeInput(InputType.SWAP, itemType);
+		swordPlayer.act(InputType.SWAP, itemType);
 		
 		event.setCancelled(true);
 	}
