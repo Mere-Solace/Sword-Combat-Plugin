@@ -19,7 +19,7 @@ import java.util.Objects;
 
 public class AttackAction {
 	
-	public static Runnable basic(Combatant executor, int stage) {
+	public static BukkitRunnable basic(Combatant executor, int stage) {
 		return new BukkitRunnable() {
 			@Override
 			public void run() {
@@ -42,8 +42,8 @@ public class AttackAction {
 		};
 	}
 	
-	public static Runnable basicSword(Combatant executor, int stage, Material swordType) {
-		executor.getAssociatedEntity().sendMessage("On ground?: " + executor.onGround());
+	public static BukkitRunnable basicSword(Combatant executor, int stage, Material swordType) {
+		executor.entity().sendMessage("On ground?: " + executor.onGround());
 		
 		double damage;
 		switch (swordType) {
@@ -58,7 +58,7 @@ public class AttackAction {
 		return new BukkitRunnable() {
 			@Override
 			public void run() {
-				LivingEntity ex = executor.getAssociatedEntity();
+				LivingEntity ex = executor.entity();
 				ArrayList<Vector> basis = VectorUtil.getBasis(ex.getEyeLocation(), ex.getEyeLocation().getDirection());
 				
 				double rangeMultiplier;
@@ -164,7 +164,7 @@ public class AttackAction {
 		};
 	}
 	
-	public static Runnable heavy(Combatant executor, int stage) {
+	public static BukkitRunnable heavy(Combatant executor, int stage) {
 		return new BukkitRunnable() {
 			@Override
 			public void run() {
@@ -187,7 +187,7 @@ public class AttackAction {
 		};
 	}
 	
-	public static Runnable heavySword(Combatant executor, int stage, Material swordType) {
+	public static BukkitRunnable heavySword(Combatant executor, int stage, Material swordType) {
 		double damage;
 		switch (swordType) {
 			case NETHERITE_SWORD -> damage = 20;
@@ -200,7 +200,7 @@ public class AttackAction {
 		return new BukkitRunnable() {
 			@Override
 			public void run() {
-				LivingEntity ex = executor.getAssociatedEntity();
+				LivingEntity ex = executor.entity();
 				ArrayList<Vector> basis = VectorUtil.getBasisWithoutPitch(ex.getEyeLocation());
 				
 				double rangeMultiplier;
@@ -290,7 +290,7 @@ public class AttackAction {
 		};
 	}
 	
-	public static Runnable sideStep(Combatant executor, boolean right) {
+	public static BukkitRunnable sideStep(Combatant executor, boolean right) {
 		return new BukkitRunnable() {
 			@Override
 			public void run() {
@@ -313,8 +313,8 @@ public class AttackAction {
 		};
 	}
 	
-	public static Runnable sideStepSword(Combatant executor, boolean right, Material swordType) {
-		executor.getAssociatedEntity().sendMessage("On ground?: " + executor.onGround());
+	public static BukkitRunnable sideStepSword(Combatant executor, boolean right, Material swordType) {
+		executor.entity().sendMessage("On ground?: " + executor.onGround());
 		
 		double damage;
 		switch (swordType) {
@@ -329,7 +329,7 @@ public class AttackAction {
 		return new BukkitRunnable() {
 			@Override
 			public void run() {
-				LivingEntity ex = executor.getAssociatedEntity();
+				LivingEntity ex = executor.entity();
 				Location o = ex.getEyeLocation();
 				Vector e = o.getDirection();
 				ArrayList<Vector> basis = VectorUtil.getBasis(o, e);
@@ -371,7 +371,7 @@ public class AttackAction {
 							}
 							
 							Vector v = bezierVectors.get(step[0]);
-							Location l = ex.getEyeLocation().clone().add(v);
+							Location l = o.clone().add(v);
 							
 							double offset = 0.1 + ((double) step[0] / (size*3));
 							Vector vOff = v.clone().normalize().multiply(offset);

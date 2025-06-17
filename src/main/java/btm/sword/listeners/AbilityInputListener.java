@@ -1,7 +1,6 @@
 package btm.sword.listeners;
 
 import btm.sword.Sword;
-import btm.sword.system.action.MovementAction;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.SwordPlayer;
 
@@ -24,18 +23,17 @@ public class AbilityInputListener implements Listener {
 	@EventHandler
 	public void onNormalAttack(PrePlayerAttackEntityEvent event) {
 		SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId());
-		Player player = (Player) swordPlayer.getAssociatedEntity();
+		Player player = (Player) swordPlayer.entity();
 		Material itemType = player.getInventory().getItemInMainHand().getType();
 
 		swordPlayer.takeInput(InputType.LEFT, itemType);
-		player.sendMessage("Taking Left Input from a Normal Attack");
 		event.setCancelled(true);
 	}
 	
 	@EventHandler
 	public void onPlayerInteract(PlayerInteractEvent event) {
 		SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId());
-		Player player = (Player) swordPlayer.getAssociatedEntity();
+		Player player = (Player) swordPlayer.entity();
 		Material mainItemType = player.getInventory().getItemInMainHand().getType();
 		Material offItemType = player.getInventory().getItemInOffHand().getType();
 		Action action = event.getAction();
@@ -43,15 +41,12 @@ public class AbilityInputListener implements Listener {
 		if (swordPlayer.hasPerformedDropAction()) return;
 		
 		if ((action == Action.LEFT_CLICK_AIR || action == Action.LEFT_CLICK_BLOCK)) {
+			if (swordPlayer.atRoot()) {
+				swordPlayer.performBasicAttack();
+			}
 			swordPlayer.takeInput(InputType.LEFT, mainItemType);
-			player.sendMessage("Taking Left Input from an interact event");
 		}
 		else if (action == Action.RIGHT_CLICK_AIR || action == Action.RIGHT_CLICK_BLOCK) {
-			swordPlayer.takeInput(InputType.RIGHT, mainItemType);
-			player.sendMessage("Taking Right Input from an interact event");
-		}
-		else if (!offItemType.isAir() && !mainItemType.isAir()) {
-			player.sendMessage("Doing some other interact action rn while holding: " + offItemType + " in off hand, and " + mainItemType + " in main.");
 			swordPlayer.takeInput(InputType.RIGHT, mainItemType);
 		}
 		
@@ -64,16 +59,10 @@ public class AbilityInputListener implements Listener {
 		Material itemType = event.getItemDrop().getItemStack().getType();
 		swordPlayer.setPerformedDropAction(true);
 		
-		if (swordPlayer.isGrabbing()) {
-			swordPlayer.getGrabTask().cancel();
-			swordPlayer.setGrabbing(false);
-			
-			Bukkit.getScheduler().runTaskLater(Sword.getInstance(), MovementAction.toss(swordPlayer, swordPlayer.getGrabbedEntity()), 2);
-		}
-		else {
-			swordPlayer.getAssociatedEntity().sendMessage("Taking Left Input from an interact event");
+		if (swordPlayer.isGrabbing())
+			swordPlayer.throwGrabbedEntity();
+		else
 			swordPlayer.takeInput(InputType.DROP, itemType);
-		}
 		
 		
 		new BukkitRunnable() {
@@ -89,7 +78,7 @@ public class AbilityInputListener implements Listener {
 	@EventHandler
 	public void onSneakEvent(PlayerToggleSneakEvent event) {
 		SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId());
-		Player player = (Player) swordPlayer.getAssociatedEntity();
+		Player player = (Player) swordPlayer.entity();
 		Material itemType = player.getInventory().getItemInMainHand().getType();
 		
 		
@@ -101,7 +90,7 @@ public class AbilityInputListener implements Listener {
 	@EventHandler
 	public void onSwapEvent(PlayerSwapHandItemsEvent event) {
 		SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId());
-		Player player = (Player) swordPlayer.getAssociatedEntity();
+		Player player = (Player) swordPlayer.entity();
 		Material itemType = player.getInventory().getItemInMainHand().getType();
 		
 		swordPlayer.takeInput(InputType.SWAP, itemType);

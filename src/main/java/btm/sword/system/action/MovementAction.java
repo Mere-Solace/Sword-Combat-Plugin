@@ -10,11 +10,11 @@ import org.bukkit.util.Vector;
 
 public class MovementAction extends SwordAction {
 	
-	public static Runnable dash(SwordEntity executor, boolean forward) {
+	public static BukkitRunnable dash(SwordEntity executor, boolean forward) {
 		return new BukkitRunnable() {
 			@Override
 			public void run() {
-				LivingEntity ex = executor.getAssociatedEntity();
+				LivingEntity ex = executor.entity();
 				double dashPower = executor instanceof SwordPlayer ? 0.75 + (0.1*((SwordPlayer) executor).getCombatProfile().getStat(StatType.CELERITY)) : 0.75;
 				double m = forward ? dashPower : -dashPower;
 				
@@ -30,7 +30,7 @@ public class MovementAction extends SwordAction {
 		};
 	}
 	
-	public static Runnable translate(LivingEntity executor, LivingEntity target, double endDistance) {
+	public static BukkitRunnable translate(LivingEntity executor, LivingEntity target, double endDistance) {
 		return new BukkitRunnable() {
 			@Override
 			public void run() {
@@ -50,12 +50,12 @@ public class MovementAction extends SwordAction {
 		};
 	}
 	
-	public static Runnable toss(SwordEntity executor, SwordEntity target) {
+	public static BukkitRunnable toss(SwordEntity executor, SwordEntity target) {
 		return new BukkitRunnable() {
 			@Override
 			public void run() {
-				LivingEntity ex = executor.getAssociatedEntity();
-				LivingEntity t = target.getAssociatedEntity();
+				LivingEntity ex = executor.entity();
+				LivingEntity t = target.entity();
 				
 				double baseForce = 1.5;
 				double force = baseForce + (int)(0.25*((SwordPlayer) executor).getCombatProfile().getStat(StatType.MIGHT));

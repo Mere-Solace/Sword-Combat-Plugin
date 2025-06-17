@@ -3,9 +3,9 @@ package btm.sword.system.playerdata;
 import java.util.HashMap;
 
 public class CombatProfile {
-	SwordClassType swordClass;
+	private SwordClassType swordClass;
 	
-	HashMap<StatType, Integer> stats = new HashMap<>();
+	private final HashMap<StatType, Integer> stats = new HashMap<>();
 	
 	public CombatProfile() {
 		swordClass = SwordClassType.LOSAH;

@@ -1,8 +1,14 @@
 package btm.sword.system.input;
 
 import btm.sword.Sword;
+import btm.sword.system.action.AttackAction;
+import btm.sword.system.action.MovementAction;
+import btm.sword.system.action.UtilityAction;
 import btm.sword.system.entity.Combatant;
 import btm.sword.system.entity.SwordPlayer;
+import btm.sword.system.playerdata.StatType;
+import btm.sword.util.SoundUtils;
+import btm.sword.util.sound.SoundType;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.plugin.Plugin;
@@ -14,53 +20,43 @@ import java.util.HashMap;
 import java.util.List;
 
 public class InputExecutionTree {
+	private final BukkitScheduler s = Bukkit.getScheduler();
+	private final Plugin plugin = Sword.getInstance();
 	private final InputNode root = new InputNode(null);
+	
 	private InputNode currentNode = root;
 	private StringBuilder sequenceToDisplay = new StringBuilder();
 	private BukkitTask timeoutTimer = null;
-
-	private final BukkitScheduler s = Bukkit.getScheduler();
-	private final Plugin plugin = Sword.getInstance();
+	private final long timeoutTicks;
 	
-	public InputExecutionTree() { }
+	public InputExecutionTree(long timeoutMillis) {
+		this.timeoutTicks = (long) (timeoutMillis * (0.02));
+	}
 	
-	public boolean takeInput(InputType input, Material itemUsed, SwordPlayer executor) {
+	public void takeInput(InputType input, Material itemUsed, SwordPlayer executor) {
+		if (currentNode == null || currentNode.noChild(input)) {
+			if (currentNode != root) {
+				reset();
+				SoundUtils.playSound(executor.entity(), SoundType.BLOCK_GRINDSTONE_USE, 0.5f, 1f);
+			}
+			
+			takeInput(input, itemUsed, executor);
+			return;
+		}
+		
 		if (timeoutTimer != null) timeoutTimer.cancel();
 		
-		if (currentNode == null || currentNode.noChild(input)) {
-			reset();
-			return false;
-		}
+		InputNode next = currentNode.getChild(input);
+		InputAction action = next.getAction();
 		
-		if (currentNode.getChild(input).sameItemRequired && itemUsed != executor.getItemLastUsed()) {
-			reset();
-		}
+		if (action.isSameItemRequired() && itemUsed != executor.getItemLastUsed()) reset();
 		
-		currentNode = currentNode.getChild(input);
+		currentNode = next;
 		
-		if (currentNode.getAction() != null) {
-			if (!currentNode.getAction().isUsable(executor)) {
-				executor.getAssociatedEntity().sendMessage("You cannot use this rn patriot! You'll be back in it soon!");
-				reset();
-				return false;
-			}
-			else if (currentNode.getAction().calcCooldown(executor) >= System.currentTimeMillis() - currentNode.getTimeLastExecuted()) {
-				executor.getAssociatedEntity().sendMessage("This action is on cooldown my lad!");
-				reset();
-				return false;
-			}
-		}
-		
-		if (inActionState()) {
-			if (currentNode.exclusive)
-				executor.setAbilityTask(performAction());
-			else
-				performAction();
-		}
-		
-		currentNode.setTimeLastExecuted(System.currentTimeMillis());
+		if (inActionState()) action.execute(executor, s, plugin);
 		
 		sequenceToDisplay.append(inputToString(input));
+		
 		if (!noChildren()) {
 			sequenceToDisplay.append(" + ");
 			
@@ -69,10 +65,8 @@ public class InputExecutionTree {
 				public void run() {
 					reset();
 				}
-			}.runTaskLater(plugin, 20);
+			}.runTaskLater(plugin, timeoutTicks);
 		}
-		
-		return true;
 	}
 	
 	public void reset() {
@@ -80,13 +74,15 @@ public class InputExecutionTree {
 		sequenceToDisplay = new StringBuilder();
 	}
 	
-	public void add(List<InputType> inputSequence, InputAction action, boolean sameItemRequired, boolean exclusive) {
+	public boolean atRoot() {
+		return currentNode.equals(root);
+	}
+	
+	public void add(List<InputType> inputSequence, InputAction action) {
 		InputNode dummy = root;
 		for (InputType input : inputSequence) {
 			if (dummy.noChild(input)) {
 				dummy.addChild(input, null);
-				dummy.setSameItemRequired(sameItemRequired);
-				dummy.setExclusive(exclusive);
 			}
 			dummy = dummy.getChild(input);
 		}
@@ -101,17 +97,92 @@ public class InputExecutionTree {
 		return currentNode.action != null;
 	}
 	
-	public BukkitTask performAction() {
-		return s.runTask(plugin, currentNode.getAction().getRunnable());
+	@Override
+	public String toString() {
+		return sequenceToDisplay.toString();
 	}
 	
-	public static class InputNode {
-		private final HashMap<InputType, InputNode> children = new HashMap<>();
-		private InputAction action;
-		private boolean sameItemRequired = false;
-		private boolean exclusive = false;
+	private String inputToString(InputType type) {
+		String out;
+		switch (type) {
+			case LEFT -> out = "L";
+			case RIGHT -> out = "R";
+			case DROP -> out = "D";
+			case SHIFT -> out = "S";
+			case SWAP -> out = "W";
+			default -> out = "";
+		}
+		return out;
+	}
+	
+	public void initializeInputTree(SwordPlayer swordPlayer) {
+		// Item independent actions:
+		// dodge forward, dodge backward
+		add(List.of(InputType.DROP, InputType.DROP),
+				new InputAction(
+						MovementAction.dash(swordPlayer, true),
+						executor -> executor.calcCooldown(200L, 1000L, StatType.CELERITY, 10),
+						Combatant::cannotPerformAction, false));
 		
-		private long timeLastExecuted;
+		add(List.of(InputType.SHIFT, InputType.DROP),
+				new InputAction(
+						MovementAction.dash(swordPlayer, false),
+						executor -> executor.calcCooldown(200L, 1000L, StatType.CELERITY, 10),
+						Combatant::cannotPerformAction, false));
+		
+		// grab
+		add(List.of(InputType.SHIFT, InputType.RIGHT),
+				new InputAction(
+						UtilityAction.grab(swordPlayer),
+						executor -> executor.calcCooldown(200L, 1000L, StatType.FORTITUDE, 10),
+						Combatant::cannotPerformAction, false));
+		
+		// Item dependent actions:
+		// basic attack sequence
+		add(List.of(InputType.LEFT),
+				new InputAction(
+						AttackAction.basic(swordPlayer, 0),
+						executor -> executor.calcCooldown(200L, 1000L, StatType.FORM, 10),
+						Combatant::cannotPerformAction, true));
+		
+		add(List.of(InputType.LEFT, InputType.LEFT),
+				new InputAction(
+						AttackAction.basic(swordPlayer, 1),
+						executor -> executor.calcCooldown(200L, 1000L, StatType.FORM, 10),
+						Combatant::cannotPerformAction, true));
+		
+		add(List.of(InputType.LEFT, InputType.LEFT, InputType.LEFT),
+				new InputAction(
+						AttackAction.basic(swordPlayer, 2),
+						executor -> executor.calcCooldown(200L, 1000L, StatType.FORM, 10),
+						Combatant::cannotPerformAction, true));
+		
+		// side step attacks
+		add(List.of(InputType.SWAP, InputType.RIGHT),
+				new InputAction(AttackAction.sideStep(swordPlayer, true),
+						executor -> executor.calcCooldown(300L, 600L, StatType.CELERITY, 10),
+						Combatant::cannotPerformAction, true));
+		
+		add(List.of(InputType.SWAP, InputType.LEFT),
+				new InputAction(AttackAction.sideStep(swordPlayer, false),
+						executor -> executor.calcCooldown(300L, 600L, StatType.CELERITY, 10),
+						Combatant::cannotPerformAction, true));
+		
+		// skills
+		add(List.of(InputType.DROP, InputType.RIGHT, InputType.SHIFT), null);
+		
+		add(List.of(InputType.DROP, InputType.RIGHT, InputType.DROP), null);
+		
+		add(List.of(InputType.DROP, InputType.RIGHT, InputType.LEFT),
+				new InputAction(
+						AttackAction.heavy(swordPlayer, 1),
+						executor -> executor.calcCooldown(400L, 1000L, StatType.FORM, 10),
+						Combatant::cannotPerformAction, true));
+	}
+	
+	private static class InputNode {
+		private InputAction action;
+		private final HashMap<InputType, InputNode> children = new HashMap<>();
 		
 		public InputNode(InputAction action) {
 			this.action = action;
@@ -136,39 +207,5 @@ public class InputExecutionTree {
 		public void setAction(InputAction action) {
 			this.action = action;
 		}
-		
-		public void setSameItemRequired(boolean sameItemRequired) {
-			this.sameItemRequired = sameItemRequired;
-		}
-		
-		public void setExclusive(boolean exclusive) {
-			this.exclusive = exclusive;
-		}
-		
-		public long getTimeLastExecuted() {
-			return timeLastExecuted;
-		}
-		
-		public void setTimeLastExecuted(long time) {
-			timeLastExecuted = time;
-		}
-	}
-	
-	@Override
-	public String toString() {
-		return sequenceToDisplay.toString();
-	}
-	
-	private String inputToString(InputType type) {
-		String out;
-		switch (type) {
-			case LEFT -> out = "L";
-			case RIGHT -> out = "R";
-			case DROP -> out = "D";
-			case SHIFT -> out = "S";
-			case SWAP -> out = "W";
-			default -> out = "";
-		}
-		return out;
 	}
 }

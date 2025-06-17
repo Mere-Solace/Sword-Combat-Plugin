@@ -5,14 +5,11 @@ import btm.sword.system.entity.Combatant;
 import btm.sword.system.entity.SwordEntity;
 import btm.sword.system.playerdata.StatType;
 import btm.sword.system.entity.SwordEntityArbiter;
-import btm.sword.system.entity.SwordPlayer;
 import btm.sword.util.Cache;
 import btm.sword.util.HitboxUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.LivingEntity;
-import org.bukkit.potion.PotionEffect;
-import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitScheduler;
 import org.bukkit.scheduler.BukkitTask;
@@ -20,7 +17,7 @@ import org.bukkit.util.Vector;
 
 public class UtilityAction extends SwordAction {
 	
-	public static Runnable grab(Combatant executor) {
+	public static BukkitRunnable grab(Combatant executor) {
 		// outer runnable
 		return new BukkitRunnable() {
 			@Override
@@ -29,7 +26,7 @@ public class UtilityAction extends SwordAction {
 				final BukkitScheduler scheduler = Bukkit.getScheduler();
 				
 				// inner grab runnable for creation of an accessible bukkit task that can be
-				// assigned to the player's current grab task, and canceled as needed
+				// assigned to the player's current task, and canceled / checked as needed
 				Runnable grabRunnable = new BukkitRunnable() {
 					@Override
 					public void run() {
@@ -42,18 +39,18 @@ public class UtilityAction extends SwordAction {
 						double baseGrabThickness = 0.3;
 						double grabThickness = baseGrabThickness + (0.1*executor.getCombatProfile().getStat(StatType.WILLPOWER));
 						
-						LivingEntity ex = executor.getAssociatedEntity();
+						LivingEntity ex = executor.entity();
 						Location o = ex.getEyeLocation();
 //						LivingEntity target = HitboxUtil.rayTrace(ex, range);
 						LivingEntity target = HitboxUtil.firstInLineKnownLength(ex, o, o.getDirection(), range, grabThickness);
 						if (target == null) {
-							executor.getAssociatedEntity().sendMessage("Missed 'em");
+							executor.entity().sendMessage("Missed 'em");
 							return;
 						}
-						executor.getAssociatedEntity().sendMessage("Grabbed him by te scruff o' da neck!");
+						executor.entity().sendMessage("Grabbed him by te scruff o' da neck!");
 						SwordEntity swordTarget = SwordEntityArbiter.getOrAdd(target.getUniqueId());
 						
-						swordTarget.setBeingGrabbed(true);
+						swordTarget.setGrabbed(true);
 						executor.setGrabbing(true);
 						executor.setGrabbedEntity(swordTarget);
 						
@@ -66,7 +63,8 @@ public class UtilityAction extends SwordAction {
 							public void run() {
 								if (ticks[0] >= duration - 1 || !executor.isGrabbing()) {
 									executor.setGrabbing(false);
-									swordTarget.setBeingGrabbed(false);
+									executor.setAbilityTask(null);
+									swordTarget.setGrabbed(false);
 									cancel();
 								}
 								
@@ -96,7 +94,7 @@ public class UtilityAction extends SwordAction {
 				
 				BukkitTask grabTask = scheduler.runTask(Sword.getInstance(), grabRunnable);
 				
-				executor.setGrabTask(grabTask);
+				executor.setAbilityTask(grabTask);
 			}
 		};
 	}
@@ -105,7 +103,7 @@ public class UtilityAction extends SwordAction {
 		return new BukkitRunnable() {
 			@Override
 			public void run() {
-				executor.getAssociatedEntity().sendMessage("Safely performing no operation");
+				executor.entity().sendMessage("Safely performing no operation");
 			}
 		};
 	}

@@ -48,15 +48,15 @@ public class Cache {
 				new Vector(-1.1,-1.77,5)));
 
 		sideStepSwordR = new ArrayList<>(List.of(
-				new Vector(-2.17,1.03,2),
-				new Vector(3.47,1.03,-1.9),
-				new Vector(-5,-1.73,1.7),
-				new Vector(2,-0.93,7)));
+				new Vector(-1.3,1.03,2),
+				new Vector(8.2,1.03,-1.9),
+				new Vector(-7,-1.73,3.3),
+				new Vector(9,-0.93,5)));
 		sideStepSwordL = new ArrayList<>(List.of(
-				new Vector(2.17,1.03,2),
-				new Vector(-3.47,1.03,-1.9),
-				new Vector(5,-1.73,1.7),
-				new Vector(-2,-0.93,7)));
+				new Vector(1.3,1.03,2),
+				new Vector(-8.2,1.03,-1.9),
+				new Vector(7,-1.73,3.3),
+				new Vector(-9,-0.93,5)));
 		
 		dragonKillerArc = new ArrayList<>(List.of(
 				new Vector(0.26, 2.23, -2.5),
