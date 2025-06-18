@@ -12,10 +12,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
-import org.bukkit.event.player.PlayerDropItemEvent;
-import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.event.player.PlayerSwapHandItemsEvent;
-import org.bukkit.event.player.PlayerToggleSneakEvent;
+import org.bukkit.event.player.*;
 import org.bukkit.scheduler.BukkitRunnable;
 
 public class AbilityInputListener implements Listener {
@@ -93,5 +90,12 @@ public class AbilityInputListener implements Listener {
 		swordPlayer.act(InputType.SWAP, itemType);
 		
 		event.setCancelled(true);
+	}
+	
+	@EventHandler
+	public void onChangeItemEvent(PlayerItemHeldEvent event) {
+		SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId());
+		
+		swordPlayer.resetTree();
 	}
 }

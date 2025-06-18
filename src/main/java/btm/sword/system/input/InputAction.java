@@ -1,6 +1,8 @@
 package btm.sword.system.input;
 
+import btm.sword.Sword;
 import btm.sword.system.entity.SwordPlayer;
+import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitScheduler;
 
@@ -25,7 +27,7 @@ public class InputAction {
 		this.cannotPerform = cannotPerform;
 	}
 	
-	public void execute(SwordPlayer executor, BukkitScheduler s, Plugin plugin) {
+	public void execute(SwordPlayer executor) {
 		long currentTime = System.currentTimeMillis();
 		long deltaTime = currentTime - getTimeLastExecuted();
 		long cooldown = calcCooldown(executor);
@@ -41,7 +43,8 @@ public class InputAction {
 		else {
 			setTimeLastExecuted();
 			executor.entity().sendMessage("      setting ability task");
-			executor.setAbilityTask(s.runTask(plugin, runnable), name);
+//			executor.setAbilityTask(Bukkit.getScheduler().runTask(Sword.getInstance(), runnable), name);
+			Bukkit.getScheduler().runTask(Sword.getInstance(), runnable);
 		}
 	}
 	

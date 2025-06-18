@@ -7,10 +7,7 @@ import btm.sword.system.action.UtilityAction;
 import btm.sword.system.entity.Combatant;
 import btm.sword.system.entity.SwordPlayer;
 import btm.sword.system.playerdata.StatType;
-import btm.sword.util.SoundUtils;
-import btm.sword.util.sound.SoundType;
 import org.bukkit.Bukkit;
-import org.bukkit.Material;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitScheduler;
@@ -20,59 +17,47 @@ import java.util.HashMap;
 import java.util.List;
 
 public class InputExecutionTree {
-	private final BukkitScheduler s = Bukkit.getScheduler();
-	private final Plugin plugin = Sword.getInstance();
-	private final InputNode root = new InputNode(null);
+	private static final BukkitScheduler s = Bukkit.getScheduler();
+	private static final Plugin plugin = Sword.getInstance();
 	
-	private InputNode currentNode = root;
-	private StringBuilder sequenceToDisplay = new StringBuilder();
-	private BukkitTask timeoutTimer = null;
+	private static final InputNode root = new InputNode(null);
+	
+	private InputNode currentNode;
+	private StringBuilder sequenceToDisplay;
+	private BukkitTask timeoutTimer;
 	private final long timeoutTicks;
 	
 	public InputExecutionTree(long timeoutMillis) {
+		currentNode = root;
+		sequenceToDisplay = new StringBuilder();
+		timeoutTimer = null;
 		this.timeoutTicks = (long) (timeoutMillis * (0.02)); // 1/50 (or 0.02) is the conversion from milliseconds to ticks
 	}
 	
-	public void takeInput(InputType input, Material itemUsed, SwordPlayer executor) {
-		executor.entity().sendMessage("  InputExecutionTree is taking input.");
+	public InputNode step(InputType input) {
 		if (timeoutTimer != null) timeoutTimer.cancel();
+		// before taking input, if it is known that the current node is a leaf, reset and take input from the root
+		if (!hasChildren()) reset();
 		
+		// shouldn't happen often
 		if (currentNode == null) {
-			executor.entity().sendMessage("    current was null");
-			return;
+			reset();
+			return null;
 		}
-		
+		// initialize a new node that points to the traversal of the input
 		InputNode next = currentNode.getChild(input);
 		
 		if (next == null) {
-			executor.entity().sendMessage("    No next node for that input");
-			if (currentNode != root) {
-				sequenceToDisplay.append("~");
-				executor.displayInputSequence();
-				reset();
-				SoundUtils.playSound(executor.entity(), SoundType.BLOCK_GRINDSTONE_USE, 0.6f, 1f);
-			}
-			else {
-				executor.entity().sendMessage("    No Input down that way at all. you're at the root");
-			}
-			return;
+			reset();
+			return null;
 		}
 		
+		// set the
 		currentNode = next;
+		
 		sequenceToDisplay.append(inputToString(input));
 		
-		if (itemUsed != executor.getItemLastUsed() && currentNode.isSameItemRequired()) {
-			executor.entity().sendMessage("    You swapped weapons in the middle of a sequence that requires the same weapon.\n\t Taking input from root instead");
-			executor.displayMistake();
-			reset();
-			executor.setItemLastUsed(itemUsed);
-			takeInput(input, itemUsed, executor);
-			return;
-		}
-		
-		boolean noChildren = noChildren();
-		
-		if (!noChildren) {
+		if (hasChildren()) {
 			sequenceToDisplay.append(" + ");
 			timeoutTimer = new BukkitRunnable() {
 				@Override
@@ -82,17 +67,7 @@ public class InputExecutionTree {
 			}.runTaskLater(plugin, timeoutTicks);
 		}
 		
-		if (inActionState()) {
-			executor.entity().sendMessage("    Executing the runnable now");
-			currentNode.action.execute(executor, s, plugin);
-		}
-		
-		executor.displayInputSequence();
-		
-		if (noChildren) {
-			executor.entity().sendMessage("         resetting cuz no children.");
-			reset();
-		}
+		return next;
 	}
 	
 	public void reset() {
@@ -100,7 +75,7 @@ public class InputExecutionTree {
 		sequenceToDisplay = new StringBuilder();
 	}
 	
-	public boolean atRoot() {
+	public boolean isRoot() {
 		return currentNode == root;
 	}
 	
@@ -116,12 +91,8 @@ public class InputExecutionTree {
 		dummy.setSameItemRequired(sameItemRequired);
 	}
 	
-	public boolean noChildren() {
-		return currentNode.children.isEmpty();
-	}
-	
-	public boolean inActionState() {
-		return currentNode.action != null;
+	public boolean hasChildren() {
+		return !currentNode.children.isEmpty();
 	}
 	
 	@Override
@@ -218,7 +189,7 @@ public class InputExecutionTree {
 		add(List.of(InputType.DROP, InputType.RIGHT, InputType.LEFT), null, true);
 	}
 	
-	private static class InputNode {
+	public static class InputNode {
 		private InputAction action;
 		private final HashMap<InputType, InputNode> children = new HashMap<>();
 		private boolean sameItemRequired;

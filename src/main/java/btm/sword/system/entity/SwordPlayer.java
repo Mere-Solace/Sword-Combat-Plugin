@@ -1,5 +1,6 @@
 package btm.sword.system.entity;
 
+import btm.sword.system.input.InputAction;
 import btm.sword.system.playerdata.StatType;
 import btm.sword.system.input.InputExecutionTree;
 import btm.sword.system.input.InputType;
@@ -11,15 +12,13 @@ import net.kyori.adventure.title.Title;
 
 import org.bukkit.Material;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Player;
 
 import java.time.Duration;
 
 public class SwordPlayer extends Combatant {
 	private final InputExecutionTree inputExecutionTree;
 	private final long inputTimeoutMillis = 1000L;
-	
-	private Material itemInUse = Material.AIR;
-	private Material itemLastUsed = Material.AIR;
 	
 	private boolean performedDropAction = false;
 	
@@ -30,24 +29,21 @@ public class SwordPlayer extends Combatant {
 	}
 	
 	public void act(InputType input, Material itemUsed) {
-		associatedEntity.sendMessage("Acting. Input: " + input + ", ItemUsed: " + itemUsed + ", ItemLastUsed: " + itemLastUsed);
-		itemInUse = itemUsed;
+		associatedEntity.sendMessage("Acting. Input: " + input + ", ItemUsed: " + itemUsed);
 		
-		giveInput(input, itemUsed);
+		InputExecutionTree.InputNode node = inputExecutionTree.step(input);
 		
-		itemLastUsed = itemInUse;
-	}
-	
-	public Material getItemInUse() {
-		return itemInUse;
-	}
-	
-	public Material getItemLastUsed() {
-		return itemLastUsed;
-	}
-	
-	public void setItemLastUsed(Material itemLastUsed) {
-		this.itemLastUsed = itemLastUsed;
+		displayInputSequence();
+		
+		if (node == null) {
+			return;
+		}
+		
+		InputAction action = node.getAction();
+		
+		if (action != null) {
+			action.execute(this);
+		}
 	}
 	
 	public boolean hasPerformedDropAction() {
@@ -58,12 +54,12 @@ public class SwordPlayer extends Combatant {
 		this.performedDropAction = performedDropAction;
 	}
 	
-	public void giveInput(InputType input, Material itemUsed) {
-		inputExecutionTree.takeInput(input, itemUsed, this);
+	public void resetTree() {
+		inputExecutionTree.reset();
 	}
 	
 	public boolean atRoot() {
-		return inputExecutionTree.atRoot();
+		return inputExecutionTree.isRoot();
 	}
 	
 	public long calcCooldown(long min, long base, StatType stat, double multiplier) {
@@ -110,6 +106,10 @@ public class SwordPlayer extends Combatant {
 						Duration.ofMillis(0),
 						Duration.ofMillis(inputTimeoutMillis),
 						Duration.ofMillis(100))));
+	}
+	
+	public Material getItemInUse() {
+		return ((Player) associatedEntity).getInventory().getItemInMainHand().getType();
 	}
 	
 	public void addStat(StatType stat, int amount) {

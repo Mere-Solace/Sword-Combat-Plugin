@@ -7,7 +7,9 @@ import btm.sword.system.playerdata.StatType;
 import btm.sword.util.Cache;
 
 import org.bukkit.Bukkit;
+import org.bukkit.Material;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
 
