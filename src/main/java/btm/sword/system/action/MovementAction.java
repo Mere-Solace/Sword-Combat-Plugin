@@ -28,11 +28,12 @@ public class MovementAction extends SwordAction {
 						}
 					}.runTaskLater(Sword.getInstance(), i);
 				}
+				disassociateTask(executor);
 			}
 		};
 	}
 	
-	public static Runnable toss(SwordEntity executor, SwordEntity target) {
+	public static Runnable toss(Combatant executor, SwordEntity target) {
 		return new BukkitRunnable() {
 			@Override
 			public void run() {
@@ -74,6 +75,7 @@ public class MovementAction extends SwordAction {
 						}
 					}.runTaskLater(Sword.getInstance(), i);
 				}
+				disassociateTask(executor);
 			}
 		};
 	}

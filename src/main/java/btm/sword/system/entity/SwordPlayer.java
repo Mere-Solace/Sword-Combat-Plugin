@@ -30,12 +30,10 @@ public class SwordPlayer extends Combatant {
 	}
 	
 	public void act(InputType input, Material itemUsed) {
+		associatedEntity.sendMessage("Acting. Input: " + input + ", ItemUsed: " + itemUsed + ", ItemLastUsed: " + itemLastUsed);
 		itemInUse = itemUsed;
 		
-		if (atRoot() && input == InputType.LEFT) {
-			performBasicAttack();
-		}
-		else giveInput(input, itemUsed);
+		giveInput(input, itemUsed);
 		
 		itemLastUsed = itemInUse;
 	}
@@ -46,6 +44,10 @@ public class SwordPlayer extends Combatant {
 	
 	public Material getItemLastUsed() {
 		return itemLastUsed;
+	}
+	
+	public void setItemLastUsed(Material itemLastUsed) {
+		this.itemLastUsed = itemLastUsed;
 	}
 	
 	public boolean hasPerformedDropAction() {

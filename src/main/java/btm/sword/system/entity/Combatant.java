@@ -1,26 +1,21 @@
 package btm.sword.system.entity;
 
 import btm.sword.Sword;
-import btm.sword.system.action.AttackAction;
 import btm.sword.system.action.MovementAction;
-import btm.sword.system.input.InputAction;
 import btm.sword.system.playerdata.CombatProfile;
 import btm.sword.system.playerdata.StatType;
 import btm.sword.util.Cache;
+
 import org.bukkit.Bukkit;
 import org.bukkit.entity.LivingEntity;
-import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
 
 public abstract class Combatant extends SwordEntity {
 	protected CombatProfile combatProfile;
 	
-	private BukkitTask basicAttackSequenceTimeout = null;
-	private BukkitTask basicAttackCooldownReset = null;
-	private boolean canBasicAttack = true;
 	private BukkitTask abilityTask = null;
-	private int basicAttackStage = 0;
+	private String abilityTaskName = null;
 	private boolean isGrabbing = false;
 	private SwordEntity grabbedEntity;
 	
@@ -37,12 +32,17 @@ public abstract class Combatant extends SwordEntity {
 		return abilityTask;
 	}
 	
-	public void setAbilityTask(BukkitTask abilityTask) {
+	public void setAbilityTask(BukkitTask abilityTask, String abilityTaskName) {
 		this.abilityTask = abilityTask;
+		this.abilityTaskName = abilityTaskName;
 	}
 	
 	public boolean isAbilityTaskFinished() {
 		return abilityTask == null;
+	}
+	
+	public String getAbilityTaskName() {
+		return abilityTaskName;
 	}
 	
 	public boolean isGrabbing() {
@@ -88,60 +88,11 @@ public abstract class Combatant extends SwordEntity {
 	public boolean cannotPerformAnyAction() {
 		return isGrabbing || isGrabbed() || abilityTask != null;
 	}
-	// for every runnable, must reset task to null when finished.
-
-	public void performBasicAttack() {
-		if (!canBasicAttack) {
-			associatedEntity.sendMessage("Can't perform it rn lil bro");
-			return;
-		}
-		if (basicAttackSequenceTimeout != null && basicAttackSequenceTimeout.getTaskId() != -1) {
-			basicAttackSequenceTimeout.cancel();
-			basicAttackSequenceTimeout = null;
-		}
-		associatedEntity.sendMessage("Trying to perform stage: " + basicAttackStage);
-		if (!new InputAction(
-				AttackAction.basic(this, basicAttackStage),
-				executor -> executor.calcCooldown(0L, 0L, StatType.CELERITY, 124),
-				Combatant::cannotPerformAnyAction,
-				false)
-				.execute((SwordPlayer) this, Bukkit.getScheduler(), Sword.getInstance())) {
-			associatedEntity.sendMessage("It didn't work lol");
-			return;
-		}
-		
-		basicAttackStage++;
-		if (basicAttackStage > 2){
-			basicAttackStage = 0;
-			canBasicAttack = false;
-			
-			if (basicAttackCooldownReset != null && basicAttackCooldownReset.getTaskId() != -1) {
-				basicAttackCooldownReset.cancel();
-			}
-			basicAttackCooldownReset = new BukkitRunnable() {
-				@Override
-				public void run() {
-					canBasicAttack = true;
-					associatedEntity.sendMessage("you can basic again.");
-					basicAttackCooldownReset = null;
-				}
-			}.runTaskLater(Sword.getInstance(), 20);
-		} else {
-			basicAttackSequenceTimeout = new BukkitRunnable() {
-				@Override
-				public void run() {
-					basicAttackStage = 0;
-					basicAttackSequenceTimeout = null;
-				}
-			}.runTaskLater(Sword.getInstance(), 30);
-		}
-	}
 	
+	// for every runnable, must reset task to null when finished.
 	public void endAction() {
-		if (abilityTask != null) {
-			abilityTask.cancel();
-			abilityTask = null;
-		}
+		abilityTask = null;
+		abilityTaskName = null;
 	}
 	
 	public double calcValue(StatType stat, double base, double multiplier) {

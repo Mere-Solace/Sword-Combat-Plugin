@@ -24,7 +24,6 @@ public class AttackAction extends SwordAction {
 		return new BukkitRunnable() {
 			@Override
 			public void run() {
-				BukkitTask task = null;
 				Material item;
 				// basic grounded attacks
 				if (executor.onGround()) {
@@ -33,16 +32,15 @@ public class AttackAction extends SwordAction {
 						item = ((SwordPlayer) executor).getItemInUse();
 						
 						if (item.name().endsWith("_SWORD")) {
-							task = s.runTask(plugin, basicSword(executor, stage, item));
+							s.runTask(plugin, basicSword(executor, stage, item));
 						}
 						
 					}
-					executor.setAbilityTask(task);
 				}
 				// basic aerials
-				else {
-				
-				}
+//				else {
+//
+//				}
 			}
 		};
 	}
@@ -105,8 +103,8 @@ public class AttackAction extends SwordAction {
 					public void run() {
 						for (int i = 0; i < perIteration; i++) {
 							if (step[0] >= size) {
+								disassociateTask(executor);
 								cancel();
-								endTask(executor);
 								break;
 							}
 							
@@ -178,20 +176,22 @@ public class AttackAction extends SwordAction {
 			@Override
 			public void run() {
 				Material item;
-				if (executor instanceof SwordPlayer) {
-					item = ((SwordPlayer) executor).getItemInUse();
+				// basic grounded attacks
+				if (executor.onGround()) {
+					
+					if (executor instanceof SwordPlayer) {
+						item = ((SwordPlayer) executor).getItemInUse();
+						
+						if (item.name().endsWith("_SWORD")) {
+							s.runTask(plugin, heavySword(executor, stage, item));
+						}
+						
+					}
 				}
-				else {
-					UtilityAction.noOp(executor).run();
-					return;
-				}
-				
-				if (item.name().endsWith("_SWORD")) {
-					heavySword(executor, stage, item).run();
-					return;
-				}
-				
-				UtilityAction.noOp(executor).run();
+				// basic aerials
+//				else {
+//
+//				}
 			}
 		};
 	}
@@ -257,7 +257,7 @@ public class AttackAction extends SwordAction {
 					public void run() {
 						for (int i = 0; i < perIteration; i++) {
 							if (step[0] >= size) {
-								endTask(executor);
+								disassociateTask(executor);
 								cancel();
 								break;
 							}
@@ -314,21 +314,24 @@ public class AttackAction extends SwordAction {
 		return new BukkitRunnable() {
 			@Override
 			public void run() {
+				BukkitTask task = null;
 				Material item;
-				if (executor instanceof SwordPlayer) {
-					item = ((SwordPlayer) executor).getItemInUse();
+				// basic grounded attacks
+				if (executor.onGround()) {
+					
+					if (executor instanceof SwordPlayer) {
+						item = ((SwordPlayer) executor).getItemInUse();
+						
+						if (item.name().endsWith("_SWORD")) {
+							s.runTask(plugin, sideStepSword(executor, right, item));
+						}
+						
+					}
 				}
-				else {
-					UtilityAction.noOp(executor).run();
-					return;
-				}
-				
-				if (item.name().endsWith("_SWORD")) {
-					sideStepSword(executor, right, item).run();
-					return;
-				}
-				
-				UtilityAction.noOp(executor).run();
+				// basic aerials
+//				else {
+//
+//				}M
 			}
 		};
 	}
@@ -348,7 +351,7 @@ public class AttackAction extends SwordAction {
 			@Override
 			public void run() {
 				if (!executor.onGround()) {
-					endTask(executor);
+					disassociateTask(executor);
 					cancel();
 					return;
 				}
@@ -384,8 +387,8 @@ public class AttackAction extends SwordAction {
 					public void run() {
 						for (int i = 0; i < perIteration; i++) {
 							if (step[0] >= size) {
+								disassociateTask(executor);
 								cancel();
-								endTask(executor);
 								return;
 							}
 							

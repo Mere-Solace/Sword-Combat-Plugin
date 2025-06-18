@@ -10,7 +10,8 @@ public abstract class SwordAction {
 	protected static final BukkitScheduler s = Bukkit.getScheduler();
 	protected static final Plugin plugin = Sword.getInstance();
 	
-	protected static void endTask(Combatant executor) {
-		executor.setAbilityTask(null);
+	protected static void disassociateTask(Combatant executor) {
+		executor.entity().sendMessage("Setting ability task to null");
+		executor.setAbilityTask(null, "none");
 	}
 }
