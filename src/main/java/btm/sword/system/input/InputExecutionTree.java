@@ -37,19 +37,17 @@ public class InputExecutionTree {
 		if (timeoutTimer != null) timeoutTimer.cancel();
 		
 		if (currentNode == null) {
-			executor.entity().sendMessage("Current node was null for some reason");
 			return;
 		}
+		
 		InputNode next = currentNode.getChild(input);
 		
 		if (next == null) {
-			executor.entity().sendMessage("No input sequence that way");
 			if (currentNode != root) {
 				sequenceToDisplay.append("~");
 				executor.displayInputSequence();
 				reset();
 				SoundUtils.playSound(executor.entity(), SoundType.BLOCK_GRINDSTONE_USE, 0.6f, 1f);
-				executor.entity().sendMessage("  Resetting the tree cuz you messed up an input sequence");
 			}
 			return;
 		}
@@ -58,7 +56,6 @@ public class InputExecutionTree {
 		sequenceToDisplay.append(inputToString(input));
 		
 		if (itemUsed != executor.getItemLastUsed() && currentNode.isSameItemRequired()) {
-			executor.entity().sendMessage("Resetting cuz you changed items in the middle of a sequence that requires the same item");
 			executor.displayMistake();
 			reset();
 			return;
@@ -96,7 +93,7 @@ public class InputExecutionTree {
 	}
 	
 	public boolean atRoot() {
-		return currentNode.equals(root);
+		return currentNode == root;
 	}
 	
 	public void add(List<InputType> inputSequence, InputAction action, boolean sameItemRequired) {
@@ -144,14 +141,14 @@ public class InputExecutionTree {
 				new InputAction(
 						MovementAction.dash(swordPlayer, true),
 						executor -> executor.calcCooldown(200L, 1000L, StatType.CELERITY, 10),
-						Combatant::cannotPerformAction,
+						Combatant::cannotPerformAnyAction,
 						false), false);
 		
 		add(List.of(InputType.SHIFT, InputType.DROP),
 				new InputAction(
 						MovementAction.dash(swordPlayer, false),
 						executor -> executor.calcCooldown(200L, 1000L, StatType.CELERITY, 10),
-						Combatant::cannotPerformAction,
+						Combatant::cannotPerformAnyAction,
 						false), false);
 		
 		// grab
@@ -159,21 +156,53 @@ public class InputExecutionTree {
 				new InputAction(
 						UtilityAction.grab(swordPlayer),
 						executor -> executor.calcCooldown(200L, 1000L, StatType.FORTITUDE, 10),
-						Combatant::cannotPerformAction,
+						Combatant::cannotPerformAnyAction,
 						true), false);
 		
 			// Item dependent actions:
+		// basic attacks
+		add(List.of(InputType.LEFT),
+				new InputAction(AttackAction.basic(swordPlayer, 0),
+						executor -> executor.calcCooldown(50L, 1100L, StatType.FINESSE, 10),
+						Combatant::cannotPerformAnyAction,
+						true), true);
+		add(List.of(InputType.LEFT, InputType.LEFT),
+				new InputAction(AttackAction.basic(swordPlayer, 1),
+						executor -> executor.calcCooldown(0L, 0L, StatType.FINESSE, 10),
+						Combatant::cannotPerformAnyAction,
+						true), true);
+		add(List.of(InputType.LEFT, InputType.LEFT, InputType.LEFT),
+				new InputAction(AttackAction.basic(swordPlayer, 2),
+						executor -> executor.calcCooldown(0L, 0L, StatType.FINESSE, 10),
+						Combatant::cannotPerformAnyAction,
+						true), true);
+		
+		// heavy attacks
+		add(List.of(InputType.LEFT, InputType.RIGHT),
+				new InputAction(
+						AttackAction.heavy(swordPlayer, 0),
+						executor -> executor.calcCooldown(400L, 1000L, StatType.MIGHT, 10),
+						Combatant::cannotPerformAnyAction,
+						true), true);
+		
+		add(List.of(InputType.LEFT, InputType.LEFT,InputType.RIGHT),
+				new InputAction(
+						AttackAction.heavy(swordPlayer, 1),
+						executor -> executor.calcCooldown(400L, 1000L, StatType.MIGHT, 10),
+						Combatant::cannotPerformAnyAction,
+						true), true);
+		
 		// side step attacks
 		add(List.of(InputType.SWAP, InputType.RIGHT),
 				new InputAction(AttackAction.sideStep(swordPlayer, true),
 						executor -> executor.calcCooldown(300L, 600L, StatType.CELERITY, 10),
-						Combatant::cannotPerformAction,
+						Combatant::cannotPerformAnyAction,
 						true), true);
 		
 		add(List.of(InputType.SWAP, InputType.LEFT),
 				new InputAction(AttackAction.sideStep(swordPlayer, false),
 						executor -> executor.calcCooldown(300L, 600L, StatType.CELERITY, 10),
-						Combatant::cannotPerformAction,
+						Combatant::cannotPerformAnyAction,
 						true), true);
 		
 		// skills
@@ -181,12 +210,7 @@ public class InputExecutionTree {
 		
 		add(List.of(InputType.DROP, InputType.RIGHT, InputType.DROP), null, true);
 		
-		add(List.of(InputType.DROP, InputType.RIGHT, InputType.LEFT),
-				new InputAction(
-						AttackAction.heavy(swordPlayer, 1),
-						executor -> executor.calcCooldown(400L, 1000L, StatType.FORM, 10),
-						Combatant::cannotPerformAction,
-						true), true);
+		add(List.of(InputType.DROP, InputType.RIGHT, InputType.LEFT), null, true);
 	}
 	
 	private static class InputNode {

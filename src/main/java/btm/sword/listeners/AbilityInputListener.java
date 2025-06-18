@@ -25,8 +25,9 @@ public class AbilityInputListener implements Listener {
 		SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId());
 		Player player = (Player) swordPlayer.entity();
 		Material itemType = player.getInventory().getItemInMainHand().getType();
-
+		
 		swordPlayer.act(InputType.LEFT, itemType);
+		
 		event.setCancelled(true);
 	}
 	
@@ -41,11 +42,7 @@ public class AbilityInputListener implements Listener {
 		if (swordPlayer.hasPerformedDropAction()) return;
 		
 		if ((action == Action.LEFT_CLICK_AIR || action == Action.LEFT_CLICK_BLOCK)) {
-			if (swordPlayer.atRoot()) {
-				swordPlayer.performBasicAttack();
-			}
-			else
-				swordPlayer.act(InputType.LEFT, mainItemType);
+			swordPlayer.act(InputType.LEFT, mainItemType);
 		}
 		else if (action == Action.RIGHT_CLICK_AIR || action == Action.RIGHT_CLICK_BLOCK) {
 			swordPlayer.act(InputType.RIGHT, mainItemType);
@@ -80,10 +77,11 @@ public class AbilityInputListener implements Listener {
 		Player player = (Player) swordPlayer.entity();
 		Material itemType = player.getInventory().getItemInMainHand().getType();
 		
-		
 		if (event.isSneaking()) {
 			swordPlayer.act(InputType.SHIFT, itemType);
 		}
+		
+		event.setCancelled(true);
 	}
 	
 	@EventHandler

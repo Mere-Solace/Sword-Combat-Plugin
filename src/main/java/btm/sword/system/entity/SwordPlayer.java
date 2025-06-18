@@ -32,7 +32,10 @@ public class SwordPlayer extends Combatant {
 	public void act(InputType input, Material itemUsed) {
 		itemInUse = itemUsed;
 		
-		giveInput(input, itemUsed);
+		if (atRoot() && input == InputType.LEFT) {
+			performBasicAttack();
+		}
+		else giveInput(input, itemUsed);
 		
 		itemLastUsed = itemInUse;
 	}

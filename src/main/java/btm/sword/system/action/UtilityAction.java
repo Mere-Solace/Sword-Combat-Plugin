@@ -13,7 +13,7 @@ import org.bukkit.util.Vector;
 
 public class UtilityAction extends SwordAction {
 	
-	public static BukkitRunnable grab(Combatant executor) {
+	public static Runnable grab(Combatant executor) {
 		return new BukkitRunnable() {
 			@Override
 			public void run() {
@@ -77,11 +77,12 @@ public class UtilityAction extends SwordAction {
 		};
 	}
 	
-	public static Runnable noOp(SwordEntity executor) {
+	public static Runnable noOp(Combatant executor) {
 		return new BukkitRunnable() {
 			@Override
 			public void run() {
 				executor.entity().sendMessage("Safely performing no operation");
+				endTask(executor);
 			}
 		};
 	}

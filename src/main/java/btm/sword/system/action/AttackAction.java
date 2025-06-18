@@ -9,6 +9,7 @@ import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
 
@@ -19,32 +20,34 @@ import java.util.Objects;
 
 public class AttackAction extends SwordAction {
 	
-	public static BukkitRunnable basic(Combatant executor, int stage) {
+	public static Runnable basic(Combatant executor, int stage) {
 		return new BukkitRunnable() {
 			@Override
 			public void run() {
+				BukkitTask task = null;
 				Material item;
-				if (executor instanceof SwordPlayer) {
-					item = ((SwordPlayer) executor).getItemInUse();
+				// basic grounded attacks
+				if (executor.onGround()) {
+					
+					if (executor instanceof SwordPlayer) {
+						item = ((SwordPlayer) executor).getItemInUse();
+						
+						if (item.name().endsWith("_SWORD")) {
+							task = s.runTask(plugin, basicSword(executor, stage, item));
+						}
+						
+					}
+					executor.setAbilityTask(task);
 				}
+				// basic aerials
 				else {
-					UtilityAction.noOp(executor).run();
-					return;
-				}
 				
-				if (item.name().endsWith("_SWORD")) {
-					basicSword(executor, stage, item).run();
-					return;
 				}
-				
-				UtilityAction.noOp(executor).run();
 			}
 		};
 	}
 	
-	public static BukkitRunnable basicSword(Combatant executor, int stage, Material swordType) {
-		executor.entity().sendMessage("On ground?: " + executor.onGround());
-		
+	public static Runnable basicSword(Combatant executor, int stage, Material swordType) {
 		double damage;
 		switch (swordType) {
 			case NETHERITE_SWORD -> damage = 15;
@@ -128,16 +131,17 @@ public class AttackAction extends SwordAction {
 							Cache.basicSwordBlueTransitionParticle.display(lOff2);
 							Cache.testSoulFlameParticle.display(lOff2);
 							
+							int step2 = step[0]*step[0];
 							if (step[0] > size * (0.2)) {
-								Location p = l.clone().subtract(vOff.clone().multiply(0.5 + ((double) size /16000)*step[0]*step[0]));
+								Location p = l.clone().subtract(vOff.clone().multiply(0.5 + ((double) size /16000)*step2));
 								Cache.basicSwordWhiteTransitionParticle.display(p);
 							}
 							if (step[0] > size * (0.4)) {
-								Location p = l.clone().subtract(vOff.clone().multiply(0.75 + ((double) size /14500)*step[0]*step[0]));
+								Location p = l.clone().subtract(vOff.clone().multiply(0.75 + ((double) size /14500)*step2));
 								Cache.basicSwordWhiteTransitionParticle.display(p);
 							}
 							if (step[0] > size * (0.6)) {
-								Location p = l.clone().subtract(vOff.clone().multiply(0.75 + ((double) size /10000)*step[0]*step[0]));
+								Location p = l.clone().subtract(vOff.clone().multiply(0.75 + ((double) size /10000)*step2));
 								Cache.basicSwordWhiteTransitionParticle.display(p);
 							}
 							
@@ -169,7 +173,7 @@ public class AttackAction extends SwordAction {
 		};
 	}
 	
-	public static BukkitRunnable heavy(Combatant executor, int stage) {
+	public static Runnable heavy(Combatant executor, int stage) {
 		return new BukkitRunnable() {
 			@Override
 			public void run() {
@@ -192,7 +196,7 @@ public class AttackAction extends SwordAction {
 		};
 	}
 	
-	public static BukkitRunnable heavySword(Combatant executor, int stage, Material swordType) {
+	public static Runnable heavySword(Combatant executor, int stage, Material swordType) {
 		double damage;
 		switch (swordType) {
 			case NETHERITE_SWORD -> damage = 20;
@@ -266,21 +270,31 @@ public class AttackAction extends SwordAction {
 							Vector v = bezierVectors.get(step[0]).add(new Vector(0, 1.5, 0));
 							Location l = b.clone().add(v);
 							
-							double offset = 0.1 + ((double) step[0] / 35);
+							double offset = 0.1 + ((double) step[0] / (size*3));
 							Vector vOff = v.clone().normalize().multiply(offset);
+							Vector vOff2 = vOff.clone().multiply(1/2);
 							Location lOff = l.clone().subtract(vOff);
+							Location lOff2 = l.clone().subtract(vOff2);
 							
 							Cache.basicSwordBlueTransitionParticle.display(l);
 							Cache.testSoulFlameParticle.display(l);
 							Cache.basicSwordBlueTransitionParticle.display(lOff);
+							Cache.testSoulFlameParticle.display(lOff);
+							Cache.basicSwordBlueTransitionParticle.display(lOff2);
+							Cache.testSoulFlameParticle.display(lOff2);
 							
-							if (step[0] > size * 0.6) {
-								Vector v3 = v.clone().multiply(0.875);
-								Location l4 = b.clone().add(v3);
-								Cache.basicSwordBlueTransitionParticle.display(l4);
-								
-								Location lOff2 = l.clone().subtract(vOff.clone().multiply(1.1));
-								Cache.basicSwordBlueTransitionParticle.display(lOff2);
+							int step2 = step[0]*step[0];
+							if (step[0] > size * (0.2)) {
+								Location p = l.clone().subtract(vOff.clone().multiply(0.5 + ((double) size /40000)*step2));
+								Cache.basicSwordWhiteTransitionParticle.display(p);
+							}
+							if (step[0] > size * (0.4)) {
+								Location p = l.clone().subtract(vOff.clone().multiply(0.75 + ((double) size /34000)*step2));
+								Cache.basicSwordWhiteTransitionParticle.display(p);
+							}
+							if (step[0] > size * (0.6)) {
+								Location p = l.clone().subtract(vOff.clone().multiply(0.8 + ((double) size /20000)*step2));
+								Cache.basicSwordWhiteTransitionParticle.display(p);
 							}
 							
 							HashSet<LivingEntity> curHit = HitboxUtil.line(ex, o, l, 0.4);
@@ -296,7 +310,7 @@ public class AttackAction extends SwordAction {
 		};
 	}
 	
-	public static BukkitRunnable sideStep(Combatant executor, boolean right) {
+	public static Runnable sideStep(Combatant executor, boolean right) {
 		return new BukkitRunnable() {
 			@Override
 			public void run() {
@@ -319,9 +333,7 @@ public class AttackAction extends SwordAction {
 		};
 	}
 	
-	public static BukkitRunnable sideStepSword(Combatant executor, boolean right, Material swordType) {
-		executor.entity().sendMessage("On ground?: " + executor.onGround());
-		
+	public static Runnable sideStepSword(Combatant executor, boolean right, Material swordType) {
 		double damage;
 		switch (swordType) {
 			case NETHERITE_SWORD -> damage = 15;
@@ -335,10 +347,15 @@ public class AttackAction extends SwordAction {
 		return new BukkitRunnable() {
 			@Override
 			public void run() {
+				if (!executor.onGround()) {
+					endTask(executor);
+					cancel();
+					return;
+				}
 				LivingEntity ex = executor.entity();
 				Location o = ex.getEyeLocation();
 				Vector e = o.getDirection();
-				ArrayList<Vector> basis = VectorUtil.getBasis(o, e);
+				ArrayList<Vector> basis = VectorUtil.getBasisWithoutPitch(o);
 				Vector r = basis.getFirst();
 				
 				double rangeMultiplier = 1;
@@ -393,16 +410,17 @@ public class AttackAction extends SwordAction {
 							Cache.basicSwordBlueTransitionParticle.display(lOff2);
 							Cache.testSoulFlameParticle.display(lOff2);
 							
+							int step2 = step[0]*step[0];
 							if (step[0] > size * (0.2)) {
-								Location p = l.clone().subtract(vOff.clone().multiply(0.5 + ((double) size /24000)*step[0]*step[0]));
+								Location p = l.clone().subtract(vOff.clone().multiply(0.5 + ((double) size /24000)*step2));
 								Cache.basicSwordWhiteTransitionParticle.display(p);
 							}
 							if (step[0] > size * (0.4)) {
-								Location p = l.clone().subtract(vOff.clone().multiply(0.75 + ((double) size /19000)*step[0]*step[0]));
+								Location p = l.clone().subtract(vOff.clone().multiply(0.75 + ((double) size /19000)*step2));
 								Cache.basicSwordWhiteTransitionParticle.display(p);
 							}
 							if (step[0] > size * (0.6)) {
-								Location p = l.clone().subtract(vOff.clone().multiply(0.8 + ((double) size /15000)*step[0]*step[0]));
+								Location p = l.clone().subtract(vOff.clone().multiply(0.8 + ((double) size /15000)*step2));
 								Cache.basicSwordWhiteTransitionParticle.display(p);
 							}
 							

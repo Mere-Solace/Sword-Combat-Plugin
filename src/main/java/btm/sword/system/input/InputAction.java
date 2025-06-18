@@ -31,10 +31,11 @@ public class InputAction {
 		long deltaTime = currentTime - getTimeLastExecuted();
 		long cooldown = calcCooldown(executor);
 		
-		executor.cannotPerformAction();
+		executor.cannotPerformAnyAction();
 		
 		if (cannotPerform(executor)) {
-			executor.displayDisablingEffect();
+			if (executor.getAbilityTask() == null)
+				executor.displayDisablingEffect();
 			return false;
 		}
 		if (deltaTime <= cooldown) {
@@ -45,7 +46,6 @@ public class InputAction {
 		BukkitTask abilityTask = s.runTask(plugin, runnable);
 		if (dominantAbility) {
 			executor.setAbilityTask(abilityTask);
-			executor.entity().sendMessage("Setting ability task as: " + abilityTask);
 		}
 		return true;
 	}

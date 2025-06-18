@@ -9,13 +9,17 @@ import btm.sword.system.playerdata.StatType;
 import btm.sword.util.Cache;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
 
 public abstract class Combatant extends SwordEntity {
 	protected CombatProfile combatProfile;
 	
-	private BukkitTask abilityTask;
+	private BukkitTask basicAttackSequenceTimeout = null;
+	private BukkitTask basicAttackCooldownReset = null;
+	private boolean canBasicAttack = true;
+	private BukkitTask abilityTask = null;
 	private int basicAttackStage = 0;
 	private boolean isGrabbing = false;
 	private SwordEntity grabbedEntity;
@@ -69,7 +73,6 @@ public abstract class Combatant extends SwordEntity {
 	public void onGrabLetGo() {
 		isGrabbing = false;
 		grabbedEntity.setGrabbed(false);
-		associatedEntity.sendMessage("it broke free. ended task: " + abilityTask);
 		endAction();
 	}
 	
@@ -77,40 +80,61 @@ public abstract class Combatant extends SwordEntity {
 		isGrabbing = false;
 		grabbedEntity.setGrabbed(false);
 		Bukkit.getScheduler().runTaskLater(Sword.getInstance(), MovementAction.toss(this, grabbedEntity), 1);
-		associatedEntity.sendMessage("You threw that sunofa gun. ended task: " + abilityTask);
 		endAction();
 	}
 	
 	// if the player is grabbing, is being grabbed, or is currently casting an ability,
 	// return true, that they CANNOT perform an action
-	public boolean cannotPerformAction() {
-		boolean cannotPerform = false;
-		if (isGrabbing) {
-			entity().sendMessage("You're grabbing sum1 rn lad");
-			cannotPerform = true;
-		}
-		if (isGrabbed()) {
-			entity().sendMessage("You're being pulled off bro!");
-			cannotPerform = true;
-		}
-		if (abilityTask != null) {
-			entity().sendMessage("You're already casting something rn: " + abilityTask.toString());
-			cannotPerform = true;
-		}
-		return cannotPerform;
+	public boolean cannotPerformAnyAction() {
+		return isGrabbing || isGrabbed() || abilityTask != null;
 	}
 	// for every runnable, must reset task to null when finished.
 
-	
 	public void performBasicAttack() {
-		associatedEntity.sendMessage("Performing basic attack");
-		if (basicAttackStage > 2) basicAttackStage = 0;
-		new InputAction(
-			AttackAction.basic(this, basicAttackStage),
-			executor -> executor.calcCooldown(200L, 1000L, StatType.FORM, 10),
-			Combatant::cannotPerformAction,
-			false).execute((SwordPlayer) this, Bukkit.getScheduler(), Sword.getInstance());
+		if (!canBasicAttack) {
+			associatedEntity.sendMessage("Can't perform it rn lil bro");
+			return;
+		}
+		if (basicAttackSequenceTimeout != null && basicAttackSequenceTimeout.getTaskId() != -1) {
+			basicAttackSequenceTimeout.cancel();
+			basicAttackSequenceTimeout = null;
+		}
+		associatedEntity.sendMessage("Trying to perform stage: " + basicAttackStage);
+		if (!new InputAction(
+				AttackAction.basic(this, basicAttackStage),
+				executor -> executor.calcCooldown(0L, 0L, StatType.CELERITY, 124),
+				Combatant::cannotPerformAnyAction,
+				false)
+				.execute((SwordPlayer) this, Bukkit.getScheduler(), Sword.getInstance())) {
+			associatedEntity.sendMessage("It didn't work lol");
+			return;
+		}
+		
 		basicAttackStage++;
+		if (basicAttackStage > 2){
+			basicAttackStage = 0;
+			canBasicAttack = false;
+			
+			if (basicAttackCooldownReset != null && basicAttackCooldownReset.getTaskId() != -1) {
+				basicAttackCooldownReset.cancel();
+			}
+			basicAttackCooldownReset = new BukkitRunnable() {
+				@Override
+				public void run() {
+					canBasicAttack = true;
+					associatedEntity.sendMessage("you can basic again.");
+					basicAttackCooldownReset = null;
+				}
+			}.runTaskLater(Sword.getInstance(), 20);
+		} else {
+			basicAttackSequenceTimeout = new BukkitRunnable() {
+				@Override
+				public void run() {
+					basicAttackStage = 0;
+					basicAttackSequenceTimeout = null;
+				}
+			}.runTaskLater(Sword.getInstance(), 30);
+		}
 	}
 	
 	public void endAction() {

@@ -12,7 +12,8 @@ public class VectorUtil {
 		
 		if (Math.abs(dir.dot(ref)) > 0.999) {
 			double yaw = Math.toRadians(origin.getYaw());
-			ref = new Vector(-Math.sin(yaw), 0, Math.cos(yaw));
+			ref = new Vector(Math.sin(yaw), 0, Math.cos(yaw));
+			Cache.testObsidianTearParticle.display(origin.clone().add(ref));
 		}
 		
 		Vector right = dir.getCrossProduct(ref).normalize();
