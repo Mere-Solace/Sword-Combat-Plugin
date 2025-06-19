@@ -6,9 +6,13 @@ import btm.sword.system.playerdata.CombatProfile;
 import btm.sword.system.playerdata.StatType;
 import btm.sword.util.Cache;
 import org.bukkit.Bukkit;
+import org.bukkit.Material;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
+
+import java.util.Objects;
 
 public abstract class Combatant extends SwordEntity {
 	protected CombatProfile combatProfile;
@@ -85,6 +89,17 @@ public abstract class Combatant extends SwordEntity {
 	
 	public double calcValue(StatType stat, double base, double multiplier) {
 		return base + (multiplier * combatProfile.getStat(stat));
+	}
+	
+	public long calcCooldown(long min, long base, StatType stat, double multiplier) {
+		return (long) Math.max(min, base - (this.getCombatProfile().getStat(stat) * multiplier));
+	}
+	
+	public Material getItemInMainHand() {
+		if (associatedEntity instanceof Player) {
+			return ((Player) associatedEntity).getInventory().getItemInMainHand().getType();
+		}
+		return Objects.requireNonNull(associatedEntity.getEquipment()).getItemInMainHand().getType();
 	}
 	
 	public void message(String message) {

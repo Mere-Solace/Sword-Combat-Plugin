@@ -4,7 +4,6 @@ import btm.sword.Sword;
 import btm.sword.system.entity.Combatant;
 import btm.sword.system.entity.SwordEntity;
 import btm.sword.system.playerdata.StatType;
-import btm.sword.system.entity.SwordPlayer;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
@@ -40,7 +39,7 @@ public class MovementAction extends SwordAction {
 				LivingEntity t = target.entity();
 				
 				double baseForce = 1.5;
-				double force = baseForce + (int)(0.25*((SwordPlayer) executor).getCombatProfile().getStat(StatType.MIGHT));
+				double force = baseForce + (int)(0.25*(executor).getCombatProfile().getStat(StatType.MIGHT));
 				
 				for (int i = 0; i < 2; i++) {
 					new BukkitRunnable() {

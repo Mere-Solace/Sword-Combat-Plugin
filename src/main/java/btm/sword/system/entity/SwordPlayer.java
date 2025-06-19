@@ -62,10 +62,6 @@ public class SwordPlayer extends Combatant {
 		return inputExecutionTree.isRoot();
 	}
 	
-	public long calcCooldown(long min, long base, StatType stat, double multiplier) {
-		return (long) Math.max(min, base - (this.getCombatProfile().getStat(stat) * multiplier));
-	}
-	
 	public void displayInputSequence() {
 		associatedEntity.showTitle(Title.title(
 				Component.text(""),

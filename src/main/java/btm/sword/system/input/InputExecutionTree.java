@@ -111,72 +111,73 @@ public class InputExecutionTree {
 	}
 	
 	public void initializeInputTree(SwordPlayer swordPlayer) {
-			// Item independent actions:
-		// dodge forward, dodge backward
-		add(List.of(InputType.DROP, InputType.DROP),
-				new InputAction(
-						MovementAction.dash(swordPlayer, true),
-						executor -> executor.calcCooldown(200L, 1000L, StatType.CELERITY, 10),
-						Combatant::cannotPerformAnyAction), false);
-		
-		add(List.of(InputType.SHIFT, InputType.DROP),
-				new InputAction(
-						MovementAction.dash(swordPlayer, false),
-						executor -> executor.calcCooldown(200L, 1000L, StatType.CELERITY, 10),
-						Combatant::cannotPerformAnyAction), false);
-		
-		// grab
-		add(List.of(InputType.SHIFT, InputType.RIGHT),
-				new InputAction(
-						UtilityAction.grab(swordPlayer),
-						executor -> executor.calcCooldown(200L, 1000L, StatType.FORTITUDE, 10),
-						Combatant::cannotPerformAnyAction), false);
-		
+//			// Item independent actions:
+//		// dodge forward, dodge backward
+//		add(List.of(InputType.DROP, InputType.DROP),
+//				new InputAction(
+//						executor -> MovementAction.dash(executor, true),
+//						MovementAction.dash(swordPlayer, true),
+//						executor -> executor.calcCooldown(200L, 1000L, StatType.CELERITY, 10),
+//						Combatant::cannotPerformAnyAction), false);
+//
+//		add(List.of(InputType.SHIFT, InputType.DROP),
+//				new InputAction(
+//						MovementAction.dash(swordPlayer, false),
+//						executor -> executor.calcCooldown(200L, 1000L, StatType.CELERITY, 10),
+//						Combatant::cannotPerformAnyAction), false);
+//
+//		// grab
+//		add(List.of(InputType.SHIFT, InputType.RIGHT),
+//				new InputAction(
+//						UtilityAction.grab(swordPlayer),
+//						executor -> executor.calcCooldown(200L, 1000L, StatType.FORTITUDE, 10),
+//						Combatant::cannotPerformAnyAction), false);
+//
 			// Item dependent actions:
 		// basic attacks
 		add(List.of(InputType.LEFT),
 				new InputAction(
-						AttackAction.basic(swordPlayer, 0),
+						executor -> AttackAction.basicAttack(executor, 0),
 						executor -> executor.calcCooldown(50L, 1100L, StatType.FINESSE, 10),
 						Combatant::cannotPerformAnyAction), true);
 		
-		add(List.of(InputType.LEFT, InputType.LEFT),
-				new InputAction(
-						AttackAction.basic(swordPlayer, 1),
-						executor -> executor.calcCooldown(0L, 0L, StatType.FINESSE, 10),
-						Combatant::cannotPerformAnyAction), true);
-		
-		add(List.of(InputType.LEFT, InputType.LEFT, InputType.LEFT),
-				new InputAction(
-						AttackAction.basic(swordPlayer, 2),
-						executor -> executor.calcCooldown(0L, 0L, StatType.FINESSE, 10),
-						Combatant::cannotPerformAnyAction), true);
-		
+//		add(List.of(InputType.LEFT, InputType.LEFT),
+//				new InputAction(
+//						AttackAction.basic(swordPlayer, 1),
+//						executor -> executor.calcCooldown(0L, 0L, StatType.FINESSE, 10),
+//						Combatant::cannotPerformAnyAction), true);
+//
+//		add(List.of(InputType.LEFT, InputType.LEFT, InputType.LEFT),
+//				new InputAction(
+//						AttackAction.basic(swordPlayer, 2),
+//						executor -> executor.calcCooldown(0L, 0L, StatType.FINESSE, 10),
+//						Combatant::cannotPerformAnyAction), true);
+//
 		// heavy attacks
-		add(List.of(InputType.LEFT, InputType.RIGHT),
-				new InputAction(
-						AttackAction.heavy(swordPlayer, 0),
-						executor -> executor.calcCooldown(400L, 1000L, StatType.MIGHT, 10),
-						Combatant::cannotPerformAnyAction), true);
-		
-		add(List.of(InputType.LEFT, InputType.LEFT,InputType.RIGHT),
-				new InputAction(
-						AttackAction.heavy(swordPlayer, 1),
-						executor -> executor.calcCooldown(400L, 1000L, StatType.MIGHT, 10),
-						Combatant::cannotPerformAnyAction), true);
-		
-		// side step attacks
-		add(List.of(InputType.SWAP, InputType.RIGHT),
-				new InputAction(
-						AttackAction.sideStep(swordPlayer, true),
-						executor -> executor.calcCooldown(300L, 600L, StatType.CELERITY, 10),
-						Combatant::cannotPerformAnyAction), true);
-		
-		add(List.of(InputType.SWAP, InputType.LEFT),
-				new InputAction(
-						AttackAction.sideStep(swordPlayer, false),
-						executor -> executor.calcCooldown(300L, 600L, StatType.CELERITY, 10),
-						Combatant::cannotPerformAnyAction), true);
+//		add(List.of(InputType.LEFT, InputType.RIGHT),
+//				new InputAction(
+//						AttackAction.heavy(swordPlayer, 0),
+//						executor -> executor.calcCooldown(400L, 1000L, StatType.MIGHT, 10),
+//						Combatant::cannotPerformAnyAction), true);
+//
+//		add(List.of(InputType.LEFT, InputType.LEFT,InputType.RIGHT),
+//				new InputAction(
+//						AttackAction.heavy(swordPlayer, 1),
+//						executor -> executor.calcCooldown(400L, 1000L, StatType.MIGHT, 10),
+//						Combatant::cannotPerformAnyAction), true);
+//
+//		// side step attacks
+//		add(List.of(InputType.SWAP, InputType.RIGHT),
+//				new InputAction(
+//						AttackAction.sideStep(swordPlayer, true),
+//						executor -> executor.calcCooldown(300L, 600L, StatType.CELERITY, 10),
+//						Combatant::cannotPerformAnyAction), true);
+//
+//		add(List.of(InputType.SWAP, InputType.LEFT),
+//				new InputAction(
+//						AttackAction.sideStep(swordPlayer, false),
+//						executor -> executor.calcCooldown(300L, 600L, StatType.CELERITY, 10),
+//						Combatant::cannotPerformAnyAction), true);
 		
 		// skills
 		add(List.of(InputType.DROP, InputType.RIGHT, InputType.SHIFT), null, true);
