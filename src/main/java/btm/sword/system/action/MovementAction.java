@@ -28,7 +28,6 @@ public class MovementAction extends SwordAction {
 						}
 					}.runTaskLater(Sword.getInstance(), i);
 				}
-				disassociateTask(executor);
 			}
 		};
 	}
@@ -75,7 +74,6 @@ public class MovementAction extends SwordAction {
 						}
 					}.runTaskLater(Sword.getInstance(), i);
 				}
-				disassociateTask(executor);
 			}
 		};
 	}

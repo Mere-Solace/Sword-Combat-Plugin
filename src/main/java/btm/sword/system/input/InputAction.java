@@ -10,18 +10,18 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 
 public class InputAction {
-	private final String name;
+	private static final Plugin plugin = Sword.getInstance();
+	private static final BukkitScheduler s = Bukkit.getScheduler();
+	
 	private final Runnable runnable;
 	private final Function<SwordPlayer, Long> cooldownCalculation; // this function should return time in milliseconds
 	private final Predicate<SwordPlayer> cannotPerform;
 	
 	private long timeLastExecuted;
 	
-	public InputAction(String name,
-	                   Runnable runnable,
+	public InputAction(Runnable runnable,
 	                   Function<SwordPlayer, Long> cooldownCalculation,
 	                   Predicate<SwordPlayer> cannotPerform) {
-		this.name = name;
 		this.runnable = runnable;
 		this.cooldownCalculation = cooldownCalculation;
 		this.cannotPerform = cannotPerform;
@@ -33,7 +33,7 @@ public class InputAction {
 		long cooldown = calcCooldown(executor);
 		
 		if (cannotPerform(executor)) {
-			executor.entity().sendMessage("      you're disabled bro. \n\t\tActiveAbility: " + executor.getAbilityTask() + ", " + executor.getAbilityTaskName() + "  \n\t\tisGrabbing: " + executor.isGrabbing() + ",  \n\t\tisGrabbed: " + executor.isGrabbed() );
+			executor.entity().sendMessage("      you're disabled bro. \n\t\tActiveAbility: " + executor.getAbilityCastTask() + ", " + executor.getAbilityCastTaskName() + "  \n\t\tisGrabbing: " + executor.isGrabbing() + ",  \n\t\tisGrabbed: " + executor.isGrabbed() );
 			executor.displayDisablingEffect();
 		}
 		else if (deltaTime <= cooldown) {
@@ -43,8 +43,7 @@ public class InputAction {
 		else {
 			setTimeLastExecuted();
 			executor.entity().sendMessage("      setting ability task");
-//			executor.setAbilityTask(Bukkit.getScheduler().runTask(Sword.getInstance(), runnable), name);
-			Bukkit.getScheduler().runTask(Sword.getInstance(), runnable);
+			s.runTask(plugin, runnable);
 		}
 	}
 	

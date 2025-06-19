@@ -30,7 +30,7 @@ public class UtilityAction extends SwordAction {
 
 				LivingEntity target = HitboxUtil.firstInLineKnownLength(ex, o, o.getDirection(), range, grabThickness);
 				if (target == null) {
-					executor.entity().sendMessage("Missed, stopping your current grab action: " + executor.getAbilityTask());
+					executor.entity().sendMessage("Missed, stopping your current grab action: " + executor.getAbilityCastTask());
 					disassociateTask(executor);
 					return;
 				}

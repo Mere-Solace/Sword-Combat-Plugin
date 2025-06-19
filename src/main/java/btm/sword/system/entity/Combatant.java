@@ -5,19 +5,16 @@ import btm.sword.system.action.MovementAction;
 import btm.sword.system.playerdata.CombatProfile;
 import btm.sword.system.playerdata.StatType;
 import btm.sword.util.Cache;
-
 import org.bukkit.Bukkit;
-import org.bukkit.Material;
 import org.bukkit.entity.LivingEntity;
-import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
 
 public abstract class Combatant extends SwordEntity {
 	protected CombatProfile combatProfile;
 	
-	private BukkitTask abilityTask = null;
-	private String abilityTaskName = null;
+	private BukkitTask abilityCastTask = null;
+	
 	private boolean isGrabbing = false;
 	private SwordEntity grabbedEntity;
 	
@@ -30,21 +27,16 @@ public abstract class Combatant extends SwordEntity {
 		return combatProfile;
 	}
 	
-	public BukkitTask getAbilityTask() {
-		return abilityTask;
+	public BukkitTask getAbilityCastTask() {
+		return abilityCastTask;
 	}
 	
-	public void setAbilityTask(BukkitTask abilityTask, String abilityTaskName) {
-		this.abilityTask = abilityTask;
-		this.abilityTaskName = abilityTaskName;
+	public void setCastTask(BukkitTask abilityCastTask) {
+		this.abilityCastTask = abilityCastTask;
 	}
 	
-	public boolean isAbilityTaskFinished() {
-		return abilityTask == null;
-	}
-	
-	public String getAbilityTaskName() {
-		return abilityTaskName;
+	public String getAbilityCastTaskName() {
+		return abilityCastTaskName;
 	}
 	
 	public boolean isGrabbing() {
@@ -88,16 +80,18 @@ public abstract class Combatant extends SwordEntity {
 	// if the player is grabbing, is being grabbed, or is currently casting an ability,
 	// return true, that they CANNOT perform an action
 	public boolean cannotPerformAnyAction() {
-		return isGrabbing || isGrabbed() || abilityTask != null;
+		return isGrabbing || isGrabbed() || abilityCastTask != null;
 	}
 	
-	// for every runnable, must reset task to null when finished.
 	public void endAction() {
-		abilityTask = null;
-		abilityTaskName = null;
+		abilityCastTask = null;
 	}
 	
 	public double calcValue(StatType stat, double base, double multiplier) {
 		return base + (multiplier * combatProfile.getStat(stat));
+	}
+	
+	public void message(String message) {
+		associatedEntity.sendMessage(message);
 	}
 }

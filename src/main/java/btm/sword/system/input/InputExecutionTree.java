@@ -7,17 +7,14 @@ import btm.sword.system.action.UtilityAction;
 import btm.sword.system.entity.Combatant;
 import btm.sword.system.entity.SwordPlayer;
 import btm.sword.system.playerdata.StatType;
-import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
-import org.bukkit.scheduler.BukkitScheduler;
 import org.bukkit.scheduler.BukkitTask;
 
 import java.util.HashMap;
 import java.util.List;
 
 public class InputExecutionTree {
-	private static final BukkitScheduler s = Bukkit.getScheduler();
 	private static final Plugin plugin = Sword.getInstance();
 	
 	private static final InputNode root = new InputNode(null);
@@ -117,20 +114,20 @@ public class InputExecutionTree {
 			// Item independent actions:
 		// dodge forward, dodge backward
 		add(List.of(InputType.DROP, InputType.DROP),
-				new InputAction("Forward Dash",
+				new InputAction(
 						MovementAction.dash(swordPlayer, true),
 						executor -> executor.calcCooldown(200L, 1000L, StatType.CELERITY, 10),
 						Combatant::cannotPerformAnyAction), false);
 		
 		add(List.of(InputType.SHIFT, InputType.DROP),
-				new InputAction("Backward Dash",
+				new InputAction(
 						MovementAction.dash(swordPlayer, false),
 						executor -> executor.calcCooldown(200L, 1000L, StatType.CELERITY, 10),
 						Combatant::cannotPerformAnyAction), false);
 		
 		// grab
 		add(List.of(InputType.SHIFT, InputType.RIGHT),
-				new InputAction("Grab",
+				new InputAction(
 						UtilityAction.grab(swordPlayer),
 						executor -> executor.calcCooldown(200L, 1000L, StatType.FORTITUDE, 10),
 						Combatant::cannotPerformAnyAction), false);
@@ -138,45 +135,45 @@ public class InputExecutionTree {
 			// Item dependent actions:
 		// basic attacks
 		add(List.of(InputType.LEFT),
-				new InputAction("Basic 0",
+				new InputAction(
 						AttackAction.basic(swordPlayer, 0),
 						executor -> executor.calcCooldown(50L, 1100L, StatType.FINESSE, 10),
 						Combatant::cannotPerformAnyAction), true);
 		
 		add(List.of(InputType.LEFT, InputType.LEFT),
-				new InputAction("Basic 1",
+				new InputAction(
 						AttackAction.basic(swordPlayer, 1),
 						executor -> executor.calcCooldown(0L, 0L, StatType.FINESSE, 10),
 						Combatant::cannotPerformAnyAction), true);
 		
 		add(List.of(InputType.LEFT, InputType.LEFT, InputType.LEFT),
-				new InputAction("Basic 2",
+				new InputAction(
 						AttackAction.basic(swordPlayer, 2),
 						executor -> executor.calcCooldown(0L, 0L, StatType.FINESSE, 10),
 						Combatant::cannotPerformAnyAction), true);
 		
 		// heavy attacks
 		add(List.of(InputType.LEFT, InputType.RIGHT),
-				new InputAction("Heavy 0",
+				new InputAction(
 						AttackAction.heavy(swordPlayer, 0),
 						executor -> executor.calcCooldown(400L, 1000L, StatType.MIGHT, 10),
 						Combatant::cannotPerformAnyAction), true);
 		
 		add(List.of(InputType.LEFT, InputType.LEFT,InputType.RIGHT),
-				new InputAction("Heavy 1",
+				new InputAction(
 						AttackAction.heavy(swordPlayer, 1),
 						executor -> executor.calcCooldown(400L, 1000L, StatType.MIGHT, 10),
 						Combatant::cannotPerformAnyAction), true);
 		
 		// side step attacks
 		add(List.of(InputType.SWAP, InputType.RIGHT),
-				new InputAction("Right Side Step Attack",
+				new InputAction(
 						AttackAction.sideStep(swordPlayer, true),
 						executor -> executor.calcCooldown(300L, 600L, StatType.CELERITY, 10),
 						Combatant::cannotPerformAnyAction), true);
 		
 		add(List.of(InputType.SWAP, InputType.LEFT),
-				new InputAction("Left Side Step Attack",
+				new InputAction(
 						AttackAction.sideStep(swordPlayer, false),
 						executor -> executor.calcCooldown(300L, 600L, StatType.CELERITY, 10),
 						Combatant::cannotPerformAnyAction), true);
