@@ -35,10 +35,6 @@ public abstract class Combatant extends SwordEntity {
 		this.abilityCastTask = abilityCastTask;
 	}
 	
-	public String getAbilityCastTaskName() {
-		return abilityCastTaskName;
-	}
-	
 	public boolean isGrabbing() {
 		return isGrabbing;
 	}
