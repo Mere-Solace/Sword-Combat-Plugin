@@ -6,6 +6,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitScheduler;
+import org.bukkit.scheduler.BukkitTask;
 
 public abstract class SwordAction {
 	protected static final BukkitScheduler s = Bukkit.getScheduler();
@@ -19,13 +20,15 @@ public abstract class SwordAction {
 	//
 	// abilities may still be canceled internally before the cast runnable is up, though.
 	protected static void cast(Combatant executor, long castDuration, Runnable action) {
-		executor.message("Casting dis ting");
-		executor.setCastTask(s.runTask(plugin, action));
+		BukkitTask castTask = s.runTask(plugin, action);
+		
+		if (castDuration <= 0) return;
+		
+		executor.setCastTask(castTask);
 		new BukkitRunnable() {
 			@Override
 			public void run() {
 				if (executor.getAbilityCastTask() != null) {
-					executor.message("Stopped Casting dis ting, ");
 					executor.setCastTask(null);
 				}
 			}

@@ -5,7 +5,6 @@ import btm.sword.system.action.AttackAction;
 import btm.sword.system.action.MovementAction;
 import btm.sword.system.action.UtilityAction;
 import btm.sword.system.entity.Combatant;
-import btm.sword.system.entity.SwordPlayer;
 import btm.sword.system.playerdata.StatType;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -41,18 +40,26 @@ public class InputExecutionTree {
 			reset();
 			return null;
 		}
+		
 		// initialize a new node that points to the traversal of the input
 		InputNode next = currentNode.getChild(input);
 		
 		if (next == null) {
-			reset();
-			return null;
+			if (isRoot()) return null;
+			else {
+				reset();
+				if (currentNode.isCancellable())
+					return step(input);
+				
+				else
+					return null;
+			}
 		}
+		
+		sequenceToDisplay.append(inputToString(input));
 		
 		// set the
 		currentNode = next;
-		
-		sequenceToDisplay.append(inputToString(input));
 		
 		if (hasChildren()) {
 			sequenceToDisplay.append(" + ");
@@ -76,16 +83,22 @@ public class InputExecutionTree {
 		return currentNode == root;
 	}
 	
-	public void add(List<InputType> inputSequence, InputAction action, boolean sameItemRequired) {
+	public void add(List<InputType> inputSequence, InputAction action,
+	                boolean sameItemRequired,
+	                boolean cancellable,
+	                boolean display) {
 		InputNode dummy = root;
 		for (InputType input : inputSequence) {
 			if (dummy.noChild(input)) {
 				dummy.addChild(input, null);
 				dummy.setSameItemRequired(sameItemRequired);
+				dummy.setCancellable(cancellable);
+				dummy.setDisplay(display);
 			}
 			dummy = dummy.getChild(input);
 		}
 		dummy.setAction(action);
+		dummy.setDisplay(display);
 	}
 	
 	public boolean hasChildren() {
@@ -119,42 +132,54 @@ public class InputExecutionTree {
 		// dodge forward, dodge backward
 		add(List.of(InputType.DROP, InputType.DROP),
 				new InputAction(
-						executor -> MovementAction.dash(executor, true),
-						executor -> executor.calcCooldown(200L, 1000L, StatType.CELERITY, 10),
-						executor -> executor.canPerformAction() && executor.getAirDashesPerformed() < executor.getCombatProfile().getMaxAirDodges()), false);
+					executor -> MovementAction.dash(executor, true),
+					executor -> executor.calcCooldown(200L, 1000L, StatType.CELERITY, 10),
+					Combatant::canAirDash,
+					false, true),
+				false, true, true);
 
 		add(List.of(InputType.SHIFT, InputType.DROP),
 				new InputAction(
-						executor -> MovementAction.dash(executor, false),
-						executor -> executor.calcCooldown(200L, 1000L, StatType.CELERITY, 10),
-						executor -> executor.canPerformAction() && executor.getAirDashesPerformed() < executor.getCombatProfile().getMaxAirDodges()), false);
+					executor -> MovementAction.dash(executor, false),
+					executor -> executor.calcCooldown(200L, 1000L, StatType.CELERITY, 10),
+					Combatant::canAirDash,
+					false, true),
+				false, true, true);
 
 		// grab
 		add(List.of(InputType.SHIFT, InputType.RIGHT),
 				new InputAction(
-						UtilityAction::grab,
-						executor -> executor.calcCooldown(200L, 1000L, StatType.FORTITUDE, 10),
-						Combatant::canPerformAction), false);
+					UtilityAction::grab,
+					executor -> executor.calcCooldown(200L, 1000L, StatType.FORTITUDE, 10),
+					Combatant::canPerformAction,
+					false, true),
+				false, false, true);
 
 			// Item dependent actions:
 		// basic attacks
 		add(List.of(InputType.LEFT),
 				new InputAction(
-						executor -> AttackAction.basicAttack(executor, 0),
-						executor -> executor.calcCooldown(50L, 1300L, StatType.FINESSE, 10),
-						Combatant::canPerformAction), true);
+					executor -> AttackAction.basicAttack(executor, 0),
+					executor -> executor.calcCooldown(50L, 1200L, StatType.FINESSE, 10),
+					Combatant::canPerformAction,
+					true, true),
+				true, true, false);
 		
 		add(List.of(InputType.LEFT, InputType.LEFT),
 				new InputAction(
-						executor -> AttackAction.basicAttack(executor, 1),
-						executor -> executor.calcCooldown(0L, 0L, StatType.FINESSE, 10),
-						Combatant::canPerformAction), true);
+					executor -> AttackAction.basicAttack(executor, 1),
+					executor -> executor.calcCooldown(0L, 0L, StatType.FINESSE, 10),
+					Combatant::canPerformAction,
+					false, true),
+				true, true, false);
 
 		add(List.of(InputType.LEFT, InputType.LEFT, InputType.LEFT),
 				new InputAction(
-						executor -> AttackAction.basicAttack(executor, 2),
-						executor -> executor.calcCooldown(0L, 0L, StatType.FINESSE, 10),
-						Combatant::canPerformAction), true);
+					executor -> AttackAction.basicAttack(executor, 2),
+					executor -> executor.calcCooldown(0L, 0L, StatType.FINESSE, 10),
+					Combatant::canPerformAction,
+					false, true),
+				true, true, false);
 
 		// heavy attacks
 //		add(List.of(InputType.LEFT, InputType.RIGHT),
@@ -183,17 +208,25 @@ public class InputExecutionTree {
 //						Combatant::cannotPerformAnyAction), true);
 		
 		// skills
-		add(List.of(InputType.DROP, InputType.RIGHT, InputType.SHIFT), null, true);
+		add(List.of(InputType.DROP, InputType.RIGHT, InputType.SHIFT),
+				null,
+				true, false, true);
 		
-		add(List.of(InputType.DROP, InputType.RIGHT, InputType.DROP), null, true);
+		add(List.of(InputType.DROP, InputType.RIGHT, InputType.DROP),
+				null,
+				true, false, true);
 		
-		add(List.of(InputType.DROP, InputType.RIGHT, InputType.LEFT), null, true);
+		add(List.of(InputType.DROP, InputType.RIGHT, InputType.LEFT),
+				null,
+				true, false, true);
 	}
 	
 	public static class InputNode {
 		private InputAction action;
 		private final HashMap<InputType, InputNode> children = new HashMap<>();
 		private boolean sameItemRequired;
+		private boolean cancellable;
+		private boolean display;
 		
 		public InputNode(InputAction action) {
 			this.action = action;
@@ -219,12 +252,28 @@ public class InputExecutionTree {
 			this.action = action;
 		}
 		
+		public boolean isSameItemRequired() {
+			return sameItemRequired;
+		}
+		
 		public void setSameItemRequired(boolean sameItemRequired) {
 			this.sameItemRequired = sameItemRequired;
 		}
 		
-		public boolean isSameItemRequired() {
-			return sameItemRequired;
+		public boolean isCancellable() {
+			return cancellable;
+		}
+		
+		public void setCancellable(boolean cancellable) {
+			this.cancellable = cancellable;
+		}
+		
+		public boolean shouldDisplay() {
+			return display;
+		}
+		
+		public void setDisplay(boolean display) {
+			this.display = display;
 		}
 	}
 }

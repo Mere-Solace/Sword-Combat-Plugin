@@ -34,8 +34,8 @@ public class ParticleWrapper {
 		this.speed = speed;
 	}
 	
-	public ParticleWrapper(Particle particle, Particle.DustOptions options) {
-		this(particle);
+	public ParticleWrapper(Particle particle, int count, double xOffset, double yOffset, double zOffset, Particle.DustOptions options) {
+		this(particle, count, xOffset, yOffset, zOffset);
 		this.options = options;
 	}
 	

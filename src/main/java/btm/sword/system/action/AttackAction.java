@@ -35,9 +35,8 @@ public class AttackAction extends SwordAction {
 				}
 			}
 		}
-		else {
-			executor.message("Should use the aerial map");
-		}
+//		else {
+//		}
 	}
 	
 	// Breakdown of all methods and params and behaviour than can change between types of attacks (basic, heavy, sideStep):
@@ -47,7 +46,7 @@ public class AttackAction extends SwordAction {
 	//
 	
 	public static void basicSword(Combatant executor, int stage) {
-		long castDuration = (long) executor.calcValueReductive(StatType.FINESSE, 2L, 4L, 0.2);
+		long castDuration = (long) executor.calcValueReductive(StatType.FINESSE, 0L, 4L, 0.2);
 		cast(executor, castDuration,
 			new BukkitRunnable() {
 				@Override
@@ -82,9 +81,9 @@ public class AttackAction extends SwordAction {
 							.toList();
 					
 					bezierVectors = BezierUtil.cubicBezier3D(transformedControlVectors.getFirst(),transformedControlVectors.get(1), transformedControlVectors.get(2), transformedControlVectors.getLast(),
-							30);
+							20);
 					
-					int duration = 3;
+					int duration = 4;
 					int period = 1;
 					int[] step = {0};
 					int size = bezierVectors.size();
@@ -127,15 +126,16 @@ public class AttackAction extends SwordAction {
 								
 								int s2 = s*s;
 								if (s > size * (0.2)) {
-									Location p = l.clone().subtract(vOff.clone().multiply(0.5 + ((double) size /16000)*s2));
+									// 16000, 14500, 10000 for 40
+									Location p = l.clone().subtract(vOff.clone().multiply(0.5 + ((double) size /11000)*s2));
 									Cache.basicSwordWhiteTransitionParticle.display(p);
 								}
 								if (s > size * (0.4)) {
-									Location p = l.clone().subtract(vOff.clone().multiply(0.75 + ((double) size /14500)*s2));
+									Location p = l.clone().subtract(vOff.clone().multiply(0.75 + ((double) size /9500)*s2));
 									Cache.basicSwordWhiteTransitionParticle.display(p);
 								}
 								if (s > size * (0.6)) {
-									Location p = l.clone().subtract(vOff.clone().multiply(0.75 + ((double) size /10000)*s2));
+									Location p = l.clone().subtract(vOff.clone().multiply(0.75 + ((double) size /5000)*s2));
 									Cache.basicSwordWhiteTransitionParticle.display(p);
 								}
 								
@@ -154,7 +154,6 @@ public class AttackAction extends SwordAction {
 									if (result != null) {
 										new ParticleWrapper(Particle.BLOCK, 10, 0.5, 0.5, 0.5, Objects.requireNonNull(result.getHitBlock()).getBlockData()).display(l);
 										Cache.basicSwordEnterGround.display(l);
-										// For each point that passes through a block, reduce damage by one, down to a min of 20% of original damage
 										d[0] = Math.max(d[0] *(0.2), d[0]-1);
 									}
 								}

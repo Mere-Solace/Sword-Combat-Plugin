@@ -31,7 +31,6 @@ public class UtilityAction extends SwordAction {
 
 				LivingEntity target = HitboxUtil.firstInLineKnownLength(ex, o, o.getDirection(), range, grabThickness);
 				if (target == null) {
-					executor.entity().sendMessage("Missed, stopping your current grab action: " + executor.getAbilityCastTask());
 					return;
 				}
 				SwordEntity swordTarget = SwordEntityArbiter.getOrAdd(target.getUniqueId());
@@ -42,7 +41,7 @@ public class UtilityAction extends SwordAction {
 				new BukkitRunnable() {
 					@Override
 					public void run() {
-						if (ticks[0] >= duration - 1) {
+						if (ticks[0] >= duration - 1 || target.isDead()) {
 							executor.onGrabLetGo();
 							cancel();
 							return;
@@ -58,11 +57,11 @@ public class UtilityAction extends SwordAction {
 						double holdDist = 2;
 						Vector direction = ex.getLocation().toVector().add(ex.getEyeLocation().getDirection().multiply(holdDist)).subtract(target.getLocation().toVector());
 						double distanceSquared = direction.lengthSquared();
-						double bufferDistance = 0.5;
+						double bufferDistance = 0.4;
 						double pullSpeed = 0.6;
 						
 						if (distanceSquared < bufferDistance*bufferDistance) {
-							target.setVelocity(new Vector(0,target.getVelocity().getY()*0.3,0));
+							target.setVelocity(new Vector(0,target.getVelocity().getY()*0.25,0));
 						}
 						else {
 							Vector velocity = direction.normalize().multiply(pullSpeed);
@@ -75,14 +74,5 @@ public class UtilityAction extends SwordAction {
 				}.runTaskTimer(Sword.getInstance(), 0, 1);
 			}
 		});
-	}
-	
-	public static Runnable noOp(Combatant executor) {
-		return new BukkitRunnable() {
-			@Override
-			public void run() {
-				executor.entity().sendMessage("Safely performing no operation");
-			}
-		};
 	}
 }

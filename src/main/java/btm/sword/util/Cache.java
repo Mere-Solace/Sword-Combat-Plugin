@@ -30,6 +30,8 @@ public class Cache {
 	public static final ParticleWrapper basicSwordEnterGround;
 	
 	public static final ParticleWrapper grabCloudParticle;
+	public static final ParticleWrapper throwTrailParticle;
+	public static final ParticleWrapper throwTrailParticle2;
 	
 	static {
 		basicSword1 = new ArrayList<>(List.of(
@@ -71,7 +73,7 @@ public class Cache {
 		
 		testFlameParticle = new ParticleWrapper(Particle.FLAME, 2, 0.025, 0.025, 0.025, 0);
 		testSoulFlameParticle = new ParticleWrapper(Particle.SOUL_FIRE_FLAME, 1, 0.025, 0.025, 0.025, 0);
-		testObsidianTearParticle = new ParticleWrapper(Particle.DRIPPING_OBSIDIAN_TEAR, 2, 0.025, 0.025, 0.025, 0);
+		testObsidianTearParticle = new ParticleWrapper(Particle.DRIPPING_OBSIDIAN_TEAR, 5, 0.05, 0.05, 0.05, 0);
 		testLavaDripParticle = new ParticleWrapper(Particle.FALLING_LAVA, 2, 0.025, 0.025, 0.025, 0);
 		
 		basicSwordBlueTransitionParticle = new ParticleWrapper(Particle.DUST_COLOR_TRANSITION, 5, 0.025, 0.025, 0.025, 1,
@@ -82,9 +84,8 @@ public class Cache {
 		basicSwordHit2 = new ParticleWrapper(Particle.ENCHANTED_HIT, 20, 0.5, 0.5, 0.5, 0.3);
 		basicSwordEnterGround = new ParticleWrapper(Particle.CRIT, 30, 0.1, 0.1, 0.1, 0.5);
 		
-		
 		grabCloudParticle = new ParticleWrapper(Particle.POOF, 20, 0.5, 0.5, 0.5, 0.1);
-		
-		
+		throwTrailParticle = new ParticleWrapper(Particle.DUST, 4, 0.2, 0.2, 0.2, new Particle.DustOptions(Color.WHITE, 2.5f));
+		throwTrailParticle2 = new ParticleWrapper(Particle.DUST_PLUME, 5, 0.1, 0.1, 0.1, 0);
 	}
 }

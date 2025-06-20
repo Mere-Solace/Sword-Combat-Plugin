@@ -9,7 +9,7 @@ public class EntityUtil {
 		double maxCheckDist = 0.3;
 		Location base = entity.getLocation().add(new Vector(0, -maxCheckDist, 0));
 		
-		double[] offsets = {-0.4, -0.2, 0, 0.2, -0.4};
+		double[] offsets = {-0.45, 0, -0.45};
 		
 		for (double x : offsets) {
 			for (double z : offsets) {

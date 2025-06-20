@@ -58,8 +58,8 @@ public abstract class Combatant extends SwordEntity {
 	
 	public void onGrab(SwordEntity target) {
 		LivingEntity t = target.entity();
-		target.setGrabbed(true);
 		setGrabbing(true);
+		target.setGrabbed(true);
 		setGrabbedEntity(target);
 		t.damage(0.25, associatedEntity);
 		Cache.grabCloudParticle.display(t.getLocation().add(new Vector(0, 1, 0)));
@@ -82,6 +82,10 @@ public abstract class Combatant extends SwordEntity {
 	// return true, that they CAN perform an action
 	public boolean canPerformAction() {
 		return abilityCastTask == null && !isGrabbing && !isGrabbed();
+	}
+	
+	public boolean canAirDash() {
+		return canPerformAction() && getAirDashesPerformed() < getCombatProfile().getMaxAirDodges();
 	}
 	
 	public int getAirDashesPerformed() {

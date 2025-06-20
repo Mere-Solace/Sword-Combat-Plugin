@@ -30,17 +30,17 @@ public class SwordPlayer extends Combatant {
 	
 	public void act(InputType input) {
 		if (getAbilityCastTask() != null) {
-			message("My fellow... You are currently casting an ability!");
 			return;
 		}
 		
 		InputExecutionTree.InputNode node = inputExecutionTree.step(input);
 		
-		displayInputSequence();
-		
-		if (node == null) {
-			return;
+		if (node != null) {
+			if (node.shouldDisplay()) {
+				displayInputSequence();
+			}
 		}
+		else return;
 		
 		InputAction action = node.getAction();
 		

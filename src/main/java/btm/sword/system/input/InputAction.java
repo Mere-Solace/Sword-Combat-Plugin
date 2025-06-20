@@ -11,17 +11,23 @@ public class InputAction {
 	private final Consumer<Combatant> action;
 	private final Function<Combatant, Long> cooldownCalculation; // this function should return time in milliseconds
 	private final Predicate<Combatant> canCastAbility;
+	private final boolean displayCooldown;
+	private final boolean displayDisabled;
 	
 	private long timeLastExecuted = 0;
 	
 	public InputAction(
 			Consumer<Combatant> action,
 			Function<Combatant, Long> cooldownCalculation,
-			Predicate<Combatant> canCastAbility) {
+			Predicate<Combatant> canCastAbility,
+			boolean displayCooldown,
+			boolean displayDisabled) {
 		
 		this.action = action;
 		this.cooldownCalculation = cooldownCalculation;
 		this.canCastAbility = canCastAbility;
+		this.displayCooldown = displayCooldown;
+		this.displayDisabled = displayDisabled;
 	}
 	
 	public boolean execute(Combatant executor) {
@@ -30,17 +36,17 @@ public class InputAction {
 		long cooldown = calcCooldown(executor);
 		
 		if (deltaTime <= cooldown) {
-			((SwordPlayer) executor).displayCooldown(Math.max(0, cooldown - (currentTime - getTimeLastExecuted())));
+			if (displayCooldown)
+				((SwordPlayer) executor).displayCooldown(Math.max(0, cooldown - (currentTime - getTimeLastExecuted())));
 			return false;
 		}
 		if (canCast(executor)) {
-			executor.entity().sendMessage("      Running ability");
 			action.accept(executor);
 			return true;
 		}
 		else {
-			executor.entity().sendMessage("      you're disabled bro. \n\t\tActiveAbility: " + executor.getAbilityCastTask() + "  \n\t\tisGrabbing: " + executor.isGrabbing() + ",  \n\t\tisGrabbed: " + executor.isGrabbed() );
-			((SwordPlayer) executor).displayDisablingEffect();
+			if (displayDisabled)
+				((SwordPlayer) executor).displayDisablingEffect();
 			return false;
 		}
 	}
