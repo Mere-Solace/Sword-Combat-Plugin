@@ -18,17 +18,22 @@ import java.time.Duration;
 
 public class SwordPlayer extends Combatant {
 	private final InputExecutionTree inputExecutionTree;
-	private final long inputTimeoutMillis = 1000L;
+	private final long inputTimeoutMillis = 1200L;
 	
 	private boolean performedDropAction = false;
 	
 	public SwordPlayer(LivingEntity associatedEntity, PlayerData data) {
 		super(associatedEntity, data.getCombatProfile());
 		inputExecutionTree = new InputExecutionTree(inputTimeoutMillis);
-		inputExecutionTree.initializeInputTree(this);
+		inputExecutionTree.initializeInputTree();
 	}
 	
 	public void act(InputType input) {
+		if (getAbilityCastTask() != null) {
+			message("My fellow... You are currently casting an ability!");
+			return;
+		}
+		
 		InputExecutionTree.InputNode node = inputExecutionTree.step(input);
 		
 		displayInputSequence();

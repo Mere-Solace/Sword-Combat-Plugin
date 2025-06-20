@@ -114,7 +114,7 @@ public class InputExecutionTree {
 		return currentNode.isSameItemRequired();
 	}
 	
-	public void initializeInputTree(SwordPlayer swordPlayer) {
+	public void initializeInputTree() {
 			// Item independent actions:
 		// dodge forward, dodge backward
 		add(List.of(InputType.DROP, InputType.DROP),

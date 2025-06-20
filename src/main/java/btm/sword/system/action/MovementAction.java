@@ -4,9 +4,17 @@ import btm.sword.Sword;
 import btm.sword.system.entity.Combatant;
 import btm.sword.system.entity.SwordEntity;
 import btm.sword.system.playerdata.StatType;
+import org.bukkit.FluidCollisionMode;
+import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.block.Block;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
+
+import java.util.Collection;
+import java.util.List;
 
 public class MovementAction extends SwordAction {
 	
@@ -59,13 +67,23 @@ public class MovementAction extends SwordAction {
 		
 		boolean[] check = {true};
 		for (int i = 0; i < 15; i++) {
-			if (!check[0]) return;
-			
 			new BukkitRunnable() {
 				@Override
 				public void run() {
-					if (t.getWorld().rayTraceBlocks(t.getLocation().add(new Vector(0,1,0)), t.getVelocity().normalize(), 0.6) != null) {
-						t.getWorld().createExplosion(t.getEyeLocation().add(t.getVelocity().normalize()), 1, false, false);
+					if (!check[0]) {
+						cancel();
+						return;
+					}
+					Vector v = t.getVelocity().normalize();
+					Location l = t.getLocation().add(new Vector(0,1,0).add(v));
+					
+					Collection<LivingEntity> entities = t.getWorld().getNearbyLivingEntities(
+							l, 0.2, 0.2, 0.2, entity -> !entity.getUniqueId().equals(t.getUniqueId()));
+
+					RayTraceResult blockResult = t.getWorld().rayTraceBlocks(l, v, 0.3);
+					
+					if ((blockResult != null && blockResult.getHitBlock() != null) || !entities.isEmpty()) {
+						t.getWorld().createExplosion(t.getEyeLocation().add(t.getVelocity().normalize()), 2, false, false);
 						check[0] = false;
 					}
 				}

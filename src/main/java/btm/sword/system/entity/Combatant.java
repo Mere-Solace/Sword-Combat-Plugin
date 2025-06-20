@@ -78,10 +78,10 @@ public abstract class Combatant extends SwordEntity {
 		endAction();
 	}
 	
-	// if the player is grabbing, is being grabbed, or is currently casting an ability,
-	// return true, that they CANNOT perform an action
+	// if the player is not grabbing, is not being grabbed, and is currently not casting an ability,
+	// return true, that they CAN perform an action
 	public boolean canPerformAction() {
-		return !isGrabbing || !isGrabbed() || abilityCastTask == null;
+		return abilityCastTask == null && !isGrabbing && !isGrabbed();
 	}
 	
 	public int getAirDashesPerformed() {

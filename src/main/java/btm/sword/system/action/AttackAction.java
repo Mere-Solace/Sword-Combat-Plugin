@@ -47,7 +47,7 @@ public class AttackAction extends SwordAction {
 	//
 	
 	public static void basicSword(Combatant executor, int stage) {
-		long castDuration = (long) executor.calcValueReductive(StatType.FINESSE, 2L, 20L, 0.2);
+		long castDuration = (long) executor.calcValueReductive(StatType.FINESSE, 2L, 4L, 0.2);
 		cast(executor, castDuration,
 			new BukkitRunnable() {
 				@Override
