@@ -13,17 +13,18 @@ import org.bukkit.util.Vector;
 
 public class UtilityAction extends SwordAction {
 	
-	public static Runnable grab(Combatant executor) {
-		return new BukkitRunnable() {
+	public static void grab(Combatant executor) {
+		cast(executor, 0L,
+			new BukkitRunnable() {
 			@Override
 			public void run() {
 				int baseDuration = 60;
 				double baseGrabRange = 3;
 				double baseGrabThickness = 0.3;
 				
-				int duration = (int) executor.calcValue(StatType.MIGHT, baseDuration, 0.2);
-				double range = executor.calcValue(StatType.WILLPOWER, baseGrabRange, 0.1);
-				double grabThickness = executor.calcValue(StatType.WILLPOWER, baseGrabThickness, 0.1);
+				long duration = (long) executor.calcValueAdditive(StatType.MIGHT, 100L, baseDuration, 0.2);
+				double range = executor.calcValueAdditive(StatType.WILLPOWER, 4.5, baseGrabRange, 0.1);
+				double grabThickness = executor.calcValueAdditive(StatType.WILLPOWER, 0.75, baseGrabThickness, 0.1);
 				
 				LivingEntity ex = executor.entity();
 				Location o = ex.getEyeLocation();
@@ -73,7 +74,7 @@ public class UtilityAction extends SwordAction {
 					}
 				}.runTaskTimer(Sword.getInstance(), 0, 1);
 			}
-		};
+		});
 	}
 	
 	public static Runnable noOp(Combatant executor) {

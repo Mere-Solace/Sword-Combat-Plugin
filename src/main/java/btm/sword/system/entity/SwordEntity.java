@@ -1,6 +1,8 @@
 package btm.sword.system.entity;
 
+import org.bukkit.Location;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.util.BoundingBox;
 import org.bukkit.util.Vector;
 
 import java.util.UUID;
@@ -31,9 +33,5 @@ public abstract class SwordEntity {
 	
 	public void setGrabbed(boolean grabbed) {
 		this.grabbed = grabbed;
-	}
-	
-	public boolean onGround() {
-		return associatedEntity.getWorld().rayTraceBlocks(associatedEntity.getLocation(), new Vector(0, -1, 0), 0.25) != null;
 	}
 }

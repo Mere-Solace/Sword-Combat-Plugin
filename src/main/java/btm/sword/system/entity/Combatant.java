@@ -1,11 +1,9 @@
 package btm.sword.system.entity;
 
-import btm.sword.Sword;
 import btm.sword.system.action.MovementAction;
 import btm.sword.system.playerdata.CombatProfile;
 import btm.sword.system.playerdata.StatType;
 import btm.sword.util.Cache;
-import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
@@ -19,12 +17,15 @@ public abstract class Combatant extends SwordEntity {
 	
 	private BukkitTask abilityCastTask = null;
 	
+	private int airDashesPerformed;
+	
 	private boolean isGrabbing = false;
 	private SwordEntity grabbedEntity;
 	
 	public Combatant(LivingEntity associatedEntity, CombatProfile combatProfile) {
 		super(associatedEntity);
 		this.combatProfile = combatProfile;
+		airDashesPerformed = 0;
 	}
 	
 	public CombatProfile getCombatProfile() {
@@ -73,22 +74,38 @@ public abstract class Combatant extends SwordEntity {
 	public void onGrabThrow() {
 		isGrabbing = false;
 		grabbedEntity.setGrabbed(false);
-		Bukkit.getScheduler().runTaskLater(Sword.getInstance(), MovementAction.toss(this, grabbedEntity), 1);
+		MovementAction.toss(this, grabbedEntity);
 		endAction();
 	}
 	
 	// if the player is grabbing, is being grabbed, or is currently casting an ability,
 	// return true, that they CANNOT perform an action
-	public boolean cannotPerformAnyAction() {
-		return isGrabbing || isGrabbed() || abilityCastTask != null;
+	public boolean canPerformAction() {
+		return !isGrabbing || !isGrabbed() || abilityCastTask == null;
+	}
+	
+	public int getAirDashesPerformed() {
+		return airDashesPerformed;
+	}
+	
+	public void resetAirDashesPerformed() {
+		this.airDashesPerformed = 0;
+	}
+	
+	public void increaseAirDashesPerformed() {
+		airDashesPerformed++;
 	}
 	
 	public void endAction() {
 		abilityCastTask = null;
 	}
 	
-	public double calcValue(StatType stat, double base, double multiplier) {
-		return base + (multiplier * combatProfile.getStat(stat));
+	public double calcValueAdditive(StatType stat, double max, double base, double multiplier) {
+		return Math.min(max, base + (multiplier * combatProfile.getStat(stat)));
+	}
+	
+	public double calcValueReductive(StatType stat, double min, double base, double multiplier) {
+		return Math.max(min, base - (multiplier * combatProfile.getStat(stat)));
 	}
 	
 	public long calcCooldown(long min, long base, StatType stat, double multiplier) {

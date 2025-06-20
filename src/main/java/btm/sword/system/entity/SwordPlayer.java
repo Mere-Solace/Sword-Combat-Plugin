@@ -28,9 +28,7 @@ public class SwordPlayer extends Combatant {
 		inputExecutionTree.initializeInputTree(this);
 	}
 	
-	public void act(InputType input, Material itemUsed) {
-		associatedEntity.sendMessage("Acting. Input: " + input + ", ItemUsed: " + itemUsed);
-		
+	public void act(InputType input) {
 		InputExecutionTree.InputNode node = inputExecutionTree.step(input);
 		
 		displayInputSequence();
@@ -42,7 +40,12 @@ public class SwordPlayer extends Combatant {
 		InputAction action = node.getAction();
 		
 		if (action != null) {
-			action.execute(this);
+			if (action.execute(this)) {
+				action.setTimeLastExecuted();
+			}
+			else {
+				resetTree();
+			}
 		}
 	}
 	
@@ -111,4 +114,10 @@ public class SwordPlayer extends Combatant {
 	public void addStat(StatType stat, int amount) {
 		combatProfile.addStat(stat, amount);
 	}
+	
+	public boolean inputReliantOnItem() {
+		return inputExecutionTree.requiresSameItem();
+	}
+	
+	
 }

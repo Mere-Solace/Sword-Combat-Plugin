@@ -10,8 +10,8 @@ import org.bukkit.util.Vector;
 
 public class MovementAction extends SwordAction {
 	
-	public static Runnable dash(Combatant executor, boolean forward) {
-		return new BukkitRunnable() {
+	public static void dash(Combatant executor, boolean forward) {
+		cast (executor, 5L, new BukkitRunnable() {
 			@Override
 			public void run() {
 				LivingEntity ex = executor.entity();
@@ -27,53 +27,49 @@ public class MovementAction extends SwordAction {
 						}
 					}.runTaskLater(Sword.getInstance(), i);
 				}
+				executor.increaseAirDashesPerformed();
 			}
-		};
+		});
 	}
 	
-	public static Runnable toss(Combatant executor, SwordEntity target) {
-		return new BukkitRunnable() {
-			@Override
-			public void run() {
-				LivingEntity ex = executor.entity();
-				LivingEntity t = target.entity();
-				
-				double baseForce = 1.5;
-				double force = baseForce + (int)(0.25*(executor).getCombatProfile().getStat(StatType.MIGHT));
-				
-				for (int i = 0; i < 2; i++) {
-					new BukkitRunnable() {
-						@Override
-						public void run() {
-							t.setVelocity(new Vector(0,.25,0));
-						}
-					}.runTaskLater(Sword.getInstance(), i);
+	public static void toss(Combatant executor, SwordEntity target) {
+		LivingEntity ex = executor.entity();
+		LivingEntity t = target.entity();
+		
+		double baseForce = 1.5;
+		double force = baseForce + (int)(0.25*(executor).getCombatProfile().getStat(StatType.MIGHT));
+		
+		for (int i = 0; i < 2; i++) {
+			new BukkitRunnable() {
+				@Override
+				public void run() {
+					t.setVelocity(new Vector(0,.25,0));
 				}
-				
-				for (int i = 0; i < 3; i++) {
-					new BukkitRunnable() {
-						@Override
-						public void run() {
-							t.setVelocity(ex.getEyeLocation().getDirection().multiply(force));
-						}
-					}.runTaskLater(Sword.getInstance(), i+2);
+			}.runTaskLater(Sword.getInstance(), i);
+		}
+		
+		for (int i = 0; i < 3; i++) {
+			new BukkitRunnable() {
+				@Override
+				public void run() {
+					t.setVelocity(ex.getEyeLocation().getDirection().multiply(force));
 				}
-				
-				boolean[] check = {true};
-				for (int i = 0; i < 15; i++) {
-					if (!check[0]) return;
-					
-					new BukkitRunnable() {
-						@Override
-						public void run() {
-							if (t.getWorld().rayTraceBlocks(t.getLocation().add(new Vector(0,1,0)), t.getVelocity().normalize(), 0.6) != null) {
-								t.getWorld().createExplosion(t.getEyeLocation().add(t.getVelocity().normalize()), 1, false, false);
-								check[0] = false;
-							}
-						}
-					}.runTaskLater(Sword.getInstance(), i);
+			}.runTaskLater(Sword.getInstance(), i+2);
+		}
+		
+		boolean[] check = {true};
+		for (int i = 0; i < 15; i++) {
+			if (!check[0]) return;
+			
+			new BukkitRunnable() {
+				@Override
+				public void run() {
+					if (t.getWorld().rayTraceBlocks(t.getLocation().add(new Vector(0,1,0)), t.getVelocity().normalize(), 0.6) != null) {
+						t.getWorld().createExplosion(t.getEyeLocation().add(t.getVelocity().normalize()), 1, false, false);
+						check[0] = false;
+					}
 				}
-			}
-		};
+			}.runTaskLater(Sword.getInstance(), i);
+		}
 	}
 }

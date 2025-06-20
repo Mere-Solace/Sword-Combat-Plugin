@@ -81,11 +81,11 @@ public class InputExecutionTree {
 		for (InputType input : inputSequence) {
 			if (dummy.noChild(input)) {
 				dummy.addChild(input, null);
+				dummy.setSameItemRequired(sameItemRequired);
 			}
 			dummy = dummy.getChild(input);
 		}
 		dummy.setAction(action);
-		dummy.setSameItemRequired(sameItemRequired);
 	}
 	
 	public boolean hasChildren() {
@@ -110,49 +110,52 @@ public class InputExecutionTree {
 		return out;
 	}
 	
+	public boolean requiresSameItem() {
+		return currentNode.isSameItemRequired();
+	}
+	
 	public void initializeInputTree(SwordPlayer swordPlayer) {
-//			// Item independent actions:
-//		// dodge forward, dodge backward
-//		add(List.of(InputType.DROP, InputType.DROP),
-//				new InputAction(
-//						executor -> MovementAction.dash(executor, true),
-//						MovementAction.dash(swordPlayer, true),
-//						executor -> executor.calcCooldown(200L, 1000L, StatType.CELERITY, 10),
-//						Combatant::cannotPerformAnyAction), false);
-//
-//		add(List.of(InputType.SHIFT, InputType.DROP),
-//				new InputAction(
-//						MovementAction.dash(swordPlayer, false),
-//						executor -> executor.calcCooldown(200L, 1000L, StatType.CELERITY, 10),
-//						Combatant::cannotPerformAnyAction), false);
-//
-//		// grab
-//		add(List.of(InputType.SHIFT, InputType.RIGHT),
-//				new InputAction(
-//						UtilityAction.grab(swordPlayer),
-//						executor -> executor.calcCooldown(200L, 1000L, StatType.FORTITUDE, 10),
-//						Combatant::cannotPerformAnyAction), false);
-//
+			// Item independent actions:
+		// dodge forward, dodge backward
+		add(List.of(InputType.DROP, InputType.DROP),
+				new InputAction(
+						executor -> MovementAction.dash(executor, true),
+						executor -> executor.calcCooldown(200L, 1000L, StatType.CELERITY, 10),
+						executor -> executor.canPerformAction() && executor.getAirDashesPerformed() < executor.getCombatProfile().getMaxAirDodges()), false);
+
+		add(List.of(InputType.SHIFT, InputType.DROP),
+				new InputAction(
+						executor -> MovementAction.dash(executor, false),
+						executor -> executor.calcCooldown(200L, 1000L, StatType.CELERITY, 10),
+						Combatant::canPerformAction), false);
+
+		// grab
+		add(List.of(InputType.SHIFT, InputType.RIGHT),
+				new InputAction(
+						UtilityAction::grab,
+						executor -> executor.calcCooldown(200L, 1000L, StatType.FORTITUDE, 10),
+						Combatant::canPerformAction), false);
+
 			// Item dependent actions:
 		// basic attacks
 		add(List.of(InputType.LEFT),
 				new InputAction(
 						executor -> AttackAction.basicAttack(executor, 0),
-						executor -> executor.calcCooldown(50L, 1100L, StatType.FINESSE, 10),
-						Combatant::cannotPerformAnyAction), true);
+						executor -> executor.calcCooldown(50L, 1300L, StatType.FINESSE, 10),
+						Combatant::canPerformAction), true);
 		
-//		add(List.of(InputType.LEFT, InputType.LEFT),
-//				new InputAction(
-//						AttackAction.basic(swordPlayer, 1),
-//						executor -> executor.calcCooldown(0L, 0L, StatType.FINESSE, 10),
-//						Combatant::cannotPerformAnyAction), true);
-//
-//		add(List.of(InputType.LEFT, InputType.LEFT, InputType.LEFT),
-//				new InputAction(
-//						AttackAction.basic(swordPlayer, 2),
-//						executor -> executor.calcCooldown(0L, 0L, StatType.FINESSE, 10),
-//						Combatant::cannotPerformAnyAction), true);
-//
+		add(List.of(InputType.LEFT, InputType.LEFT),
+				new InputAction(
+						executor -> AttackAction.basicAttack(executor, 1),
+						executor -> executor.calcCooldown(0L, 0L, StatType.FINESSE, 10),
+						Combatant::canPerformAction), true);
+
+		add(List.of(InputType.LEFT, InputType.LEFT, InputType.LEFT),
+				new InputAction(
+						executor -> AttackAction.basicAttack(executor, 2),
+						executor -> executor.calcCooldown(0L, 0L, StatType.FINESSE, 10),
+						Combatant::canPerformAction), true);
+
 		// heavy attacks
 //		add(List.of(InputType.LEFT, InputType.RIGHT),
 //				new InputAction(
@@ -197,7 +200,7 @@ public class InputExecutionTree {
 		}
 		
 		public void addChild(InputType input, InputAction action) {
-			children.put(input, new InputNode(action));
+			children.putIfAbsent(input, new InputNode(action));
 		}
 		
 		public boolean noChild(InputType input) {

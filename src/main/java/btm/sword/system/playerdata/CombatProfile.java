@@ -7,6 +7,8 @@ public class CombatProfile {
 	
 	private final HashMap<StatType, Integer> stats = new HashMap<>();
 	
+	private int maxAirDodges = 2;
+	
 	public CombatProfile() {
 		swordClass = SwordClassType.LOSAH;
 		
@@ -40,5 +42,13 @@ public class CombatProfile {
 	
 	public int getStat(StatType type) {
 		return stats.getOrDefault(type, -1);
+	}
+	
+	public void increaseNumAirDodges() {
+		maxAirDodges++;
+	}
+	
+	public int getMaxAirDodges() {
+		return maxAirDodges;
 	}
 }

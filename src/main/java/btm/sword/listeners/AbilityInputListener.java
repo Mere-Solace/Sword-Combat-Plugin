@@ -23,7 +23,7 @@ public class AbilityInputListener implements Listener {
 		Player player = (Player) swordPlayer.entity();
 		Material itemType = player.getInventory().getItemInMainHand().getType();
 		
-		swordPlayer.act(InputType.LEFT, itemType);
+		swordPlayer.act(InputType.LEFT);
 		
 		event.setCancelled(true);
 	}
@@ -39,10 +39,10 @@ public class AbilityInputListener implements Listener {
 		if (swordPlayer.hasPerformedDropAction()) return;
 		
 		if ((action == Action.LEFT_CLICK_AIR || action == Action.LEFT_CLICK_BLOCK)) {
-			swordPlayer.act(InputType.LEFT, mainItemType);
+			swordPlayer.act(InputType.LEFT);
 		}
 		else if (action == Action.RIGHT_CLICK_AIR || action == Action.RIGHT_CLICK_BLOCK) {
-			swordPlayer.act(InputType.RIGHT, mainItemType);
+			swordPlayer.act(InputType.RIGHT);
 		}
 		
 		Bukkit.getCurrentTick();
@@ -56,7 +56,7 @@ public class AbilityInputListener implements Listener {
 		
 		if (swordPlayer.isGrabbing()) swordPlayer.setGrabbing(false);
 		
-		else swordPlayer.act(InputType.DROP, itemType);
+		else swordPlayer.act(InputType.DROP);
 		
 		new BukkitRunnable() {
 			@Override
@@ -75,7 +75,7 @@ public class AbilityInputListener implements Listener {
 		Material itemType = player.getInventory().getItemInMainHand().getType();
 		
 		if (event.isSneaking()) {
-			swordPlayer.act(InputType.SHIFT, itemType);
+			swordPlayer.act(InputType.SHIFT);
 		}
 		
 		event.setCancelled(true);
@@ -87,7 +87,7 @@ public class AbilityInputListener implements Listener {
 		Player player = (Player) swordPlayer.entity();
 		Material itemType = player.getInventory().getItemInMainHand().getType();
 		
-		swordPlayer.act(InputType.SWAP, itemType);
+		swordPlayer.act(InputType.SWAP);
 		
 		event.setCancelled(true);
 	}
@@ -96,6 +96,8 @@ public class AbilityInputListener implements Listener {
 	public void onChangeItemEvent(PlayerItemHeldEvent event) {
 		SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId());
 		
-		swordPlayer.resetTree();
+		if (swordPlayer.inputReliantOnItem()) {
+			swordPlayer.resetTree();
+		}
 	}
 }
