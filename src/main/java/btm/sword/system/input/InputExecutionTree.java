@@ -127,7 +127,7 @@ public class InputExecutionTree {
 				new InputAction(
 						executor -> MovementAction.dash(executor, false),
 						executor -> executor.calcCooldown(200L, 1000L, StatType.CELERITY, 10),
-						Combatant::canPerformAction), false);
+						executor -> executor.canPerformAction() && executor.getAirDashesPerformed() < executor.getCombatProfile().getMaxAirDodges()), false);
 
 		// grab
 		add(List.of(InputType.SHIFT, InputType.RIGHT),
