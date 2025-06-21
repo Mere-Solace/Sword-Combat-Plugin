@@ -6,7 +6,6 @@ import btm.sword.system.entity.SwordPlayer;
 
 import btm.sword.system.input.InputType;
 import io.papermc.paper.event.player.PrePlayerAttackEntityEvent;
-import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -20,8 +19,6 @@ public class AbilityInputListener implements Listener {
 	@EventHandler
 	public void onNormalAttack(PrePlayerAttackEntityEvent event) {
 		SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId());
-		Player player = (Player) swordPlayer.entity();
-		Material itemType = player.getInventory().getItemInMainHand().getType();
 		
 		swordPlayer.act(InputType.LEFT);
 		
@@ -31,9 +28,7 @@ public class AbilityInputListener implements Listener {
 	@EventHandler
 	public void onPlayerInteract(PlayerInteractEvent event) {
 		SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId());
-		Player player = (Player) swordPlayer.entity();
-		Material mainItemType = player.getInventory().getItemInMainHand().getType();
-		Material offItemType = player.getInventory().getItemInOffHand().getType();
+		
 		Action action = event.getAction();
 		
 		if (swordPlayer.hasPerformedDropAction()) return;
@@ -44,19 +39,23 @@ public class AbilityInputListener implements Listener {
 		else if (action == Action.RIGHT_CLICK_AIR || action == Action.RIGHT_CLICK_BLOCK) {
 			swordPlayer.act(InputType.RIGHT);
 		}
-		
-		Bukkit.getCurrentTick();
 	}
 	
 	@EventHandler
 	public void onPlayerDropEvent(PlayerDropItemEvent event) {
 		SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId());
-		Material itemType = event.getItemDrop().getItemStack().getType();
+
 		swordPlayer.setPerformedDropAction(true);
 		
-		if (swordPlayer.isGrabbing()) swordPlayer.setGrabbing(false);
+		if (swordPlayer.isGrabbing()) {
+			swordPlayer.setGrabbing(false);
+			event.setCancelled(true);
+		}
+
+		swordPlayer.act(InputType.DROP);
 		
-		else swordPlayer.act(InputType.DROP);
+		if (!swordPlayer.canDrop())
+			event.setCancelled(true);
 		
 		new BukkitRunnable() {
 			@Override
@@ -64,21 +63,18 @@ public class AbilityInputListener implements Listener {
 				swordPlayer.setPerformedDropAction(false);
 			}
 		}.runTaskLater(Sword.getInstance(), 1);
-		
-		event.setCancelled(true);
 	}
 	
 	@EventHandler
 	public void onSneakEvent(PlayerToggleSneakEvent event) {
 		SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId());
-		Player player = (Player) swordPlayer.entity();
-		Material itemType = player.getInventory().getItemInMainHand().getType();
 		
 		if (event.isSneaking()) {
 			swordPlayer.act(InputType.SHIFT);
 		}
-		
-		event.setCancelled(true);
+		else {
+			swordPlayer.endSneaking();
+		}
 	}
 	
 	@EventHandler
@@ -86,6 +82,8 @@ public class AbilityInputListener implements Listener {
 		SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId());
 		Player player = (Player) swordPlayer.entity();
 		Material itemType = player.getInventory().getItemInMainHand().getType();
+		
+		itemType.isAir();
 		
 		swordPlayer.act(InputType.SWAP);
 		

@@ -4,6 +4,7 @@ import btm.sword.system.action.MovementAction;
 import btm.sword.system.playerdata.CombatProfile;
 import btm.sword.system.playerdata.StatType;
 import btm.sword.util.Cache;
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
@@ -72,10 +73,20 @@ public abstract class Combatant extends SwordEntity {
 	}
 	
 	public void onGrabThrow() {
+		onGrabHit();
+		
 		isGrabbing = false;
 		grabbedEntity.setGrabbed(false);
 		MovementAction.toss(this, grabbedEntity);
 		endAction();
+	}
+	
+	public void onGrabHit() {
+		LivingEntity target = grabbedEntity.entity();
+		Location hitLoc = target.getLocation().add(0, target.getEyeHeight()*0.5, 0);
+		Cache.grabHitParticle.display(hitLoc);
+		Cache.grabHitParticle2.display(hitLoc);
+		target.damage(1, associatedEntity);
 	}
 	
 	// if the player is not grabbing, is not being grabbed, and is currently not casting an ability,

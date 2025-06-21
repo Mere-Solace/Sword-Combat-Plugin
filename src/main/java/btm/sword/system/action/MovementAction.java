@@ -5,8 +5,10 @@ import btm.sword.system.entity.Combatant;
 import btm.sword.system.entity.SwordEntity;
 import btm.sword.system.playerdata.StatType;
 import btm.sword.util.Cache;
+import btm.sword.util.EntityUtil;
 import org.bukkit.FluidCollisionMode;
 import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.RayTraceResult;
@@ -34,7 +36,8 @@ public class MovementAction extends SwordAction {
 						}
 					}.runTaskLater(Sword.getInstance(), i);
 				}
-				executor.increaseAirDashesPerformed();
+				if (!EntityUtil.isOnGround(ex))
+					executor.increaseAirDashesPerformed();
 			}
 		});
 	}
@@ -73,23 +76,26 @@ public class MovementAction extends SwordAction {
 						cancel();
 						return;
 					}
+					World world = t.getWorld();
+					Location base = t.getLocation();
+					double h = t.getEyeHeight();
 					Vector v = t.getVelocity().normalize();
-					Location l = t.getLocation().add(new Vector(0,t.getEyeHeight() * 0.3,0).add(v));
+					Location l = base.add(new Vector(0,h * 0.3,0).add(v));
 					
-					Cache.throwTrailParticle.display(l);
+					Cache.throwTrailParticle.display(base.add(new Vector(0, h * 0.5, 0)));
 					
-					RayTraceResult blockResult = t.getWorld().rayTraceBlocks(l, v, 0.4, FluidCollisionMode.NEVER, true);
+					RayTraceResult blockResult = world.rayTraceBlocks(l, v, h * 0.6, FluidCollisionMode.NEVER, true);
 					
-					Collection<LivingEntity> entities = t.getWorld().getNearbyLivingEntities(
+					Collection<LivingEntity> entities = world.getNearbyLivingEntities(
 							l, 0.4, 0.4, 0.4,
 							entity -> !entity.getUniqueId().equals(t.getUniqueId()) && !entity.getUniqueId().equals(ex.getUniqueId()));
 					
 					if ((blockResult != null && blockResult.getHitBlock() != null) || !entities.isEmpty()) {
 						if (!entities.isEmpty()) {
-							Vector knockbackDir = t.getLocation().toVector().subtract(((LivingEntity)Arrays.stream(entities.toArray()).toList().getFirst()).getLocation().toVector());
+							Vector knockbackDir = base.toVector().subtract(((LivingEntity)Arrays.stream(entities.toArray()).toList().getFirst()).getLocation().toVector());
 							t.setVelocity(knockbackDir.normalize().multiply(0.3 * force));
 						}
-						t.getWorld().createExplosion(l, 2, false, false);
+						world.createExplosion(l, 2, false, false);
 						check[0] = false;
 					}
 				}

@@ -28,6 +28,6 @@ public class EventTasks {
 					}
 				}
 			}
-		}.runTaskTimer(Sword.getInstance(), 0, 2L);
+		}.runTaskTimer(Sword.getInstance(), 0, 3L);
 	}
 }

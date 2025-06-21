@@ -3,6 +3,7 @@ package btm.sword.system.action;
 import btm.sword.Sword;
 import btm.sword.system.entity.Combatant;
 import btm.sword.system.entity.SwordEntity;
+import btm.sword.system.entity.SwordPlayer;
 import btm.sword.system.playerdata.StatType;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.util.HitboxUtil;
@@ -72,6 +73,21 @@ public class UtilityAction extends SwordAction {
 						ticks[0]++;
 					}
 				}.runTaskTimer(Sword.getInstance(), 0, 1);
+			}
+		});
+	}
+	
+	public static void allowDrop(SwordPlayer executor) {
+		cast(executor, 0L, new BukkitRunnable() {
+			@Override
+			public void run() {
+				executor.setCanDrop(true);
+				new BukkitRunnable() {
+					@Override
+					public void run() {
+						executor.setCanDrop(false);
+					}
+				}.runTaskLater(Sword.getInstance(), 2L);
 			}
 		});
 	}

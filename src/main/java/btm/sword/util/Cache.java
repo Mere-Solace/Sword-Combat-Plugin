@@ -32,6 +32,8 @@ public class Cache {
 	public static final ParticleWrapper grabCloudParticle;
 	public static final ParticleWrapper throwTrailParticle;
 	public static final ParticleWrapper throwTrailParticle2;
+	public static final ParticleWrapper grabHitParticle;
+	public static final ParticleWrapper grabHitParticle2;
 	
 	static {
 		basicSword1 = new ArrayList<>(List.of(
@@ -85,7 +87,11 @@ public class Cache {
 		basicSwordEnterGround = new ParticleWrapper(Particle.CRIT, 30, 0.1, 0.1, 0.1, 0.5);
 		
 		grabCloudParticle = new ParticleWrapper(Particle.POOF, 20, 0.5, 0.5, 0.5, 0.1);
-		throwTrailParticle = new ParticleWrapper(Particle.DUST, 4, 0.2, 0.2, 0.2, new Particle.DustOptions(Color.WHITE, 2.5f));
+		throwTrailParticle = new ParticleWrapper(Particle.DUST, 4, 0.2, 0.2, 0.2,
+				new Particle.DustOptions(Color.WHITE, 2.5f));
 		throwTrailParticle2 = new ParticleWrapper(Particle.DUST_PLUME, 5, 0.1, 0.1, 0.1, 0);
+		grabHitParticle = new ParticleWrapper(Particle.FLAME, 50, 0.6, 0.6, 0.6, 0.02);
+		grabHitParticle2 = new ParticleWrapper(Particle.DUST, 3, 0.01, 0.01, 0.01,
+				new Particle.DustOptions(Color.ORANGE, 3f));
 	}
 }

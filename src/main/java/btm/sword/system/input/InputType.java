@@ -6,5 +6,7 @@ public enum InputType {
 	SHIFT,
 	DROP,
 	SWAP,
-	HOLD
+	R_HOLD,
+	SHIFT_HOLD,
+	NONE
 }
