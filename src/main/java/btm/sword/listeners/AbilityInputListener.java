@@ -54,6 +54,8 @@ public class AbilityInputListener implements Listener {
 
 		swordPlayer.act(InputType.DROP);
 		
+		swordPlayer.message("Can drop? " + swordPlayer.canDrop());
+		
 		if (!swordPlayer.canDrop())
 			event.setCancelled(true);
 		

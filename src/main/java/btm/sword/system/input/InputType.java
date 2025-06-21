@@ -3,10 +3,9 @@ package btm.sword.system.input;
 public enum InputType {
 	LEFT,
 	RIGHT,
-	SHIFT,
+	RIGHT_HOLD,
 	DROP,
 	SWAP,
-	R_HOLD,
+	SHIFT,
 	SHIFT_HOLD,
-	NONE
 }

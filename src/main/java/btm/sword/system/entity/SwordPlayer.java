@@ -26,25 +26,31 @@ public class SwordPlayer extends Combatant {
 	private boolean performedDropAction = false;
 	private boolean canDrop;
 	
-	BukkitTask holdCheckTask;
-	InputType currentHoldingType;
+	BukkitTask rightHoldCheckTask;
+	boolean holdingRight;
 	long rightHoldTimeStart;
 	long lastHoldTimeRecorded;
 	long timeRightHeld;
 	
-	boolean isSneaking;
-	long shitHoldTimeStart;
-	long timeShiftHeld;
+	BukkitTask sneakTask;
+	boolean sneaking;
+	long sneakHoldTimeStart;
+	long timeSneakHeld;
 	
 	public SwordPlayer(LivingEntity associatedEntity, PlayerData data) {
 		super(associatedEntity, data.getCombatProfile());
 		inputExecutionTree = new InputExecutionTree(inputTimeoutMillis);
 		inputExecutionTree.initializeInputTree();
-		currentHoldingType = InputType.NONE;
+		
+		rightHoldCheckTask = null;
+		holdingRight = false;
 		rightHoldTimeStart = 0L;
 		lastHoldTimeRecorded = 0L;
 		timeRightHeld = 0L;
-		isSneaking = false;
+		
+		sneaking = false;
+		sneakHoldTimeStart = 0L;
+		timeSneakHeld = 0L;
 	}
 	
 	public void act(InputType input) {
@@ -58,8 +64,8 @@ public class SwordPlayer extends Combatant {
 		}
 		
 		if (input == InputType.RIGHT) {
-			updateLastHoldTime();
-			if (holdCheckTask == null) {
+			updateLastRightHoldTime();
+			if (rightHoldCheckTask == null) {
 				startRightHoldCheck();
 			}
 			else {
@@ -67,23 +73,22 @@ public class SwordPlayer extends Combatant {
 				return;
 			}
 		}
+		else if (input == InputType.SHIFT) {
+			if (sneakTask == null)
+				startSneaking();
+		}
 		
-		if (input == InputType.R_HOLD || input == InputType.SHIFT_HOLD) {
+		if (input == InputType.RIGHT_HOLD || input == InputType.SHIFT_HOLD) {
 			long minTime = inputExecutionTree.getMinHoldLengthOfNext(input);
-			message("Min Hold Time: " + minTime + ", Right held for " + timeRightHeld + ", Shift held for: " + timeShiftHeld);
+			message("Min Hold Time: " + minTime + ", Right held for " + timeRightHeld + ", Shift held for: " + timeSneakHeld);
 			if (minTime == -1
-					|| (input == InputType.R_HOLD && timeRightHeld < minTime)
-					|| (input == InputType.SHIFT_HOLD && timeShiftHeld < minTime)) {
+					|| (input == InputType.RIGHT_HOLD && timeRightHeld < minTime)
+					|| (input == InputType.SHIFT_HOLD && timeSneakHeld < minTime)) {
 				return;
 			}
 		}
 		
 		InputExecutionTree.InputNode node = inputExecutionTree.step(input);
-		
-		if (input == InputType.SHIFT) {
-			setSneaking();
-			inputExecutionTree.stopTimeoutTimer();
-		}
 		
 		if (node != null) {
 			if (node.shouldDisplay()) {
@@ -183,52 +188,74 @@ public class SwordPlayer extends Combatant {
 	}
 	
 	public void startRightHoldCheck() {
-		if (currentHoldingType == InputType.RIGHT) return;
+		if (holdingRight) return;
 		message("Pressed Right");
-		if (holdCheckTask != null) holdCheckTask.cancel();
+		if (rightHoldCheckTask != null) rightHoldCheckTask.cancel();
 		
-		currentHoldingType = InputType.RIGHT;
+		holdingRight = true;
 		rightHoldTimeStart = System.currentTimeMillis();
 		
-		holdCheckTask = new BukkitRunnable() {
+		rightHoldCheckTask = new BukkitRunnable() {
 			@Override
 			public void run() {
 				long curTime = System.currentTimeMillis();
 				if (curTime - lastHoldTimeRecorded > 200L) {
 					onStopRightHold();
 					message("You stopped holding Right (held for " + ((double)(timeRightHeld)/1000) + " s)");
-					resetHolding();
+					resetHoldingRight();
 					cancel();
 				}
 			}
 		}.runTaskTimer(Sword.getInstance(), 0, 4L);
 	}
 	
-	public void updateLastHoldTime() {
+	public void updateLastRightHoldTime() {
 		lastHoldTimeRecorded = System.currentTimeMillis();
 	}
 	
-	public void resetHolding() {
-		holdCheckTask = null;
-		currentHoldingType = InputType.NONE;
+	public void resetHoldingRight() {
+		rightHoldCheckTask = null;
+		holdingRight = false;
 		rightHoldTimeStart = 0L;
 		lastHoldTimeRecorded = 0L;
+		timeRightHeld = 0L;
 	}
 	
 	public void onStopRightHold() {
 		timeRightHeld = System.currentTimeMillis() - rightHoldTimeStart;
-		act(InputType.R_HOLD);
+		act(InputType.RIGHT_HOLD);
 	}
 	
-	public void setSneaking() {
-		if (isSneaking) return;
-		isSneaking = true;
-		shitHoldTimeStart = System.currentTimeMillis();
+	public void startSneaking() {
+		if (sneaking) return;
+		message("Pressed Sneak");
+		if (sneakTask != null) sneakTask.cancel();
+		
+		sneaking = true;
+		sneakHoldTimeStart = System.currentTimeMillis();
+		
+		sneakTask = new BukkitRunnable() {
+			@Override
+			public void run() {
+				inputExecutionTree.restartTimeoutTimer();
+				if (!sneaking) {
+					act(InputType.SHIFT_HOLD);
+					resetSneaking();
+					cancel();
+				}
+			}
+		}.runTaskTimer(Sword.getInstance(), 0L, 1L);
+	}
+	
+	public void resetSneaking() {
+		sneakTask = null;
+		sneaking = false;
+		sneakHoldTimeStart = 0L;
+		timeSneakHeld = 0L;
 	}
 	
 	public void endSneaking() {
-		isSneaking = false;
-		timeShiftHeld = System.currentTimeMillis() - shitHoldTimeStart;
-		act(InputType.SHIFT_HOLD);
+		sneaking = false;
+		timeSneakHeld = System.currentTimeMillis() - sneakHoldTimeStart;
 	}
 }

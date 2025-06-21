@@ -87,7 +87,7 @@ public class UtilityAction extends SwordAction {
 					public void run() {
 						executor.setCanDrop(false);
 					}
-				}.runTaskLater(Sword.getInstance(), 2L);
+				}.runTaskLater(Sword.getInstance(), 5L);
 			}
 		});
 	}

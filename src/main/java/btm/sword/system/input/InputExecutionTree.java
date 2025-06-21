@@ -125,7 +125,7 @@ public class InputExecutionTree {
 		InputNode dummy = root;
 		for (InputType input : inputSequence) {
 			if (dummy.noChild(input)) {
-				if (input == InputType.R_HOLD || input == InputType.SHIFT_HOLD) {
+				if (input == InputType.RIGHT_HOLD || input == InputType.SHIFT_HOLD) {
 					dummy.addChild(input, null, minHoldTime);
 				}
 				else {
@@ -158,7 +158,7 @@ public class InputExecutionTree {
 			case DROP -> out = "D";
 			case SHIFT -> out = "S";
 			case SWAP -> out = "~";
-			case R_HOLD -> out = "_R_";
+			case RIGHT_HOLD -> out = "_R_";
 			case SHIFT_HOLD -> out = "_S_";
 			default -> out = "";
 		}
@@ -268,7 +268,7 @@ public class InputExecutionTree {
 				null,
 				true, false, true);
 		
-		add(List.of(InputType.RIGHT, InputType.R_HOLD),
+		add(List.of(InputType.RIGHT, InputType.RIGHT_HOLD),
 				new InputAction(
 						executor -> MovementAction.dash(executor, true),
 						executor -> executor.calcCooldown(200L, 1400L, StatType.CELERITY, 10),
