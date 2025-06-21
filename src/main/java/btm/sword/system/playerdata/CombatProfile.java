@@ -5,7 +5,7 @@ import java.util.HashMap;
 public class CombatProfile {
 	private SwordClassType swordClass;
 	
-	private final HashMap<StatType, Integer> stats = new HashMap<>();
+	private final HashMap<StatType, Integer> stats = new HashMap<>(); // max Stats
 	
 	private int maxAirDodges = 1;
 	

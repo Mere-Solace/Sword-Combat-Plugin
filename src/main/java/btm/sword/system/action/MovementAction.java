@@ -36,6 +36,7 @@ public class MovementAction extends SwordAction {
 						}
 					}.runTaskLater(Sword.getInstance(), i);
 				}
+				executor.message("Cur air dodges performed: " + executor.getAirDashesPerformed());
 				if (!EntityUtil.isOnGround(ex))
 					executor.increaseAirDashesPerformed();
 			}

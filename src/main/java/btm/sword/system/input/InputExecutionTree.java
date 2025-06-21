@@ -210,7 +210,7 @@ public class InputExecutionTree {
 						executor -> AttackAction.basicAttack(executor, 0),
 						executor -> executor.calcCooldown(50L, 1200L, StatType.FINESSE, 10),
 						Combatant::canPerformAction,
-						true, true),
+						false, true),
 				true, true, false);
 		
 		add(List.of(InputType.LEFT, InputType.LEFT),

@@ -14,8 +14,6 @@ import org.bukkit.util.Vector;
 import java.util.Objects;
 
 public abstract class Combatant extends SwordEntity {
-	protected CombatProfile combatProfile;
-	
 	private BukkitTask abilityCastTask = null;
 	
 	private int airDashesPerformed;
@@ -27,10 +25,6 @@ public abstract class Combatant extends SwordEntity {
 		super(associatedEntity);
 		this.combatProfile = combatProfile;
 		airDashesPerformed = 0;
-	}
-	
-	public CombatProfile getCombatProfile() {
-		return combatProfile;
 	}
 	
 	public BukkitTask getAbilityCastTask() {

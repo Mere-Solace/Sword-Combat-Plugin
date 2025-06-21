@@ -84,6 +84,7 @@ public class SwordPlayer extends Combatant {
 			if (minTime == -1
 					|| (input == InputType.RIGHT_HOLD && timeRightHeld < minTime)
 					|| (input == InputType.SHIFT_HOLD && timeSneakHeld < minTime)) {
+				message("  not letting you send input to the tree.");
 				return;
 			}
 		}

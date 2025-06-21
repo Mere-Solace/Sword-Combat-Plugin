@@ -1,15 +1,19 @@
 package btm.sword.system.entity;
 
-import org.bukkit.Location;
+import btm.sword.system.playerdata.CombatProfile;
 import org.bukkit.entity.LivingEntity;
-import org.bukkit.util.BoundingBox;
-import org.bukkit.util.Vector;
 
 import java.util.UUID;
 
 public abstract class SwordEntity {
 	protected LivingEntity associatedEntity;
-	private final UUID uuid;
+	protected UUID uuid;
+	
+	protected CombatProfile combatProfile;
+	
+	protected int curShards;
+	protected int effToughness;
+	protected int curSoulfire;
 	
 	private boolean grabbed;
 	
@@ -22,10 +26,17 @@ public abstract class SwordEntity {
 		return associatedEntity;
 	}
 	
+	public UUID uuid() {
+		return uuid;
+	}
+	
 	public void setAssociatedEntity(LivingEntity entity) {
 		this.associatedEntity = entity;
 	}
 	
+	public CombatProfile getCombatProfile() {
+		return combatProfile;
+	}
 	
 	public boolean isGrabbed() {
 		return grabbed;
