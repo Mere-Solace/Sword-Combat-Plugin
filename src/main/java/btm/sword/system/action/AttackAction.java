@@ -2,6 +2,8 @@ package btm.sword.system.action;
 
 import btm.sword.Sword;
 import btm.sword.system.entity.Combatant;
+import btm.sword.system.entity.SwordEntity;
+import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.playerdata.StatType;
 import btm.sword.util.*;
 import org.apache.logging.log4j.util.BiConsumer;
@@ -142,8 +144,16 @@ public class AttackAction extends SwordAction {
 								HashSet<LivingEntity> curHit = HitboxUtil.line(ex, o, l, 0.4);
 								for (LivingEntity target : curHit)
 									if (!hit.contains(target)) {
-										target.damage(d[0], ex);
+//										target.damage(d[0], ex);
+										
+										SwordEntity sTarget = SwordEntityArbiter.get(target.getUniqueId());
+										
+										sTarget.hit(executor,1, d[0], 6,
+														target.getLocation().toVector().subtract(o.toVector()).multiply(0.5));
+										
+										
 										Cache.basicSwordHit1.display(target.getLocation());
+										Cache.basicSwordHit1.display(sTarget.getChestLocation());
 										Cache.basicSwordHit2.display(target.getLocation());
 									}
 								hit.addAll(curHit);

@@ -22,8 +22,7 @@ public abstract class Combatant extends SwordEntity {
 	private SwordEntity grabbedEntity;
 	
 	public Combatant(LivingEntity associatedEntity, CombatProfile combatProfile) {
-		super(associatedEntity);
-		this.combatProfile = combatProfile;
+		super(associatedEntity, combatProfile);
 		airDashesPerformed = 0;
 	}
 	
@@ -56,7 +55,7 @@ public abstract class Combatant extends SwordEntity {
 		setGrabbing(true);
 		target.setGrabbed(true);
 		setGrabbedEntity(target);
-		t.damage(0.25, associatedEntity);
+		t.damage(0.25, self);
 		Cache.grabCloudParticle.display(t.getLocation().add(new Vector(0, 1, 0)));
 	}
 	
@@ -80,7 +79,7 @@ public abstract class Combatant extends SwordEntity {
 		Location hitLoc = target.getLocation().add(0, target.getEyeHeight()*0.5, 0);
 		Cache.grabHitParticle.display(hitLoc);
 		Cache.grabHitParticle2.display(hitLoc);
-		target.damage(1, associatedEntity);
+		target.damage(1, self);
 	}
 	
 	// if the player is not grabbing, is not being grabbed, and is currently not casting an ability,
@@ -122,13 +121,13 @@ public abstract class Combatant extends SwordEntity {
 	}
 	
 	public Material getItemInMainHand() {
-		if (associatedEntity instanceof Player) {
-			return ((Player) associatedEntity).getInventory().getItemInMainHand().getType();
+		if (self instanceof Player) {
+			return ((Player) self).getInventory().getItemInMainHand().getType();
 		}
-		return Objects.requireNonNull(associatedEntity.getEquipment()).getItemInMainHand().getType();
+		return Objects.requireNonNull(self.getEquipment()).getItemInMainHand().getType();
 	}
 	
 	public void message(String message) {
-		associatedEntity.sendMessage(message);
+		self.sendMessage(message);
 	}
 }

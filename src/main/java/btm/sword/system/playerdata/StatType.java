@@ -14,6 +14,7 @@ public enum StatType {
 	CELERITY,
 	WILLPOWER;
 	
+	// Maybe for efficiency...
 	public int mapToBinary(StatType type) {
 		int bits;
 		switch (type) {

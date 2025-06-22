@@ -135,7 +135,7 @@ public class SwordPlayer extends Combatant {
 	}
 	
 	public void displayInputSequence() {
-		associatedEntity.showTitle(Title.title(
+		self.showTitle(Title.title(
 				Component.text(""),
 				Component.text(inputExecutionTree.toString(), NamedTextColor.DARK_RED, TextDecoration.ITALIC),
 				Title.Times.times(
@@ -145,7 +145,7 @@ public class SwordPlayer extends Combatant {
 	}
 	
 	public void displayMistake() {
-		associatedEntity.showTitle(Title.title(
+		self.showTitle(Title.title(
 				Component.text(""),
 				Component.text("~*#*~", NamedTextColor.DARK_GRAY, TextDecoration.ITALIC),
 				Title.Times.times(
@@ -155,7 +155,7 @@ public class SwordPlayer extends Combatant {
 	}
 	
 	public void displayDisablingEffect() {
-		associatedEntity.showTitle(Title.title(
+		self.showTitle(Title.title(
 				Component.text(""),
 				Component.text("ur disabled", NamedTextColor.DARK_GRAY, TextDecoration.ITALIC),
 				Title.Times.times(
@@ -167,7 +167,7 @@ public class SwordPlayer extends Combatant {
 	public void displayCooldown(long timeLeft) {
 		double timeToDisplay = timeLeft > 1000L ? (double)timeLeft/1000 : timeLeft;
 		String unit = timeLeft > 1000L ? "s" : "ms";
-		associatedEntity.showTitle(Title.title(
+		self.showTitle(Title.title(
 				Component.text(""),
 				Component.text("on cooldown: " + timeToDisplay + " " + unit, NamedTextColor.GRAY, TextDecoration.ITALIC),
 				Title.Times.times(
@@ -177,11 +177,12 @@ public class SwordPlayer extends Combatant {
 	}
 	
 	public Material getItemInUse() {
-		return ((Player) associatedEntity).getInventory().getItemInMainHand().getType();
+		return ((Player) self).getInventory().getItemInMainHand().getType();
 	}
 	
 	public void addStat(StatType stat, int amount) {
 		combatProfile.addStat(stat, amount);
+		// invalidate all cached, calculated values with that stat
 	}
 	
 	public boolean inputReliantOnItem() {

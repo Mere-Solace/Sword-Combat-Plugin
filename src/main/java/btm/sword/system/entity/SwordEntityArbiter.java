@@ -22,7 +22,7 @@ public class SwordEntityArbiter {
 				onlineSwordPlayers.put(entityUUID, new SwordPlayer(entity, PlayerDataManager.getPlayerData(entityUUID)));
 			}
 			else {
-				onlineSwordPlayers.get(entityUUID).setAssociatedEntity(entity);
+				onlineSwordPlayers.get(entityUUID).setSelf(entity);
 			}
 		} else if (!entity.isDead()) {
 			existingSwordNPCs.putIfAbsent(entityUUID, initializeNPC(entity));
@@ -55,7 +55,7 @@ public class SwordEntityArbiter {
 				return new Hostile(entity, new CombatProfile());
 			}
 			default -> {
-				return new Passive(entity);
+				return new Passive(entity, new CombatProfile());
 			}
 		}
 	}
