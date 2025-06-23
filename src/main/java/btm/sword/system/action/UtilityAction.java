@@ -4,7 +4,7 @@ import btm.sword.Sword;
 import btm.sword.system.entity.Combatant;
 import btm.sword.system.entity.SwordEntity;
 import btm.sword.system.entity.SwordPlayer;
-import btm.sword.system.playerdata.StatType;
+import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.util.HitboxUtil;
 import org.bukkit.Location;
@@ -23,9 +23,9 @@ public class UtilityAction extends SwordAction {
 				double baseGrabRange = 3;
 				double baseGrabThickness = 0.3;
 				
-				long duration = (long) executor.calcValueAdditive(StatType.MIGHT, 100L, baseDuration, 0.2);
-				double range = executor.calcValueAdditive(StatType.WILLPOWER, 4.5, baseGrabRange, 0.1);
-				double grabThickness = executor.calcValueAdditive(StatType.WILLPOWER, 0.75, baseGrabThickness, 0.1);
+				long duration = (long) executor.calcValueAdditive(AspectType.MIGHT, 100L, baseDuration, 0.2);
+				double range = executor.calcValueAdditive(AspectType.WILLPOWER, 4.5, baseGrabRange, 0.1);
+				double grabThickness = executor.calcValueAdditive(AspectType.WILLPOWER, 0.75, baseGrabThickness, 0.1);
 				
 				LivingEntity ex = executor.entity();
 				Location o = ex.getEyeLocation();

@@ -4,7 +4,7 @@ import btm.sword.Sword;
 import btm.sword.system.entity.Combatant;
 import btm.sword.system.entity.SwordEntity;
 import btm.sword.system.entity.SwordEntityArbiter;
-import btm.sword.system.playerdata.StatType;
+import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.util.*;
 import org.apache.logging.log4j.util.BiConsumer;
 import org.bukkit.Location;
@@ -48,7 +48,7 @@ public class AttackAction extends SwordAction {
 	//
 	
 	public static void basicSword(Combatant executor, int stage) {
-		long castDuration = (long) executor.calcValueReductive(StatType.FINESSE, 0L, 4L, 0.2);
+		long castDuration = (long) executor.calcValueReductive(AspectType.FINESSE, 0L, 4L, 0.2);
 		cast(executor, castDuration,
 			new BukkitRunnable() {
 				@Override
@@ -148,7 +148,7 @@ public class AttackAction extends SwordAction {
 										
 										SwordEntity sTarget = SwordEntityArbiter.get(target.getUniqueId());
 										
-										sTarget.hit(executor,1, d[0], 6,
+										sTarget.hit(executor,1, (float) d[0], 6,
 														target.getLocation().toVector().subtract(o.toVector()).multiply(0.5));
 										
 										

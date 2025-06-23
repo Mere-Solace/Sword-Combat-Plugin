@@ -3,7 +3,7 @@ package btm.sword.system.action;
 import btm.sword.Sword;
 import btm.sword.system.entity.Combatant;
 import btm.sword.system.entity.SwordEntity;
-import btm.sword.system.playerdata.StatType;
+import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.util.Cache;
 import btm.sword.util.EntityUtil;
 import org.bukkit.FluidCollisionMode;
@@ -36,9 +36,10 @@ public class MovementAction extends SwordAction {
 						}
 					}.runTaskLater(Sword.getInstance(), i);
 				}
-				executor.message("Cur air dodges performed: " + executor.getAirDashesPerformed());
+				executor.message("before: " + executor.getAirDashesPerformed());
 				if (!EntityUtil.isOnGround(ex))
 					executor.increaseAirDashesPerformed();
+				executor.message("  Cur air dodges performed: " + executor.getAirDashesPerformed());
 			}
 		});
 	}
@@ -48,7 +49,7 @@ public class MovementAction extends SwordAction {
 		LivingEntity t = target.entity();
 		
 		double baseForce = 1.5;
-		double force = executor.calcValueAdditive(StatType.MIGHT, 2.5, baseForce, 0.1);
+		double force = executor.calcValueAdditive(AspectType.MIGHT, 2.5, baseForce, 0.1);
 		
 		for (int i = 0; i < 2; i++) {
 			new BukkitRunnable() {

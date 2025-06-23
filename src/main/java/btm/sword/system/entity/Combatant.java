@@ -2,7 +2,7 @@ package btm.sword.system.entity;
 
 import btm.sword.system.action.MovementAction;
 import btm.sword.system.playerdata.CombatProfile;
-import btm.sword.system.playerdata.StatType;
+import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.util.Cache;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -62,7 +62,6 @@ public abstract class Combatant extends SwordEntity {
 	public void onGrabLetGo() {
 		isGrabbing = false;
 		grabbedEntity.setGrabbed(false);
-		endAction();
 	}
 	
 	public void onGrabThrow() {
@@ -71,7 +70,6 @@ public abstract class Combatant extends SwordEntity {
 		isGrabbing = false;
 		grabbedEntity.setGrabbed(false);
 		MovementAction.toss(this, grabbedEntity);
-		endAction();
 	}
 	
 	public void onGrabHit() {
@@ -104,20 +102,16 @@ public abstract class Combatant extends SwordEntity {
 		airDashesPerformed++;
 	}
 	
-	public void endAction() {
-		abilityCastTask = null;
+	public double calcValueAdditive(AspectType stat, double max, double base, double multiplier) {
+		return Math.min(max, base + (multiplier * aspects.getAspectVal(stat)));
 	}
 	
-	public double calcValueAdditive(StatType stat, double max, double base, double multiplier) {
-		return Math.min(max, base + (multiplier * combatProfile.getStat(stat)));
+	public double calcValueReductive(AspectType stat, double min, double base, double multiplier) {
+		return Math.max(min, base - (multiplier * aspects.getAspectVal(stat)));
 	}
 	
-	public double calcValueReductive(StatType stat, double min, double base, double multiplier) {
-		return Math.max(min, base - (multiplier * combatProfile.getStat(stat)));
-	}
-	
-	public long calcCooldown(long min, long base, StatType stat, double multiplier) {
-		return (long) Math.max(min, base - (this.getCombatProfile().getStat(stat) * multiplier));
+	public long calcCooldown(AspectType type, double min, double base, double multiplier) {
+		return (long) Math.max(min, base - (multiplier * aspects.getAspectVal(type)) );
 	}
 	
 	public Material getItemInMainHand() {

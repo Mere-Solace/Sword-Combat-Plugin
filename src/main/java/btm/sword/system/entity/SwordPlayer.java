@@ -2,7 +2,7 @@ package btm.sword.system.entity;
 
 import btm.sword.Sword;
 import btm.sword.system.input.InputAction;
-import btm.sword.system.playerdata.StatType;
+import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.input.InputExecutionTree;
 import btm.sword.system.input.InputType;
 import btm.sword.system.playerdata.PlayerData;
@@ -180,8 +180,8 @@ public class SwordPlayer extends Combatant {
 		return ((Player) self).getInventory().getItemInMainHand().getType();
 	}
 	
-	public void addStat(StatType stat, int amount) {
-		combatProfile.addStat(stat, amount);
+	public void addStat(AspectType stat, int amount) {
+		aspects.getAspect(stat).addBaseValue(amount);
 		// invalidate all cached, calculated values with that stat
 	}
 	

@@ -50,6 +50,7 @@ public class PlayerListener implements Listener {
 
 		if (event.isGrounded()) {
 			swordPlayer.resetAirDashesPerformed();
+			swordPlayer.message("Resetting your # air dashes");
 		}
 	}
 }

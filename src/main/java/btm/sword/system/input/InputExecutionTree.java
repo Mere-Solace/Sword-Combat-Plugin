@@ -6,7 +6,7 @@ import btm.sword.system.action.MovementAction;
 import btm.sword.system.action.UtilityAction;
 import btm.sword.system.entity.Combatant;
 import btm.sword.system.entity.SwordPlayer;
-import btm.sword.system.playerdata.StatType;
+import btm.sword.system.entity.aspect.AspectType;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
@@ -181,7 +181,7 @@ public class InputExecutionTree {
 		add(List.of(InputType.SWAP, InputType.SWAP),
 				new InputAction(
 						executor -> MovementAction.dash(executor, true),
-						executor -> executor.calcCooldown(200L, 1000L, StatType.CELERITY, 10),
+						executor -> executor.calcCooldown(AspectType.CELERITY, 200L, 1000L, 10),
 						Combatant::canAirDash,
 						false, true),
 				false, true, true);
@@ -189,7 +189,7 @@ public class InputExecutionTree {
 		add(List.of(InputType.SHIFT, InputType.SWAP),
 				new InputAction(
 						executor -> MovementAction.dash(executor, false),
-						executor -> executor.calcCooldown(200L, 1000L, StatType.CELERITY, 10),
+						executor -> executor.calcCooldown(AspectType.CELERITY, 200L, 1000L, 10),
 						Combatant::canAirDash,
 						false, true),
 				false, true, true);
@@ -198,7 +198,7 @@ public class InputExecutionTree {
 		add(List.of(InputType.SHIFT, InputType.RIGHT),
 				new InputAction(
 						UtilityAction::grab,
-						executor -> executor.calcCooldown(200L, 1000L, StatType.FORTITUDE, 10),
+						executor -> executor.calcCooldown(AspectType.FORTITUDE, 200L, 1000L, 10),
 						Combatant::canPerformAction,
 						false, true),
 				false, false, true);
@@ -208,7 +208,7 @@ public class InputExecutionTree {
 		add(List.of(InputType.LEFT),
 				new InputAction(
 						executor -> AttackAction.basicAttack(executor, 0),
-						executor -> executor.calcCooldown(50L, 1200L, StatType.FINESSE, 10),
+						executor -> executor.calcCooldown(AspectType.FINESSE, 5L, 1000L, 10),
 						Combatant::canPerformAction,
 						false, true),
 				true, true, false);
@@ -216,7 +216,7 @@ public class InputExecutionTree {
 		add(List.of(InputType.LEFT, InputType.LEFT),
 				new InputAction(
 						executor -> AttackAction.basicAttack(executor, 1),
-						executor -> executor.calcCooldown(0L, 0L, StatType.FINESSE, 10),
+						executor -> 0L,
 						Combatant::canPerformAction,
 						false, true),
 				true, true, false);
@@ -224,7 +224,7 @@ public class InputExecutionTree {
 		add(List.of(InputType.LEFT, InputType.LEFT, InputType.LEFT),
 				new InputAction(
 						executor -> AttackAction.basicAttack(executor, 2),
-						executor -> executor.calcCooldown(0L, 0L, StatType.FINESSE, 10),
+						executor -> 0L,
 						Combatant::canPerformAction,
 						false, true),
 				true, true, false);
@@ -271,7 +271,7 @@ public class InputExecutionTree {
 		add(List.of(InputType.RIGHT, InputType.RIGHT_HOLD),
 				new InputAction(
 						executor -> MovementAction.dash(executor, true),
-						executor -> executor.calcCooldown(200L, 1400L, StatType.CELERITY, 10),
+						executor -> executor.calcCooldown(AspectType.CELERITY, 200L,1400L, 10),
 						Combatant::canAirDash,
 						true, true),
 				true, true, true, 1000L);
@@ -279,7 +279,7 @@ public class InputExecutionTree {
 		add(List.of(InputType.SHIFT, InputType.SHIFT_HOLD),
 				new InputAction(
 						executor -> MovementAction.dash(executor, true),
-						executor -> executor.calcCooldown(200L, 1400L, StatType.CELERITY, 10),
+						executor -> executor.calcCooldown(AspectType.CELERITY, 200L,1400L, 10),
 						Combatant::canAirDash,
 						true, true),
 				true, true, true, 1000L);
@@ -288,7 +288,7 @@ public class InputExecutionTree {
 		add(List.of(InputType.DROP, InputType.DROP, InputType.DROP),
 				new InputAction(
 						executor -> UtilityAction.allowDrop((SwordPlayer) executor),
-						executor -> executor.calcCooldown(0L, 0L, StatType.WILLPOWER, 10),
+						executor -> 0L,
 						Combatant::canPerformAction,
 						false, false),
 				true, true, true);

@@ -1,23 +1,28 @@
 package btm.sword.system.playerdata;
 
+import btm.sword.system.entity.aspect.AspectType;
+import btm.sword.system.entity.aspect.value.AspectValue;
+import btm.sword.system.entity.aspect.value.ResourceValue;
+
 import java.util.HashMap;
 
 public class CombatProfile {
 	private SwordClassType swordClass;
 	
-	private final HashMap<StatType, Integer> stats = new HashMap<>(); // max Stats
+	private final HashMap<AspectType, AspectValue> stats = new HashMap<>(); // max Stats
 	
 	private int maxAirDodges = 1;
 	
 	public CombatProfile() {
 		swordClass = SwordClassType.LOSAH;
 		
-		for (StatType stat : StatType.values()) {
+		for (AspectType stat : AspectType.values()) {
 			switch (stat) {
-				case SHARDS -> stats.put(stat, 5);
-				case TOUGHNESS -> stats.put(stat, 20);
-				case SOULFIRE -> stats.put(stat, 50);
-				default -> stats.put(stat, 1);
+				case SHARDS -> stats.put(stat, new ResourceValue(5, 40, 1));
+				case TOUGHNESS -> stats.put(stat, new ResourceValue(20, 20, 1));
+				case SOULFIRE -> stats.put(stat, new ResourceValue(50, 2, 0.2f));
+				case FORM -> stats.put(stat, new ResourceValue(10, 60, 2));
+				default -> stats.put(stat, new AspectValue(1));
 			}
 		}
 		// replace item material type with a specific item metadata in the future
@@ -31,17 +36,12 @@ public class CombatProfile {
 		this.swordClass = swordClass;
 	}
 	
-	public void setStat(StatType type, int value) {
-		stats.put(type, value);
+	public void setStat(AspectType type, AspectValue values) {
+		stats.put(type, values);
 	}
 	
-	public void addStat(StatType type, int delta) {
-		stats.putIfAbsent(type, 0);
-		stats.replace(type, getStat(type) + delta);
-	}
-	
-	public int getStat(StatType type) {
-		return stats.getOrDefault(type, -1);
+	public AspectValue getStat(AspectType type) {
+		return stats.get(type);
 	}
 	
 	public void increaseNumAirDodges() {
