@@ -45,6 +45,10 @@ public class Resource extends Aspect {
 		return curValue;
 	}
 	
+	public float curPercent() {
+		return curValue/effectiveValue();
+	}
+	
 	public void add(float amount) {
 		curValue += amount;
 	}
@@ -57,6 +61,16 @@ public class Resource extends Aspect {
 			return true;
 		}
 		return false;
+	}
+	
+	public void reset() {
+		curValue = effectiveValue();
+	}
+	
+	@Override
+	public void setBaseValue(float baseValue) {
+		this.baseValue = baseValue;
+		curValue = Math.min(curValue, effectiveValue());
 	}
 	
 	public long effectivePeriod() {

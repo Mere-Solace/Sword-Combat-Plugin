@@ -86,19 +86,21 @@ public class MovementAction extends SwordAction {
 					
 					Cache.throwTrailParticle.display(base.add(new Vector(0, h * 0.5, 0)));
 					
-					RayTraceResult blockResult = world.rayTraceBlocks(l, v, h * 0.6, FluidCollisionMode.NEVER, true);
-					
-					Collection<LivingEntity> entities = world.getNearbyLivingEntities(
-							l, 0.4, 0.4, 0.4,
-							entity -> !entity.getUniqueId().equals(t.getUniqueId()) && !entity.getUniqueId().equals(ex.getUniqueId()));
-					
-					if ((blockResult != null && blockResult.getHitBlock() != null) || !entities.isEmpty()) {
-						if (!entities.isEmpty()) {
-							Vector knockbackDir = base.toVector().subtract(((LivingEntity)Arrays.stream(entities.toArray()).toList().getFirst()).getLocation().toVector());
-							t.setVelocity(knockbackDir.normalize().multiply(0.3 * force));
+					if (l.isFinite()) {
+						RayTraceResult blockResult = world.rayTraceBlocks(l, v, h * 0.6, FluidCollisionMode.NEVER, true);
+						
+						Collection<LivingEntity> entities = world.getNearbyLivingEntities(
+								l, 0.4, 0.4, 0.4,
+								entity -> !entity.getUniqueId().equals(t.getUniqueId()) && !entity.getUniqueId().equals(ex.getUniqueId()));
+						
+						if ((blockResult != null && blockResult.getHitBlock() != null) || !entities.isEmpty()) {
+							if (!entities.isEmpty()) {
+								Vector knockbackDir = base.toVector().subtract(((LivingEntity) Arrays.stream(entities.toArray()).toList().getFirst()).getLocation().toVector());
+								t.setVelocity(knockbackDir.normalize().multiply(0.3 * force));
+							}
+							world.createExplosion(l, 2, false, false);
+							check[0] = false;
 						}
-						world.createExplosion(l, 2, false, false);
-						check[0] = false;
 					}
 				}
 			}.runTaskLater(Sword.getInstance(), i);

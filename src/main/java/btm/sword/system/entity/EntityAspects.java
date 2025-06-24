@@ -8,19 +8,19 @@ import btm.sword.system.entity.aspect.value.ResourceValue;
 import btm.sword.system.playerdata.CombatProfile;
 
 public class EntityAspects {
-	protected Resource shards;
-	protected Resource toughness;
-	protected Resource soulfire;
-	protected Resource form;
+	private final Resource shards;
+	private final Resource toughness;
+	private final Resource soulfire;
+	private final Resource form;
 	
-	protected Aspect might;
-	protected Aspect resolve;
-	protected Aspect finesse;
-	protected Aspect prowess;
-	protected Aspect armor;
-	protected Aspect fortitude;
-	protected Aspect celerity;
-	protected Aspect willpower;
+	private final Aspect might;
+	private final Aspect resolve;
+	private final Aspect finesse;
+	private final Aspect prowess;
+	private final Aspect armor;
+	private final Aspect fortitude;
+	private final Aspect celerity;
+	private final Aspect willpower;
 	
 	public EntityAspects(CombatProfile profile) {
 		AspectValue shardVals = profile.getStat(AspectType.SHARDS);
@@ -114,4 +114,16 @@ public class EntityAspects {
 	public float fortitudeVal() { return fortitude.effectiveValue(); }
 	public float celerityVal() { return celerity.effectiveValue(); }
 	public float willpowerVal() { return willpower.effectiveValue(); }
+	
+	public float shardsCur() { return shards.cur(); }
+	public float toughnessCur() { return toughness.cur(); }
+	public float soulfireCur() { return soulfire.cur(); }
+	public float formCur() { return form.cur(); }
+	
+	public String curResources() {
+		return "Shards: " + shardsCur() +
+				"\nToughness: " + toughnessCur() +
+				"\nSoulfire: " + soulfireCur() +
+				"\nForm: " + formCur();
+	}
 }

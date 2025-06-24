@@ -146,15 +146,18 @@ public class AttackAction extends SwordAction {
 									if (!hit.contains(target)) {
 //										target.damage(d[0], ex);
 										
-										SwordEntity sTarget = SwordEntityArbiter.get(target.getUniqueId());
-										
-										sTarget.hit(executor,1, (float) d[0], 6,
-														target.getLocation().toVector().subtract(o.toVector()).multiply(0.5));
-										
-										
-										Cache.basicSwordHit1.display(target.getLocation());
-										Cache.basicSwordHit1.display(sTarget.getChestLocation());
-										Cache.basicSwordHit2.display(target.getLocation());
+										SwordEntity sTarget = SwordEntityArbiter.getOrAdd(target.getUniqueId());
+										if (sTarget != null && !sTarget.entity().isDead()) {
+											sTarget.hit(executor, 1, (float) d[0], 6,
+													target.getLocation().toVector().subtract(o.toVector()).multiply(0.5));
+											
+											Cache.basicSwordHit1.display(target.getLocation());
+											Cache.basicSwordHit1.display(sTarget.getChestLocation());
+											Cache.basicSwordHit2.display(target.getLocation());
+										}
+										else {
+											executor.message("Target: " + target + " caused an NPE");
+										}
 									}
 								hit.addAll(curHit);
 								

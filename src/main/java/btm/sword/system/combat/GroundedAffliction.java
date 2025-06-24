@@ -6,15 +6,15 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.util.Vector;
 
 public class GroundedAffliction extends Affliction {
-	public GroundedAffliction(long tickDuration) {
-		super(true, tickDuration);
+	public GroundedAffliction(long tickDuration, double strength) {
+		super(true, tickDuration, strength);
 	}
 	
 	@Override
-	public void apply(SwordEntity afflicted) {
+	public void onApply(SwordEntity afflicted) {
 		LivingEntity a = afflicted.entity();
 		Vector v = a.getVelocity();
-		a.setVelocity(new Vector(v.getX(), 0, v.getZ()));
+		a.setVelocity(new Vector(v.getX(), -strength, v.getZ()));
 	}
 	
 	@Override

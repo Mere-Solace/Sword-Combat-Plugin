@@ -22,4 +22,14 @@ public class Hostile extends Combatant {
 			equipment.setChestplate(new ItemStack(Material.NETHERITE_CHESTPLATE));
 		}
 	}
+	
+	@Override
+	public void onSpawn() {
+	
+	}
+	
+	@Override
+	public void onDeath() {
+	
+	}
 }

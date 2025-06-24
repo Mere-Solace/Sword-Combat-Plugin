@@ -260,4 +260,14 @@ public class SwordPlayer extends Combatant {
 		sneaking = false;
 		timeSneakHeld = System.currentTimeMillis() - sneakHoldTimeStart;
 	}
+	
+	@Override
+	public void onSpawn() {
+		resetResources();
+	}
+	
+	@Override
+	public void onDeath() {
+	
+	}
 }

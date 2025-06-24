@@ -120,8 +120,4 @@ public abstract class Combatant extends SwordEntity {
 		}
 		return Objects.requireNonNull(self.getEquipment()).getItemInMainHand().getType();
 	}
-	
-	public void message(String message) {
-		self.sendMessage(message);
-	}
 }

@@ -2,6 +2,7 @@ package btm.sword.util;
 
 import org.bukkit.Color;
 import org.bukkit.Particle;
+import org.bukkit.block.data.type.Bed;
 import org.bukkit.util.Vector;
 
 import java.util.ArrayList;
@@ -34,6 +35,10 @@ public class Cache {
 	public static final ParticleWrapper throwTrailParticle2;
 	public static final ParticleWrapper grabHitParticle;
 	public static final ParticleWrapper grabHitParticle2;
+	
+	public static final ParticleWrapper toughnessBreakParticle1;
+	public static final ParticleWrapper toughnessRechargeParticle;
+	public static final ParticleWrapper toughnessRechargeParticle2;
 	
 	static {
 		basicSword1 = new ArrayList<>(List.of(
@@ -93,5 +98,9 @@ public class Cache {
 		grabHitParticle = new ParticleWrapper(Particle.FLAME, 50, 0.6, 0.6, 0.6, 0.02);
 		grabHitParticle2 = new ParticleWrapper(Particle.DUST, 3, 0.01, 0.01, 0.01,
 				new Particle.DustOptions(Color.ORANGE, 3f));
+		
+		toughnessBreakParticle1 = new ParticleWrapper(Particle.GUST, 2, 1, 1, 1, 1);
+		toughnessRechargeParticle = new ParticleWrapper(Particle.GUST_EMITTER_SMALL, 2, 1, 1, 1, 0);
+		toughnessRechargeParticle2 = new ParticleWrapper(Particle.FLAME, 30, 2, 2, 2, 0.2);
 	}
 }

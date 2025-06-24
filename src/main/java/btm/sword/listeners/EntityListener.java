@@ -14,8 +14,10 @@ public class EntityListener implements Listener {
 	@EventHandler
 	public void entitySpawnEvent(EntitySpawnEvent event) {
 		Entity entity = event.getEntity();
-		if (entity instanceof LivingEntity)
+		if (entity instanceof LivingEntity) {
 			SwordEntityArbiter.register((LivingEntity) entity);
+			SwordEntityArbiter.get(entity.getUniqueId()).resetResources();
+		}
 	}
 	
 	@EventHandler
@@ -25,6 +27,9 @@ public class EntityListener implements Listener {
 	
 	@EventHandler
 	public void entityDamageEvent(EntityDamageEvent event) {
-//		event.setCancelled(true);
+		if(event.getDamage() < 7474040) {
+			event.setDamage(0.01);
+			((LivingEntity) event.getEntity()).heal(100);
+		}
 	}
 }

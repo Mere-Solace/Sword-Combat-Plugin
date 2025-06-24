@@ -1,8 +1,12 @@
 package btm.sword.system.playerdata;
 
 import btm.sword.Sword;
+import btm.sword.system.entity.aspect.value.AspectValue;
+import btm.sword.system.entity.aspect.value.ResourceValue;
+import btm.sword.util.gson.RuntimeTypeAdapterFactory;
 import com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
@@ -13,8 +17,16 @@ import java.util.Map;
 import java.util.UUID;
 
 public class PlayerDataManager {
+	static RuntimeTypeAdapterFactory<AspectValue> aspectFactory = RuntimeTypeAdapterFactory
+			.of(AspectValue.class, "type")
+			.registerSubtype(AspectValue.class, "aspect")
+			.registerSubtype(ResourceValue.class, "resource");
+	
+	static Gson gson = new GsonBuilder()
+			.registerTypeAdapterFactory(aspectFactory)
+			.create();
+	
 	private static final Map<UUID, PlayerData> allPlayerData = new HashMap<>();
-	private static final Gson gson = new Gson();
 	private static final File datafile = new File("plugins/sword/playerdata.json");
 	
 	public static void initialize() {

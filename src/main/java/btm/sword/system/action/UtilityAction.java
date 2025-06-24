@@ -1,6 +1,7 @@
 package btm.sword.system.action;
 
 import btm.sword.Sword;
+import btm.sword.system.combat.GroundedAffliction;
 import btm.sword.system.entity.Combatant;
 import btm.sword.system.entity.SwordEntity;
 import btm.sword.system.entity.SwordPlayer;
@@ -52,8 +53,12 @@ public class UtilityAction extends SwordAction {
 							cancel();
 							return;
 						}
-						Vector v = ex.getVelocity();
-						ex.setVelocity(new Vector(v.getX() * 0.2, v.getY() * 0.7,v.getZ() * 0.2));
+						
+						executor.message("ur grounded broski");
+						new GroundedAffliction(1, 6).apply(executor);
+						
+//						Vector v = ex.getVelocity();
+//						ex.setVelocity(new Vector(v.getX() * 0.2, v.getY() * 0.7,v.getZ() * 0.2));
 						
 						double holdDist = 2;
 						Vector direction = ex.getLocation().toVector().add(ex.getEyeLocation().getDirection().multiply(holdDist)).subtract(target.getLocation().toVector());
