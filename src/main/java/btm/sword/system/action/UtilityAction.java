@@ -18,9 +18,7 @@ import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.*;
-import org.bukkit.inventory.EquipmentSlot;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.MainHand;
+import org.bukkit.inventory.*;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -33,6 +31,7 @@ import org.joml.Vector3f;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 
 public class UtilityAction extends SwordAction {
 	
@@ -112,101 +111,118 @@ public class UtilityAction extends SwordAction {
 				LivingEntity ex = executor.entity();
 				World world = ex.getWorld();
 				
+				ItemStack thrownItem;
 				if (executor instanceof SwordPlayer sp) {
 					Player p = ((Player) sp.entity());
-					p.getInventory().setItem(p.getInventory().getHeldItemSlot(), new ItemStack(Material.AIR));
+					PlayerInventory inv = p.getInventory();
+					thrownItem = inv.getItemInMainHand();
+					inv.setItem(inv.getHeldItemSlot(), new ItemStack(Material.AIR));
+				}
+				else {
+					thrownItem = Objects.requireNonNull(ex.getEquipment()).getItemInMainHand();
+					Objects.requireNonNull(ex.getEquipment()).setItemInMainHand(new ItemStack(Material.AIR));
 				}
 				
-				ItemDisplay display = (ItemDisplay) world.spawnEntity(executor.getChestLocation(), EntityType.ITEM_DISPLAY);
-				display.setItemStack(new ItemStack(Material.NETHERITE_SWORD));
-				Transformation t = new Transformation(
-						new Vector3f(0,0,3),
-						new Quaternionf(0,0,0,1),
-						new Vector3f(1.1f,1.1f,1.1f),
-						new Quaternionf(0,0,0,1));
-				display.setTransformation(t);
+				Location eyeLoc = ex.getEyeLocation();
+				double pitchRads = Math.toRadians(eyeLoc.getPitch());
+				double yawRads = Math.toRadians(eyeLoc.getYaw());
 				
-				ItemDisplay display1 = (ItemDisplay) world.spawnEntity(executor.getChestLocation(), EntityType.ITEM_DISPLAY);
-				display1.setItemStack(new ItemStack(Material.NETHERITE_SWORD));
-				Transformation t1 = new Transformation(
-						new Vector3f(2,0,1),
-						new Quaternionf(0,0,1,0),
-						new Vector3f(1.1f,1.1f,1.1f),
-						new Quaternionf(0,0,0,1));
-				display1.setTransformation(t1);
+				Vector planeDir = new Vector(-Math.sin(yawRads), 0, Math.cos(yawRads));
 				
-				ItemDisplay display2 = (ItemDisplay) world.spawnEntity(executor.getChestLocation(), EntityType.ITEM_DISPLAY);
-				display2.setItemStack(new ItemStack(Material.NETHERITE_SWORD));
-				Transformation t2 = new Transformation(
-						new Vector3f(-2,0,1),
-						new Quaternionf(0,1,0,0),
-						new Vector3f(1.1f,1.1f,1.1f),
-						new Quaternionf(0,0,0,1));
-				display2.setTransformation(t2);
+				List<Vector> basis = VectorUtil.getBasis(eyeLoc, planeDir);
+				Vector right = basis.getFirst();
+				Vector up = basis.get(1);
 				
-				ItemDisplay display3 = (ItemDisplay) world.spawnEntity(executor.getChestLocation(), EntityType.ITEM_DISPLAY);
-				display3.setItemStack(new ItemStack(Material.NETHERITE_SWORD));
-				Transformation t3 = new Transformation(
-						new Vector3f(0,-1,0.5f),
-						new Quaternionf(1,0,0,0),
-						new Vector3f(1.1f,1.1f,1.1f),
-						new Quaternionf(0,0,0,1));
-				display3.setTransformation(t3);
+				Location throwOrigin = eyeLoc.clone();
 				
-				ItemDisplay display4 = (ItemDisplay) world.spawnEntity(executor.getChestLocation(), EntityType.ITEM_DISPLAY);
-				display4.setItemStack(new ItemStack(Material.NETHERITE_SWORD));
-				Transformation t4 = new Transformation(
+				throwOrigin.add(right.clone().multiply(0.45))
+						.subtract(up.clone().multiply(0.25))
+						.setDirection(planeDir);
+				
+				double force = 1.5;
+				float scale = 1.1f;
+				
+				ItemDisplay itemDisplay = (ItemDisplay) world.spawnEntity(throwOrigin, EntityType.ITEM_DISPLAY);
+				itemDisplay.setItemStack(thrownItem);
+				Transformation tr = new Transformation(
 						new Vector3f(0,0,1),
-						new Quaternionf(0.7,0,0,0.7),
-						new Vector3f(1.1f,1.1f,1.1f),
-						new Quaternionf(0,0,0,1));
-				display4.setTransformation(t4);
+						new Quaternionf().rotateX((float) (Math.PI/2)).rotateY((float) (Math.PI/2)),
+						new Vector3f(scale,scale,scale),
+						new Quaternionf());
+				itemDisplay.setTransformation(tr);
 				
+				Location[] prev = {eyeLoc};
 				int[] step = {0};
 				new BukkitRunnable() {
 					@Override
 					public void run() {
-//
-//						display.setTransformation(new Transformation(
-//								new Vector3f(0,0,1*step[0]*0.05f),
-//								t.getLeftRotation(),
-//								t.getScale(),
-//								t.getRightRotation()
-//						));
-//
-//						display1.setTransformation(new Transformation(
-//								new Vector3f(0,0,1*step[0]*0.05f),
-//								t1.getLeftRotation(),
-//								t1.getScale(),
-//								t1.getRightRotation()
-//						));
-//
-//						display2.setTransformation(new Transformation(
-//								new Vector3f(0,0,1*step[0]*0.05f),
-//								t2.getLeftRotation(),
-//								t2.getScale(),
-//								t2.getRightRotation()
-//						));
-//
-//						display3.setTransformation(new Transformation(
-//								new Vector3f(0,0,1*step[0]*0.05f),
-//								t3.getLeftRotation(),
-//								t3.getScale(),
-//								t3.getRightRotation()
-//						));
-//
-//						display4.setTransformation(new Transformation(
-//								new Vector3f(0,0,1*step[0]*0.05f),
-//								t4.getLeftRotation(),
-//								t4.getScale(),
-//								t4.getRightRotation()
-//						));
 						
-						if (step[0] > 500) {
-							display.remove();
+						double yVelocity = (force * Math.sin(-pitchRads) * step[0]);
+						double yAcceleration = force/50 * step[0] * step[0];
+						double y = yVelocity - yAcceleration;
+						
+						double forwardVelocity = force * Math.cos(pitchRads) * step[0];
+						
+						Vector displacement = planeDir.clone().multiply(forwardVelocity).add(up.clone().multiply(y));
+						Location cur = throwOrigin.clone().add(displacement);
+						Cache.testObsidianTearParticle.display(cur);
+						
+						Vector tangent = cur.clone().subtract(prev[0].toVector()).toVector();
+						Cache.testLavaDripParticle.display(cur.clone().add(tangent));
+						
+						Quaternionf lRotation = new Quaternionf();
+						tr.getLeftRotation().slerp(tr.getLeftRotation().rotateZ((float) (Math.PI/6)), 0.75f, lRotation);
+						
+						itemDisplay.setTransformation(new Transformation(
+								new Vector3f(0, (float) y, (float) forwardVelocity),
+								lRotation,
+								tr.getScale(),
+								tr.getRightRotation()
+						));
+						
+						float v2 = (float) tangent.lengthSquared();
+						
+						HashSet<LivingEntity> hit = HitboxUtil.line(ex, prev[0], cur, scale/2);
+						
+						if (!hit.isEmpty()) {
+							for (LivingEntity target : hit) {
+								Vector kb;
+								if (!tangent.isZero() && v2 > 0.001f) {
+									kb = tangent;
+								}
+								else {
+									kb = target.getEyeLocation().subtract(ex.getEyeLocation().toVector()).toVector().normalize().multiply(force);
+								}
+								SwordEntityArbiter.getOrAdd(target.getUniqueId()).hit(executor, 2, 50, 12, kb);
+							}
+							world.createExplosion(cur, 2, false, false);
+							new BukkitRunnable() {
+								@Override
+								public void run() {
+									thrownItem.damage(15, ex);
+									world.dropItemNaturally(cur, thrownItem);
+									itemDisplay.remove();
+								}
+							}.runTaskLater(Sword.getInstance(), 2L);
 							cancel();
 						}
 						
+						if (!tangent.isZero() && v2 > 0.001f) {
+							RayTraceResult block = world.rayTraceBlocks(cur, tangent, scale*force*(v2/5));
+							if (block != null && block.getHitBlock() != null) {
+								new ParticleWrapper(Particle.BLOCK, 40, 0.2, 0.2, 0.2, block.getHitBlock().getBlockData());
+								executor.message("  Lodged in the ground now");
+								new BukkitRunnable() {
+									@Override
+									public void run() {
+										itemDisplay.remove();
+									}
+								}.runTaskLater(Sword.getInstance(), 100L);
+								cancel();
+							}
+						}
+						
+						prev[0] = cur;
 						step[0] += 1;
 					}
 				}.runTaskTimer(Sword.getInstance(), 0L, 1L);

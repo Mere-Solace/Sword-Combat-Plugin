@@ -30,6 +30,8 @@ public class InputAction {
 		this.displayDisabled = displayDisabled;
 	}
 	
+	
+	
 	public boolean execute(Combatant executor) {
 		long currentTime = System.currentTimeMillis();
 		long deltaTime = currentTime - getTimeLastExecuted();

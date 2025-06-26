@@ -14,6 +14,7 @@ import org.bukkit.scheduler.BukkitTask;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.function.Consumer;
 
 public class InputExecutionTree {
 	private static final Plugin plugin = Sword.getInstance();
@@ -237,7 +238,7 @@ public class InputExecutionTree {
 						executor -> 0L,
 						Combatant::canPerformAction,
 						false, false),
-				true, true, true);
+				true, true, true, 400L);
 		
 		// skills
 		add(List.of(InputType.SWAP, InputType.RIGHT, InputType.SHIFT),
@@ -284,16 +285,23 @@ public class InputExecutionTree {
 		private boolean sameItemRequired;
 		private boolean cancellable;
 		private boolean display;
-		private long minHoldTime;
+		private final long minHoldTime;
+		private final Consumer<Combatant> whileHoldingAction;
 		
-		public InputNode(InputAction action) {
+		private boolean stillHolding;
+		
+		public InputNode(InputAction action, long minHoldTime, Consumer<Combatant> whileHoldingAction) {
 			this.action = action;
-			minHoldTime = -12498174;
+			this.minHoldTime = minHoldTime;
+			this.whileHoldingAction = whileHoldingAction;
 		}
 		
 		public InputNode(InputAction action, long minHoldTime) {
-			this(action);
-			this.minHoldTime = minHoldTime;
+			this(action, minHoldTime, null);
+		}
+		
+		public InputNode(InputAction action) {
+			this(action, -1);
 		}
 		
 		public void addChild(InputType input, InputAction action) {
@@ -346,6 +354,22 @@ public class InputExecutionTree {
 		
 		public long getMinHoldTime() {
 			return minHoldTime;
+		}
+		
+		public boolean hasHoldingAction() {
+			return whileHoldingAction == null;
+		}
+		
+		public void performWhileHoldingAction(Combatant executor) {
+			whileHoldingAction.accept(executor);
+		}
+		
+		public boolean isStillHolding() {
+			return stillHolding;
+		}
+		
+		public void setStillHolding(boolean stillHolding) {
+			this.stillHolding = stillHolding;
 		}
 	}
 }

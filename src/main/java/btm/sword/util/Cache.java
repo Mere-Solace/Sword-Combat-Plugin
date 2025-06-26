@@ -83,7 +83,7 @@ public class Cache {
 		testFlameParticle = new ParticleWrapper(Particle.FLAME, 2, 0.025, 0.025, 0.025, 0);
 		testSoulFlameParticle = new ParticleWrapper(Particle.SOUL_FIRE_FLAME, 1, 0.025, 0.025, 0.025, 0);
 		testObsidianTearParticle = new ParticleWrapper(Particle.DRIPPING_OBSIDIAN_TEAR, 1, 0, 0, 0, 0);
-		testLavaDripParticle = new ParticleWrapper(Particle.FALLING_LAVA, 2, 0.025, 0.025, 0.025, 0);
+		testLavaDripParticle = new ParticleWrapper(Particle.DRIPPING_LAVA, 2, 0, 0, 0, 0);
 		testSwingParticle = new ParticleWrapper(Particle.DUST_COLOR_TRANSITION, 2, 0, 0, 0, 1,
 				new Particle.DustTransition(Color.fromRGB(142, 142, 142), Color.fromRGB(254, 0, 1), 0.6f));
 		testHitParticle = new ParticleWrapper(Particle.SWEEP_ATTACK, 3, 0, 0, 0, 1);
