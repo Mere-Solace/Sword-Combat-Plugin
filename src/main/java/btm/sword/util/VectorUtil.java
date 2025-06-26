@@ -65,4 +65,17 @@ public class VectorUtil {
 	public static Vector getProjOntoPlan(Vector v, Vector norm) {
 		return v.clone().subtract(norm.clone().multiply(v.dot(norm)/norm.lengthSquared()));
 	}
+	
+	public static double getPitch(Vector v) {
+		double x = v.getX();
+		double y = v.getY();
+		double z = v.getZ();
+		
+		double horizontalDist = Math.sqrt(x * x + z * z);
+		return Math.toDegrees(Math.atan2(-y, horizontalDist));
+	}
+	
+	public static double getYaw(Vector v) {
+		return Math.toDegrees(Math.atan2(-v.getX(), v.getZ()));
+	}
 }

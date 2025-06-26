@@ -2,7 +2,7 @@ package btm.sword;
 
 import btm.sword.commands.CommandManager;
 import btm.sword.listeners.EntityListener;
-import btm.sword.listeners.AbilityInputListener;
+import btm.sword.listeners.InputListener;
 import btm.sword.listeners.PlayerListener;
 import btm.sword.system.event.EventTasks;
 import btm.sword.system.playerdata.PlayerDataManager;
@@ -16,7 +16,7 @@ public final class Sword extends JavaPlugin {
 	public void onEnable() {
 		instance = this;
 		
-		getServer().getPluginManager().registerEvents(new AbilityInputListener(), this);
+		getServer().getPluginManager().registerEvents(new InputListener(), this);
 		getServer().getPluginManager().registerEvents(new PlayerListener(), this);
 		getServer().getPluginManager().registerEvents(new EntityListener(), this);
 		

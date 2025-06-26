@@ -14,7 +14,7 @@ import org.bukkit.event.block.Action;
 import org.bukkit.event.player.*;
 import org.bukkit.scheduler.BukkitRunnable;
 
-public class AbilityInputListener implements Listener {
+public class InputListener implements Listener {
 	
 	@EventHandler
 	public void onNormalAttack(PrePlayerAttackEntityEvent event) {
@@ -35,6 +35,7 @@ public class AbilityInputListener implements Listener {
 		
 		if ((action == Action.LEFT_CLICK_AIR || action == Action.LEFT_CLICK_BLOCK)) {
 			swordPlayer.act(InputType.LEFT);
+			event.setCancelled(true);
 		}
 		else if (action == Action.RIGHT_CLICK_AIR || action == Action.RIGHT_CLICK_BLOCK) {
 			swordPlayer.act(InputType.RIGHT);
@@ -84,8 +85,6 @@ public class AbilityInputListener implements Listener {
 		SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId());
 		Player player = (Player) swordPlayer.entity();
 		Material itemType = player.getInventory().getItemInMainHand().getType();
-		
-		itemType.isAir();
 		
 		swordPlayer.act(InputType.SWAP);
 		

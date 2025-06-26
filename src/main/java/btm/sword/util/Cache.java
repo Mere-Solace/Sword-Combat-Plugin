@@ -23,6 +23,8 @@ public class Cache {
 	public static final ParticleWrapper testSoulFlameParticle;
 	public static final ParticleWrapper testObsidianTearParticle;
 	public static final ParticleWrapper testLavaDripParticle;
+	public static final ParticleWrapper testSwingParticle;
+	public static final ParticleWrapper testHitParticle;
 	
 	public static final ParticleWrapper basicSwordBlueTransitionParticle;
 	public static final ParticleWrapper basicSwordWhiteTransitionParticle;
@@ -80,16 +82,21 @@ public class Cache {
 		
 		testFlameParticle = new ParticleWrapper(Particle.FLAME, 2, 0.025, 0.025, 0.025, 0);
 		testSoulFlameParticle = new ParticleWrapper(Particle.SOUL_FIRE_FLAME, 1, 0.025, 0.025, 0.025, 0);
-		testObsidianTearParticle = new ParticleWrapper(Particle.DRIPPING_OBSIDIAN_TEAR, 5, 0.05, 0.05, 0.05, 0);
+		testObsidianTearParticle = new ParticleWrapper(Particle.DRIPPING_OBSIDIAN_TEAR, 1, 0, 0, 0, 0);
 		testLavaDripParticle = new ParticleWrapper(Particle.FALLING_LAVA, 2, 0.025, 0.025, 0.025, 0);
+		testSwingParticle = new ParticleWrapper(Particle.DUST_COLOR_TRANSITION, 2, 0, 0, 0, 1,
+				new Particle.DustTransition(Color.fromRGB(142, 142, 142), Color.fromRGB(254, 0, 1), 0.6f));
+		testHitParticle = new ParticleWrapper(Particle.SWEEP_ATTACK, 3, 0, 0, 0, 1);
 		
 		basicSwordBlueTransitionParticle = new ParticleWrapper(Particle.DUST_COLOR_TRANSITION, 5, 0.025, 0.025, 0.025, 1,
 				new Particle.DustTransition(Color.fromRGB(14, 107, 207), Color.fromRGB(162, 226, 255), 0.75f));
 		basicSwordWhiteTransitionParticle = new ParticleWrapper(Particle.DUST_COLOR_TRANSITION, 5, 0.025, 0.025, 0.025, 1,
 				new Particle.DustTransition(Color.fromRGB(235, 243, 255), Color.fromRGB(120, 121, 255), 0.65f));
+		
 		basicSwordHit1 = new ParticleWrapper(Particle.SOUL_FIRE_FLAME, 30, 0.5, 0.5, 0.5, 0.1);
-		basicSwordHit2 = new ParticleWrapper(Particle.ENCHANTED_HIT, 20, 0.5, 0.5, 0.5, 0.3);
-		basicSwordEnterGround = new ParticleWrapper(Particle.CRIT, 30, 0.1, 0.1, 0.1, 0.5);
+		basicSwordHit2 = new ParticleWrapper(Particle.ENCHANTED_HIT, 30, 0.5, 0.5, 0.5, 0.3);
+		
+		basicSwordEnterGround = new ParticleWrapper(Particle.CRIT, 10, 0.1, 0.1, 0.1, 0.5);
 		
 		grabCloudParticle = new ParticleWrapper(Particle.POOF, 20, 0.5, 0.5, 0.5, 0.1);
 		throwTrailParticle = new ParticleWrapper(Particle.DUST, 4, 0.2, 0.2, 0.2,
@@ -99,8 +106,9 @@ public class Cache {
 		grabHitParticle2 = new ParticleWrapper(Particle.DUST, 3, 0.01, 0.01, 0.01,
 				new Particle.DustOptions(Color.ORANGE, 3f));
 		
-		toughnessBreakParticle1 = new ParticleWrapper(Particle.GUST, 2, 1, 1, 1, 1);
-		toughnessRechargeParticle = new ParticleWrapper(Particle.GUST_EMITTER_SMALL, 2, 1, 1, 1, 0);
-		toughnessRechargeParticle2 = new ParticleWrapper(Particle.FLAME, 30, 2, 2, 2, 0.2);
+		toughnessBreakParticle1 = new ParticleWrapper(Particle.GUST, 2, 0.1, 0.1, 0.1, 1);
+		
+		toughnessRechargeParticle = new ParticleWrapper(Particle.LAVA, 10, 0.1, 0.1, 0.1, 0.25);
+		toughnessRechargeParticle2 = new ParticleWrapper(Particle.FLAME, 100, 0.5, 0.5, 0.5, 0.5);
 	}
 }

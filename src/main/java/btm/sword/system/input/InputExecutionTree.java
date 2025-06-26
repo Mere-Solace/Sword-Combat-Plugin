@@ -4,6 +4,7 @@ import btm.sword.Sword;
 import btm.sword.system.action.AttackAction;
 import btm.sword.system.action.MovementAction;
 import btm.sword.system.action.UtilityAction;
+import btm.sword.system.action.type.AttackType;
 import btm.sword.system.entity.Combatant;
 import btm.sword.system.entity.SwordPlayer;
 import btm.sword.system.entity.aspect.AspectType;
@@ -207,15 +208,15 @@ public class InputExecutionTree {
 		// basic attacks
 		add(List.of(InputType.LEFT),
 				new InputAction(
-						executor -> AttackAction.basicAttack(executor, 0),
-						executor -> executor.calcCooldown(AspectType.FINESSE, 5L, 1000L, 10),
+						executor -> AttackAction.basicAttack(executor, AttackType.BASIC_1),
+						executor -> Math.max(0, (executor.getTimeOfLastAttack() + executor.getDurationOfLastAttack()) - System.currentTimeMillis()),
 						Combatant::canPerformAction,
-						false, true),
+						true, true),
 				true, true, false);
 		
 		add(List.of(InputType.LEFT, InputType.LEFT),
 				new InputAction(
-						executor -> AttackAction.basicAttack(executor, 1),
+						executor -> AttackAction.basicAttack(executor, AttackType.BASIC_2),
 						executor -> 0L,
 						Combatant::canPerformAction,
 						false, true),
@@ -223,37 +224,20 @@ public class InputExecutionTree {
 
 		add(List.of(InputType.LEFT, InputType.LEFT, InputType.LEFT),
 				new InputAction(
-						executor -> AttackAction.basicAttack(executor, 2),
+						executor -> AttackAction.basicAttack(executor, AttackType.BASIC_3),
 						executor -> 0L,
 						Combatant::canPerformAction,
 						false, true),
 				true, true, false);
-
-		// heavy attacks
-//		add(List.of(InputType.LEFT, InputType.RIGHT),
-//				new InputAction(
-//						AttackAction.heavy(swordPlayer, 0),
-//						executor -> executor.calcCooldown(400L, 1000L, StatType.MIGHT, 10),
-//						Combatant::cannotPerformAnyAction), true);
-//
-//		add(List.of(InputType.LEFT, InputType.LEFT,InputType.RIGHT),
-//				new InputAction(
-//						AttackAction.heavy(swordPlayer, 1),
-//						executor -> executor.calcCooldown(400L, 1000L, StatType.MIGHT, 10),
-//						Combatant::cannotPerformAnyAction), true);
-//
-//		// side step attacks
-//		add(List.of(InputType.SWAP, InputType.RIGHT),
-//				new InputAction(
-//						AttackAction.sideStep(swordPlayer, true),
-//						executor -> executor.calcCooldown(300L, 600L, StatType.CELERITY, 10),
-//						Combatant::cannotPerformAnyAction), true);
-//
-//		add(List.of(InputType.SWAP, InputType.LEFT),
-//				new InputAction(
-//						AttackAction.sideStep(swordPlayer, false),
-//						executor -> executor.calcCooldown(300L, 600L, StatType.CELERITY, 10),
-//						Combatant::cannotPerformAnyAction), true);
+		
+		// throw
+		add(List.of(InputType.DROP, InputType.RIGHT, InputType.RIGHT_HOLD),
+				new InputAction(
+						UtilityAction::throwItem,
+						executor -> 0L,
+						Combatant::canPerformAction,
+						false, false),
+				true, true, true);
 		
 		// skills
 		add(List.of(InputType.SWAP, InputType.RIGHT, InputType.SHIFT),
@@ -278,11 +262,11 @@ public class InputExecutionTree {
 		
 		add(List.of(InputType.SHIFT, InputType.SHIFT_HOLD),
 				new InputAction(
-						executor -> MovementAction.dash(executor, true),
+						UtilityAction::death,
 						executor -> executor.calcCooldown(AspectType.CELERITY, 200L,1400L, 10),
-						Combatant::canAirDash,
+						Combatant::canPerformAction,
 						true, true),
-				true, true, true, 1000L);
+				true, true, true, 500L);
 		
 		// Drop an item "ability"
 		add(List.of(InputType.DROP, InputType.DROP, InputType.DROP),

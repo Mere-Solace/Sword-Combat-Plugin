@@ -49,6 +49,14 @@ public class Resource extends Aspect {
 		return curValue/effectiveValue();
 	}
 	
+	public void setCur(float value) {
+		curValue = Math.min(effectiveValue(), value);
+	}
+	
+	public void setCurPercent(float percent) {
+		curValue = percent * effectiveValue();
+	}
+	
 	public void add(float amount) {
 		curValue += amount;
 	}

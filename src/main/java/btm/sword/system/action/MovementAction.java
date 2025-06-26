@@ -25,14 +25,24 @@ public class MovementAction extends SwordAction {
 			public void run() {
 				LivingEntity ex = executor.entity();
 
-				double dashPower = 0.7;
-				double m = forward ? dashPower : -dashPower;
+				double dashPower = 0.6;
+				double s = forward ? dashPower : -dashPower;
+				
+				Vector velocity;
+				if (EntityUtil.isOnGround(ex)) {
+					double yaw = Math.toRadians(ex.getEyeLocation().getYaw());
+					Vector f = new Vector(-Math.sin(yaw), 0, Math.cos(yaw));
+					velocity = f.multiply(s).add(new Vector(0, 0.4, 0));
+				}
+				else {
+					velocity = ex.getEyeLocation().getDirection().multiply(s * 1.25);
+				}
 				
 				for (int i = 0; i < 2; i++) {
 					new BukkitRunnable() {
 						@Override
 						public void run() {
-							ex.setVelocity(ex.getEyeLocation().getDirection().multiply(m).add(new Vector(0, .2, 0)));
+							ex.setVelocity(velocity);
 						}
 					}.runTaskLater(Sword.getInstance(), i);
 				}

@@ -5,7 +5,6 @@ import btm.sword.system.combat.Affliction;
 import btm.sword.system.playerdata.CombatProfile;
 import btm.sword.util.Cache;
 import org.bukkit.Location;
-import org.bukkit.Material;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
@@ -21,11 +20,18 @@ public abstract class SwordEntity {
 	
 	protected EntityAspects aspects;
 	
+	private long timeOfLastAttack;
+	private int durationOfLastAttack;
+	
 	private boolean grabbed;
+	private boolean hit;
+	
+	protected boolean shielding;
 	
 	protected final HashMap<Class<? extends Affliction>, Affliction> afflictions;
 	
 	protected boolean toughnessBroken;
+	protected int shardsLost;
 	
 	protected final double eyeHeight;
 	protected final Vector chestVector;
@@ -37,6 +43,14 @@ public abstract class SwordEntity {
 		this.combatProfile = combatProfile;
 		aspects = new EntityAspects(combatProfile);
 		
+		timeOfLastAttack = 0L;
+		durationOfLastAttack = 0;
+		
+		grabbed = false;
+		hit = false;
+		
+		shielding = false;
+		
 		afflictions = new HashMap<>();
 		
 		eyeHeight = self.getEyeHeight(true);
@@ -45,7 +59,9 @@ public abstract class SwordEntity {
 	
 	public abstract void onSpawn();
 	
-	public abstract void onDeath();
+	public void onDeath() {
+		resetResources();
+	}
 	
 	public LivingEntity entity() {
 		return self;
@@ -76,9 +92,9 @@ public abstract class SwordEntity {
 	}
 	
 	public void hit(Combatant source, int baseNumShards, float baseToughnessDamage, float baseSoulfireReduction, Vector knockbackVelocity, Affliction... afflictions) {
-		if (self.getActiveItem().getType() != Material.SHIELD) {
-			source.message("That lad is raisin 'is shield!");
-		}
+//		if (self.getActiveItem().getType() != Material.SHIELD) {
+//			source.message("That lad is raisin 'is shield!");
+//		}
 		
 		self.damage(0.01);
 		self.heal(7474040);
@@ -94,6 +110,13 @@ public abstract class SwordEntity {
 				self.damage(74077740, source.entity());
 				if (!self.isDead())
 					self.setHealth(0);
+				return;
+			}
+			shardsLost += baseNumShards;
+			
+			if (shardsLost >= 0.75 * aspects.shards().effectiveValue()) {
+				aspects.toughness().setCurPercent(0.9f);
+				source.message("You dealt the most amount of damage possible while this lad's toughness was broken");
 			}
 		}
 		
@@ -125,6 +148,9 @@ public abstract class SwordEntity {
 		new BukkitRunnable() {
 			@Override
 			public void run() {
+				if (self == null || self.isDead())
+					cancel();
+				
 				if (aspects.toughness().curPercent() > 0.6) {
 					aspects.toughness().setEffAmountPercent(1f);
 					aspects.toughness().setEffPeriodPercent(1f);
@@ -152,5 +178,21 @@ public abstract class SwordEntity {
 	
 	public void message(String message) {
 		self.sendMessage(message);
+	}
+	
+	public long getTimeOfLastAttack() {
+		return timeOfLastAttack;
+	}
+	
+	public void setTimeOfLastAttack(long timeOfLastAttack) {
+		this.timeOfLastAttack = timeOfLastAttack;
+	}
+	
+	public int getDurationOfLastAttack() {
+		return durationOfLastAttack;
+	}
+	
+	public void setDurationOfLastAttack(int durationOfLastAttack) {
+		this.durationOfLastAttack = durationOfLastAttack;
 	}
 }
