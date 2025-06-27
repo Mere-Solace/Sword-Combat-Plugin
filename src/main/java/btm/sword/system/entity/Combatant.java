@@ -5,13 +5,11 @@ import btm.sword.system.playerdata.CombatProfile;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.util.Cache;
 import org.bukkit.Location;
-import org.bukkit.Material;
+import org.bukkit.entity.ItemDisplay;
 import org.bukkit.entity.LivingEntity;
-import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
-
-import java.util.Objects;
 
 public abstract class Combatant extends SwordEntity {
 	private BukkitTask abilityCastTask = null;
@@ -20,6 +18,10 @@ public abstract class Combatant extends SwordEntity {
 	
 	private boolean isGrabbing = false;
 	private SwordEntity grabbedEntity;
+	
+	ItemStack thrownItemStack;
+	ItemDisplay thrownItemDisplay;
+	private boolean throwCancelled;
 	
 	public Combatant(LivingEntity associatedEntity, CombatProfile combatProfile) {
 		super(associatedEntity, combatProfile);
@@ -114,10 +116,27 @@ public abstract class Combatant extends SwordEntity {
 		return (long) Math.max(min, base - (multiplier * aspects.getAspectVal(type)) );
 	}
 	
-	public Material getItemInMainHand() {
-		if (self instanceof Player) {
-			return ((Player) self).getInventory().getItemInMainHand().getType();
-		}
-		return Objects.requireNonNull(self.getEquipment()).getItemInMainHand().getType();
+	public ItemStack getThrownItemStack() {
+		return thrownItemStack;
+	}
+	
+	public void setThrownItemStack(ItemStack thrownItemStack) {
+		this.thrownItemStack = thrownItemStack;
+	}
+	
+	public ItemDisplay getThrownItemDisplay() {
+		return thrownItemDisplay;
+	}
+	
+	public void setThrownItemDisplay(ItemDisplay thrownItemDisplay) {
+		this.thrownItemDisplay = thrownItemDisplay;
+	}
+	
+	public boolean isThrowCancelled() {
+		return throwCancelled;
+	}
+	
+	public void setThrowCancelled(boolean throwCancelled) {
+		this.throwCancelled = throwCancelled;
 	}
 }

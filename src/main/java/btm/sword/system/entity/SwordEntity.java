@@ -225,4 +225,22 @@ public abstract class SwordEntity {
 			return true;
 		}
 	}
+	
+	public ItemStack getItemStackInMainHand() {
+		if (self instanceof Player) {
+			return ((Player) self).getInventory().getItemInMainHand();
+		}
+		return Objects.requireNonNull(self.getEquipment()).getItemInMainHand();
+	}
+	
+	public Material getItemTypeInMainHand() {
+		return getItemStackInMainHand().getType();
+	}
+	
+	public void setItemStackInMainHand(ItemStack itemStack) {
+		if (self instanceof Player)
+			((Player) self).getInventory().setItemInMainHand(itemStack);
+		else
+			Objects.requireNonNull(self.getEquipment()).setItemInMainHand(itemStack);
+	}
 }

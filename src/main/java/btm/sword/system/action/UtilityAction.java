@@ -99,95 +99,79 @@ public class UtilityAction extends SwordAction {
 	}
 	
 	public static void throwReady(Combatant executor) {
-		cast(executor, 0L, new BukkitRunnable() {
+		executor.setThrowCancelled(false);
+		float scale = 1.1f;
+		double rOffset = 0.75;
+		double upOffset = -0.1;
+		
+		LivingEntity ex = executor.entity();
+		World world = ex.getWorld();
+		
+		ItemStack thrownItem = executor.getItemStackInMainHand();
+		
+		Location eyeLoc = ex.getEyeLocation();
+		double yawRads = Math.toRadians(eyeLoc.getYaw());
+		
+		Vector planeDir = new Vector(-Math.sin(yawRads), 0, Math.cos(yawRads));
+		
+		List<Vector> basis = VectorUtil.getBasis(eyeLoc, planeDir);
+		Vector right = basis.getFirst();
+		Vector up = basis.get(1);
+		
+		Location throwOrigin = eyeLoc.clone()
+				.add(right.clone().multiply(rOffset))
+				.add(up.clone().multiply(upOffset))
+				.setDirection(planeDir);
+		
+		ItemDisplay itemDisplay = (ItemDisplay) world.spawnEntity(throwOrigin, EntityType.ITEM_DISPLAY);
+		itemDisplay.setItemStack(thrownItem);
+		
+		executor.setThrownItemStack(thrownItem);
+		executor.setThrownItemDisplay(itemDisplay);
+		
+		Transformation tr = new Transformation(
+				new Vector3f(0,0,0),
+				new Quaternionf().rotateX((float) (-Math.PI/2)).rotateY((float) (Math.PI/2)),
+				new Vector3f(scale,scale,scale),
+				new Quaternionf());
+		itemDisplay.setTransformation(tr);
+		
+		int[] step = {0};
+		new BukkitRunnable() {
 			@Override
 			public void run() {
-				SwordPlayer sp;
-				if (executor instanceof SwordPlayer) {
-					sp = (SwordPlayer) executor;
-				}
-				else {
+				if (executor instanceof SwordPlayer sp && (!sp.isHoldingRight() || sp.isThrowCancelled())) {
+					itemDisplay.remove();
 					cancel();
-					return;
 				}
+				ex.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 1, 2));
 				
-				if (!sp.isHoldingRight()) {
-					cancel();
-					return;
+				if (step[0] % 3 == 0) {
+					Location l = ex.getEyeLocation();
+					List<Vector> basis = VectorUtil.getBasis(l, l.getDirection());
+					Vector right = basis.getFirst();
+					Vector up = basis.get(1);
+					Location cur = ex.getEyeLocation()
+							.add(right.clone().multiply(rOffset))
+							.add(up.clone().multiply(upOffset));
+					
+					itemDisplay.teleport(cur);
+					itemDisplay.setTransformation(new Transformation(
+							new Vector3f(0, 0, 0),
+							tr.getLeftRotation(),
+							tr.getScale(),
+							tr.getRightRotation()
+					));
 				}
-				
-				float scale = 1.1f;
-				double rOffset = 0.75;
-				double upOffset = -0.1;
-				
-				LivingEntity ex = executor.entity();
-				World world = ex.getWorld();
-				
-				Player p = ((Player) sp.entity());
-				PlayerInventory inv = p.getInventory();
-				ItemStack thrownItem = inv.getItemInMainHand();
-				
-				Location eyeLoc = ex.getEyeLocation();
-				double yawRads = Math.toRadians(eyeLoc.getYaw());
-				
-				Vector planeDir = new Vector(-Math.sin(yawRads), 0, Math.cos(yawRads));
-				
-				List<Vector> basis = VectorUtil.getBasis(eyeLoc, planeDir);
-				Vector right = basis.getFirst();
-				Vector up = basis.get(1);
-				
-				Location throwOrigin = eyeLoc.clone()
-						.add(right.clone().multiply(rOffset))
-						.add(up.clone().multiply(upOffset))
-						.setDirection(planeDir);
-				
-				ItemDisplay itemDisplay = (ItemDisplay) world.spawnEntity(throwOrigin, EntityType.ITEM_DISPLAY);
-				itemDisplay.setItemStack(thrownItem);
-				
-				sp.setThrownItemStack(thrownItem);
-				sp.setThrownItemDisplay(itemDisplay);
-				
-				Transformation tr = new Transformation(
-						new Vector3f(0,0,0),
-						new Quaternionf().rotateX((float) (-Math.PI/2)).rotateY((float) (Math.PI/2)),
-						new Vector3f(scale,scale,scale),
-						new Quaternionf());
-				itemDisplay.setTransformation(tr);
-				
-				int[] step = {0};
-				new BukkitRunnable() {
-					@Override
-					public void run() {
-						if (!((SwordPlayer) executor).isHoldingRight()) {
-							itemDisplay.remove();
-							cancel();
-						}
-						ex.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 1, 2));
-						
-						if (step[0] % 3 == 0) {
-							Location l = ex.getEyeLocation();
-							List<Vector> basis = VectorUtil.getBasis(l, l.getDirection());
-							Vector right = basis.getFirst();
-							Vector up = basis.get(1);
-							Location cur = ex.getEyeLocation()
-									.add(right.clone().multiply(rOffset))
-									.add(up.clone().multiply(upOffset));
-							
-							itemDisplay.teleport(cur);
-							itemDisplay.setTransformation(new Transformation(
-									new Vector3f(0, 0, 0),
-									tr.getLeftRotation(),
-									tr.getScale(),
-									tr.getRightRotation()
-							));
-						}
-						step[0]++;
-					}
-				}.runTaskTimer(Sword.getInstance(), 0L, 1L);
+				step[0]++;
 			}
-		});
+		}.runTaskTimer(Sword.getInstance(), 0L, 1L);
 	}
-	// TODO store some values in Combatant so that throw Item needn't recreate everything that throwReady already does
+	
+	public static void throwCancel(Combatant executor) {
+	
+	}
+	
 	public static void throwItem(Combatant executor) {
 		cast(executor, 10L, new BukkitRunnable() {
 			@Override
@@ -245,7 +229,6 @@ public class UtilityAction extends SwordAction {
 				
 				Location[] prev = {eyeLoc};
 				int[] step = {0};
-				
 				new BukkitRunnable() {
 					@Override
 					public void run() {
@@ -268,7 +251,7 @@ public class UtilityAction extends SwordAction {
 						Vector tangent = cur.clone().subtract(prev[0]).toVector();
 						
 						Quaternionf lRotation = new Quaternionf();
-						tr.getLeftRotation().slerp(tr.getLeftRotation().rotateZ((float) (Math.PI/6)), 0.75f, lRotation);
+						tr.getLeftRotation().slerp(tr.getLeftRotation().rotateZ((float) (Math.PI/4)), 0.75f, lRotation);
 						
 						itemDisplay.setTransformation(new Transformation(
 								new Vector3f(0, (float) y, (float) forwardVelocity),

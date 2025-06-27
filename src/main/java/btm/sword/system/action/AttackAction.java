@@ -25,7 +25,7 @@ public class AttackAction extends SwordAction {
 	);
 	
 	public static void basicAttack(Combatant executor, AttackType type) {
-		Material item = executor.getItemInMainHand();
+		Material item = executor.getItemTypeInMainHand();
 		double pitch = executor.entity().getEyeLocation().getPitch();
 		
 		if (EntityUtil.isOnGround(executor.entity())) {
@@ -112,7 +112,7 @@ public class AttackAction extends SwordAction {
 					executor.setDurationOfLastAttack((int) castDuration * 500);
 					
 					LivingEntity ex = executor.entity();
-					double damage = getBasicNonRPGDamage(executor.getItemInMainHand());
+					double damage = getBasicNonRPGDamage(executor.getItemTypeInMainHand());
 					
 					double rangeMultiplier;
 					List<Vector> controlVectors;

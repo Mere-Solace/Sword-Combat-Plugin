@@ -28,19 +28,16 @@ public class SwordPlayer extends Combatant {
 	private boolean performedDropAction = false;
 	private boolean canDrop;
 	
-	BukkitTask rightHoldCheckTask;
-	boolean holdingRight;
-	long rightHoldTimeStart;
-	long lastHoldTimeRecorded;
-	long timeRightHeld;
+	private BukkitTask rightHoldCheckTask;
+	private boolean holdingRight;
+	private long rightHoldTimeStart;
+	private long lastHoldTimeRecorded;
+	private long timeRightHeld;
 	
-	BukkitTask sneakTask;
-	boolean sneaking;
-	long sneakHoldTimeStart;
-	long timeSneakHeld;
-	
-	ItemStack thrownItemStack;
-	ItemDisplay thrownItemDisplay;
+	private BukkitTask sneakTask;
+	private boolean sneaking;
+	private long sneakHoldTimeStart;
+	private long timeSneakHeld;
 	
 	public SwordPlayer(LivingEntity associatedEntity, PlayerData data) {
 		super(associatedEntity, data.getCombatProfile());
@@ -224,7 +221,7 @@ public class SwordPlayer extends Combatant {
 			@Override
 			public void run() {
 				long curTime = System.currentTimeMillis();
-				if (curTime - lastHoldTimeRecorded > 200L) {
+				if (curTime - lastHoldTimeRecorded > 212L) {
 					onStopRightHold();
 					message("You stopped holding Right (held for " + ((double)(timeRightHeld)/1000) + " s)");
 					resetHoldingRight();
@@ -282,22 +279,6 @@ public class SwordPlayer extends Combatant {
 	public void endSneaking() {
 		sneaking = false;
 		timeSneakHeld = System.currentTimeMillis() - sneakHoldTimeStart;
-	}
-	
-	public ItemStack getThrownItemStack() {
-		return thrownItemStack;
-	}
-	
-	public void setThrownItemStack(ItemStack thrownItemStack) {
-		this.thrownItemStack = thrownItemStack;
-	}
-	
-	public ItemDisplay getThrownItemDisplay() {
-		return thrownItemDisplay;
-	}
-	
-	public void setThrownItemDisplay(ItemDisplay thrownItemDisplay) {
-		this.thrownItemDisplay = thrownItemDisplay;
 	}
 	
 	@Override

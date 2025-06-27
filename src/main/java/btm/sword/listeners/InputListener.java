@@ -35,7 +35,6 @@ public class InputListener implements Listener {
 		
 		if ((action == Action.LEFT_CLICK_AIR || action == Action.LEFT_CLICK_BLOCK)) {
 			swordPlayer.act(InputType.LEFT);
-			event.setCancelled(true);
 		}
 		else if (action == Action.RIGHT_CLICK_AIR || action == Action.RIGHT_CLICK_BLOCK) {
 			swordPlayer.act(InputType.RIGHT);
@@ -47,11 +46,6 @@ public class InputListener implements Listener {
 		SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId());
 
 		swordPlayer.setPerformedDropAction(true);
-		
-		if (swordPlayer.isGrabbing()) {
-			swordPlayer.setGrabbing(false);
-			event.setCancelled(true);
-		}
 
 		swordPlayer.act(InputType.DROP);
 		
@@ -86,7 +80,10 @@ public class InputListener implements Listener {
 		Player player = (Player) swordPlayer.entity();
 		Material itemType = player.getInventory().getItemInMainHand().getType();
 		
-		swordPlayer.act(InputType.SWAP);
+		if (swordPlayer.isGrabbing())
+			swordPlayer.setGrabbing(false);
+		else
+			swordPlayer.act(InputType.SWAP);
 		
 		event.setCancelled(true);
 	}
@@ -94,9 +91,12 @@ public class InputListener implements Listener {
 	@EventHandler
 	public void onChangeItemEvent(PlayerItemHeldEvent event) {
 		SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId());
+		swordPlayer.message("You changed your held slot. prev: " + event.getPreviousSlot() + ", cur: " + event.getNewSlot());
 		
 		if (swordPlayer.inputReliantOnItem()) {
 			swordPlayer.resetTree();
 		}
+		
+		swordPlayer.setThrowCancelled(true);
 	}
 }
