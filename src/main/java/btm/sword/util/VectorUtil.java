@@ -9,14 +9,20 @@ import java.util.List;
 public class VectorUtil {
 	public static ArrayList<Vector> getBasis(Location origin, Vector dir) {
 		Vector ref = new Vector(0,1,0);
+		Vector right = null;
 		
-		if (Math.abs(dir.dot(ref)) > 0.999) {
+		double dot = dir.dot(ref);
+		
+		if (Math.abs(dot) > 0.999) {
 			double yaw = Math.toRadians(origin.getYaw());
 			ref = new Vector(-Math.sin(yaw), 0, Math.cos(yaw));
 			Cache.testObsidianTearParticle.display(origin.clone().add(ref));
+			right = dot >= 0 ? ref.getCrossProduct(dir).normalize() : dir.getCrossProduct(ref).normalize();
 		}
 		
-		Vector right = dir.getCrossProduct(ref).normalize();
+		if (right == null)
+			right = dir.getCrossProduct(ref).normalize();
+		
 		Vector up = right.getCrossProduct(dir).normalize();
 		
 		ArrayList<Vector> basis = new ArrayList<>(3);

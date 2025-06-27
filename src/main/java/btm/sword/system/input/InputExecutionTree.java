@@ -198,7 +198,7 @@ public class InputExecutionTree {
 				false, true, true);
 
 		// grab
-		add(List.of(InputType.SHIFT, InputType.RIGHT),
+		add(List.of(InputType.SHIFT, InputType.LEFT),
 				new InputAction(
 						UtilityAction::grab,
 						executor -> executor.calcCooldown(AspectType.FORTITUDE, 200L, 1000L, 10),
