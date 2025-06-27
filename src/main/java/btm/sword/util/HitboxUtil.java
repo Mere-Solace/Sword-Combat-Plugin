@@ -36,7 +36,7 @@ public class HitboxUtil {
 		return null;
 	}
 	
-	public static HashSet<LivingEntity> line(LivingEntity executor, Location origin, Location end, double thickness) {
+	public static HashSet<LivingEntity> line(LivingEntity executor, Location origin, Location end, double thickness, boolean removeExecutor) {
 		HashSet<LivingEntity> hit = new HashSet<>();
 		
 		Vector direction = end.clone().subtract(origin).toVector();
@@ -49,13 +49,15 @@ public class HitboxUtil {
 		for (int i = 0; i <= steps; i++) {
 			for (Entity e : cur.getNearbyLivingEntities(thickness)) {
 				if (e instanceof LivingEntity entity &&
-						!entity.isDead() &&
-						!entity.equals(executor)) {
+						!entity.isDead()) {
 					hit.add(entity);
 				}
 			}
 			cur.add(step);
 		}
+		
+		if (removeExecutor)
+			hit.remove(executor);
 		
 		return hit;
 	}

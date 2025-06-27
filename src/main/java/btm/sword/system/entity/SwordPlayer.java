@@ -12,8 +12,10 @@ import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.title.Title;
 
 import org.bukkit.Material;
+import org.bukkit.entity.ItemDisplay;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 
@@ -36,6 +38,9 @@ public class SwordPlayer extends Combatant {
 	boolean sneaking;
 	long sneakHoldTimeStart;
 	long timeSneakHeld;
+	
+	ItemStack thrownItemStack;
+	ItemDisplay thrownItemDisplay;
 	
 	public SwordPlayer(LivingEntity associatedEntity, PlayerData data) {
 		super(associatedEntity, data.getCombatProfile());
@@ -97,7 +102,7 @@ public class SwordPlayer extends Combatant {
 			}
 		}
 		else return;
-		
+
 		InputAction action = node.getAction();
 		
 		if (action != null) {
@@ -176,6 +181,16 @@ public class SwordPlayer extends Combatant {
 						Duration.ofMillis(100))));
 	}
 	
+	public void displayTitle(String title, String subtitle, long duration) {
+		self.showTitle(Title.title(
+				Component.text(title),
+				Component.text(subtitle),
+				Title.Times.times(
+						Duration.ofMillis(50),
+						Duration.ofMillis(duration),
+						Duration.ofMillis(100))));
+	}
+	
 	public Material getItemInUse() {
 		return ((Player) self).getInventory().getItemInMainHand().getType();
 	}
@@ -189,9 +204,17 @@ public class SwordPlayer extends Combatant {
 		return inputExecutionTree.requiresSameItem();
 	}
 	
+	public boolean isHolding() {
+		return holdingRight || sneaking;
+	}
+	
+	public boolean isHoldingRight() {
+		return holdingRight;
+	}
+	
 	public void startRightHoldCheck() {
 		if (holdingRight) return;
-		message("Pressed Right");
+		
 		if (rightHoldCheckTask != null) rightHoldCheckTask.cancel();
 		
 		holdingRight = true;
@@ -230,7 +253,7 @@ public class SwordPlayer extends Combatant {
 	
 	public void startSneaking() {
 		if (sneaking) return;
-		message("Pressed Sneak");
+		
 		if (sneakTask != null) sneakTask.cancel();
 		
 		sneaking = true;
@@ -259,6 +282,22 @@ public class SwordPlayer extends Combatant {
 	public void endSneaking() {
 		sneaking = false;
 		timeSneakHeld = System.currentTimeMillis() - sneakHoldTimeStart;
+	}
+	
+	public ItemStack getThrownItemStack() {
+		return thrownItemStack;
+	}
+	
+	public void setThrownItemStack(ItemStack thrownItemStack) {
+		this.thrownItemStack = thrownItemStack;
+	}
+	
+	public ItemDisplay getThrownItemDisplay() {
+		return thrownItemDisplay;
+	}
+	
+	public void setThrownItemDisplay(ItemDisplay thrownItemDisplay) {
+		this.thrownItemDisplay = thrownItemDisplay;
 	}
 	
 	@Override

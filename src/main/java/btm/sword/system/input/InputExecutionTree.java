@@ -8,6 +8,7 @@ import btm.sword.system.action.type.AttackType;
 import btm.sword.system.entity.Combatant;
 import btm.sword.system.entity.SwordPlayer;
 import btm.sword.system.entity.aspect.AspectType;
+import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
@@ -231,6 +232,15 @@ public class InputExecutionTree {
 						false, true),
 				true, true, false);
 		
+		// throw hold action
+		add(List.of(InputType.DROP, InputType.RIGHT),
+				new InputAction(
+						UtilityAction::throwReady,
+						executor -> 0L,
+						Combatant::canPerformAction,
+						false, false),
+				true, true, true);
+		
 		// throw
 		add(List.of(InputType.DROP, InputType.RIGHT, InputType.RIGHT_HOLD),
 				new InputAction(
@@ -286,18 +296,10 @@ public class InputExecutionTree {
 		private boolean cancellable;
 		private boolean display;
 		private final long minHoldTime;
-		private final Consumer<Combatant> whileHoldingAction;
-		
-		private boolean stillHolding;
-		
-		public InputNode(InputAction action, long minHoldTime, Consumer<Combatant> whileHoldingAction) {
-			this.action = action;
-			this.minHoldTime = minHoldTime;
-			this.whileHoldingAction = whileHoldingAction;
-		}
 		
 		public InputNode(InputAction action, long minHoldTime) {
-			this(action, minHoldTime, null);
+			this.action = action;
+			this.minHoldTime = minHoldTime;
 		}
 		
 		public InputNode(InputAction action) {
@@ -354,22 +356,6 @@ public class InputExecutionTree {
 		
 		public long getMinHoldTime() {
 			return minHoldTime;
-		}
-		
-		public boolean hasHoldingAction() {
-			return whileHoldingAction == null;
-		}
-		
-		public void performWhileHoldingAction(Combatant executor) {
-			whileHoldingAction.accept(executor);
-		}
-		
-		public boolean isStillHolding() {
-			return stillHolding;
-		}
-		
-		public void setStillHolding(boolean stillHolding) {
-			this.stillHolding = stillHolding;
 		}
 	}
 }

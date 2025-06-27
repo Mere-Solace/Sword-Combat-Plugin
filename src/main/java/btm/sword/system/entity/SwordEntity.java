@@ -5,12 +5,17 @@ import btm.sword.system.combat.Affliction;
 import btm.sword.system.playerdata.CombatProfile;
 import btm.sword.util.Cache;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
+import java.util.Objects;
 import java.util.UUID;
 
 public abstract class SwordEntity {
@@ -194,5 +199,30 @@ public abstract class SwordEntity {
 	
 	public void setDurationOfLastAttack(int durationOfLastAttack) {
 		this.durationOfLastAttack = durationOfLastAttack;
+	}
+	
+	public boolean giveItem(ItemStack itemStack) {
+		if (self instanceof Player p) {
+			PlayerInventory inv = p.getInventory();
+			if (inv.getItemInMainHand().getType().isAir()) {
+				inv.setItem(inv.getHeldItemSlot(), itemStack);
+				return true;
+			}
+			else {
+				int i = 0;
+				for (ItemStack item : inv.getContents()) {
+					i++;
+					if (item == null || item.isEmpty()) {
+						inv.setItem(i, itemStack);
+						return true;
+					}
+				}
+				return false;
+			}
+		}
+		else {
+			Objects.requireNonNull(self.getEquipment()).setItemInMainHand(itemStack);
+			return true;
+		}
 	}
 }

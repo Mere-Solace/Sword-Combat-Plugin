@@ -211,7 +211,7 @@ public class AttackAction extends SwordAction {
 								Vector r = right.clone().multiply(0.1);
 								
 								// enum map to hitbox Consumer function accepting executor
-								HashSet<LivingEntity> curHit = HitboxUtil.line(ex, o, l, 0.4);
+								HashSet<LivingEntity> curHit = HitboxUtil.line(ex, o, l, 0.4, true);
 								
 								for (LivingEntity target : curHit)
 									if (!hit.contains(target)) {
