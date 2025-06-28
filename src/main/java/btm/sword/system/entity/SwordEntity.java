@@ -212,7 +212,8 @@ public abstract class SwordEntity {
 				int i = 0;
 				for (ItemStack item : inv.getContents()) {
 					i++;
-					if (item == null || item.isEmpty()) {
+					if (item == null || item.getType() == Material.AIR || item.isEmpty()) {
+						message("   giving item to location: " + i);
 						inv.setItem(i, itemStack);
 						return true;
 					}
@@ -226,25 +227,33 @@ public abstract class SwordEntity {
 		}
 	}
 	
-	public ItemStack getItemStackInMainHand() {
-		if (self instanceof Player) {
-			return ((Player) self).getInventory().getItemInMainHand();
+	public ItemStack getItemStackInHand(boolean main) {
+		if (self instanceof Player p) {
+			return main ? p.getInventory().getItemInMainHand() : p.getInventory().getItemInOffHand();
 		}
-		return Objects.requireNonNull(self.getEquipment()).getItemInMainHand();
+		return main ? Objects.requireNonNull(self.getEquipment()).getItemInMainHand() : Objects.requireNonNull(self.getEquipment()).getItemInOffHand();
 	}
 	
-	public Material getItemTypeInMainHand() {
-		return getItemStackInMainHand().getType();
+	public Material getItemTypeInHand(boolean main) {
+		return getItemStackInHand(main).getType();
 	}
 	
-	public void setItemStackInMainHand(ItemStack itemStack) {
-		if (self instanceof Player)
-			((Player) self).getInventory().setItemInMainHand(itemStack);
-		else
-			Objects.requireNonNull(self.getEquipment()).setItemInMainHand(itemStack);
+	public void setItemStackInHand(ItemStack itemStack, boolean main) {
+		if (self instanceof Player) {
+			if (main)
+				((Player) self).getInventory().setItemInMainHand(itemStack);
+			else
+				((Player) self).getInventory().setItemInOffHand(itemStack);
+		}
+		else {
+			if (main)
+				Objects.requireNonNull(self.getEquipment()).setItemInMainHand(itemStack);
+			else
+				Objects.requireNonNull(self.getEquipment()).setItemInOffHand(itemStack);
+		}
 	}
 	
-	public void setItemTypeInMainHand(Material itemType) {
-		setItemStackInMainHand(new ItemStack(itemType));
+	public void setItemTypeInHand(Material itemType, boolean main) {
+		setItemStackInHand(new ItemStack(itemType), main);
 	}
 }

@@ -248,7 +248,7 @@ public class InputExecutionTree {
 						executor -> 0L,
 						Combatant::canPerformAction,
 						false, false),
-				true, true, true, 400L);
+				true, true, true, 600L);
 		
 		// skills
 		add(List.of(InputType.SWAP, InputType.RIGHT, InputType.SHIFT),

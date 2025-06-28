@@ -21,7 +21,9 @@ public abstract class Combatant extends SwordEntity {
 	
 	ItemStack thrownItemStack;
 	ItemDisplay thrownItemDisplay;
+	private boolean attemptingThrow;
 	private boolean throwCancelled;
+	private boolean throwSuccessful;
 	
 	public Combatant(LivingEntity associatedEntity, CombatProfile combatProfile) {
 		super(associatedEntity, combatProfile);
@@ -131,6 +133,22 @@ public abstract class Combatant extends SwordEntity {
 	
 	public void setThrownItemDisplay(ItemDisplay thrownItemDisplay) {
 		this.thrownItemDisplay = thrownItemDisplay;
+	}
+	
+	public boolean isThrowSuccessful() {
+		return throwSuccessful;
+	}
+	
+	public void setThrowSuccessful(boolean throwSuccessful) {
+		this.throwSuccessful = throwSuccessful;
+	}
+	
+	public boolean isAttemptingThrow() {
+		return attemptingThrow;
+	}
+	
+	public void setAttemptingThrow(boolean attemptingThrow) {
+		this.attemptingThrow = attemptingThrow;
 	}
 	
 	public boolean isThrowCancelled() {

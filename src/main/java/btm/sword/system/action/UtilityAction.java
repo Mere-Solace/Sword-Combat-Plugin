@@ -25,7 +25,6 @@ import org.joml.Vector3f;
 
 import java.util.HashSet;
 import java.util.List;
-import java.util.Objects;
 
 public class UtilityAction extends SwordAction {
 	
@@ -100,81 +99,66 @@ public class UtilityAction extends SwordAction {
 	
 	public static void throwReady(Combatant executor) {
 		float scale = 1.05f;
-		double rOffset = 1.25;
-		double upOffset = 0.1;
-		double fOffset = -0.5;
+		float xOffset = -0.75f;
+		float yOffset = 0.1f;
+		float zOffset = 0;
 		
-		int indexOfDummy = -1;
+		int indexOfThrown = -1;
 		
+		executor.setAttemptingThrow(true);
 		executor.setThrowCancelled(false);
-		ItemStack thrownItem = executor.getItemStackInMainHand();
+		executor.setThrowSuccessful(false);
+		
+		if (executor.getItemTypeInHand(false) == Material.SHIELD) {
+			executor.setItemTypeInHand(Material.BAMBOO_BUTTON, false);
+		}
+		
+		ItemStack thrownItem = executor.getItemStackInHand(true);
 		if (executor instanceof SwordPlayer sp) {
 			sp.setThrownItemIndex();
-			indexOfDummy = sp.getCurrentInvIndex();
-			executor.message("Index of item thrown: " + indexOfDummy);
-			executor.setItemTypeInMainHand(Material.GUNPOWDER);
+			indexOfThrown = sp.getThrownItemIndex();
+			executor.message("Index of item thrown: " + indexOfThrown);
+			executor.setItemTypeInHand(Material.GUNPOWDER, true);
+		}
+		else {
+			executor.setItemTypeInHand(Material.AIR, true);
 		}
 		executor.setThrownItemStack(thrownItem);
 		
 		LivingEntity ex = executor.entity();
 		World world = ex.getWorld();
 		
-		Location eyeLoc = ex.getEyeLocation();
-		double yawRads = Math.toRadians(eyeLoc.getYaw());
-		
-		Vector planeDir = new Vector(-Math.sin(yawRads), 0, Math.cos(yawRads));
-		
-		List<Vector> basis = VectorUtil.getBasis(eyeLoc, planeDir);
-		Vector right = basis.getFirst();
-		Vector up = basis.get(1);
-		Vector forward = basis.getLast();
-		
-		Location throwOrigin = eyeLoc.clone()
-				.add(right.clone().multiply(rOffset))
-				.add(up.clone().multiply(upOffset))
-				.add(forward.clone().multiply(fOffset))
-				.setDirection(planeDir);
-		
-		ItemDisplay itemDisplay = (ItemDisplay) world.spawnEntity(throwOrigin, EntityType.ITEM_DISPLAY);
+		ItemDisplay itemDisplay = (ItemDisplay) world.spawnEntity(ex.getEyeLocation(), EntityType.ITEM_DISPLAY);
 		itemDisplay.setItemStack(thrownItem);
 		
 		executor.setThrownItemDisplay(itemDisplay);
 		
 		Transformation tr = new Transformation(
-				new Vector3f(0,0,0),
-				new Quaternionf().rotateX((float) (-Math.PI/3)).rotateY((float) (Math.PI/2)),
+				new Vector3f(xOffset,yOffset,zOffset),
+				new Quaternionf().rotateX((float) (-Math.PI/2)).rotateY((float) (Math.PI/2)),
 				new Vector3f(scale,scale,scale),
 				new Quaternionf());
 		itemDisplay.setTransformation(tr);
 		
 		int[] step = {0};
-		int finalIndexOfDummy = indexOfDummy;
+		int index = indexOfThrown;
 		new BukkitRunnable() {
 			@Override
 			public void run() {
-				if (executor instanceof SwordPlayer sp && (!sp.isHoldingRight() || sp.isThrowCancelled())) {
+				if (executor instanceof SwordPlayer sp && (sp.isThrowCancelled() || sp.isThrowSuccessful())) {
 					if (sp.isThrowCancelled()) {
+						itemDisplay.remove();
 						throwCancel(executor);
 					}
-					if (finalIndexOfDummy != -1) {
-						((Player) sp.entity()).getInventory().setItem(finalIndexOfDummy, new ItemStack(Material.AIR));
+					else if (index != -1) {
+						((Player) sp.entity()).getInventory().setItem(index, new ItemStack(Material.AIR));
 					}
-					itemDisplay.remove();
 					cancel();
 				}
 				ex.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 1, 2));
 				
 				if (step[0] % 3 == 0) {
-					Location l = ex.getEyeLocation();
-					List<Vector> basis = VectorUtil.getBasis(l, l.getDirection());
-					Vector right = basis.getFirst();
-					Vector up = basis.get(1);
-					Location cur = ex.getEyeLocation()
-							.add(right.clone().multiply(rOffset))
-							.add(up.clone().multiply(upOffset))
-							.add(forward.clone().multiply(fOffset));
-					
-					itemDisplay.teleport(cur);
+					itemDisplay.teleport(ex.getEyeLocation());
 				}
 				step[0]++;
 			}
@@ -182,28 +166,33 @@ public class UtilityAction extends SwordAction {
 	}
 	
 	public static void throwCancel(Combatant executor) {
+		executor.setAttemptingThrow(false);
+		executor.setThrowCancelled(true);
+		executor.setThrowSuccessful(false);
 		if (executor instanceof SwordPlayer sp){
 			if (sp.getThrownItemIndex() == sp.getCurrentInvIndex()) {
-				sp.setItemStackInMainHand(sp.getThrownItemStack());
+				sp.setItemStackInHand(sp.getThrownItemStack(), true);
 			}
 			else {
-				sp.giveItem(sp.getThrownItemStack());
+				sp.setItemAtIndex(sp.getThrownItemStack(), sp.getThrownItemIndex());
 			}
 		}
 		else {
-			executor.setItemStackInMainHand(executor.getThrownItemStack());
+			executor.setItemStackInHand(executor.getThrownItemStack(), true);
 		}
 	}
 	
 	public static void throwItem(Combatant executor) {
+		executor.setAttemptingThrow(false);
+		executor.setThrowSuccessful(true);
 		cast(executor, 10L, new BukkitRunnable() {
 			@Override
 			public void run() {
 				double force = 1.5;
 				float scale = 1.05f;
-				double rOffset = 1.25;
-				double upOffset = 0.1;
-				double fOffset = -0.5;
+				double xOffset = 0.75;
+				double yOffset = 0.2;
+				double zOffset = -0.2;
 				
 				LivingEntity ex = executor.entity();
 				World world = ex.getWorld();
@@ -231,9 +220,9 @@ public class UtilityAction extends SwordAction {
 				Vector forward = basis.getLast();
 				
 				Location throwOrigin = eyeLoc.clone()
-						.add(right.clone().multiply(rOffset))
-						.add(up.clone().multiply(upOffset))
-						.add(forward.clone().multiply(fOffset))
+						.add(right.clone().multiply(xOffset))
+						.add(up.clone().multiply(yOffset))
+						.add(forward.clone().multiply(zOffset))
 						.setDirection(planeDir);
 				
 //				ItemDisplay itemDisplay = (ItemDisplay) world.spawnEntity(throwOrigin, EntityType.ITEM_DISPLAY);
@@ -243,7 +232,7 @@ public class UtilityAction extends SwordAction {
 				itemDisplay.teleport(throwOrigin);
 				
 				Transformation tr = new Transformation(
-						new Vector3f(0,0,1),
+						new Vector3f(0,0,0),
 						new Quaternionf().rotateX((float) (Math.PI/2)).rotateY((float) (Math.PI/2)),
 						new Vector3f(scale,scale,scale),
 						new Quaternionf());
@@ -273,7 +262,7 @@ public class UtilityAction extends SwordAction {
 						Vector velocity = cur.clone().subtract(prev[0]).toVector();
 						
 						Quaternionf lRotation = new Quaternionf();
-						tr.getLeftRotation().slerp(tr.getLeftRotation().rotateZ((float) (Math.PI/4)), 0.75f, lRotation);
+						tr.getLeftRotation().slerp(tr.getLeftRotation().rotateZ((float) (Math.PI/4)).rotateX((float) (Math.PI/270)), 0.75f, lRotation);
 						
 						itemDisplay.setTransformation(new Transformation(
 								new Vector3f(0, (float) y, (float) forwardVelocity),
@@ -319,7 +308,7 @@ public class UtilityAction extends SwordAction {
 								}
 							}.runTaskLater(Sword.getInstance(), 1L);
 							if (data != null) {
-								new ParticleWrapper(Particle.DUST_PILLAR, 60, 0.25,0.25,0.25, data).display(cur);
+								new ParticleWrapper(Particle.BLOCK, 30, 0.5,0.5,0.5, data).display(cur);
 							}
 							
 							cancel();
@@ -330,7 +319,7 @@ public class UtilityAction extends SwordAction {
 							if (block != null && block.getHitBlock() != null) {
 								new ParticleWrapper(Particle.BLOCK, 60, 0.25,0.25,0.25, block.getHitBlock().getBlockData())
 										.display(cur);
-								new ParticleWrapper(Particle.DUST_PILLAR, 60, 0.25,0.25,0.25, block.getHitBlock().getBlockData())
+								new ParticleWrapper(Particle.DUST_PILLAR, 60, 0.5,0.5,0.5, block.getHitBlock().getBlockData())
 										.display(cur);
 								
 								executor.message("  Lodged in the ground now");
@@ -341,7 +330,7 @@ public class UtilityAction extends SwordAction {
 									}
 								}.runTaskLater(Sword.getInstance(), 100L);
 								if (data != null) {
-									new ParticleWrapper(Particle.DUST_PILLAR, 60, 0.25,0.25,0.25, data).display(cur);
+									new ParticleWrapper(Particle.DUST_PILLAR, 60, 0.5,0.5,0.5, data).display(cur);
 								}
 								cancel();
 							}

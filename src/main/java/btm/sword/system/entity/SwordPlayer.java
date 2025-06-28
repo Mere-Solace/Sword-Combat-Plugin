@@ -42,6 +42,8 @@ public class SwordPlayer extends Combatant {
 	
 	private int thrownItemIndex;
 	
+	private boolean canPickUpItems;
+	
 	public SwordPlayer(LivingEntity associatedEntity, PlayerData data) {
 		super(associatedEntity, data.getCombatProfile());
 		inputExecutionTree = new InputExecutionTree(inputTimeoutMillis);
@@ -89,7 +91,9 @@ public class SwordPlayer extends Combatant {
 			if (minTime == -1
 					|| (input == InputType.RIGHT_HOLD && timeRightHeld < minTime)
 					|| (input == InputType.SHIFT_HOLD && timeSneakHeld < minTime)) {
-				if (!isThrowCancelled()) UtilityAction.throwCancel(this);
+				
+				if (isAttemptingThrow()) UtilityAction.throwCancel(this);
+				
 				message("  not letting you send input to the tree.");
 				return;
 			}
@@ -305,5 +309,9 @@ public class SwordPlayer extends Combatant {
 	
 	public int getCurrentInvIndex() {
 		return ((Player) self).getInventory().getHeldItemSlot();
+	}
+	
+	public void setItemAtIndex(ItemStack item, int index) {
+		((Player) self).getInventory().setItem(index, item);
 	}
 }
