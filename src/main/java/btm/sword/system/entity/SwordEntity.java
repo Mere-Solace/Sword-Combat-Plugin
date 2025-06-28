@@ -243,4 +243,8 @@ public abstract class SwordEntity {
 		else
 			Objects.requireNonNull(self.getEquipment()).setItemInMainHand(itemStack);
 	}
+	
+	public void setItemTypeInMainHand(Material itemType) {
+		setItemStackInMainHand(new ItemStack(itemType));
+	}
 }

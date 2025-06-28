@@ -99,15 +99,25 @@ public class UtilityAction extends SwordAction {
 	}
 	
 	public static void throwReady(Combatant executor) {
+		float scale = 1.05f;
+		double rOffset = 1.25;
+		double upOffset = 0.1;
+		double fOffset = -0.5;
+		
+		int indexOfDummy = -1;
+		
 		executor.setThrowCancelled(false);
-		float scale = 1.1f;
-		double rOffset = 0.75;
-		double upOffset = -0.1;
+		ItemStack thrownItem = executor.getItemStackInMainHand();
+		if (executor instanceof SwordPlayer sp) {
+			sp.setThrownItemIndex();
+			indexOfDummy = sp.getCurrentInvIndex();
+			executor.message("Index of item thrown: " + indexOfDummy);
+			executor.setItemTypeInMainHand(Material.GUNPOWDER);
+		}
+		executor.setThrownItemStack(thrownItem);
 		
 		LivingEntity ex = executor.entity();
 		World world = ex.getWorld();
-		
-		ItemStack thrownItem = executor.getItemStackInMainHand();
 		
 		Location eyeLoc = ex.getEyeLocation();
 		double yawRads = Math.toRadians(eyeLoc.getYaw());
@@ -117,30 +127,38 @@ public class UtilityAction extends SwordAction {
 		List<Vector> basis = VectorUtil.getBasis(eyeLoc, planeDir);
 		Vector right = basis.getFirst();
 		Vector up = basis.get(1);
+		Vector forward = basis.getLast();
 		
 		Location throwOrigin = eyeLoc.clone()
 				.add(right.clone().multiply(rOffset))
 				.add(up.clone().multiply(upOffset))
+				.add(forward.clone().multiply(fOffset))
 				.setDirection(planeDir);
 		
 		ItemDisplay itemDisplay = (ItemDisplay) world.spawnEntity(throwOrigin, EntityType.ITEM_DISPLAY);
 		itemDisplay.setItemStack(thrownItem);
 		
-		executor.setThrownItemStack(thrownItem);
 		executor.setThrownItemDisplay(itemDisplay);
 		
 		Transformation tr = new Transformation(
 				new Vector3f(0,0,0),
-				new Quaternionf().rotateX((float) (-Math.PI/2)).rotateY((float) (Math.PI/2)),
+				new Quaternionf().rotateX((float) (-Math.PI/3)).rotateY((float) (Math.PI/2)),
 				new Vector3f(scale,scale,scale),
 				new Quaternionf());
 		itemDisplay.setTransformation(tr);
 		
 		int[] step = {0};
+		int finalIndexOfDummy = indexOfDummy;
 		new BukkitRunnable() {
 			@Override
 			public void run() {
 				if (executor instanceof SwordPlayer sp && (!sp.isHoldingRight() || sp.isThrowCancelled())) {
+					if (sp.isThrowCancelled()) {
+						throwCancel(executor);
+					}
+					if (finalIndexOfDummy != -1) {
+						((Player) sp.entity()).getInventory().setItem(finalIndexOfDummy, new ItemStack(Material.AIR));
+					}
 					itemDisplay.remove();
 					cancel();
 				}
@@ -153,15 +171,10 @@ public class UtilityAction extends SwordAction {
 					Vector up = basis.get(1);
 					Location cur = ex.getEyeLocation()
 							.add(right.clone().multiply(rOffset))
-							.add(up.clone().multiply(upOffset));
+							.add(up.clone().multiply(upOffset))
+							.add(forward.clone().multiply(fOffset));
 					
 					itemDisplay.teleport(cur);
-					itemDisplay.setTransformation(new Transformation(
-							new Vector3f(0, 0, 0),
-							tr.getLeftRotation(),
-							tr.getScale(),
-							tr.getRightRotation()
-					));
 				}
 				step[0]++;
 			}
@@ -169,7 +182,17 @@ public class UtilityAction extends SwordAction {
 	}
 	
 	public static void throwCancel(Combatant executor) {
-	
+		if (executor instanceof SwordPlayer sp){
+			if (sp.getThrownItemIndex() == sp.getCurrentInvIndex()) {
+				sp.setItemStackInMainHand(sp.getThrownItemStack());
+			}
+			else {
+				sp.giveItem(sp.getThrownItemStack());
+			}
+		}
+		else {
+			executor.setItemStackInMainHand(executor.getThrownItemStack());
+		}
 	}
 	
 	public static void throwItem(Combatant executor) {
@@ -177,27 +200,21 @@ public class UtilityAction extends SwordAction {
 			@Override
 			public void run() {
 				double force = 1.5;
-				float scale = 1.1f;
+				float scale = 1.05f;
+				double rOffset = 1.25;
+				double upOffset = 0.1;
+				double fOffset = -0.5;
 				
 				LivingEntity ex = executor.entity();
 				World world = ex.getWorld();
 				
-				ItemStack thrownItem;
-				if (executor instanceof SwordPlayer sp) {
-					Player p = ((Player) sp.entity());
-					PlayerInventory inv = p.getInventory();
-					thrownItem = inv.getItemInMainHand();
-					inv.setItem(inv.getHeldItemSlot(), new ItemStack(Material.AIR));
-				}
-				else {
-					thrownItem = Objects.requireNonNull(ex.getEquipment()).getItemInMainHand();
-					Objects.requireNonNull(ex.getEquipment()).setItemInMainHand(new ItemStack(Material.AIR));
-				}
+				ItemStack thrownItem = executor.getThrownItemStack();
+				
 				BlockData thrownBlockData = null;
 				ParticleWrapper blockTrail = null;
 				if (thrownItem.getType().isBlock()) {
 					thrownBlockData = thrownItem.getType().createBlockData();
-					blockTrail = new ParticleWrapper(Particle.BLOCK, 10, scale / 3, scale / 3, scale / 3, thrownBlockData);
+					blockTrail = new ParticleWrapper(Particle.BLOCK, 5, scale / 4, scale / 4, scale / 4, thrownBlockData);
 				}
 				BlockData data = thrownBlockData;
 				ParticleWrapper bt = blockTrail;
@@ -211,14 +228,19 @@ public class UtilityAction extends SwordAction {
 				List<Vector> basis = VectorUtil.getBasis(eyeLoc, planeDir);
 				Vector right = basis.getFirst();
 				Vector up = basis.get(1);
+				Vector forward = basis.getLast();
 				
 				Location throwOrigin = eyeLoc.clone()
-						.add(right.clone().multiply(0.45))
-						.subtract(up.clone().multiply(0.3))
+						.add(right.clone().multiply(rOffset))
+						.add(up.clone().multiply(upOffset))
+						.add(forward.clone().multiply(fOffset))
 						.setDirection(planeDir);
 				
-				ItemDisplay itemDisplay = (ItemDisplay) world.spawnEntity(throwOrigin, EntityType.ITEM_DISPLAY);
-				itemDisplay.setItemStack(thrownItem);
+//				ItemDisplay itemDisplay = (ItemDisplay) world.spawnEntity(throwOrigin, EntityType.ITEM_DISPLAY);
+//				itemDisplay.setItemStack(thrownItem);
+				
+				ItemDisplay itemDisplay = executor.getThrownItemDisplay();
+				itemDisplay.teleport(throwOrigin);
 				
 				Transformation tr = new Transformation(
 						new Vector3f(0,0,1),
@@ -248,7 +270,7 @@ public class UtilityAction extends SwordAction {
 								bt.display(cur);
 						}
 						
-						Vector tangent = cur.clone().subtract(prev[0]).toVector();
+						Vector velocity = cur.clone().subtract(prev[0]).toVector();
 						
 						Quaternionf lRotation = new Quaternionf();
 						tr.getLeftRotation().slerp(tr.getLeftRotation().rotateZ((float) (Math.PI/4)), 0.75f, lRotation);
@@ -260,7 +282,7 @@ public class UtilityAction extends SwordAction {
 								tr.getRightRotation()
 						));
 						
-						float v2 = (float) tangent.lengthSquared();
+						float v2 = (float) velocity.lengthSquared();
 						
 						HashSet<LivingEntity> hit = HitboxUtil.line(ex, prev[0], cur, scale/2, false);
 						
@@ -279,8 +301,8 @@ public class UtilityAction extends SwordAction {
 							for (LivingEntity target : hit) {
 								if (target != ex) {
 									Vector kb;
-									if (!tangent.isZero() && v2 > 0.001f) {
-										kb = tangent;
+									if (!velocity.isZero() && v2 > 0.001f) {
+										kb = velocity;
 									} else {
 										kb = target.getEyeLocation().subtract(ex.getEyeLocation().toVector()).toVector().normalize().multiply(force);
 									}
@@ -297,17 +319,20 @@ public class UtilityAction extends SwordAction {
 								}
 							}.runTaskLater(Sword.getInstance(), 1L);
 							if (data != null) {
-								new ParticleWrapper(Particle.DUST_PILLAR, 2, 0.1,0.1,0.1, data).display(cur);
+								new ParticleWrapper(Particle.DUST_PILLAR, 60, 0.25,0.25,0.25, data).display(cur);
 							}
 							
 							cancel();
 						}
 						
-						if (!tangent.isZero() && v2 > 0.001f) {
-							RayTraceResult block = world.rayTraceBlocks(cur, tangent, scale*force*(v2/3));
+						if (!velocity.isZero() && v2 > 0.001f) {
+							RayTraceResult block = world.rayTraceBlocks(cur, velocity, scale*force);
 							if (block != null && block.getHitBlock() != null) {
-								new ParticleWrapper(Particle.BLOCK, 40, 0.2, 0.2, 0.2, block.getHitBlock().getBlockData())
+								new ParticleWrapper(Particle.BLOCK, 60, 0.25,0.25,0.25, block.getHitBlock().getBlockData())
 										.display(cur);
+								new ParticleWrapper(Particle.DUST_PILLAR, 60, 0.25,0.25,0.25, block.getHitBlock().getBlockData())
+										.display(cur);
+								
 								executor.message("  Lodged in the ground now");
 								new BukkitRunnable() {
 									@Override
@@ -316,7 +341,7 @@ public class UtilityAction extends SwordAction {
 									}
 								}.runTaskLater(Sword.getInstance(), 100L);
 								if (data != null) {
-									new ParticleWrapper(Particle.DUST_PILLAR, 2, 0.1,0.1,0.1, data).display(cur);
+									new ParticleWrapper(Particle.DUST_PILLAR, 60, 0.25,0.25,0.25, data).display(cur);
 								}
 								cancel();
 							}

@@ -109,6 +109,7 @@ public class MovementAction extends SwordAction {
 								t.setVelocity(knockbackDir.normalize().multiply(0.3 * force));
 							}
 							world.createExplosion(l, 2, false, false);
+							target.hit(executor, 2, 30, 5,new Vector());
 							check[0] = false;
 						}
 					}

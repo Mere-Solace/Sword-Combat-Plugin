@@ -1,6 +1,7 @@
 package btm.sword.system.entity;
 
 import btm.sword.Sword;
+import btm.sword.system.action.UtilityAction;
 import btm.sword.system.input.InputAction;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.input.InputExecutionTree;
@@ -38,6 +39,8 @@ public class SwordPlayer extends Combatant {
 	private boolean sneaking;
 	private long sneakHoldTimeStart;
 	private long timeSneakHeld;
+	
+	private int thrownItemIndex;
 	
 	public SwordPlayer(LivingEntity associatedEntity, PlayerData data) {
 		super(associatedEntity, data.getCombatProfile());
@@ -86,6 +89,7 @@ public class SwordPlayer extends Combatant {
 			if (minTime == -1
 					|| (input == InputType.RIGHT_HOLD && timeRightHeld < minTime)
 					|| (input == InputType.SHIFT_HOLD && timeSneakHeld < minTime)) {
+				if (!isThrowCancelled()) UtilityAction.throwCancel(this);
 				message("  not letting you send input to the tree.");
 				return;
 			}
@@ -289,5 +293,17 @@ public class SwordPlayer extends Combatant {
 	@Override
 	public void onDeath() {
 	
+	}
+	
+	public int getThrownItemIndex() {
+		return thrownItemIndex;
+	}
+	
+	public void setThrownItemIndex() {
+		thrownItemIndex = getCurrentInvIndex();
+	}
+	
+	public int getCurrentInvIndex() {
+		return ((Player) self).getInventory().getHeldItemSlot();
 	}
 }
