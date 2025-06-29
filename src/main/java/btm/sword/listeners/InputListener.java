@@ -81,10 +81,7 @@ public class InputListener implements Listener {
 		Player player = (Player) swordPlayer.entity();
 		Material itemType = player.getInventory().getItemInMainHand().getType();
 		
-		if (swordPlayer.isGrabbing())
-			swordPlayer.setGrabbing(false);
-		else
-			swordPlayer.act(InputType.SWAP);
+		swordPlayer.act(InputType.SWAP);
 		
 		event.setCancelled(true);
 	}

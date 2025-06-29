@@ -22,15 +22,12 @@ public class InputAction {
 			Predicate<Combatant> canCastAbility,
 			boolean displayCooldown,
 			boolean displayDisabled) {
-		
 		this.action = action;
 		this.cooldownCalculation = cooldownCalculation;
 		this.canCastAbility = canCastAbility;
 		this.displayCooldown = displayCooldown;
 		this.displayDisabled = displayDisabled;
 	}
-	
-	
 	
 	public boolean execute(Combatant executor) {
 		long currentTime = System.currentTimeMillis();

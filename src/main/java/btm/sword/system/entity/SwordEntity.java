@@ -41,6 +41,8 @@ public abstract class SwordEntity {
 	protected final double eyeHeight;
 	protected final Vector chestVector;
 	
+	protected boolean ableToPickup;
+	
 	public SwordEntity(@NotNull LivingEntity self, @NotNull CombatProfile combatProfile) {
 		this.self = self;
 		uuid = self.getUniqueId();
@@ -60,6 +62,8 @@ public abstract class SwordEntity {
 		
 		eyeHeight = self.getEyeHeight(true);
 		chestVector = new Vector(0, eyeHeight * 0.45, 0);
+		
+		ableToPickup = true;
 	}
 	
 	public abstract void onSpawn();
@@ -255,5 +259,13 @@ public abstract class SwordEntity {
 	
 	public void setItemTypeInHand(Material itemType, boolean main) {
 		setItemStackInHand(new ItemStack(itemType), main);
+	}
+	
+	public boolean isAbleToPickup() {
+		return ableToPickup;
+	}
+	
+	public void setAbleToPickup(boolean ableToPickup) {
+		this.ableToPickup = ableToPickup;
 	}
 }

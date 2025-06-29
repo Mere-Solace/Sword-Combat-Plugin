@@ -11,7 +11,7 @@ import java.util.HashSet;
 import java.util.List;
 
 public class HitboxUtil {
-	public static HashSet<LivingEntity> lineKnownLength(LivingEntity executor, Location o, Vector e, double maxRange, double thickness) {
+	public static HashSet<LivingEntity> line(LivingEntity executor, Location o, Vector e, double maxRange, double thickness) {
 		HashSet<LivingEntity> hit = new HashSet<>();
 		
 		for (double i = 0; i < maxRange; i += thickness) {
@@ -22,7 +22,7 @@ public class HitboxUtil {
 		return hit;
 	}
 	
-	public static LivingEntity firstInLineKnownLength(LivingEntity executor, Location o, Vector e, double maxRange, double thickness) {
+	public static LivingEntity lineFirst(LivingEntity executor, Location o, Vector e, double maxRange, double thickness) {
 		for (double i = 0; i < maxRange; i += thickness) {
 			List<LivingEntity> hits = new ArrayList<>(o.clone().add(e.clone().multiply(i)).getNearbyLivingEntities(thickness));
 
@@ -32,11 +32,11 @@ public class HitboxUtil {
 				}
 			}
 		}
-		
 		return null;
 	}
 	
-	public static HashSet<LivingEntity> line(LivingEntity executor, Location origin, Location end, double thickness, boolean removeExecutor) {
+	
+	public static HashSet<LivingEntity> secant(LivingEntity executor, Location origin, Location end, double thickness, boolean removeExecutor) {
 		HashSet<LivingEntity> hit = new HashSet<>();
 		
 		Vector direction = end.clone().subtract(origin).toVector();
@@ -62,10 +62,10 @@ public class HitboxUtil {
 		return hit;
 	}
 	
-	public static HashSet<LivingEntity> sphere(LivingEntity executor, Location o, double radius) {
+	public static HashSet<LivingEntity> sphere(LivingEntity executor, Location o, double radius, boolean removeExecutor) {
 		HashSet<LivingEntity> hit = new HashSet<>(o.getNearbyLivingEntities(radius));
 		hit.removeIf(Entity::isDead);
-		hit.remove(executor);
+		if (removeExecutor) hit.remove(executor);
 		return hit;
 	}
 	
@@ -107,7 +107,7 @@ public class HitboxUtil {
 		return null;
 	}
 	
-	public static HashSet<LivingEntity> sphereAtRayHit(LivingEntity executor, double maxRange, double radius, Vector offsetFromHit) {
+	public static HashSet<LivingEntity> sphereAtRayHit(LivingEntity executor, double maxRange, double radius, Vector offsetFromHit, boolean removeExecutor) {
 		HashSet<LivingEntity> hit = new HashSet<>();
 		
 		LivingEntity origin = rayTrace(executor, maxRange);
@@ -115,6 +115,6 @@ public class HitboxUtil {
 		if (origin == null)
 			return hit;
 		
-		return sphere(executor, origin.getLocation().add(offsetFromHit), radius);
+		return sphere(executor, origin.getLocation().add(offsetFromHit), radius, removeExecutor);
 	}
 }

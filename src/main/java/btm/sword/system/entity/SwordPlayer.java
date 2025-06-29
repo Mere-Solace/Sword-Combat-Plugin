@@ -42,8 +42,6 @@ public class SwordPlayer extends Combatant {
 	
 	private int thrownItemIndex;
 	
-	private boolean canPickUpItems;
-	
 	public SwordPlayer(LivingEntity associatedEntity, PlayerData data) {
 		super(associatedEntity, data.getCombatProfile());
 		inputExecutionTree = new InputExecutionTree(inputTimeoutMillis);
@@ -61,6 +59,11 @@ public class SwordPlayer extends Combatant {
 	}
 	
 	public void act(InputType input) {
+		if (input == InputType.SWAP && isGrabbing()) {
+			setGrabbing(false);
+			return;
+		}
+		
 		if (input == InputType.LEFT && isGrabbing()) {
 			onGrabHit();
 			return;
@@ -87,14 +90,14 @@ public class SwordPlayer extends Combatant {
 		
 		if (input == InputType.RIGHT_HOLD || input == InputType.SHIFT_HOLD) {
 			long minTime = inputExecutionTree.getMinHoldLengthOfNext(input);
-			message("Min Hold Time: " + minTime + ", Right held for " + timeRightHeld + ", Shift held for: " + timeSneakHeld);
+			message("~ Min Hold Time: " + minTime + ", Right held for " + timeRightHeld + ", Shift held for: " + timeSneakHeld);
 			if (minTime == -1
 					|| (input == InputType.RIGHT_HOLD && timeRightHeld < minTime)
 					|| (input == InputType.SHIFT_HOLD && timeSneakHeld < minTime)) {
 				
 				if (isAttemptingThrow()) UtilityAction.throwCancel(this);
 				
-				message("  not letting you send input to the tree.");
+				message("       not letting you send input to the tree.");
 				return;
 			}
 		}

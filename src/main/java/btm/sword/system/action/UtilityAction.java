@@ -6,11 +6,13 @@ import btm.sword.system.entity.SwordEntity;
 import btm.sword.system.entity.SwordPlayer;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.SwordEntityArbiter;
+import btm.sword.system.entity.display.InteractiveItemArbiter;
 import btm.sword.util.Cache;
 import btm.sword.util.HitboxUtil;
 import btm.sword.util.ParticleWrapper;
 import btm.sword.util.VectorUtil;
 import org.bukkit.*;
+import org.bukkit.block.Block;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.*;
 import org.bukkit.inventory.*;
@@ -25,6 +27,7 @@ import org.joml.Vector3f;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 
 public class UtilityAction extends SwordAction {
 	
@@ -44,10 +47,21 @@ public class UtilityAction extends SwordAction {
 				LivingEntity ex = executor.entity();
 				Location o = ex.getEyeLocation();
 
-				LivingEntity target = HitboxUtil.firstInLineKnownLength(ex, o, o.getDirection(), range, grabThickness);
+				LivingEntity target = HitboxUtil.lineFirst(ex, o, o.getDirection(), range, grabThickness);
 				if (target == null) {
 					return;
 				}
+				
+				if (target.getType() == EntityType.ARMOR_STAND) {
+					BlockData lodgedBlockData = Material.AIR.createBlockData();
+					RayTraceResult result = target.getWorld().rayTraceBlocks(target.getLocation(), new Vector(0, -1, 0), 2);
+					Block b = null;
+					if (result != null) b = result.getHitBlock();
+					if (b != null) lodgedBlockData = b.getBlockData();
+					InteractiveItemArbiter.onPickup((ArmorStand) target, executor, lodgedBlockData);
+					return;
+				}
+				
 				SwordEntity swordTarget = SwordEntityArbiter.getOrAdd(target.getUniqueId());
 				
 				executor.onGrab(swordTarget);
@@ -135,7 +149,7 @@ public class UtilityAction extends SwordAction {
 		
 		Transformation tr = new Transformation(
 				new Vector3f(xOffset,yOffset,zOffset),
-				new Quaternionf().rotateX((float) (-Math.PI/2)).rotateY((float) (Math.PI/2)),
+				new Quaternionf().rotateX((float) (-Math.PI/3)).rotateY((float) (Math.PI/1.5)),
 				new Vector3f(scale,scale,scale),
 				new Quaternionf());
 		itemDisplay.setTransformation(tr);
@@ -170,12 +184,7 @@ public class UtilityAction extends SwordAction {
 		executor.setThrowCancelled(true);
 		executor.setThrowSuccessful(false);
 		if (executor instanceof SwordPlayer sp){
-			if (sp.getThrownItemIndex() == sp.getCurrentInvIndex()) {
-				sp.setItemStackInHand(sp.getThrownItemStack(), true);
-			}
-			else {
-				sp.setItemAtIndex(sp.getThrownItemStack(), sp.getThrownItemIndex());
-			}
+			sp.setItemAtIndex(sp.getThrownItemStack(), sp.getThrownItemIndex());
 		}
 		else {
 			executor.setItemStackInHand(executor.getThrownItemStack(), true);
@@ -225,9 +234,6 @@ public class UtilityAction extends SwordAction {
 						.add(forward.clone().multiply(zOffset))
 						.setDirection(planeDir);
 				
-//				ItemDisplay itemDisplay = (ItemDisplay) world.spawnEntity(throwOrigin, EntityType.ITEM_DISPLAY);
-//				itemDisplay.setItemStack(thrownItem);
-				
 				ItemDisplay itemDisplay = executor.getThrownItemDisplay();
 				itemDisplay.teleport(throwOrigin);
 				
@@ -243,9 +249,8 @@ public class UtilityAction extends SwordAction {
 				new BukkitRunnable() {
 					@Override
 					public void run() {
-						
 						double yVelocity = (force * Math.sin(-pitchRads) * step[0]);
-						double yAcceleration = force/50 * step[0] * step[0];
+						double yAcceleration = force/45 * step[0] * step[0];
 						double y = yVelocity - yAcceleration;
 						
 						double forwardVelocity = force * Math.cos(pitchRads) * step[0];
@@ -253,11 +258,10 @@ public class UtilityAction extends SwordAction {
 						Vector displacement = planeDir.clone().multiply(forwardVelocity).add(up.clone().multiply(y));
 						Location cur = throwOrigin.clone().add(displacement);
 						
-						if (step[0] % 2 == 0) {
-							Cache.throwTrailParticle.display(cur);
+						Cache.throwTrailParticle.display(cur);
+						if (step[0] % 3 == 0)
 							if (bt != null)
 								bt.display(cur);
-						}
 						
 						Vector velocity = cur.clone().subtract(prev[0]).toVector();
 						
@@ -273,12 +277,13 @@ public class UtilityAction extends SwordAction {
 						
 						float v2 = (float) velocity.lengthSquared();
 						
-						HashSet<LivingEntity> hit = HitboxUtil.line(ex, prev[0], cur, scale/2, false);
+						boolean removeExecutor = step[0] <= 15;
+						HashSet<LivingEntity> hit =
+								prev[0].clone().subtract(cur).toVector().lengthSquared() > 0.001 ?
+								HitboxUtil.secant(ex, prev[0], cur, scale/2.5f, removeExecutor) :
+								HitboxUtil.sphere(ex, cur, scale/2.5f, removeExecutor);
 						
-						if (step[0] <= 20) {
-							hit.remove(ex);
-						}
-						
+						// check if the item was caught by the executor, and return it to their inventory if so
 						if (hit.contains(ex)) {
 							executor.giveItem(thrownItem);
 							itemDisplay.remove();
@@ -286,9 +291,10 @@ public class UtilityAction extends SwordAction {
 							return;
 						}
 						
+						// if entities other than the executor were caught in the path, hit them and create an explosion, and drop the item in the air
 						if (!hit.isEmpty()) {
 							for (LivingEntity target : hit) {
-								if (target != ex) {
+								if (target != ex) { // add other filters for armor stands, item displays, and undesirable targets
 									Vector kb;
 									if (!velocity.isZero() && v2 > 0.001f) {
 										kb = velocity;
@@ -302,20 +308,23 @@ public class UtilityAction extends SwordAction {
 							new BukkitRunnable() {
 								@Override
 								public void run() {
-									thrownItem.damage(15, ex);
+									thrownItem.damage(50, ex);
 									world.dropItemNaturally(cur, thrownItem);
 									itemDisplay.remove();
 								}
 							}.runTaskLater(Sword.getInstance(), 1L);
+							
 							if (data != null) {
 								new ParticleWrapper(Particle.BLOCK, 30, 0.5,0.5,0.5, data).display(cur);
+								new ParticleWrapper(Particle.DUST_PILLAR, 15, 0.5,0.5,0.5, data).display(cur);
 							}
 							
 							cancel();
 						}
 						
+						// ray trace in the direction of the velocity to check for blocks, if one exists, stop the movement
 						if (!velocity.isZero() && v2 > 0.001f) {
-							RayTraceResult block = world.rayTraceBlocks(cur, velocity, scale*force);
+							RayTraceResult block = world.rayTraceBlocks(cur, velocity, scale*force*0.5);
 							if (block != null && block.getHitBlock() != null) {
 								new ParticleWrapper(Particle.BLOCK, 60, 0.25,0.25,0.25, block.getHitBlock().getBlockData())
 										.display(cur);
@@ -323,12 +332,24 @@ public class UtilityAction extends SwordAction {
 										.display(cur);
 								
 								executor.message("  Lodged in the ground now");
+								
+								// create a marker to be used for retrieving the item with a 'grab' action
+								ArmorStand marker = (ArmorStand) world.spawnEntity(cur, EntityType.ARMOR_STAND);
+								marker.setInvulnerable(true);
+								marker.setInvisible(true);
+								marker.setCanMove(false);
+								marker.setGravity(false);
+								InteractiveItemArbiter.register(marker, itemDisplay);
+								
 								new BukkitRunnable() {
 									@Override
 									public void run() {
-										itemDisplay.remove();
+										if (!itemDisplay.isDead()) {
+											itemDisplay.remove();
+											InteractiveItemArbiter.remove(marker);
+										}
 									}
-								}.runTaskLater(Sword.getInstance(), 100L);
+								}.runTaskLater(Sword.getInstance(), 1000L);
 								if (data != null) {
 									new ParticleWrapper(Particle.DUST_PILLAR, 60, 0.5,0.5,0.5, data).display(cur);
 								}
