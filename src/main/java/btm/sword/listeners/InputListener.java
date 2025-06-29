@@ -1,7 +1,7 @@
 package btm.sword.listeners;
 
 import btm.sword.Sword;
-import btm.sword.system.action.UtilityAction;
+import btm.sword.system.action.utility.ThrowAction;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.SwordPlayer;
 
@@ -96,6 +96,6 @@ public class InputListener implements Listener {
 		}
 		
 		if (swordPlayer.isAttemptingThrow())
-			UtilityAction.throwCancel(swordPlayer);
+			ThrowAction.throwCancel(swordPlayer);
 	}
 }

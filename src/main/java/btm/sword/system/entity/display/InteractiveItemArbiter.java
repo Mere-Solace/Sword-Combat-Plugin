@@ -16,6 +16,12 @@ public class InteractiveItemArbiter {
 	
 	public static void register(ArmorStand marker, ItemDisplay interactiveItem) {
 		itemHitboxMap.put(marker, interactiveItem);
+		marker.setMarker(true);
+		marker.setInvulnerable(true);
+		marker.setCanMove(false);
+		marker.setGravity(false);
+		marker.setVisible(true); // TODO change back
+		marker.setCollidable(false);
 	}
 	
 	public static void remove(ArmorStand marker) {
@@ -23,13 +29,6 @@ public class InteractiveItemArbiter {
 	}
 	
 	public static void onPickup(ArmorStand marker, Combatant executor, BlockData blockData) {
-		marker.setMarker(true);
-		marker.setInvulnerable(true);
-		marker.setCanMove(false);
-		marker.setGravity(false);
-		marker.setVisible(false);
-		marker.setCollidable(false);
-		
 		ItemDisplay interactiveItem = itemHitboxMap.get(marker);
 		if (interactiveItem != null) {
 			ItemStack itemStack = interactiveItem.getItemStack();

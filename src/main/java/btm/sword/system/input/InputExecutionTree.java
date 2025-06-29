@@ -3,19 +3,18 @@ package btm.sword.system.input;
 import btm.sword.Sword;
 import btm.sword.system.action.AttackAction;
 import btm.sword.system.action.MovementAction;
-import btm.sword.system.action.UtilityAction;
+import btm.sword.system.action.utility.GrabAction;
+import btm.sword.system.action.utility.ThrowAction;
 import btm.sword.system.action.type.AttackType;
 import btm.sword.system.entity.Combatant;
 import btm.sword.system.entity.SwordPlayer;
 import btm.sword.system.entity.aspect.AspectType;
-import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 
 import java.util.HashMap;
 import java.util.List;
-import java.util.function.Consumer;
 
 public class InputExecutionTree {
 	private static final Plugin plugin = Sword.getInstance();
@@ -200,7 +199,7 @@ public class InputExecutionTree {
 		// grab
 		add(List.of(InputType.SHIFT, InputType.LEFT),
 				new InputAction(
-						UtilityAction::grab,
+						GrabAction::grab,
 						executor -> executor.calcCooldown(AspectType.FORTITUDE, 200L, 1000L, 10),
 						Combatant::canPerformAction,
 						false, true),
@@ -235,7 +234,7 @@ public class InputExecutionTree {
 		// throw hold action
 		add(List.of(InputType.DROP, InputType.RIGHT),
 				new InputAction(
-						UtilityAction::throwReady,
+						ThrowAction::throwReady,
 						executor -> 0L,
 						Combatant::canPerformAction,
 						false, false),
@@ -244,7 +243,7 @@ public class InputExecutionTree {
 		// throw
 		add(List.of(InputType.DROP, InputType.RIGHT, InputType.RIGHT_HOLD),
 				new InputAction(
-						UtilityAction::throwItem,
+						ThrowAction::throwItem,
 						executor -> 0L,
 						Combatant::canPerformAction,
 						false, false),
@@ -273,7 +272,7 @@ public class InputExecutionTree {
 		
 		add(List.of(InputType.SHIFT, InputType.SHIFT_HOLD),
 				new InputAction(
-						UtilityAction::death,
+						ThrowAction::death,
 						executor -> executor.calcCooldown(AspectType.CELERITY, 200L,1400L, 10),
 						Combatant::canPerformAction,
 						true, true),
@@ -282,7 +281,7 @@ public class InputExecutionTree {
 		// Drop an item "ability"
 		add(List.of(InputType.DROP, InputType.DROP, InputType.DROP),
 				new InputAction(
-						executor -> UtilityAction.allowDrop((SwordPlayer) executor),
+						executor -> ThrowAction.allowDrop((SwordPlayer) executor),
 						executor -> 0L,
 						Combatant::canPerformAction,
 						false, false),

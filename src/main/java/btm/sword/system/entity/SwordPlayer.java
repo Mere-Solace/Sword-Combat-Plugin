@@ -1,7 +1,7 @@
 package btm.sword.system.entity;
 
 import btm.sword.Sword;
-import btm.sword.system.action.UtilityAction;
+import btm.sword.system.action.utility.ThrowAction;
 import btm.sword.system.input.InputAction;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.input.InputExecutionTree;
@@ -13,7 +13,6 @@ import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.title.Title;
 
 import org.bukkit.Material;
-import org.bukkit.entity.ItemDisplay;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -95,7 +94,7 @@ public class SwordPlayer extends Combatant {
 					|| (input == InputType.RIGHT_HOLD && timeRightHeld < minTime)
 					|| (input == InputType.SHIFT_HOLD && timeSneakHeld < minTime)) {
 				
-				if (isAttemptingThrow()) UtilityAction.throwCancel(this);
+				if (isAttemptingThrow()) ThrowAction.throwCancel(this);
 				
 				message("       not letting you send input to the tree.");
 				return;
