@@ -4,7 +4,6 @@ import btm.sword.system.entity.Combatant;
 import btm.sword.util.Cache;
 import btm.sword.util.ParticleWrapper;
 import org.bukkit.Particle;
-import org.bukkit.block.Block;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.ItemDisplay;
@@ -24,6 +23,13 @@ public class InteractiveItemArbiter {
 	}
 	
 	public static void onPickup(ArmorStand marker, Combatant executor, BlockData blockData) {
+		marker.setMarker(true);
+		marker.setInvulnerable(true);
+		marker.setCanMove(false);
+		marker.setGravity(false);
+		marker.setVisible(false);
+		marker.setCollidable(false);
+		
 		ItemDisplay interactiveItem = itemHitboxMap.get(marker);
 		if (interactiveItem != null) {
 			ItemStack itemStack = interactiveItem.getItemStack();

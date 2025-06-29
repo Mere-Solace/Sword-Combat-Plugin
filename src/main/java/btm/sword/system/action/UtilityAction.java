@@ -7,15 +7,13 @@ import btm.sword.system.entity.SwordPlayer;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.display.InteractiveItemArbiter;
-import btm.sword.util.Cache;
-import btm.sword.util.HitboxUtil;
-import btm.sword.util.ParticleWrapper;
-import btm.sword.util.VectorUtil;
+import btm.sword.util.*;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.*;
 import org.bukkit.inventory.*;
+import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -28,6 +26,7 @@ import org.joml.Vector3f;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Predicate;
 
 public class UtilityAction extends SwordAction {
 	
@@ -147,9 +146,18 @@ public class UtilityAction extends SwordAction {
 		
 		executor.setThrownItemDisplay(itemDisplay);
 		
+		Quaternionf lRotation;
+		String itemType = thrownItem.getItemMeta().getPersistentDataContainer()
+				.get(new NamespacedKey(Sword.getInstance(), "weapon"), PersistentDataType.STRING);
+		if (Objects.equals(itemType, "long_sword")) {
+			lRotation = new Quaternionf().rotateX((float) (Math.PI/2)).rotateY((float) (Math.PI/2));
+		}
+		else {
+			lRotation = new Quaternionf().rotateX((float) (-Math.PI/1.75)).rotateY((float) (Math.PI/3)); // changed from 3 and 1.5
+		}
 		Transformation tr = new Transformation(
 				new Vector3f(xOffset,yOffset,zOffset),
-				new Quaternionf().rotateX((float) (-Math.PI/3)).rotateY((float) (Math.PI/1.5)),
+				lRotation,
 				new Vector3f(scale,scale,scale),
 				new Quaternionf());
 		itemDisplay.setTransformation(tr);
@@ -208,6 +216,11 @@ public class UtilityAction extends SwordAction {
 				
 				ItemStack thrownItem = executor.getThrownItemStack();
 				
+				boolean[] spearLike = {false};
+				String itemType = thrownItem.getItemMeta().getPersistentDataContainer()
+						.get(new NamespacedKey(Sword.getInstance(), "weapon"), PersistentDataType.STRING);
+				if (Objects.equals(itemType, "long_sword")) spearLike[0] = true;
+				
 				BlockData thrownBlockData = null;
 				ParticleWrapper blockTrail = null;
 				if (thrownItem.getType().isBlock()) {
@@ -244,30 +257,49 @@ public class UtilityAction extends SwordAction {
 						new Quaternionf());
 				itemDisplay.setTransformation(tr);
 				
+				Predicate<Entity> hitMask = entity ->
+						!entity.isDead()
+						&& entity.getUniqueId() != executor.uuid()
+						&& !entity.getType().equals(EntityType.ITEM_DISPLAY)
+						&& !entity.getType().equals(EntityType.ARMOR_STAND);
+				
 				Location[] prev = {eyeLoc};
 				int[] step = {0};
+				double yVelocityCoeff = force * Math.sin(-pitchRads);
+				double yAccelerationCoeff = force/45;
+				double forwardCoeff = force * Math.cos(pitchRads);
+				// flight runnable
 				new BukkitRunnable() {
 					@Override
 					public void run() {
-						double yVelocity = (force * Math.sin(-pitchRads) * step[0]);
-						double yAcceleration = force/45 * step[0] * step[0];
+						double yVelocity = yVelocityCoeff * step[0];
+						double yAcceleration = yAccelerationCoeff * step[0] * step[0];
 						double y = yVelocity - yAcceleration;
 						
-						double forwardVelocity = force * Math.cos(pitchRads) * step[0];
+						double forwardVelocity = forwardCoeff * step[0];
 						
+						// calc displacement and then current pos
 						Vector displacement = planeDir.clone().multiply(forwardVelocity).add(up.clone().multiply(y));
 						Location cur = throwOrigin.clone().add(displacement);
-						
-						Cache.throwTrailParticle.display(cur);
-						if (step[0] % 3 == 0)
-							if (bt != null)
-								bt.display(cur);
-						
+						// calc velocity vector from cur and prev and then check if it's a valid vector
 						Vector velocity = cur.clone().subtract(prev[0]).toVector();
+						float v2 = (float) velocity.lengthSquared();
+						boolean validVelocity = !velocity.isZero() && v2 > 0.001;
+						Vector vNorm = validVelocity ? velocity.normalize() : velocity;
 						
 						Quaternionf lRotation = new Quaternionf();
-						tr.getLeftRotation().slerp(tr.getLeftRotation().rotateZ((float) (Math.PI/4)).rotateX((float) (Math.PI/270)), 0.75f, lRotation);
 						
+						if (spearLike[0]) {
+							if (validVelocity) {
+								lRotation = new Quaternionf().rotateY((float) Math.PI / 1.9f).rotateZ((float) Math.acos(vNorm.dot(new Vector(0, 1, 0))));
+							}
+							else {
+								lRotation = itemDisplay.getTransformation().getLeftRotation();
+							}
+						}
+						else {
+							tr.getLeftRotation().slerp(tr.getLeftRotation().rotateZ((float) (Math.PI / 4)).rotateX((float) (Math.PI / 270)), 0.75f, lRotation);
+						}
 						itemDisplay.setTransformation(new Transformation(
 								new Vector3f(0, (float) y, (float) forwardVelocity),
 								lRotation,
@@ -275,11 +307,9 @@ public class UtilityAction extends SwordAction {
 								tr.getRightRotation()
 						));
 						
-						float v2 = (float) velocity.lengthSquared();
-						
 						boolean removeExecutor = step[0] <= 15;
-						HashSet<LivingEntity> hit =
-								prev[0].clone().subtract(cur).toVector().lengthSquared() > 0.001 ?
+						
+						HashSet<LivingEntity> hit = validVelocity ?
 								HitboxUtil.secant(ex, prev[0], cur, scale/2.5f, removeExecutor) :
 								HitboxUtil.sphere(ex, cur, scale/2.5f, removeExecutor);
 						
@@ -289,6 +319,79 @@ public class UtilityAction extends SwordAction {
 							itemDisplay.remove();
 							cancel();
 							return;
+						}
+						
+						// if an impaling-type weapon, calc ray trace
+						if (spearLike[0]) {
+							RayTraceResult result = validVelocity ?
+									world.rayTraceEntities(cur, vNorm, scale*force*0.5, hitMask) :
+									world.rayTraceEntities(cur, forward.clone().subtract(up), scale*force*0.5, hitMask);
+							
+							LivingEntity impaled = null;
+
+							if (result != null && result.getHitEntity() != null) {
+								impaled = (LivingEntity) result.getHitEntity();
+							}
+							else if (!hit.isEmpty()) {
+								impaled = hit.stream().toList().getFirst();
+							}
+							
+							if (impaled != null) {
+								SwordEntity swordImpaled = SwordEntityArbiter.getOrAdd(impaled.getUniqueId());
+								
+								if (swordImpaled != null) {
+									Vector offset = spearLike[0] ?
+											cur.clone().subtract(vNorm.multiply(scale/2)).subtract(impaled.getLocation()).toVector() :
+											cur.clone().subtract(impaled.getLocation()).toVector();
+									
+									double entityYawRads = Math.toRadians(impaled.getBodyYaw());
+									Vector entityDir = new Vector(-Math.sin(entityYawRads), 0, Math.cos(entityYawRads));
+									
+									List<Vector> eBasis = VectorUtil.getBasis(impaled.getLocation(), entityDir);
+									Vector eRight = eBasis.getFirst();
+									Vector eForward = eBasis.getLast();
+									
+									double relativeYawOffset = Math.acos(eForward.dot(vNorm));
+									boolean check = VectorUtil.getProjOntoPlan(velocity, new Vector(0,1,0)).dot(eRight) >= 0;
+									
+									Transformation orientation = new Transformation(
+											new Vector3f ((float) offset.getX() * 0.15f, (float) offset.getY(), (float) offset.getZ() * 0.15f),
+											itemDisplay.getTransformation().getLeftRotation(),
+											new Vector3f(scale),
+											new Quaternionf()
+									);
+									EntityUtil.itemDisplayFollow(swordImpaled, itemDisplay, relativeYawOffset, check, orientation);
+									swordImpaled.hit(executor, 2, 75,60,velocity.clone().normalize().multiply(3));
+									
+									ArmorStand marker = (ArmorStand) world.spawnEntity(cur, EntityType.ARMOR_STAND);
+									InteractiveItemArbiter.register(marker, itemDisplay);
+									
+									new BukkitRunnable() {
+										@Override
+										public void run() {
+											if (marker.isDead() || itemDisplay.isDead()) {
+												executor.message("Item was retrieved");
+												itemDisplay.remove();
+												marker.remove();
+												cancel();
+											}
+											Location itemPos = itemDisplay.getLocation().add(new Vector(0, offset.getY(), 0));
+											Cache.basicSwordWhiteTransitionParticle.display(itemPos);
+											
+											marker.teleport(itemPos);
+											
+											if (swordImpaled.isDead()) {
+												swordImpaled.entity().getWorld().dropItemNaturally(itemPos, itemDisplay.getItemStack());
+												itemDisplay.remove();
+												marker.remove();
+												cancel();
+											}
+										}
+									}.runTaskTimer(Sword.getInstance(), 0L, 1L);
+									cancel();
+									return;
+								}
+							}
 						}
 						
 						// if entities other than the executor were caught in the path, hit them and create an explosion, and drop the item in the air
@@ -323,8 +426,8 @@ public class UtilityAction extends SwordAction {
 						}
 						
 						// ray trace in the direction of the velocity to check for blocks, if one exists, stop the movement
-						if (!velocity.isZero() && v2 > 0.001f) {
-							RayTraceResult block = world.rayTraceBlocks(cur, velocity, scale*force*0.5);
+						if (validVelocity) {
+							RayTraceResult block = world.rayTraceBlocks(cur, velocity, scale*force*0.25);
 							if (block != null && block.getHitBlock() != null) {
 								new ParticleWrapper(Particle.BLOCK, 60, 0.25,0.25,0.25, block.getHitBlock().getBlockData())
 										.display(cur);
@@ -333,12 +436,36 @@ public class UtilityAction extends SwordAction {
 								
 								executor.message("  Lodged in the ground now");
 								
+								float buffer = scale/5;
+								Vector u;
+								float dot = (float) velocity.normalize().dot(new Vector(0,1,0));
+								u = forward.clone().subtract(up.clone().multiply(dot)).multiply(buffer);
+								Location ref = cur.clone();
+								int[] progress = {0};
+								while (!ref.getBlock().getType().isAir()) {
+									executor.message("Moving ref");
+									ref.subtract(u);
+									progress[0]++;
+									if (progress[0] > 20) {
+										executor.message("Too many offset steps!");
+										break;
+									}
+								}
+								
+								executor.message("Item is now here: " + ref);
+								
+								if (ref != cur) {
+									Transformation curTr = itemDisplay.getTransformation();
+									itemDisplay.setTransformation(new Transformation(
+											curTr.getTranslation().add(0, dot*progress[0]*buffer, -progress[0]*buffer),
+											curTr.getLeftRotation(),
+											curTr.getScale(),
+											curTr.getRightRotation()
+									));
+								}
+								
 								// create a marker to be used for retrieving the item with a 'grab' action
-								ArmorStand marker = (ArmorStand) world.spawnEntity(cur, EntityType.ARMOR_STAND);
-								marker.setInvulnerable(true);
-								marker.setInvisible(true);
-								marker.setCanMove(false);
-								marker.setGravity(false);
+								ArmorStand marker = (ArmorStand) world.spawnEntity(ref, EntityType.ARMOR_STAND);
 								InteractiveItemArbiter.register(marker, itemDisplay);
 								
 								new BukkitRunnable() {
@@ -356,6 +483,11 @@ public class UtilityAction extends SwordAction {
 								cancel();
 							}
 						}
+						
+						Cache.throwTrailParticle.display(cur);
+						if (step[0] % 3 == 0)
+							if (bt != null)
+								bt.display(cur);
 						
 						prev[0] = cur;
 						step[0] += 1;

@@ -268,4 +268,8 @@ public abstract class SwordEntity {
 	public void setAbleToPickup(boolean ableToPickup) {
 		this.ableToPickup = ableToPickup;
 	}
+	
+	public boolean isDead() {
+		return self.isDead() || aspects.shards().cur() == 0;
+	}
 }

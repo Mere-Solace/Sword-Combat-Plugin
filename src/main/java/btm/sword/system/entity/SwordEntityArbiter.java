@@ -3,6 +3,7 @@ package btm.sword.system.entity;
 import btm.sword.system.playerdata.CombatProfile;
 import btm.sword.system.playerdata.PlayerDataManager;
 import org.bukkit.Bukkit;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 
@@ -12,20 +13,22 @@ public class SwordEntityArbiter {
 	private static final HashMap<UUID, SwordEntity> existingSwordNPCs = new HashMap<>();
 	private static final HashMap<UUID, SwordEntity> onlineSwordPlayers = new HashMap<>();
 	
-	public static void register(LivingEntity entity) {
+	public static void register(Entity entity) {
+		if (!(entity instanceof LivingEntity)) return;
+		
 		UUID entityUUID = entity.getUniqueId();
 		if (entity instanceof Player) {
 			Objects.requireNonNull(Bukkit.getPlayer(entityUUID)).sendMessage("You're being registered as online.");
 			
 			PlayerDataManager.register(entityUUID);
 			if (onlineSwordPlayers.get(entityUUID) == null) {
-				onlineSwordPlayers.put(entityUUID, new SwordPlayer(entity, PlayerDataManager.getPlayerData(entityUUID)));
+				onlineSwordPlayers.put(entityUUID, new SwordPlayer((LivingEntity) entity, PlayerDataManager.getPlayerData(entityUUID)));
 			}
 			else {
-				onlineSwordPlayers.get(entityUUID).setSelf(entity);
+				onlineSwordPlayers.get(entityUUID).setSelf((LivingEntity) entity);
 			}
 		} else if (!entity.isDead()) {
-			existingSwordNPCs.putIfAbsent(entityUUID, initializeNPC(entity));
+			existingSwordNPCs.putIfAbsent(entityUUID, initializeNPC((LivingEntity) entity));
 		}
 	}
 	
