@@ -6,7 +6,7 @@ import net.kyori.adventure.key.Key;
 import net.kyori.adventure.sound.Sound;
 import org.bukkit.entity.LivingEntity;
 
-public class SoundUtils {
+public class SoundUtil {
 	
 	public static void playSound(LivingEntity target, SoundType type, float volume, float pitch) {
 		try {

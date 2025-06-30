@@ -275,9 +275,18 @@ public class ThrowAction extends SwordAction {
 									Vector eRight = eBasis.getFirst();
 									Vector eForward = eBasis.getLast();
 									
-									double relativeYawOffset = Math.acos(eForward.dot(vNorm));
-									boolean check = VectorUtil.getProjOntoPlan(velocity, VectorUtil.UP).dot(eRight) >= 0;
+									executor.message("Entity's forward vector length: " + eForward.length() + ", cur entity yaw: " + impaled.getBodyYaw());
 									
+									Vector projIntoRightPlane = VectorUtil.getProjOntoPlan(velocity, VectorUtil.UP).normalize();
+									boolean check = projIntoRightPlane.dot(eRight) >= 0;
+									double relativeYawOffset = Math.acos(eForward.dot(projIntoRightPlane));
+									
+									executor.message("Sword relative offset degrees: " + Math.toDegrees(relativeYawOffset) + ", \n" +
+											"\tfrom a dot product of the velocity and entity forward of value: " + eForward.dot(vNorm));
+									
+									executor.message("Clockwise?: " + check);
+									
+//									impaled.setAI(false);
 									Transformation orientation = new Transformation(
 											new Vector3f ((float) offset.getX() * 0.15f, (float) offset.getY(), (float) offset.getZ() * 0.15f),
 											itemDisplay.getTransformation().getLeftRotation(),
@@ -290,7 +299,7 @@ public class ThrowAction extends SwordAction {
 									
 									ArmorStand marker = (ArmorStand) world.spawnEntity(cur, EntityType.ARMOR_STAND);
 									InteractiveItemArbiter.register(marker, itemDisplay);
-									
+									Location testLoc = impaled.getLocation().add(VectorUtil.UP.clone().multiply(offset.getY()));
 									new BukkitRunnable() {
 										@Override
 										public void run() {
@@ -300,6 +309,10 @@ public class ThrowAction extends SwordAction {
 												marker.remove();
 												cancel();
 											}
+											
+											DisplayUtil.line(List.of(Cache.basicSwordBlueTransitionParticle), testLoc, projIntoRightPlane, 2, 0.2);
+											DisplayUtil.line(List.of(Cache.testSwingParticle), testLoc, entityDir, 2, 0.2);
+											
 											Location itemPos = itemDisplay.getLocation().add(new Vector(0, offset.getY(), 0));
 											Cache.basicSwordWhiteTransitionParticle.display(itemPos);
 											

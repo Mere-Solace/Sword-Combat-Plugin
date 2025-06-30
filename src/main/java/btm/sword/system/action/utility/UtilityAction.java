@@ -6,7 +6,7 @@ import btm.sword.system.entity.Combatant;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.SwordPlayer;
 import btm.sword.util.ParticleWrapper;
-import btm.sword.util.SoundUtils;
+import btm.sword.util.SoundUtil;
 import btm.sword.util.sound.SoundType;
 import org.bukkit.Location;
 import org.bukkit.Particle;
@@ -63,7 +63,7 @@ public class UtilityAction extends SwordAction {
 			new BukkitRunnable() {
 				@Override
 				public void run() {
-					SoundUtils.playSound(executor.entity(), soundType, 1f, 1f);
+					SoundUtil.playSound(executor.entity(), soundType, 1f, 1f);
 					executor.message("i: " + finalI + ", " + soundType.getKey());
 				}
 			}.runTaskLater(Sword.getInstance(), 30L * (i-startIndex));
