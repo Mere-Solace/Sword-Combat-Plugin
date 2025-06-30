@@ -36,6 +36,7 @@ public class InputListener implements Listener {
 		
 		if ((action == Action.LEFT_CLICK_AIR || action == Action.LEFT_CLICK_BLOCK)) {
 			swordPlayer.act(InputType.LEFT);
+			event.setCancelled(true);
 		}
 		else if (action == Action.RIGHT_CLICK_AIR || action == Action.RIGHT_CLICK_BLOCK) {
 			swordPlayer.act(InputType.RIGHT);

@@ -272,4 +272,9 @@ public abstract class SwordEntity {
 	public boolean isDead() {
 		return self.isDead() || aspects.shards().cur() == 0;
 	}
+	
+	public Vector getFlatDir() {
+		double yawRads = Math.toRadians(self.getYaw());
+		return new Vector(-Math.sin(yawRads), 0, Math.cos(yawRads));
+	}
 }

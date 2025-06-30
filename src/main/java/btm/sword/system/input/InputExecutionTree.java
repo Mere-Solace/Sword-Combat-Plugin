@@ -6,6 +6,7 @@ import btm.sword.system.action.MovementAction;
 import btm.sword.system.action.utility.GrabAction;
 import btm.sword.system.action.utility.ThrowAction;
 import btm.sword.system.action.type.AttackType;
+import btm.sword.system.action.utility.UtilityAction;
 import btm.sword.system.entity.Combatant;
 import btm.sword.system.entity.SwordPlayer;
 import btm.sword.system.entity.aspect.AspectType;
@@ -272,7 +273,7 @@ public class InputExecutionTree {
 		
 		add(List.of(InputType.SHIFT, InputType.SHIFT_HOLD),
 				new InputAction(
-						ThrowAction::death,
+						UtilityAction::death,
 						executor -> executor.calcCooldown(AspectType.CELERITY, 200L,1400L, 10),
 						Combatant::canPerformAction,
 						true, true),
@@ -281,7 +282,7 @@ public class InputExecutionTree {
 		// Drop an item "ability"
 		add(List.of(InputType.DROP, InputType.DROP, InputType.DROP),
 				new InputAction(
-						executor -> ThrowAction.allowDrop((SwordPlayer) executor),
+						executor -> UtilityAction.allowDrop((SwordPlayer) executor),
 						executor -> 0L,
 						Combatant::canPerformAction,
 						false, false),

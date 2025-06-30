@@ -411,40 +411,4 @@ public class ThrowAction extends SwordAction {
 			}
 		});
 	}
-	
-	public static void allowDrop(SwordPlayer executor) {
-		cast(executor, 0L, new BukkitRunnable() {
-			@Override
-			public void run() {
-				executor.setCanDrop(true);
-				new BukkitRunnable() {
-					@Override
-					public void run() {
-						executor.setCanDrop(false);
-					}
-				}.runTaskLater(Sword.getInstance(), 5L);
-			}
-		});
-	}
-	
-	public static void death(Combatant executor) {
-		cast(executor, 0L, new BukkitRunnable() {
-			@Override
-			public void run() {
-				LivingEntity ex = executor.entity();
-				Location l = executor.entity().getEyeLocation();
-				RayTraceResult ray = ex.getWorld().rayTraceEntities(l, l.getDirection(), 6, entity -> entity.getUniqueId() != ex.getUniqueId());
-				if (ray != null && ray.getHitEntity() != null) {
-					Entity target = ray.getHitEntity();
-					if (target instanceof LivingEntity le)
-							SwordEntityArbiter.getOrAdd(le.getUniqueId()).hit(executor,
-									1000, 20000,
-									1, l.getDirection().multiply(100));
-					else {
-						target.getWorld().createExplosion(target.getLocation(), 5, true, true);
-					}
-				}
-			}
-		});
-	}
 }

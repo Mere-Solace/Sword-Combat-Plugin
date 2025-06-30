@@ -20,7 +20,7 @@ public class InteractiveItemArbiter {
 		marker.setInvulnerable(true);
 		marker.setCanMove(false);
 		marker.setGravity(false);
-		marker.setVisible(true); // TODO change back
+		marker.setVisible(false);
 		marker.setCollidable(false);
 	}
 	
@@ -38,8 +38,10 @@ public class InteractiveItemArbiter {
 					new ParticleWrapper(Particle.BLOCK, 50, 0.25, 0.25, 0.25, itemStack.getType().createBlockData())
 							.display(marker.getLocation());
 				}
-				new ParticleWrapper(Particle.BLOCK, 30, 0.5, 0.5, 0.5, blockData)
-						.display(marker.getLocation());
+				if (blockData != null) {
+					new ParticleWrapper(Particle.BLOCK, 30, 0.5, 0.5, 0.5, blockData)
+							.display(marker.getLocation());
+				}
 				Cache.grabCloudParticle.display(marker.getLocation());
 			}
 			interactiveItem.remove();
