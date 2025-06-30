@@ -275,16 +275,9 @@ public class ThrowAction extends SwordAction {
 									Vector eRight = eBasis.getFirst();
 									Vector eForward = eBasis.getLast();
 									
-									executor.message("Entity's forward vector length: " + eForward.length() + ", cur entity yaw: " + impaled.getBodyYaw());
-									
 									Vector projIntoRightPlane = VectorUtil.getProjOntoPlan(velocity, VectorUtil.UP).normalize();
 									boolean check = projIntoRightPlane.dot(eRight) >= 0;
 									double relativeYawOffset = Math.acos(eForward.dot(projIntoRightPlane));
-									
-									executor.message("Sword relative offset degrees: " + Math.toDegrees(relativeYawOffset) + ", \n" +
-											"\tfrom a dot product of the velocity and entity forward of value: " + eForward.dot(vNorm));
-									
-									executor.message("Clockwise?: " + check);
 									
 //									impaled.setAI(false);
 									Transformation orientation = new Transformation(
@@ -295,7 +288,7 @@ public class ThrowAction extends SwordAction {
 									);
 									// TODO fix angle of sword sticking out of impaled targets
 									EntityUtil.itemDisplayFollow(swordImpaled, itemDisplay, relativeYawOffset, check, orientation);
-									swordImpaled.hit(executor, 2, 75,60,velocity.clone().normalize().multiply(3));
+									swordImpaled.hit(executor, 1, 2, 75,60,velocity.clone().normalize().multiply(3));
 									
 									ArmorStand marker = (ArmorStand) world.spawnEntity(cur, EntityType.ARMOR_STAND);
 									InteractiveItemArbiter.register(marker, itemDisplay);
@@ -343,7 +336,7 @@ public class ThrowAction extends SwordAction {
 									} else {
 										kb = target.getEyeLocation().subtract(ex.getEyeLocation().toVector()).toVector().normalize().multiply(force);
 									}
-									SwordEntityArbiter.getOrAdd(target.getUniqueId()).hit(executor, 2, 50, 12, kb);
+									SwordEntityArbiter.getOrAdd(target.getUniqueId()).hit(executor, 3, 2, 50, 12, kb);
 								}
 							}
 							world.createExplosion(cur, 2, false, false);

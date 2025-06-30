@@ -64,6 +64,7 @@ public class GrabAction extends SwordAction {
 				}
 				
 				SwordEntity swordTarget = SwordEntityArbiter.getOrAdd(target.getUniqueId());
+				if (swordTarget.isHit()) return;
 				
 				executor.onGrab(swordTarget);
 				
@@ -83,7 +84,7 @@ public class GrabAction extends SwordAction {
 						}
 						
 						Vector v = ex.getVelocity();
-						ex.addPotionEffect(new PotionEffect(PotionEffectType.JUMP_BOOST, 2, 3));
+						ex.addPotionEffect(new PotionEffect(PotionEffectType.JUMP_BOOST, 2, 1));
 						ex.setVelocity(new Vector(v.getX() * 0.2, v.getY(),v.getZ() * 0.2));
 						
 						double holdDist = 2;

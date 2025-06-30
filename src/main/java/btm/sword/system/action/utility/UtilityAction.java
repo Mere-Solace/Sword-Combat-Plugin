@@ -41,7 +41,8 @@ public class UtilityAction extends SwordAction {
 				if (ray != null && ray.getHitEntity() != null) {
 					Entity target = ray.getHitEntity();
 					if (target instanceof LivingEntity le)
-						SwordEntityArbiter.getOrAdd(le.getUniqueId()).hit(executor,
+						SwordEntityArbiter.getOrAdd(le.getUniqueId()).hit(
+								executor, 0,
 								1000, 20000,
 								1, l.getDirection().multiply(100));
 					else {

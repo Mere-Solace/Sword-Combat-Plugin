@@ -256,9 +256,12 @@ public class AttackAction extends SwordAction {
 										}
 										
 										SwordEntity sTarget = SwordEntityArbiter.getOrAdd(target.getUniqueId());
-										if (sTarget != null && !sTarget.entity().isDead()) {
+										if (sTarget == null)
+											continue;
+										
+										if (!sTarget.entity().isDead()) {
 											// hit function call
-											sTarget.hit(executor, 1, (float) d[0], 6, kb);
+											sTarget.hit(executor, 5, 1, (float) d[0], 6, kb);
 											// hit particles
 											Cache.testHitParticle.display(sTarget.getChestLocation());
 										}

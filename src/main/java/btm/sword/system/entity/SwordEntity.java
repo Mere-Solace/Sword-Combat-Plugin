@@ -25,11 +25,17 @@ public abstract class SwordEntity {
 	
 	protected EntityAspects aspects;
 	
+	private boolean tick;
+	
 	private long timeOfLastAttack;
 	private int durationOfLastAttack;
 	
-	private boolean grabbed;
 	private boolean hit;
+	private long curTicksInvulnerable;
+	private long hitInvulnerableTickDuration;
+	
+	private boolean grabbed;
+	private boolean impaled;
 	
 	protected boolean shielding;
 	
@@ -50,6 +56,8 @@ public abstract class SwordEntity {
 		this.combatProfile = combatProfile;
 		aspects = new EntityAspects(combatProfile);
 		
+		tick = true;
+		
 		timeOfLastAttack = 0L;
 		durationOfLastAttack = 0;
 		
@@ -64,6 +72,31 @@ public abstract class SwordEntity {
 		chestVector = new Vector(0, eyeHeight * 0.45, 0);
 		
 		ableToPickup = true;
+		
+		startTicking();
+	}
+	
+	private void startTicking() {
+		new BukkitRunnable() {
+			@Override
+			public void run() {
+				if (tick) {
+					onTick();
+				}
+			}
+		}.runTaskTimer(Sword.getInstance(), 0L, 1L);
+	}
+	
+	protected void onTick() {
+		if (hit) {
+			curTicksInvulnerable++;
+			if (curTicksInvulnerable >= hitInvulnerableTickDuration) {
+				hit = false;
+				curTicksInvulnerable = 0;
+			}
+		}
+		
+		
 	}
 	
 	public abstract void onSpawn();
@@ -88,6 +121,14 @@ public abstract class SwordEntity {
 		return combatProfile;
 	}
 	
+	public boolean isTick() {
+		return tick;
+	}
+	
+	public void setTick(boolean tick) {
+		this.tick = tick;
+	}
+	
 	public boolean isGrabbed() {
 		return grabbed;
 	}
@@ -96,14 +137,35 @@ public abstract class SwordEntity {
 		this.grabbed = grabbed;
 	}
 	
+	public boolean isHit() {
+		return hit;
+	}
+	
+	public void setHit(boolean hit) {
+		this.hit = hit;
+	}
+	
+	public boolean isImpaled() {
+		return impaled;
+	}
+	
+	public void setImpaled(boolean impaled) {
+		this.impaled = impaled;
+	}
+	
 	public Affliction getAffliction(Class<? extends Affliction> afflictionClass) {
 		return afflictions.get(afflictionClass);
 	}
 	
-	public void hit(Combatant source, int baseNumShards, float baseToughnessDamage, float baseSoulfireReduction, Vector knockbackVelocity, Affliction... afflictions) {
+	public void hit(Combatant source, long hitInvulnerableTickDuration, int baseNumShards, float baseToughnessDamage, float baseSoulfireReduction, Vector knockbackVelocity, Affliction... afflictions) {
 //		if (self.getActiveItem().getType() != Material.SHIELD) {
 //			source.message("That lad is raisin 'is shield!");
 //		}
+		if (hit)
+			return;
+		else
+			hit = true;
+		this.hitInvulnerableTickDuration = hitInvulnerableTickDuration;
 		
 		self.damage(0.01);
 		self.heal(7474040);
