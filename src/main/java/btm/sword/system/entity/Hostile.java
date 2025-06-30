@@ -25,7 +25,8 @@ public class Hostile extends Combatant {
 	
 	@Override
 	public void onSpawn() {
-	
+		super.onSpawn();
+		
 	}
 	
 	@Override

@@ -35,7 +35,8 @@ public abstract class SwordEntity {
 	private long hitInvulnerableTickDuration;
 	
 	private boolean grabbed;
-	private boolean impaled;
+	private int numberOfImpalements;
+	private boolean aiEnabled;
 	
 	protected boolean shielding;
 	
@@ -95,15 +96,16 @@ public abstract class SwordEntity {
 				curTicksInvulnerable = 0;
 			}
 		}
-		
-		
+		if (!(self instanceof Player)) {
+			self.setAI(!isImpaled());
+		}
 	}
 	
-	public abstract void onSpawn();
-	
-	public void onDeath() {
+	public void onSpawn() {
 		resetResources();
 	}
+	
+	public abstract void onDeath();
 	
 	public LivingEntity entity() {
 		return self;
@@ -145,12 +147,28 @@ public abstract class SwordEntity {
 		this.hit = hit;
 	}
 	
-	public boolean isImpaled() {
-		return impaled;
+	public void addImpalement() {
+		numberOfImpalements++;
 	}
 	
-	public void setImpaled(boolean impaled) {
-		this.impaled = impaled;
+	public void removeImpalement() {
+		numberOfImpalements--;
+	}
+	
+	public boolean isImpaled() {
+		return numberOfImpalements <= 0;
+	}
+	
+	public int getNumberOfImpalements() {
+		return numberOfImpalements;
+	}
+	
+	public boolean isAiEnabled() {
+		return aiEnabled;
+	}
+	
+	public void setAiEnabled(boolean aiEnabled) {
+		this.aiEnabled = aiEnabled;
 	}
 	
 	public Affliction getAffliction(Class<? extends Affliction> afflictionClass) {

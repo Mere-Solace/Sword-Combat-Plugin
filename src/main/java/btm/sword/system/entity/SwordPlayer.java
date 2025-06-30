@@ -293,7 +293,7 @@ public class SwordPlayer extends Combatant {
 	
 	@Override
 	public void onSpawn() {
-		resetResources();
+		super.onSpawn();
 	}
 	
 	@Override

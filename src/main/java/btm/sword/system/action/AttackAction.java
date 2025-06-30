@@ -178,6 +178,8 @@ public class AttackAction extends SwordAction {
 					
 					HashSet<LivingEntity> hit = new HashSet<>();
 					
+					if (aerial) o.add(VectorUtil.UP.clone().multiply(ex.getVelocity().getY()));
+					
 					double[] d = {damage};
 					boolean finalAerial = aerial;
 					new BukkitRunnable() {
@@ -252,7 +254,7 @@ public class AttackAction extends SwordAction {
 											case BASIC_3 -> kb = target.getLocation().toVector()
 													.subtract(o.toVector()).normalize()
 													.subtract(new Vector(0,0.5,0));
-											default -> kb = v.clone().multiply(1.5);
+											default -> kb = v.clone().normalize().multiply(0.7);
 										}
 										
 										SwordEntity sTarget = SwordEntityArbiter.getOrAdd(target.getUniqueId());

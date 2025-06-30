@@ -264,6 +264,8 @@ public class ThrowAction extends SwordAction {
 								SwordEntity swordImpaled = SwordEntityArbiter.getOrAdd(impaled.getUniqueId());
 								
 								if (swordImpaled != null) {
+									swordImpaled.addImpalement();
+									executor.message("This lil guy is impaled by: " + swordImpaled.getNumberOfImpalements());
 									Vector offset = spearLike[0] ?
 											cur.clone().subtract(vNorm.multiply(scale/2)).subtract(impaled.getLocation()).toVector() :
 											cur.clone().subtract(impaled.getLocation()).toVector();
@@ -297,6 +299,8 @@ public class ThrowAction extends SwordAction {
 										@Override
 										public void run() {
 											if (marker.isDead() || itemDisplay.isDead()) {
+												swordImpaled.removeImpalement();
+												executor.message("This lil guy is impaled by: " + swordImpaled.getNumberOfImpalements());
 												executor.message("Item was retrieved");
 												itemDisplay.remove();
 												marker.remove();

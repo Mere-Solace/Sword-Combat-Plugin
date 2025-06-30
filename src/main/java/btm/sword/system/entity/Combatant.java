@@ -81,7 +81,7 @@ public abstract class Combatant extends SwordEntity {
 		Location hitLoc = target.getLocation().add(0, target.getEyeHeight()*0.5, 0);
 		Cache.grabHitParticle.display(hitLoc);
 		Cache.grabHitParticle2.display(hitLoc);
-		grabbedEntity.hit(this, 0, 5, 15,
+		grabbedEntity.hit(this, 0, 0, 5, 15,
 				target.getEyeLocation().subtract(self.getEyeLocation()).toVector());
 	}
 	
