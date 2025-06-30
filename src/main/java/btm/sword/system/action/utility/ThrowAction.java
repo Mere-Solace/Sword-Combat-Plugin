@@ -276,7 +276,7 @@ public class ThrowAction extends SwordAction {
 									Vector eForward = eBasis.getLast();
 									
 									double relativeYawOffset = Math.acos(eForward.dot(vNorm));
-									boolean check = VectorUtil.getProjOntoPlan(velocity, new Vector(0,1,0)).dot(eRight) >= 0;
+									boolean check = VectorUtil.getProjOntoPlan(velocity, VectorUtil.UP).dot(eRight) >= 0;
 									
 									Transformation orientation = new Transformation(
 											new Vector3f ((float) offset.getX() * 0.15f, (float) offset.getY(), (float) offset.getZ() * 0.15f),
@@ -284,6 +284,7 @@ public class ThrowAction extends SwordAction {
 											new Vector3f(scale),
 											new Quaternionf()
 									);
+									// TODO fix angle of sword sticking out of impaled targets
 									EntityUtil.itemDisplayFollow(swordImpaled, itemDisplay, relativeYawOffset, check, orientation);
 									swordImpaled.hit(executor, 2, 75,60,velocity.clone().normalize().multiply(3));
 									

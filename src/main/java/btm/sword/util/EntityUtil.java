@@ -37,8 +37,8 @@ public class EntityUtil {
 				Location l = entity.entity().getLocation();
 				
 				double yawRads = clockwise ?
-						Math.toRadians(entity.entity().getBodyYaw()) + relativeOffsetAngle :
-						Math.toRadians(entity.entity().getBodyYaw()) - relativeOffsetAngle;
+						Math.toRadians(entity.entity().getBodyYaw()) - relativeOffsetAngle :
+						Math.toRadians(entity.entity().getBodyYaw()) + relativeOffsetAngle;
 				
 				l.setDirection(new Vector(-Math.sin(yawRads), 0, Math.cos(yawRads)));
 				

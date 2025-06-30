@@ -5,6 +5,7 @@ import btm.sword.system.action.type.AttackType;
 import btm.sword.system.entity.Combatant;
 import btm.sword.system.entity.SwordEntity;
 import btm.sword.system.entity.SwordEntityArbiter;
+import btm.sword.system.entity.SwordPlayer;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.util.*;
 import org.apache.logging.log4j.util.BiConsumer;
@@ -26,10 +27,10 @@ public class AttackAction extends SwordAction {
 	
 	public static void basicAttack(Combatant executor, AttackType type) {
 		Material item = executor.getItemTypeInHand(true);
-		double pitch = executor.entity().getEyeLocation().getPitch();
+		double dot = executor.entity().getEyeLocation().getDirection().dot(VectorUtil.UP);
 		
 		if (EntityUtil.isOnGround(executor.entity())) {
-			if (Math.abs(pitch) < 50) {
+			if (dot < 0.5 && dot > -0.5) {
 				for (var entry : attackMap.entrySet()) {
 					if (item.name().endsWith(entry.getKey())) {
 						entry.getValue().accept(executor, type);
@@ -42,11 +43,17 @@ public class AttackAction extends SwordAction {
 			}
 		}
 		else {
-			if (Math.abs(pitch) < 50) {
-				executor.message("basic aerial attack");
-			}
-			else {
-				executor.message("tilted aerial attack");
+			((SwordPlayer) executor).resetTree(); // can't combo aerials
+			
+			AttackType attackType = AttackType.F_AIR;
+			if (dot < -0.5) attackType = AttackType.DOWN_AIR;
+			else if (dot > 0.5) attackType = AttackType.UP_AIR;
+			
+			for (var entry : attackMap.entrySet()) {
+				if (item.name().endsWith(entry.getKey())) {
+					entry.getValue().accept(executor, attackType);
+					return;
+				}
 			}
 		}
 	}
@@ -117,7 +124,8 @@ public class AttackAction extends SwordAction {
 					double rangeMultiplier;
 					List<Vector> controlVectors;
 					List<Vector> bezierVectors;
-					
+					boolean withPitch = true;
+					boolean aerial = false;
 					switch (type) {
 						default -> {
 							rangeMultiplier = 1.4;
@@ -131,11 +139,28 @@ public class AttackAction extends SwordAction {
 							rangeMultiplier = 1.4;
 							controlVectors = new ArrayList<>(Cache.basicSword3);
 						}
+						case F_AIR -> {
+							rangeMultiplier = 1.3;
+							controlVectors = new ArrayList<>(Cache.aerialForwardSword);
+							withPitch = false;
+							aerial = true;
+						}
+						case DOWN_AIR -> {
+							rangeMultiplier = 1.2;
+							controlVectors = new ArrayList<>(Cache.aerialSwordDown);
+							withPitch = false;
+							aerial = true;
+						}
+						case UP_AIR -> {
+							rangeMultiplier = 1.2;
+							controlVectors = new ArrayList<>(Cache.aerialSwordUp);
+							aerial = true;
+						}
 					}
 					
 					Location o = ex.getEyeLocation();
 					
-					ArrayList<Vector> basis = VectorUtil.getBasis(o, o.getDirection());
+					ArrayList<Vector> basis = withPitch ? VectorUtil.getBasis(o, o.getDirection()) : VectorUtil.getBasisWithoutPitch(o);
 					Vector right = basis.getFirst();
 					
 					List<Vector> transformedControlVectors = controlVectors.stream()
@@ -154,6 +179,7 @@ public class AttackAction extends SwordAction {
 					HashSet<LivingEntity> hit = new HashSet<>();
 					
 					double[] d = {damage};
+					boolean finalAerial = aerial;
 					new BukkitRunnable() {
 						@Override
 						public void run() {
@@ -163,11 +189,19 @@ public class AttackAction extends SwordAction {
 									cancel();
 									break;
 								}
-								// set slower or no velocity while attacking
-								ex.setVelocity(new Vector(
-										ex.getVelocity().getX() * 0.5,
-										ex.getVelocity().getY() * 0.4,
-										ex.getVelocity().getZ() * 0.5));
+								Vector curV = ex.getVelocity();
+								if (finalAerial) {
+									ex.setVelocity(new Vector(
+											curV.getX() * 0.8,
+											curV.getY(),
+											curV.getZ() * 0.8));
+								}
+								else {
+									ex.setVelocity(new Vector(
+											curV.getX() * 0.5,
+											curV.getY() * 0.4,
+											curV.getZ() * 0.5));
+								}
 								
 								// particle placement
 								Vector v = bezierVectors.get(s);
@@ -176,8 +210,6 @@ public class AttackAction extends SwordAction {
 								
 								Cache.testSwingParticle.display(l);
 								
-								int s2 = s*s;
-								int size2 = size*size;
 								if (s > size * (0.1)) {
 									Location p = l.clone().subtract(v.clone().multiply(0.05 * ((double) s / (size))).add(n.multiply(0.2)));
 									Cache.testSwingParticle.display(p);
@@ -205,7 +237,6 @@ public class AttackAction extends SwordAction {
 									Cache.testSwingParticle.display(p2);
 								}
 								
-								
 								// retrieving targets and setting knockback
 								Vector kb =  new Vector(0,0.25,0);
 								Vector r = right.clone().multiply(0.1);
@@ -221,6 +252,7 @@ public class AttackAction extends SwordAction {
 											case BASIC_3 -> kb = target.getLocation().toVector()
 													.subtract(o.toVector()).normalize()
 													.subtract(new Vector(0,0.5,0));
+											default -> kb = v.clone().multiply(1.5);
 										}
 										
 										SwordEntity sTarget = SwordEntityArbiter.getOrAdd(target.getUniqueId());

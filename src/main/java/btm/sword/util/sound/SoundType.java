@@ -1,6 +1,7 @@
 package btm.sword.util.sound;
 
 import org.intellij.lang.annotations.Subst;
+import org.jetbrains.annotations.NotNull;
 
 public enum SoundType {
 	AMBIENT_BASALT_DELTAS_ADDITIONS("ambient.basalt_deltas.additions"),
@@ -607,7 +608,591 @@ public enum SoundType {
 	ENTITY_GENERIC_EXTINGUISH_FIRE("entity.generic.extinguish_fire"),
 	ENTITY_GENERIC_HURT("entity.generic.hurt"),
 	ENTITY_GENERIC_SMALL_FALL("entity.generic.small_fall"),
-	ENTITY_GENERIC_SPLASH("entity.generic.splash");
+	ENTITY_GENERIC_SPLASH("entity.generic.splash"),
+	ENTITY_GENERIC_SWIM("entity.generic.swim"),
+	
+	ENTITY_GHAST_AMBIENT("entity.ghast.ambient"),
+	ENTITY_GHAST_DEATH("entity.ghast.death"),
+	ENTITY_GHAST_HURT("entity.ghast.hurt"),
+	ENTITY_GHAST_SCREAM("entity.ghast.scream"),
+	ENTITY_GHAST_SHOOT("entity.ghast.shoot"),
+	ENTITY_GHAST_WARN("entity.ghast.warn"),
+	
+	ENTITY_GUARDIAN_AMBIENT("entity.guardian.ambient"),
+	ENTITY_GUARDIAN_AMBIENT_LAND("entity.guardian.ambient_land"),
+	ENTITY_GUARDIAN_ATTACK("entity.guardian.attack"),
+	ENTITY_GUARDIAN_DEATH("entity.guardian.death"),
+	ENTITY_GUARDIAN_DEATH_LAND("entity.guardian.death_land"),
+	ENTITY_GUARDIAN_FLOP("entity.guardian.flop"),
+	ENTITY_GUARDIAN_HURT("entity.guardian.hurt"),
+	ENTITY_GUARDIAN_HURT_LAND("entity.guardian.hurt_land"),
+	
+	ENTITY_HOGLIN_AMBIENT("entity.hoglin.ambient"),
+	ENTITY_HOGLIN_ANGRY("entity.hoglin.angry"),
+	ENTITY_HOGLIN_ATTACK("entity.hoglin.attack"),
+	ENTITY_HOGLIN_CONVERTED_TO_ZOMBIFIED("entity.hoglin.converted_to_zombified"),
+	ENTITY_HOGLIN_DEATH("entity.hoglin.death"),
+	ENTITY_HOGLIN_HURT("entity.hoglin.hurt"),
+	ENTITY_HOGLIN_RETREAT("entity.hoglin.retreat"),
+	ENTITY_HOGLIN_STEP("entity.hoglin.step"),
+	
+	ENTITY_HORSE_AMBIENT("entity.horse.ambient"),
+	ENTITY_HORSE_ANGRY("entity.horse.angry"),
+	ENTITY_HORSE_ARMOR("entity.horse.armor"),
+	ENTITY_HORSE_BREATHE("entity.horse.breathe"),
+	ENTITY_HORSE_DEATH("entity.horse.death"),
+	ENTITY_HORSE_EAT("entity.horse.eat"),
+	ENTITY_HORSE_GALLOP("entity.horse.gallop"),
+	ENTITY_HORSE_HURT("entity.horse.hurt"),
+	ENTITY_HORSE_JUMP("entity.horse.jump"),
+	ENTITY_HORSE_LAND("entity.horse.land"),
+	ENTITY_HORSE_SADDLE("entity.horse.saddle"),
+	ENTITY_HORSE_STEP("entity.horse.step"),
+	ENTITY_HORSE_STEP_WOOD("entity.horse.step_wood"),
+	
+	ENTITY_HOSTILE_BIG_FALL("entity.hostile.big_fall"),
+	ENTITY_HOSTILE_DEATH("entity.hostile.death"),
+	ENTITY_HOSTILE_HURT("entity.hostile.hurt"),
+	ENTITY_HOSTILE_SMALL_FALL("entity.hostile.small_fall"),
+	ENTITY_HOSTILE_SPLASH("entity.hostile.splash"),
+	ENTITY_HOSTILE_SWIM("entity.hostile.swim"),
+	
+	ENTITY_HUSK_AMBIENT("entity.husk.ambient"),
+	ENTITY_HUSK_CONVERTED_TO_ZOMBIE("entity.husk.converted_to_zombie"),
+	ENTITY_HUSK_DEATH("entity.husk.death"),
+	ENTITY_HUSK_HURT("entity.husk.hurt"),
+	ENTITY_HUSK_STEP("entity.husk.step"),
+	
+	ENTITY_ILLUSIONER_AMBIENT("entity.illusioner.ambient"),
+	ENTITY_ILLUSIONER_CAST_SPELL("entity.illusioner.cast_spell"),
+	ENTITY_ILLUSIONER_DEATH("entity.illusioner.death"),
+	ENTITY_ILLUSIONER_HURT("entity.illusioner.hurt"),
+	ENTITY_ILLUSIONER_MIRROR_MOVE("entity.illusioner.mirror_move"),
+	ENTITY_ILLUSIONER_PREPARE_BLINDNESS("entity.illusioner.prepare_blindness"),
+	ENTITY_ILLUSIONER_PREPARE_MIRROR("entity.illusioner.prepare_mirror"),
+	
+	ENTITY_IRON_GOLEM_ATTACK("entity.iron_golem.attack"),
+	ENTITY_IRON_GOLEM_DAMAGE("entity.iron_golem.damage"),
+	ENTITY_IRON_GOLEM_DEATH("entity.iron_golem.death"),
+	ENTITY_IRON_GOLEM_HURT("entity.iron_golem.hurt"),
+	ENTITY_IRON_GOLEM_REPAIR("entity.iron_golem.repair"),
+	ENTITY_IRON_GOLEM_STEP("entity.iron_golem.step"),
+	
+	ENTITY_ITEM_BREAK("entity.item.break"),
+	ENTITY_ITEM_PICKUP("entity.item.pickup"),
+	
+	ENTITY_ITEM_FRAME_ADD_ITEM("entity.item_frame.add_item"),
+	ENTITY_ITEM_FRAME_BREAK("entity.item_frame.break"),
+	ENTITY_ITEM_FRAME_PLACE("entity.item_frame.place"),
+	ENTITY_ITEM_FRAME_REMOVE_ITEM("entity.item_frame.remove_item"),
+	ENTITY_ITEM_FRAME_ROTATE_ITEM("entity.item_frame.rotate_item"),
+	
+	ENTITY_LEASH_KNOT_BREAK("entity.leash_knot.break"),
+	ENTITY_LEASH_KNOT_PLACE("entity.leash_knot.place"),
+	
+	ENTITY_LIGHTNING_BOLT_IMPACT("entity.lightning_bolt.impact"),
+	ENTITY_LIGHTNING_BOLT_THUNDER("entity.lightning_bolt.thunder"),
+	
+	ENTITY_LINGERING_POTION_THROW("entity.lingering_potion.throw"),
+	
+	ENTITY_LLAMA_AMBIENT("entity.llama.ambient"),
+	ENTITY_LLAMA_ANGRY("entity.llama.angry"),
+	ENTITY_LLAMA_CHEST("entity.llama.chest"),
+	ENTITY_LLAMA_DEATH("entity.llama.death"),
+	ENTITY_LLAMA_EAT("entity.llama.eat"),
+	ENTITY_LLAMA_HURT("entity.llama.hurt"),
+	ENTITY_LLAMA_SPIT("entity.llama.spit"),
+	ENTITY_LLAMA_STEP("entity.llama.step"),
+	ENTITY_LLAMA_SWAG("entity.llama.swag"),
+	
+	ENTITY_MAGMA_CUBE_DEATH("entity.magma_cube.death"),
+	ENTITY_MAGMA_CUBE_DEATH_SMALL("entity.magma_cube.death_small"),
+	ENTITY_MAGMA_CUBE_HURT("entity.magma_cube.hurt"),
+	ENTITY_MAGMA_CUBE_HURT_SMALL("entity.magma_cube.hurt_small"),
+	ENTITY_MAGMA_CUBE_JUMP("entity.magma_cube.jump"),
+	ENTITY_MAGMA_CUBE_SQUISH("entity.magma_cube.squish"),
+	ENTITY_MAGMA_CUBE_SQUISH_SMALL("entity.magma_cube.squish_small"),
+	
+	ENTITY_MINECART_INSIDE("entity.minecart.inside"),
+	ENTITY_MINECART_RIDING("entity.minecart.riding"),
+	
+	ENTITY_MOOSHROOM_CONVERT("entity.mooshroom.convert"),
+	ENTITY_MOOSHROOM_EAT("entity.mooshroom.eat"),
+	ENTITY_MOOSHROOM_MILK("entity.mooshroom.milk"),
+	ENTITY_MOOSHROOM_SHEAR("entity.mooshroom.shear"),
+	ENTITY_MOOSHROOM_SUSPICIOUS_MILK("entity.mooshroom.suspicious_milk"),
+	
+	ENTITY_MULE_AMBIENT("entity.mule.ambient"),
+	ENTITY_MULE_ANGRY("entity.mule.angry"),
+	ENTITY_MULE_CHEST("entity.mule.chest"),
+	ENTITY_MULE_DEATH("entity.mule.death"),
+	ENTITY_MULE_EAT("entity.mule.eat"),
+	ENTITY_MULE_HURT("entity.mule.hurt"),
+	
+	ENTITY_OCELOT_AMBIENT("entity.ocelot.ambient"),
+	ENTITY_OCELOT_DEATH("entity.ocelot.death"),
+	ENTITY_OCELOT_HURT("entity.ocelot.hurt"),
+	
+	ENTITY_PAINTING_BREAK("entity.painting.break"),
+	ENTITY_PAINTING_PLACE("entity.painting.place"),
+	
+	ENTITY_PANDA_AGGRESSIVE_AMBIENT("entity.panda.aggressive_ambient"),
+	ENTITY_PANDA_AMBIENT("entity.panda.ambient"),
+	ENTITY_PANDA_BITE("entity.panda.bite"),
+	ENTITY_PANDA_CANT_BREED("entity.panda.cant_breed"),
+	ENTITY_PANDA_DEATH("entity.panda.death"),
+	ENTITY_PANDA_EAT("entity.panda.eat"),
+	ENTITY_PANDA_HURT("entity.panda.hurt"),
+	ENTITY_PANDA_PRE_SNEEZE("entity.panda.pre_sneeze"),
+	ENTITY_PANDA_SNEEZE("entity.panda.sneeze"),
+	ENTITY_PANDA_STEP("entity.panda.step"),
+	ENTITY_PANDA_WORRIED_AMBIENT("entity.panda.worried_ambient"),
+	
+	ENTITY_PARROT_AMBIENT("entity.parrot.ambient"),
+	ENTITY_PARROT_DEATH("entity.parrot.death"),
+	ENTITY_PARROT_EAT("entity.parrot.eat"),
+	ENTITY_PARROT_FLY("entity.parrot.fly"),
+	ENTITY_PARROT_HURT("entity.parrot.hurt"),
+	ENTITY_PARROT_STEP("entity.parrot.step"),
+	
+	ENTITY_PARROT_IMITATE_BLAZE("entity.parrot.imitate.blaze"),
+	ENTITY_PARROT_IMITATE_CREEPER("entity.parrot.imitate.creeper"),
+	ENTITY_PARROT_IMITATE_DROWNED("entity.parrot.imitate.drowned"),
+	ENTITY_PARROT_IMITATE_ELDER_GUARDIAN("entity.parrot.imitate.elder_guardian"),
+	ENTITY_PARROT_IMITATE_ENDER_DRAGON("entity.parrot.imitate.ender_dragon"),
+	ENTITY_PARROT_IMITATE_ENDERMITE("entity.parrot.imitate.endermite"),
+	ENTITY_PARROT_IMITATE_EVOKER("entity.parrot.imitate.evoker"),
+	ENTITY_PARROT_IMITATE_GHAST("entity.parrot.imitate.ghast"),
+	ENTITY_PARROT_IMITATE_GUARDIAN("entity.parrot.imitate.guardian"),
+	ENTITY_PARROT_IMITATE_HOGLIN("entity.parrot.imitate.hoglin"),
+	ENTITY_PARROT_IMITATE_HUSK("entity.parrot.imitate.husk"),
+	ENTITY_PARROT_IMITATE_ILLUSIONER("entity.parrot.imitate.illusioner"),
+	ENTITY_PARROT_IMITATE_MAGMA_CUBE("entity.parrot.imitate.magma_cube"),
+	ENTITY_PARROT_IMITATE_PHANTOM("entity.parrot.imitate.phantom"),
+	ENTITY_PARROT_IMITATE_PIGLIN("entity.parrot.imitate.piglin"),
+	ENTITY_PARROT_IMITATE_PILLAGER("entity.parrot.imitate.pillager"),
+	ENTITY_PARROT_IMITATE_RAVAGER("entity.parrot.imitate.ravager"),
+	ENTITY_PARROT_IMITATE_SHULKER("entity.parrot.imitate.shulker"),
+	ENTITY_PARROT_IMITATE_SILVERFISH("entity.parrot.imitate.silverfish"),
+	ENTITY_PARROT_IMITATE_SKELETON("entity.parrot.imitate.skeleton"),
+	ENTITY_PARROT_IMITATE_SLIME("entity.parrot.imitate.slime"),
+	ENTITY_PARROT_IMITATE_SPIDER("entity.parrot.imitate.spider"),
+	ENTITY_PARROT_IMITATE_STRAY("entity.parrot.imitate.stray"),
+	ENTITY_PARROT_IMITATE_VEX("entity.parrot.imitate.vex"),
+	ENTITY_PARROT_IMITATE_VINDICATOR("entity.parrot.imitate.vindicator"),
+	ENTITY_PARROT_IMITATE_WITCH("entity.parrot.imitate.witch"),
+	ENTITY_PARROT_IMITATE_WITHER("entity.parrot.imitate.wither"),
+	ENTITY_PARROT_IMITATE_WITHER_SKELETON("entity.parrot.imitate.wither_skeleton"),
+	ENTITY_PARROT_IMITATE_ZOGLIN("entity.parrot.imitate.zoglin"),
+	ENTITY_PARROT_IMITATE_ZOMBIE("entity.parrot.imitate.zombie"),
+	ENTITY_PARROT_IMITATE_ZOMBIE_VILLAGER("entity.parrot.imitate.zombie_villager"),
+	
+	ENTITY_PHANTOM_AMBIENT("entity.phantom.ambient"),
+	ENTITY_PHANTOM_BITE("entity.phantom.bite"),
+	ENTITY_PHANTOM_DEATH("entity.phantom.death"),
+	ENTITY_PHANTOM_FLAP("entity.phantom.flap"),
+	ENTITY_PHANTOM_HURT("entity.phantom.hurt"),
+	ENTITY_PHANTOM_SWOOP("entity.phantom.swoop"),
+	
+	ENTITY_PIG_AMBIENT("entity.pig.ambient"),
+	ENTITY_PIG_DEATH("entity.pig.death"),
+	ENTITY_PIG_HURT("entity.pig.hurt"),
+	ENTITY_PIG_SADDLE("entity.pig.saddle"),
+	ENTITY_PIG_STEP("entity.pig.step"),
+	
+	ENTITY_PIGLIN_ADMIRING_ITEM("entity.piglin.admiring_item"),
+	ENTITY_PIGLIN_AMBIENT("entity.piglin.ambient"),
+	ENTITY_PIGLIN_ANGRY("entity.piglin.angry"),
+	ENTITY_PIGLIN_CELEBRATE("entity.piglin.celebrate"),
+	ENTITY_PIGLIN_CONVERTED_TO_ZOMBIFIED("entity.piglin.converted_to_zombified"),
+	ENTITY_PIGLIN_DEATH("entity.piglin.death"),
+	ENTITY_PIGLIN_HURT("entity.piglin.hurt"),
+	ENTITY_PIGLIN_JEALOUS("entity.piglin.jealous"),
+	ENTITY_PIGLIN_RETREAT("entity.piglin.retreat"),
+	ENTITY_PIGLIN_STEP("entity.piglin.step"),
+	
+	ENTITY_PILLAGER_AMBIENT("entity.pillager.ambient"),
+	ENTITY_PILLAGER_CELEBRATE("entity.pillager.celebrate"),
+	ENTITY_PILLAGER_DEATH("entity.pillager.death"),
+	ENTITY_PILLAGER_HURT("entity.pillager.hurt"),
+	
+	ENTITY_PLAYER_ATTACK_CRIT("entity.player.attack.crit"),
+	ENTITY_PLAYER_ATTACK_KNOCKBACK("entity.player.attack.knockback"),
+	ENTITY_PLAYER_ATTACK_NODAMAGE("entity.player.attack.nodamage"),
+	ENTITY_PLAYER_ATTACK_STRONG("entity.player.attack.strong"),
+	ENTITY_PLAYER_ATTACK_SWEEP("entity.player.attack.sweep"),
+	ENTITY_PLAYER_ATTACK_WEAK("entity.player.attack.weak"),
+	ENTITY_PLAYER_BIG_FALL("entity.player.big_fall"),
+	ENTITY_PLAYER_BREATH("entity.player.breath"),
+	ENTITY_PLAYER_BURP("entity.player.burp"),
+	ENTITY_PLAYER_DEATH("entity.player.death"),
+	ENTITY_PLAYER_HURT("entity.player.hurt"),
+	ENTITY_PLAYER_HURT_DROWN("entity.player.hurt_drown"),
+	ENTITY_PLAYER_HURT_ON_FIRE("entity.player.hurt_on_fire"),
+	ENTITY_PLAYER_HURT_SWEET_BERRY_BUSH("entity.player.hurt_sweet_berry_bush"),
+	ENTITY_PLAYER_LEVELUP("entity.player.levelup"),
+	ENTITY_PLAYER_SMALL_FALL("entity.player.small_fall"),
+	ENTITY_PLAYER_SPLASH("entity.player.splash"),
+	ENTITY_PLAYER_SPLASH_HIGH_SPEED("entity.player.splash.high_speed"),
+	ENTITY_PLAYER_SWIM("entity.player.swim"),
+	
+	ENTITY_POLAR_BEAR_AMBIENT("entity.polar_bear.ambient"),
+	ENTITY_POLAR_BEAR_AMBIENT_BABY("entity.polar_bear.ambient_baby"),
+	ENTITY_POLAR_BEAR_DEATH("entity.polar_bear.death"),
+	ENTITY_POLAR_BEAR_HURT("entity.polar_bear.hurt"),
+	ENTITY_POLAR_BEAR_STEP("entity.polar_bear.step"),
+	ENTITY_POLAR_BEAR_WARNING("entity.polar_bear.warning"),
+	
+	ENTITY_PUFFER_FISH_AMBIENT("entity.puffer_fish.ambient"),
+	ENTITY_PUFFER_FISH_BLOW_OUT("entity.puffer_fish.blow_out"),
+	ENTITY_PUFFER_FISH_BLOW_UP("entity.puffer_fish.blow_up"),
+	ENTITY_PUFFER_FISH_DEATH("entity.puffer_fish.death"),
+	ENTITY_PUFFER_FISH_FLOP("entity.puffer_fish.flop"),
+	ENTITY_PUFFER_FISH_HURT("entity.puffer_fish.hurt"),
+	ENTITY_PUFFER_FISH_STING("entity.puffer_fish.sting"),
+	
+	ENTITY_RABBIT_AMBIENT("entity.rabbit.ambient"),
+	ENTITY_RABBIT_ATTACK("entity.rabbit.attack"),
+	ENTITY_RABBIT_DEATH("entity.rabbit.death"),
+	ENTITY_RABBIT_HURT("entity.rabbit.hurt"),
+	ENTITY_RABBIT_JUMP("entity.rabbit.jump"),
+	
+	ENTITY_RAVAGER_AMBIENT("entity.ravager.ambient"),
+	ENTITY_RAVAGER_ATTACK("entity.ravager.attack"),
+	ENTITY_RAVAGER_CELEBRATE("entity.ravager.celebrate"),
+	ENTITY_RAVAGER_DEATH("entity.ravager.death"),
+	ENTITY_RAVAGER_HURT("entity.ravager.hurt"),
+	ENTITY_RAVAGER_ROAR("entity.ravager.roar"),
+	ENTITY_RAVAGER_STEP("entity.ravager.step"),
+	ENTITY_RAVAGER_STUNNED("entity.ravager.stunned"),
+	
+	ENTITY_SALMON_AMBIENT("entity.salmon.ambient"),
+	ENTITY_SALMON_DEATH("entity.salmon.death"),
+	ENTITY_SALMON_FLOP("entity.salmon.flop"),
+	ENTITY_SALMON_HURT("entity.salmon.hurt"),
+	
+	ENTITY_SHEEP_AMBIENT("entity.sheep.ambient"),
+	ENTITY_SHEEP_DEATH("entity.sheep.death"),
+	ENTITY_SHEEP_HURT("entity.sheep.hurt"),
+	ENTITY_SHEEP_SHEAR("entity.sheep.shear"),
+	ENTITY_SHEEP_STEP("entity.sheep.step"),
+	
+	ENTITY_SHULKER_AMBIENT("entity.shulker.ambient"),
+	ENTITY_SHULKER_CLOSE("entity.shulker.close"),
+	ENTITY_SHULKER_DEATH("entity.shulker.death"),
+	ENTITY_SHULKER_HURT("entity.shulker.hurt"),
+	ENTITY_SHULKER_HURT_CLOSED("entity.shulker.hurt_closed"),
+	ENTITY_SHULKER_OPEN("entity.shulker.open"),
+	ENTITY_SHULKER_SHOOT("entity.shulker.shoot"),
+	ENTITY_SHULKER_TELEPORT("entity.shulker.teleport"),
+	
+	ENTITY_SHULKER_BULLET_HIT("entity.shulker_bullet.hit"),
+	ENTITY_SHULKER_BULLET_HURT("entity.shulker_bullet.hurt"),
+	
+	ENTITY_SILVERFISH_AMBIENT("entity.silverfish.ambient"),
+	ENTITY_SILVERFISH_DEATH("entity.silverfish.death"),
+	ENTITY_SILVERFISH_HURT("entity.silverfish.hurt"),
+	ENTITY_SILVERFISH_STEP("entity.silverfish.step"),
+	
+	ENTITY_SKELETON_AMBIENT("entity.skeleton.ambient"),
+	ENTITY_SKELETON_DEATH("entity.skeleton.death"),
+	ENTITY_SKELETON_HURT("entity.skeleton.hurt"),
+	ENTITY_SKELETON_SHOOT("entity.skeleton.shoot"),
+	ENTITY_SKELETON_STEP("entity.skeleton.step"),
+	
+	ENTITY_SKELETON_HORSE_AMBIENT("entity.skeleton_horse.ambient"),
+	ENTITY_SKELETON_HORSE_AMBIENT_WATER("entity.skeleton_horse.ambient_water"),
+	ENTITY_SKELETON_HORSE_DEATH("entity.skeleton_horse.death"),
+	ENTITY_SKELETON_HORSE_GALLOP_WATER("entity.skeleton_horse.gallop_water"),
+	ENTITY_SKELETON_HORSE_HURT("entity.skeleton_horse.hurt"),
+	ENTITY_SKELETON_HORSE_JUMP_WATER("entity.skeleton_horse.jump_water"),
+	ENTITY_SKELETON_HORSE_STEP_WATER("entity.skeleton_horse.step_water"),
+	ENTITY_SKELETON_HORSE_SWIM("entity.skeleton_horse.swim"),
+	
+	ENTITY_SLIME_ATTACK("entity.slime.attack"),
+	ENTITY_SLIME_DEATH("entity.slime.death"),
+	ENTITY_SLIME_DEATH_SMALL("entity.slime.death_small"),
+	ENTITY_SLIME_HURT("entity.slime.hurt"),
+	ENTITY_SLIME_HURT_SMALL("entity.slime.hurt_small"),
+	ENTITY_SLIME_JUMP("entity.slime.jump"),
+	ENTITY_SLIME_JUMP_SMALL("entity.slime.jump_small"),
+	ENTITY_SLIME_SQUISH("entity.slime.squish"),
+	ENTITY_SLIME_SQUISH_SMALL("entity.slime.squish_small"),
+	
+	ENTITY_SNOW_GOLEM_AMBIENT("entity.snow_golem.ambient"),
+	ENTITY_SNOW_GOLEM_DEATH("entity.snow_golem.death"),
+	ENTITY_SNOW_GOLEM_HURT("entity.snow_golem.hurt"),
+	ENTITY_SNOW_GOLEM_SHEAR("entity.snow_golem.shear"),
+	ENTITY_SNOW_GOLEM_SHOOT("entity.snow_golem.shoot"),
+	
+	ENTITY_SNOWBALL_THROW("entity.snowball.throw"),
+	
+	ENTITY_SPIDER_AMBIENT("entity.spider.ambient"),
+	ENTITY_SPIDER_DEATH("entity.spider.death"),
+	ENTITY_SPIDER_HURT("entity.spider.hurt"),
+	ENTITY_SPIDER_STEP("entity.spider.step"),
+	
+	ENTITY_SPLASH_POTION_BREAK("entity.splash_potion.break"),
+	ENTITY_SPLASH_POTION_THROW("entity.splash_potion.throw"),
+	
+	ENTITY_SQUID_AMBIENT("entity.squid.ambient"),
+	ENTITY_SQUID_DEATH("entity.squid.death"),
+	ENTITY_SQUID_HURT("entity.squid.hurt"),
+	ENTITY_SQUID_SQUIRT("entity.squid.squirt"),
+	
+	ENTITY_STRAY_AMBIENT("entity.stray.ambient"),
+	ENTITY_STRAY_DEATH("entity.stray.death"),
+	ENTITY_STRAY_HURT("entity.stray.hurt"),
+	ENTITY_STRAY_STEP("entity.stray.step"),
+	
+	ENTITY_STRIDER_AMBIENT("entity.strider.ambient"),
+	ENTITY_STRIDER_DEATH("entity.strider.death"),
+	ENTITY_STRIDER_EAT("entity.strider.eat"),
+	ENTITY_STRIDER_HAPPY("entity.strider.happy"),
+	ENTITY_STRIDER_HURT("entity.strider.hurt"),
+	ENTITY_STRIDER_RETREAT("entity.strider.retreat"),
+	ENTITY_STRIDER_SADDLE("entity.strider.saddle"),
+	ENTITY_STRIDER_STEP("entity.strider.step"),
+	ENTITY_STRIDER_STEP_LAVA("entity.strider.step_lava"),
+	
+	ENTITY_TNT_PRIMED("entity.tnt.primed"),
+	
+	ENTITY_TROPICAL_FISH_AMBIENT("entity.tropical_fish.ambient"),
+	ENTITY_TROPICAL_FISH_DEATH("entity.tropical_fish.death"),
+	ENTITY_TROPICAL_FISH_FLOP("entity.tropical_fish.flop"),
+	ENTITY_TROPICAL_FISH_HURT("entity.tropical_fish.hurt"),
+	
+	ENTITY_TURTLE_AMBIENT_LAND("entity.turtle.ambient_land"),
+	ENTITY_TURTLE_DEATH("entity.turtle.death"),
+	ENTITY_TURTLE_DEATH_BABY("entity.turtle.death_baby"),
+	ENTITY_TURTLE_EGG_BREAK("entity.turtle.egg_break"),
+	ENTITY_TURTLE_EGG_CRACK("entity.turtle.egg_crack"),
+	ENTITY_TURTLE_EGG_HATCH("entity.turtle.egg_hatch"),
+	ENTITY_TURTLE_HURT("entity.turtle.hurt"),
+	ENTITY_TURTLE_HURT_BABY("entity.turtle.hurt_baby"),
+	ENTITY_TURTLE_LAY_EGG("entity.turtle.lay_egg"),
+	ENTITY_TURTLE_SHAMBLE("entity.turtle.shamble"),
+	ENTITY_TURTLE_SHAMBLE_BABY("entity.turtle.shamble_baby"),
+	ENTITY_TURTLE_SWIM("entity.turtle.swim"),
+	
+	ENTITY_VEX_AMBIENT("entity.vex.ambient"),
+	ENTITY_VEX_CHARGE("entity.vex.charge"),
+	ENTITY_VEX_DEATH("entity.vex.death"),
+	ENTITY_VEX_HURT("entity.vex.hurt"),
+	
+	ENTITY_VILLAGER_AMBIENT("entity.villager.ambient"),
+	ENTITY_VILLAGER_CELEBRATE("entity.villager.celebrate"),
+	ENTITY_VILLAGER_DEATH("entity.villager.death"),
+	ENTITY_VILLAGER_HURT("entity.villager.hurt"),
+	ENTITY_VILLAGER_NO("entity.villager.no"),
+	ENTITY_VILLAGER_TRADE("entity.villager.trade"),
+	ENTITY_VILLAGER_WORK_ARMORER("entity.villager.work_armorer"),
+	ENTITY_VILLAGER_WORK_BUTCHER("entity.villager.work_butcher"),
+	ENTITY_VILLAGER_WORK_CARTOGRAPHER("entity.villager.work_cartographer"),
+	ENTITY_VILLAGER_WORK_CLERIC("entity.villager.work_cleric"),
+	ENTITY_VILLAGER_WORK_FARMER("entity.villager.work_farmer"),
+	ENTITY_VILLAGER_WORK_FISHERMAN("entity.villager.work_fisherman"),
+	ENTITY_VILLAGER_WORK_FLETCHER("entity.villager.work_fletcher"),
+	ENTITY_VILLAGER_WORK_LEATHERWORKER("entity.villager.work_leatherworker"),
+	ENTITY_VILLAGER_WORK_LIBRARIAN("entity.villager.work_librarian"),
+	ENTITY_VILLAGER_WORK_MASON("entity.villager.work_mason"),
+	ENTITY_VILLAGER_WORK_SHEPHERD("entity.villager.work_shepherd"),
+	ENTITY_VILLAGER_WORK_TOOLSMITH("entity.villager.work_toolsmith"),
+	ENTITY_VILLAGER_WORK_WEAPONSMITH("entity.villager.work_weaponsmith"),
+	ENTITY_VILLAGER_YES("entity.villager.yes"),
+	
+	ENTITY_VINDICATOR_AMBIENT("entity.vindicator.ambient"),
+	ENTITY_VINDICATOR_CELEBRATE("entity.vindicator.celebrate"),
+	ENTITY_VINDICATOR_DEATH("entity.vindicator.death"),
+	ENTITY_VINDICATOR_HURT("entity.vindicator.hurt"),
+	
+	ENTITY_WANDERING_TRADER_AMBIENT("entity.wandering_trader.ambient"),
+	ENTITY_WANDERING_TRADER_DEATH("entity.wandering_trader.death"),
+	ENTITY_WANDERING_TRADER_DISAPPEARED("entity.wandering_trader.disappeared"),
+	ENTITY_WANDERING_TRADER_DRINK_MILK("entity.wandering_trader.drink_milk"),
+	ENTITY_WANDERING_TRADER_DRINK_POTION("entity.wandering_trader.drink_potion"),
+	ENTITY_WANDERING_TRADER_HURT("entity.wandering_trader.hurt"),
+	ENTITY_WANDERING_TRADER_NO("entity.wandering_trader.no"),
+	ENTITY_WANDERING_TRADER_REAPPEARED("entity.wandering_trader.reappeared"),
+	ENTITY_WANDERING_TRADER_TRADE("entity.wandering_trader.trade"),
+	ENTITY_WANDERING_TRADER_YES("entity.wandering_trader.yes"),
+	
+	ENTITY_WITCH_AMBIENT("entity.witch.ambient"),
+	ENTITY_WITCH_CELEBRATE("entity.witch.celebrate"),
+	ENTITY_WITCH_DEATH("entity.witch.death"),
+	ENTITY_WITCH_DRINK("entity.witch.drink"),
+	ENTITY_WITCH_HURT("entity.witch.hurt"),
+	ENTITY_WITCH_THROW("entity.witch.throw"),
+	
+	ENTITY_WITHER_AMBIENT("entity.wither.ambient"),
+	ENTITY_WITHER_BREAK_BLOCK("entity.wither.break_block"),
+	ENTITY_WITHER_DEATH("entity.wither.death"),
+	ENTITY_WITHER_HURT("entity.wither.hurt"),
+	ENTITY_WITHER_SHOOT("entity.wither.shoot"),
+	ENTITY_WITHER_SPAWN("entity.wither.spawn"),
+	
+	ENTITY_WITHER_SKELETON_AMBIENT("entity.wither_skeleton.ambient"),
+	ENTITY_WITHER_SKELETON_DEATH("entity.wither_skeleton.death"),
+	ENTITY_WITHER_SKELETON_HURT("entity.wither_skeleton.hurt"),
+	ENTITY_WITHER_SKELETON_STEP("entity.wither_skeleton.step"),
+	ENTITY_WOLF_AMBIENT("entity.wolf.ambient"),
+	ENTITY_WOLF_DEATH("entity.wolf.death"),
+	ENTITY_WOLF_GROWL("entity.wolf.growl"),
+	ENTITY_WOLF_HOWL("entity.wolf.howl"),
+	ENTITY_WOLF_HURT("entity.wolf.hurt"),
+	ENTITY_WOLF_PANT("entity.wolf.pant"),
+	ENTITY_WOLF_SHAKE("entity.wolf.shake"),
+	ENTITY_WOLF_STEP("entity.wolf.step"),
+	ENTITY_WOLF_WHINE("entity.wolf.whine"),
+	
+	ENTITY_ZOGLIN_AMBIENT("entity.zoglin.ambient"),
+	ENTITY_ZOGLIN_ANGRY("entity.zoglin.angry"),
+	ENTITY_ZOGLIN_ATTACK("entity.zoglin.attack"),
+	ENTITY_ZOGLIN_DEATH("entity.zoglin.death"),
+	ENTITY_ZOGLIN_HURT("entity.zoglin.hurt"),
+	ENTITY_ZOGLIN_STEP("entity.zoglin.step"),
+	
+	ENTITY_ZOMBIE_AMBIENT("entity.zombie.ambient"),
+	ENTITY_ZOMBIE_ATTACK_IRON_DOOR("entity.zombie.attack_iron_door"),
+	ENTITY_ZOMBIE_ATTACK_WOODEN_DOOR("entity.zombie.attack_wooden_door"),
+	ENTITY_ZOMBIE_BREAK_WOODEN_DOOR("entity.zombie.break_wooden_door"),
+	ENTITY_ZOMBIE_CONVERTED_TO_DROWNED("entity.zombie.converted_to_drowned"),
+	ENTITY_ZOMBIE_DEATH("entity.zombie.death"),
+	ENTITY_ZOMBIE_DESTROY_EGG("entity.zombie.destroy_egg"),
+	ENTITY_ZOMBIE_HURT("entity.zombie.hurt"),
+	ENTITY_ZOMBIE_INFECT("entity.zombie.infect"),
+	ENTITY_ZOMBIE_STEP("entity.zombie.step"),
+	
+	ENTITY_ZOMBIE_HORSE_AMBIENT("entity.zombie_horse.ambient"),
+	ENTITY_ZOMBIE_HORSE_DEATH("entity.zombie_horse.death"),
+	ENTITY_ZOMBIE_HORSE_HURT("entity.zombie_horse.hurt"),
+	
+	ENTITY_ZOMBIE_VILLAGER_AMBIENT("entity.zombie_villager.ambient"),
+	ENTITY_ZOMBIE_VILLAGER_CONVERTED("entity.zombie_villager.converted"),
+	ENTITY_ZOMBIE_VILLAGER_CURE("entity.zombie_villager.cure"),
+	ENTITY_ZOMBIE_VILLAGER_DEATH("entity.zombie_villager.death"),
+	ENTITY_ZOMBIE_VILLAGER_HURT("entity.zombie_villager.hurt"),
+	ENTITY_ZOMBIE_VILLAGER_STEP("entity.zombie_villager.step"),
+	
+	ENTITY_ZOMBIFIED_PIGLIN_AMBIENT("entity.zombified_piglin.ambient"),
+	ENTITY_ZOMBIFIED_PIGLIN_ANGRY("entity.zombified_piglin.angry"),
+	ENTITY_ZOMBIFIED_PIGLIN_DEATH("entity.zombified_piglin.death"),
+	ENTITY_ZOMBIFIED_PIGLIN_HURT("entity.zombified_piglin.hurt"),
+	
+	EVENT_RAID_HORN("event.raid.horn"),
+	
+	ITEM_ARMOR_EQUIP_CHAIN("item.armor.equip_chain"),
+	ITEM_ARMOR_EQUIP_DIAMOND("item.armor.equip_diamond"),
+	ITEM_ARMOR_EQUIP_ELYTRA("item.armor.equip_elytra"),
+	ITEM_ARMOR_EQUIP_GENERIC("item.armor.equip_generic"),
+	ITEM_ARMOR_EQUIP_GOLD("item.armor.equip_gold"),
+	ITEM_ARMOR_EQUIP_IRON("item.armor.equip_iron"),
+	ITEM_ARMOR_EQUIP_LEATHER("item.armor.equip_leather"),
+	ITEM_ARMOR_EQUIP_NETHERITE("item.armor.equip_netherite"),
+	ITEM_ARMOR_EQUIP_TURTLE("item.armor.equip_turtle"),
+	
+	ITEM_AXE_STRIP("item.axe.strip"),
+	
+	ITEM_BOOK_PAGE_TURN("item.book.page_turn"),
+	ITEM_BOOK_PUT("item.book.put"),
+	
+	ITEM_BOTTLE_EMPTY("item.bottle.empty"),
+	ITEM_BOTTLE_FILL("item.bottle.fill"),
+	ITEM_BOTTLE_FILL_DRAGONBREATH("item.bottle.fill_dragonbreath"),
+	
+	ITEM_BUCKET_EMPTY("item.bucket.empty"),
+	ITEM_BUCKET_EMPTY_FISH("item.bucket.empty_fish"),
+	ITEM_BUCKET_EMPTY_LAVA("item.bucket.empty_lava"),
+	ITEM_BUCKET_FILL("item.bucket.fill"),
+	ITEM_BUCKET_FILL_FISH("item.bucket.fill_fish"),
+	ITEM_BUCKET_FILL_LAVA("item.bucket.fill_lava"),
+	
+	ITEM_CHORUS_FRUIT_TELEPORT("item.chorus_fruit.teleport"),
+	ITEM_CROP_PLANT("item.crop.plant"),
+	
+	ITEM_CROSSBOW_HIT("item.crossbow.hit"),
+	ITEM_CROSSBOW_LOADING_END("item.crossbow.loading_end"),
+	ITEM_CROSSBOW_LOADING_MIDDLE("item.crossbow.loading_middle"),
+	ITEM_CROSSBOW_LOADING_START("item.crossbow.loading_start"),
+	ITEM_CROSSBOW_QUICK_CHARGE_1("item.crossbow.quick_charge_1"),
+	ITEM_CROSSBOW_QUICK_CHARGE_2("item.crossbow.quick_charge_2"),
+	ITEM_CROSSBOW_QUICK_CHARGE_3("item.crossbow.quick_charge_3"),
+	ITEM_CROSSBOW_SHOOT("item.crossbow.shoot"),
+	
+	ITEM_ELYTRA_FLYING("item.elytra.flying"),
+	
+	ITEM_FIRECHARGE_USE("item.firecharge.use"),
+	ITEM_FLINTANDSTEEL_USE("item.flintandsteel.use"),
+	
+	ITEM_HOE_TILL("item.hoe.till"),
+	
+	ITEM_HONEY_BOTTLE_DRINK("item.honey_bottle.drink"),
+	
+	ITEM_LODESTONE_COMPASS_LOCK("item.lodestone_compass.lock"),
+	ITEM_NETHER_WART_PLANT("item.nether_wart.plant"),
+	
+	ITEM_SHIELD_BLOCK("item.shield.block"),
+	ITEM_SHIELD_BREAK("item.shield.break"),
+	
+	ITEM_SHOVEL_FLATTEN("item.shovel.flatten"),
+	
+	ITEM_SWEET_BERRIES_PICK_FROM_BUSH("item.sweet_berries.pick_from_bush"),
+	
+	ITEM_TOTEM_USE("item.totem.use"),
+	
+	ITEM_TRIDENT_HIT("item.trident.hit"),
+	ITEM_TRIDENT_HIT_GROUND("item.trident.hit_ground"),
+	ITEM_TRIDENT_RETURN("item.trident.return"),
+	ITEM_TRIDENT_RIPTIDE_1("item.trident.riptide_1"),
+	ITEM_TRIDENT_RIPTIDE_2("item.trident.riptide_2"),
+	ITEM_TRIDENT_RIPTIDE_3("item.trident.riptide_3"),
+	ITEM_TRIDENT_THROW("item.trident.throw"),
+	ITEM_TRIDENT_THUNDER("item.trident.thunder"),
+	
+	MUSIC_CREATIVE("music.creative"),
+	MUSIC_CREDITS("music.credits"),
+	MUSIC_DRAGON("music.dragon"),
+	MUSIC_END("music.end"),
+	MUSIC_GAME("music.game"),
+	MUSIC_MENU("music.menu"),
+	
+	MUSIC_NETHER_BASALT_DELTAS("music.nether.basalt_deltas"),
+	MUSIC_NETHER_CRIMSON_FOREST("music.nether.crimson_forest"),
+	MUSIC_NETHER_NETHER_WASTES("music.nether.nether_wastes"),
+	MUSIC_NETHER_SOUL_SAND_VALLEY("music.nether.soul_sand_valley"),
+	MUSIC_NETHER_WARPED_FOREST("music.nether.warped_forest"),
+	
+	MUSIC_UNDER_WATER("music.under_water"),
+	
+	MUSIC_DISC_11("music_disc.11"),
+	MUSIC_DISC_13("music_disc.13"),
+	MUSIC_DISC_BLOCKS("music_disc.blocks"),
+	MUSIC_DISC_CAT("music_disc.cat"),
+	MUSIC_DISC_CHIRP("music_disc.chirp"),
+	MUSIC_DISC_FAR("music_disc.far"),
+	MUSIC_DISC_MALL("music_disc.mall"),
+	MUSIC_DISC_MELLOHI("music_disc.mellohi"),
+	MUSIC_DISC_PIGSTEP("music_disc.pigstep"),
+	MUSIC_DISC_STAL("music_disc.stal"),
+	MUSIC_DISC_STRAD("music_disc.strad"),
+	MUSIC_DISC_WAIT("music_disc.wait"),
+	MUSIC_DISC_WARD("music_disc.ward"),
+	
+	PARTICLE_SOUL_ESCAPE("particle.soul_escape"),
+	
+	UI_BUTTON_CLICK("ui.button.click"),
+	UI_CARTOGRAPHY_TABLE_TAKE_RESULT("ui.cartography_table.take_result"),
+	UI_LOOM_SELECT_PATTERN("ui.loom.select_pattern"),
+	UI_LOOM_TAKE_RESULT("ui.loom.take_result"),
+	UI_STONECUTTER_SELECT_RECIPE("ui.stonecutter.select_recipe"),
+	UI_STONECUTTER_TAKE_RESULT("ui.stonecutter.take_result"),
+	UI_TOAST_CHALLENGE_COMPLETE("ui.toast.challenge_complete"),
+	UI_TOAST_IN("ui.toast.in"),
+	UI_TOAST_OUT("ui.toast.out"),
+	
+	WEATHER_RAIN("weather.rain"),
+	WEATHER_RAIN_ABOVE("weather.rain.above");
+	// end
 	
 	private final String key;
 	
@@ -616,7 +1201,7 @@ public enum SoundType {
 	}
 	
 	@Subst("class.item.type")
-	public String getKey() {
+	public @NotNull String  getKey() {
 		return key;
 	}
 }
@@ -624,500 +1209,8 @@ public enum SoundType {
 
 	
 	//TODO get gpt to generate more lines
-	//entity.generic.swim
-	//entity.ghast.ambient
-	//entity.ghast.death
-	//entity.ghast.hurt
-	//entity.ghast.scream
-	//entity.ghast.shoot
-	//entity.ghast.warn
-	//entity.guardian.ambient
-	//entity.guardian.ambient_land
-	//entity.guardian.attack
-	//entity.guardian.death
-	//entity.guardian.death_land
-	//entity.guardian.flop
-	//entity.guardian.hurt
-	//entity.guardian.hurt_land
-	//entity.hoglin.ambient
-	//entity.hoglin.angry
-	//entity.hoglin.attack
-	//entity.hoglin.converted_to_zombified
-	//entity.hoglin.death
-	//entity.hoglin.hurt
-	//entity.hoglin.retreat
-	//entity.hoglin.step
-	//entity.horse.ambient
-	//entity.horse.angry
-	//entity.horse.armor
-	//entity.horse.breathe
-	//entity.horse.death
-	//entity.horse.eat
-	//entity.horse.gallop
-	//entity.horse.hurt
-	//entity.horse.jump
-	//entity.horse.land
-	//entity.horse.saddle
-	//entity.horse.step
-	//entity.horse.step_wood
-	//entity.hostile.big_fall
-	//entity.hostile.death
-	//entity.hostile.hurt
-	//entity.hostile.small_fall
-	//entity.hostile.splash
-	//entity.hostile.swim
-	//entity.husk.ambient
-	//entity.husk.converted_to_zombie
-	//entity.husk.death
-	//entity.husk.hurt
-	//entity.husk.step
-	//entity.illusioner.ambient
-	//entity.illusioner.cast_spell
-	//entity.illusioner.death
-	//entity.illusioner.hurt
-	//entity.illusioner.mirror_move
-	//entity.illusioner.prepare_blindness
-	//entity.illusioner.prepare_mirror
-	//entity.iron_golem.attack
-	//entity.iron_golem.damage
-	//entity.iron_golem.death
-	//entity.iron_golem.hurt
-	//entity.iron_golem.repair
-	//entity.iron_golem.step
-	//entity.item.break
-	//entity.item.pickup
-	//entity.item_frame.add_item
-	//entity.item_frame.break
-	//entity.item_frame.place
-	//entity.item_frame.remove_item
-	//entity.item_frame.rotate_item
-	//entity.leash_knot.break
-	//entity.leash_knot.place
-	//entity.lightning_bolt.impact
-	//entity.lightning_bolt.thunder
-	//entity.lingering_potion.throw
-	//entity.llama.ambient
-	//entity.llama.angry
-	//entity.llama.chest
-	//entity.llama.death
-	//entity.llama.eat
-	//entity.llama.hurt
-	//entity.llama.spit
-	//entity.llama.step
-	//entity.llama.swag
-	//entity.magma_cube.death
-	//entity.magma_cube.death_small
-	//entity.magma_cube.hurt
-	//entity.magma_cube.hurt_small
-	//entity.magma_cube.jump
-	//entity.magma_cube.squish
-	//entity.magma_cube.squish_small
-	//entity.minecart.inside
-	//entity.minecart.riding
-	//entity.mooshroom.convert
-	//entity.mooshroom.eat
-	//entity.mooshroom.milk
-	//entity.mooshroom.shear
-	//entity.mooshroom.suspicious_milk
-	//entity.mule.ambient
-	//entity.mule.angry
-	//entity.mule.chest
-	//entity.mule.death
-	//entity.mule.eat
-	//entity.mule.hurt
-	//entity.ocelot.ambient
-	//entity.ocelot.death
-	//entity.ocelot.hurt
-	//entity.painting.break
-	//entity.painting.place
-	//entity.panda.aggressive_ambient
-	//entity.panda.ambient
-	//entity.panda.bite
-	//entity.panda.cant_breed
-	//entity.panda.death
-	//entity.panda.eat
-	//entity.panda.hurt
-	//entity.panda.pre_sneeze
-	//entity.panda.sneeze
-	//entity.panda.step
-	//entity.panda.worried_ambient
-	//entity.parrot.ambient
-	//entity.parrot.death
-	//entity.parrot.eat
-	//entity.parrot.fly
-	//entity.parrot.hurt
-	//entity.parrot.imitate.blaze
-	//entity.parrot.imitate.creeper
-	//entity.parrot.imitate.drowned
-	//entity.parrot.imitate.elder_guardian
-	//entity.parrot.imitate.ender_dragon
-	//entity.parrot.imitate.endermite
-	//entity.parrot.imitate.evoker
-	//entity.parrot.imitate.ghast
-	//entity.parrot.imitate.guardian
-	//entity.parrot.imitate.hoglin
-	//entity.parrot.imitate.husk
-	//entity.parrot.imitate.illusioner
-	//entity.parrot.imitate.magma_cube
-	//entity.parrot.imitate.phantom
-	//entity.parrot.imitate.piglin
-	//entity.parrot.imitate.pillager
-	//entity.parrot.imitate.ravager
-	//entity.parrot.imitate.shulker
-	//entity.parrot.imitate.silverfish
-	//entity.parrot.imitate.skeleton
-	//entity.parrot.imitate.slime
-	//entity.parrot.imitate.spider
-	//entity.parrot.imitate.stray
-	//entity.parrot.imitate.vex
-	//entity.parrot.imitate.vindicator
-	//entity.parrot.imitate.witch
-	//entity.parrot.imitate.wither
-	//entity.parrot.imitate.wither_skeleton
-	//entity.parrot.imitate.zoglin
-	//entity.parrot.imitate.zombie
-	//entity.parrot.imitate.zombie_villager
-	//entity.parrot.step
-	//entity.phantom.ambient
-	//entity.phantom.bite
-	//entity.phantom.death
-	//entity.phantom.flap
-	//entity.phantom.hurt
-	//entity.phantom.swoop
-	//entity.pig.ambient
-	//entity.pig.death
-	//entity.pig.hurt
-	//entity.pig.saddle
-	//entity.pig.step
-	//entity.piglin.admiring_item
-	//entity.piglin.ambient
-	//entity.piglin.angry
-	//entity.piglin.celebrate
-	//entity.piglin.converted_to_zombified
-	//entity.piglin.death
-	//entity.piglin.hurt
-	//entity.piglin.jealous
-	//entity.piglin.retreat
-	//entity.piglin.step
-	//entity.pillager.ambient
-	//entity.pillager.celebrate
-	//entity.pillager.death
-	//entity.pillager.hurt
-	//entity.player.attack.crit
-	//entity.player.attack.knockback
-	//entity.player.attack.nodamage
-	//entity.player.attack.strong
-	//entity.player.attack.sweep
-	//entity.player.attack.weak
-	//entity.player.big_fall
-	//entity.player.breath
-	//entity.player.burp
-	//entity.player.death
-	//entity.player.hurt
-	//entity.player.hurt_drown
-	//entity.player.hurt_on_fire
-	//entity.player.hurt_sweet_berry_bush
-	//entity.player.levelup
-	//entity.player.small_fall
-	//entity.player.splash
-	//entity.player.splash.high_speed
-	//entity.player.swim
-	//entity.polar_bear.ambient
-	//entity.polar_bear.ambient_baby
-	//entity.polar_bear.death
-	//entity.polar_bear.hurt
-	//entity.polar_bear.step
-	//entity.polar_bear.warning
-	//entity.puffer_fish.ambient
-	//entity.puffer_fish.blow_out
-	//entity.puffer_fish.blow_up
-	//entity.puffer_fish.death
-	//entity.puffer_fish.flop
-	//entity.puffer_fish.hurt
-	//entity.puffer_fish.sting
-	//entity.rabbit.ambient
-	//entity.rabbit.attack
-	//entity.rabbit.death
-	//entity.rabbit.hurt
-	//entity.rabbit.jump
-	//entity.ravager.ambient
-	//entity.ravager.attack
-	//entity.ravager.celebrate
-	//entity.ravager.death
-	//entity.ravager.hurt
-	//entity.ravager.roar
-	//entity.ravager.step
-	//entity.ravager.stunned
-	//entity.salmon.ambient
-	//entity.salmon.death
-	//entity.salmon.flop
-	//entity.salmon.hurt
-	//entity.sheep.ambient
-	//entity.sheep.death
-	//entity.sheep.hurt
-	//entity.sheep.shear
-	//entity.sheep.step
-	//entity.shulker.ambient
-	//entity.shulker.close
-	//entity.shulker.death
-	//entity.shulker.hurt
-	//entity.shulker.hurt_closed
-	//entity.shulker.open
-	//entity.shulker.shoot
-	//entity.shulker.teleport
-	//entity.shulker_bullet.hit
-	//entity.shulker_bullet.hurt
-	//entity.silverfish.ambient
-	//entity.silverfish.death
-	//entity.silverfish.hurt
-	//entity.silverfish.step
-	//entity.skeleton.ambient
-	//entity.skeleton.death
-	//entity.skeleton.hurt
-	//entity.skeleton.shoot
-	//entity.skeleton.step
-	//entity.skeleton_horse.ambient
-	//entity.skeleton_horse.ambient_water
-	//entity.skeleton_horse.death
-	//entity.skeleton_horse.gallop_water
-	//entity.skeleton_horse.hurt
-	//entity.skeleton_horse.jump_water
-	//entity.skeleton_horse.step_water
-	//entity.skeleton_horse.swim
-	//entity.slime.attack
-	//entity.slime.death
-	//entity.slime.death_small
-	//entity.slime.hurt
-	//entity.slime.hurt_small
-	//entity.slime.jump
-	//entity.slime.jump_small
-	//entity.slime.squish
-	//entity.slime.squish_small
-	//entity.snow_golem.ambient
-	//entity.snow_golem.death
-	//entity.snow_golem.hurt
-	//entity.snow_golem.shear
-	//entity.snow_golem.shoot
-	//entity.snowball.throw
-	//entity.spider.ambient
-	//entity.spider.death
-	//entity.spider.hurt
-	//entity.spider.step
-	//entity.splash_potion.break
-	//entity.splash_potion.throw
-	//entity.squid.ambient
-	//entity.squid.death
-	//entity.squid.hurt
-	//entity.squid.squirt
-	//entity.stray.ambient
-	//entity.stray.death
-	//entity.stray.hurt
-	//entity.stray.step
-	//entity.strider.ambient
-	//entity.strider.death
-	//entity.strider.eat
-	//entity.strider.happy
-	//entity.strider.hurt
-	//entity.strider.retreat
-	//entity.strider.saddle
-	//entity.strider.step
-	//entity.strider.step_lava
-	//entity.tnt.primed
-	//entity.tropical_fish.ambient
-	//entity.tropical_fish.death
-	//entity.tropical_fish.flop
-	//entity.tropical_fish.hurt
-	//entity.turtle.ambient_land
-	//entity.turtle.death
-	//entity.turtle.death_baby
-	//entity.turtle.egg_break
-	//entity.turtle.egg_crack
-	//entity.turtle.egg_hatch
-	//entity.turtle.hurt
-	//entity.turtle.hurt_baby
-	//entity.turtle.lay_egg
-	//entity.turtle.shamble
-	//entity.turtle.shamble_baby
-	//entity.turtle.swim
-	//entity.vex.ambient
-	//entity.vex.charge
-	//entity.vex.death
-	//entity.vex.hurt
-	//entity.villager.ambient
-	//entity.villager.celebrate
-	//entity.villager.death
-	//entity.villager.hurt
-	//entity.villager.no
-	//entity.villager.trade
-	//entity.villager.work_armorer
-	//entity.villager.work_butcher
-	//entity.villager.work_cartographer
-	//entity.villager.work_cleric
-	//entity.villager.work_farmer
-	//entity.villager.work_fisherman
-	//entity.villager.work_fletcher
-	//entity.villager.work_leatherworker
-	//entity.villager.work_librarian
-	//entity.villager.work_mason
-	//entity.villager.work_shepherd
-	//entity.villager.work_toolsmith
-	//entity.villager.work_weaponsmith
-	//entity.villager.yes
-	//entity.vindicator.ambient
-	//entity.vindicator.celebrate
-	//entity.vindicator.death
-	//entity.vindicator.hurt
-	//entity.wandering_trader.ambient
-	//entity.wandering_trader.death
-	//entity.wandering_trader.disappeared
-	//entity.wandering_trader.drink_milk
-	//entity.wandering_trader.drink_potion
-	//entity.wandering_trader.hurt
-	//entity.wandering_trader.no
-	//entity.wandering_trader.reappeared
-	//entity.wandering_trader.trade
-	//entity.wandering_trader.yes
-	//entity.witch.ambient
-	//entity.witch.celebrate
-	//entity.witch.death
-	//entity.witch.drink
-	//entity.witch.hurt
-	//entity.witch.throw
-	//entity.wither.ambient
-	//entity.wither.break_block
-	//entity.wither.death
-	//entity.wither.hurt
-	//entity.wither.shoot
-	//entity.wither.spawn
-	//entity.wither_skeleton.ambient
-	//entity.wither_skeleton.death
-	//entity.wither_skeleton.hurt
-	//entity.wither_skeleton.step
-	//entity.wolf.ambient
-	//entity.wolf.death
-	//entity.wolf.growl
-	//entity.wolf.howl
-	//entity.wolf.hurt
-	//entity.wolf.pant
-	//entity.wolf.shake
-	//entity.wolf.step
-	//entity.wolf.whine
-	//entity.zoglin.ambient
-	//entity.zoglin.angry
-	//entity.zoglin.attack
-	//entity.zoglin.death
-	//entity.zoglin.hurt
-	//entity.zoglin.step
-	//entity.zombie.ambient
-	//entity.zombie.attack_iron_door
-	//entity.zombie.attack_wooden_door
-	//entity.zombie.break_wooden_door
-	//entity.zombie.converted_to_drowned
-	//entity.zombie.death
-	//entity.zombie.destroy_egg
-	//entity.zombie.hurt
-	//entity.zombie.infect
-	//entity.zombie.step
-	//entity.zombie_horse.ambient
-	//entity.zombie_horse.death
-	//entity.zombie_horse.hurt
-	//entity.zombie_villager.ambient
-	//entity.zombie_villager.converted
-	//entity.zombie_villager.cure
-	//entity.zombie_villager.death
-	//entity.zombie_villager.hurt
-	//entity.zombie_villager.step
-	//entity.zombified_piglin.ambient
-	//entity.zombified_piglin.angry
-	//entity.zombified_piglin.death
-	//entity.zombified_piglin.hurt
-	//event.raid.horn
-	//item.armor.equip_chain
-	//item.armor.equip_diamond
-	//item.armor.equip_elytra
-	//item.armor.equip_generic
-	//item.armor.equip_gold
-	//item.armor.equip_iron
-	//item.armor.equip_leather
-	//item.armor.equip_netherite
-	//item.armor.equip_turtle
-	//item.axe.strip
-	//item.book.page_turn
-	//item.book.put
-	//item.bottle.empty
-	//item.bottle.fill
-	//item.bottle.fill_dragonbreath
-	//item.bucket.empty
-	//item.bucket.empty_fish
-	//item.bucket.empty_lava
-	//item.bucket.fill
-	//item.bucket.fill_fish
-	//item.bucket.fill_lava
-	//item.chorus_fruit.teleport
-	//item.crop.plant
-	//item.crossbow.hit
-	//item.crossbow.loading_end
-	//item.crossbow.loading_middle
-	//item.crossbow.loading_start
-	//item.crossbow.quick_charge_1
-	//item.crossbow.quick_charge_2
-	//item.crossbow.quick_charge_3
-	//item.crossbow.shoot
-	//item.elytra.flying
-	//item.firecharge.use
-	//item.flintandsteel.use
-	//item.hoe.till
-	//item.honey_bottle.drink
-	//item.lodestone_compass.lock
-	//item.nether_wart.plant
-	//item.shield.block
-	//item.shield.break
-	//item.shovel.flatten
-	//item.sweet_berries.pick_from_bush
-	//item.totem.use
-	//item.trident.hit
-	//item.trident.hit_ground
-	//item.trident.return
-	//item.trident.riptide_1
-	//item.trident.riptide_2
-	//item.trident.riptide_3
-	//item.trident.throw
-	//item.trident.thunder
-	//music.creative
-	//music.credits
-	//music.dragon
-	//music.end
-	//music.game
-	//music.menu
-	//music.nether.basalt_deltas
-	//music.nether.crimson_forest
-	//music.nether.nether_wastes
-	//music.nether.soul_sand_valley
-	//music.nether.warped_forest
-	//music.under_water
-	//music_disc.11
-	//music_disc.13
-	//music_disc.blocks
-	//music_disc.cat
-	//music_disc.chirp
-	//music_disc.far
-	//music_disc.mall
-	//music_disc.mellohi
-	//music_disc.pigstep
-	//music_disc.stal
-	//music_disc.strad
-	//music_disc.wait
-	//music_disc.ward
-	//particle.soul_escape
-	//ui.button.click
-	//ui.cartography_table.take_result
-	//ui.loom.select_pattern
-	//ui.loom.take_result
-	//ui.stonecutter.select_recipe
-	//ui.stonecutter.take_result
-	//ui.toast.challenge_complete
-	//ui.toast.in
-	//ui.toast.out
-	//weather.rain
-	//weather.rain.above
+
+	
+	
+	
 

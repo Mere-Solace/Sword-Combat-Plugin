@@ -213,7 +213,7 @@ public class InputExecutionTree {
 						executor -> AttackAction.basicAttack(executor, AttackType.BASIC_1),
 						executor -> Math.max(0, (executor.getTimeOfLastAttack() + executor.getDurationOfLastAttack()) - System.currentTimeMillis()),
 						Combatant::canPerformAction,
-						true, true),
+						false, true),
 				true, true, false);
 		
 		add(List.of(InputType.LEFT, InputType.LEFT),
@@ -252,11 +252,19 @@ public class InputExecutionTree {
 		
 		// skills
 		add(List.of(InputType.SWAP, InputType.RIGHT, InputType.SHIFT),
-				null,
-				true, false, true);
+				new InputAction(
+						executor -> UtilityAction.soundTest(executor, 0),
+						executor -> 0L,
+						Combatant::canPerformAction,
+						false, false),
+				true, true, true);
 		
 		add(List.of(InputType.SWAP, InputType.RIGHT, InputType.DROP),
-				null,
+				new InputAction(
+						UtilityAction::particleTest,
+						executor -> 0L,
+						Combatant::canPerformAction,
+						false, false),
 				true, false, true);
 		
 		add(List.of(InputType.SWAP, InputType.RIGHT, InputType.LEFT),

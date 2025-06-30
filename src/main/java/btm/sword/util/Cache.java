@@ -2,7 +2,6 @@ package btm.sword.util;
 
 import org.bukkit.Color;
 import org.bukkit.Particle;
-import org.bukkit.block.data.type.Bed;
 import org.bukkit.util.Vector;
 
 import java.util.ArrayList;
@@ -18,6 +17,10 @@ public class Cache {
 	
 	public static final List<Vector> dragonKillerArc;
 	public static final List<Double> dragonKillerArcRatios;
+	
+	public static final List<Vector> aerialForwardSword;
+	public static final List<Vector> aerialSwordDown;
+	public static final List<Vector> aerialSwordUp;
 	
 	public static final ParticleWrapper testFlameParticle;
 	public static final ParticleWrapper testSoulFlameParticle;
@@ -74,19 +77,36 @@ public class Cache {
 				new Vector(0.26, 2.23, -2.5),
 				new Vector(0, -1.53, 2.66),
 				new Vector(-0.63, 4.04, 0.74),
-				new Vector(0.14, 1.8, 3.4)
-		));
+				new Vector(0.14, 1.8, 3.4)));
 		dragonKillerArcRatios = new ArrayList<>(List.of(
-				0.86, 2.13, 2.3, 0.87
-		));
+				0.86, 2.13, 2.3, 0.87));
+		
+		aerialForwardSword = new ArrayList<>(List.of(
+				new Vector(1.0961, 3.324, -1.13),
+				new Vector(0, -1.083, -0.791),
+				new Vector(-0.2825, 0.951, 10.509),
+				new Vector(-0.7458, -5.151, -1.808)));
+		
+		aerialSwordDown = new ArrayList<>(List.of(
+				new Vector(-0.35, 2.53, 0.56),
+				new Vector(0, -3.42, -0.581),
+				new Vector(0.329, -0.165, 4.97),
+				new Vector(-0.07, -6.15, 0.98)));
+		
+		aerialSwordUp = new ArrayList<>(List.of(
+				new Vector(-1.19, -0.389, -0.63),
+				new Vector(0.84, -0.053, 3.64),
+				new Vector(-1.449, 0.71, 3.43),
+				new Vector(-0.91, -0.13, 4.83)));
+		
 		
 		testFlameParticle = new ParticleWrapper(Particle.FLAME, 2, 0.025, 0.025, 0.025, 0);
 		testSoulFlameParticle = new ParticleWrapper(Particle.SOUL_FIRE_FLAME, 1, 0.025, 0.025, 0.025, 0);
 		testObsidianTearParticle = new ParticleWrapper(Particle.DRIPPING_OBSIDIAN_TEAR, 1, 0, 0, 0, 0);
 		testLavaDripParticle = new ParticleWrapper(Particle.DRIPPING_LAVA, 2, 0, 0, 0, 0);
 		testSwingParticle = new ParticleWrapper(Particle.DUST_COLOR_TRANSITION, 2, 0, 0, 0, 1,
-				new Particle.DustTransition(Color.fromRGB(142, 142, 142), Color.fromRGB(254, 0, 1), 0.6f));
-		testHitParticle = new ParticleWrapper(Particle.SWEEP_ATTACK, 3, 0, 0, 0, 1);
+				new Particle.DustTransition(Color.fromRGB(211, 222, 240), Color.fromRGB(36, 103, 220), 0.7f));
+		testHitParticle = new ParticleWrapper(Particle.SONIC_BOOM, 3, 0, 0, 0, 0.5);
 		
 		basicSwordBlueTransitionParticle = new ParticleWrapper(Particle.DUST_COLOR_TRANSITION, 5, 0.025, 0.025, 0.025, 1,
 				new Particle.DustTransition(Color.fromRGB(14, 107, 207), Color.fromRGB(162, 226, 255), 0.75f));
