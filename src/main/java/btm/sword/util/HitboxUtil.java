@@ -9,6 +9,7 @@ import org.bukkit.util.Vector;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.function.Predicate;
 
 public class HitboxUtil {
 	public static HashSet<LivingEntity> line(LivingEntity executor, Location o, Vector e, double maxRange, double thickness) {
@@ -80,31 +81,9 @@ public class HitboxUtil {
 		return null;
 	}
 	
-	// plus shaped, in to out (for now)
-	public static LivingEntity multipleRayTrace(LivingEntity executor, double maxRange, int numberExtraRays, double spacingWidth) {
-		int range = (int) Math.round(maxRange);
-		RayTraceResult result = executor.rayTraceEntities(range);
-		Location o = executor.getEyeLocation();
-		Vector e = o.getDirection();
-		List<Vector> basis = VectorUtil.getBasis(o , e);
-		Vector rightStep = basis.getFirst().normalize().multiply(spacingWidth);
-		Vector upStep = basis.get(1).normalize().multiply(spacingWidth);
-		
-		int i = 0;
-		while (result == null && i < numberExtraRays) {
-			result = executor.getWorld().rayTraceEntities(o.clone().add(rightStep.clone().multiply(i+1)) , e, range);
-			if (result == null)
-				result = executor.getWorld().rayTraceEntities(o.clone().add(rightStep.clone().multiply(-1*(i+1))) , e, range);
-			if (result == null)
-				result = executor.getWorld().rayTraceEntities(o.clone().add(upStep.clone().multiply(i+1)) , e, range);
-			if (result == null)
-				result = executor.getWorld().rayTraceEntities(o.clone().add(upStep.clone().multiply(-1*(i+1))) , e, range);
-		}
-		
-		if (result != null && result.getHitEntity() instanceof LivingEntity target && !target.isDead())
-			return target;
-		
-		return null;
+	public static Entity ray(Location origin, Vector direction, double maxDistance, double raySize, Predicate<Entity> filter) {
+		RayTraceResult result = origin.getWorld().rayTraceEntities(origin, direction, maxDistance, raySize, filter);
+		return result == null ? null : result.getHitEntity();
 	}
 	
 	public static HashSet<LivingEntity> sphereAtRayHit(LivingEntity executor, double maxRange, double radius, Vector offsetFromHit, boolean removeExecutor) {

@@ -5,48 +5,75 @@ import btm.sword.system.entity.Combatant;
 import btm.sword.system.entity.SwordEntity;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.display.InteractiveItemArbiter;
-import btm.sword.util.Cache;
-import btm.sword.util.EntityUtil;
-import btm.sword.util.HitboxUtil;
-import btm.sword.util.ParticleWrapper;
+import btm.sword.util.*;
 import org.bukkit.FluidCollisionMode;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.World;
 import org.bukkit.block.data.BlockData;
-import org.bukkit.entity.ArmorStand;
-import org.bukkit.entity.EntityType;
-import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.*;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashSet;
 
 public class MovementAction extends SwordAction {
 	public static void dash(Combatant executor, boolean forward) {
+		double maxDistance = 12;
+		
 		cast (executor, 5L, new BukkitRunnable() {
 			@Override
 			public void run() {
 				LivingEntity ex = executor.entity();
-				boolean onGround = EntityUtil.isOnGround(ex);
+				boolean onGround = executor.isGrounded();
+				Location o = ex.getEyeLocation();
 				
-				HashSet<LivingEntity> hit = HitboxUtil.line(ex, ex.getEyeLocation(), ex.getEyeLocation().getDirection(), 15, 0.7);
-				for (LivingEntity t : hit) {
-					if (t.getType() == EntityType.ARMOR_STAND) {
-						InteractiveItemArbiter.onPickup((ArmorStand) t, executor, null);
-						executor.entity().teleport(t);
-						BlockData blockData = t.getLocation().subtract(new Vector(0,0.75,0)).getBlock().getBlockData();
-						new ParticleWrapper(Particle.DUST_PILLAR, 100, 1.25,1.25,1.25, blockData).display(t.getLocation());
+				Entity targetedItem = HitboxUtil.ray(o, o.getDirection(), maxDistance, 0.7,
+						entity -> entity.getType() == EntityType.ITEM_DISPLAY && !entity.isDead());
+				executor.message("Targeted: " + targetedItem);
+				
+				if (targetedItem instanceof ItemDisplay id
+						&& !id.isDead()
+						&& !id.getItemStack().isEmpty()) {
+					RayTraceResult impedanceCheck = ex.getWorld().rayTraceBlocks(
+							ex.getLocation().add(new Vector(0,0.2,0)),
+							targetedItem.getLocation().subtract(ex.getLocation()).toVector().normalize(),
+							maxDistance/2);
+					
+					if (impedanceCheck != null && impedanceCheck.getHitBlock() == null) {
+						double length = id.getLocation().subtract(ex.getEyeLocation()).length();
+						
+						executor.setVelocity(ex.getEyeLocation().getDirection().multiply(Math.sqrt(length)));
+						
+						Vector u = executor.getFlatDir().multiply(forward ? 1 : -1).add(VectorUtil.UP.clone().multiply(0.25));
+						
+						new BukkitRunnable() {
+							@Override
+							public void run() {
+								if (id.getLocation().subtract(ex.getEyeLocation()).lengthSquared() < 9) {
+									BlockData blockData = ex.getLocation().add(new Vector(0,-0.75,0)).getBlock().getBlockData();
+									new ParticleWrapper(Particle.DUST_PILLAR, 100, 1.25,1.25,1.25, blockData).display(ex.getLocation());
+									
+									executor.setVelocity(u);
+									InteractiveItemArbiter.onGrab(id, executor);
+								}
+								else {
+									ex.setVelocity(new Vector(0,0,0));
+									executor.message("Didn't get there");
+								}
+							}
+						}.runTaskLater(Sword.getInstance(), 4L);
 						return;
+					}
+					else {
+						executor.message("You can't dash to that item...");
 					}
 				}
 				
-				double dashPower = 0.7;
+				double dashPower = 0.85;
 				double s = forward ? dashPower : -dashPower;
-				double finalS = onGround ? s * 1.5 : s;
 				
 				for (int i = 0; i < 2; i++) {
 					new BukkitRunnable() {
@@ -59,7 +86,7 @@ public class MovementAction extends SwordAction {
 									(!forward && dir.dot(new Vector(0, 1, 0)) > 0))) {
 								dir = executor.getFlatDir();
 							}
-							ex.setVelocity(dir.multiply(finalS));
+							ex.setVelocity(dir.multiply(s));
 						}
 					}.runTaskLater(Sword.getInstance(), i);
 				}

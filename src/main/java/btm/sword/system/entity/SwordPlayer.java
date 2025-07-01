@@ -2,6 +2,7 @@ package btm.sword.system.entity;
 
 import btm.sword.Sword;
 import btm.sword.system.action.utility.ThrowAction;
+import btm.sword.system.action.utility.UtilityAction;
 import btm.sword.system.input.InputAction;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.input.InputExecutionTree;
@@ -58,6 +59,14 @@ public class SwordPlayer extends Combatant {
 	}
 	
 	public void act(InputType input) {
+		if (isAttemptingThrow()) {
+			if (input != InputType.RIGHT_HOLD && input != InputType.RIGHT) {
+				ThrowAction.throwCancel(this);
+				resetTree();
+				return;
+			}
+		}
+		
 		if (input == InputType.SWAP && isGrabbing()) {
 			setGrabbing(false);
 			return;
@@ -89,14 +98,12 @@ public class SwordPlayer extends Combatant {
 		
 		if (input == InputType.RIGHT_HOLD || input == InputType.SHIFT_HOLD) {
 			long minTime = inputExecutionTree.getMinHoldLengthOfNext(input);
-			message("~ Min Hold Time: " + minTime + ", Right held for " + timeRightHeld + ", Shift held for: " + timeSneakHeld);
 			if (minTime == -1
 					|| (input == InputType.RIGHT_HOLD && timeRightHeld < minTime)
 					|| (input == InputType.SHIFT_HOLD && timeSneakHeld < minTime)) {
 				
 				if (isAttemptingThrow()) ThrowAction.throwCancel(this);
 				
-				message("       not letting you send input to the tree.");
 				return;
 			}
 		}
@@ -233,7 +240,7 @@ public class SwordPlayer extends Combatant {
 				long curTime = System.currentTimeMillis();
 				if (curTime - lastHoldTimeRecorded > 212L) {
 					onStopRightHold();
-					message("You stopped holding Right (held for " + ((double)(timeRightHeld)/1000) + " s)");
+//					message("You stopped holding Right (held for " + ((double)(timeRightHeld)/1000) + " s)");
 					resetHoldingRight();
 					cancel();
 				}

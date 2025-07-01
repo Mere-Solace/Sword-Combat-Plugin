@@ -9,16 +9,10 @@ import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.display.InteractiveItemArbiter;
 import btm.sword.util.HitboxUtil;
 import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.block.Block;
-import org.bukkit.block.data.BlockData;
-import org.bukkit.entity.ArmorStand;
-import org.bukkit.entity.EntityType;
-import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.*;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
-import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
 
 import java.util.HashSet;
@@ -31,7 +25,7 @@ public class GrabAction extends SwordAction {
 			public void run() {
 				int baseDuration = 60;
 				double baseGrabRange = 3;
-				double baseGrabThickness = 0.3;
+				double baseGrabThickness = 0.4;
 				
 				long duration = (long) executor.calcValueAdditive(AspectType.MIGHT, 100L, baseDuration, 0.2);
 				double range = executor.calcValueAdditive(AspectType.WILLPOWER, 4.5, baseGrabRange, 0.1);
@@ -40,21 +34,17 @@ public class GrabAction extends SwordAction {
 				LivingEntity ex = executor.entity();
 				Location o = ex.getEyeLocation();
 				
-				HashSet<LivingEntity> hit = HitboxUtil.line(ex, o, o.getDirection(), range, grabThickness);
-				if (hit.isEmpty()) {
+				Entity grabbed  = HitboxUtil.ray(o, o.getDirection(), range, grabThickness, entity -> !entity.isDead() && entity.getUniqueId() != ex.getUniqueId());
+				executor.message("Grabbed: " + grabbed);
+				
+				if (grabbed != null && grabbed.getType() == EntityType.ITEM_DISPLAY) {
+					InteractiveItemArbiter.onGrab((ItemDisplay) grabbed, executor);
 					return;
 				}
 				
-				for (LivingEntity h : hit) {
-					if (h.getType() == EntityType.ARMOR_STAND) {
-						BlockData lodgedBlockData = Material.AIR.createBlockData();
-						RayTraceResult result = h.getWorld().rayTraceBlocks(h.getLocation(), new Vector(0, -1, 0), 2);
-						Block b = null;
-						if (result != null) b = result.getHitBlock();
-						if (b != null) lodgedBlockData = b.getBlockData();
-						InteractiveItemArbiter.onPickup((ArmorStand) h, executor, lodgedBlockData);
-						return;
-					}
+				HashSet<LivingEntity> hit = HitboxUtil.line(ex, o, o.getDirection(), range, grabThickness);
+				if (hit.isEmpty()) {
+					return;
 				}
 				
 				LivingEntity target = hit.stream().toList().getFirst();

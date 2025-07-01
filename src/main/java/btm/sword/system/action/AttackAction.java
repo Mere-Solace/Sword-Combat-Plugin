@@ -29,17 +29,18 @@ public class AttackAction extends SwordAction {
 		Material item = executor.getItemTypeInHand(true);
 		double dot = executor.entity().getEyeLocation().getDirection().dot(VectorUtil.UP);
 		
-		if (EntityUtil.isOnGround(executor.entity())) {
+		if (executor.isGrounded()) {
 			if (dot < 0.5 && dot > -0.5) {
-				for (var entry : attackMap.entrySet()) {
-					if (item.name().endsWith(entry.getKey())) {
-						entry.getValue().accept(executor, type);
-						return;
-					}
-				}
+			
 			}
 			else {
 				executor.message("tilted attack");
+			}
+			for (var entry : attackMap.entrySet()) {
+				if (item.name().endsWith(entry.getKey())) {
+					entry.getValue().accept(executor, type);
+					return;
+				}
 			}
 		}
 		else {

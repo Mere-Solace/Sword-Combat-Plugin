@@ -48,7 +48,6 @@ public class ThrowAction extends SwordAction {
 		if (executor instanceof SwordPlayer sp) {
 			sp.setThrownItemIndex();
 			indexOfThrown = sp.getThrownItemIndex();
-			executor.message("Index of item thrown: " + indexOfThrown);
 			executor.setItemTypeInHand(Material.GUNPOWDER, true);
 		}
 		else {
@@ -116,9 +115,10 @@ public class ThrowAction extends SwordAction {
 			executor.setItemStackInHand(executor.getThrownItemStack(), true);
 		}
 	}
-	// TODO DONT ALLOW INPUT WHILE HOLDING THROW!
+
 	public static void throwItem(Combatant executor) {
 		executor.setAttemptingThrow(false);
+		executor.setThrowCancelled(false);
 		executor.setThrowSuccessful(true);
 		cast(executor, 10L, new BukkitRunnable() {
 			@Override
@@ -129,7 +129,6 @@ public class ThrowAction extends SwordAction {
 				double yOffset = 0.2;
 				double zOffset = -0.2;
 				
-				//#region entity and item initialization
 				LivingEntity ex = executor.entity();
 				World world = ex.getWorld();
 				
@@ -148,14 +147,10 @@ public class ThrowAction extends SwordAction {
 				}
 				BlockData data = thrownBlockData;
 				ParticleWrapper bt = blockTrail;
-				//#endregion
+
+				Vector planeDir = executor.getFlatDir();
 				
-				//#region location, direction, and transform
 				Location eyeLoc = ex.getEyeLocation();
-				double pitchRads = Math.toRadians(eyeLoc.getPitch());
-				double yawRads = Math.toRadians(eyeLoc.getYaw());
-				
-				Vector planeDir = new Vector(-Math.sin(yawRads), 0, Math.cos(yawRads));
 				
 				List<Vector> basis = VectorUtil.getBasis(eyeLoc, planeDir);
 				Vector right = basis.getFirst();
@@ -170,6 +165,7 @@ public class ThrowAction extends SwordAction {
 				
 				ItemDisplay itemDisplay = executor.getThrownItemDisplay();
 				itemDisplay.teleport(throwOrigin);
+				InteractiveItemArbiter.put(itemDisplay);
 				
 				Transformation tr = new Transformation(
 						new Vector3f(0,0,0),
@@ -177,7 +173,6 @@ public class ThrowAction extends SwordAction {
 						new Vector3f(scale,scale,scale),
 						new Quaternionf());
 				itemDisplay.setTransformation(tr);
-				//#endregion
 				
 				Predicate<Entity> hitMask = entity ->
 						!entity.isDead()
@@ -185,23 +180,27 @@ public class ThrowAction extends SwordAction {
 						&& !entity.getType().equals(EntityType.ITEM_DISPLAY)
 						&& !entity.getType().equals(EntityType.ARMOR_STAND);
 				
-				Location[] prev = {eyeLoc};
-				int[] step = {0};
+				double pitchRads = Math.toRadians(eyeLoc.getPitch());
 				double yVelocityCoeff = force * Math.sin(-pitchRads);
 				double yAccelerationCoeff = force/45;
 				double forwardCoeff = force * Math.cos(pitchRads);
+				double[] yCurDistance = {-yVelocityCoeff};
+				double[] zCurDistance = {-forwardCoeff};
+				
+				Location[] prev = {eyeLoc};
+				int[] step = {0};
 				// flight runnable
 				new BukkitRunnable() {
 					@Override
 					public void run() {
-						double yVelocity = yVelocityCoeff * step[0];
+						yCurDistance[0] += yVelocityCoeff;
 						double yAcceleration = yAccelerationCoeff * step[0] * step[0];
-						double y = yVelocity - yAcceleration;
+						double y = yCurDistance[0] - yAcceleration;
 						
-						double forwardVelocity = forwardCoeff * step[0];
+						zCurDistance[0] += forwardCoeff;
 						
 						// calc displacement and then current pos
-						Vector displacement = planeDir.clone().multiply(forwardVelocity).add(up.clone().multiply(y));
+						Vector displacement = planeDir.clone().multiply(zCurDistance[0]).add(up.clone().multiply(y));
 						Location cur = throwOrigin.clone().add(displacement);
 						// calc velocity vector from cur and prev and then check if it's a valid vector
 						Vector velocity = cur.clone().subtract(prev[0]).toVector();
@@ -225,7 +224,7 @@ public class ThrowAction extends SwordAction {
 							tr.getLeftRotation().slerp(tr.getLeftRotation().rotateZ((float) (Math.PI / 4)), 0.75f, lRotation);
 						}
 						itemDisplay.setTransformation(new Transformation(
-								new Vector3f(0, (float) y, (float) forwardVelocity),
+								new Vector3f(0, (float) y, (float) zCurDistance[0]),
 								lRotation,
 								tr.getScale(),
 								tr.getRightRotation()
@@ -245,7 +244,7 @@ public class ThrowAction extends SwordAction {
 							return;
 						}
 						
-						//#region if an impaling-type weapon, calc ray trace
+						//if an impaling-type weapon, calc ray trace
 						if (spearLike[0]) {
 							RayTraceResult result = validVelocity ?
 									world.rayTraceEntities(cur, vNorm, scale*force*0.5, hitMask) :
@@ -265,7 +264,6 @@ public class ThrowAction extends SwordAction {
 								
 								if (swordImpaled != null) {
 									swordImpaled.addImpalement();
-									executor.message("This lil guy is impaled by: " + swordImpaled.getNumberOfImpalements());
 									Vector offset = spearLike[0] ?
 											cur.clone().subtract(vNorm.multiply(scale/2)).subtract(impaled.getLocation()).toVector() :
 											cur.clone().subtract(impaled.getLocation()).toVector();
@@ -281,44 +279,35 @@ public class ThrowAction extends SwordAction {
 									boolean check = projIntoRightPlane.dot(eRight) >= 0;
 									double relativeYawOffset = Math.acos(eForward.dot(projIntoRightPlane));
 									
-//									impaled.setAI(false);
 									Transformation orientation = new Transformation(
 											new Vector3f ((float) offset.getX() * 0.15f, (float) offset.getY(), (float) offset.getZ() * 0.15f),
 											itemDisplay.getTransformation().getLeftRotation(),
 											new Vector3f(scale),
 											new Quaternionf()
 									);
-									// TODO fix angle of sword sticking out of impaled targets
-									EntityUtil.itemDisplayFollow(swordImpaled, itemDisplay, relativeYawOffset, check, orientation);
-									swordImpaled.hit(executor, 1, 2, 75,60,velocity.clone().normalize().multiply(3));
 									
-									ArmorStand marker = (ArmorStand) world.spawnEntity(cur, EntityType.ARMOR_STAND);
-									InteractiveItemArbiter.register(marker, itemDisplay);
-									Location testLoc = impaled.getLocation().add(VectorUtil.UP.clone().multiply(offset.getY()));
+									EntityUtil.itemDisplayFollow(swordImpaled, itemDisplay, relativeYawOffset, check, orientation);
+									swordImpaled.hit(executor, 1, 1, 75,60,velocity.clone().normalize().multiply(3));
+									
+									LivingEntity finalImpaled = impaled;
 									new BukkitRunnable() {
 										@Override
 										public void run() {
-											if (marker.isDead() || itemDisplay.isDead()) {
+											if (itemDisplay.isDead()) {
 												swordImpaled.removeImpalement();
-												executor.message("This lil guy is impaled by: " + swordImpaled.getNumberOfImpalements());
-												executor.message("Item was retrieved");
-												itemDisplay.remove();
-												marker.remove();
 												cancel();
 											}
-											
-											DisplayUtil.line(List.of(Cache.basicSwordBlueTransitionParticle), testLoc, projIntoRightPlane, 2, 0.2);
-											DisplayUtil.line(List.of(Cache.testSwingParticle), testLoc, entityDir, 2, 0.2);
+											if (Bukkit.getCurrentTick() % 4 == 0)
+												DisplayUtil.line(List.of(Cache.basicSwordBlueTransitionParticle),
+														finalImpaled.getLocation().add(VectorUtil.UP.clone().multiply(offset.getY())),
+														velocity,
+														2, 0.2);
 											
 											Location itemPos = itemDisplay.getLocation().add(new Vector(0, offset.getY(), 0));
-											Cache.basicSwordWhiteTransitionParticle.display(itemPos);
-											
-											marker.teleport(itemPos);
 											
 											if (swordImpaled.isDead()) {
 												swordImpaled.entity().getWorld().dropItemNaturally(itemPos, itemDisplay.getItemStack());
 												itemDisplay.remove();
-												marker.remove();
 												cancel();
 											}
 										}
@@ -328,7 +317,6 @@ public class ThrowAction extends SwordAction {
 								}
 							}
 						}
-						//#endregion
 						
 						// if entities other than the executor were caught in the path, hit them and create an explosion, and drop the item in the air
 						if (!hit.isEmpty()) {
@@ -369,22 +357,15 @@ public class ThrowAction extends SwordAction {
 										.display(cur);
 								new ParticleWrapper(Particle.DUST_PILLAR, 60, 0.5,0.5,0.5, block.getHitBlock().getBlockData())
 										.display(cur);
-								
-								executor.message("  Lodged in the ground now");
-
-								// create a marker to be used for retrieving the item with a 'grab' action
-								ArmorStand marker = (ArmorStand) world.spawnEntity(cur, EntityType.ARMOR_STAND);
-								InteractiveItemArbiter.register(marker, itemDisplay);
-								
+					
 								int x = 1;
-								while (!marker.getLocation().getBlock().getType().isAir()) {
-									marker.teleport(cur.clone().add(velocity.normalize().multiply(-0.25*x)));
+								while (!cur.getBlock().getType().isAir()) {
+									cur.add(velocity.normalize().multiply(-0.25*x));
 									x++;
-									if (x > 30)
-										executor.message("Some wacky stuff just happened");
+									if (x > 30) break;
 								}
-								executor.message(marker.getLocation().toString());
-								itemDisplay.teleport(marker.getLocation().setDirection(forward));
+
+								itemDisplay.teleport(cur.setDirection(forward));
 								Transformation curTr = itemDisplay.getTransformation();
 								Transformation newTr = new Transformation(
 										new Vector3f(),
@@ -399,15 +380,20 @@ public class ThrowAction extends SwordAction {
 									public void run() {
 										if (!itemDisplay.isDead()) {
 											itemDisplay.remove();
-											InteractiveItemArbiter.remove(marker);
 										}
 									}
 								}.runTaskLater(Sword.getInstance(), 1000L);
+								
 								if (data != null) {
 									new ParticleWrapper(Particle.DUST_PILLAR, 60, 0.5,0.5,0.5, data).display(cur);
 								}
 								cancel();
 							}
+						}
+						
+						if (itemDisplay.isDead()) {
+							cancel();
+							return;
 						}
 						
 						Cache.throwTrailParticle.display(cur);

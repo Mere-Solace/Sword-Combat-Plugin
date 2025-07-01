@@ -4,6 +4,7 @@ import btm.sword.Sword;
 import btm.sword.system.combat.Affliction;
 import btm.sword.system.playerdata.CombatProfile;
 import btm.sword.util.Cache;
+import btm.sword.util.EntityUtil;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.LivingEntity;
@@ -26,9 +27,12 @@ public abstract class SwordEntity {
 	protected EntityAspects aspects;
 	
 	private boolean tick;
+	private long ticks;
 	
 	private long timeOfLastAttack;
 	private int durationOfLastAttack;
+	
+	private boolean grounded;
 	
 	private boolean hit;
 	private long curTicksInvulnerable;
@@ -58,6 +62,7 @@ public abstract class SwordEntity {
 		aspects = new EntityAspects(combatProfile);
 		
 		tick = true;
+		ticks = 0L;
 		
 		timeOfLastAttack = 0L;
 		durationOfLastAttack = 0;
@@ -84,6 +89,7 @@ public abstract class SwordEntity {
 				if (tick) {
 					onTick();
 				}
+				ticks++;
 			}
 		}.runTaskTimer(Sword.getInstance(), 0L, 1L);
 	}
@@ -97,12 +103,22 @@ public abstract class SwordEntity {
 			}
 		}
 		if (!(self instanceof Player)) {
-			self.setAI(!isImpaled());
+		
+//			self.setAI(!isImpaled());
+		}
+		else {
+			if (ticks % 3 == 0) {
+				grounded = EntityUtil.isOnGround(self);
+				if (grounded && this instanceof Combatant c) {
+					c.resetAirDashesPerformed();
+				}
+			}
 		}
 	}
 	
 	public void onSpawn() {
 		resetResources();
+		ticks = 0;
 	}
 	
 	public abstract void onDeath();
@@ -131,6 +147,10 @@ public abstract class SwordEntity {
 		this.tick = tick;
 	}
 	
+	public boolean isGrounded() {
+		return grounded;
+	}
+	
 	public boolean isGrabbed() {
 		return grabbed;
 	}
@@ -156,7 +176,7 @@ public abstract class SwordEntity {
 	}
 	
 	public boolean isImpaled() {
-		return numberOfImpalements <= 0;
+		return numberOfImpalements > 0;
 	}
 	
 	public int getNumberOfImpalements() {
@@ -205,7 +225,6 @@ public abstract class SwordEntity {
 			
 			if (shardsLost >= 0.75 * aspects.shards().effectiveValue()) {
 				aspects.toughness().setCurPercent(0.9f);
-				source.message("You dealt the most amount of damage possible while this lad's toughness was broken");
 			}
 		}
 		
@@ -216,10 +235,10 @@ public abstract class SwordEntity {
 		for (Affliction affliction : afflictions) {
 			affliction.start(this);
 		}
-
-		source.message("Hit that guy. He now has: " + aspects.shards().cur() + " pure shards,  "
-				+ aspects.toughness().cur() + " toughness,  "
-				+ " and " + aspects.soulfire().cur() + " soulfire.");
+//
+//		source.message("Hit that guy. He now has: " + aspects.shards().cur() + " pure shards,  "
+//				+ aspects.toughness().cur() + " toughness,  "
+//				+ " and " + aspects.soulfire().cur() + " soulfire.");
 	}
 	
 	public void resetResources() {
@@ -297,7 +316,6 @@ public abstract class SwordEntity {
 				for (ItemStack item : inv.getContents()) {
 					i++;
 					if (item == null || item.getType() == Material.AIR || item.isEmpty()) {
-						message("   giving item to location: " + i);
 						inv.setItem(i, itemStack);
 						return true;
 					}
@@ -356,5 +374,9 @@ public abstract class SwordEntity {
 	public Vector getFlatDir() {
 		double yawRads = Math.toRadians(self.getYaw());
 		return new Vector(-Math.sin(yawRads), 0, Math.cos(yawRads));
+	}
+	
+	public void setVelocity(Vector v) {
+		self.setVelocity(v);
 	}
 }

@@ -3,14 +3,14 @@ package btm.sword.util;
 import btm.sword.Sword;
 import btm.sword.system.entity.SwordEntity;
 import org.bukkit.Location;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.ItemDisplay;
-import org.bukkit.entity.LivingEntity;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Transformation;
 import org.bukkit.util.Vector;
 
 public class EntityUtil {
-	public static boolean isOnGround(LivingEntity entity) {
+	public static boolean isOnGround(Entity entity) {
 		double maxCheckDist = 0.3;
 		Location base = entity.getLocation().add(new Vector(0, -maxCheckDist, 0));
 		
@@ -37,8 +37,8 @@ public class EntityUtil {
 				Location l = entity.entity().getLocation();
 				
 				double yawRads = clockwise ?
-						Math.toRadians(entity.entity().getBodyYaw()) - relativeOffsetAngle :
-						Math.toRadians(entity.entity().getBodyYaw()) + relativeOffsetAngle;
+						Math.toRadians(entity.entity().getBodyYaw()) + relativeOffsetAngle :
+						Math.toRadians(entity.entity().getBodyYaw()) - relativeOffsetAngle;
 				
 				l.setDirection(new Vector(-Math.sin(yawRads), 0, Math.cos(yawRads)));
 				

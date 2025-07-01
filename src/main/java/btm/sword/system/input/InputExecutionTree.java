@@ -20,7 +20,7 @@ import java.util.List;
 public class InputExecutionTree {
 	private static final Plugin plugin = Sword.getInstance();
 	
-	private static final InputNode root = new InputNode(null);
+	private final InputNode root = new InputNode(null);
 	
 	private InputNode currentNode;
 	private StringBuilder sequenceToDisplay;
@@ -90,8 +90,6 @@ public class InputExecutionTree {
 		stopTimeoutTimer();
 		startTimeoutTimer();
 	}
-	
-	
 	
 	public void reset() {
 		currentNode = root;
@@ -186,16 +184,22 @@ public class InputExecutionTree {
 						executor -> MovementAction.dash(executor, true),
 						executor -> executor.calcCooldown(AspectType.CELERITY, 200L, 1000L, 10),
 						Combatant::canAirDash,
-						false, true),
-				false, true, true);
+						false,
+						true),
+				false,
+				true,
+				true);
 
 		add(List.of(InputType.SHIFT, InputType.SWAP),
 				new InputAction(
 						executor -> MovementAction.dash(executor, false),
 						executor -> executor.calcCooldown(AspectType.CELERITY, 200L, 1000L, 10),
 						Combatant::canAirDash,
-						false, true),
-				false, true, true);
+						false,
+						true),
+				false,
+				true,
+				true);
 
 		// grab
 		add(List.of(InputType.SHIFT, InputType.LEFT),
@@ -203,8 +207,11 @@ public class InputExecutionTree {
 						GrabAction::grab,
 						executor -> executor.calcCooldown(AspectType.FORTITUDE, 200L, 1000L, 10),
 						Combatant::canPerformAction,
-						false, true),
-				false, false, true);
+						false,
+						true),
+				false,
+				false,
+				true);
 
 			// Item dependent actions:
 		// basic attacks
@@ -213,24 +220,33 @@ public class InputExecutionTree {
 						executor -> AttackAction.basicAttack(executor, AttackType.BASIC_1),
 						executor -> Math.max(0, (executor.getTimeOfLastAttack() + executor.getDurationOfLastAttack()) - System.currentTimeMillis()),
 						Combatant::canPerformAction,
-						false, true),
-				true, true, false);
+						false,
+						true),
+				true,
+				true,
+				false);
 		
 		add(List.of(InputType.LEFT, InputType.LEFT),
 				new InputAction(
 						executor -> AttackAction.basicAttack(executor, AttackType.BASIC_2),
 						executor -> 0L,
 						Combatant::canPerformAction,
-						false, true),
-				true, true, false);
+						false,
+						true),
+				true,
+				true,
+				false);
 
 		add(List.of(InputType.LEFT, InputType.LEFT, InputType.LEFT),
 				new InputAction(
 						executor -> AttackAction.basicAttack(executor, AttackType.BASIC_3),
 						executor -> 0L,
 						Combatant::canPerformAction,
-						false, true),
-				true, true, false);
+						false,
+						true),
+				true,
+				true,
+				false);
 		
 		// throw hold action
 		add(List.of(InputType.DROP, InputType.RIGHT),
@@ -238,8 +254,11 @@ public class InputExecutionTree {
 						ThrowAction::throwReady,
 						executor -> 0L,
 						Combatant::canPerformAction,
-						false, false),
-				true, true, true);
+						false,
+						false),
+				true,
+				true,
+				true);
 		
 		// throw
 		add(List.of(InputType.DROP, InputType.RIGHT, InputType.RIGHT_HOLD),
@@ -247,45 +266,59 @@ public class InputExecutionTree {
 						ThrowAction::throwItem,
 						executor -> 0L,
 						Combatant::canPerformAction,
-						false, false),
-				true, true, true, 600L);
+						false,
+						false),
+				true,
+				true,
+				true,
+				600L);
 		
 		// skills
-		add(List.of(InputType.SWAP, InputType.RIGHT, InputType.SHIFT),
-				new InputAction(
-						executor -> UtilityAction.soundTest(executor, 0),
-						executor -> 0L,
-						Combatant::canPerformAction,
-						false, false),
-				true, true, true);
-		
-		add(List.of(InputType.SWAP, InputType.RIGHT, InputType.DROP),
-				new InputAction(
-						UtilityAction::particleTest,
-						executor -> 0L,
-						Combatant::canPerformAction,
-						false, false),
-				true, false, true);
+//		add(List.of(InputType.SWAP, InputType.RIGHT, InputType.SHIFT),
+//				new InputAction(
+//						executor -> UtilityAction.soundTest(executor, 0),
+//						executor -> 0L,
+//						Combatant::canPerformAction,
+//						false, false),
+//				true, true, true);
+//
+//		add(List.of(InputType.SWAP, InputType.RIGHT, InputType.DROP),
+//				new InputAction(
+//						UtilityAction::particleTest,
+//						executor -> 0L,
+//						Combatant::canPerformAction,
+//						false, false),
+//				true, false, true);
 		
 		add(List.of(InputType.SWAP, InputType.RIGHT, InputType.LEFT),
 				null,
-				true, false, true);
+				true,
+				false,
+				true);
 		
 		add(List.of(InputType.RIGHT, InputType.RIGHT_HOLD),
 				new InputAction(
 						executor -> MovementAction.dash(executor, true),
 						executor -> executor.calcCooldown(AspectType.CELERITY, 200L,1400L, 10),
 						Combatant::canAirDash,
-						true, true),
-				true, true, true, 1000L);
+						true,
+						true),
+				true,
+				true,
+				true,
+				1000L);
 		
 		add(List.of(InputType.SHIFT, InputType.SHIFT_HOLD),
 				new InputAction(
 						UtilityAction::death,
 						executor -> executor.calcCooldown(AspectType.CELERITY, 200L,1400L, 10),
 						Combatant::canPerformAction,
-						true, true),
-				true, true, true, 500L);
+						true,
+						true),
+				true,
+				true,
+				true,
+				500L);
 		
 		// Drop an item "ability"
 		add(List.of(InputType.DROP, InputType.DROP, InputType.DROP),
@@ -293,8 +326,11 @@ public class InputExecutionTree {
 						executor -> UtilityAction.allowDrop((SwordPlayer) executor),
 						executor -> 0L,
 						Combatant::canPerformAction,
-						false, false),
-				true, true, true);
+						false,
+						false),
+				true,
+				true,
+				true);
 	}
 	
 	public static class InputNode {

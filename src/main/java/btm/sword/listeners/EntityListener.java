@@ -21,7 +21,7 @@ public class EntityListener implements Listener {
 	public void entitySpawnEvent(EntitySpawnEvent event) {
 		Entity entity = event.getEntity();
 		if (entity instanceof LivingEntity) {
-			SwordEntityArbiter.register((LivingEntity) entity);
+			SwordEntityArbiter.register(entity);
 			SwordEntityArbiter.get(entity.getUniqueId()).resetResources();
 		}
 	}

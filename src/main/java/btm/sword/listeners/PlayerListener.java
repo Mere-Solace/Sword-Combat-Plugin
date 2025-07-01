@@ -6,14 +6,10 @@ import btm.sword.system.entity.Combatant;
 import btm.sword.system.entity.SwordEntity;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.SwordPlayer;
-import btm.sword.system.event.EventTasks;
-import btm.sword.system.event.PlayerGroundedUpdateEvent;
-import btm.sword.util.EntityUtil;
 import io.papermc.paper.event.player.AsyncChatEvent;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
-import org.bukkit.Bukkit;
 import org.bukkit.Particle;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -23,7 +19,6 @@ import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
-import org.bukkit.scheduler.BukkitRunnable;
 import org.intellij.lang.annotations.Subst;
 
 public class PlayerListener implements Listener {
@@ -32,14 +27,12 @@ public class PlayerListener implements Listener {
 		Player p = event.getPlayer();
 		SwordEntityArbiter.register(p);
 		p.sendMessage("Hello!");
-		EventTasks.playerGroundedMap.put(p.getUniqueId(), EntityUtil.isOnGround(p));
 	}
 	
 	@EventHandler
 	public void onPlayerLeave(PlayerQuitEvent event) {
 		SwordEntityArbiter.remove(event.getPlayer().getUniqueId());
 		Sword.getInstance().getLogger().info(event.getPlayer().getName() + " has left the server ;(");
-		EventTasks.playerGroundedMap.remove(event.getPlayer().getUniqueId());
 	}
 	
 	@EventHandler
@@ -55,16 +48,6 @@ public class PlayerListener implements Listener {
 		event.getPlayer().sendMessage("You: " + swordPlayer);
 		
 		swordPlayer.onSpawn();
-	}
-	
-	@EventHandler
-	public void onGroundedUpdate(PlayerGroundedUpdateEvent event) {
-		SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId());
-
-		if (event.isGrounded()) {
-			swordPlayer.resetAirDashesPerformed();
-			swordPlayer.message("Resetting your # air dashes");
-		}
 	}
 	
 	@EventHandler

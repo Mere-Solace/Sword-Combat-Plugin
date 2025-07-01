@@ -4,7 +4,6 @@ import btm.sword.commands.CommandManager;
 import btm.sword.listeners.EntityListener;
 import btm.sword.listeners.InputListener;
 import btm.sword.listeners.PlayerListener;
-import btm.sword.system.event.EventTasks;
 import btm.sword.system.playerdata.PlayerDataManager;
 
 import org.bukkit.plugin.java.JavaPlugin;
@@ -20,8 +19,6 @@ public final class Sword extends JavaPlugin {
 		getServer().getPluginManager().registerEvents(new PlayerListener(), this);
 		getServer().getPluginManager().registerEvents(new EntityListener(), this);
 		
-		EventTasks.startPlayerGroundedTask();
-		
 		CommandManager.register();
 		
 		PlayerDataManager.initialize();
@@ -32,8 +29,6 @@ public final class Sword extends JavaPlugin {
 	@Override
 	public void onDisable() {
 		PlayerDataManager.shutdown();
-		
-		EventTasks.playerGroundedUpdateEventTask.cancel();
 		
 		getLogger().info("~ Sword Plugin has been disabled ~");
 	}
