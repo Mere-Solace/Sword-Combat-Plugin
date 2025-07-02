@@ -40,6 +40,7 @@ public abstract class SwordEntity {
 	
 	private boolean grabbed;
 	private int numberOfImpalements;
+	private boolean pinned;
 	private boolean aiEnabled;
 	
 	protected boolean shielding;
@@ -103,8 +104,7 @@ public abstract class SwordEntity {
 			}
 		}
 		if (!(self instanceof Player)) {
-		
-//			self.setAI(!isImpaled());
+			self.setAI(!isPinned());
 		}
 		else {
 			if (ticks % 3 == 0) {
@@ -181,6 +181,14 @@ public abstract class SwordEntity {
 	
 	public int getNumberOfImpalements() {
 		return numberOfImpalements;
+	}
+	
+	public boolean isPinned() {
+		return pinned;
+	}
+	
+	public void setPinned(boolean pinned) {
+		this.pinned = pinned;
 	}
 	
 	public boolean isAiEnabled() {

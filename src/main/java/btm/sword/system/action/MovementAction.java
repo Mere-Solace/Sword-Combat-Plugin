@@ -4,7 +4,7 @@ import btm.sword.Sword;
 import btm.sword.system.entity.Combatant;
 import btm.sword.system.entity.SwordEntity;
 import btm.sword.system.entity.aspect.AspectType;
-import btm.sword.system.entity.display.InteractiveItemArbiter;
+import btm.sword.system.action.utility.thrown.InteractiveItemArbiter;
 import btm.sword.util.*;
 import org.bukkit.FluidCollisionMode;
 import org.bukkit.Location;

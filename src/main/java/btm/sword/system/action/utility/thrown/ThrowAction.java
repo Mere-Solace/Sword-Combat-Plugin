@@ -1,4 +1,4 @@
-package btm.sword.system.action.utility;
+package btm.sword.system.action.utility.thrown;
 
 import btm.sword.Sword;
 import btm.sword.system.action.SwordAction;
@@ -6,7 +6,6 @@ import btm.sword.system.entity.Combatant;
 import btm.sword.system.entity.SwordEntity;
 import btm.sword.system.entity.SwordPlayer;
 import btm.sword.system.entity.SwordEntityArbiter;
-import btm.sword.system.entity.display.InteractiveItemArbiter;
 import btm.sword.util.*;
 import org.bukkit.*;
 import org.bukkit.block.data.BlockData;

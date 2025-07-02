@@ -47,4 +47,27 @@ public class EntityUtil {
 			}
 		}.runTaskTimer(Sword.getInstance(), 0L, 2L);
 	}
+	
+	public static void itemDisplayFollowTest(SwordEntity entity, ItemDisplay itemDisplay, double heightOffset, double relativeOffsetAngle) {
+		Transformation orientation = itemDisplay.getTransformation();
+		Vector offset = VectorUtil.UP.clone().multiply(heightOffset);
+		
+		new BukkitRunnable() {
+			@Override
+			public void run() {
+				if (entity.isDead() || itemDisplay.isDead() || itemDisplay.getItemStack().getType().isAir()) {
+					cancel();
+				}
+				
+				Location l = entity.entity().getLocation().add(offset);
+				
+				double yawRads = Math.toRadians(entity.entity().getBodyYaw()) + relativeOffsetAngle;
+				
+				l.setDirection(new Vector(-Math.sin(yawRads), 0, Math.cos(yawRads)));
+				
+				itemDisplay.teleport(l);
+				itemDisplay.setTransformation(orientation);
+			}
+		}.runTaskTimer(Sword.getInstance(), 0L, 2L);
+	}
 }

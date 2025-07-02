@@ -1,8 +1,7 @@
 package btm.sword.system.entity;
 
 import btm.sword.Sword;
-import btm.sword.system.action.utility.ThrowAction;
-import btm.sword.system.action.utility.UtilityAction;
+import btm.sword.system.action.utility.thrown.ThrowAction;
 import btm.sword.system.input.InputAction;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.input.InputExecutionTree;

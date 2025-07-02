@@ -4,7 +4,7 @@ import btm.sword.Sword;
 import btm.sword.system.action.AttackAction;
 import btm.sword.system.action.MovementAction;
 import btm.sword.system.action.utility.GrabAction;
-import btm.sword.system.action.utility.ThrowAction;
+import btm.sword.system.action.utility.thrown.ThrowAction;
 import btm.sword.system.action.type.AttackType;
 import btm.sword.system.action.utility.UtilityAction;
 import btm.sword.system.entity.Combatant;
