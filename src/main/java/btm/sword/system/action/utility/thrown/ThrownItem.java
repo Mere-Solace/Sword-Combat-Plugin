@@ -4,17 +4,14 @@ import btm.sword.Sword;
 import btm.sword.system.entity.Combatant;
 import btm.sword.system.entity.SwordEntity;
 import btm.sword.system.entity.SwordEntityArbiter;
+import btm.sword.system.entity.SwordPlayer;
 import btm.sword.util.*;
-import org.bukkit.FluidCollisionMode;
-import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.Particle;
+import org.bukkit.*;
 import org.bukkit.block.Block;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.EntityType;
-import org.bukkit.entity.ItemDisplay;
-import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.*;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.RayTraceResult;
@@ -23,14 +20,19 @@ import org.bukkit.util.Vector;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
+import java.util.List;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
 public class ThrownItem {
-	private ItemDisplay display;
-	private Combatant thrower;
-	
+	private final ItemDisplay display;
+	private final Combatant thrower;
+	private final boolean mainHandThrow;
 	private final ParticleWrapper blockTrail;
+	
+	private float xDisplayOffset;
+	private float yDisplayOffset;
+	private float zDisplayOffset;
 	
 	private Location origin;
 	private Location cur;
@@ -52,36 +54,82 @@ public class ThrownItem {
 	
 	private BukkitTask disposeTask;
 
-	public ThrownItem(Combatant thrower, ItemDisplay display) {
+	public ThrownItem(Combatant thrower, ItemDisplay display, boolean mainHandThrow) {
 		this.thrower = thrower;
 		this.display = display;
+		this.mainHandThrow = mainHandThrow;
 		
 		blockTrail = display.getItemStack().getType().isBlock() ?
 				new ParticleWrapper(Particle.BLOCK, 5, 0.25,  0.25,  0.25, display.getItemStack().getType().createBlockData()) :
 				null;
+		
+		thrower.setMainHandItemStackDuringThrow(thrower.getItemStackInHand(true));
+		thrower.setOffHandItemStackDuringThrow(thrower.getItemStackInHand(false));
+		xDisplayOffset = mainHandThrow ? -1 : 1;
+		yDisplayOffset = 0.1f;
+		zDisplayOffset = -0.25f;
+	}
+	
+	public void onReady() {
+		determineOrientation();
+		
+		if (thrower instanceof SwordPlayer sp) {
+			sp.setThrownItemIndex();
+		}
+		
+		thrower.setItemTypeInHand(Material.GUNPOWDER, true);
+		thrower.setItemTypeInHand(Material.GUNPOWDER, false);
+		
+		LivingEntity ex = thrower.entity();
+		
+		int[] step = {0};
+		new BukkitRunnable() {
+			@Override
+			public void run() {
+				if (thrower.isThrowCancelled()) {
+					display.remove();
+					ThrowAction.throwCancel(thrower);
+					thrower.setThrownItem(null);
+					cancel();
+				}
+				else if (thrower.isThrowSuccessful()) {
+					thrower.setItemTypeInHand(Material.AIR, mainHandThrow);
+					ItemStack toReturn = !mainHandThrow ? thrower.getMainHandItemStackDuringThrow() : thrower.getOffHandItemStackDuringThrow();
+					thrower.setItemStackInHand(toReturn, !mainHandThrow);
+					cancel();
+				}
+				ex.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 1, 2));
+				
+				if (step[0] % 2 == 0) {
+					display.teleport(ex.getEyeLocation());
+				}
+				step[0]++;
+			}
+		}.runTaskTimer(Sword.getInstance(), 0L, 1L);
 	}
 	
 	// when the item is thrown
-	public void onRelease(Combatant executor, double initialVelocity) {
-		display = executor.getThrownItemDisplay();
-		determineOrientation(display.getItemStack());
-		thrower = executor;
-		
+	public void onRelease(double initialVelocity) {
 		InteractiveItemArbiter.put(this);
+		xDisplayOffset = yDisplayOffset = zDisplayOffset = 0;
+		determineOrientation();
 		
 		this.initialVelocity = initialVelocity;
-		LivingEntity ex = executor.entity();
+		LivingEntity ex = thrower.entity();
 		Location o = ex.getEyeLocation();
+		List<Vector> basis = VectorUtil.getBasisWithoutPitch(o);
 		double phi = Math.toRadians(-1 * o.getPitch());
-		executor.message("Pitch rads: " + phi);
+		thrower.message("Pitch rads: " + phi);
 		double cosPhi = Math.cos(phi);
 		double sinPhi = Math.sin(phi);
 		double forwardCoeff = initialVelocity*cosPhi;
 		double upwardCoeff = initialVelocity*sinPhi;
-		origin = o.clone();
+		origin = o.add(basis.getFirst().multiply(mainHandThrow ? 1 : -1))
+				.add(basis.get(1).multiply(0.1))
+				.add(basis.getLast().multiply(-0.25));
 		cur = origin.clone();
 		prev = cur.clone();
-		Vector flatDir = executor.getFlatDir();
+		Vector flatDir = thrower.getFlatDir();
 		Vector forwardVelocity = flatDir.clone().multiply(forwardCoeff);
 		Vector upwardVelocity = VectorUtil.UP.clone().multiply(upwardCoeff);
 		
@@ -120,8 +168,12 @@ public class ThrownItem {
 		Transformation curTr = display.getTransformation();
 		Quaternionf curRotation = curTr.getLeftRotation();
 		Quaternionf newRotation;
-		if (display.getItemStack().getType().toString().endsWith("_SWORD")) {
+		String name = display.getItemStack().getType().toString();
+		if (name.endsWith("_SWORD")) {
 			newRotation = curRotation;
+		}
+		else if (name.endsWith("_AXE")) {
+			newRotation = curRotation.rotateZ((float) -Math.PI/8);
 		}
 		else {
 			newRotation = curRotation.rotateX((float) Math.PI/8);
@@ -178,8 +230,9 @@ public class ThrownItem {
 		
 		LivingEntity hit = hitEntity.entity();
 		if (display.getItemStack().getType().toString().endsWith("_SWORD")) {
-			Vector to = hitEntity.getChestLocation().clone().subtract(cur).toVector().normalize();
-			Vector kb = EntityUtil.isOnGround(hit) ? to.multiply(2) : VectorUtil.getProjOntoPlan(to, VectorUtil.UP).multiply(3);
+			Vector kb = EntityUtil.isOnGround(hit) ?
+					velocity.clone().multiply(2) :
+					VectorUtil.getProjOntoPlan(velocity, VectorUtil.UP).multiply(3);
 			
 			impale(hit);
 			hitEntity.hit(thrower, 0, 2, 75, 50, kb);
@@ -221,8 +274,7 @@ public class ThrownItem {
 			}.runTaskTimer(Sword.getInstance(), 0L, 1L);
 		}
 		else {
-			Vector kb = hitEntity.getChestLocation().clone().subtract(cur).toVector().normalize();
-			hitEntity.hit(thrower, 0, 2, 75, 50, kb);
+			hitEntity.hit(thrower, 0, 2, 75, 50, velocity);
 			disposeNaturally();
 		}
 	}
@@ -270,11 +322,12 @@ public class ThrownItem {
 		}
 	}
 	
-	public void determineOrientation(ItemStack itemStack) {
-		String itemName = itemStack.getType().toString();
+	public void determineOrientation() {
+		String itemName = display.getItemStack().getType().toString();
+		Vector3f base = new Vector3f(xDisplayOffset, yDisplayOffset, zDisplayOffset);
 		if (itemName.endsWith("_SWORD")) {
 			display.setTransformation(new Transformation(
-					new Vector3f(),
+					base.add(new Vector3f()),
 					new Quaternionf()
 							.rotateY((float) Math.PI/2)
 							.rotateZ((float) Math.PI/2),
@@ -284,27 +337,26 @@ public class ThrownItem {
 		}
 		else if (itemName.endsWith("_AXE")) {
 			display.setTransformation(new Transformation(
-					new Vector3f(),
-					new Quaternionf()
-							.rotateY((float) Math.PI)
-							.rotateZ((float) Math.PI/2),
-					new Vector3f(1,1,1),
+					base.add(new Vector3f()),
+					new Quaternionf().rotateY((float) -Math.PI/2)
+							.rotateZ((float) Math.PI/4),
+					new Vector3f(1.5f,1.5f,1.5f),
 					new Quaternionf()
 			));
 		}
-		else if (itemStack.getType() == Material.SHIELD) {
+		else if (display.getItemStack().getType() == Material.SHIELD) {
 			display.setTransformation(new Transformation(
-					new Vector3f(1, 0, 0),
+					base.add(new Vector3f(-1,0,0)),
 					new Quaternionf()
 							.rotateY((float) Math.PI)
-							.rotateZ((float) Math.PI/2),
+							.rotateX((float) Math.PI/4),
 					new Vector3f(1,1,1),
 					new Quaternionf()
 			));
 		}
 		else {
 			display.setTransformation(new Transformation(
-					new Vector3f(),
+					base.add(new Vector3f()),
 					new Quaternionf(),
 					new Vector3f(1,1,1),
 					new Quaternionf()
@@ -374,10 +426,6 @@ public class ThrownItem {
 	
 	public Combatant getThrower() {
 		return thrower;
-	}
-	
-	public void setThrower(Combatant thrower) {
-		this.thrower = thrower;
 	}
 	
 	public Location getCur() {

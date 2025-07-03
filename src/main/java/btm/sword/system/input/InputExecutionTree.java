@@ -273,7 +273,7 @@ public class InputExecutionTree {
 				true,
 				600L);
 		
-		// skills
+		// testing
 //		add(List.of(InputType.SWAP, InputType.RIGHT, InputType.SHIFT),
 //				new InputAction(
 //						executor -> UtilityAction.soundTest(executor, 0),
@@ -289,6 +289,15 @@ public class InputExecutionTree {
 //						Combatant::canPerformAction,
 //						false, false),
 //				true, false, true);
+		
+		add(List.of(InputType.LEFT, InputType.RIGHT),
+				new InputAction(
+						UtilityAction::orientationTest,
+						executor -> 0L,
+						Combatant::canPerformAction,
+						false, false),
+				true, true, true);
+		
 		
 		add(List.of(InputType.SWAP, InputType.RIGHT, InputType.LEFT),
 				null,
@@ -309,7 +318,7 @@ public class InputExecutionTree {
 		
 		add(List.of(InputType.RIGHT, InputType.RIGHT_HOLD),
 				new InputAction(
-						ThrowAction::throwItemTest,
+						ThrowAction::throwItem,
 						executor -> 0L,
 						Combatant::canPerformAction,
 						false,

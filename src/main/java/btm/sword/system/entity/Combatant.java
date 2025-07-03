@@ -1,6 +1,7 @@
 package btm.sword.system.entity;
 
 import btm.sword.system.action.MovementAction;
+import btm.sword.system.action.utility.thrown.ThrownItem;
 import btm.sword.system.playerdata.CombatProfile;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.util.Cache;
@@ -19,8 +20,9 @@ public abstract class Combatant extends SwordEntity {
 	private boolean isGrabbing = false;
 	private SwordEntity grabbedEntity;
 	
-	ItemStack thrownItemStack;
-	ItemDisplay thrownItemDisplay;
+	private ThrownItem thrownItem;
+	private ItemStack offHandItemStackDuringThrow;
+	private ItemStack mainHandItemStackDuringThrow;
 	private boolean attemptingThrow;
 	private boolean throwCancelled;
 	private boolean throwSuccessful;
@@ -119,20 +121,32 @@ public abstract class Combatant extends SwordEntity {
 		return (long) Math.max(min, base - (multiplier * aspects.getAspectVal(type)) );
 	}
 	
+	public ThrownItem getThrownItem() {
+		return thrownItem;
+	}
+	
+	public void setThrownItem(ThrownItem thrownItem) {
+		this.thrownItem = thrownItem;
+	}
+	
+	public ItemStack getMainHandItemStackDuringThrow() {
+		return mainHandItemStackDuringThrow;
+	}
+	
+	public void setMainHandItemStackDuringThrow(ItemStack mainHandItemStackDuringThrow) {
+		this.mainHandItemStackDuringThrow = mainHandItemStackDuringThrow;
+	}
+	
+	public ItemStack getOffHandItemStackDuringThrow() {
+		return offHandItemStackDuringThrow;
+	}
+	
+	public void setOffHandItemStackDuringThrow(ItemStack offHandItemStackDuringThrow) {
+		this.offHandItemStackDuringThrow = offHandItemStackDuringThrow;
+	}
+	
 	public ItemStack getThrownItemStack() {
-		return thrownItemStack;
-	}
-	
-	public void setThrownItemStack(ItemStack thrownItemStack) {
-		this.thrownItemStack = thrownItemStack;
-	}
-	
-	public ItemDisplay getThrownItemDisplay() {
-		return thrownItemDisplay;
-	}
-	
-	public void setThrownItemDisplay(ItemDisplay thrownItemDisplay) {
-		this.thrownItemDisplay = thrownItemDisplay;
+		return thrownItem.getDisplay().getItemStack();
 	}
 	
 	public boolean isThrowSuccessful() {
