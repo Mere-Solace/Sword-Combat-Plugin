@@ -380,7 +380,12 @@ public abstract class SwordEntity {
 	}
 	
 	public Vector getFlatDir() {
-		double yawRads = Math.toRadians(self.getYaw());
+		double yawRads = Math.toRadians(self.getEyeLocation().getYaw());
+		return new Vector(-Math.sin(yawRads), 0, Math.cos(yawRads));
+	}
+	
+	public Vector getFlatBodyDir() {
+		double yawRads = Math.toRadians(self.getBodyYaw());
 		return new Vector(-Math.sin(yawRads), 0, Math.cos(yawRads));
 	}
 	

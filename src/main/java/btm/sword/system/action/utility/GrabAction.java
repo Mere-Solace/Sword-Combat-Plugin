@@ -37,8 +37,9 @@ public class GrabAction extends SwordAction {
 				Entity grabbed  = HitboxUtil.ray(o, o.getDirection(), range, grabThickness, entity -> !entity.isDead() && entity.getUniqueId() != ex.getUniqueId());
 				executor.message("Grabbed: " + grabbed);
 				
-				if (grabbed != null && grabbed.getType() == EntityType.ITEM_DISPLAY) {
-					InteractiveItemArbiter.onGrab((ItemDisplay) grabbed, executor);
+				if (grabbed instanceof ItemDisplay id) {
+					InteractiveItemArbiter.onGrab(id, executor);
+					InteractiveItemArbiter.onGrabTest(id, executor);
 					return;
 				}
 				

@@ -4,6 +4,12 @@ import org.intellij.lang.annotations.Subst;
 import org.jetbrains.annotations.NotNull;
 
 public enum SoundType {
+	//#region Custom Sounds:
+	RANDOM_BANE_SLASH("random.baneslash"),
+	RANDOM_CLASH("random.clash"),
+	//#endregion
+	
+	//#region Minecraft Sounds:
 	AMBIENT_BASALT_DELTAS_ADDITIONS("ambient.basalt_deltas.additions"),
 	AMBIENT_BASALT_DELTAS_LOOP("ambient.basalt_deltas.loop"),
 	AMBIENT_BASALT_DELTAS_MOOD("ambient.basalt_deltas.mood"),
@@ -1192,7 +1198,7 @@ public enum SoundType {
 	
 	WEATHER_RAIN("weather.rain"),
 	WEATHER_RAIN_ABOVE("weather.rain.above");
-	// end
+	//#endregion
 	
 	private final String key;
 	

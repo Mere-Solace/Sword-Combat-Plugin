@@ -2,12 +2,16 @@ package btm.sword.util;
 
 import btm.sword.Sword;
 import btm.sword.system.entity.SwordEntity;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.ItemDisplay;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Transformation;
 import org.bukkit.util.Vector;
+
+import java.util.List;
+import java.util.Objects;
 
 public class EntityUtil {
 	public static boolean isOnGround(Entity entity) {
@@ -48,10 +52,12 @@ public class EntityUtil {
 		}.runTaskTimer(Sword.getInstance(), 0L, 2L);
 	}
 	
-	public static void itemDisplayFollowTest(SwordEntity entity, ItemDisplay itemDisplay, double heightOffset, double relativeOffsetAngle) {
+	public static void itemDisplayFollowTest(SwordEntity entity, ItemDisplay itemDisplay, Vector direction, double heightOffset) {
 		Transformation orientation = itemDisplay.getTransformation();
 		Vector offset = VectorUtil.UP.clone().multiply(heightOffset);
 		
+		double originalYaw = Math.toRadians(entity.entity().getBodyYaw());
+
 		new BukkitRunnable() {
 			@Override
 			public void run() {
@@ -61,9 +67,12 @@ public class EntityUtil {
 				
 				Location l = entity.entity().getLocation().add(offset);
 				
-				double yawRads = Math.toRadians(entity.entity().getBodyYaw()) + relativeOffsetAngle;
+				double yawRads = Math.toRadians(entity.entity().getBodyYaw());
+				Vector curDir = direction.clone().rotateAroundY(originalYaw-yawRads);
+				l.setDirection(curDir);
 				
-				l.setDirection(new Vector(-Math.sin(yawRads), 0, Math.cos(yawRads)));
+				DisplayUtil.line(List.of(Cache.testBleedParticle),
+						l.clone().subtract(curDir), curDir, 2, 0.3);
 				
 				itemDisplay.teleport(l);
 				itemDisplay.setTransformation(orientation);

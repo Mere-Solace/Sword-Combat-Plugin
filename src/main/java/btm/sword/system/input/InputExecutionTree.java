@@ -296,13 +296,24 @@ public class InputExecutionTree {
 				false,
 				true);
 		
+		add(List.of(InputType.RIGHT),
+				new InputAction(
+						ThrowAction::throwReady,
+						executor -> 0L,
+						Combatant::canPerformAction,
+						false,
+						false),
+				true,
+				true,
+				true);
+		
 		add(List.of(InputType.RIGHT, InputType.RIGHT_HOLD),
 				new InputAction(
-						executor -> MovementAction.dash(executor, true),
-						executor -> executor.calcCooldown(AspectType.CELERITY, 200L,1400L, 10),
-						Combatant::canAirDash,
-						true,
-						true),
+						ThrowAction::throwItemTest,
+						executor -> 0L,
+						Combatant::canPerformAction,
+						false,
+						false),
 				true,
 				true,
 				true,

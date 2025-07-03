@@ -6,6 +6,7 @@ import btm.sword.system.entity.SwordEntity;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.action.utility.thrown.InteractiveItemArbiter;
 import btm.sword.util.*;
+import btm.sword.util.sound.SoundType;
 import org.bukkit.FluidCollisionMode;
 import org.bukkit.Location;
 import org.bukkit.Particle;
@@ -18,6 +19,7 @@ import org.bukkit.util.Vector;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 
 public class MovementAction extends SwordAction {
 	public static void dash(Combatant executor, boolean forward) {
@@ -38,11 +40,28 @@ public class MovementAction extends SwordAction {
 						&& !id.isDead()
 						&& !id.getItemStack().isEmpty()) {
 					RayTraceResult impedanceCheck = ex.getWorld().rayTraceBlocks(
-							ex.getLocation().add(new Vector(0,0.2,0)),
+							ex.getLocation().add(new Vector(0,0.3,0)),
 							targetedItem.getLocation().subtract(ex.getLocation()).toVector().normalize(),
 							maxDistance/2);
 					
-					if (impedanceCheck != null && impedanceCheck.getHitBlock() == null) {
+					Location loc = ex.getLocation().add(new Vector(0,0.3,0));
+					Vector dir = targetedItem.getLocation().subtract(ex.getLocation()).toVector().normalize();
+					int[] t = {0};
+					new BukkitRunnable() {
+						@Override
+						public void run() {
+							DisplayUtil.line(List.of(Cache.basicSwordBlueTransitionParticle), loc, dir,
+									maxDistance/2, 0.3);
+							t[0]+=2;
+							if (t[0] > 60) cancel();
+						}
+					}.runTaskTimer(Sword.getInstance(), 0L, 2L);
+					
+					
+					if (impedanceCheck != null)
+						executor.message("Hit block: " + impedanceCheck.getHitBlock());
+					
+					if (impedanceCheck == null || impedanceCheck.getHitBlock() == null) {
 						double length = id.getLocation().subtract(ex.getEyeLocation()).length();
 						
 						executor.setVelocity(ex.getEyeLocation().getDirection().multiply(Math.sqrt(length)));
@@ -52,15 +71,17 @@ public class MovementAction extends SwordAction {
 						new BukkitRunnable() {
 							@Override
 							public void run() {
-								if (id.getLocation().subtract(ex.getEyeLocation()).lengthSquared() < 9) {
+								if (id.getLocation().subtract(ex.getEyeLocation()).lengthSquared() < 8.5) {
 									BlockData blockData = ex.getLocation().add(new Vector(0,-0.75,0)).getBlock().getBlockData();
 									new ParticleWrapper(Particle.DUST_PILLAR, 100, 1.25,1.25,1.25, blockData).display(ex.getLocation());
-									
+									SoundUtil.playSound(ex, SoundType.RANDOM_BANE_SLASH, 1f, 1f);
 									executor.setVelocity(u);
 									InteractiveItemArbiter.onGrab(id, executor);
+									InteractiveItemArbiter.onGrabTest(id, executor);
 								}
 								else {
-									ex.setVelocity(new Vector(0,0,0));
+									Vector v = ex.getVelocity();
+									ex.setVelocity(new Vector(v.getX()*0.3,v.getY()*0.3,v.getZ()*0.3));
 									executor.message("Didn't get there");
 								}
 							}

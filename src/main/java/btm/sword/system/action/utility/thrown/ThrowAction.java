@@ -11,6 +11,7 @@ import org.bukkit.*;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.*;
 import org.bukkit.inventory.*;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
@@ -63,9 +64,11 @@ public class ThrowAction extends SwordAction {
 		executor.setThrownItemDisplay(itemDisplay);
 		
 		Quaternionf lRotation;
-		String itemType = thrownItem.getItemMeta().getPersistentDataContainer()
-				.get(new NamespacedKey(Sword.getInstance(), "weapon"), PersistentDataType.STRING);
-		if (Objects.equals(itemType, "long_sword")) {
+		ItemMeta im = thrownItem.getItemMeta();
+		String type = im != null ?
+				im.getPersistentDataContainer().get(new NamespacedKey(Sword.getInstance(), "weapon"), PersistentDataType.STRING) :
+				null;
+		if (im != null && type != null && Objects.equals(type, "long_sword")) {
 			lRotation = new Quaternionf().rotateX((float) (Math.PI/2)).rotateY((float) (Math.PI/2));
 		}
 		else {
@@ -115,6 +118,19 @@ public class ThrowAction extends SwordAction {
 		}
 	}
 
+	public static void throwItemTest(Combatant executor) {
+		executor.setAttemptingThrow(false);
+		executor.setThrowCancelled(false);
+		executor.setThrowSuccessful(true);
+		cast(executor, 10L, new BukkitRunnable() {
+			@Override
+			public void run() {
+				ThrownItem thrownItem = new ThrownItem(executor, executor.getThrownItemDisplay());
+				thrownItem.onRelease(executor,1.5);
+			}
+		});
+	}
+	
 	public static void throwItem(Combatant executor) {
 		executor.setAttemptingThrow(false);
 		executor.setThrowCancelled(false);

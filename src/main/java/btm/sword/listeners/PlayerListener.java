@@ -6,6 +6,7 @@ import btm.sword.system.entity.Combatant;
 import btm.sword.system.entity.SwordEntity;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.SwordPlayer;
+import btm.sword.system.item.prefab.Prefab;
 import io.papermc.paper.event.player.AsyncChatEvent;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.sound.Sound;
@@ -119,6 +120,9 @@ public class PlayerListener implements Listener {
 				}
 				event.setCancelled(true);
 			}
+		}
+		else if (cleaned.startsWith("give")) {
+			SwordEntityArbiter.getOrAdd(player.getUniqueId()).giveItem(Prefab.sword);
 		}
 	}
 }
