@@ -19,7 +19,7 @@ import java.util.HashSet;
 
 public class GrabAction extends SwordAction {
 	public static void grab(Combatant executor) {
-		cast(executor, 0L,
+		cast(executor, 12L,
 		new BukkitRunnable() {
 			@Override
 			public void run() {

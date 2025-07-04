@@ -108,7 +108,6 @@ public class ThrownItem {
 		}.runTaskTimer(Sword.getInstance(), 0L, 1L);
 	}
 	
-	// when the item is thrown
 	public void onRelease(double initialVelocity) {
 		InteractiveItemArbiter.put(this);
 		xDisplayOffset = yDisplayOffset = zDisplayOffset = 0;
@@ -175,6 +174,9 @@ public class ThrownItem {
 		else if (name.endsWith("_AXE")) {
 			newRotation = curRotation.rotateZ((float) -Math.PI/8);
 		}
+		else if (display.getItemStack().getType() == Material.SHIELD) {
+			newRotation = curRotation.rotateZ((float) -Math.PI/8);
+		}
 		else {
 			newRotation = curRotation.rotateX((float) Math.PI/8);
 		}
@@ -191,37 +193,55 @@ public class ThrownItem {
 	
 	public void onEnd() {
 		if (caught) onCatch();
+		else if (grounded) onGrounded();
 		else if (hit) onHit();
-		
-		if (grounded) onGrounded();
 		
 		thrower.message("Throw method is now over");
 	}
 	
 	public void onGrounded() {
 		thrower.message("Entered ground");
-		int i = 0;
-		Vector step = velocity.normalize().multiply(0.5);
-		thrower.message("Lodged BlockType: " + cur.clone().add(step).getBlock().getType());
-		while (!cur.clone().add(step).getBlock().getType().isAir()) {
-			cur.subtract(step);
-			i++;
-			if (i > 30) {
-				thrower.message("   Exceeded step limit of placement check");
-				break;
-			}
-		}
-		thrower.message("      tp'ing item display to the location");
-		display.teleport(cur.setDirection(velocity));
 		
+		Vector step = velocity.normalize().multiply(0.5);
+		int[] i = {0};
+		new BukkitRunnable() {
+			@Override
+			public void run() {
+				if (i[0] > 10 || cur.clone().add(step).getBlock().isPassable()) {
+					display.teleport(cur.setDirection(velocity));
+					cancel();
+				}
+				
+				cur.subtract(step);
+				Cache.testSwingParticle.display(cur);
+				
+				
+				i[0]++;
+			}
+		}.runTaskTimer(Sword.getInstance(), 0L, 1L);
+
+		
+		
+		int[] x = {0};
 		disposeTask = new BukkitRunnable() {
 			@Override
 			public void run() {
-				if (!display.isDead()) {
-					display.remove();
+				if (display.isDead()) {
+					thrower.message("   This item display has been slated for collection!");
+					cancel();
 				}
+				
+				if (x[0] >= 1000) {
+					if (!display.isDead()) display.remove();
+					cancel();
+				}
+				
+				Cache.thrownItemMarkerParticle.display(cur);
+				Cache.thrownItemMarkerParticle.display(cur.clone().subtract(step));
+
+				x[0] += 5;
 			}
-		}.runTaskLater(Sword.getInstance(), 1000L);
+		}.runTaskTimer(Sword.getInstance(), 0L, 5L);
 	}
 	
 	public void onHit() {
@@ -229,10 +249,10 @@ public class ThrownItem {
 		if (hitEntity == null) return;
 		
 		LivingEntity hit = hitEntity.entity();
-		if (display.getItemStack().getType().toString().endsWith("_SWORD")) {
+		if (display.getItemStack().getType().toString().endsWith("_SWORD") || display.getItemStack().getType().toString().endsWith("_AXE")) {
 			Vector kb = EntityUtil.isOnGround(hit) ?
-					velocity.clone().multiply(2) :
-					VectorUtil.getProjOntoPlan(velocity, VectorUtil.UP).multiply(3);
+					velocity.clone().multiply(0.7) :
+					VectorUtil.getProjOntoPlan(velocity, VectorUtil.UP).multiply(1);
 			
 			impale(hit);
 			hitEntity.hit(thrower, 0, 2, 75, 50, kb);
@@ -274,7 +294,7 @@ public class ThrownItem {
 			}.runTaskTimer(Sword.getInstance(), 0L, 1L);
 		}
 		else {
-			hitEntity.hit(thrower, 0, 2, 75, 50, velocity);
+			hitEntity.hit(thrower, 0, 2, 75, 50, velocity.clone().multiply(0.7));
 			disposeNaturally();
 		}
 	}
@@ -346,10 +366,8 @@ public class ThrownItem {
 		}
 		else if (display.getItemStack().getType() == Material.SHIELD) {
 			display.setTransformation(new Transformation(
-					base.add(new Vector3f(-1,0,0)),
-					new Quaternionf()
-							.rotateY((float) Math.PI)
-							.rotateX((float) Math.PI/4),
+					base.add(new Vector3f(0,0,0)),
+					new Quaternionf(),
 					new Vector3f(1,1,1),
 					new Quaternionf()
 			));
@@ -392,47 +410,7 @@ public class ThrownItem {
 		return display;
 	}
 	
-	public Block getStuckBlock() {
-		return stuckBlock;
-	}
-	
-	public void setStuckBlock(Block stuckBlock) {
-		this.stuckBlock = stuckBlock;
-	}
-	
-	public boolean isCaught() {
-		return caught;
-	}
-	
-	public void setCaught(boolean caught) {
-		this.caught = caught;
-	}
-	
-	public boolean isHit() {
-		return hit;
-	}
-	
-	public void setHit(boolean hit) {
-		this.hit = hit;
-	}
-	
-	public boolean isGrounded() {
-		return grounded;
-	}
-	
-	public void setGrounded(boolean grounded) {
-		this.grounded = grounded;
-	}
-	
-	public Combatant getThrower() {
-		return thrower;
-	}
-	
-	public Location getCur() {
-		return cur;
-	}
-	
-	public void setCur(Location cur) {
-		this.cur = cur;
+	public boolean isMainHandThrow() {
+		return mainHandThrow;
 	}
 }

@@ -34,7 +34,12 @@ public class ThrowAction extends SwordAction {
 		executor.setThrowCancelled(true);
 		executor.setThrowSuccessful(false);
 		
-		executor.setItemStackInHand(executor.getMainHandItemStackDuringThrow(), true);
+		if (executor instanceof SwordPlayer sp) {
+			sp.setItemAtIndex(sp.getMainHandItemStackDuringThrow(), sp.getThrownItemIndex());
+		}
+		else {
+			executor.setItemStackInHand(executor.getMainHandItemStackDuringThrow(), true);
+		}
 		executor.setItemStackInHand(executor.getOffHandItemStackDuringThrow(), false);
 		
 		executor.setThrownItem(null);
@@ -50,7 +55,8 @@ public class ThrowAction extends SwordAction {
 			@Override
 			public void run() {
 				executor.getThrownItem().onRelease(1.5);
-				executor.setItemStackInHand(executor.getOffHandItemStackDuringThrow(), false);
+				boolean main = executor.getThrownItem().isMainHandThrow();
+				executor.setItemStackInHand(main ? executor.getOffHandItemStackDuringThrow() : executor.getMainHandItemStackDuringThrow(), main);
 			}
 		});
 	}

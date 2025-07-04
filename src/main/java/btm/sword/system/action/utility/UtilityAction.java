@@ -104,7 +104,7 @@ public class UtilityAction extends SwordAction {
 	}
 	
 	public static void orientationTest(Combatant executor) {
-		Location base = executor.getChestLocation();
+		Location base = executor.getChestLocation().setDirection(executor.entity().getEyeLocation().getDirection());
 		World world = base.getWorld();
 		List<List<ItemDisplay>> displays = new ArrayList<>(3);
 		List<ItemDisplay> displaysX = new ArrayList<>(3);

@@ -204,9 +204,6 @@ public class SwordPlayer extends Combatant {
 						Duration.ofMillis(100))));
 	}
 	
-	public Material getItemInUse() {
-		return ((Player) self).getInventory().getItemInMainHand().getType();
-	}
 	
 	public void addStat(AspectType stat, int amount) {
 		aspects.getAspect(stat).addBaseValue(amount);
@@ -215,14 +212,6 @@ public class SwordPlayer extends Combatant {
 	
 	public boolean inputReliantOnItem() {
 		return inputExecutionTree.requiresSameItem();
-	}
-	
-	public boolean isHolding() {
-		return holdingRight || sneaking;
-	}
-	
-	public boolean isHoldingRight() {
-		return holdingRight;
 	}
 	
 	public void startRightHoldCheck() {

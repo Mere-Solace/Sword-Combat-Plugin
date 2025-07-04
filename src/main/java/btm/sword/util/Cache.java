@@ -31,6 +31,8 @@ public class Cache {
 	public static final ParticleWrapper testHitParticle;
 	public static final ParticleWrapper testBleedParticle;
 	
+	public static final ParticleWrapper thrownItemMarkerParticle;
+	
 	public static final ParticleWrapper basicSwordBlueTransitionParticle;
 	public static final ParticleWrapper basicSwordWhiteTransitionParticle;
 	public static final ParticleWrapper basicSwordHit1;
@@ -110,6 +112,8 @@ public class Cache {
 				new Particle.DustTransition(Color.fromRGB(211, 222, 240), Color.fromRGB(36, 103, 220), 0.7f));
 		testHitParticle = new ParticleWrapper(Particle.SONIC_BOOM, 3, 0, 0, 0, 0.5);
 		testBleedParticle = new ParticleWrapper(Particle.BLOCK, 5, 0, 0, 0, Material.CRIMSON_HYPHAE.createBlockData());
+		
+		thrownItemMarkerParticle = new ParticleWrapper(Particle.TRIAL_SPAWNER_DETECTION, 2, 0.01, 0.01, 0.01, 0);
 		
 		basicSwordBlueTransitionParticle = new ParticleWrapper(Particle.DUST_COLOR_TRANSITION, 5, 0.025, 0.025, 0.025, 1,
 				new Particle.DustTransition(Color.fromRGB(14, 107, 207), Color.fromRGB(162, 226, 255), 0.75f));
