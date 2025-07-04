@@ -311,29 +311,36 @@ public abstract class SwordEntity {
 	public void setDurationOfLastAttack(int durationOfLastAttack) {
 		this.durationOfLastAttack = durationOfLastAttack;
 	}
-	
-	public boolean giveItem(ItemStack itemStack) {
+
+	public void giveItem(ItemStack itemStack) {
 		if (self instanceof Player p) {
 			PlayerInventory inv = p.getInventory();
-			if (inv.getItemInMainHand().getType().isAir()) {
-				inv.setItem(inv.getHeldItemSlot(), itemStack);
-				return true;
+			
+			ItemStack mainHand = inv.getItemInMainHand();
+			if (mainHand.getType().isAir()) {
+				inv.setItemInMainHand(itemStack);
+				return;
 			}
-			else {
-				int i = 0;
-				for (ItemStack item : inv.getContents()) {
-					i++;
-					if (item == null || item.getType() == Material.AIR || item.isEmpty()) {
-						inv.setItem(i, itemStack);
-						return true;
-					}
+			
+			ItemStack offHand = inv.getItemInOffHand();
+			if (offHand.getType().isAir()) {
+				inv.setItemInOffHand(itemStack);
+				return;
+			}
+			
+			ItemStack[] contents = inv.getContents();
+			for (int slot = 0; slot < contents.length; slot++) {
+				if (slot >= 36 && slot <= 39) continue;
+				
+				ItemStack slotItem = contents[slot];
+				if (slotItem == null || slotItem.getType().isAir()) {
+					inv.setItem(slot, itemStack);
+					return;
 				}
-				return false;
 			}
 		}
 		else {
 			Objects.requireNonNull(self.getEquipment()).setItemInMainHand(itemStack);
-			return true;
 		}
 	}
 	

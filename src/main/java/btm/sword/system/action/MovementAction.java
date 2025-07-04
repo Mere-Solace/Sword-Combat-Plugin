@@ -77,7 +77,6 @@ public class MovementAction extends SwordAction {
 									SoundUtil.playSound(ex, SoundType.RANDOM_BANE_SLASH, 1f, 1f);
 									executor.setVelocity(u);
 									InteractiveItemArbiter.onGrab(id, executor);
-									InteractiveItemArbiter.onGrabTest(id, executor);
 								}
 								else {
 									Vector v = ex.getVelocity();

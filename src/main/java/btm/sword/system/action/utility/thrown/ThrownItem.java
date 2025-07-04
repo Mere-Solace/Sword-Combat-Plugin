@@ -94,7 +94,7 @@ public class ThrownItem {
 				}
 				else if (thrower.isThrowSuccessful()) {
 					thrower.setItemTypeInHand(Material.AIR, mainHandThrow);
-					ItemStack toReturn = !mainHandThrow ? thrower.getMainHandItemStackDuringThrow() : thrower.getOffHandItemStackDuringThrow();
+					ItemStack toReturn = mainHandThrow ? thrower.getOffHandItemStackDuringThrow() : thrower.getMainHandItemStackDuringThrow();
 					thrower.setItemStackInHand(toReturn, !mainHandThrow);
 					cancel();
 				}
@@ -171,7 +171,7 @@ public class ThrownItem {
 		if (name.endsWith("_SWORD")) {
 			newRotation = curRotation;
 		}
-		else if (name.endsWith("_AXE")) {
+		else if (name.endsWith("_AXE") || name.endsWith("_HOE") || name.endsWith("_PICKAXE") || name.endsWith("_SHOVEL")) {
 			newRotation = curRotation.rotateZ((float) -Math.PI/8);
 		}
 		else if (display.getItemStack().getType() == Material.SHIELD) {
@@ -195,34 +195,36 @@ public class ThrownItem {
 		if (caught) onCatch();
 		else if (grounded) onGrounded();
 		else if (hit) onHit();
-		
-		thrower.message("Throw method is now over");
 	}
 	
 	public void onGrounded() {
-		thrower.message("Entered ground");
+		if (stuckBlock != null)
+			new ParticleWrapper(Particle.DUST_PILLAR, 50, 1, 1, 1, stuckBlock.getBlockData()).display(cur);
 		
-		Vector step = velocity.normalize().multiply(0.5);
-		int[] i = {0};
+		double offset = 0.1;
+		Vector step = velocity.normalize().multiply(offset);
+		
+		ArmorStand marker = (ArmorStand) display.getWorld().spawnEntity(cur, EntityType.ARMOR_STAND);
+		marker.setMarker(true);
+		marker.setVisible(false);
+		
+		int x = 1;
+		while (!marker.getLocation().getBlock().isPassable()) { // changed from getType().isAir()
+			marker.teleport(cur.clone().add(velocity.normalize().multiply(-0.1*x)));
+			x++;
+			if (x > 30) break;
+		}
+		
 		new BukkitRunnable() {
 			@Override
 			public void run() {
-				if (i[0] > 10 || cur.clone().add(step).getBlock().isPassable()) {
-					display.teleport(cur.setDirection(velocity));
-					cancel();
-				}
-				
-				cur.subtract(step);
-				Cache.testSwingParticle.display(cur);
-				
-				
-				i[0]++;
+				cur = marker.getLocation().setDirection(velocity);
+				display.teleport(cur);
+				marker.remove();
 			}
-		}.runTaskTimer(Sword.getInstance(), 0L, 1L);
-
+		}.runTaskLater(Sword.getInstance(), 1L);
 		
-		
-		int[] x = {0};
+		int[] tick = {0};
 		disposeTask = new BukkitRunnable() {
 			@Override
 			public void run() {
@@ -231,17 +233,18 @@ public class ThrownItem {
 					cancel();
 				}
 				
-				if (x[0] >= 1000) {
+				if (tick[0] >= 1000) {
 					if (!display.isDead()) display.remove();
 					cancel();
 				}
 				
+				Cache.thrownItemMarkerParticle.display(cur.clone().add(step));
 				Cache.thrownItemMarkerParticle.display(cur);
 				Cache.thrownItemMarkerParticle.display(cur.clone().subtract(step));
 
-				x[0] += 5;
+				tick[0] += 5;
 			}
-		}.runTaskTimer(Sword.getInstance(), 0L, 5L);
+		}.runTaskTimer(Sword.getInstance(), 1L, 5L);
 	}
 	
 	public void onHit() {
@@ -249,7 +252,8 @@ public class ThrownItem {
 		if (hitEntity == null) return;
 		
 		LivingEntity hit = hitEntity.entity();
-		if (display.getItemStack().getType().toString().endsWith("_SWORD") || display.getItemStack().getType().toString().endsWith("_AXE")) {
+		String name = display.getItemStack().getType().toString();
+		if (name.endsWith("_SWORD") || name.endsWith("AXE")) {
 			Vector kb = EntityUtil.isOnGround(hit) ?
 					velocity.clone().multiply(0.7) :
 					VectorUtil.getProjOntoPlan(velocity, VectorUtil.UP).multiply(1);
@@ -300,7 +304,6 @@ public class ThrownItem {
 	}
 	
 	public void onCatch() {
-		thrower.message("Caught that thang");
 		thrower.giveItem(display.getItemStack());
 		dispose();
 	}
@@ -321,6 +324,7 @@ public class ThrownItem {
 		
 		grounded = true;
 		stuckBlock = hitBlock.getHitBlock();
+		cur = hitBlock.getHitPosition().toLocation(display.getWorld());
 	}
 	
 	public void hitCheck() {
@@ -343,9 +347,9 @@ public class ThrownItem {
 	}
 	
 	public void determineOrientation() {
-		String itemName = display.getItemStack().getType().toString();
+		String name = display.getItemStack().getType().toString();
 		Vector3f base = new Vector3f(xDisplayOffset, yDisplayOffset, zDisplayOffset);
-		if (itemName.endsWith("_SWORD")) {
+		if (name.endsWith("_SWORD")) {
 			display.setTransformation(new Transformation(
 					base.add(new Vector3f()),
 					new Quaternionf()
@@ -355,7 +359,7 @@ public class ThrownItem {
 					new Quaternionf()
 			));
 		}
-		else if (itemName.endsWith("_AXE")) {
+		else if (name.endsWith("AXE") || name.endsWith("_HOE") || name.endsWith("_SHOVEL")) {
 			display.setTransformation(new Transformation(
 					base.add(new Vector3f()),
 					new Quaternionf().rotateY((float) -Math.PI/2)
@@ -384,14 +388,17 @@ public class ThrownItem {
 	
 	public void impale(LivingEntity hit) {
 		hitEntity.addImpalement();
+		
 		double max = hit.getEyeLocation().getY();
 		double feet = hit.getLocation().getY();
 		double min = feet + hitEntity.getEyeHeight()*0.2;
+		
 		double diff = cur.getY();
 		double worldOffset = Math.min(Math.max(diff, min), max);
 		double heightOffset = worldOffset - feet;
 		
-		EntityUtil.itemDisplayFollowTest(hitEntity, display,  velocity.clone().normalize(), heightOffset);
+		boolean followHead = hitEntity.entity().getType() != EntityType.SPIDER && diff >= max;
+		EntityUtil.itemDisplayFollowTest(hitEntity, display,  velocity.clone().normalize(), heightOffset, followHead);
 	}
 	
 	public void disposeNaturally() {

@@ -54,9 +54,9 @@ public class ThrowAction extends SwordAction {
 		cast(executor, 10L, new BukkitRunnable() {
 			@Override
 			public void run() {
-				executor.getThrownItem().onRelease(1.5);
+				executor.getThrownItem().onRelease(2);
 				boolean main = executor.getThrownItem().isMainHandThrow();
-				executor.setItemStackInHand(main ? executor.getOffHandItemStackDuringThrow() : executor.getMainHandItemStackDuringThrow(), main);
+				executor.setItemStackInHand(main ? executor.getOffHandItemStackDuringThrow() : executor.getMainHandItemStackDuringThrow(), !main);
 			}
 		});
 	}

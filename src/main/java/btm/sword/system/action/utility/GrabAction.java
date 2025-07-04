@@ -39,7 +39,6 @@ public class GrabAction extends SwordAction {
 				
 				if (grabbed instanceof ItemDisplay id) {
 					InteractiveItemArbiter.onGrab(id, executor);
-					InteractiveItemArbiter.onGrabTest(id, executor);
 					return;
 				}
 				
