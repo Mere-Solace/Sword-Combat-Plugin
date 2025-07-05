@@ -19,7 +19,11 @@ public class Item {
 					PersistentDataType.STRING, getUUIDString());
 	}
 	
-	public UUID getUUID() {
+	public ItemStack getItemStack() {
+		return itemStack;
+	}
+	
+	public UUID getUniqueId() {
 		return uuid;
 	}
 	

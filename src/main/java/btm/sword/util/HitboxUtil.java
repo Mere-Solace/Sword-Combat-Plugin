@@ -23,9 +23,9 @@ public class HitboxUtil {
 		return hit;
 	}
 	
-	public static LivingEntity lineFirst(LivingEntity executor, Location o, Vector e, double maxRange, double thickness) {
+	public static LivingEntity lineFirst(LivingEntity executor, Location o, Vector e, double maxRange, double thickness, Predicate<Entity> filter) {
 		for (double i = 0; i < maxRange; i += thickness) {
-			List<LivingEntity> hits = new ArrayList<>(o.clone().add(e.clone().multiply(i)).getNearbyLivingEntities(thickness));
+			List<LivingEntity> hits = new ArrayList<>(o.clone().add(e.clone().multiply(i)).getNearbyLivingEntities(thickness, filter));
 
 			for (LivingEntity t : hits) {
 				if (!t.isDead() && !t.equals(executor)) {

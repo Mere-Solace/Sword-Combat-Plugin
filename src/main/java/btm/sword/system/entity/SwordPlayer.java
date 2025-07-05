@@ -9,19 +9,25 @@ import btm.sword.system.input.InputType;
 import btm.sword.system.playerdata.PlayerData;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.title.Title;
 
+import org.bukkit.Color;
 import org.bukkit.Material;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 
 import java.time.Duration;
 
 public class SwordPlayer extends Combatant {
+	private final Player player;
+	
 	private final InputExecutionTree inputExecutionTree;
 	private final long inputTimeoutMillis = 1200L;
 	
@@ -41,8 +47,13 @@ public class SwordPlayer extends Combatant {
 	
 	private int thrownItemIndex;
 	
+	private boolean swappingInInv;
+	private boolean droppingInInv;
+	
 	public SwordPlayer(LivingEntity associatedEntity, PlayerData data) {
 		super(associatedEntity, data.getCombatProfile());
+		player = (Player) self;
+		
 		inputExecutionTree = new InputExecutionTree(inputTimeoutMillis);
 		inputExecutionTree.initializeInputTree();
 		
@@ -55,11 +66,17 @@ public class SwordPlayer extends Combatant {
 		sneaking = false;
 		sneakHoldTimeStart = 0L;
 		timeSneakHeld = 0L;
+		
+		thrownItemIndex = -1;
+		
+		swappingInInv = false;
+		droppingInInv = false;
 	}
 	
 	public void act(InputType input) {
 		if (isAttemptingThrow()) {
-			if (input != InputType.RIGHT_HOLD && input != InputType.RIGHT) {
+			// TODO revert
+			if (input != InputType.RIGHT && input != InputType.RIGHT_HOLD) {
 				ThrowAction.throwCancel(this);
 				resetTree();
 				return;
@@ -136,14 +153,6 @@ public class SwordPlayer extends Combatant {
 		this.performedDropAction = performedDropAction;
 	}
 	
-	public void setCanDrop(boolean canDrop) {
-		this.canDrop = canDrop;
-	}
-	
-	public boolean canDrop() {
-		return canDrop;
-	}
-	
 	public void resetTree() {
 		inputExecutionTree.reset();
 	}
@@ -204,6 +213,22 @@ public class SwordPlayer extends Combatant {
 						Duration.ofMillis(100))));
 	}
 	
+	public void itemNameDisplay(String toDisplay, TextColor color, TextDecoration style) {
+		ItemStack stack = getItemStackInHand(true).clone();
+		if (stack.isEmpty() || stack.getType().isAir()) stack = new ItemStack(Material.GUNPOWDER);
+		ItemMeta metaData = stack.getItemMeta();
+		if (metaData == null) {
+			message("MetaData for item to display is null!");
+			return;
+		}
+		if (style == null)
+			metaData.itemName(Component.text(toDisplay, color));
+		else
+			metaData.itemName(Component.text(toDisplay, color, style));
+		
+		stack.setItemMeta(metaData);
+		player.sendEquipmentChange(self, EquipmentSlot.HAND, stack);
+	}
 	
 	public void addStat(AspectType stat, int amount) {
 		aspects.getAspect(stat).addBaseValue(amount);
@@ -228,7 +253,6 @@ public class SwordPlayer extends Combatant {
 				long curTime = System.currentTimeMillis();
 				if (curTime - lastHoldTimeRecorded > 212L) {
 					onStopRightHold();
-//					message("You stopped holding Right (held for " + ((double)(timeRightHeld)/1000) + " s)");
 					resetHoldingRight();
 					cancel();
 				}
@@ -305,10 +329,38 @@ public class SwordPlayer extends Combatant {
 	}
 	
 	public int getCurrentInvIndex() {
-		return ((Player) self).getInventory().getHeldItemSlot();
+		return player.getInventory().getHeldItemSlot();
 	}
 	
 	public void setItemAtIndex(ItemStack item, int index) {
-		((Player) self).getInventory().setItem(index, item);
+		player.getInventory().setItem(index, item);
+	}
+	
+	public boolean isSwappingInInv() {
+		return swappingInInv;
+	}
+	
+	public void setSwappingInInv() {
+		swappingInInv = true;
+		new BukkitRunnable() {
+			@Override
+			public void run() {
+				swappingInInv = false;
+			}
+		}.runTaskLater(Sword.getInstance(), 1L);
+	}
+	
+	public boolean isDroppingInInv() {
+		return droppingInInv;
+	}
+	
+	public void setDroppingInInv() {
+		droppingInInv = true;
+		new BukkitRunnable() {
+			@Override
+			public void run() {
+				droppingInInv = false;
+			}
+		}.runTaskLater(Sword.getInstance(), 1L);
 	}
 }

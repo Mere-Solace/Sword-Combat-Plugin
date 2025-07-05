@@ -7,8 +7,6 @@ import btm.sword.system.entity.SwordPlayer;
 
 import btm.sword.system.input.InputType;
 import io.papermc.paper.event.player.PrePlayerAttackEntityEvent;
-import org.bukkit.Material;
-import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
@@ -48,11 +46,11 @@ public class InputListener implements Listener {
 		SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId());
 
 		swordPlayer.setPerformedDropAction(true);
-
-		swordPlayer.act(InputType.DROP);
 		
-		if (!swordPlayer.canDrop())
+		if (!swordPlayer.isDroppingInInv()) {
+			swordPlayer.act(InputType.DROP);
 			event.setCancelled(true);
+		}
 		
 		new BukkitRunnable() {
 			@Override
@@ -77,18 +75,16 @@ public class InputListener implements Listener {
 	@EventHandler
 	public void onSwapEvent(PlayerSwapHandItemsEvent event) {
 		SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId());
-		Player player = (Player) swordPlayer.entity();
-		Material itemType = player.getInventory().getItemInMainHand().getType();
 		
-		swordPlayer.act(InputType.SWAP);
-		
-		event.setCancelled(true);
+		if (!swordPlayer.isSwappingInInv()) {
+			swordPlayer.act(InputType.SWAP);
+			event.setCancelled(true);
+		}
 	}
 	
 	@EventHandler
 	public void onChangeItemEvent(PlayerItemHeldEvent event) {
 		SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId());
-//		swordPlayer.message("You changed your held slot. prev: " + event.getPreviousSlot() + ", cur: " + event.getNewSlot());
 		
 		if (swordPlayer.inputReliantOnItem()) {
 			swordPlayer.resetTree();

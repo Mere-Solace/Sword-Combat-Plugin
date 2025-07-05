@@ -4,7 +4,6 @@ import btm.sword.Sword;
 import btm.sword.system.action.SwordAction;
 import btm.sword.system.entity.Combatant;
 import btm.sword.system.entity.SwordEntityArbiter;
-import btm.sword.system.entity.SwordPlayer;
 import btm.sword.util.ParticleWrapper;
 import btm.sword.util.SoundUtil;
 import btm.sword.util.sound.SoundType;
@@ -20,28 +19,12 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Transformation;
-import org.bukkit.util.Vector;
 import org.joml.Vector3f;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class UtilityAction extends SwordAction {
-	public static void allowDrop(SwordPlayer executor) {
-		cast(executor, 0L, new BukkitRunnable() {
-			@Override
-			public void run() {
-				executor.setCanDrop(true);
-				new BukkitRunnable() {
-					@Override
-					public void run() {
-						executor.setCanDrop(false);
-					}
-				}.runTaskLater(Sword.getInstance(), 5L);
-			}
-		});
-	}
-	
 	public static void death(Combatant executor) {
 		cast(executor, 0L, new BukkitRunnable() {
 			@Override

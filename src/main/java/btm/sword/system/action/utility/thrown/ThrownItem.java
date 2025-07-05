@@ -6,6 +6,8 @@ import btm.sword.system.entity.SwordEntity;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.SwordPlayer;
 import btm.sword.util.*;
+import net.kyori.adventure.text.format.TextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.entity.*;
@@ -65,7 +67,7 @@ public class ThrownItem {
 		
 		thrower.setMainHandItemStackDuringThrow(thrower.getItemStackInHand(true));
 		thrower.setOffHandItemStackDuringThrow(thrower.getItemStackInHand(false));
-		xDisplayOffset = mainHandThrow ? -1 : 1;
+		xDisplayOffset = mainHandThrow ? -0.5f : 0.5f;
 		yDisplayOffset = 0.1f;
 		zDisplayOffset = -0.25f;
 	}
@@ -73,15 +75,16 @@ public class ThrownItem {
 	public void onReady() {
 		determineOrientation();
 		
+		thrower.setItemTypeInHand(Material.GUNPOWDER, true);
+		thrower.setItemTypeInHand(Material.GUNPOWDER, false);
+		
 		if (thrower instanceof SwordPlayer sp) {
 			sp.setThrownItemIndex();
 		}
 		
-		thrower.setItemTypeInHand(Material.GUNPOWDER, true);
-		thrower.setItemTypeInHand(Material.GUNPOWDER, false);
-		
 		LivingEntity ex = thrower.entity();
 		
+		int[] i = {0};
 		int[] step = {0};
 		new BukkitRunnable() {
 			@Override
@@ -91,13 +94,28 @@ public class ThrownItem {
 					ThrowAction.throwCancel(thrower);
 					thrower.setThrownItem(null);
 					cancel();
+					return;
 				}
 				else if (thrower.isThrowSuccessful()) {
 					thrower.setItemTypeInHand(Material.AIR, mainHandThrow);
 					ItemStack toReturn = mainHandThrow ? thrower.getOffHandItemStackDuringThrow() : thrower.getMainHandItemStackDuringThrow();
 					thrower.setItemStackInHand(toReturn, !mainHandThrow);
 					cancel();
+					return;
 				}
+				
+				if (thrower instanceof SwordPlayer sp) {
+					if (sp.getCurrentInvIndex() == sp.getThrownItemIndex()) {
+						if (i[0] < 10)
+							sp.itemNameDisplay("- HURL IT AT 'EM SOLDIER! -", TextColor.color(100, 100, 100), null);
+						else
+							sp.itemNameDisplay("| HURL IT AT 'EM SOLDIER! |", TextColor.color(150, 150, 150), null);
+						
+						if (i[0] > 20) i[0] = 0;
+						i[0]++;
+					}
+				}
+				
 				ex.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 1, 2));
 				
 				if (step[0] % 2 == 0) {
@@ -123,12 +141,12 @@ public class ThrownItem {
 		double sinPhi = Math.sin(phi);
 		double forwardCoeff = initialVelocity*cosPhi;
 		double upwardCoeff = initialVelocity*sinPhi;
-		origin = o.add(basis.getFirst().multiply(mainHandThrow ? 1 : -1))
+		origin = o.add(basis.getFirst().multiply(mainHandThrow ? 0.5 : -0.5))
 				.add(basis.get(1).multiply(0.1))
 				.add(basis.getLast().multiply(-0.25));
 		cur = origin.clone();
 		prev = cur.clone();
-		Vector flatDir = thrower.getFlatDir();
+		Vector flatDir = thrower.getFlatDir().rotateAroundY(mainHandThrow ? Math.PI/85 : -Math.PI/85);
 		Vector forwardVelocity = flatDir.clone().multiply(forwardCoeff);
 		Vector upwardVelocity = VectorUtil.UP.clone().multiply(upwardCoeff);
 		
@@ -178,7 +196,7 @@ public class ThrownItem {
 			newRotation = curRotation.rotateZ((float) -Math.PI/8);
 		}
 		else {
-			newRotation = curRotation.rotateX((float) Math.PI/8);
+			newRotation = curRotation.rotateX((float) Math.PI/32);
 		}
 		
 		display.setTransformation(
@@ -193,8 +211,8 @@ public class ThrownItem {
 	
 	public void onEnd() {
 		if (caught) onCatch();
-		else if (grounded) onGrounded();
 		else if (hit) onHit();
+		else if (grounded) onGrounded();
 	}
 	
 	public void onGrounded() {
@@ -329,7 +347,7 @@ public class ThrownItem {
 	
 	public void hitCheck() {
 		Predicate<Entity> filter = entity -> (entity instanceof LivingEntity l) && !l.isDead() && l.getType() != EntityType.ARMOR_STAND;
-		Predicate<Entity> effFilter = t < 20 ? entity -> filter.test(entity) && entity.getUniqueId() != thrower.uuid() : filter;
+		Predicate<Entity> effFilter = t < 20 ? entity -> filter.test(entity) && entity.getUniqueId() != thrower.getUniqueId() : filter;
 		
 		RayTraceResult hitEntity = display.getWorld().rayTraceEntities(prev, velocity, initialVelocity, 0.6, effFilter);
 		
@@ -337,7 +355,7 @@ public class ThrownItem {
 		
 		if (hitEntity.getHitEntity() == null) return;
 		
-		if (hitEntity.getHitEntity().getUniqueId() == thrower.uuid()) {
+		if (hitEntity.getHitEntity().getUniqueId() == thrower.getUniqueId()) {
 			caught = true;
 		}
 		else {
@@ -370,8 +388,8 @@ public class ThrownItem {
 		}
 		else if (display.getItemStack().getType() == Material.SHIELD) {
 			display.setTransformation(new Transformation(
-					base.add(new Vector3f(0,0,0)),
-					new Quaternionf(),
+					base.add(new Vector3f(0,0.5f,1)),
+					new Quaternionf().rotateY((float) Math.PI/4),
 					new Vector3f(1,1,1),
 					new Quaternionf()
 			));
@@ -379,7 +397,7 @@ public class ThrownItem {
 		else {
 			display.setTransformation(new Transformation(
 					base.add(new Vector3f()),
-					new Quaternionf(),
+					new Quaternionf().rotateZ((float) Math.PI/8),
 					new Vector3f(1,1,1),
 					new Quaternionf()
 			));

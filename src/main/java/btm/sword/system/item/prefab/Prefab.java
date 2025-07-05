@@ -14,13 +14,12 @@ public class Prefab {
 	public static ItemStack gun;
 	
 	static {
-		sword = new ItemBuilder(Material.NETHERITE_SWORD)
-				.name("Muramasa", TextColor.color(254,56,0), TextDecoration.BOLD)
+		sword = new ItemBuilder(Material.DIAMOND_SWORD)
+				.name("Masamune", TextColor.color(254,56,0), TextDecoration.BOLD)
 				.lore(List.of(
-						Component.text().content("yes").color(TextColor.color(89,89,89)).build(),
-						Component.newline(),
-						Component.newline(),
-						Component.text().content("assiduity").color(TextColor.color(160,160,160)).build()))
+						Component.text().content("Veracity").color(TextColor.color(160,160,160)).build(),
+						Component.text().content("&").color(TextColor.color(89,89,89)).build(),
+						Component.text().content("Assiduity").color(TextColor.color(160,160,160)).build()))
 				.unbreakable(true)
 				.durability(3)
 				.tag("weapon", "long_sword")
@@ -30,10 +29,9 @@ public class Prefab {
 		gun = new ItemBuilder(Material.IRON_SHOVEL)
 				.name("Gunblade", TextColor.color(0,174,200), TextDecoration.BOLD)
 				.lore(List.of(
-						Component.text().content("yes").color(TextColor.color(89,89,89)).build(),
-						Component.newline(),
-						Component.newline(),
-						Component.text().content("assiduity").color(TextColor.color(160,160,160)).build()))
+						Component.text().content("Veracity").color(TextColor.color(160,160,160)).build(),
+						Component.text().content("&").color(TextColor.color(89,89,89)).build(),
+						Component.text().content("Assiduity").color(TextColor.color(160,160,160)).build()))
 				.unbreakable(true)
 				.durability(3)
 				.tag("weapon", "gun")

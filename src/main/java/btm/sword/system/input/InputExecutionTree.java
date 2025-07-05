@@ -177,6 +177,8 @@ public class InputExecutionTree {
 	}
 	
 	public void initializeInputTree() {
+		// NOTE: Do not start inputs with swap or drop... those actions work normally if used at the root
+		
 			// Item independent actions:
 		// dodge forward, dodge backward
 		add(List.of(InputType.SWAP, InputType.SWAP),
@@ -190,7 +192,7 @@ public class InputExecutionTree {
 				true,
 				true);
 
-		add(List.of(InputType.SHIFT, InputType.SWAP),
+		add(List.of(InputType.SHIFT, InputType.SHIFT),
 				new InputAction(
 						executor -> MovementAction.dash(executor, false),
 						executor -> executor.calcCooldown(AspectType.CELERITY, 200L, 1000L, 10),
@@ -249,7 +251,7 @@ public class InputExecutionTree {
 				false);
 		
 		// throw hold action
-		add(List.of(InputType.DROP, InputType.RIGHT),
+		add(List.of(InputType.RIGHT),
 				new InputAction(
 						ThrowAction::throwReady,
 						executor -> 0L,
@@ -261,7 +263,7 @@ public class InputExecutionTree {
 				true);
 		
 		// throw
-		add(List.of(InputType.DROP, InputType.RIGHT, InputType.RIGHT_HOLD),
+		add(List.of(InputType.RIGHT, InputType.RIGHT_HOLD),
 				new InputAction(
 						ThrowAction::throwItem,
 						executor -> 0L,
@@ -289,46 +291,23 @@ public class InputExecutionTree {
 //						Combatant::canPerformAction,
 //						false, false),
 //				true, false, true);
+//
+//		add(List.of(InputType.LEFT, InputType.RIGHT),
+//				new InputAction(
+//						UtilityAction::orientationTest,
+//						executor -> 0L,
+//						Combatant::canPerformAction,
+//						false, false),
+//				true, true, true);
 		
-		add(List.of(InputType.LEFT, InputType.RIGHT),
-				new InputAction(
-						UtilityAction::orientationTest,
-						executor -> 0L,
-						Combatant::canPerformAction,
-						false, false),
-				true, true, true);
 		
-		
-		add(List.of(InputType.SWAP, InputType.RIGHT, InputType.LEFT),
+		add(List.of(InputType.RIGHT, InputType.RIGHT, InputType.LEFT),
 				null,
 				true,
 				false,
 				true);
 		
-		add(List.of(InputType.RIGHT),
-				new InputAction(
-						ThrowAction::throwReady,
-						executor -> 0L,
-						Combatant::canPerformAction,
-						false,
-						false),
-				true,
-				true,
-				true);
-		
-		add(List.of(InputType.RIGHT, InputType.RIGHT_HOLD),
-				new InputAction(
-						ThrowAction::throwItem,
-						executor -> 0L,
-						Combatant::canPerformAction,
-						false,
-						false),
-				true,
-				true,
-				true,
-				1000L);
-		
-		add(List.of(InputType.SHIFT, InputType.SHIFT_HOLD),
+		add(List.of(InputType.DROP, InputType.DROP),
 				new InputAction(
 						UtilityAction::death,
 						executor -> executor.calcCooldown(AspectType.CELERITY, 200L,1400L, 10),
@@ -339,18 +318,6 @@ public class InputExecutionTree {
 				true,
 				true,
 				500L);
-		
-		// Drop an item "ability"
-		add(List.of(InputType.DROP, InputType.DROP, InputType.DROP),
-				new InputAction(
-						executor -> UtilityAction.allowDrop((SwordPlayer) executor),
-						executor -> 0L,
-						Combatant::canPerformAction,
-						false,
-						false),
-				true,
-				true,
-				true);
 	}
 	
 	public static class InputNode {

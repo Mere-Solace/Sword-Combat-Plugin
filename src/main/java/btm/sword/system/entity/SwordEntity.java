@@ -7,6 +7,7 @@ import btm.sword.util.Cache;
 import btm.sword.util.EntityUtil;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.entity.Item;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -131,7 +132,7 @@ public abstract class SwordEntity {
 		this.self = entity;
 	}
 	
-	public UUID uuid() {
+	public UUID getUniqueId() {
 		return uuid;
 	}
 	
@@ -328,9 +329,9 @@ public abstract class SwordEntity {
 				return;
 			}
 			
-			ItemStack[] contents = inv.getContents();
+			ItemStack[] contents = inv.getStorageContents();
 			for (int slot = 0; slot < contents.length; slot++) {
-				if (slot >= 36 && slot <= 39) continue;
+//				if (slot >= 36 && slot <= 39) continue;
 				
 				ItemStack slotItem = contents[slot];
 				if (slotItem == null || slotItem.getType().isAir()) {
@@ -338,6 +339,17 @@ public abstract class SwordEntity {
 					return;
 				}
 			}
+			
+			Item dropped = p.getWorld().dropItemNaturally(p.getLocation(), itemStack);
+			new BukkitRunnable() {
+				@Override
+				public void run() {
+					if (dropped.isDead()) {
+						cancel();
+					}
+					Cache.thrownItemMarkerParticle2.display(dropped.getLocation());
+				}
+			}.runTaskTimer(Sword.getInstance(), 0L, 5L);
 		}
 		else {
 			Objects.requireNonNull(self.getEquipment()).setItemInMainHand(itemStack);

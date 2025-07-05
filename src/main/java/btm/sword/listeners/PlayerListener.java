@@ -12,11 +12,13 @@ import net.kyori.adventure.key.Key;
 import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Particle;
+import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityPickupItemEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.inventory.*;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
@@ -56,6 +58,33 @@ public class PlayerListener implements Listener {
 		SwordEntity e = SwordEntityArbiter.getOrAdd(event.getEntity().getUniqueId());
 		if (!e.isAbleToPickup())
 			event.setCancelled(true);
+	}
+	
+	@EventHandler
+	public void inventoryEvent(InventoryEvent event) {
+		for (HumanEntity h : event.getViewers()) {
+			if (h instanceof Player) {
+				SwordEntityArbiter.get(h.getUniqueId()).message("getInventory(): " + event.getInventory() + "\n  getView(): " + event.getView());
+			}
+		}
+	}
+	
+	@EventHandler
+	public void inventoryInteractEvent(InventoryClickEvent event) {
+		if (event.getInventory().getType() == InventoryType.PLAYER) {
+			SwordPlayer sp = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getViewers().getFirst().getUniqueId());
+			
+			ClickType clickType = event.getClick();
+			switch (clickType) {
+				case SWAP_OFFHAND -> sp.setSwappingInInv();
+				case DROP -> sp.setDroppingInInv();
+			}
+			InventoryAction action = event.getAction();
+			switch (action) {
+				case DROP_ALL_SLOT, DROP_ALL_CURSOR, DROP_ONE_SLOT, DROP_ONE_CURSOR -> sp.setDroppingInInv();
+				case SWAP_WITH_CURSOR, HOTBAR_SWAP -> sp.setSwappingInInv();
+			}
+		}
 	}
 	
 	@EventHandler

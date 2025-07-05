@@ -53,7 +53,7 @@ public class MovementAction extends SwordAction {
 							DisplayUtil.line(List.of(Cache.basicSwordBlueTransitionParticle), loc, dir,
 									maxDistance/2, 0.3);
 							t[0]+=2;
-							if (t[0] > 60) cancel();
+							if (t[0] > 4) cancel();
 						}
 					}.runTaskTimer(Sword.getInstance(), 0L, 2L);
 					
