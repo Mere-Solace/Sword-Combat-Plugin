@@ -3,6 +3,7 @@ package btm.sword.system.action.utility.thrown;
 import btm.sword.system.action.SwordAction;
 import btm.sword.system.entity.Combatant;
 import btm.sword.system.entity.SwordPlayer;
+import org.bukkit.Color;
 import org.bukkit.entity.*;
 import org.bukkit.inventory.*;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -15,6 +16,8 @@ public class ThrowAction extends SwordAction {
 		
 		LivingEntity ex = executor.entity();
 		ItemDisplay display = (ItemDisplay) ex.getWorld().spawnEntity(ex.getEyeLocation(), EntityType.ITEM_DISPLAY);
+		display.setGlowing(true);
+		display.setGlowColorOverride(Color.fromRGB(255, 0, 15));
 		
 		ItemStack main = executor.getItemStackInHand(true);
 		ItemStack off = executor.getItemStackInHand(false);

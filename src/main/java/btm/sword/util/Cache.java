@@ -19,9 +19,8 @@ public class Cache {
 	public static final List<Vector> dragonKillerArc;
 	public static final List<Double> dragonKillerArcRatios;
 	
-	public static final List<Vector> aerialForwardSword;
+	public static final List<Vector> aerialNeutralSword;
 	public static final List<Vector> aerialSwordDown;
-	public static final List<Vector> aerialSwordUp;
 	
 	public static final ParticleWrapper testFlameParticle;
 	public static final ParticleWrapper testSoulFlameParticle;
@@ -88,10 +87,10 @@ public class Cache {
 		dragonKillerArcRatios = new ArrayList<>(List.of(
 				0.86, 2.13, 2.3, 0.87));
 		
-		aerialForwardSword = new ArrayList<>(List.of(
-				new Vector(1.0961, 3.324, -1.13),
-				new Vector(0, -1.083, -0.791),
-				new Vector(-0.2825, 0.951, 10.509),
+		aerialNeutralSword = new ArrayList<>(List.of(
+				new Vector(1.0961, 1.742, -1.13),
+				new Vector(0, -1.987, -0.791),
+				new Vector(-0.2825, 0.951, 9.153),
 				new Vector(-0.7458, -5.151, -1.808)));
 		
 		aerialSwordDown = new ArrayList<>(List.of(
@@ -100,12 +99,6 @@ public class Cache {
 				new Vector(0.329, -0.165, 4.97),
 				new Vector(-0.07, -6.15, 0.98)));
 		
-		aerialSwordUp = new ArrayList<>(List.of(
-				new Vector(-1.19, -0.389, -0.63),
-				new Vector(0.84, -0.053, 3.64),
-				new Vector(-1.449, 0.71, 3.43),
-				new Vector(-0.91, -0.13, 4.83)));
-		
 		
 		testFlameParticle = new ParticleWrapper(Particle.FLAME, 2, 0.025, 0.025, 0.025, 0);
 		testSoulFlameParticle = new ParticleWrapper(Particle.SOUL_FIRE_FLAME, 1, 0.025, 0.025, 0.025, 0);
@@ -113,7 +106,7 @@ public class Cache {
 		testLavaDripParticle = new ParticleWrapper(Particle.DRIPPING_LAVA, 2, 0, 0, 0, 0);
 		testSwingParticle = new ParticleWrapper(Particle.DUST_COLOR_TRANSITION, 2, 0, 0, 0, 1,
 				new Particle.DustTransition(Color.fromRGB(211, 222, 240), Color.fromRGB(36, 103, 220), 0.7f));
-		testHitParticle = new ParticleWrapper(Particle.SONIC_BOOM, 3, 0, 0, 0, 0.5);
+		testHitParticle = new ParticleWrapper(Particle.SOUL, 30, 0.1, 0.1, 0.1, 0.15);
 		testBleedParticle = new ParticleWrapper(Particle.BLOCK, 5, 0, 0, 0, Material.CRIMSON_HYPHAE.createBlockData());
 		
 		thrownItemStickParticle = new ParticleWrapper(Particle.SOUL, 2, 0, 0, 0, 0);

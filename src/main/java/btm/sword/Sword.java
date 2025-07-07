@@ -5,15 +5,19 @@ import btm.sword.listeners.EntityListener;
 import btm.sword.listeners.InputListener;
 import btm.sword.listeners.PlayerListener;
 import btm.sword.system.playerdata.PlayerDataManager;
-
 import org.bukkit.plugin.java.JavaPlugin;
+
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 
 public final class Sword extends JavaPlugin {
 	private static Sword instance;
+	private static ScheduledExecutorService scheduler;
 	
 	@Override
 	public void onEnable() {
 		instance = this;
+		scheduler = Executors.newSingleThreadScheduledExecutor();
 		
 		getServer().getPluginManager().registerEvents(new InputListener(), this);
 		getServer().getPluginManager().registerEvents(new PlayerListener(), this);
@@ -35,5 +39,9 @@ public final class Sword extends JavaPlugin {
 	
 	public static Sword getInstance() {
 		return instance;
+	}
+	
+	public static ScheduledExecutorService getScheduler() {
+		return scheduler;
 	}
 }

@@ -30,12 +30,6 @@ public class AttackAction extends SwordAction {
 		double dot = executor.entity().getEyeLocation().getDirection().dot(VectorUtil.UP);
 		
 		if (executor.isGrounded()) {
-			if (dot < 0.5 && dot > -0.5) {
-			
-			}
-			else {
-				executor.message("tilted attack");
-			}
 			for (var entry : attackMap.entrySet()) {
 				if (item.name().endsWith(entry.getKey())) {
 					entry.getValue().accept(executor, type);
@@ -46,9 +40,8 @@ public class AttackAction extends SwordAction {
 		else {
 			((SwordPlayer) executor).resetTree(); // can't combo aerials
 			
-			AttackType attackType = AttackType.F_AIR;
+			AttackType attackType = AttackType.N_AIR;
 			if (dot < -0.5) attackType = AttackType.DOWN_AIR;
-			else if (dot > 0.5) attackType = AttackType.UP_AIR;
 			
 			for (var entry : attackMap.entrySet()) {
 				if (item.name().endsWith(entry.getKey())) {
@@ -140,21 +133,15 @@ public class AttackAction extends SwordAction {
 							rangeMultiplier = 1.4;
 							controlVectors = new ArrayList<>(Cache.basicSword3);
 						}
-						case F_AIR -> {
+						case N_AIR -> {
 							rangeMultiplier = 1.3;
-							controlVectors = new ArrayList<>(Cache.aerialForwardSword);
-							withPitch = false;
+							controlVectors = new ArrayList<>(Cache.aerialNeutralSword);
 							aerial = true;
 						}
 						case DOWN_AIR -> {
 							rangeMultiplier = 1.2;
 							controlVectors = new ArrayList<>(Cache.aerialSwordDown);
 							withPitch = false;
-							aerial = true;
-						}
-						case UP_AIR -> {
-							rangeMultiplier = 1.2;
-							controlVectors = new ArrayList<>(Cache.aerialSwordUp);
 							aerial = true;
 						}
 					}
@@ -181,8 +168,15 @@ public class AttackAction extends SwordAction {
 					
 					if (aerial) o.add(VectorUtil.UP.clone().multiply(ex.getVelocity().getY()));
 					
+					if (!aerial) {
+						Vector curV = ex.getVelocity();
+						ex.setVelocity(new Vector(
+								curV.getX() * 0.3,
+								curV.getY() * 0.4,
+								curV.getZ() * 0.3));
+					}
+					
 					double[] d = {damage};
-					boolean finalAerial = aerial;
 					new BukkitRunnable() {
 						@Override
 						public void run() {
@@ -191,19 +185,6 @@ public class AttackAction extends SwordAction {
 								if (s >= size) {
 									cancel();
 									break;
-								}
-								Vector curV = ex.getVelocity();
-								if (finalAerial) {
-									ex.setVelocity(new Vector(
-											curV.getX() * 0.8,
-											curV.getY(),
-											curV.getZ() * 0.8));
-								}
-								else {
-									ex.setVelocity(new Vector(
-											curV.getX() * 0.5,
-											curV.getY() * 0.4,
-											curV.getZ() * 0.5));
 								}
 								
 								// particle placement

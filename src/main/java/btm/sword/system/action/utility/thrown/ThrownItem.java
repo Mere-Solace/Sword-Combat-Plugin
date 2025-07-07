@@ -7,7 +7,6 @@ import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.SwordPlayer;
 import btm.sword.util.*;
 import net.kyori.adventure.text.format.TextColor;
-import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.entity.*;
@@ -69,7 +68,7 @@ public class ThrownItem {
 		thrower.setOffHandItemStackDuringThrow(thrower.getItemStackInHand(false));
 		xDisplayOffset = mainHandThrow ? -0.5f : 0.5f;
 		yDisplayOffset = 0.1f;
-		zDisplayOffset = -0.25f;
+		zDisplayOffset = -0.05f;
 	}
 	
 	public void onReady() {
@@ -84,9 +83,9 @@ public class ThrownItem {
 		
 		LivingEntity ex = thrower.entity();
 		
-		int[] i = {0};
-		int[] step = {0};
 		new BukkitRunnable() {
+			int i = 0;
+			int step = 0;
 			@Override
 			public void run() {
 				if (thrower.isThrowCancelled()) {
@@ -106,22 +105,22 @@ public class ThrownItem {
 				
 				if (thrower instanceof SwordPlayer sp) {
 					if (sp.getCurrentInvIndex() == sp.getThrownItemIndex()) {
-						if (i[0] < 10)
+						if (i < 10)
 							sp.itemNameDisplay("- HURL IT AT 'EM SOLDIER! -", TextColor.color(100, 100, 100), null);
 						else
 							sp.itemNameDisplay("| HURL IT AT 'EM SOLDIER! |", TextColor.color(150, 150, 150), null);
 						
-						if (i[0] > 20) i[0] = 0;
-						i[0]++;
+						if (i > 20) i = 0;
+						i++;
 					}
 				}
 				
 				ex.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 1, 2));
 				
-				if (step[0] % 2 == 0) {
+				if (step % 2 == 0) {
 					display.teleport(ex.getEyeLocation());
 				}
-				step[0]++;
+				step++;
 			}
 		}.runTaskTimer(Sword.getInstance(), 0L, 1L);
 	}
@@ -242,8 +241,8 @@ public class ThrownItem {
 			}
 		}.runTaskLater(Sword.getInstance(), 1L);
 		
-		int[] tick = {0};
 		disposeTask = new BukkitRunnable() {
+			int tick = 0;
 			@Override
 			public void run() {
 				if (display.isDead()) {
@@ -251,7 +250,7 @@ public class ThrownItem {
 					cancel();
 				}
 				
-				if (tick[0] >= 1000) {
+				if (tick >= 1000) {
 					if (!display.isDead()) display.remove();
 					cancel();
 				}
@@ -260,7 +259,7 @@ public class ThrownItem {
 				Cache.thrownItemMarkerParticle.display(cur);
 				Cache.thrownItemMarkerParticle.display(cur.clone().subtract(step));
 
-				tick[0] += 5;
+				tick += 5;
 			}
 		}.runTaskTimer(Sword.getInstance(), 1L, 5L);
 	}
@@ -288,16 +287,24 @@ public class ThrownItem {
 					if (pinnedBlock == null || pinnedBlock.getHitBlock() == null || pinnedBlock.getHitBlock().getType().isAir()) return;
 					
 					thrower.message("Pinned that infidel!");
+					float yaw = cur.setDirection(velocity.clone().multiply(-1)).getYaw();
+					hitEntity.entity().setBodyYaw(yaw);
 					hitEntity.setPinned(true);
 					new BukkitRunnable() {
+						int i = 0;
 						@Override
 						public void run() {
-							if (!display.isDead()) {
+							if (display.isDead() || i > 50) {
 								hitEntity.setPinned(false);
-								disposeNaturally();
+								if (!display.isDead()) disposeNaturally();
+								cancel();
 							}
+							hitEntity.entity().setBodyYaw(yaw);
+							hitEntity.entity().setVelocity(new Vector());
+							
+							i += 2;
 						}
-					}.runTaskLater(Sword.getInstance(), 70L);
+					}.runTaskTimer(Sword.getInstance(), 0L, 2L);
 				}
 			}.runTaskLater(Sword.getInstance(), 3L);
 			
@@ -388,8 +395,8 @@ public class ThrownItem {
 		}
 		else if (display.getItemStack().getType() == Material.SHIELD) {
 			display.setTransformation(new Transformation(
-					base.add(new Vector3f(0,0.5f,1)),
-					new Quaternionf().rotateY((float) Math.PI/4),
+					base.add(new Vector3f(0,0,0)),
+					new Quaternionf().rotateY((float) (Math.PI/1.01f) * 0),
 					new Vector3f(1,1,1),
 					new Quaternionf()
 			));

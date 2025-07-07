@@ -23,12 +23,13 @@ import java.util.List;
 
 public class MovementAction extends SwordAction {
 	public static void dash(Combatant executor, boolean forward) {
-		double maxDistance = 12;
+		double maxDistance = 6;
 		
 		cast (executor, 5L, new BukkitRunnable() {
 			@Override
 			public void run() {
 				LivingEntity ex = executor.entity();
+				Location initial = ex.getLocation().add(new Vector(0,0.3,0));
 				boolean onGround = executor.isGrounded();
 				Location o = ex.getEyeLocation();
 				
@@ -43,17 +44,14 @@ public class MovementAction extends SwordAction {
 							ex.getLocation().add(new Vector(0,0.3,0)),
 							targetedItem.getLocation().subtract(ex.getLocation()).toVector().normalize(),
 							maxDistance/2);
-					
-					Location loc = ex.getLocation().add(new Vector(0,0.3,0));
-					Vector dir = targetedItem.getLocation().subtract(ex.getLocation()).toVector().normalize();
-					int[] t = {0};
+	
 					new BukkitRunnable() {
+						int t = 0;
 						@Override
 						public void run() {
-							DisplayUtil.line(List.of(Cache.basicSwordBlueTransitionParticle), loc, dir,
-									maxDistance/2, 0.3);
-							t[0]+=2;
-							if (t[0] > 4) cancel();
+							DisplayUtil.secant(List.of(Cache.basicSwordBlueTransitionParticle), initial, ex.getLocation(), 0.3);
+							t += 2;
+							if (t > 4) cancel();
 						}
 					}.runTaskTimer(Sword.getInstance(), 0L, 2L);
 					
@@ -66,7 +64,7 @@ public class MovementAction extends SwordAction {
 						
 						executor.setVelocity(ex.getEyeLocation().getDirection().multiply(Math.sqrt(length)));
 						
-						Vector u = executor.getFlatDir().multiply(forward ? 1 : -1).add(VectorUtil.UP.clone().multiply(0.25));
+						Vector u = executor.getFlatDir().multiply(forward ? 0.5 : -0.5).add(VectorUtil.UP.clone().multiply(0.15));
 						
 						new BukkitRunnable() {
 							@Override
@@ -80,7 +78,7 @@ public class MovementAction extends SwordAction {
 								}
 								else {
 									Vector v = ex.getVelocity();
-									ex.setVelocity(new Vector(v.getX()*0.3,v.getY()*0.3,v.getZ()*0.3));
+									ex.setVelocity(new Vector(v.getX()*0.6,v.getY()*0.6,v.getZ()*0.6));
 									executor.message("Didn't get there");
 								}
 							}
@@ -92,24 +90,31 @@ public class MovementAction extends SwordAction {
 					}
 				}
 				
-				double dashPower = 0.85;
+				double dashPower = 0.7;
 				double s = forward ? dashPower : -dashPower;
-				
-				for (int i = 0; i < 2; i++) {
-					new BukkitRunnable() {
-						@Override
-						public void run() {
-							Vector dir = ex.getEyeLocation().getDirection();
-							if (onGround && (
-									(forward && dir.dot(new Vector(0, 1, 0)) < 0)
-									||
-									(!forward && dir.dot(new Vector(0, 1, 0)) > 0))) {
-								dir = executor.getFlatDir();
-							}
+				Vector up = VectorUtil.UP.clone().multiply(0.05);
+				new BukkitRunnable() {
+					int i = 0;
+					@Override
+					public void run() {
+						Vector dir = ex.getEyeLocation().getDirection();
+						if (onGround && (
+								(forward && dir.dot(new Vector(0, 1, 0)) < 0)
+										||
+										(!forward && dir.dot(new Vector(0, 1, 0)) > 0))) {
+							dir = executor.getFlatDir();
+						}
+						if (i == 0)
+							ex.setVelocity(dir.multiply(s).add(up));
+						else if (i == 1) {
 							ex.setVelocity(dir.multiply(s));
 						}
-					}.runTaskLater(Sword.getInstance(), i);
-				}
+						else {
+							cancel();
+						}
+						i++;
+					}
+				}.runTaskTimer(Sword.getInstance(), 0L, 1L);
 				if (!onGround)
 					executor.increaseAirDashesPerformed();
 			}

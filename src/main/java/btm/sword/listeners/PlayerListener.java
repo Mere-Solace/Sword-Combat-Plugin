@@ -11,6 +11,7 @@ import io.papermc.paper.event.player.AsyncChatEvent;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
+import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
@@ -22,6 +23,7 @@ import org.bukkit.event.inventory.*;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
+import org.bukkit.inventory.ItemStack;
 import org.intellij.lang.annotations.Subst;
 
 public class PlayerListener implements Listener {
@@ -77,12 +79,37 @@ public class PlayerListener implements Listener {
 			ClickType clickType = event.getClick();
 			switch (clickType) {
 				case SWAP_OFFHAND -> sp.setSwappingInInv();
-				case DROP -> sp.setDroppingInInv();
+				case DROP, CONTROL_DROP -> sp.setDroppingInInv();
+				case SHIFT_RIGHT -> {
+					sp.message("Shift right clicking!");
+					sp.entity().getWorld().dropItem(sp.getChestLocation(), event.getCursor());
+					sp.player().getInventory().setItem(event.getSlot(), new ItemStack(Material.AIR));
+				}
+				case DOUBLE_CLICK -> {
+					sp.message("Double clicked smth");
+					sp.entity().getWorld().dropItem(sp.getChestLocation(), event.getCursor());
+					sp.player().getInventory().setItem(event.getSlot(), new ItemStack(Material.AIR));
+				}
+				case SHIFT_LEFT -> {
+					sp.message("Shift lefting!");
+					sp.entity().getWorld().dropItem(sp.getChestLocation(), event.getCursor());
+					sp.player().getInventory().setItem(event.getSlot(), new ItemStack(Material.AIR));
+				}
 			}
 			InventoryAction action = event.getAction();
 			switch (action) {
-				case DROP_ALL_SLOT, DROP_ALL_CURSOR, DROP_ONE_SLOT, DROP_ONE_CURSOR -> sp.setDroppingInInv();
-				case SWAP_WITH_CURSOR, HOTBAR_SWAP -> sp.setSwappingInInv();
+				case DROP_ALL_SLOT, DROP_ALL_CURSOR, DROP_ONE_SLOT, DROP_ONE_CURSOR, UNKNOWN -> {
+					sp.message("Dropping is detected");
+					sp.setDroppingInInv();
+				}
+				case SWAP_WITH_CURSOR, HOTBAR_SWAP -> {
+					sp.message("Swapping detected");
+					sp.setSwappingInInv();
+				}
+				case PICKUP_ALL, PICKUP_HALF, PICKUP_ONE, PICKUP_SOME -> {
+					sp.message("You picked something up");
+				}
+				case PLACE_ALL, PLACE_SOME, PLACE_ONE -> sp.message("You placed something");
 			}
 		}
 	}

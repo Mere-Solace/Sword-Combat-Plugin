@@ -3,6 +3,7 @@ package btm.sword.system.input;
 import btm.sword.Sword;
 import btm.sword.system.action.AttackAction;
 import btm.sword.system.action.MovementAction;
+import btm.sword.system.action.TestAction;
 import btm.sword.system.action.utility.GrabAction;
 import btm.sword.system.action.utility.thrown.ThrowAction;
 import btm.sword.system.action.type.AttackType;
@@ -292,13 +293,13 @@ public class InputExecutionTree {
 //						false, false),
 //				true, false, true);
 //
-//		add(List.of(InputType.LEFT, InputType.RIGHT),
-//				new InputAction(
-//						UtilityAction::orientationTest,
-//						executor -> 0L,
-//						Combatant::canPerformAction,
-//						false, false),
-//				true, true, true);
+		add(List.of(InputType.LEFT, InputType.RIGHT),
+				new InputAction(
+						TestAction::testAttack,
+						executor -> 0L,
+						Combatant::canPerformAction,
+						false, false),
+				true, true, true);
 		
 		
 		add(List.of(InputType.RIGHT, InputType.RIGHT, InputType.LEFT),

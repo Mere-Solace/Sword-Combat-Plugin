@@ -145,6 +145,10 @@ public class SwordPlayer extends Combatant {
 		}
 	}
 	
+	public Player player() {
+		return player;
+	}
+	
 	public boolean hasPerformedDropAction() {
 		return performedDropAction;
 	}
