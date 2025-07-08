@@ -56,6 +56,15 @@ public class ItemBuilder {
 		return this;
 	}
 	
+	public ItemBuilder weaponTag(String key, String value) {
+		meta.getPersistentDataContainer().set(
+				new NamespacedKey(plugin, key),
+				PersistentDataType.STRING,
+				value
+		);
+		return this;
+	}
+	
 	public ItemBuilder baseDamage(double value) {
 		meta.getPersistentDataContainer().set(
 				new NamespacedKey(plugin, "damage"),

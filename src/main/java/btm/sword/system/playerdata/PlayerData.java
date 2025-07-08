@@ -14,7 +14,7 @@ public class PlayerData {
 		combatProfile = new CombatProfile();
 	}
 	
-	public UUID getUUID() {
+	public UUID getUniqueId() {
 		return uuid;
 	}
 	

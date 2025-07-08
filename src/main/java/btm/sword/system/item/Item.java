@@ -30,6 +30,4 @@ public class Item {
 	public String getUUIDString() {
 		return uuid.toString();
 	}
-	
-	
 }

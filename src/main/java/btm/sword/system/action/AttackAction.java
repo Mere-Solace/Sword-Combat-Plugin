@@ -105,6 +105,7 @@ public class AttackAction extends SwordAction {
 	
 	public static void basicSlash(Combatant executor, AttackType type) {
 		long castDuration = (long) executor.calcValueReductive(AspectType.FINESSE, 1L, 3L, 0.2);
+		if (executor instanceof SwordPlayer sp) sp.player().setCooldown(sp.getItemTypeInHand(true), (int) castDuration);
 		cast(executor, castDuration,
 			new BukkitRunnable() {
 				@Override

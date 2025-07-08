@@ -215,7 +215,19 @@ public class InputExecutionTree {
 				false,
 				false,
 				true);
-
+		
+		add(List.of(InputType.SHIFT, InputType.DROP, InputType.SHIFT, InputType.SHIFT_HOLD),
+				new InputAction(
+						TestAction::testAttack2,
+						executor -> 0L,
+						Combatant::canPerformAction,
+						false,
+						true),
+				false,
+				false,
+				true,
+				5L);
+		
 			// Item dependent actions:
 		// basic attacks
 		add(List.of(InputType.LEFT),

@@ -74,8 +74,8 @@ public class ThrownItem {
 	public void onReady() {
 		determineOrientation();
 		
-		thrower.setItemTypeInHand(Material.GUNPOWDER, true);
-		thrower.setItemTypeInHand(Material.GUNPOWDER, false);
+		thrower.setItemTypeInHand(Material.BREAD, true);
+		thrower.setItemTypeInHand(Material.BREAD, false);
 		
 		if (thrower instanceof SwordPlayer sp) {
 			sp.setThrownItemIndex();
@@ -423,7 +423,7 @@ public class ThrownItem {
 		double heightOffset = worldOffset - feet;
 		
 		boolean followHead = hitEntity.entity().getType() != EntityType.SPIDER && diff >= max;
-		EntityUtil.itemDisplayFollowTest(hitEntity, display,  velocity.clone().normalize(), heightOffset, followHead);
+		EntityUtil.itemDisplayFollow(hitEntity, display,  velocity.clone().normalize(), heightOffset, followHead);
 	}
 	
 	public void disposeNaturally() {

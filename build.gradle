@@ -16,11 +16,16 @@ repositories {
         name = "sonatype"
         url = "https://oss.sonatype.org/content/groups/public/"
     }
+    maven {
+        name = "dmulloy2-repo"
+        url = uri("https://repo.dmulloy2.net/repository/public/")
+    }
 }
 
 dependencies {
     compileOnly("io.papermc.paper:paper-api:1.21-R0.1-SNAPSHOT")
     implementation 'com.google.code.gson:gson:2.10.1'
+    compileOnly "com.comphenix.protocol:ProtocolLib:5.1.0"
 }
 
 tasks {

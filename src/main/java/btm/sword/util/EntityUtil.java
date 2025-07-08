@@ -28,7 +28,7 @@ public class EntityUtil {
 		return false;
 	}
 	
-	public static void itemDisplayFollowTest(SwordEntity entity, ItemDisplay itemDisplay, Vector direction, double heightOffset, boolean followHead) {
+	public static void itemDisplayFollow(SwordEntity entity, ItemDisplay itemDisplay, Vector direction, double heightOffset, boolean followHead) {
 		Transformation orientation = itemDisplay.getTransformation();
 		Vector offset = VectorUtil.UP.clone().multiply(heightOffset);
 		

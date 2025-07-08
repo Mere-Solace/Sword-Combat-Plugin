@@ -214,12 +214,15 @@ public abstract class SwordEntity {
 			hit = true;
 		this.hitInvulnerableTickDuration = hitInvulnerableTickDuration;
 		
-		self.damage(0.01);
-		self.heal(7474040);
+		
 		
 		if (aspects.toughness().remove(baseToughnessDamage) && !toughnessBroken) {
 			Cache.toughnessBreakParticle1.display(getChestLocation());
 			onToughnessBroken();
+			self.playHurtAnimation(0);
+//			self.damage(0.01);
+//			self.heal(7474040);
+			displayShardLoss();
 		}
 		
 		// remove returns true only if the value reaches or goes below 0
@@ -244,10 +247,14 @@ public abstract class SwordEntity {
 		for (Affliction affliction : afflictions) {
 			affliction.start(this);
 		}
-//
-//		source.message("Hit that guy. He now has: " + aspects.shards().cur() + " pure shards,  "
-//				+ aspects.toughness().cur() + " toughness,  "
-//				+ " and " + aspects.soulfire().cur() + " soulfire.");
+
+		source.message("Hit that guy. He now has:\n" + aspects.shards().cur() + " shards,\n"
+				+ aspects.toughness().cur() + " toughness,\n"
+				+ aspects.soulfire().cur() + " soulfire.");
+	}
+	
+	public void displayShardLoss() {
+	
 	}
 	
 	public void resetResources() {
@@ -384,6 +391,10 @@ public abstract class SwordEntity {
 	
 	public void setItemTypeInHand(Material itemType, boolean main) {
 		setItemStackInHand(new ItemStack(itemType), main);
+	}
+	
+	public boolean hasItemInMainHand() {
+		return !getItemStackInHand(true).isEmpty();
 	}
 	
 	public boolean isAbleToPickup() {

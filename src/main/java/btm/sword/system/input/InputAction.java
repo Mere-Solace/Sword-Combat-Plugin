@@ -41,6 +41,7 @@ public class InputAction {
 		}
 		if (canCast(executor)) {
 			action.accept(executor);
+			setTimeLastExecuted();
 			return true;
 		}
 		else {
