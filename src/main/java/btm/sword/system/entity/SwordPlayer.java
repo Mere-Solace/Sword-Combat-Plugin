@@ -30,18 +30,15 @@ public class SwordPlayer extends Combatant {
 	private final long inputTimeoutMillis = 1200L;
 	
 	private boolean performedDropAction;
-	private boolean canDrop;
 	
-	private long holdTimeoutLength;
-	
-	private BukkitTask rightHoldCheckTask;
-	private ItemStack heldItemStack;
-	private boolean mainHandForRight;
-	private int rightHoldIndex;
+	private BukkitTask rightTask;
 	private boolean holdingRight;
 	private long rightHoldTimeStart;
-	private long lastHoldTimeRecorded;
 	private long timeRightHeld;
+	private ItemStack mainItemStackAtTimeOfHold;
+	private ItemStack offItemStackAtTimeOfHold;
+	private int indexOfRightHold;
+	private boolean mainHandRightHold;
 	
 	private BukkitTask sneakTask;
 	private boolean sneaking;
@@ -61,15 +58,11 @@ public class SwordPlayer extends Combatant {
 		inputExecutionTree.initializeInputTree();
 		
 		performedDropAction = false;
-		canDrop = false;
 		
-		holdTimeoutLength = 75L;
-		
-		rightHoldCheckTask = null;
 		holdingRight = false;
 		rightHoldTimeStart = 0L;
-		lastHoldTimeRecorded = 0L;
 		timeRightHeld = 0L;
+		mainHandRightHold = false;
 		
 		sneaking = false;
 		sneakHoldTimeStart = 0L;
@@ -79,6 +72,16 @@ public class SwordPlayer extends Combatant {
 		
 		swappingInInv = false;
 		droppingInInv = false;
+	}
+	
+	@Override
+	public void onSpawn() {
+		super.onSpawn();
+	}
+	
+	@Override
+	public void onDeath() {
+	
 	}
 	
 	public void act(InputType input) {
@@ -105,41 +108,42 @@ public class SwordPlayer extends Combatant {
 		}
 		
 		if (input == InputType.RIGHT) {
-			if (rightHoldCheckTask == null) {
-				startRightHoldCheck();
-			}
-			else {
-				inputExecutionTree.restartTimeoutTimer();
+			if (rightTask == null)
+				startHoldingRight();
+			else
 				return;
-			}
 		}
 		else if (input == InputType.SHIFT) {
 			if (sneakTask == null)
 				startSneaking();
+			else
+				return;
 		}
 		
-		if (input == InputType.RIGHT_HOLD || input == InputType.SHIFT_HOLD) {
+		if (input == InputType.RIGHT_TAP || input == InputType.SHIFT_TAP) {
+			if (!inputExecutionTree.nextExists(input)) return;
+		}
+		
+		if (input == InputType.RIGHT_HOLD) {
 			long minTime = inputExecutionTree.getMinHoldLengthOfNext(input);
-			if (minTime == -1
-					|| (input == InputType.RIGHT_HOLD && timeRightHeld < minTime)
-					|| (input == InputType.SHIFT_HOLD && timeSneakHeld < minTime)) {
-				if (minTime == -1) message("No hold input action");
-				else message("Didn't hold for long enough");
-				
+			if (minTime == -1 || timeRightHeld < minTime) {
 				if (isAttemptingThrow()) ThrowAction.throwCancel(this);
-				
+				return;
+			}
+		}
+		else if (input == InputType.SHIFT_HOLD) {
+			long minTime = inputExecutionTree.getMinHoldLengthOfNext(input);
+			if (minTime == -1 || timeSneakHeld < minTime) {
 				return;
 			}
 		}
 		
 		InputExecutionTree.InputNode node = inputExecutionTree.step(input);
 		
-		if (node != null) {
-			if (node.shouldDisplay()) {
-				displayInputSequence();
-			}
-		}
-		else return;
+		if (node == null)
+			return;
+		else if (node.shouldDisplay())
+			displayInputSequence();
 
 		InputAction action = node.getAction();
 		
@@ -160,22 +164,6 @@ public class SwordPlayer extends Combatant {
 	
 	public void setPerformedDropAction(boolean performedDropAction) {
 		this.performedDropAction = performedDropAction;
-	}
-	
-	public long getHoldTimeoutLength() {
-		return holdTimeoutLength;
-	}
-	
-	public void setHoldTimeoutLength(long holdTimeoutLength) {
-		this.holdTimeoutLength = holdTimeoutLength;
-	}
-	
-	public boolean isMainHandForRight() {
-		return mainHandForRight;
-	}
-	
-	public void setMainHandForRight(boolean mainHandForRight) {
-		this.mainHandForRight = mainHandForRight;
 	}
 	
 	public void resetTree() {
@@ -264,61 +252,67 @@ public class SwordPlayer extends Combatant {
 		return inputExecutionTree.requiresSameItem();
 	}
 	
-	public void startRightHoldCheck() {
+	public void startHoldingRight() {
+		message("   Starting to hold right click!");
 		if (holdingRight) return;
 		
-		if (rightHoldCheckTask != null && !rightHoldCheckTask.isCancelled()) rightHoldCheckTask.cancel();
-		
-		mainHandForRight = hasItemInMainHand();
-		heldItemStack = getItemStackInHand(mainHandForRight);
-		if (mainHandForRight)
-			rightHoldIndex = getCurrentInvIndex();
-		else
-			rightHoldIndex = -1;
-		
-		setItemTypeInHand(Material.BREAD, mainHandForRight);
+		if (rightTask != null && !rightTask.isCancelled()) rightTask.cancel();
 		
 		holdingRight = true;
 		rightHoldTimeStart = System.currentTimeMillis();
 		
-		rightHoldCheckTask = new BukkitRunnable() {
+		mainItemStackAtTimeOfHold = getItemStackInHand(true);
+		offItemStackAtTimeOfHold = getItemStackInHand(false);
+		
+		mainHandRightHold = !mainItemStackAtTimeOfHold.isEmpty();
+		
+		indexOfRightHold = getCurrentInvIndex();
+		
+		setItemStackInHand(new ItemStack(Material.GUNPOWDER), true);
+		
+		rightTask = new BukkitRunnable() {
 			@Override
 			public void run() {
-				if (!player.getActiveItem().isEmpty()) {
-					message("   ~ lad! ye be usin' an active item! ~");
-					updateLastRightHoldTime();
+				inputExecutionTree.restartTimeoutTimer();
+				if (!player.isHandRaised() && !player.isBlocking()) { // player must ALWAYS be holding a shield in offhand, then... I can work with this though
+					endHoldingRight();
 				}
-				
-				long curTime = System.currentTimeMillis();
-				if (curTime - lastHoldTimeRecorded > 62L) { // don't allow min hold times to be less than ~ 112 ms!
-					onStopRightHold();
+				if (!holdingRight) {
+					if (timeRightHeld < 162)
+						act(InputType.RIGHT_TAP);
+					else
+						act(InputType.RIGHT_HOLD);
 					resetHoldingRight();
 					cancel();
 				}
 			}
-		}.runTaskTimer(Sword.getInstance(), 0, 1L);
-	}
-	
-	public void updateLastRightHoldTime() {
-		lastHoldTimeRecorded = System.currentTimeMillis();
+		}.runTaskTimer(Sword.getInstance(), 2L, 1L);
 	}
 	
 	public void resetHoldingRight() {
-		rightHoldCheckTask = null;
+		rightTask = null;
 		holdingRight = false;
 		rightHoldTimeStart = 0L;
-		lastHoldTimeRecorded = 0L;
 		timeRightHeld = 0L;
 	}
 	
-	public void onStopRightHold() {
+	public void endHoldingRight() {
+		holdingRight = false;
 		timeRightHeld = System.currentTimeMillis() - rightHoldTimeStart;
-		message("       * held right for: " + timeRightHeld + " ms *");
-		if (mainHandForRight)
-			setItemAtIndex(heldItemStack, rightHoldIndex);
-		else
-			setItemStackInHand(heldItemStack, false);
-		act(InputType.RIGHT_HOLD);
+		setItemStackInHand(offItemStackAtTimeOfHold, false);
+		setItemAtIndex(mainItemStackAtTimeOfHold, indexOfRightHold);
+	}
+	
+	public ItemStack getMainItemStackAtTimeOfHold() {
+		return mainItemStackAtTimeOfHold;
+	}
+	
+	public ItemStack getOffItemStackAtTimeOfHold() {
+		return offItemStackAtTimeOfHold;
+	}
+	
+	public boolean isMainHandRightHold() {
+		return mainHandRightHold;
 	}
 	
 	public void startSneaking() {
@@ -334,7 +328,10 @@ public class SwordPlayer extends Combatant {
 			public void run() {
 				inputExecutionTree.restartTimeoutTimer();
 				if (!sneaking) {
-					act(InputType.SHIFT_HOLD);
+					if (timeSneakHeld < 162)
+						act(InputType.SHIFT_TAP);
+					else
+						act(InputType.SHIFT_HOLD);
 					resetSneaking();
 					cancel();
 				}
@@ -352,16 +349,6 @@ public class SwordPlayer extends Combatant {
 	public void endSneaking() {
 		sneaking = false;
 		timeSneakHeld = System.currentTimeMillis() - sneakHoldTimeStart;
-	}
-	
-	@Override
-	public void onSpawn() {
-		super.onSpawn();
-	}
-	
-	@Override
-	public void onDeath() {
-	
 	}
 	
 	public int getThrownItemIndex() {

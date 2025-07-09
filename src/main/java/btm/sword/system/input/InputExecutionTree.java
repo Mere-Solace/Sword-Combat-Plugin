@@ -101,6 +101,10 @@ public class InputExecutionTree {
 		return currentNode == root;
 	}
 	
+	public boolean nextExists(InputType input) {
+		return currentNode.getChild(input) != null;
+	}
+	
 	public void add(List<InputType> inputSequence, InputAction action,
 	                boolean sameItemRequired,
 	                boolean cancellable,
@@ -157,12 +161,12 @@ public class InputExecutionTree {
 		switch (type) {
 			case LEFT -> out = "L";
 			case RIGHT -> out = "R";
+			case RIGHT_TAP, SHIFT_TAP -> out = "_";
+			case RIGHT_HOLD, SHIFT_HOLD -> out = "___";
 			case DROP -> out = "D";
+			case SWAP -> out = "F";
 			case SHIFT -> out = "S";
-			case SWAP -> out = "~";
-			case RIGHT_HOLD -> out = "_R_";
-			case SHIFT_HOLD -> out = "_S_";
-			default -> out = "";
+			default -> out = "*";
 		}
 		return out;
 	}
@@ -314,7 +318,7 @@ public class InputExecutionTree {
 				true, true, true);
 		
 		
-		add(List.of(InputType.RIGHT, InputType.RIGHT, InputType.LEFT),
+		add(List.of(InputType.RIGHT, InputType.LEFT),
 				null,
 				true,
 				false,
@@ -323,14 +327,13 @@ public class InputExecutionTree {
 		add(List.of(InputType.DROP, InputType.DROP),
 				new InputAction(
 						UtilityAction::death,
-						executor -> executor.calcCooldown(AspectType.CELERITY, 200L,1400L, 10),
+						executor -> 0L,
 						Combatant::canPerformAction,
 						true,
 						true),
 				true,
 				true,
-				true,
-				500L);
+				true);
 	}
 	
 	public static class InputNode {

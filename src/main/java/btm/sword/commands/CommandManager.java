@@ -1,6 +1,5 @@
 package btm.sword.commands;
 
 public class CommandManager {
-	public static void register() {
-	}
+	public static void register() { }
 }

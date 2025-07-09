@@ -19,15 +19,18 @@ public class ThrowAction extends SwordAction {
 		display.setGlowing(true);
 		display.setGlowColorOverride(Color.fromRGB(255, 0, 15));
 		
-		ItemStack main = executor.getItemStackInHand(true);
-		ItemStack off = executor.getItemStackInHand(false);
-		if (main.isEmpty() && off.isEmpty()) {
-			if (executor instanceof SwordPlayer sp) sp.resetTree();
-			return;
+		ThrownItem thrownItem;
+		if (executor instanceof SwordPlayer sp) {
+			display.setItemStack(sp.isMainHandRightHold() ? sp.getMainItemStackAtTimeOfHold() : sp.getOffItemStackAtTimeOfHold());
+			thrownItem = new ThrownItem(executor, display, sp.isMainHandRightHold());
 		}
-		
-		display.setItemStack(main.isEmpty() ? off : main);
-		ThrownItem thrownItem = new ThrownItem(executor, display, !main.isEmpty());
+		else {
+			ItemStack main = executor.getItemStackInHand(true);
+			ItemStack off = executor.getItemStackInHand(false);
+			
+			display.setItemStack(main.isEmpty() ? off : main);
+			thrownItem = new ThrownItem(executor, display, !main.isEmpty());
+		}
 		executor.setThrownItem(thrownItem);
 		thrownItem.onReady();
 	}

@@ -64,8 +64,14 @@ public class ThrownItem {
 				new ParticleWrapper(Particle.BLOCK, 5, 0.25,  0.25,  0.25, display.getItemStack().getType().createBlockData()) :
 				null;
 		
+		if (thrower instanceof SwordPlayer sp) {
+			sp.setMainHandItemStackDuringThrow(sp.getMainItemStackAtTimeOfHold());
+			sp.setOffHandItemStackDuringThrow(sp.getOffItemStackAtTimeOfHold());
+		}
+		else {
 		thrower.setMainHandItemStackDuringThrow(thrower.getItemStackInHand(true));
 		thrower.setOffHandItemStackDuringThrow(thrower.getItemStackInHand(false));
+		}
 		xDisplayOffset = mainHandThrow ? -0.5f : 0.5f;
 		yDisplayOffset = 0.1f;
 		zDisplayOffset = -0.05f;
@@ -73,9 +79,6 @@ public class ThrownItem {
 	
 	public void onReady() {
 		determineOrientation();
-		
-		thrower.setItemTypeInHand(Material.BREAD, true);
-		thrower.setItemTypeInHand(Material.BREAD, false);
 		
 		if (thrower instanceof SwordPlayer sp) {
 			sp.setThrownItemIndex();
@@ -144,7 +147,6 @@ public class ThrownItem {
 				.add(basis.get(1).multiply(0.1))
 				.add(basis.getLast().multiply(-0.25));
 		cur = origin.clone();
-		prev = cur.clone();
 		Vector flatDir = thrower.getFlatDir().rotateAroundY(mainHandThrow ? Math.PI/85 : -Math.PI/85);
 		Vector forwardVelocity = flatDir.clone().multiply(forwardCoeff);
 		Vector upwardVelocity = VectorUtil.UP.clone().multiply(upwardCoeff);
@@ -160,10 +162,15 @@ public class ThrownItem {
 		new BukkitRunnable() {
 			@Override
 			public void run() {
+				evaluate();
+				prev = cur.clone();
+				
 				if (grounded || hit || caught || display.isDead()) {
 					onEnd();
 					cancel();
+					return;
 				}
+				
 				cur = origin.clone().add(positionFunction.apply(t));
 				velocity = velocityFunction.apply(t);
 				display.teleport(cur.setDirection(velocity));
@@ -173,8 +180,6 @@ public class ThrownItem {
 				if (blockTrail != null && t % 3 == 0)
 					blockTrail.display(cur);
 				
-				evaluate();
-				prev = cur.clone();
 				t++;
 			}
 		}.runTaskTimer(Sword.getInstance(), 0L, 1L);

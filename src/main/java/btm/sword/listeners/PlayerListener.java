@@ -77,9 +77,12 @@ public class PlayerListener implements Listener {
 		SwordPlayer sp = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getViewers().getFirst().getUniqueId());
 		ClickType clickType = event.getClick();
 		InventoryAction action = event.getAction();
-		sp.message("Click event firing.\nInventory: " + event.getInventory().getType()
-				+ "\nClick type: " + clickType
-				+ "\nAction type: " + action);
+		
+		sp.message("~   Click event firing."
+				+ "\n       Inventory: " + event.getInventory().getType()
+				+ "\n       Click type: " + clickType
+				+ "\n       Action type: " + action
+				+ "\n\n     * Item: " + event.getCursor());
 		
 		switch (clickType) {
 			case SWAP_OFFHAND -> sp.setSwappingInInv();

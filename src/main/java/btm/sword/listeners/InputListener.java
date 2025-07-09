@@ -7,7 +7,6 @@ import btm.sword.system.entity.SwordPlayer;
 
 import btm.sword.system.input.InputType;
 import io.papermc.paper.event.player.PrePlayerAttackEntityEvent;
-import org.bukkit.Material;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
@@ -35,13 +34,9 @@ public class InputListener implements Listener {
 		
 		if ((action == Action.LEFT_CLICK_AIR || action == Action.LEFT_CLICK_BLOCK)) {
 			swordPlayer.act(InputType.LEFT);
-			event.setCancelled(true);
 		}
 		else if (action == Action.RIGHT_CLICK_AIR || action == Action.RIGHT_CLICK_BLOCK) {
-			swordPlayer.message("Right clicking.");
 			swordPlayer.act(InputType.RIGHT);
-			if (swordPlayer.getItemStackInHand(swordPlayer.isMainHandForRight()).getType() == Material.BREAD)
-				event.setCancelled(true);
 		}
 	}
 	
@@ -94,7 +89,8 @@ public class InputListener implements Listener {
 			swordPlayer.resetTree();
 		}
 		
-		if (swordPlayer.isAttemptingThrow())
+		if (swordPlayer.isAttemptingThrow()) {
 			ThrowAction.throwCancel(swordPlayer);
+		}
 	}
 }
