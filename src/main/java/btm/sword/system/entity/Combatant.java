@@ -6,7 +6,6 @@ import btm.sword.system.playerdata.CombatProfile;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.util.Cache;
 import org.bukkit.Location;
-import org.bukkit.entity.ItemDisplay;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitTask;
@@ -46,10 +45,6 @@ public abstract class Combatant extends SwordEntity {
 	
 	public void setGrabbing(boolean isGrabbing) {
 		this.isGrabbing = isGrabbing;
-	}
-	
-	public SwordEntity getGrabbedEntity() {
-		return grabbedEntity;
 	}
 	
 	public void setGrabbedEntity(SwordEntity grabbedEntity) {
@@ -143,10 +138,6 @@ public abstract class Combatant extends SwordEntity {
 	
 	public void setOffHandItemStackDuringThrow(ItemStack offHandItemStackDuringThrow) {
 		this.offHandItemStackDuringThrow = offHandItemStackDuringThrow;
-	}
-	
-	public ItemStack getThrownItemStack() {
-		return thrownItem.getDisplay().getItemStack();
 	}
 	
 	public boolean isThrowSuccessful() {

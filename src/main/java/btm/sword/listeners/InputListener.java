@@ -7,10 +7,12 @@ import btm.sword.system.entity.SwordPlayer;
 
 import btm.sword.system.input.InputType;
 import io.papermc.paper.event.player.PrePlayerAttackEntityEvent;
+import org.bukkit.Material;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.player.*;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
 
 public class InputListener implements Listener {
@@ -27,6 +29,8 @@ public class InputListener implements Listener {
 	@EventHandler
 	public void onPlayerInteract(PlayerInteractEvent event) {
 		SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId());
+		ItemStack item = swordPlayer.getItemStackInHand(true);
+		Material type = item.getType();
 		
 		Action action = event.getAction();
 		
@@ -36,6 +40,11 @@ public class InputListener implements Listener {
 			swordPlayer.act(InputType.LEFT);
 		}
 		else if (action == Action.RIGHT_CLICK_AIR || action == Action.RIGHT_CLICK_BLOCK) {
+			if (type.isEdible() || type == Material.SHIELD || type == Material.BOW || type == Material.CROSSBOW) {
+				
+				return;
+			}
+			
 			swordPlayer.act(InputType.RIGHT);
 		}
 	}
@@ -77,8 +86,9 @@ public class InputListener implements Listener {
 		
 		if (!swordPlayer.isSwappingInInv()) {
 			swordPlayer.act(InputType.SWAP);
-			event.setCancelled(true);
+			
 		}
+		event.setCancelled(true);
 	}
 	
 	@EventHandler

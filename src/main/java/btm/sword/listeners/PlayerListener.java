@@ -6,15 +6,17 @@ import btm.sword.system.entity.Combatant;
 import btm.sword.system.entity.SwordEntity;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.SwordPlayer;
+import btm.sword.system.inventory.DevMenu;
 import btm.sword.system.item.prefab.Prefab;
-import btm.sword.util.dev.DevMenu;
 import io.papermc.paper.event.player.AsyncChatEvent;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.entity.HumanEntity;
+import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -24,8 +26,12 @@ import org.bukkit.event.inventory.*;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.scheduler.BukkitRunnable;
 import org.intellij.lang.annotations.Subst;
+
+import java.util.Objects;
 
 public class PlayerListener implements Listener {
 	@EventHandler
@@ -75,9 +81,28 @@ public class PlayerListener implements Listener {
 	@EventHandler
 	public void inventoryInteractEvent(InventoryClickEvent event) {
 		SwordPlayer sp = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getViewers().getFirst().getUniqueId());
+		Inventory inv = event.getInventory();
 		ClickType clickType = event.getClick();
 		InventoryAction action = event.getAction();
+		ItemStack onCursor = event.getCursor();
+		int slotNumber = event.getSlot();
 		
+		sp.message("~   Click event firing."
+				+ "\n       Inventory: " + inv.getType()
+				+ "\n       Click type: " + clickType
+				+ "\n       Action type: " + action
+				+ "\n\n     * Item on cursor: " + onCursor
+				+ "\n slot number: " + slotNumber);
+		
+		if (event.getView().title().equals(DevMenu.TITLE)) {
+			sp.message("Ye clicked inside of the dev menu!");
+			
+			DevMenu.handleInput(event.getInventory().getItem(event.getSlot()), sp, clickType, action);
+			
+			event.setCancelled(true);
+			return;
+		}
+
 		sp.message("~   Click event firing."
 				+ "\n       Inventory: " + event.getInventory().getType()
 				+ "\n       Click type: " + clickType
@@ -89,18 +114,39 @@ public class PlayerListener implements Listener {
 			case DROP, CONTROL_DROP -> sp.setDroppingInInv();
 			case SHIFT_RIGHT -> {
 				sp.message("Shift right clicking!");
-				sp.entity().getWorld().dropItem(sp.getChestLocation(), event.getCursor());
-				sp.player().getInventory().setItem(event.getSlot(), new ItemStack(Material.AIR));
+				event.setCancelled(true);
+				new BukkitRunnable() {
+					final int slot = event.getSlot();
+					@Override
+					public void run() {
+						Item itemDrop = sp.entity().getWorld().dropItem(sp.getChestLocation(), Objects.requireNonNull(inv.getItem(slot)));
+						itemDrop.setPickupDelay(5);
+						itemDrop.setVelocity(sp.entity().getEyeLocation().getDirection().multiply(0.5));
+						itemDrop.setThrower(sp.getUniqueId());
+						inv.setItem(slot, new ItemStack(Material.AIR));
+					}
+				}.runTaskLater(Sword.getInstance(), 1L);
 			}
 			case DOUBLE_CLICK -> {
 				sp.message("Double clicked smth");
-				sp.entity().getWorld().dropItem(sp.getChestLocation(), event.getCursor());
+				sp.entity().getWorld().dropItem(sp.entity().getEyeLocation(), event.getCursor()).setPickupDelay(5);
 				sp.player().getInventory().setItem(event.getSlot(), new ItemStack(Material.AIR));
+				event.getCursor().setAmount(0);
 			}
 			case SHIFT_LEFT -> {
-				sp.message("Shift lefting!");
-				sp.entity().getWorld().dropItem(sp.getChestLocation(), event.getCursor());
-				sp.player().getInventory().setItem(event.getSlot(), new ItemStack(Material.AIR));
+				sp.message("Shift left clicking!");
+				event.setCancelled(true);
+				new BukkitRunnable() {
+					final int slot = event.getSlot();
+					@Override
+					public void run() {
+						Item itemDrop = sp.entity().getWorld().dropItem(sp.getChestLocation(), Objects.requireNonNull(inv.getItem(slot)));
+						itemDrop.setPickupDelay(5);
+						itemDrop.setVelocity(sp.entity().getEyeLocation().getDirection().multiply(0.5));
+						itemDrop.setThrower(sp.getUniqueId());
+						inv.setItem(slot, new ItemStack(Material.AIR));
+					}
+				}.runTaskLater(Sword.getInstance(), 1L);
 			}
 		}
 		
@@ -126,7 +172,7 @@ public class PlayerListener implements Listener {
 		
 		Component msg = event.message();
 		
-		String cleaned = net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText().serialize(msg).trim();
+		String cleaned = PlainTextComponentSerializer.plainText().serialize(msg).trim();
 		
 		Sword.getInstance().getLogger().info("Chat input: " + cleaned);
 		
@@ -186,9 +232,13 @@ public class PlayerListener implements Listener {
 		else if (cleaned.startsWith("give")) {
 			SwordEntityArbiter.getOrAdd(player.getUniqueId()).giveItem(Prefab.sword);
 		}
-		else if (cleaned.startsWith("dev tools")) {
-			SwordPlayer sp = (SwordPlayer) SwordEntityArbiter.getOrAdd(player.getUniqueId());
-			player.openInventory(DevMenu.create(sp));
+		else if (cleaned.startsWith("dev")) {
+			new BukkitRunnable() {
+				@Override
+				public void run() {
+					player.openInventory(DevMenu.createMenuPage(player, 0));
+				}
+			}.runTask(Sword.getInstance());
 		}
 	}
 }

@@ -147,7 +147,9 @@ public class ThrownItem {
 				.add(basis.get(1).multiply(0.1))
 				.add(basis.getLast().multiply(-0.25));
 		cur = origin.clone();
+		prev = cur.clone().subtract(VectorUtil.UP);
 		Vector flatDir = thrower.getFlatDir().rotateAroundY(mainHandThrow ? Math.PI/85 : -Math.PI/85);
+		velocity = flatDir.clone();
 		Vector forwardVelocity = flatDir.clone().multiply(forwardCoeff);
 		Vector upwardVelocity = VectorUtil.UP.clone().multiply(upwardCoeff);
 		
@@ -162,23 +164,23 @@ public class ThrownItem {
 		new BukkitRunnable() {
 			@Override
 			public void run() {
+				cur = origin.clone().add(positionFunction.apply(t));
+				velocity = velocityFunction.apply(t);
 				evaluate();
-				prev = cur.clone();
-				
 				if (grounded || hit || caught || display.isDead()) {
 					onEnd();
 					cancel();
 					return;
 				}
 				
-				cur = origin.clone().add(positionFunction.apply(t));
-				velocity = velocityFunction.apply(t);
 				display.teleport(cur.setDirection(velocity));
 				rotate();
 				
 				Cache.throwTrailParticle.display(cur);
 				if (blockTrail != null && t % 3 == 0)
 					blockTrail.display(cur);
+				
+				prev = cur.clone();
 				
 				t++;
 			}
@@ -360,6 +362,8 @@ public class ThrownItem {
 	public void hitCheck() {
 		Predicate<Entity> filter = entity -> (entity instanceof LivingEntity l) && !l.isDead() && l.getType() != EntityType.ARMOR_STAND;
 		Predicate<Entity> effFilter = t < 20 ? entity -> filter.test(entity) && entity.getUniqueId() != thrower.getUniqueId() : filter;
+		
+		if (prev == null) disposeNaturally();
 		
 		RayTraceResult hitEntity = display.getWorld().rayTraceEntities(prev, velocity, initialVelocity, 0.6, effFilter);
 		

@@ -1,6 +1,6 @@
 package btm.sword.system.item.prefab;
 
-import btm.sword.system.item.ItemBuilder;
+import btm.sword.system.item.ItemStackBuilder;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -14,8 +14,8 @@ public class Prefab {
 	public static ItemStack gun;
 	
 	static {
-		sword = new ItemBuilder(Material.DIAMOND_SWORD)
-				.name("Masamune", TextColor.color(254,56,0), TextDecoration.BOLD)
+		sword = new ItemStackBuilder(Material.DIAMOND_SWORD)
+				.name(Component.text("Masamune", TextColor.color(254,56,0), TextDecoration.BOLD))
 				.lore(List.of(
 						Component.text().content("Veracity").color(TextColor.color(160,160,160)).build(),
 						Component.text().content("&").color(TextColor.color(89,89,89)).build(),
@@ -26,8 +26,8 @@ public class Prefab {
 				.baseDamage(35)
 				.build();
 		
-		gun = new ItemBuilder(Material.IRON_SHOVEL)
-				.name("Gunblade", TextColor.color(0,174,200), TextDecoration.BOLD)
+		gun = new ItemStackBuilder(Material.IRON_SHOVEL)
+				.name(Component.text("Gunblade", TextColor.color(0,174,200), TextDecoration.BOLD))
 				.lore(List.of(
 						Component.text().content("Veracity").color(TextColor.color(160,160,160)).build(),
 						Component.text().content("&").color(TextColor.color(89,89,89)).build(),
