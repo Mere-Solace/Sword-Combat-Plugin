@@ -2,10 +2,7 @@ package btm.sword.listeners;
 
 import btm.sword.Sword;
 import btm.sword.system.action.utility.UtilityAction;
-import btm.sword.system.entity.Combatant;
-import btm.sword.system.entity.SwordEntity;
-import btm.sword.system.entity.SwordEntityArbiter;
-import btm.sword.system.entity.SwordPlayer;
+import btm.sword.system.entity.*;
 import btm.sword.system.inventory.DevMenu;
 import btm.sword.system.item.prefab.Prefab;
 import io.papermc.paper.event.player.AsyncChatEvent;
@@ -85,29 +82,29 @@ public class PlayerListener implements Listener {
 		ClickType clickType = event.getClick();
 		InventoryAction action = event.getAction();
 		ItemStack onCursor = event.getCursor();
+		ItemStack clicked = event.getCurrentItem();
 		int slotNumber = event.getSlot();
 		
-		sp.message("~   Click event firing."
+		sp.message("\n\n~|------Beginning of new inventory interact event------|~"
 				+ "\n       Inventory: " + inv.getType()
 				+ "\n       Click type: " + clickType
 				+ "\n       Action type: " + action
-				+ "\n\n     * Item on cursor: " + onCursor
-				+ "\n slot number: " + slotNumber);
+				+ "\n       Item on cursor: " + onCursor
+				+ "\n       Current Item in slot: " + clicked
+				+ "\n       slot number: " + slotNumber);
 		
-		if (event.getView().title().equals(DevMenu.TITLE)) {
-			sp.message("Ye clicked inside of the dev menu!");
-			
-			DevMenu.handleInput(event.getInventory().getItem(event.getSlot()), sp, clickType, action);
-			
-			event.setCancelled(true);
+		if (PlainTextComponentSerializer.plainText().serialize(event.getView().title()).trim().startsWith(DevMenu.BASE_TITLE_STRING)) {
+			if (sp instanceof Developer dev) {
+				sp.message("    * you clicked inside of the dev menu");
+				dev.handleMenuInput(event.getInventory().getItem(event.getSlot()), clickType);
+				event.setCancelled(true);
+			}
+			else {
+				sp.player().getInventory().close();
+				event.setCancelled(true);
+			}
 			return;
 		}
-
-		sp.message("~   Click event firing."
-				+ "\n       Inventory: " + event.getInventory().getType()
-				+ "\n       Click type: " + clickType
-				+ "\n       Action type: " + action
-				+ "\n\n     * Item: " + event.getCursor());
 		
 		switch (clickType) {
 			case SWAP_OFFHAND -> sp.setSwappingInInv();
@@ -231,14 +228,6 @@ public class PlayerListener implements Listener {
 		}
 		else if (cleaned.startsWith("give")) {
 			SwordEntityArbiter.getOrAdd(player.getUniqueId()).giveItem(Prefab.sword);
-		}
-		else if (cleaned.startsWith("dev")) {
-			new BukkitRunnable() {
-				@Override
-				public void run() {
-					player.openInventory(DevMenu.createMenuPage(player, 0));
-				}
-			}.runTask(Sword.getInstance());
 		}
 	}
 }

@@ -13,28 +13,41 @@ public class SwordEntityArbiter {
 	private static final HashMap<UUID, SwordEntity> existingSwordNPCs = new HashMap<>();
 	private static final HashMap<UUID, SwordEntity> onlineSwordPlayers = new HashMap<>();
 	
+	private static final List<String> developerUsernames = new ArrayList<>();
+	
+	static {
+		developerUsernames.add("BladeSworn");
+		developerUsernames.add("3e9");
+	}
+	
+	public static boolean checkIfDev(Player player) {
+		return developerUsernames.contains(player.getName());
+	}
+	
 	public static void register(Entity entity) {
 		if (!(entity instanceof LivingEntity)) return;
 		
 		UUID entityUUID = entity.getUniqueId();
-		if (entity instanceof Player) {
+		if (entity instanceof Player player) {
 			Objects.requireNonNull(Bukkit.getPlayer(entityUUID)).sendMessage("You're being registered as online.");
 			
 			PlayerDataManager.register(entityUUID);
 			if (onlineSwordPlayers.get(entityUUID) == null) {
-				onlineSwordPlayers.put(entityUUID, new SwordPlayer((LivingEntity) entity, PlayerDataManager.getPlayerData(entityUUID)));
+				if (checkIfDev(player))
+					onlineSwordPlayers.put(entityUUID, new Developer(player, PlayerDataManager.getPlayerData(entityUUID)));
+				else
+					onlineSwordPlayers.put(entityUUID, new SwordPlayer(player, PlayerDataManager.getPlayerData(entityUUID)));
 			}
-			else {
-				onlineSwordPlayers.get(entityUUID).setSelf((LivingEntity) entity);
-			}
-		} else if (!entity.isDead()) {
-			existingSwordNPCs.putIfAbsent(entityUUID, initializeNPC((LivingEntity) entity));
+			else
+				onlineSwordPlayers.get(entityUUID).setSelf(player);
+			
 		}
+		else if (!entity.isDead())
+			existingSwordNPCs.putIfAbsent(entityUUID, initializeNPC((LivingEntity) entity));
 	}
 	
 	public static void remove(UUID uuid) {
-		if (onlineSwordPlayers.remove(uuid) == null)
-			existingSwordNPCs.remove(uuid);
+		if (onlineSwordPlayers.remove(uuid) == null) existingSwordNPCs.remove(uuid);
 	}
 	
 	public static SwordEntity get(UUID uuid) {

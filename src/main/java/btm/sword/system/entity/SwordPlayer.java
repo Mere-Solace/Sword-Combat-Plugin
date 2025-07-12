@@ -6,6 +6,8 @@ import btm.sword.system.input.InputAction;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.input.InputExecutionTree;
 import btm.sword.system.input.InputType;
+import btm.sword.system.item.ItemStackBuilder;
+import btm.sword.system.item.KeyCache;
 import btm.sword.system.playerdata.PlayerData;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -56,6 +58,13 @@ public class SwordPlayer extends Combatant {
 		
 		inputExecutionTree = new InputExecutionTree(inputTimeoutMillis);
 		inputExecutionTree.initializeInputTree();
+		
+		setItemAtIndex(new ItemStackBuilder(Material.SILENCE_ARMOR_TRIM_SMITHING_TEMPLATE)
+				.name(Component.text("+}- ", TextColor.color(72, 72, 72))
+						.append(Component.text("Menu", TextColor.color(30, 150, 180)))
+						.append(Component.text(" -{+", TextColor.color(72, 72, 72))))
+				.tag(KeyCache.menuStr, KeyCache.menuUUID)
+				.build(), 8);
 		
 		performedDropAction = false;
 		
