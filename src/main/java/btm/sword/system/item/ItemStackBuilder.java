@@ -78,8 +78,7 @@ public class ItemStackBuilder {
 	}
 	
 	public ItemStackBuilder hideAll() {
-		for (ItemFlag flag : ItemFlag.values())
-			meta.addItemFlags(flag);
+		meta.addItemFlags(ItemFlag.values());
 		return this;
 	}
 	

@@ -3,7 +3,6 @@ package btm.sword.listeners;
 import btm.sword.Sword;
 import btm.sword.system.action.utility.UtilityAction;
 import btm.sword.system.entity.*;
-import btm.sword.system.inventory.DevMenu;
 import btm.sword.system.item.prefab.Prefab;
 import io.papermc.paper.event.player.AsyncChatEvent;
 import net.kyori.adventure.key.Key;
@@ -78,89 +77,67 @@ public class PlayerListener implements Listener {
 	@EventHandler
 	public void inventoryInteractEvent(InventoryClickEvent event) {
 		SwordPlayer sp = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getViewers().getFirst().getUniqueId());
-		Inventory inv = event.getInventory();
-		ClickType clickType = event.getClick();
-		InventoryAction action = event.getAction();
-		ItemStack onCursor = event.getCursor();
-		ItemStack clicked = event.getCurrentItem();
-		int slotNumber = event.getSlot();
 		
-		sp.message("\n\n~|------Beginning of new inventory interact event------|~"
-				+ "\n       Inventory: " + inv.getType()
-				+ "\n       Click type: " + clickType
-				+ "\n       Action type: " + action
-				+ "\n       Item on cursor: " + onCursor
-				+ "\n       Current Item in slot: " + clicked
-				+ "\n       slot number: " + slotNumber);
-		
-		if (PlainTextComponentSerializer.plainText().serialize(event.getView().title()).trim().startsWith(DevMenu.BASE_TITLE_STRING)) {
-			if (sp instanceof Developer dev) {
-				sp.message("    * you clicked inside of the dev menu");
-				dev.handleMenuInput(event.getInventory().getItem(event.getSlot()), clickType);
-				event.setCancelled(true);
-			}
-			else {
-				sp.player().getInventory().close();
-				event.setCancelled(true);
-			}
-			return;
+		if (sp.handleInventoryInput(event)) {
+			event.setCancelled(true);
+			
 		}
 		
-		switch (clickType) {
-			case SWAP_OFFHAND -> sp.setSwappingInInv();
-			case DROP, CONTROL_DROP -> sp.setDroppingInInv();
-			case SHIFT_RIGHT -> {
-				sp.message("Shift right clicking!");
-				event.setCancelled(true);
-				new BukkitRunnable() {
-					final int slot = event.getSlot();
-					@Override
-					public void run() {
-						Item itemDrop = sp.entity().getWorld().dropItem(sp.getChestLocation(), Objects.requireNonNull(inv.getItem(slot)));
-						itemDrop.setPickupDelay(5);
-						itemDrop.setVelocity(sp.entity().getEyeLocation().getDirection().multiply(0.5));
-						itemDrop.setThrower(sp.getUniqueId());
-						inv.setItem(slot, new ItemStack(Material.AIR));
-					}
-				}.runTaskLater(Sword.getInstance(), 1L);
-			}
-			case DOUBLE_CLICK -> {
-				sp.message("Double clicked smth");
-				sp.entity().getWorld().dropItem(sp.entity().getEyeLocation(), event.getCursor()).setPickupDelay(5);
-				sp.player().getInventory().setItem(event.getSlot(), new ItemStack(Material.AIR));
-				event.getCursor().setAmount(0);
-			}
-			case SHIFT_LEFT -> {
-				sp.message("Shift left clicking!");
-				event.setCancelled(true);
-				new BukkitRunnable() {
-					final int slot = event.getSlot();
-					@Override
-					public void run() {
-						Item itemDrop = sp.entity().getWorld().dropItem(sp.getChestLocation(), Objects.requireNonNull(inv.getItem(slot)));
-						itemDrop.setPickupDelay(5);
-						itemDrop.setVelocity(sp.entity().getEyeLocation().getDirection().multiply(0.5));
-						itemDrop.setThrower(sp.getUniqueId());
-						inv.setItem(slot, new ItemStack(Material.AIR));
-					}
-				}.runTaskLater(Sword.getInstance(), 1L);
-			}
-		}
-		
-		switch (action) {
-			case DROP_ALL_SLOT, DROP_ALL_CURSOR, DROP_ONE_SLOT, DROP_ONE_CURSOR, UNKNOWN -> {
-				sp.message("Dropping is detected");
-				sp.setDroppingInInv();
-			}
-			case SWAP_WITH_CURSOR, HOTBAR_SWAP -> {
-				sp.message("Swapping detected");
-				sp.setSwappingInInv();
-			}
-			case PICKUP_ALL, PICKUP_HALF, PICKUP_ONE, PICKUP_SOME -> {
-				sp.message("You picked something up");
-			}
-			case PLACE_ALL, PLACE_SOME, PLACE_ONE -> sp.message("You placed something");
-		}
+//		switch (clickType) {
+//			case SWAP_OFFHAND -> sp.setSwappingInInv();
+//			case DROP, CONTROL_DROP -> sp.setDroppingInInv();
+//			case SHIFT_RIGHT -> {
+//				sp.message("Shift right clicking!");
+//				event.setCancelled(true);
+//				new BukkitRunnable() {
+//					final int slot = event.getSlot();
+//					@Override
+//					public void run() {
+//						Item itemDrop = sp.entity().getWorld().dropItem(sp.getChestLocation(), Objects.requireNonNull(inv.getItem(slot)));
+//						itemDrop.setPickupDelay(5);
+//						itemDrop.setVelocity(sp.entity().getEyeLocation().getDirection().multiply(0.5));
+//						itemDrop.setThrower(sp.getUniqueId());
+//						inv.setItem(slot, new ItemStack(Material.AIR));
+//					}
+//				}.runTaskLater(Sword.getInstance(), 1L);
+//			}
+//			case DOUBLE_CLICK -> {
+//				sp.message("Double clicked smth");
+//				sp.entity().getWorld().dropItem(sp.entity().getEyeLocation(), event.getCursor()).setPickupDelay(5);
+//				sp.player().getInventory().setItem(event.getSlot(), new ItemStack(Material.AIR));
+//				event.getCursor().setAmount(0);
+//			}
+//			case SHIFT_LEFT -> {
+//				sp.message("Shift left clicking!");
+//				event.setCancelled(true);
+//				new BukkitRunnable() {
+//					final int slot = event.getSlot();
+//					@Override
+//					public void run() {
+//						Item itemDrop = sp.entity().getWorld().dropItem(sp.getChestLocation(), Objects.requireNonNull(inv.getItem(slot)));
+//						itemDrop.setPickupDelay(5);
+//						itemDrop.setVelocity(sp.entity().getEyeLocation().getDirection().multiply(0.5));
+//						itemDrop.setThrower(sp.getUniqueId());
+//						inv.setItem(slot, new ItemStack(Material.AIR));
+//					}
+//				}.runTaskLater(Sword.getInstance(), 1L);
+//			}
+//		}
+//
+//		switch (action) {
+//			case DROP_ALL_SLOT, DROP_ALL_CURSOR, DROP_ONE_SLOT, DROP_ONE_CURSOR, UNKNOWN -> {
+//				sp.message("Dropping is detected");
+//				sp.setDroppingInInv();
+//			}
+//			case SWAP_WITH_CURSOR, HOTBAR_SWAP -> {
+//				sp.message("Swapping detected");
+//				sp.setSwappingInInv();
+//			}
+//			case PICKUP_ALL, PICKUP_HALF, PICKUP_ONE, PICKUP_SOME -> {
+//				sp.message("You picked something up");
+//			}
+//			case PLACE_ALL, PLACE_SOME, PLACE_ONE -> sp.message("You placed something");
+//		}
 	}
 	
 	@EventHandler

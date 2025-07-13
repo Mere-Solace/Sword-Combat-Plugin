@@ -6,6 +6,9 @@ import btm.sword.system.input.InputAction;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.input.InputExecutionTree;
 import btm.sword.system.input.InputType;
+import btm.sword.system.inventory.Menu;
+import btm.sword.system.inventory.MenuActions;
+import btm.sword.system.inventory.selection.CustomActionButton;
 import btm.sword.system.item.ItemStackBuilder;
 import btm.sword.system.item.KeyCache;
 import btm.sword.system.playerdata.PlayerData;
@@ -17,9 +20,14 @@ import net.kyori.adventure.title.Title;
 import org.bukkit.Material;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
+import org.bukkit.event.inventory.ClickType;
+import org.bukkit.event.inventory.InventoryAction;
+import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.EquipmentSlot;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 
@@ -27,6 +35,9 @@ import java.time.Duration;
 
 public class SwordPlayer extends Combatant {
 	private final Player player;
+	
+	private final Menu mainMenu;
+	private static final String menuHotKeyId = "menu_hotkey";
 	
 	private final InputExecutionTree inputExecutionTree;
 	private final long inputTimeoutMillis = 1200L;
@@ -56,15 +67,23 @@ public class SwordPlayer extends Combatant {
 		super(associatedEntity, data.getCombatProfile());
 		player = (Player) self;
 		
-		inputExecutionTree = new InputExecutionTree(inputTimeoutMillis);
-		inputExecutionTree.initializeInputTree();
-		
 		setItemAtIndex(new ItemStackBuilder(Material.SILENCE_ARMOR_TRIM_SMITHING_TEMPLATE)
 				.name(Component.text("+}- ", TextColor.color(72, 72, 72))
 						.append(Component.text("Menu", TextColor.color(30, 150, 180)))
 						.append(Component.text(" -{+", TextColor.color(72, 72, 72))))
-				.tag(KeyCache.menuStr, KeyCache.menuUUID)
+				.tag(KeyCache.buttonTag, menuHotKeyId)
+				.hideAll()
 				.build(), 8);
+		
+		mainMenu = new Menu(Component.text("+}- ", TextColor.color(72, 72, 72))
+				.append(Component.text("Menu", TextColor.color(30, 150, 180)))
+				.append(Component.text(" -{+", TextColor.color(72, 72, 72))),
+				45);
+		
+		mainMenu.setButton(22, new CustomActionButton(Material.SHIELD, Component.text("Spawn Display"), null, MenuActions::spawnDisplay));
+		
+		inputExecutionTree = new InputExecutionTree(inputTimeoutMillis);
+		inputExecutionTree.initializeInputTree();
 		
 		performedDropAction = false;
 		
@@ -161,6 +180,59 @@ public class SwordPlayer extends Combatant {
 				resetTree();
 			}
 		}
+	}
+	
+	// method used to catch input before it's sent to act(), and before the action is cancelled.
+	// true -> the action gets cancelled
+	// false -> the input passes and gets handled by act()
+	public boolean evaluateItemInput(ItemStack itemStack, InputType inputType) {
+		Material type = itemStack.getType();
+		ItemMeta meta = itemStack.getItemMeta();
+		String id = meta != null ? meta.getPersistentDataContainer().get(KeyCache.buttonTagKey, PersistentDataType.STRING) : null;
+		switch (inputType) {
+			case RIGHT -> {
+				if (type.isEdible() || type == Material.SHIELD || type == Material.BOW || type == Material.CROSSBOW) {
+					return true;
+				}
+				else if (id != null && id.equals(menuHotKeyId)) {
+					mainMenu.display(player);
+					return true;
+				}
+			}
+			case DROP -> {
+				if (id != null && id.equals(menuHotKeyId)) {
+					mainMenu.display(player);
+					return true;
+				}
+			}
+			default -> {
+				return false;
+			}
+		}
+		return false;
+	}
+	
+	public boolean handleInventoryInput(InventoryClickEvent e) {
+		Inventory inv = e.getInventory();
+		ClickType clickType = e.getClick();
+		InventoryAction action = e.getAction();
+		ItemStack onCursor = e.getCursor();
+		ItemStack clicked = e.getCurrentItem();
+		int slotNumber = e.getSlot();
+		
+		message("\n\n~|------Beginning of new inventory interact event------|~"
+				+ "\n       Inventory: " + inv.getType()
+				+ "\n       Click type: " + clickType
+				+ "\n       Action type: " + action
+				+ "\n       Item on cursor: " + onCursor
+				+ "\n       Current Item in slot: " + clicked
+				+ "\n       slot number: " + slotNumber);
+		
+		if (mainMenu.equateInv(inv)) {
+			mainMenu.handleClick(e);
+			return true;
+		}
+		return false;
 	}
 	
 	public Player player() {

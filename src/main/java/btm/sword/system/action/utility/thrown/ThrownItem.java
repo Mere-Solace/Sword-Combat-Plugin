@@ -147,7 +147,7 @@ public class ThrownItem {
 				.add(basis.get(1).multiply(0.1))
 				.add(basis.getLast().multiply(-0.25));
 		cur = origin.clone();
-		prev = cur.clone().subtract(VectorUtil.UP);
+		prev = cur.clone();
 		Vector flatDir = thrower.getFlatDir().rotateAroundY(mainHandThrow ? Math.PI/85 : -Math.PI/85);
 		velocity = flatDir.clone();
 		Vector forwardVelocity = flatDir.clone().multiply(forwardCoeff);
@@ -164,15 +164,14 @@ public class ThrownItem {
 		new BukkitRunnable() {
 			@Override
 			public void run() {
-				cur = origin.clone().add(positionFunction.apply(t));
-				velocity = velocityFunction.apply(t);
-				evaluate();
 				if (grounded || hit || caught || display.isDead()) {
 					onEnd();
 					cancel();
 					return;
 				}
 				
+				cur = origin.clone().add(positionFunction.apply(t));
+				velocity = velocityFunction.apply(t);
 				display.teleport(cur.setDirection(velocity));
 				rotate();
 				
@@ -180,8 +179,8 @@ public class ThrownItem {
 				if (blockTrail != null && t % 3 == 0)
 					blockTrail.display(cur);
 				
+				evaluate();
 				prev = cur.clone();
-				
 				t++;
 			}
 		}.runTaskTimer(Sword.getInstance(), 0L, 1L);
@@ -229,7 +228,7 @@ public class ThrownItem {
 		Vector step = velocity.normalize().multiply(offset);
 		
 		ArmorStand marker = (ArmorStand) display.getWorld().spawnEntity(cur, EntityType.ARMOR_STAND);
-		marker.setMarker(true);
+		marker.setGravity(false);
 		marker.setVisible(false);
 		
 		int x = 1;
@@ -242,8 +241,8 @@ public class ThrownItem {
 		new BukkitRunnable() {
 			@Override
 			public void run() {
-				cur = marker.getLocation().setDirection(velocity);
-				display.teleport(cur);
+				cur = marker.getLocation();
+				display.teleport(cur.clone().setDirection(velocityFunction.apply(t+1)));
 				marker.remove();
 			}
 		}.runTaskLater(Sword.getInstance(), 1L);

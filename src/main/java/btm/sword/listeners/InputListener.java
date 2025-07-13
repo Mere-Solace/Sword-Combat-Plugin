@@ -7,7 +7,6 @@ import btm.sword.system.entity.SwordPlayer;
 
 import btm.sword.system.input.InputType;
 import io.papermc.paper.event.player.PrePlayerAttackEntityEvent;
-import org.bukkit.Material;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
@@ -20,6 +19,12 @@ public class InputListener implements Listener {
 	@EventHandler
 	public void onNormalAttack(PrePlayerAttackEntityEvent event) {
 		SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId());
+		ItemStack item = swordPlayer.getItemStackInHand(true);
+		
+		if (swordPlayer.evaluateItemInput(item, InputType.LEFT)) {
+			event.setCancelled(true);
+			return;
+		}
 		
 		swordPlayer.act(InputType.LEFT);
 		
@@ -30,18 +35,21 @@ public class InputListener implements Listener {
 	public void onPlayerInteract(PlayerInteractEvent event) {
 		SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId());
 		ItemStack item = swordPlayer.getItemStackInHand(true);
-		Material type = item.getType();
 		
 		Action action = event.getAction();
 		
 		if (swordPlayer.hasPerformedDropAction()) return;
 		
 		if ((action == Action.LEFT_CLICK_AIR || action == Action.LEFT_CLICK_BLOCK)) {
+			if (swordPlayer.evaluateItemInput(item, InputType.LEFT)) {
+				event.setCancelled(true);
+				return;
+			}
 			swordPlayer.act(InputType.LEFT);
 		}
 		else if (action == Action.RIGHT_CLICK_AIR || action == Action.RIGHT_CLICK_BLOCK) {
-			if (type.isEdible() || type == Material.SHIELD || type == Material.BOW || type == Material.CROSSBOW) {
-				
+			if (swordPlayer.evaluateItemInput(item, InputType.RIGHT)) {
+				event.setCancelled(true);
 				return;
 			}
 			
@@ -52,10 +60,14 @@ public class InputListener implements Listener {
 	@EventHandler
 	public void onPlayerDropEvent(PlayerDropItemEvent event) {
 		SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId());
-
+		ItemStack item = swordPlayer.getItemStackInHand(true);
+		
 		swordPlayer.setPerformedDropAction(true);
 		
-		if (!swordPlayer.isDroppingInInv()) {
+		if (swordPlayer.evaluateItemInput(item, InputType.DROP)) {
+			event.setCancelled(true);
+		}
+		else if (!swordPlayer.isDroppingInInv()) {
 			swordPlayer.act(InputType.DROP);
 			event.setCancelled(true);
 		}
@@ -83,12 +95,15 @@ public class InputListener implements Listener {
 	@EventHandler
 	public void onSwapEvent(PlayerSwapHandItemsEvent event) {
 		SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId());
+		ItemStack item = swordPlayer.getItemStackInHand(true);
 		
-		if (!swordPlayer.isSwappingInInv()) {
-			swordPlayer.act(InputType.SWAP);
-			
+		if (swordPlayer.evaluateItemInput(item, InputType.SWAP)) {
+			event.setCancelled(true);
 		}
-		event.setCancelled(true);
+		else if (!swordPlayer.isSwappingInInv()) {
+			swordPlayer.act(InputType.SWAP);
+			event.setCancelled(true);
+		}
 	}
 	
 	@EventHandler

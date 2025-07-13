@@ -13,15 +13,15 @@ public class SwordEntityArbiter {
 	private static final HashMap<UUID, SwordEntity> existingSwordNPCs = new HashMap<>();
 	private static final HashMap<UUID, SwordEntity> onlineSwordPlayers = new HashMap<>();
 	
-	private static final List<String> developerUsernames = new ArrayList<>();
+	private static final String[] developerUsernames = new String[2];
 	
 	static {
-		developerUsernames.add("BladeSworn");
-		developerUsernames.add("3e9");
+		developerUsernames[0] = "BladeSworn";
+		developerUsernames[1] = "3e9";
 	}
 	
 	public static boolean checkIfDev(Player player) {
-		return developerUsernames.contains(player.getName());
+		return Arrays.stream(developerUsernames).anyMatch(str -> str.equals(player.getName()));
 	}
 	
 	public static void register(Entity entity) {
