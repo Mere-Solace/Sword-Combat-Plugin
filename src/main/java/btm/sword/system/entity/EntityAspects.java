@@ -7,7 +7,11 @@ import btm.sword.system.entity.aspect.value.AspectValue;
 import btm.sword.system.entity.aspect.value.ResourceValue;
 import btm.sword.system.playerdata.CombatProfile;
 
+import java.util.ArrayList;
+
 public class EntityAspects {
+	private final Aspect[] stats = new Aspect[12];
+	
 	private final Resource shards;
 	private final Resource toughness;
 	private final Resource soulfire;
@@ -30,6 +34,7 @@ public class EntityAspects {
 				((ResourceValue) shardVals).getRegenPeriod(),
 				((ResourceValue) shardVals).getRegenAmount());
 		shards.startRegenTask();
+		stats[0] = shards;
 		
 		AspectValue toughnessVals = profile.getStat(AspectType.TOUGHNESS);
 		toughness = new Resource(
@@ -38,6 +43,7 @@ public class EntityAspects {
 				((ResourceValue) toughnessVals).getRegenPeriod(),
 				((ResourceValue) toughnessVals).getRegenAmount());
 		toughness.startRegenTask();
+		stats[1] = toughness;
 		
 		AspectValue soulfireVals = profile.getStat(AspectType.SOULFIRE);
 		soulfire = new Resource(
@@ -46,6 +52,7 @@ public class EntityAspects {
 				((ResourceValue) soulfireVals).getRegenPeriod(),
 				((ResourceValue) soulfireVals).getRegenAmount());
 		soulfire.startRegenTask();
+		stats[2] = soulfire;
 		
 		AspectValue formVals = profile.getStat(AspectType.FORM);
 		form = new Resource(
@@ -54,15 +61,24 @@ public class EntityAspects {
 				((ResourceValue) formVals).getRegenPeriod(),
 				((ResourceValue) formVals).getRegenAmount());
 		form.startRegenTask();
+		stats[3] = form;
 		
 		might = new Aspect(AspectType.MIGHT, profile.getStat(AspectType.MIGHT).getValue());
+		stats[4] = might;
 		resolve = new Aspect(AspectType.RESOLVE, profile.getStat(AspectType.RESOLVE).getValue());
+		stats[5] = resolve;
 		finesse = new Aspect(AspectType.FINESSE, profile.getStat(AspectType.FINESSE).getValue());
+		stats[6] = finesse;
 		prowess = new Aspect(AspectType.PROWESS, profile.getStat(AspectType.PROWESS).getValue());
+		stats[7] = prowess;
 		armor = new Aspect(AspectType.ARMOR, profile.getStat(AspectType.ARMOR).getValue());
+		stats[8] = armor;
 		fortitude = new Aspect(AspectType.FORTITUDE, profile.getStat(AspectType.FORTITUDE).getValue());
+		stats[9] = fortitude;
 		celerity = new Aspect(AspectType.CELERITY, profile.getStat(AspectType.CELERITY).getValue());
+		stats[10] = celerity;
 		willpower = new Aspect(AspectType.WILLPOWER, profile.getStat(AspectType.WILLPOWER).getValue());
+		stats[11] = willpower;
 	}
 	
 	public Aspect getAspect(AspectType type) {
@@ -81,6 +97,10 @@ public class EntityAspects {
 			case CELERITY -> celerity;
 			case WILLPOWER -> willpower;
 		};
+	}
+	
+	public Aspect[] aspectSet() {
+		return stats;
 	}
 	
 	public float getAspectVal(AspectType type) {

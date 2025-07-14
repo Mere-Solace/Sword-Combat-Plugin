@@ -12,7 +12,7 @@ public class MenuLayout {
 	private final Map<Integer, ItemStack> decorations;
 	private final int size;
 	
-	private boolean invalidated;
+	protected boolean invalidated;
 	
 	public MenuLayout(int size) {
 		this.size = size;
@@ -69,5 +69,9 @@ public class MenuLayout {
 	
 	public boolean isInvalidated() {
 		return invalidated;
+	}
+	
+	public int size() {
+		return size;
 	}
 }

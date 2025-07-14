@@ -19,9 +19,13 @@ public class ItemStackBuilder {
 	private final Plugin plugin;
 	
     public ItemStackBuilder(Material material) {
-		this.item = new ItemStack(material);
-		this.meta = item.getItemMeta();
-		this.plugin = Sword.getInstance();
+	    ItemMeta preMeta;
+	    this.item = new ItemStack(material);
+		preMeta = item.getItemMeta();
+		if (preMeta == null)
+			preMeta = new ItemStack(Material.SHIELD).getItemMeta();
+	    this.meta = preMeta;
+	    this.plugin = Sword.getInstance();
     }
 	
 	public ItemStackBuilder name(Component component) {

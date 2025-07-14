@@ -31,8 +31,6 @@ public class MenuActions {
 		ItemStack itemStack = developer.getItemStackInHand(main);
 		if (itemStack == null || itemStack.getType().isAir()) return;
 		
-		
-		
 		Display display;
 		if (itemStack.getType().isBlock()) {
 			display = (BlockDisplay) player.getWorld().spawnEntity(player.getEyeLocation().add(player.getEyeLocation().getDirection().multiply(2)), EntityType.BLOCK_DISPLAY);
@@ -48,6 +46,7 @@ public class MenuActions {
 			((ItemDisplay) display).setItemStack(itemStack);
 		}
 		
+		developer.addDisplay(display);
 		
 		new BukkitRunnable() {
 			@Override

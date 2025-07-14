@@ -2,16 +2,17 @@ package btm.sword.system.entity;
 
 import btm.sword.Sword;
 import btm.sword.system.action.utility.thrown.ThrowAction;
+import btm.sword.system.entity.aspect.Aspect;
 import btm.sword.system.input.InputAction;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.input.InputExecutionTree;
 import btm.sword.system.input.InputType;
 import btm.sword.system.inventory.Menu;
-import btm.sword.system.inventory.MenuActions;
 import btm.sword.system.inventory.selection.CustomActionButton;
 import btm.sword.system.item.ItemStackBuilder;
 import btm.sword.system.item.KeyCache;
 import btm.sword.system.playerdata.PlayerData;
+import com.destroystokyo.paper.profile.PlayerProfile;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
@@ -27,17 +28,24 @@ import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 
 import java.time.Duration;
+import java.util.*;
 
 public class SwordPlayer extends Combatant {
 	private final Player player;
+	private final PlayerProfile profile;
+	private final String username;
+	private final ItemStack playerHead;
 	
-	private final Menu mainMenu;
-	private static final String menuHotKeyId = "menu_hotkey";
+	protected final Menu mainMenu;
+	protected final List<Menu> predefinedMenus = new ArrayList<>();
+	protected static final String menuHotKeyId = "menu_hotkey";
+	protected Menu curMenu;
 	
 	private final InputExecutionTree inputExecutionTree;
 	private final long inputTimeoutMillis = 1200L;
@@ -66,21 +74,21 @@ public class SwordPlayer extends Combatant {
 	public SwordPlayer(LivingEntity associatedEntity, PlayerData data) {
 		super(associatedEntity, data.getCombatProfile());
 		player = (Player) self;
+		profile = player.getPlayerProfile();
+		username = profile.getName();
 		
-		setItemAtIndex(new ItemStackBuilder(Material.SILENCE_ARMOR_TRIM_SMITHING_TEMPLATE)
-				.name(Component.text("+}- ", TextColor.color(72, 72, 72))
-						.append(Component.text("Menu", TextColor.color(30, 150, 180)))
-						.append(Component.text(" -{+", TextColor.color(72, 72, 72))))
-				.tag(KeyCache.buttonTag, menuHotKeyId)
-				.hideAll()
-				.build(), 8);
+		playerHead = new ItemStack(Material.PLAYER_HEAD);
+		SkullMeta skullMeta = (SkullMeta) playerHead.getItemMeta();
+		
+		skullMeta.setPlayerProfile(profile);
+		playerHead.setItemMeta(skullMeta);
 		
 		mainMenu = new Menu(Component.text("+}- ", TextColor.color(72, 72, 72))
 				.append(Component.text("Menu", TextColor.color(30, 150, 180)))
 				.append(Component.text(" -{+", TextColor.color(72, 72, 72))),
-				45);
-		
-		mainMenu.setButton(22, new CustomActionButton(Material.SHIELD, Component.text("Spawn Display"), null, MenuActions::spawnDisplay));
+				54);
+		predefinedMenus.add(mainMenu);
+		menuSetup();
 		
 		inputExecutionTree = new InputExecutionTree(inputTimeoutMillis);
 		inputExecutionTree.initializeInputTree();
@@ -100,6 +108,38 @@ public class SwordPlayer extends Combatant {
 		
 		swappingInInv = false;
 		droppingInInv = false;
+	}
+	
+	protected void menuSetup() {
+		setItemAtIndex(new ItemStackBuilder(Material.SILENCE_ARMOR_TRIM_SMITHING_TEMPLATE)
+				.name(Component.text("+}- ", TextColor.color(72, 72, 72))
+						.append(Component.text("Menu", TextColor.color(30, 150, 180)))
+						.append(Component.text(" -{+", TextColor.color(72, 72, 72))))
+				.tag(KeyCache.buttonTag, menuHotKeyId)
+				.hideAll()
+				.build(), 8);
+		
+		ItemStack infoItem = new ItemStack(Material.PLAYER_HEAD);
+		SkullMeta skullMeta = (SkullMeta) playerHead.getItemMeta();
+		skullMeta.itemName(Component.text(username + "'s Profile"));
+		Iterator<Aspect> iterator = Arrays.stream(aspects.aspectSet()).iterator();
+		List<Component> lore = new ArrayList<>(12);
+		while (iterator.hasNext()) {
+			Aspect cur = iterator.next();
+			lore.add(Component.text(cur.type + ": \t\t" + cur.baseValue));
+		}
+		skullMeta.lore(lore);
+		skullMeta.setPlayerProfile(player.getPlayerProfile());
+		infoItem.setItemMeta(skullMeta);
+		mainMenu.setButton(22, new CustomActionButton(infoItem, null));
+		
+		for (int i = 45; i < 54; i++) {
+			mainMenu.setDecoration(i,
+					new ItemStackBuilder(Material.ORANGE_STAINED_GLASS_PANE)
+							.name(Component.text("||| ||| |||", TextColor.color(191, 119, 28), TextDecoration.BOLD))
+							.hideAll()
+							.build());
+		}
 	}
 	
 	@Override
@@ -228,15 +268,38 @@ public class SwordPlayer extends Combatant {
 				+ "\n       Current Item in slot: " + clicked
 				+ "\n       slot number: " + slotNumber);
 		
-		if (mainMenu.equateInv(inv)) {
-			mainMenu.handleClick(e);
-			return true;
+		if (curMenu != null) {
+			return curMenu.handleClick(e);
 		}
+		
+		for (Menu menu : predefinedMenus) {
+			if (menu.equateInv(inv)) {
+				return menu.handleClick(e);
+			}
+		}
+		
+		message("Normal click event.");
 		return false;
 	}
 	
 	public Player player() {
 		return player;
+	}
+	
+	public PlayerProfile getProfile() {
+		return profile;
+	}
+	
+	public ItemStack getPlayerHeadItem() {
+		return playerHead;
+	}
+	
+	public Menu getCurMenu() {
+		return curMenu;
+	}
+	
+	public void setCurMenu(Menu curMenu) {
+		this.curMenu = curMenu;
 	}
 	
 	public boolean hasPerformedDropAction() {

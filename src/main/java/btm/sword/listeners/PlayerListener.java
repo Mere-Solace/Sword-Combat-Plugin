@@ -80,7 +80,6 @@ public class PlayerListener implements Listener {
 		
 		if (sp.handleInventoryInput(event)) {
 			event.setCancelled(true);
-			
 		}
 		
 //		switch (clickType) {

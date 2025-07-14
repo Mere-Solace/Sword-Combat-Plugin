@@ -7,7 +7,8 @@ import org.jetbrains.annotations.NotNull;
 public interface SelectionItem {
 	@NotNull ItemStack getItem();
 	
-	void onClick(InventoryClickEvent e);
+	// return true only if the original click event should be cancelled
+	boolean onClick(InventoryClickEvent e);
 	
 	@NotNull String getId();
 }
