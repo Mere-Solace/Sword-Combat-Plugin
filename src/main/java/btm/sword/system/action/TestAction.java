@@ -1,6 +1,5 @@
 package btm.sword.system.action;
 
-import btm.sword.Sword;
 import btm.sword.system.SwordScheduler;
 import btm.sword.system.entity.Combatant;
 import btm.sword.system.entity.SwordEntityArbiter;
@@ -184,8 +183,6 @@ public class TestAction extends SwordAction {
 							offset = new Vector();
 							scale = new Vector3f();
 							break;
-						
-						
 							
 						default:
 							dir = o.getDirection();

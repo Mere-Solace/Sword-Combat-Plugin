@@ -13,6 +13,8 @@ import btm.sword.system.item.ItemStackBuilder;
 import btm.sword.system.item.KeyCache;
 import btm.sword.system.playerdata.PlayerData;
 import com.destroystokyo.paper.profile.PlayerProfile;
+import lombok.Getter;
+import lombok.Setter;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
@@ -36,6 +38,8 @@ import org.bukkit.scheduler.BukkitTask;
 import java.time.Duration;
 import java.util.*;
 
+@Getter
+@Setter
 public class SwordPlayer extends Combatant {
 	private final Player player;
 	private final PlayerProfile profile;
@@ -285,31 +289,11 @@ public class SwordPlayer extends Combatant {
 	public Player player() {
 		return player;
 	}
-	
-	public PlayerProfile getProfile() {
-		return profile;
-	}
-	
-	public ItemStack getPlayerHeadItem() {
-		return playerHead;
-	}
-	
-	public Menu getCurMenu() {
-		return curMenu;
-	}
-	
-	public void setCurMenu(Menu curMenu) {
-		this.curMenu = curMenu;
-	}
-	
-	public boolean hasPerformedDropAction() {
+
+    public boolean hasPerformedDropAction() {
 		return performedDropAction;
 	}
-	
-	public void setPerformedDropAction(boolean performedDropAction) {
-		this.performedDropAction = performedDropAction;
-	}
-	
+
 	public void resetTree() {
 		inputExecutionTree.reset();
 	}
@@ -447,18 +431,6 @@ public class SwordPlayer extends Combatant {
 		setItemAtIndex(mainItemStackAtTimeOfHold, indexOfRightHold);
 	}
 	
-	public ItemStack getMainItemStackAtTimeOfHold() {
-		return mainItemStackAtTimeOfHold;
-	}
-	
-	public ItemStack getOffItemStackAtTimeOfHold() {
-		return offItemStackAtTimeOfHold;
-	}
-	
-	public boolean isMainHandRightHold() {
-		return mainHandRightHold;
-	}
-	
 	public void startSneaking() {
 		if (sneaking) return;
 		
@@ -495,10 +467,6 @@ public class SwordPlayer extends Combatant {
 		timeSneakHeld = System.currentTimeMillis() - sneakHoldTimeStart;
 	}
 	
-	public int getThrownItemIndex() {
-		return thrownItemIndex;
-	}
-	
 	public void setThrownItemIndex() {
 		thrownItemIndex = getCurrentInvIndex();
 	}
@@ -511,10 +479,6 @@ public class SwordPlayer extends Combatant {
 		player.getInventory().setItem(index, item);
 	}
 	
-	public boolean isSwappingInInv() {
-		return swappingInInv;
-	}
-	
 	public void setSwappingInInv() {
 		swappingInInv = true;
 		new BukkitRunnable() {
@@ -523,10 +487,6 @@ public class SwordPlayer extends Combatant {
 				swappingInInv = false;
 			}
 		}.runTaskLater(Sword.getInstance(), 1L);
-	}
-	
-	public boolean isDroppingInInv() {
-		return droppingInInv;
 	}
 	
 	public void setDroppingInInv() {

@@ -184,7 +184,7 @@ public class InputExecutionTree {
 	public void initializeInputTree() {
 		// NOTE: Do not start inputs with swap or drop... those actions work normally if used at the root
 		
-			// Item independent actions:
+        // Item independent actions:
 		// dodge forward, dodge backward
 		add(List.of(InputType.SWAP, InputType.SWAP),
 				new InputAction(

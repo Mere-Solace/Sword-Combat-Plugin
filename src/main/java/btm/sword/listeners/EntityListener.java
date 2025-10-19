@@ -2,15 +2,15 @@ package btm.sword.listeners;
 
 import btm.sword.Sword;
 import btm.sword.system.entity.SwordEntityArbiter;
+import com.destroystokyo.paper.event.entity.EntityAddToWorldEvent;
+import com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageEvent;
-import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.EntityPickupItemEvent;
-import org.bukkit.event.entity.EntitySpawnEvent;
 import org.bukkit.persistence.PersistentDataType;
 
 import java.util.Objects;
@@ -18,7 +18,7 @@ import java.util.Objects;
 public class EntityListener implements Listener {
 	
 	@EventHandler
-	public void entitySpawnEvent(EntitySpawnEvent event) {
+	public void entityAddEvent(EntityAddToWorldEvent event) {
 		Entity entity = event.getEntity();
 		if (entity instanceof LivingEntity) {
 			SwordEntityArbiter.register(entity);
@@ -27,7 +27,7 @@ public class EntityListener implements Listener {
 	}
 	
 	@EventHandler
-	public void entityDeathEvent(EntityDeathEvent event) {
+	public void entityRemoveEvent(EntityRemoveFromWorldEvent event) {
 		SwordEntityArbiter.remove(event.getEntity().getUniqueId());
 	}
 	
