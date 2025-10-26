@@ -122,11 +122,7 @@ public class AttackAction extends SwordAction {
 					boolean withPitch = true;
 					boolean aerial = false;
 					switch (type) {
-						default -> {
-							rangeMultiplier = 1.4;
-							controlVectors = new ArrayList<>(Cache.basicSword1);
-						}
-						case BASIC_2 -> {
+                        case BASIC_2 -> {
 							rangeMultiplier = 1.4;
 							controlVectors = new ArrayList<>(Cache.basicSword2);
 						}
@@ -145,7 +141,11 @@ public class AttackAction extends SwordAction {
 							withPitch = false;
 							aerial = true;
 						}
-					}
+                        default -> {
+                            rangeMultiplier = 1.4;
+                            controlVectors = new ArrayList<>(Cache.basicSword1);
+                        }
+                    }
 					
 					Location o = ex.getEyeLocation();
 					

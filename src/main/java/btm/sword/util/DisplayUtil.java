@@ -1,11 +1,17 @@
 package btm.sword.util;
 
 import org.bukkit.Location;
+import org.bukkit.entity.Display;
 import org.bukkit.util.Vector;
 
 import java.util.List;
 
 public class DisplayUtil {
+    public static void setInterpolationValues(Display display, int delay, int duration) {
+        display.setInterpolationDelay(delay);
+        display.setInterpolationDuration(duration);
+    }
+
 	public static void secant(List<ParticleWrapper> particles, Location origin, Location end, double width) {
 		Vector direction = end.clone().subtract(origin).toVector();
 		int steps = (int) (direction.length() / (width));

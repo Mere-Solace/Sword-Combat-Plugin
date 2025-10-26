@@ -6,6 +6,8 @@ import btm.sword.system.entity.SwordEntity;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.SwordPlayer;
 import btm.sword.util.*;
+import lombok.Getter;
+import lombok.Setter;
 import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.*;
 import org.bukkit.block.Block;
@@ -25,10 +27,12 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
+
+@Getter
+@Setter
 public class ThrownItem {
 	private final ItemDisplay display;
 	private final Combatant thrower;
-	private final boolean mainHandThrow;
 	private final ParticleWrapper blockTrail;
 	
 	private float xDisplayOffset;
@@ -55,10 +59,9 @@ public class ThrownItem {
 	
 	private BukkitTask disposeTask;
 
-	public ThrownItem(Combatant thrower, ItemDisplay display, boolean mainHandThrow) {
+	public ThrownItem(Combatant thrower, ItemDisplay display) {
 		this.thrower = thrower;
 		this.display = display;
-		this.mainHandThrow = mainHandThrow;
 		
 		blockTrail = display.getItemStack().getType().isBlock() ?
 				new ParticleWrapper(Particle.BLOCK, 5, 0.25,  0.25,  0.25, display.getItemStack().getType().createBlockData()) :
@@ -72,7 +75,7 @@ public class ThrownItem {
 		thrower.setMainHandItemStackDuringThrow(thrower.getItemStackInHand(true));
 		thrower.setOffHandItemStackDuringThrow(thrower.getItemStackInHand(false));
 		}
-		xDisplayOffset = mainHandThrow ? -0.5f : 0.5f;
+		xDisplayOffset = -0.5f;
 		yDisplayOffset = 0.1f;
 		zDisplayOffset = -0.05f;
 	}
@@ -99,9 +102,9 @@ public class ThrownItem {
 					return;
 				}
 				else if (thrower.isThrowSuccessful()) {
-					thrower.setItemTypeInHand(Material.AIR, mainHandThrow);
-					ItemStack toReturn = mainHandThrow ? thrower.getOffHandItemStackDuringThrow() : thrower.getMainHandItemStackDuringThrow();
-					thrower.setItemStackInHand(toReturn, !mainHandThrow);
+					thrower.setItemTypeInHand(Material.AIR, true);
+					ItemStack toReturn = thrower.getOffHandItemStackDuringThrow();
+					thrower.setItemStackInHand(toReturn, false);
 					cancel();
 					return;
 				}
@@ -121,6 +124,7 @@ public class ThrownItem {
 				ex.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 1, 2));
 				
 				if (step % 2 == 0) {
+                    DisplayUtil.setInterpolationValues(display, 0, 2);
 					display.teleport(ex.getEyeLocation());
 				}
 				step++;
@@ -143,12 +147,12 @@ public class ThrownItem {
 		double sinPhi = Math.sin(phi);
 		double forwardCoeff = initialVelocity*cosPhi;
 		double upwardCoeff = initialVelocity*sinPhi;
-		origin = o.add(basis.getFirst().multiply(mainHandThrow ? 0.5 : -0.5))
+		origin = o.add(basis.getFirst().multiply(0.5))
 				.add(basis.get(1).multiply(0.1))
 				.add(basis.getLast().multiply(-0.25));
 		cur = origin.clone();
 		prev = cur.clone();
-		Vector flatDir = thrower.getFlatDir().rotateAroundY(mainHandThrow ? Math.PI/85 : -Math.PI/85);
+		Vector flatDir = thrower.getFlatDir().rotateAroundY(Math.PI/85);
 		velocity = flatDir.clone();
 		Vector forwardVelocity = flatDir.clone().multiply(forwardCoeff);
 		Vector upwardVelocity = VectorUtil.UP.clone().multiply(upwardCoeff);
@@ -172,6 +176,7 @@ public class ThrownItem {
 				
 				cur = origin.clone().add(positionFunction.apply(t));
 				velocity = velocityFunction.apply(t);
+                DisplayUtil.setInterpolationValues(display, 0, 1);
 				display.teleport(cur.setDirection(velocity));
 				rotate();
 				
@@ -242,6 +247,7 @@ public class ThrownItem {
 			@Override
 			public void run() {
 				cur = marker.getLocation();
+                DisplayUtil.setInterpolationValues(display, 0, 1);
 				display.teleport(cur.clone().setDirection(velocityFunction.apply(t+1)));
 				marker.remove();
 			}
@@ -444,13 +450,5 @@ public class ThrownItem {
 	public void dispose() {
 		display.remove();
 		if (disposeTask != null && !disposeTask.isCancelled()) disposeTask.cancel();
-	}
-	
-	public ItemDisplay getDisplay() {
-		return display;
-	}
-	
-	public boolean isMainHandThrow() {
-		return mainHandThrow;
 	}
 }
