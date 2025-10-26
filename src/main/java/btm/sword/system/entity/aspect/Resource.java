@@ -1,9 +1,13 @@
 package btm.sword.system.entity.aspect;
 
 import btm.sword.Sword;
+import lombok.Getter;
+import lombok.Setter;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 
+@Getter
+@Setter
 public class Resource extends Aspect {
 	private float curValue;
 	private int baseRegenPeriod;
@@ -89,14 +93,6 @@ public class Resource extends Aspect {
 		return baseRegenAmount * effAmountPercent;
 	}
 	
-	public void setBaseRegenPeriod(int baseRegenPeriod) {
-		this.baseRegenPeriod = baseRegenPeriod;
-	}
-	
-	public void setBaseRegenAmount(float baseRegenAmount) {
-		this.baseRegenAmount = baseRegenAmount;
-	}
-	
 	public void setEffPeriodPercent(float effPeriodPercent) {
 		this.effPeriodPercent = effPeriodPercent;
 		restartRegenTask();
@@ -110,10 +106,6 @@ public class Resource extends Aspect {
 	public void subEffPeriodPercent(float percent) {
 		effPeriodPercent -= percent;
 		restartRegenTask();
-	}
-	
-	public void setEffAmountPercent(float effAmountPercent) {
-		this.effAmountPercent = effAmountPercent;
 	}
 	
 	public void addEffAmountPercent(float percent) {

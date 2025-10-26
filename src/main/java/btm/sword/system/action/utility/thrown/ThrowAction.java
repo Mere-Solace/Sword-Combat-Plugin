@@ -1,8 +1,10 @@
 package btm.sword.system.action.utility.thrown;
 
+import btm.sword.Sword;
 import btm.sword.system.action.SwordAction;
 import btm.sword.system.entity.Combatant;
 import btm.sword.system.entity.SwordPlayer;
+import org.bukkit.Bukkit;
 import org.bukkit.Color;
 import org.bukkit.entity.*;
 import org.bukkit.inventory.*;
@@ -20,7 +22,7 @@ public class ThrowAction extends SwordAction {
 		display.setGlowColorOverride(Color.fromRGB(255, 0, 15));
 		
 		ThrownItem thrownItem;
-		if (executor instanceof SwordPlayer sp) {
+		if (executor instanceof SwordPlayer sp && !sp.getItemStackInHand(true).isEmpty()) {
 			display.setItemStack(sp.getMainItemStackAtTimeOfHold());
         }
 		else {
@@ -31,10 +33,12 @@ public class ThrowAction extends SwordAction {
         }
         thrownItem = new ThrownItem(executor, display);
         executor.setThrownItem(thrownItem);
+
 		thrownItem.onReady();
 	}
 	
 	public static void throwCancel(Combatant executor) {
+        Sword.getInstance().getLogger().info("\nThrow was <CANCELED>\n");
 		executor.setAttemptingThrow(false);
 		executor.setThrowCancelled(true);
 		executor.setThrowSuccessful(false);
@@ -60,7 +64,7 @@ public class ThrowAction extends SwordAction {
 			@Override
 			public void run() {
 				executor.getThrownItem().onRelease(2);
-				executor.setItemStackInHand(executor.getMainHandItemStackDuringThrow(), true);
+//				executor.setItemStackInHand(executor.getMainHandItemStackDuringThrow(), true);
 			}
 		});
 	}

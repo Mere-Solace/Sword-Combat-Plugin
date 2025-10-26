@@ -5,16 +5,22 @@ import btm.sword.listeners.EntityListener;
 import btm.sword.listeners.InputListener;
 import btm.sword.listeners.PlayerListener;
 import btm.sword.system.playerdata.PlayerDataManager;
+import lombok.Getter;
+import lombok.Setter;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
+@Getter
+@Setter
 public final class Sword extends JavaPlugin {
-	private static Sword instance;
-	private static ScheduledExecutorService scheduler;
-	
-	@Override
+	@Getter
+    private static Sword instance;
+	@Getter
+    private static ScheduledExecutorService scheduler;
+
+    @Override
 	public void onEnable() {
 		instance = this;
 		scheduler = Executors.newSingleThreadScheduledExecutor();
@@ -36,12 +42,8 @@ public final class Sword extends JavaPlugin {
 		
 		getLogger().info("~ Sword Plugin has been disabled ~");
 	}
-	
-	public static Sword getInstance() {
-		return instance;
-	}
-	
-	public static ScheduledExecutorService getScheduler() {
-		return scheduler;
-	}
+
+    public static void print(String str) {
+        instance.getLogger().info(str);
+    }
 }

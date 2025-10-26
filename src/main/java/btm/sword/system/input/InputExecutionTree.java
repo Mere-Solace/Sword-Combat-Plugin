@@ -9,8 +9,9 @@ import btm.sword.system.action.utility.thrown.ThrowAction;
 import btm.sword.system.action.type.AttackType;
 import btm.sword.system.action.utility.UtilityAction;
 import btm.sword.system.entity.Combatant;
-import btm.sword.system.entity.SwordPlayer;
 import btm.sword.system.entity.aspect.AspectType;
+import lombok.Getter;
+import lombok.Setter;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
@@ -217,7 +218,7 @@ public class InputExecutionTree {
 						false,
 						true),
 				false,
-				false,
+				true,
 				true);
 		
 		add(List.of(InputType.SHIFT, InputType.DROP, InputType.SHIFT, InputType.SHIFT_HOLD),
@@ -228,7 +229,7 @@ public class InputExecutionTree {
 						false,
 						true),
 				false,
-				false,
+				true,
 				true,
 				5L);
 		
@@ -268,7 +269,7 @@ public class InputExecutionTree {
 				false);
 		
 		// throw hold action
-		add(List.of(InputType.RIGHT),
+		add(List.of(InputType.DROP, InputType.RIGHT),
 				new InputAction(
 						ThrowAction::throwReady,
 						executor -> 0L,
@@ -280,7 +281,7 @@ public class InputExecutionTree {
 				true);
 		
 		// throw
-		add(List.of(InputType.RIGHT, InputType.RIGHT_HOLD),
+		add(List.of(InputType.DROP, InputType.RIGHT, InputType.RIGHT_HOLD),
 				new InputAction(
 						ThrowAction::throwItem,
 						executor -> 0L,
@@ -321,7 +322,7 @@ public class InputExecutionTree {
 		add(List.of(InputType.RIGHT, InputType.LEFT),
 				null,
 				true,
-				false,
+				true,
 				true);
 		
 		add(List.of(InputType.DROP, InputType.DROP),
@@ -335,7 +336,9 @@ public class InputExecutionTree {
 				true,
 				true);
 	}
-	
+
+	@Getter
+    @Setter
 	public static class InputNode {
 		private InputAction action;
 		private final HashMap<InputType, InputNode> children = new HashMap<>();
@@ -367,42 +370,6 @@ public class InputExecutionTree {
 		
 		public InputNode getChild(InputType input) {
 			return children.get(input);
-		}
-		
-		public InputAction getAction() {
-			return action;
-		}
-		
-		public void setAction(InputAction action) {
-			this.action = action;
-		}
-		
-		public boolean isSameItemRequired() {
-			return sameItemRequired;
-		}
-		
-		public void setSameItemRequired(boolean sameItemRequired) {
-			this.sameItemRequired = sameItemRequired;
-		}
-		
-		public boolean isCancellable() {
-			return cancellable;
-		}
-		
-		public void setCancellable(boolean cancellable) {
-			this.cancellable = cancellable;
-		}
-		
-		public boolean shouldDisplay() {
-			return display;
-		}
-		
-		public void setDisplay(boolean display) {
-			this.display = display;
-		}
-		
-		public long getMinHoldTime() {
-			return minHoldTime;
 		}
 	}
 }

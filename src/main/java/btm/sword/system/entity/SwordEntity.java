@@ -5,6 +5,8 @@ import btm.sword.system.combat.Affliction;
 import btm.sword.system.playerdata.CombatProfile;
 import btm.sword.util.Cache;
 import btm.sword.util.EntityUtil;
+import lombok.Getter;
+import lombok.Setter;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Item;
@@ -20,6 +22,8 @@ import java.util.HashMap;
 import java.util.Objects;
 import java.util.UUID;
 
+@Getter
+@Setter
 public abstract class SwordEntity {
 	protected LivingEntity self;
 	protected UUID uuid;
@@ -105,7 +109,7 @@ public abstract class SwordEntity {
 			}
 		}
 		if (!(self instanceof Player)) {
-			self.setAI(!isPinned());
+			self.setAI(!pinned);
 		}
 		else {
 			if (ticks % 3 == 0) {
@@ -128,44 +132,8 @@ public abstract class SwordEntity {
 		return self;
 	}
 	
-	public void setSelf(LivingEntity entity) {
-		this.self = entity;
-	}
-	
 	public UUID getUniqueId() {
 		return uuid;
-	}
-	
-	public CombatProfile getCombatProfile() {
-		return combatProfile;
-	}
-	
-	public boolean isTick() {
-		return tick;
-	}
-	
-	public void setTick(boolean tick) {
-		this.tick = tick;
-	}
-	
-	public boolean isGrounded() {
-		return grounded;
-	}
-	
-	public boolean isGrabbed() {
-		return grabbed;
-	}
-	
-	public void setGrabbed(boolean grabbed) {
-		this.grabbed = grabbed;
-	}
-	
-	public boolean isHit() {
-		return hit;
-	}
-	
-	public void setHit(boolean hit) {
-		this.hit = hit;
 	}
 	
 	public void addImpalement() {
@@ -178,26 +146,6 @@ public abstract class SwordEntity {
 	
 	public boolean isImpaled() {
 		return numberOfImpalements > 0;
-	}
-	
-	public int getNumberOfImpalements() {
-		return numberOfImpalements;
-	}
-	
-	public boolean isPinned() {
-		return pinned;
-	}
-	
-	public void setPinned(boolean pinned) {
-		this.pinned = pinned;
-	}
-	
-	public boolean isAiEnabled() {
-		return aiEnabled;
-	}
-	
-	public void setAiEnabled(boolean aiEnabled) {
-		this.aiEnabled = aiEnabled;
 	}
 	
 	public Affliction getAffliction(Class<? extends Affliction> afflictionClass) {
@@ -288,36 +236,12 @@ public abstract class SwordEntity {
 		}.runTaskTimer(Sword.getInstance(), 0L, 2L);
 	}
 	
-	public double getEyeHeight() {
-		return eyeHeight;
-	}
-	
-	public Vector getChestVector() {
-		return chestVector;
-	}
-	
 	public Location getChestLocation() {
 		return self.getLocation().add(chestVector);
 	}
 	
 	public void message(String message) {
 		self.sendMessage(message);
-	}
-	
-	public long getTimeOfLastAttack() {
-		return timeOfLastAttack;
-	}
-	
-	public void setTimeOfLastAttack(long timeOfLastAttack) {
-		this.timeOfLastAttack = timeOfLastAttack;
-	}
-	
-	public int getDurationOfLastAttack() {
-		return durationOfLastAttack;
-	}
-	
-	public void setDurationOfLastAttack(int durationOfLastAttack) {
-		this.durationOfLastAttack = durationOfLastAttack;
 	}
 
 	public void giveItem(ItemStack itemStack) {
@@ -388,21 +312,13 @@ public abstract class SwordEntity {
 				Objects.requireNonNull(self.getEquipment()).setItemInOffHand(itemStack);
 		}
 	}
-	
+
 	public void setItemTypeInHand(Material itemType, boolean main) {
 		setItemStackInHand(new ItemStack(itemType), main);
 	}
 	
 	public boolean hasItemInMainHand() {
 		return !getItemStackInHand(true).isEmpty();
-	}
-	
-	public boolean isAbleToPickup() {
-		return ableToPickup;
-	}
-	
-	public void setAbleToPickup(boolean ableToPickup) {
-		this.ableToPickup = ableToPickup;
 	}
 	
 	public boolean isDead() {

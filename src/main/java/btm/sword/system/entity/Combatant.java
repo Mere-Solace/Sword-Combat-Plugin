@@ -5,12 +5,17 @@ import btm.sword.system.action.utility.thrown.ThrownItem;
 import btm.sword.system.playerdata.CombatProfile;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.util.Cache;
+import lombok.Getter;
+import lombok.Setter;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
 
+@Getter
+@Setter
 public abstract class Combatant extends SwordEntity {
 	private BukkitTask abilityCastTask = null;
 	
@@ -30,25 +35,9 @@ public abstract class Combatant extends SwordEntity {
 		super(associatedEntity, combatProfile);
 		airDashesPerformed = 0;
 	}
-	
-	public BukkitTask getAbilityCastTask() {
-		return abilityCastTask;
-	}
-	
+
 	public void setCastTask(BukkitTask abilityCastTask) {
 		this.abilityCastTask = abilityCastTask;
-	}
-	
-	public boolean isGrabbing() {
-		return isGrabbing;
-	}
-	
-	public void setGrabbing(boolean isGrabbing) {
-		this.isGrabbing = isGrabbing;
-	}
-	
-	public void setGrabbedEntity(SwordEntity grabbedEntity) {
-		this.grabbedEntity = grabbedEntity;
 	}
 	
 	public void onGrab(SwordEntity target) {
@@ -91,11 +80,20 @@ public abstract class Combatant extends SwordEntity {
 	public boolean canAirDash() {
 		return canPerformAction() && getAirDashesPerformed() < getCombatProfile().getMaxAirDodges();
 	}
-	
-	public int getAirDashesPerformed() {
-		return airDashesPerformed;
-	}
-	
+
+    public boolean canThrow() {
+        ItemStack main = getItemStackInHand(true);
+        ItemStack off = getItemStackInHand(false);
+
+        boolean throwable =
+                        !main.getType().equals(Material.CROSSBOW) &&
+                        !main.getType().equals(Material.BOW) &&
+                        !main.getType().isEdible() &&
+                        !main.getType().isEmpty();
+
+        return canPerformAction() && throwable && off.getType().equals(Material.SHIELD);
+    }
+
 	public void resetAirDashesPerformed() {
 		this.airDashesPerformed = 0;
 	}
@@ -114,53 +112,5 @@ public abstract class Combatant extends SwordEntity {
 	
 	public long calcCooldown(AspectType type, double min, double base, double multiplier) {
 		return (long) Math.max(min, base - (multiplier * aspects.getAspectVal(type)) );
-	}
-	
-	public ThrownItem getThrownItem() {
-		return thrownItem;
-	}
-	
-	public void setThrownItem(ThrownItem thrownItem) {
-		this.thrownItem = thrownItem;
-	}
-	
-	public ItemStack getMainHandItemStackDuringThrow() {
-		return mainHandItemStackDuringThrow;
-	}
-	
-	public void setMainHandItemStackDuringThrow(ItemStack mainHandItemStackDuringThrow) {
-		this.mainHandItemStackDuringThrow = mainHandItemStackDuringThrow;
-	}
-	
-	public ItemStack getOffHandItemStackDuringThrow() {
-		return offHandItemStackDuringThrow;
-	}
-	
-	public void setOffHandItemStackDuringThrow(ItemStack offHandItemStackDuringThrow) {
-		this.offHandItemStackDuringThrow = offHandItemStackDuringThrow;
-	}
-	
-	public boolean isThrowSuccessful() {
-		return throwSuccessful;
-	}
-	
-	public void setThrowSuccessful(boolean throwSuccessful) {
-		this.throwSuccessful = throwSuccessful;
-	}
-	
-	public boolean isAttemptingThrow() {
-		return attemptingThrow;
-	}
-	
-	public void setAttemptingThrow(boolean attemptingThrow) {
-		this.attemptingThrow = attemptingThrow;
-	}
-	
-	public boolean isThrowCancelled() {
-		return throwCancelled;
-	}
-	
-	public void setThrowCancelled(boolean throwCancelled) {
-		this.throwCancelled = throwCancelled;
 	}
 }

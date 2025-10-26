@@ -72,8 +72,8 @@ public class ThrownItem {
 			sp.setOffHandItemStackDuringThrow(sp.getOffItemStackAtTimeOfHold());
 		}
 		else {
-		thrower.setMainHandItemStackDuringThrow(thrower.getItemStackInHand(true));
-		thrower.setOffHandItemStackDuringThrow(thrower.getItemStackInHand(false));
+            thrower.setMainHandItemStackDuringThrow(thrower.getItemStackInHand(true));
+            thrower.setOffHandItemStackDuringThrow(thrower.getItemStackInHand(false));
 		}
 		xDisplayOffset = -0.5f;
 		yDisplayOffset = 0.1f;
@@ -103,14 +103,14 @@ public class ThrownItem {
 				}
 				else if (thrower.isThrowSuccessful()) {
 					thrower.setItemTypeInHand(Material.AIR, true);
-					ItemStack toReturn = thrower.getOffHandItemStackDuringThrow();
-					thrower.setItemStackInHand(toReturn, false);
+//					ItemStack toReturn = thrower.getOffHandItemStackDuringThrow();
+//					thrower.setItemStackInHand(toReturn, false);
 					cancel();
 					return;
 				}
 				
 				if (thrower instanceof SwordPlayer sp) {
-					if (sp.getCurrentInvIndex() == sp.getThrownItemIndex()) {
+					if (!sp.isChangingHandIndex() && sp.getCurrentInvIndex() == sp.getThrownItemIndex()) {
 						if (i < 10)
 							sp.itemNameDisplay("- HURL IT AT 'EM SOLDIER! -", TextColor.color(100, 100, 100), null);
 						else
@@ -122,17 +122,20 @@ public class ThrownItem {
 				}
 				
 				ex.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 1, 2));
-				
-				if (step % 2 == 0) {
-                    DisplayUtil.smoothTeleport(display);
-					display.teleport(ex.getEyeLocation());
-				}
+
+                DisplayUtil.smoothTeleport(display, 2);
+                display.teleport(ex.getEyeLocation());
+
 				step++;
 			}
 		}.runTaskTimer(Sword.getInstance(), 0L, 1L);
 	}
 	
 	public void onRelease(double initialVelocity) {
+
+        thrower.setItemStackInHand(ItemStack.of(Material.AIR), true);
+
+
 		InteractiveItemArbiter.put(this);
 		xDisplayOffset = yDisplayOffset = zDisplayOffset = 0;
 		determineOrientation();
@@ -176,9 +179,14 @@ public class ThrownItem {
 				
 				cur = origin.clone().add(positionFunction.apply(t));
 				velocity = velocityFunction.apply(t);
-                DisplayUtil.smoothTeleport(display);
-				display.teleport(cur.setDirection(velocity));
-				rotate();
+
+                if (!prev.equals(cur) && cur.clone().subtract(prev).toVector().dot(velocity) > 0) {
+                    DisplayUtil.smoothTeleport(display, 1);
+                }
+
+                display.teleport(cur.setDirection(velocity));
+
+                rotate();
 				
 				Cache.throwTrailParticle.display(cur);
 				if (blockTrail != null && t % 3 == 0)
@@ -228,7 +236,7 @@ public class ThrownItem {
 	public void onGrounded() {
 		if (stuckBlock != null)
 			new ParticleWrapper(Particle.DUST_PILLAR, 50, 1, 1, 1, stuckBlock.getBlockData()).display(cur);
-		
+
 		double offset = 0.1;
 		Vector step = velocity.normalize().multiply(offset);
 		
@@ -247,7 +255,7 @@ public class ThrownItem {
 			@Override
 			public void run() {
 				cur = marker.getLocation();
-                DisplayUtil.smoothTeleport(display);
+                DisplayUtil.smoothTeleport(display, 1);
 				display.teleport(cur.clone().setDirection(velocityFunction.apply(t+1)));
 				marker.remove();
 			}

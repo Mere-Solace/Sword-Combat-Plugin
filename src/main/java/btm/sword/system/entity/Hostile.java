@@ -6,6 +6,8 @@ import btm.sword.system.playerdata.CombatProfile;
 
 import btm.sword.util.VectorUtil;
 import com.destroystokyo.paper.entity.Pathfinder;
+import lombok.Getter;
+import lombok.Setter;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.LivingEntity;
@@ -20,6 +22,8 @@ import java.util.List;
 import java.util.Random;
 import java.util.function.Consumer;
 
+@Getter
+@Setter
 public class Hostile extends Combatant {
 	private final Mob mob;
 	private final Pathfinder pathfinder;

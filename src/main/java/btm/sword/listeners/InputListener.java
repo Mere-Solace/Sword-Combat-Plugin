@@ -6,6 +6,7 @@ import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.SwordPlayer;
 
 import btm.sword.system.input.InputType;
+import btm.sword.util.InputUtil;
 import io.papermc.paper.event.player.PrePlayerAttackEntityEvent;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -48,14 +49,52 @@ public class InputListener implements Listener {
 			swordPlayer.act(InputType.LEFT);
 		}
 		else if (action == Action.RIGHT_CLICK_AIR || action == Action.RIGHT_CLICK_BLOCK) {
-			if (swordPlayer.evaluateItemInput(item, InputType.RIGHT)) {
+			if (swordPlayer.isAtRoot() &&
+                    event.hasBlock() &&
+                    InputUtil.isInteractible(event.getClickedBlock())) {
+                return;
+            }
+
+            if (swordPlayer.evaluateItemInput(item, InputType.RIGHT)) {
 				event.setCancelled(true);
 				return;
 			}
-			
 			swordPlayer.act(InputType.RIGHT);
 		}
 	}
+
+    @EventHandler
+    public void onPlayerEntityInteract(PlayerInteractEntityEvent event) {
+        SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId());
+        ItemStack item = swordPlayer.getItemStackInHand(true);
+
+        if (swordPlayer.evaluateItemInput(item, InputType.RIGHT)) {
+            event.setCancelled(true);
+            return;
+        }
+        swordPlayer.act(InputType.RIGHT);
+
+        event.setCancelled(true);
+
+        event.getRightClicked();
+    }
+
+    @EventHandler
+    public void onPlayerInteractAtEntity(PlayerInteractAtEntityEvent event) {
+        SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId());
+        ItemStack item = swordPlayer.getItemStackInHand(true);
+
+        if (swordPlayer.evaluateItemInput(item, InputType.RIGHT)) {
+            event.setCancelled(true);
+            return;
+        }
+        swordPlayer.act(InputType.RIGHT);
+
+        event.setCancelled(true);
+
+        event.getRightClicked();
+        event.getClickedPosition();
+    }
 	
 	@EventHandler
 	public void onPlayerDropEvent(PlayerDropItemEvent event) {
@@ -109,7 +148,8 @@ public class InputListener implements Listener {
 	@EventHandler
 	public void onChangeItemEvent(PlayerItemHeldEvent event) {
 		SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId());
-		
+		swordPlayer.setChangingHandIndex(true);
+
 		if (swordPlayer.inputReliantOnItem()) {
 			swordPlayer.resetTree();
 		}
@@ -117,5 +157,12 @@ public class InputListener implements Listener {
 		if (swordPlayer.isAttemptingThrow()) {
 			ThrowAction.throwCancel(swordPlayer);
 		}
+
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                swordPlayer.setChangingHandIndex(false);
+            }
+        }.runTaskLater(Sword.getInstance(), 1);
 	}
 }

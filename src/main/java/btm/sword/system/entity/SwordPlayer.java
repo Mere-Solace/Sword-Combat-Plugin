@@ -55,6 +55,7 @@ public class SwordPlayer extends Combatant {
 	private final long inputTimeoutMillis = 1200L;
 	
 	private boolean performedDropAction;
+    private boolean changingHandIndex;
 	
 	private BukkitTask rightTask;
 	private boolean holdingRight;
@@ -63,7 +64,6 @@ public class SwordPlayer extends Combatant {
 	private ItemStack mainItemStackAtTimeOfHold;
 	private ItemStack offItemStackAtTimeOfHold;
 	private int indexOfRightHold;
-	private boolean mainHandRightHold;
 	
 	private BukkitTask sneakTask;
 	private boolean sneaking;
@@ -102,7 +102,6 @@ public class SwordPlayer extends Combatant {
 		holdingRight = false;
 		rightHoldTimeStart = 0L;
 		timeRightHeld = 0L;
-		mainHandRightHold = false;
 		
 		sneaking = false;
 		sneakHoldTimeStart = 0L;
@@ -214,7 +213,7 @@ public class SwordPlayer extends Combatant {
 		
 		if (node == null)
 			return;
-		else if (node.shouldDisplay())
+		else if (node.isDisplay())
 			displayInputSequence();
 
 		InputAction action = node.getAction();
@@ -235,13 +234,15 @@ public class SwordPlayer extends Combatant {
 		String id = meta != null ? meta.getPersistentDataContainer().get(KeyCache.buttonTagKey, PersistentDataType.STRING) : null;
 		switch (inputType) {
 			case RIGHT -> {
-				if (type.isEdible() || type == Material.SHIELD || type == Material.BOW || type == Material.CROSSBOW) {
-					return true;
-				}
-				else if (id != null && id.equals(menuHotKeyId)) {
-					mainMenu.display(player);
-					return true;
-				}
+//				if (type.isEdible() || type == Material.SHIELD || type == Material.BOW || type == Material.CROSSBOW) {
+//					return true;
+//				}
+//				else if (id != null && id.equals(menuHotKeyId)) {
+//					mainMenu.display(player);
+//					return true;
+//				}
+
+                return false;
 			}
 			case DROP -> {
 				if (id != null && id.equals(menuHotKeyId)) {
@@ -392,11 +393,9 @@ public class SwordPlayer extends Combatant {
 		mainItemStackAtTimeOfHold = getItemStackInHand(true);
 		offItemStackAtTimeOfHold = getItemStackInHand(false);
 		
-		mainHandRightHold = !mainItemStackAtTimeOfHold.isEmpty();
-		
 		indexOfRightHold = getCurrentInvIndex();
 		
-		setItemStackInHand(new ItemStack(Material.GUNPOWDER), true);
+		setItemStackInHand(new ItemStack(Material.GUNPOWDER), true); // can change the logic here later
 		
 		rightTask = new BukkitRunnable() {
 			@Override
