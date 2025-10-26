@@ -21,17 +21,16 @@ public class ThrowAction extends SwordAction {
 		
 		ThrownItem thrownItem;
 		if (executor instanceof SwordPlayer sp) {
-			display.setItemStack(sp.isMainHandRightHold() ? sp.getMainItemStackAtTimeOfHold() : sp.getOffItemStackAtTimeOfHold());
-			thrownItem = new ThrownItem(executor, display, sp.isMainHandRightHold());
-		}
+			display.setItemStack(sp.getMainItemStackAtTimeOfHold());
+        }
 		else {
 			ItemStack main = executor.getItemStackInHand(true);
 			ItemStack off = executor.getItemStackInHand(false);
 			
-			display.setItemStack(main.isEmpty() ? off : main);
-			thrownItem = new ThrownItem(executor, display, !main.isEmpty());
-		}
-		executor.setThrownItem(thrownItem);
+			display.setItemStack(main);
+        }
+        thrownItem = new ThrownItem(executor, display);
+        executor.setThrownItem(thrownItem);
 		thrownItem.onReady();
 	}
 	
@@ -61,8 +60,7 @@ public class ThrowAction extends SwordAction {
 			@Override
 			public void run() {
 				executor.getThrownItem().onRelease(2);
-				boolean main = executor.getThrownItem().isMainHandThrow();
-				executor.setItemStackInHand(main ? executor.getOffHandItemStackDuringThrow() : executor.getMainHandItemStackDuringThrow(), !main);
+				executor.setItemStackInHand(executor.getMainHandItemStackDuringThrow(), true);
 			}
 		});
 	}

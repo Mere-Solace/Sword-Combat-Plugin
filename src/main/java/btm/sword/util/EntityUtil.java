@@ -49,7 +49,8 @@ public class EntityUtil {
 				l.setDirection(curDir);
 				if (step[0] % 6 == 0)
 					DisplayUtil.line(List.of(Cache.thrownItemStickParticle), l.clone().subtract(curDir), curDir, 0.75, 0.25);
-				
+
+                DisplayUtil.smoothTeleport(itemDisplay);
 				itemDisplay.teleport(l);
 				itemDisplay.setTransformation(orientation);
 				

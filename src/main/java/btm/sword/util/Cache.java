@@ -70,9 +70,9 @@ public class Cache {
     public static final ParticleWrapper thrownItemMarkerParticle = new ParticleWrapper(Particle.TRIAL_SPAWNER_DETECTION, 3, 0.01, 0.01, 0.01, 0);
     public static final ParticleWrapper thrownItemMarkerParticle2 = new ParticleWrapper(Particle.TRIAL_SPAWNER_DETECTION_OMINOUS, 4, 0.01, 0.01, 0.01, 0);
 
-    public static final ParticleWrapper basicSwordBlueTransitionParicle = new ParticleWrapper(Particle.DUST_COLOR_TRANSITION, 5, 0.025, 0.025, 0.025, 1,
+    public static final ParticleWrapper basicSwordBlueTransitionParticle = new ParticleWrapper(Particle.DUST_COLOR_TRANSITION, 5, 0.025, 0.025, 0.025, 1,
             new Particle.DustTransition(Color.fromRGB(14, 107, 207), Color.fromRGB(162, 226, 255), 0.75f));
-    public static final ParticleWrapper basicSwordWhiteTransitionPaticle = new ParticleWrapper(Particle.DUST_COLOR_TRANSITION, 5, 0.025, 0.025, 0.025, 1,
+    public static final ParticleWrapper basicSwordWhiteTransitionParticle = new ParticleWrapper(Particle.DUST_COLOR_TRANSITION, 5, 0.025, 0.025, 0.025, 1,
             new Particle.DustTransition(Color.fromRGB(235, 243, 255), Color.fromRGB(120, 121, 255), 0.65f));
 
     public static final ParticleWrapper basicSwordHit = new ParticleWrapper(Particle.SOUL_FIRE_FLAME, 30, 0.5, 0.5, 0.5, 0.1);

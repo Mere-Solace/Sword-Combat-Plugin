@@ -7,6 +7,16 @@ import org.bukkit.util.Vector;
 import java.util.List;
 
 public class DisplayUtil {
+    public static int defaultTeleportDuration = 3;
+
+    public static void smoothTeleport(Display display) {
+        display.setTeleportDuration(defaultTeleportDuration);
+    }
+
+    public static void smoothTeleport(Display display, int duration) {
+        display.setTeleportDuration(duration);
+    }
+
     public static void setInterpolationValues(Display display, int delay, int duration) {
         display.setInterpolationDelay(delay);
         display.setInterpolationDuration(duration);

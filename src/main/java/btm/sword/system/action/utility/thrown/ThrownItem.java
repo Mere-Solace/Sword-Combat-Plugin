@@ -124,7 +124,7 @@ public class ThrownItem {
 				ex.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 1, 2));
 				
 				if (step % 2 == 0) {
-                    DisplayUtil.setInterpolationValues(display, 0, 2);
+                    DisplayUtil.smoothTeleport(display);
 					display.teleport(ex.getEyeLocation());
 				}
 				step++;
@@ -136,7 +136,7 @@ public class ThrownItem {
 		InteractiveItemArbiter.put(this);
 		xDisplayOffset = yDisplayOffset = zDisplayOffset = 0;
 		determineOrientation();
-		
+
 		this.initialVelocity = initialVelocity;
 		LivingEntity ex = thrower.entity();
 		Location o = ex.getEyeLocation();
@@ -176,7 +176,7 @@ public class ThrownItem {
 				
 				cur = origin.clone().add(positionFunction.apply(t));
 				velocity = velocityFunction.apply(t);
-                DisplayUtil.setInterpolationValues(display, 0, 1);
+                DisplayUtil.smoothTeleport(display);
 				display.teleport(cur.setDirection(velocity));
 				rotate();
 				
@@ -247,7 +247,7 @@ public class ThrownItem {
 			@Override
 			public void run() {
 				cur = marker.getLocation();
-                DisplayUtil.setInterpolationValues(display, 0, 1);
+                DisplayUtil.smoothTeleport(display);
 				display.teleport(cur.clone().setDirection(velocityFunction.apply(t+1)));
 				marker.remove();
 			}
