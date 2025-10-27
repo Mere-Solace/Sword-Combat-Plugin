@@ -329,12 +329,13 @@ public class SwordPlayer extends Combatant {
 		switch (inputType) {
 			case RIGHT -> {
 //				if (type.isEdible() || type == Material.SHIELD || type == Material.BOW || type == Material.CROSSBOW) {
-//					return true;
+//					return false;
 //				}
-//				else if (id != null && id.equals(menuHotKeyId)) {
-//					mainMenu.display(player);
-//					return true;
-//				}
+//				else
+				if (id != null && id.equals(menuHotKeyId)) {
+					mainMenu.display(player);
+					return true;
+				}
 
                 return false;
 			}

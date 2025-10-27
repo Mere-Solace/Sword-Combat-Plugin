@@ -67,7 +67,7 @@ public class SwordEntityArbiter {
 	
 	public static SwordEntity initializeNPC(LivingEntity entity) {
 		switch (entity.getType()) {
-			case ZOMBIE, SKELETON -> {
+            case ZOMBIE, SKELETON, WITHER_SKELETON, ENDERMAN, WARDEN -> {
 				return new Hostile(entity, new CombatProfile());
 			}
 			default -> {

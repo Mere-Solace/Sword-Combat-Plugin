@@ -1,6 +1,7 @@
 package btm.sword.system.action;
 
 import btm.sword.Sword;
+import btm.sword.system.SwordScheduler;
 import btm.sword.system.action.type.AttackType;
 import btm.sword.system.entity.Combatant;
 import btm.sword.system.entity.SwordEntity;
@@ -8,21 +9,33 @@ import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.SwordPlayer;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.util.*;
+import btm.sword.util.sound.SoundType;
 import org.apache.logging.log4j.util.BiConsumer;
+import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Particle;
+import org.bukkit.entity.EntityType;
+import org.bukkit.entity.ItemDisplay;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.RayTraceResult;
+import org.bukkit.util.Transformation;
 import org.bukkit.util.Vector;
+import org.joml.Quaternionf;
+import org.joml.Vector3f;
 
 import java.util.*;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
 public class AttackAction extends SwordAction {
 	private static final Map<String, BiConsumer<Combatant, AttackType>> attackMap = Map.of(
-		"_SWORD", AttackAction::basicSlash,
-		"_SHOVEL", AttackAction::basicSlash
+            "_SWORD", AttackAction::basicSlash,
+            "_SHOVEL", AttackAction::basicSlash,
+            "_AXE", AttackAction::basicSlash,
+            "SHIELD", AttackAction::basicSlash
 	);
 	
 	public static void basicAttack(Combatant executor, AttackType type) {
@@ -110,12 +123,16 @@ public class AttackAction extends SwordAction {
 			new BukkitRunnable() {
 				@Override
 				public void run() {
+                    SoundUtil.playSound(executor.entity(), SoundType.ENTITY_ENDER_DRAGON_FLAP, 0.35f, 0.6f);
+
 					executor.setTimeOfLastAttack(System.currentTimeMillis());
 					executor.setDurationOfLastAttack((int) castDuration * 500);
 					
 					LivingEntity ex = executor.entity();
 					double damage = getBasicNonRPGDamage(executor.getItemTypeInHand(true));
-					
+
+                    int numSteps = 50;
+
 					double rangeMultiplier;
 					List<Vector> controlVectors;
 					List<Vector> bezierVectors;
@@ -155,9 +172,9 @@ public class AttackAction extends SwordAction {
 					List<Vector> transformedControlVectors = controlVectors.stream()
 							.map(v -> VectorUtil.transformWithNewBasis(basis, v).multiply(rangeMultiplier))
 							.toList();
-					
+
 					bezierVectors = BezierUtil.cubicBezier3D(transformedControlVectors.getFirst(),transformedControlVectors.get(1), transformedControlVectors.get(2), transformedControlVectors.getLast(),
-							50);
+							numSteps);
 					
 					int duration = (int) castDuration;
 					int period = 1;
@@ -179,6 +196,7 @@ public class AttackAction extends SwordAction {
 					
 					double[] d = {damage};
 					new BukkitRunnable() {
+                        final int slice = numSteps/4;
 						@Override
 						public void run() {
 							for (int i = 0; i < perIteration; i++) {
@@ -192,7 +210,7 @@ public class AttackAction extends SwordAction {
 								Vector v = bezierVectors.get(s);
 								Vector n = v.clone().normalize();
 								Location l = o.clone().add(v);
-								
+
 								Cache.testSwingParticle.display(l);
 								
 								if (s > size * (0.1)) {
@@ -277,7 +295,7 @@ public class AttackAction extends SwordAction {
 								step[0]++;
 							}
 						}
-					}.runTaskTimer(Sword.getInstance(), 0, period);
+					}.runTaskTimer(Sword.getInstance(), 1, period); // changed delay to 1 from 0
 				}
 			}
 		);
@@ -323,6 +341,181 @@ public class AttackAction extends SwordAction {
 		
 		// step 5: once done, run the next function or stop
 	}
-	
-	
+
+//    public static void basicSlash_V2(Combatant executor, AttackType type) {
+//        long castDuration = (long) executor.calcValueReductive(AspectType.FINESSE, 1L, 3L, 0.2);
+//        if (executor instanceof SwordPlayer sp) sp.player().setCooldown(sp.getItemTypeInHand(true), (int) castDuration);
+//        cast(executor, castDuration,
+//                new BukkitRunnable() {
+//                    @Override
+//                    public void run() {
+//                        SoundUtil.playSound(executor.entity(), SoundType.ENTITY_ENDER_DRAGON_FLAP, 0.35f, 0.6f);
+//
+//                        executor.setTimeOfLastAttack(System.currentTimeMillis());
+//                        executor.setDurationOfLastAttack((int) castDuration * 500);
+//
+//                        LivingEntity ex = executor.entity();
+//                        double damage = getBasicNonRPGDamage(executor.getItemTypeInHand(true));
+//
+//                        double rangeMultiplier;
+//                        List<Vector> controlVectors;
+//                        boolean withPitch = true;
+//                        boolean aerial = false;
+//                        switch (type) {
+//                            case BASIC_2 -> {
+//                                rangeMultiplier = 1.4;
+//                                controlVectors = new ArrayList<>(Cache.basicSword2);
+//                            }
+//                            case BASIC_3 -> {
+//                                rangeMultiplier = 1.4;
+//                                controlVectors = new ArrayList<>(Cache.basicSword3);
+//                            }
+//                            case N_AIR -> {
+//                                rangeMultiplier = 1.4;
+//                                controlVectors = new ArrayList<>(Cache.aerialNeutralSword);
+//                                aerial = true;
+//                            }
+//                            case DOWN_AIR -> {
+//                                rangeMultiplier = 1.2;
+//                                controlVectors = new ArrayList<>(Cache.aerialSwordDown);
+//                                withPitch = false;
+//                                aerial = true;
+//                            }
+//                            default -> {
+//                                rangeMultiplier = 1.4;
+//                                controlVectors = new ArrayList<>(Cache.basicSword1);
+//                            }
+//                        }
+//
+//                        Location o = ex.getEyeLocation();
+//                        Vector offset = new Vector(0, 1.1, 0);
+//
+//                        ArrayList<Vector> basis = withPitch ? VectorUtil.getBasis(o, o.getDirection()) : VectorUtil.getBasisWithoutPitch(o);
+//                        Vector right = basis.getFirst();
+//
+//                        List<Vector> trCtrlVecs = BezierUtil.adjustCtrlToBasis(basis, controlVectors, rangeMultiplier);
+//
+//                        Function<Double, Vector> bezier = BezierUtil.cubicBezier3d(trCtrlVecs.getFirst(), trCtrlVecs.get(1), trCtrlVecs.get(2), trCtrlVecs.getLast());
+//                        double start_t = -0.5;
+//                        double end_t = 1.0;
+//                        Vector start = bezier.apply(start_t);
+//
+//
+//                        int stepsPerTick = 7;
+//                        int numSteps = 3;
+//                        double step = (end_t-start_t)/(numSteps*stepsPerTick);
+//                        int period = 1;
+//
+//                        HashSet<LivingEntity> hit = new HashSet<>();
+//
+//                        if (aerial) o.add(VectorUtil.UP.clone().multiply(ex.getVelocity().getY()));
+//
+//                        if (!aerial) {
+//                            Vector curV = ex.getVelocity();
+//                            ex.setVelocity(new Vector(
+//                                    curV.getX() * 0.3,
+//                                    curV.getY() * 0.4,
+//                                    curV.getZ() * 0.3));
+//                        }
+//
+//                        // new item display stuff:
+//                        ItemDisplay weapon = (ItemDisplay) ex.getWorld().spawnEntity(ex.getLocation().add(start).add(offset), EntityType.ITEM_DISPLAY);
+//                        weapon.setItemStack(ItemStack.of(executor.getItemTypeInHand(true)));
+//                        weapon.setGlowing(true);
+//                        weapon.setGlowColorOverride(Color.WHITE);
+//                        weapon.setTransformation(new Transformation(
+//                                new Vector3f(),
+//                                new Quaternionf().rotationX((float) Math.PI/2),
+//                                new Vector3f(1,1,1),
+//                                new Quaternionf()
+//                        ));
+//                        //
+//
+//                        new BukkitRunnable() {
+//                            final double d = damage;
+//                            int i = 0;
+//                            Vector v;
+//                            Location l;
+//                            Vector prev = start.clone();
+//                            @Override
+//                            public void run() {
+//                                if (i > (numSteps*stepsPerTick)) {
+//                                    new BukkitRunnable() {
+//                                        int x = 0;
+//                                        @Override
+//                                        public void run() {
+//                                            if (x > 3) {
+//                                                if (!weapon.isDead())
+//                                                    weapon.remove();
+//                                                cancel();
+//                                            }
+//                                            Cache.thrownItemMarkerParticle2.display(weapon.getLocation());
+//                                            DisplayUtil.smoothTeleport(weapon);
+//                                            weapon.teleport(ex.getLocation().add(offset).add(v.clone().multiply(0.75)).setDirection(v));
+//                                            x++;
+//                                        }
+//                                    }.runTaskTimer(Sword.getInstance(),0,1);
+//                                    cancel();
+//                                }
+//                                // for millisecond granularity
+//                                int timeIncrement = 1000/(20 * stepsPerTick);
+//                                for (int x = 0; x < stepsPerTick; x++) {
+//                                    if (i > numSteps) break;
+//                                    final int I = i;
+//                                    SwordScheduler.runLater(() -> {
+//                                        v = bezier.apply(step * I);
+//
+//                                        Vector to = v.clone().subtract(prev);
+//
+//                                        l = ex.getLocation().add(offset).add(v.clone().multiply(0.75));
+//
+////                                        DisplayUtil.secant(List.of(Cache.testSwingParticle), ex.getLocation().add(offset), l, 0.5);
+//
+//                                        DisplayUtil.smoothTeleport(weapon, 1);
+//                                        weapon.teleport(l.setDirection(v));
+//                                        Cache.testSwingParticle.display(l);
+//
+//                                        // retrieving targets and setting knockback
+//                                        Vector kb =  new Vector(0,0.25,0);
+//                                        Vector r = right.clone().multiply(0.1);
+//
+//                                        // enum map to hitbox Consumer function accepting executor
+//                                        HashSet<LivingEntity> curHit = HitboxUtil.secant(ex, o, l, 0.4, true);
+//
+//                                        for (LivingEntity target : curHit)
+//                                            if (!hit.contains(target)) {
+//                                                switch (type) {
+//                                                    case BASIC_1 -> kb = kb.clone().add(r);
+//                                                    case BASIC_2 -> kb = kb.clone().add(r.clone().multiply(-1));
+//                                                    case BASIC_3 -> kb = target.getLocation().toVector()
+//                                                            .subtract(o.toVector()).normalize()
+//                                                            .subtract(new Vector(0,0.5,0));
+//                                                    default -> kb = v.clone().normalize().multiply(0.7);
+//                                                }
+//
+//                                                SwordEntity sTarget = SwordEntityArbiter.getOrAdd(target.getUniqueId());
+//                                                if (sTarget == null)
+//                                                    continue;
+//
+//                                                if (!sTarget.entity().isDead()) {
+//                                                    // hit function call
+//                                                    sTarget.hit(executor, 5, 1, (float) d, 6, kb);
+//                                                    // hit particles
+//                                                    Cache.testHitParticle.display(sTarget.getChestLocation());
+//                                                }
+//                                            }
+//                                        hit.addAll(curHit);
+//
+//                                        prev = v;
+//
+//                                    }, x * timeIncrement, TimeUnit.MILLISECONDS);
+//
+//                                    i++;
+//                                }
+//                            }
+//                        }.runTaskTimer(Sword.getInstance(), 0, 1);
+//                    }
+//                }
+//        );
+//    }
 }

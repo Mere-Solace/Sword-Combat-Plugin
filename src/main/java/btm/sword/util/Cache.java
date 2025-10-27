@@ -61,8 +61,9 @@ public class Cache {
     public static final ParticleWrapper testObsidianTearParticle = new ParticleWrapper(Particle.DRIPPING_OBSIDIAN_TEAR, 1, 0, 0, 0, 0);
     public static final ParticleWrapper testLavaDripParticle = new ParticleWrapper(Particle.DRIPPING_LAVA, 2, 0, 0, 0, 0);
     public static final ParticleWrapper testSwingParticle = new ParticleWrapper(Particle.DUST_COLOR_TRANSITION, 2, 0, 0, 0, 1,
-            new Particle.DustTransition(Color.fromRGB(211, 222, 240), Color.fromRGB(36, 103, 220), 0.7f));
-    public static final ParticleWrapper testHitParticle = new ParticleWrapper(Particle.CRIT, 30, 0.1, 0.1, 0.1, 0.15);
+            new Particle.DustTransition(Color.fromRGB(255, 0,0), Color.fromRGB(102,0,0), 0.7f));
+//            new Particle.DustTransition(Color.fromRGB(211, 222, 240), Color.fromRGB(36, 103, 220), 0.7f));
+    public static final ParticleWrapper testHitParticle = new ParticleWrapper(Particle.CRIT, 30, 0.5, 0.5, 0.5, 0.15);
     public static final ParticleWrapper testBleedParticle = new ParticleWrapper(Particle.BLOCK, 5, 0, 0, 0, Material.CRIMSON_HYPHAE.createBlockData());
 
     public static final ParticleWrapper thrownItemStickParticle = new ParticleWrapper(Particle.TRIAL_SPAWNER_DETECTION, 4, 0.1, 0.1, 0.1, 0);
@@ -81,7 +82,7 @@ public class Cache {
     public static final ParticleWrapper basicSwordEnterGround = new ParticleWrapper(Particle.CRIT, 10, 0.1, 0.1, 0.1, 0.5);
 
     public static final ParticleWrapper grabCloudParticle = new ParticleWrapper(Particle.POOF, 20, 0.5, 0.5, 0.5, 0.1);
-    public static final ParticleWrapper throwTrailParticle = new ParticleWrapper(Particle.DUST, 4, 0.2, 0.2, 0.2,
+    public static final ParticleWrapper throwTrailParticle = new ParticleWrapper(Particle.DUST, 1, 0.2, 0.2, 0.2,
             new Particle.DustOptions(Color.WHITE, 2.5f));
     public static final ParticleWrapper throwTrailParticle2 = new ParticleWrapper(Particle.DUST_PLUME, 5, 0.1, 0.1, 0.1, 0);
     public static final ParticleWrapper grabHitParticle = new ParticleWrapper(Particle.FLAME, 50, 0.6, 0.6, 0.6, 0.02);

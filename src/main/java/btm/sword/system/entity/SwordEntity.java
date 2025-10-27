@@ -5,6 +5,8 @@ import btm.sword.system.combat.Affliction;
 import btm.sword.system.playerdata.CombatProfile;
 import btm.sword.util.Cache;
 import btm.sword.util.EntityUtil;
+import btm.sword.util.SoundUtil;
+import btm.sword.util.sound.SoundType;
 import lombok.Getter;
 import lombok.Setter;
 import org.bukkit.Location;
@@ -161,9 +163,10 @@ public abstract class SwordEntity {
 		else
 			hit = true;
 		this.hitInvulnerableTickDuration = hitInvulnerableTickDuration;
-		
-		
-		
+
+        Cache.testHitParticle.display(getChestLocation());
+        SoundUtil.playSound(source.entity(), SoundType.ENTITY_PLAYER_ATTACK_STRONG, 0.9f, 1f);
+
 		if (aspects.toughness().remove(baseToughnessDamage) && !toughnessBroken) {
 			Cache.toughnessBreakParticle1.display(getChestLocation());
 			onToughnessBroken();

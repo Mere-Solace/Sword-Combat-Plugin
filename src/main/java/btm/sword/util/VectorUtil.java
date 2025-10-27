@@ -60,7 +60,7 @@ public class VectorUtil {
 		basis.getFirst().rotateAroundAxis(basis.get(1), yaw);
 	}
 	
-	public static Vector transformWithNewBasis(ArrayList<Vector> basis, Vector v) {
+	public static Vector transformWithNewBasis(List<Vector> basis, Vector v) {
 		Vector right = basis.getFirst();
 		Vector up = basis.get(1);
 		Vector forward = basis.getLast();

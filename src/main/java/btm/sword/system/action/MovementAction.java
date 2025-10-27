@@ -78,7 +78,8 @@ public class MovementAction extends SwordAction {
 								if (id.getLocation().subtract(ex.getEyeLocation()).lengthSquared() < 8.5) {
 									BlockData blockData = ex.getLocation().add(new Vector(0,-0.75,0)).getBlock().getBlockData();
 									new ParticleWrapper(Particle.DUST_PILLAR, 100, 1.25,1.25,1.25, blockData).display(ex.getLocation());
-									SoundUtil.playSound(ex, SoundType.RANDOM_BANE_SLASH, 1f, 1f);
+									SoundUtil.playSound(ex, SoundType.ENTITY_ENDER_DRAGON_FLAP, 0.6f, 1f);
+                                    SoundUtil.playSound(ex, SoundType.ENTITY_PLAYER_ATTACK_SWEEP, 0.3f, 0.6f);
 									executor.setVelocity(u);
 									InteractiveItemArbiter.onGrab(id, executor);
 								}

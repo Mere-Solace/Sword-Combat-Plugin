@@ -22,12 +22,12 @@ public class DisplayUtil {
         display.setInterpolationDuration(duration);
     }
 
-	public static void secant(List<ParticleWrapper> particles, Location origin, Location end, double width) {
+	public static void secant(List<ParticleWrapper> particles, Location origin, Location end, double spacing) {
 		Vector direction = end.clone().subtract(origin).toVector();
-		int steps = (int) (direction.length() / (width));
+		int steps = (int) (direction.length() / (spacing));
 		if (steps == 0) steps = 1;
 		
-		Vector step = direction.clone().normalize().multiply(width);
+		Vector step = direction.clone().normalize().multiply(spacing);
 		Location cur = origin.clone();
 		
 		for (int i = 0; i <= steps; i++) {

@@ -6,6 +6,7 @@ import btm.sword.system.entity.SwordEntity;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.SwordPlayer;
 import btm.sword.util.*;
+import btm.sword.util.sound.SoundType;
 import lombok.Getter;
 import lombok.Setter;
 import net.kyori.adventure.text.format.TextColor;
@@ -77,7 +78,7 @@ public class ThrownItem {
 		}
 		xDisplayOffset = -0.5f;
 		yDisplayOffset = 0.1f;
-		zDisplayOffset = 0.1f;
+		zDisplayOffset = 0.5f;
 	}
 	
 	public void onReady() {
@@ -154,6 +155,8 @@ public class ThrownItem {
         }
 
         thrower.setItemStackInHand(ItemStack.of(Material.AIR), true);
+
+        SoundUtil.playSound(thrower.entity(), SoundType.ENTITY_ENDER_DRAGON_FLAP, 0.5f, 0.4f);
 
 		InteractiveItemArbiter.put(this);
 		xDisplayOffset = yDisplayOffset = zDisplayOffset = 0;
@@ -366,7 +369,8 @@ public class ThrownItem {
 		}
 		else {
 			hitEntity.hit(thrower, 0, 2, 75, 50, velocity.clone().multiply(0.7));
-			disposeNaturally();
+			hit.getWorld().createExplosion(hitEntity.getChestLocation(), 1, false, false);
+            disposeNaturally();
 		}
 	}
 	
