@@ -49,7 +49,11 @@ public class InputListener implements Listener {
 			swordPlayer.act(InputType.LEFT);
 		}
 		else if (action == Action.RIGHT_CLICK_AIR || action == Action.RIGHT_CLICK_BLOCK) {
-			if (swordPlayer.isAtRoot() &&
+			if (swordPlayer.isInteractingWithEntity()) {
+                return;
+            }
+
+            if (swordPlayer.isAtRoot() &&
                     event.hasBlock() &&
                     InputUtil.isInteractible(event.getClickedBlock())) {
                 return;
@@ -65,14 +69,24 @@ public class InputListener implements Listener {
 
     @EventHandler
     public void onPlayerEntityInteract(PlayerInteractEntityEvent event) {
+        Sword.print("Interacted with entity");
         SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId());
         ItemStack item = swordPlayer.getItemStackInHand(true);
+
+        swordPlayer.setInteractingWithEntity(true);
 
         if (swordPlayer.evaluateItemInput(item, InputType.RIGHT)) {
             event.setCancelled(true);
             return;
         }
         swordPlayer.act(InputType.RIGHT);
+
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                swordPlayer.setInteractingWithEntity(false);
+            }
+        }.runTaskLater(Sword.getInstance(), 1);
 
         event.setCancelled(true);
 
@@ -81,19 +95,19 @@ public class InputListener implements Listener {
 
     @EventHandler
     public void onPlayerInteractAtEntity(PlayerInteractAtEntityEvent event) {
-        SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId());
-        ItemStack item = swordPlayer.getItemStackInHand(true);
-
-        if (swordPlayer.evaluateItemInput(item, InputType.RIGHT)) {
-            event.setCancelled(true);
-            return;
-        }
-        swordPlayer.act(InputType.RIGHT);
-
-        event.setCancelled(true);
-
-        event.getRightClicked();
-        event.getClickedPosition();
+//        SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId());
+//        ItemStack item = swordPlayer.getItemStackInHand(true);
+//
+//        if (swordPlayer.evaluateItemInput(item, InputType.RIGHT)) {
+//            event.setCancelled(true);
+//            return;
+//        }
+//        swordPlayer.act(InputType.RIGHT);
+//
+//        event.setCancelled(true);
+//
+//        event.getRightClicked();
+//        event.getClickedPosition();
     }
 	
 	@EventHandler

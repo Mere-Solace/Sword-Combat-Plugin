@@ -4,7 +4,6 @@ import btm.sword.Sword;
 import btm.sword.system.action.SwordAction;
 import btm.sword.system.entity.Combatant;
 import btm.sword.system.entity.SwordPlayer;
-import org.bukkit.Bukkit;
 import org.bukkit.Color;
 import org.bukkit.entity.*;
 import org.bukkit.inventory.*;
@@ -12,14 +11,14 @@ import org.bukkit.scheduler.BukkitRunnable;
 
 public class ThrowAction extends SwordAction {
 	public static void throwReady(Combatant executor) {
-		executor.setAttemptingThrow(true);
+        executor.setAttemptingThrow(true);
 		executor.setThrowCancelled(false);
 		executor.setThrowSuccessful(false);
 		
 		LivingEntity ex = executor.entity();
 		ItemDisplay display = (ItemDisplay) ex.getWorld().spawnEntity(ex.getEyeLocation(), EntityType.ITEM_DISPLAY);
-		display.setGlowing(true);
-		display.setGlowColorOverride(Color.fromRGB(255, 0, 15));
+//		display.setGlowing(true);
+//		display.setGlowColorOverride(Color.fromRGB(255, 0, 15));
 		
 		ThrownItem thrownItem;
 		if (executor instanceof SwordPlayer sp && !sp.getItemStackInHand(true).isEmpty()) {

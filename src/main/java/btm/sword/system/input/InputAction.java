@@ -14,7 +14,8 @@ public class InputAction {
 	private final boolean displayCooldown;
 	private final boolean displayDisabled;
 	
-	private long timeLastExecuted = 0;
+	@lombok.Getter
+    private long timeLastExecuted = 0;
 	
 	public InputAction(
 			Consumer<Combatant> action,
@@ -58,12 +59,8 @@ public class InputAction {
 	public boolean canCast(Combatant executor) {
 		return canCastAbility == null || canCastAbility.test(executor);
 	}
-	
-	public long getTimeLastExecuted() {
-		return timeLastExecuted;
-	}
-	
-	public void setTimeLastExecuted() {
+
+    public void setTimeLastExecuted() {
 		timeLastExecuted = System.currentTimeMillis();
 	}
 }

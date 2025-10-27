@@ -77,16 +77,27 @@ public class ThrownItem {
 		}
 		xDisplayOffset = -0.5f;
 		yDisplayOffset = 0.1f;
-		zDisplayOffset = -0.05f;
+		zDisplayOffset = 0.1f;
 	}
 	
 	public void onReady() {
-		determineOrientation();
-		
-		if (thrower instanceof SwordPlayer sp) {
-			sp.setThrownItemIndex();
-		}
-		
+        if (thrower instanceof SwordPlayer sp) {
+            sp.setThrewItem(false);
+            sp.setThrownItemIndex();
+            if (sp.isInteractingWithEntity()) {
+                sp.setAttemptingThrow(false);
+                sp.setThrowSuccessful(true);
+//                // this throw should be weaker because it's automatic. Could turn into a lunge or thrust or smth else
+                sp.getThrownItem().onRelease(2);
+                thrower.setItemTypeInHand(Material.AIR, true);
+                sp.endHoldingRight();
+                sp.resetTree();
+                return;
+            }
+        }
+
+        determineOrientation();
+
 		LivingEntity ex = thrower.entity();
 		
 		new BukkitRunnable() {
@@ -132,9 +143,17 @@ public class ThrownItem {
 	}
 	
 	public void onRelease(double initialVelocity) {
+        if (thrower instanceof SwordPlayer sp) {
+            sp.setThrewItem(true);
+            new BukkitRunnable() {
+                @Override
+                public void run() {
+                    sp.setThrewItem(false);
+                }
+            }.runTaskLater(Sword.getInstance(), 2);
+        }
 
         thrower.setItemStackInHand(ItemStack.of(Material.AIR), true);
-
 
 		InteractiveItemArbiter.put(this);
 		xDisplayOffset = yDisplayOffset = zDisplayOffset = 0;
@@ -302,7 +321,10 @@ public class ThrownItem {
 				@Override
 				public void run() {
 					RayTraceResult pinnedBlock = hit.getWorld().rayTraceBlocks(
-							hitEntity.getChestLocation(), velocity, 0.5, FluidCollisionMode.NEVER, true);
+							hitEntity.getChestLocation(), velocity,
+                            0.5, FluidCollisionMode.NEVER,
+                            true,
+                            block -> !block.getType().isCollidable());
 					
 					if (pinnedBlock == null || pinnedBlock.getHitBlock() == null || pinnedBlock.getHitBlock().getType().isAir()) return;
 					
@@ -349,6 +371,7 @@ public class ThrownItem {
 	}
 	
 	public void onCatch() {
+        thrower.message("Caught it!");
 		thrower.giveItem(display.getItemStack());
 		dispose();
 	}
@@ -360,7 +383,7 @@ public class ThrownItem {
 	}
 	
 	public void groundedCheck() {
-		RayTraceResult hitBlock = display.getWorld().rayTraceBlocks(cur, velocity, initialVelocity, FluidCollisionMode.NEVER, false);
+		RayTraceResult hitBlock = display.getWorld().rayTraceBlocks(cur, velocity, initialVelocity, FluidCollisionMode.NEVER, true);
 		
 		if (hitBlock == null) return;
 		
@@ -378,7 +401,7 @@ public class ThrownItem {
 		
 		if (prev == null) disposeNaturally();
 		
-		RayTraceResult hitEntity = display.getWorld().rayTraceEntities(prev, velocity, initialVelocity, 0.6, effFilter);
+		RayTraceResult hitEntity = display.getWorld().rayTraceEntities(prev, velocity, initialVelocity, 0.5, effFilter);
 		
 		if (hitEntity == null) return;
 		

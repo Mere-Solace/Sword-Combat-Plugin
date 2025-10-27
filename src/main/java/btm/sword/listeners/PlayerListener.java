@@ -26,6 +26,7 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.intellij.lang.annotations.Subst;
+import org.spigotmc.event.player.PlayerSpawnLocationEvent;
 
 import java.util.Objects;
 
@@ -35,6 +36,7 @@ public class PlayerListener implements Listener {
 		Player p = event.getPlayer();
 		SwordEntityArbiter.register(p);
 		p.sendMessage("Hello!");
+        p.setHealth(0);
 	}
 	
 	@EventHandler
@@ -47,7 +49,7 @@ public class PlayerListener implements Listener {
 	public void onPlayerDeath(PlayerDeathEvent event) {
 
 	}
-	
+
 	@EventHandler
 	public void onPlayerRespawn(PlayerRespawnEvent event) {
 		SwordEntityArbiter.register(event.getPlayer());

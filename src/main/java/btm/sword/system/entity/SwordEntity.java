@@ -31,8 +31,8 @@ public abstract class SwordEntity {
 	
 	protected EntityAspects aspects;
 	
-	private boolean tick;
-	private long ticks;
+	protected boolean tick;
+	protected long ticks;
 	
 	private long timeOfLastAttack;
 	private int durationOfLastAttack;

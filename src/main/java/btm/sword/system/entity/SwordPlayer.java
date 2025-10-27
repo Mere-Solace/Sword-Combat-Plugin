@@ -1,6 +1,7 @@
 package btm.sword.system.entity;
 
 import btm.sword.Sword;
+import btm.sword.system.SwordScheduler;
 import btm.sword.system.action.utility.thrown.ThrowAction;
 import btm.sword.system.entity.aspect.Aspect;
 import btm.sword.system.input.InputAction;
@@ -12,6 +13,7 @@ import btm.sword.system.inventory.selection.CustomActionButton;
 import btm.sword.system.item.ItemStackBuilder;
 import btm.sword.system.item.KeyCache;
 import btm.sword.system.playerdata.PlayerData;
+import btm.sword.util.DisplayUtil;
 import com.destroystokyo.paper.profile.PlayerProfile;
 import lombok.Getter;
 import lombok.Setter;
@@ -20,7 +22,12 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.title.Title;
+import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.World;
+import org.bukkit.entity.EntityType;
+import org.bukkit.entity.ItemDisplay;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.ClickType;
@@ -34,9 +41,14 @@ import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
+import org.bukkit.util.Transformation;
+import org.bukkit.util.Vector;
+import org.joml.Quaternionf;
+import org.joml.Vector3f;
 
 import java.time.Duration;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 @Getter
 @Setter
@@ -45,17 +57,22 @@ public class SwordPlayer extends Combatant {
 	private final PlayerProfile profile;
 	private final String username;
 	private final ItemStack playerHead;
-	
+
 	protected final Menu mainMenu;
 	protected final List<Menu> predefinedMenus = new ArrayList<>();
 	protected static final String menuHotKeyId = "menu_hotkey";
 	protected Menu curMenu;
+
+    private ItemDisplay sheathed;
+    private boolean sheathedReady;
 	
 	private final InputExecutionTree inputExecutionTree;
 	private final long inputTimeoutMillis = 1200L;
 	
 	private boolean performedDropAction;
     private boolean changingHandIndex;
+    private boolean interactingWithEntity;
+    private boolean threwItem;
 	
 	private BukkitTask rightTask;
 	private boolean holdingRight;
@@ -86,7 +103,7 @@ public class SwordPlayer extends Combatant {
 		
 		skullMeta.setPlayerProfile(profile);
 		playerHead.setItemMeta(skullMeta);
-		
+
 		mainMenu = new Menu(Component.text("+}- ", TextColor.color(72, 72, 72))
 				.append(Component.text("Menu", TextColor.color(30, 150, 180)))
 				.append(Component.text(" -{+", TextColor.color(72, 72, 72))),
@@ -96,8 +113,13 @@ public class SwordPlayer extends Combatant {
 		
 		inputExecutionTree = new InputExecutionTree(inputTimeoutMillis);
 		inputExecutionTree.initializeInputTree();
-		
+
+        sheathedReady = false;
+
 		performedDropAction = false;
+        changingHandIndex = false;
+        interactingWithEntity = false;
+        threwItem = false;
 		
 		holdingRight = false;
 		rightHoldTimeStart = 0L;
@@ -112,7 +134,25 @@ public class SwordPlayer extends Combatant {
 		swappingInInv = false;
 		droppingInInv = false;
 	}
-	
+
+    @Override
+    protected void onTick() {
+        super.onTick();
+        if (isSheathedReady()) {
+            int its = 3;
+            for (int i = 0; i < its; i++) {
+                SwordScheduler.runLater(new BukkitRunnable() {
+                    @Override
+                    public void run() {
+
+                        DisplayUtil.smoothTeleport(sheathed, 1);
+                        sheathed.teleport(player.getLocation().add(new Vector(0, 0.5, 0)).setDirection(getFlatBodyDir()));
+                    }
+                }, 1000/its * i, TimeUnit.MILLISECONDS);
+            }
+        }
+    }
+
 	protected void menuSetup() {
 		setItemAtIndex(new ItemStackBuilder(Material.SILENCE_ARMOR_TRIM_SMITHING_TEMPLATE)
 				.name(Component.text("+}- ", TextColor.color(72, 72, 72))
@@ -148,11 +188,32 @@ public class SwordPlayer extends Combatant {
 	@Override
 	public void onSpawn() {
 		super.onSpawn();
+
+        Bukkit.getScheduler().runTaskLater(Sword.getInstance(), () -> {
+            if (!player.isOnline() || !player.isValid()) return;
+
+            World world = player.getWorld();
+            Location loc = player.getLocation();
+
+            if (!loc.getChunk().isLoaded()) loc.getChunk().load();
+
+            sheathed = (ItemDisplay) world.spawnEntity(loc, EntityType.ITEM_DISPLAY);
+            sheathed.setItemStack(new ItemStack(Material.STONE_SWORD));
+
+            sheathed.setTransformation(new Transformation(
+                    new Vector3f(0.28f, 0.06f, -0.5f),
+                    new Quaternionf().rotationY((float) Math.PI / 2).rotateZ(-(float) Math.PI / (1.65f)),
+                    new Vector3f(1f, 1f, 1f),
+                    new Quaternionf()
+            ));
+
+            setSheathedReady(true);
+        }, 20L);
 	}
 	
 	@Override
 	public void onDeath() {
-	
+	    sheathed.remove();
 	}
 	
 	public void act(InputType input) {
@@ -394,8 +455,9 @@ public class SwordPlayer extends Combatant {
 		offItemStackAtTimeOfHold = getItemStackInHand(false);
 		
 		indexOfRightHold = getCurrentInvIndex();
-		
-		setItemStackInHand(new ItemStack(Material.GUNPOWDER), true); // can change the logic here later
+
+        if (!mainItemStackAtTimeOfHold.isEmpty())
+		    setItemStackInHand(new ItemStack(Material.GUNPOWDER), true); // can change the logic here later
 		
 		rightTask = new BukkitRunnable() {
 			@Override
@@ -424,10 +486,12 @@ public class SwordPlayer extends Combatant {
 	}
 	
 	public void endHoldingRight() {
+        message(">>> End of Right Hold, threw item? " + (threwItem ? "yes" : "nope"));
 		holdingRight = false;
 		timeRightHeld = System.currentTimeMillis() - rightHoldTimeStart;
 		setItemStackInHand(offItemStackAtTimeOfHold, false);
-		setItemAtIndex(mainItemStackAtTimeOfHold, indexOfRightHold);
+        if (!mainItemStackAtTimeOfHold.isEmpty() && !threwItem)
+		    setItemAtIndex(mainItemStackAtTimeOfHold, indexOfRightHold);
 	}
 	
 	public void startSneaking() {

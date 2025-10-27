@@ -164,7 +164,10 @@ public class MovementAction extends SwordAction {
 					Cache.throwTrailParticle.display(base.add(new Vector(0, h * 0.5, 0)));
 					
 					if (l.isFinite()) {
-						RayTraceResult blockResult = world.rayTraceBlocks(l, v, h * 0.6, FluidCollisionMode.NEVER, true);
+						RayTraceResult blockResult = world.rayTraceBlocks(l, v,
+                                h * 0.6, FluidCollisionMode.NEVER,
+                                true,
+                                block -> !block.getType().isCollidable());
 						
 						Collection<LivingEntity> entities = world.getNearbyLivingEntities(
 								l, 0.4, 0.4, 0.4,
