@@ -473,7 +473,16 @@ public class ThrownItem {
 	
 	public void disposeNaturally() {
 		Location dropLoc = hitEntity != null ? hitEntity.entity().getLocation() : display.getLocation();
-		display.getWorld().dropItemNaturally(dropLoc, display.getItemStack());
+        Item dropped = hitEntity.entity().getWorld().dropItemNaturally(hitEntity.entity().getLocation(), display.getItemStack());
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                if (dropped.isDead()) {
+                    cancel();
+                }
+                Cache.thrownItemMarkerParticle2.display(dropped.getLocation());
+            }
+        }.runTaskTimer(Sword.getInstance(), 0L, 5L);
 		display.remove();
 		if (disposeTask != null && !disposeTask.isCancelled()) disposeTask.cancel();
 	}

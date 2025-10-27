@@ -8,11 +8,13 @@ import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.action.utility.thrown.InteractiveItemArbiter;
 import btm.sword.util.HitboxUtil;
+import org.bukkit.FluidCollisionMode;
 import org.bukkit.Location;
 import org.bukkit.entity.*;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
 
 import java.util.HashSet;
@@ -25,7 +27,7 @@ public class GrabAction extends SwordAction {
 			public void run() {
 				int baseDuration = 60;
 				double baseGrabRange = 3;
-				double baseGrabThickness = 0.4;
+				double baseGrabThickness = 0.6;
 				
 				long duration = (long) executor.calcValueAdditive(AspectType.MIGHT, 100L, baseDuration, 0.2);
 				double range = executor.calcValueAdditive(AspectType.WILLPOWER, 4.5, baseGrabRange, 0.1);
@@ -33,11 +35,16 @@ public class GrabAction extends SwordAction {
 				
 				LivingEntity ex = executor.entity();
 				Location o = ex.getEyeLocation();
+
+                Entity grabbedItem = HitboxUtil.ray(o, o.getDirection(), range, grabThickness,
+                        entity -> entity.getType() == EntityType.ITEM_DISPLAY &&
+                                !entity.isDead() &&
+                                entity instanceof ItemDisplay id &&
+                                InteractiveItemArbiter.checkIfInteractive(id));
 				
-				Entity grabbed  = HitboxUtil.ray(o, o.getDirection(), range, grabThickness, entity -> !entity.isDead() && entity.getUniqueId() != ex.getUniqueId());
-				executor.message("Grabbed: " + grabbed);
-				
-				if (grabbed instanceof ItemDisplay id) {
+				if (grabbedItem instanceof ItemDisplay id &&
+                        !id.isDead() &&
+                        !id.getItemStack().isEmpty()) {
 					InteractiveItemArbiter.onGrab(id, executor);
 					return;
 				}
@@ -48,10 +55,23 @@ public class GrabAction extends SwordAction {
 				}
 				
 				LivingEntity target = hit.stream().toList().getFirst();
-				
-				if (target == null) {
-					return;
-				}
+
+                if (target == null) {
+                    return;
+                }
+
+                RayTraceResult impedanceCheck = ex.getWorld().rayTraceBlocks(
+                        ex.getLocation().add(new Vector(0,0.5,0)),
+                        target.getLocation().subtract(ex.getLocation()).toVector().normalize(),
+                        Math.sqrt(target.getLocation().subtract(ex.getLocation()).toVector().lengthSquared()), FluidCollisionMode.NEVER,
+                        true,
+                        block -> !block.isCollidable());
+
+                if (impedanceCheck != null &&
+                        impedanceCheck.getHitBlock() != null &&
+                        !impedanceCheck.getHitBlock().getType().isEmpty()) {
+                    return;
+                }
 				
 				SwordEntity swordTarget = SwordEntityArbiter.getOrAdd(target.getUniqueId());
 				if (swordTarget.isHit()) return;

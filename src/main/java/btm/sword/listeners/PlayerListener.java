@@ -36,13 +36,16 @@ public class PlayerListener implements Listener {
 		Player p = event.getPlayer();
 		SwordEntityArbiter.register(p);
 		p.sendMessage("Hello!");
-        p.setHealth(0);
+//        p.setHealth(0);
 	}
 	
 	@EventHandler
 	public void onPlayerLeave(PlayerQuitEvent event) {
-		SwordEntityArbiter.remove(event.getPlayer().getUniqueId());
-		Sword.getInstance().getLogger().info(event.getPlayer().getName() + " has left the server ;(");
+        if (SwordEntityArbiter.get(event.getPlayer().getUniqueId()) instanceof SwordPlayer sp) {
+            sp.onLeave();
+            SwordEntityArbiter.remove(sp.getUniqueId());
+            Sword.getInstance().getLogger().info(event.getPlayer().getName() + " has left the server ;(");
+        }
 	}
 	
 	@EventHandler

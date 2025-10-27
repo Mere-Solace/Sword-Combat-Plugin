@@ -1,6 +1,7 @@
 package btm.sword.listeners;
 
 import btm.sword.Sword;
+import btm.sword.system.entity.SwordEntity;
 import btm.sword.system.entity.SwordEntityArbiter;
 import com.destroystokyo.paper.event.entity.EntityAddToWorldEvent;
 import com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent;
@@ -28,7 +29,11 @@ public class EntityListener implements Listener {
 	
 	@EventHandler
 	public void entityRemoveEvent(EntityRemoveFromWorldEvent event) {
-		SwordEntityArbiter.remove(event.getEntity().getUniqueId());
+        SwordEntity swordEntity = SwordEntityArbiter.get(event.getEntity().getUniqueId());
+        if (swordEntity != null) {
+            swordEntity.onDeath();
+            SwordEntityArbiter.remove(event.getEntity().getUniqueId());
+        }
 	}
 	
 	@EventHandler

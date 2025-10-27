@@ -18,7 +18,11 @@ public class InteractiveItemArbiter {
 	public static void put(ThrownItem thrownItem) {
 		thrownItems.put(thrownItem.getDisplay(), thrownItem);
 	}
-	
+
+    public static boolean checkIfInteractive(ItemDisplay id) {
+        return thrownItems.containsKey(id);
+    }
+
 	public static ThrownItem remove(ItemDisplay display) {
 		ThrownItem thrownItem = thrownItems.remove(display);
 		if (thrownItem != null) {
@@ -48,6 +52,5 @@ public class InteractiveItemArbiter {
 			Cache.grabCloudParticle.display(display.getLocation());
 			thrownItem.dispose();
 		}
-		
 	}
 }

@@ -47,8 +47,11 @@ public class EntityUtil {
 				double yawRads = Math.toRadians(followHead ? entity.entity().getYaw() : entity.entity().getBodyYaw());
 				Vector curDir = direction.clone().rotateAroundY(originalYaw-yawRads);
 				l.setDirection(curDir);
-				if (step[0] % 6 == 0)
-					DisplayUtil.line(List.of(Cache.thrownItemStickParticle), l.clone().subtract(curDir), curDir, 0.75, 0.25);
+				if (step[0] % 6 == 0) {
+                    DisplayUtil.line(List.of(Cache.thrownItemStickParticle), l.clone().subtract(curDir), curDir, 0.75, 0.25);
+                    if (step[0] % 12 == 0)
+                        DisplayUtil.line(List.of(Cache.testBleedParticle), l.clone().subtract(curDir), curDir, 0.3, 0.25);
+                }
 
                 DisplayUtil.smoothTeleport(itemDisplay);
 				itemDisplay.teleport(l);

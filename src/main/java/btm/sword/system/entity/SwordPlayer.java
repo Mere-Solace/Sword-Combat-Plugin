@@ -114,7 +114,7 @@ public class SwordPlayer extends Combatant {
 		inputExecutionTree = new InputExecutionTree(inputTimeoutMillis);
 		inputExecutionTree.initializeInputTree();
 
-        sheathedReady = false;
+        sheathedReady = true;
 
 		performedDropAction = false;
         changingHandIndex = false;
@@ -138,6 +138,33 @@ public class SwordPlayer extends Combatant {
     @Override
     protected void onTick() {
         super.onTick();
+        player.setFoodLevel(20);
+        player.setAbsorptionAmount(20);
+
+        if ((sheathed == null || sheathed.isDead()) && isSheathedReady()) {
+            setSheathedReady(false);
+            Bukkit.getScheduler().runTaskLater(Sword.getInstance(), () -> {
+                if (!player.isOnline() || !player.isValid()) return;
+
+                World world = player.getWorld();
+                Location loc = player.getLocation();
+
+                if (!loc.getChunk().isLoaded()) loc.getChunk().load();
+
+                sheathed = (ItemDisplay) world.spawnEntity(loc, EntityType.ITEM_DISPLAY);
+                sheathed.setItemStack(new ItemStack(Material.STONE_SWORD));
+
+                sheathed.setTransformation(new Transformation(
+                        new Vector3f(0.28f, 0.06f, -0.5f),
+                        new Quaternionf().rotationY((float) Math.PI / 2).rotateZ(-(float) Math.PI / (1.65f)),
+                        new Vector3f(1f, 1f, 1f),
+                        new Quaternionf()
+                ));
+
+                setSheathedReady(true);
+            }, 5L);
+        }
+
         if (isSheathedReady()) {
             int its = 3;
             for (int i = 0; i < its; i++) {
@@ -189,32 +216,38 @@ public class SwordPlayer extends Combatant {
 	public void onSpawn() {
 		super.onSpawn();
 
-        Bukkit.getScheduler().runTaskLater(Sword.getInstance(), () -> {
-            if (!player.isOnline() || !player.isValid()) return;
-
-            World world = player.getWorld();
-            Location loc = player.getLocation();
-
-            if (!loc.getChunk().isLoaded()) loc.getChunk().load();
-
-            sheathed = (ItemDisplay) world.spawnEntity(loc, EntityType.ITEM_DISPLAY);
-            sheathed.setItemStack(new ItemStack(Material.STONE_SWORD));
-
-            sheathed.setTransformation(new Transformation(
-                    new Vector3f(0.28f, 0.06f, -0.5f),
-                    new Quaternionf().rotationY((float) Math.PI / 2).rotateZ(-(float) Math.PI / (1.65f)),
-                    new Vector3f(1f, 1f, 1f),
-                    new Quaternionf()
-            ));
-
-            setSheathedReady(true);
-        }, 20L);
+//        Bukkit.getScheduler().runTaskLater(Sword.getInstance(), () -> {
+//            if (!player.isOnline() || !player.isValid()) return;
+//
+//            World world = player.getWorld();
+//            Location loc = player.getLocation();
+//
+//            if (!loc.getChunk().isLoaded()) loc.getChunk().load();
+//
+//            sheathed = (ItemDisplay) world.spawnEntity(loc, EntityType.ITEM_DISPLAY);
+//            sheathed.setItemStack(new ItemStack(Material.STONE_SWORD));
+//
+//            sheathed.setTransformation(new Transformation(
+//                    new Vector3f(0.28f, 0.06f, -0.5f),
+//                    new Quaternionf().rotationY((float) Math.PI / 2).rotateZ(-(float) Math.PI / (1.65f)),
+//                    new Vector3f(1f, 1f, 1f),
+//                    new Quaternionf()
+//            ));
+//
+//            setSheathedReady(true);
+//        }, 15L);
 	}
 	
 	@Override
 	public void onDeath() {
-	    sheathed.remove();
+        if (sheathed != null)
+	        sheathed.remove();
 	}
+
+    public void onLeave() {
+        if (sheathed != null)
+            sheathed.remove();
+    }
 	
 	public void act(InputType input) {
 		if (isAttemptingThrow()) {

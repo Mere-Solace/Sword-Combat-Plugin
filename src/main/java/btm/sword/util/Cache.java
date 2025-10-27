@@ -62,13 +62,13 @@ public class Cache {
     public static final ParticleWrapper testLavaDripParticle = new ParticleWrapper(Particle.DRIPPING_LAVA, 2, 0, 0, 0, 0);
     public static final ParticleWrapper testSwingParticle = new ParticleWrapper(Particle.DUST_COLOR_TRANSITION, 2, 0, 0, 0, 1,
             new Particle.DustTransition(Color.fromRGB(211, 222, 240), Color.fromRGB(36, 103, 220), 0.7f));
-    public static final ParticleWrapper testHitParticle = new ParticleWrapper(Particle.SOUL, 30, 0.1, 0.1, 0.1, 0.15);
+    public static final ParticleWrapper testHitParticle = new ParticleWrapper(Particle.CRIT, 30, 0.1, 0.1, 0.1, 0.15);
     public static final ParticleWrapper testBleedParticle = new ParticleWrapper(Particle.BLOCK, 5, 0, 0, 0, Material.CRIMSON_HYPHAE.createBlockData());
 
-    public static final ParticleWrapper thrownItemStickParticle = new ParticleWrapper(Particle.SOUL, 2, 0, 0, 0, 0);
+    public static final ParticleWrapper thrownItemStickParticle = new ParticleWrapper(Particle.TRIAL_SPAWNER_DETECTION, 4, 0.1, 0.1, 0.1, 0);
 
-    public static final ParticleWrapper thrownItemMarkerParticle = new ParticleWrapper(Particle.TRIAL_SPAWNER_DETECTION, 3, 0.01, 0.01, 0.01, 0);
-    public static final ParticleWrapper thrownItemMarkerParticle2 = new ParticleWrapper(Particle.TRIAL_SPAWNER_DETECTION_OMINOUS, 4, 0.01, 0.01, 0.01, 0);
+    public static final ParticleWrapper thrownItemMarkerParticle = new ParticleWrapper(Particle.TRIAL_SPAWNER_DETECTION, 3, 0.1, 0.1, 0.1, 0);
+    public static final ParticleWrapper thrownItemMarkerParticle2 = new ParticleWrapper(Particle.TRIAL_SPAWNER_DETECTION_OMINOUS, 4, 0.1, 0.1, 0.1, 0);
 
     public static final ParticleWrapper basicSwordBlueTransitionParticle = new ParticleWrapper(Particle.DUST_COLOR_TRANSITION, 5, 0.025, 0.025, 0.025, 1,
             new Particle.DustTransition(Color.fromRGB(14, 107, 207), Color.fromRGB(162, 226, 255), 0.75f));

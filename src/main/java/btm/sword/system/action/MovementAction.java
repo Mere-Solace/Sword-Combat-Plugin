@@ -32,18 +32,24 @@ public class MovementAction extends SwordAction {
 				Location initial = ex.getLocation().add(new Vector(0,0.3,0));
 				boolean onGround = executor.isGrounded();
 				Location o = ex.getEyeLocation();
-				
+
+                // check for an item that may be the target of the dash
 				Entity targetedItem = HitboxUtil.ray(o, o.getDirection(), maxDistance, 0.7,
-						entity -> entity.getType() == EntityType.ITEM_DISPLAY && !entity.isDead());
+						entity -> entity.getType() == EntityType.ITEM_DISPLAY &&
+                                !entity.isDead() &&
+                                entity instanceof ItemDisplay id &&
+                                InteractiveItemArbiter.checkIfInteractive(id));
 				executor.message("Targeted: " + targetedItem);
-				
-				if (targetedItem instanceof ItemDisplay id
-						&& !id.isDead()
-						&& !id.getItemStack().isEmpty()) {
+
+				if (targetedItem instanceof ItemDisplay id &&
+                        !id.isDead() &&
+                        !id.getItemStack().isEmpty()) {
 					RayTraceResult impedanceCheck = ex.getWorld().rayTraceBlocks(
-							ex.getLocation().add(new Vector(0,0.3,0)),
+							ex.getLocation().add(new Vector(0,0.5,0)),
 							targetedItem.getLocation().subtract(ex.getLocation()).toVector().normalize(),
-							maxDistance/2);
+							maxDistance/2, FluidCollisionMode.NEVER,
+                            true,
+                            block -> !block.isCollidable());
 	
 					new BukkitRunnable() {
 						int t = 0;
@@ -56,13 +62,13 @@ public class MovementAction extends SwordAction {
 					}.runTaskTimer(Sword.getInstance(), 0L, 2L);
 					
 					
-					if (impedanceCheck != null)
-						executor.message("Hit block: " + impedanceCheck.getHitBlock());
+//					if (impedanceCheck != null)
+//						executor.message("Hit block: " + impedanceCheck.getHitBlock());
 					
 					if (impedanceCheck == null || impedanceCheck.getHitBlock() == null) {
 						double length = id.getLocation().subtract(ex.getEyeLocation()).length();
-						
-						executor.setVelocity(ex.getEyeLocation().getDirection().multiply(Math.sqrt(length)));
+
+						executor.setVelocity(ex.getEyeLocation().getDirection().multiply(Math.log(length)));
 						
 						Vector u = executor.getFlatDir().multiply(forward ? 0.5 : -0.5).add(VectorUtil.UP.clone().multiply(0.15));
 						
