@@ -319,10 +319,6 @@ public class SwordPlayer extends Combatant {
      * @return true to cancel the action, false to allow processing
      */
     public boolean evaluateItemInput(ItemStack itemStack, InputType inputType) {
-        Material type = itemStack.getType();
-        ItemMeta meta = itemStack.getItemMeta();
-        String id = meta != null ? meta.getPersistentDataContainer().get(KeyCache.buttonTagKey, PersistentDataType.STRING) : null;
-
         return false;
     }
 
@@ -334,12 +330,6 @@ public class SwordPlayer extends Combatant {
      * @return true if the event was handled and should be cancelled, false otherwise
      */
     public boolean handleInventoryInput(InventoryClickEvent e) {
-        Inventory inv = e.getInventory();
-        ClickType clickType = e.getClick();
-        InventoryAction action = e.getAction();
-        ItemStack onCursor = e.getCursor();
-        ItemStack clicked = e.getCurrentItem();
-        int slotNumber = e.getSlot();
 
 //		message("\n\n~|------Beginning of new inventory interact event------|~"
 //				+ "\n       Inventory: " + inv.getType()
