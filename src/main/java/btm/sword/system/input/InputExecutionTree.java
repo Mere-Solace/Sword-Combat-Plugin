@@ -264,7 +264,7 @@ public class InputExecutionTree {
     /**
      * Gets the minimum hold time in milliseconds required for the next input node of the specified hold type.
      *
-     * @param holdType the hold input type ({@link InputType.RIGHT_HOLD} or {@link InputType.SHIFT_HOLD})
+     * @param holdType the hold input type
      * @return minimum hold time in milliseconds, or -1 if no such node exists
      */
     public long getMinHoldLengthOfNext(InputType holdType) {
