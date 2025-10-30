@@ -126,3 +126,133 @@ spotless {
         // googleJavaFormat()
     }
 }
+
+// Javadoc coverage analysis task
+task javadocCoverage {
+    description = 'Generates a report showing Javadoc documentation coverage'
+    group = 'documentation'
+
+    doLast {
+        def srcDir = file('src/main/java')
+        def reportFile = file('docs/reports/javadoc-coverage-baseline.md')
+        reportFile.parentFile.mkdirs()
+
+        def stats = [
+            totalClasses: 0,
+            documentedClasses: 0,
+            totalMethods: 0,
+            documentedMethods: 0,
+            classDetails: []
+        ]
+
+        // Analyze all Java files
+        fileTree(srcDir).matching { include '**/*.java' }.each { file ->
+            def content = file.text
+            def fileName = file.name
+            def relativePath = srcDir.toPath().relativize(file.toPath()).toString()
+
+            // Count classes/interfaces
+            def classMatches = (content =~ /(?m)^\s*public\s+(class|interface|enum)\s+\w+/)
+            if (classMatches.size() > 0) {
+                stats.totalClasses++
+
+                // Check if class has Javadoc (/** */ before class declaration)
+                def hasClassJavadoc = content =~ /\/\*\*[\s\S]*?\*\/\s*(public\s+)?(class|interface|enum)/
+                def classDocumented = hasClassJavadoc.size() > 0
+                if (classDocumented) stats.documentedClasses++
+
+                // Count public methods
+                def methodMatches = (content =~ /(?m)^\s*public\s+(?!class|interface|enum)\S+\s+\w+\s*\(/)
+                def totalMethodsInClass = methodMatches.size()
+
+                // Count documented methods (/** */ before public method)
+                def docMethodMatches = (content =~ /\/\*\*[\s\S]*?\*\/\s*public\s+(?!class|interface|enum)\S+\s+\w+\s*\(/)
+                def documentedMethodsInClass = docMethodMatches.size()
+
+                stats.totalMethods += totalMethodsInClass
+                stats.documentedMethods += documentedMethodsInClass
+
+                // Calculate coverage for this class
+                def methodCoverage = totalMethodsInClass > 0 ?
+                    (documentedMethodsInClass * 100.0 / totalMethodsInClass) : 100.0
+
+                stats.classDetails << [
+                    name: fileName,
+                    path: relativePath,
+                    hasClassDoc: classDocumented,
+                    totalMethods: totalMethodsInClass,
+                    documentedMethods: documentedMethodsInClass,
+                    coverage: methodCoverage
+                ]
+            }
+        }
+
+        // Sort by coverage (worst first)
+        stats.classDetails.sort { it.coverage }
+
+        // Generate report
+        def report = new StringBuilder()
+        report << "# Javadoc Coverage Baseline Report\n\n"
+        report << "**Generated:** ${new Date().format('yyyy-MM-dd HH:mm:ss')}\n\n"
+        report << "## Summary\n\n"
+
+        def classPercent = stats.totalClasses > 0 ?
+            String.format("%.1f", stats.documentedClasses * 100.0 / stats.totalClasses) : "0.0"
+        def methodPercent = stats.totalMethods > 0 ?
+            String.format("%.1f", stats.documentedMethods * 100.0 / stats.totalMethods) : "0.0"
+
+        report << "| Metric | Count | Percentage |\n"
+        report << "|--------|-------|------------|\n"
+        report << "| **Total Classes** | ${stats.totalClasses} | - |\n"
+        report << "| **Documented Classes** | ${stats.documentedClasses} | ${classPercent}% |\n"
+        report << "| **Total Public Methods** | ${stats.totalMethods} | - |\n"
+        report << "| **Documented Methods** | ${stats.documentedMethods} | ${methodPercent}% |\n\n"
+
+        report << "## Classes Needing Documentation (Sorted by Priority)\n\n"
+        report << "| Class | Path | Class Doc | Methods | Documented | Coverage |\n"
+        report << "|-------|------|-----------|---------|------------|----------|\n"
+
+        stats.classDetails.take(20).each { cls ->
+            def classDoc = cls.hasClassDoc ? "✓" : "✗"
+            def coverage = String.format("%.0f%%", cls.coverage)
+            report << "| ${cls.name} | ${cls.path} | ${classDoc} | ${cls.totalMethods} | ${cls.documentedMethods} | ${coverage} |\n"
+        }
+
+        if (stats.classDetails.size() > 20) {
+            report << "\n*... and ${stats.classDetails.size() - 20} more classes*\n"
+        }
+
+        report << "\n## Well-Documented Classes (100% Coverage)\n\n"
+        def wellDocumented = stats.classDetails.findAll { it.coverage == 100.0 && it.hasClassDoc }
+        if (wellDocumented.isEmpty()) {
+            report << "*No classes with 100% documentation coverage yet.*\n"
+        } else {
+            report << "| Class | Path | Methods Documented |\n"
+            report << "|-------|------|--------------------|\n"
+            wellDocumented.each { cls ->
+                report << "| ${cls.name} | ${cls.path} | ${cls.documentedMethods} |\n"
+            }
+        }
+
+        report << "\n## Recommendations\n\n"
+        report << "1. **Start with high-priority classes**: Focus on classes with most methods and 0% coverage\n"
+        report << "2. **Target classes without class-level Javadoc**: Add class documentation first\n"
+        report << "3. **Document public APIs**: All public methods should have Javadoc\n"
+        report << "4. **Track progress**: Re-run this task periodically to measure improvement\n\n"
+        report << "## How to Improve\n\n"
+        report << "Run: `./gradlew javadocCoverage` to regenerate this report\n\n"
+        report << "See [docs/standards/documentation-standards.md](../standards/documentation-standards.md) for Javadoc guidelines.\n"
+
+        reportFile.text = report.toString()
+
+        println "\n========================================="
+        println "Javadoc Coverage Report Generated"
+        println "========================================="
+        println "Total Classes: ${stats.totalClasses}"
+        println "Documented Classes: ${stats.documentedClasses} (${classPercent}%)"
+        println "Total Public Methods: ${stats.totalMethods}"
+        println "Documented Methods: ${stats.documentedMethods} (${methodPercent}%)"
+        println "\nReport saved to: ${reportFile.path}"
+        println "=========================================\n"
+    }
+}
