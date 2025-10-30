@@ -59,6 +59,7 @@ public class ThrowAction extends SwordAction {
         }
         else {
             ItemStack main = executor.getItemStackInHand(true);
+            ItemStack off = executor.getItemStackInHand(false);
 
             display.setItemStack(main);
         }

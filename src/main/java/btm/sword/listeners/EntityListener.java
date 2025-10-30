@@ -15,18 +15,6 @@ import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityPickupItemEvent;
 import org.bukkit.persistence.PersistentDataType;
 
-/**
- * Handles entity lifecycle events for the Sword Combat Plugin.
- * <p>
- * This listener manages the registration and cleanup of entities in the
- * {@link SwordEntityArbiter}, ensuring that all living entities are tracked
- * and properly integrated with the combat system. It also handles damage
- * modification and item pickup events.
- * </p>
- *
- * @see SwordEntityArbiter
- * @see SwordEntity
- */
 public class EntityListener implements Listener {
     /**
      * Handles the event when any entity is added to the world (including players).
