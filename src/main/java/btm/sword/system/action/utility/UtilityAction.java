@@ -23,7 +23,26 @@ import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Transformation;
 import org.joml.Vector3f;
 
+/**
+ * Provides utility actions and development/testing tools.
+ * <p>
+ * This class contains both production utility actions (e.g., death ray)
+ * and development testing methods (sound test, particle test, orientation test).
+ * </p>
+ *
+ * @see SwordAction
+ */
 public class UtilityAction extends SwordAction {
+    /**
+     * Executes a death ray attack that targets entities in the executor's line of sight.
+     * <p>
+     * This method performs a raycast from the executor's eye location and applies
+     * massive damage to the first entity hit. If the target is not a LivingEntity,
+     * it creates an explosion at the target's location.
+     * </p>
+     *
+     * @param executor the combatant executing the death ray action
+     */
     public static void death(Combatant executor) {
         cast(executor, 0L, new BukkitRunnable() {
             @Override
@@ -46,6 +65,16 @@ public class UtilityAction extends SwordAction {
         });
     }
 
+    /**
+     * Development tool for testing all available sound effects.
+     * <p>
+     * Plays each {@link SoundType} sequentially with a delay, sending a message
+     * to the executor with the index and sound key for identification.
+     * </p>
+     *
+     * @param executor the combatant running the sound test
+     * @param startIndex the index to start testing from (allows resuming)
+     */
     public static void soundTest(Combatant executor, int startIndex) {
         int i = 0;
         for (SoundType soundType : SoundType.values()) {
@@ -65,6 +94,16 @@ public class UtilityAction extends SwordAction {
         }
     }
 
+    /**
+     * Development tool for testing all available particle effects.
+     * <p>
+     * Spawns each {@link Particle} type sequentially at a location in front
+     * of the executor, sending a message with the index and particle name.
+     * Catches and reports any exceptions for unsupported particle types.
+     * </p>
+     *
+     * @param executor the combatant running the particle test
+     */
     public static void particleTest(Combatant executor) {
         Location l = executor.getChestLocation().add(executor.entity().getEyeLocation().getDirection().multiply(2));
         int i = 0;
@@ -85,6 +124,16 @@ public class UtilityAction extends SwordAction {
         }
     }
 
+    /**
+     * Development tool for testing ItemDisplay rotation orientations.
+     * <p>
+     * Spawns item displays (shields, axes, swords) and rotates them around
+     * the X, Y, and Z axes to visualize rotation behavior. The displays are
+     * automatically removed after 30 iterations.
+     * </p>
+     *
+     * @param executor the combatant running the orientation test
+     */
     public static void orientationTest(Combatant executor) {
         Location base = executor.getChestLocation().setDirection(executor.entity().getEyeLocation().getDirection());
         World world = base.getWorld();
