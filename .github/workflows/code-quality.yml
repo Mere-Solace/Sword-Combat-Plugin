@@ -36,12 +36,23 @@ jobs:
       run: ./gradlew spotlessCheck --no-daemon
       continue-on-error: true
 
+    - name: Run PMD analysis
+      run: ./gradlew pmdMain --no-daemon
+      continue-on-error: true
+
     - name: Upload Checkstyle report
       uses: actions/upload-artifact@v4
       if: always()
       with:
         name: checkstyle-report
         path: build/reports/checkstyle/
+
+    - name: Upload PMD report
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: pmd-report
+        path: build/reports/pmd/
 
     - name: Comment PR with Spotless suggestions
       if: failure() && github.event_name == 'pull_request'

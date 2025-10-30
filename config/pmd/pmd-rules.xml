@@ -1,0 +1,63 @@
+<?xml version="1.0"?>
+<ruleset name="Sword Combat Plugin PMD Rules"
+         xmlns="http://pmd.sourceforge.net/ruleset/2.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://pmd.sourceforge.net/ruleset/2.0.0 https://pmd.sourceforge.io/ruleset_2_0_0.xsd">
+
+    <description>
+        PMD rules for Sword Combat Plugin
+        Philosophy: Informational only - help developers write better code without blocking their workflow
+    </description>
+
+    <!-- Best Practices - Unused Code Detection (Low Priority) -->
+    <rule ref="category/java/bestpractices.xml/UnusedLocalVariable">
+        <priority>4</priority>  <!-- Low priority = FYI only -->
+        <properties>
+            <property name="violationSuppressRegex" value=".*TODO.*|.*FIXME.*"/>
+        </properties>
+    </rule>
+
+    <rule ref="category/java/bestpractices.xml/UnusedPrivateField">
+        <priority>3</priority>  <!-- Medium priority = should review -->
+        <properties>
+            <property name="violationSuppressRegex" value=".*TODO.*|.*FIXME.*|.*serialVersionUID.*"/>
+        </properties>
+    </rule>
+
+    <rule ref="category/java/bestpractices.xml/UnusedPrivateMethod">
+        <priority>3</priority>
+    </rule>
+
+    <rule ref="category/java/bestpractices.xml/UnusedFormalParameter">
+        <priority>4</priority>  <!-- Low - params often required by interface -->
+    </rule>
+
+    <!-- Error Prone - Potential Bugs -->
+    <rule ref="category/java/errorprone.xml/EmptyCatchBlock">
+        <priority>2</priority>  <!-- High priority -->
+    </rule>
+
+    <rule ref="category/java/errorprone.xml/AvoidBranchingStatementAsLastInLoop">
+        <priority>3</priority>
+    </rule>
+
+    <rule ref="category/java/errorprone.xml/OverrideBothEqualsAndHashcode">
+        <priority>1</priority>  <!-- Critical -->
+    </rule>
+
+    <!-- Code Style - Informational -->
+    <rule ref="category/java/codestyle.xml/UnnecessaryLocalBeforeReturn">
+        <priority>5</priority>  <!-- Very low - stylistic only -->
+    </rule>
+
+    <!-- Performance - Potential Optimizations -->
+    <rule ref="category/java/performance.xml/UseStringBufferForStringAppends">
+        <priority>4</priority>
+    </rule>
+
+    <!-- Documentation -->
+    <rule ref="category/java/documentation.xml/UncommentedEmptyMethodBody">
+        <priority>4</priority>
+    </rule>
+
+</ruleset>

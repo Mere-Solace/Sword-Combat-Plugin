@@ -1,6 +1,7 @@
 plugins {
     id 'java'
     id 'checkstyle'
+    id 'pmd'
     id 'com.diffplug.spotless' version '6.25.0'
     id 'xyz.jpenilla.run-paper' version '2.3.1'
 }
@@ -83,6 +84,22 @@ checkstyle {
 }
 
 tasks.withType(Checkstyle) {
+    reports {
+        xml.required = true
+        html.required = true
+    }
+}
+
+// PMD configuration - detects code quality issues (unused variables, dead code, etc.)
+pmd {
+    toolVersion = '7.0.0'
+    consoleOutput = true
+    ignoreFailures = true  // Informational only - never blocks builds
+    ruleSets = []  // Clear default rules
+    ruleSetFiles = files("${rootDir}/config/pmd/pmd-rules.xml")
+}
+
+tasks.withType(Pmd) {
     reports {
         xml.required = true
         html.required = true

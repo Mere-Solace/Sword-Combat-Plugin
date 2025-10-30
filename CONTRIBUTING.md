@@ -41,10 +41,18 @@ Thank you for your interest in contributing! This document provides guidelines f
 
 ### Before You Commit
 
-1. **Build successfully**: `./gradlew build`
-2. **Format code**: Follow Microsoft Java code standards
-3. **Add Javadoc**: Document all public APIs
-4. **Test your changes**: Verify in a test server
+1. **Auto-fix formatting**: `./gradlew spotlessApply`
+2. **Run quality checks**: `./gradlew checkstyleMain pmdMain`
+3. **Build successfully**: `./gradlew build`
+4. **Add Javadoc**: Document all public APIs
+5. **Test your changes**: Verify in a test server
+
+**Note on PMD warnings:** PMD may report unused variables or fields. These are informational only:
+- If you're actively developing, you can ignore warnings about variables you plan to use
+- Add `// TODO:` comments to suppress warnings on work-in-progress code
+- Fix obvious issues (truly unused variables) when convenient
+
+See [docs/setup/pmd-guide.md](docs/setup/pmd-guide.md) for details.
 
 ## Code Standards
 
