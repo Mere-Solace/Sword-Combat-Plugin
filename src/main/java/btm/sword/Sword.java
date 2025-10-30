@@ -6,14 +6,11 @@ import btm.sword.listeners.InputListener;
 import btm.sword.listeners.PlayerListener;
 import btm.sword.system.playerdata.PlayerDataManager;
 import lombok.Getter;
-import lombok.Setter;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
-@Getter
-@Setter
 public final class Sword extends JavaPlugin {
 	@Getter
     private static Sword instance;

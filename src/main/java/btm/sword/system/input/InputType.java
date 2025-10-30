@@ -6,10 +6,8 @@ public enum InputType {
 	RIGHT_TAP,
 	RIGHT_HOLD,
 	DROP,
-	DROP_TAP,
-	DROP_HOLD,
 	SWAP,
 	SHIFT,
 	SHIFT_TAP,
-	SHIFT_HOLD,
+	SHIFT_HOLD
 }

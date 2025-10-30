@@ -5,6 +5,7 @@ import btm.sword.system.action.utility.UtilityAction;
 import btm.sword.system.entity.*;
 import btm.sword.system.item.prefab.Prefab;
 import io.papermc.paper.event.player.AsyncChatEvent;
+import io.papermc.paper.event.player.PlayerShieldDisableEvent;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
@@ -30,15 +31,41 @@ import org.spigotmc.event.player.PlayerSpawnLocationEvent;
 
 import java.util.Objects;
 
+/**
+ * Handles all player-related lifecycle and inventory events for the Sword plugin.
+ * <p>
+ * This listener manages player registration into the {@link SwordEntityArbiter},
+ * monitors joining, quitting, death, respawn, and inventory interactions, and
+ * also captures chat input for developer/debug commands such as sound or particle testing.
+ * </p>
+ */
 public class PlayerListener implements Listener {
+    /**
+     * Handles when a player joins the server.
+     * <p>
+     * Registers the player with the {@link SwordEntityArbiter} to create
+     * their {@link SwordPlayer} instance and sends a greeting message.
+     * </p>
+     *
+     * @param event the {@link PlayerJoinEvent} triggered when a player joins the server
+     */
 	@EventHandler
 	public void onPlayerJoin(PlayerJoinEvent event) {
 		Player p = event.getPlayer();
 		SwordEntityArbiter.register(p);
 		p.sendMessage("Hello!");
-//        p.setHealth(0);
 	}
-	
+
+    /**
+     * Handles when a player leaves the server.
+     * <p>
+     * Ensures that any {@link SwordPlayer} instance is properly cleaned up,
+     * invoking {@link SwordPlayer#onLeave()} before removal from the {@link SwordEntityArbiter}.
+     * Logs the departure in the server console.
+     * </p>
+     *
+     * @param event the {@link PlayerQuitEvent} triggered when a player quits the server
+     */
 	@EventHandler
 	public void onPlayerLeave(PlayerQuitEvent event) {
         if (SwordEntityArbiter.get(event.getPlayer().getUniqueId()) instanceof SwordPlayer sp) {
@@ -47,38 +74,82 @@ public class PlayerListener implements Listener {
             Sword.getInstance().getLogger().info(event.getPlayer().getName() + " has left the server ;(");
         }
 	}
-	
+
+    /**
+     * Handles player death events.
+     * <p>
+     * Currently unimplemented, but can be used in the future to track death-related
+     * statistics or handle cleanup of transient effects.
+     * </p>
+     *
+     * @param event the {@link PlayerDeathEvent} triggered when a player dies
+     */
 	@EventHandler
 	public void onPlayerDeath(PlayerDeathEvent event) {
 
 	}
 
+    /**
+     * Handles player respawn events.
+     * <p>
+     * Re-registers the player in the {@link SwordEntityArbiter} to restore
+     * their {@link SwordPlayer} state after respawn. Also calls {@link SwordPlayer#onSpawn()}.
+     * </p>
+     *
+     * @param event the {@link PlayerRespawnEvent} triggered when a player respawns
+     */
 	@EventHandler
 	public void onPlayerRespawn(PlayerRespawnEvent event) {
 		SwordEntityArbiter.register(event.getPlayer());
-		event.getPlayer().sendMessage("You've been reassigned to your SwordPlayer object!");
 		SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId());
-		event.getPlayer().sendMessage("You: " + swordPlayer);
-		
 		swordPlayer.onSpawn();
 	}
-	
+
+    /**
+     * Handles item pickup events.
+     * <p>
+     * Prevents entities that are not allowed to pick up items from doing so.
+     * Determined via {@link SwordEntity#isAbleToPickup()}.
+     * </p>
+     *
+     * @param event the {@link EntityPickupItemEvent} triggered when an entity attempts to pick up an item
+     */
 	@EventHandler
 	public void onItemPickup(EntityPickupItemEvent event) {
 		SwordEntity e = SwordEntityArbiter.getOrAdd(event.getEntity().getUniqueId());
 		if (!e.isAbleToPickup())
 			event.setCancelled(true);
 	}
-	
+
+    /**
+     * Handles general inventory events.
+     * <p>
+     * Broadcasts debug messages to player viewers about inventory state.
+     * Primarily used for diagnostic output rather than gameplay logic.
+     * </p>
+     *
+     * @param event the {@link InventoryEvent} triggered during any inventory interaction
+     */
 	@EventHandler
 	public void inventoryEvent(InventoryEvent event) {
+        // Testing
 		for (HumanEntity h : event.getViewers()) {
 			if (h instanceof Player) {
 				SwordEntityArbiter.get(h.getUniqueId()).message("getInventory(): " + event.getInventory() + "\n  getView(): " + event.getView());
 			}
 		}
 	}
-	
+
+    /**
+     * Handles inventory interaction events (clicks, drags, swaps, drops).
+     * <p>
+     * Routes click-based inputs through {@link SwordPlayer#handleInventoryInput(InventoryClickEvent)}.
+     * If handled, the default action is canceled. The commented-out section below contains
+     * prototype logic for special interactions like shift-drops and swaps.
+     * </p>
+     *
+     * @param event the {@link InventoryClickEvent} triggered when a player interacts with an inventory slot
+     */
 	@EventHandler
 	public void inventoryInteractEvent(InventoryClickEvent event) {
 		SwordPlayer sp = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getViewers().getFirst().getUniqueId());
@@ -143,7 +214,17 @@ public class PlayerListener implements Listener {
 //			case PLACE_ALL, PLACE_SOME, PLACE_ONE -> sp.message("You placed something");
 //		}
 	}
-	
+
+    /**
+     * Handles chat input events.
+     * <p>
+     * Parses developer chat commands for sound testing, particle spawning,
+     * and item giving. Messages starting with "sound", "particle", or "give"
+     * are intercepted and processed accordingly.
+     * </p>
+     *
+     * @param event the {@link AsyncChatEvent} triggered when a player sends a chat message
+     */
 	@EventHandler
 	public void onMessage(AsyncChatEvent event) {
 		Player player = event.getPlayer();
@@ -211,4 +292,18 @@ public class PlayerListener implements Listener {
 			SwordEntityArbiter.getOrAdd(player.getUniqueId()).giveItem(Prefab.sword);
 		}
 	}
+
+    /**
+     * Handles player shield disable events.
+     * <p>
+     * Cancels any attempt to disable a player's shield,
+     * effectively making shields indestructible during blocking.
+     * </p>
+     *
+     * @param event the {@link PlayerShieldDisableEvent} triggered when a player's shield would normally disable
+     */
+    @EventHandler
+    public void playerShieldBreakEvent(PlayerShieldDisableEvent event) {
+        event.setCancelled(true);
+    }
 }

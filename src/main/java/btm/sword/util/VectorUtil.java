@@ -70,7 +70,7 @@ public class VectorUtil {
 				.add(forward.clone().multiply(v.getZ()));
 	}
 	
-	public static Vector getProjOntoPlan(Vector v, Vector norm) {
+	public static Vector getProjOntoPlane(Vector v, Vector norm) {
 		return v.clone().subtract(norm.clone().multiply(v.dot(norm)/norm.lengthSquared()));
 	}
 	

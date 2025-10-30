@@ -28,7 +28,13 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-
+/**
+ * Represents a thrown item entity that is actively simulated in the world.
+ * <p>
+ * Handles all aspects of the throw lifecycle — initialization, motion physics,
+ * collision detection, and interaction outcomes such as hitting entities,
+ * embedding in blocks, or being caught.
+ */
 @Getter
 @Setter
 public class ThrownItem {
@@ -60,6 +66,12 @@ public class ThrownItem {
 	
 	private BukkitTask disposeTask;
 
+    /**
+     * Constructs a new thrown item instance with the given thrower and display.
+     *
+     * @param thrower The entity performing the throw.
+     * @param display The {@link ItemDisplay} representing the thrown object.
+     */
 	public ThrownItem(Combatant thrower, ItemDisplay display) {
 		this.thrower = thrower;
 		this.display = display;
@@ -76,19 +88,27 @@ public class ThrownItem {
             thrower.setMainHandItemStackDuringThrow(thrower.getItemStackInHand(true));
             thrower.setOffHandItemStackDuringThrow(thrower.getItemStackInHand(false));
 		}
+        // Base values for where the ItemDisplay is held in relation to the player's eye location
 		xDisplayOffset = -0.5f;
 		yDisplayOffset = 0.1f;
 		zDisplayOffset = 0.5f;
 	}
-	
+
+    /**
+     * Called when the item is primed to be thrown (held ready but not yet released).
+     * <p>
+     * Manages visual positioning, cancels premature throws, and displays in-hand effects.
+     */
 	public void onReady() {
         if (thrower instanceof SwordPlayer sp) {
             sp.setThrewItem(false);
             sp.setThrownItemIndex();
+
+            // Interacting with an entity will cause the shield holding mechanic to falter
             if (sp.isInteractingWithEntity()) {
                 sp.setAttemptingThrow(false);
                 sp.setThrowSuccessful(true);
-//                // this throw should be weaker because it's automatic. Could turn into a lunge or thrust or smth else
+                // this throw should be weaker because it's automatic. Could turn into a lunge or thrust or smth else
                 sp.getThrownItem().onRelease(2);
                 thrower.setItemTypeInHand(Material.AIR, true);
                 sp.endHoldingRight();
@@ -142,7 +162,14 @@ public class ThrownItem {
 			}
 		}.runTaskTimer(Sword.getInstance(), 0L, 1L);
 	}
-	
+
+    /**
+     * Called when the item is released (actually thrown).
+     * <p>
+     * Initializes trajectory, physics parameters, and continuous motion updates.
+     *
+     * @param initialVelocity The starting velocity magnitude of the throw.
+     */
 	public void onRelease(double initialVelocity) {
         if (thrower instanceof SwordPlayer sp) {
             sp.setThrewItem(true);
@@ -154,10 +181,9 @@ public class ThrownItem {
             }.runTaskLater(Sword.getInstance(), 2);
         }
 
-        thrower.setItemStackInHand(ItemStack.of(Material.AIR), true);
-
         SoundUtil.playSound(thrower.entity(), SoundType.ENTITY_ENDER_DRAGON_FLAP, 0.5f, 0.4f);
 
+        thrower.setItemStackInHand(ItemStack.of(Material.AIR), true);
 		InteractiveItemArbiter.put(this);
 		xDisplayOffset = yDisplayOffset = zDisplayOffset = 0;
 		determineOrientation();
@@ -167,11 +193,10 @@ public class ThrownItem {
 		Location o = ex.getEyeLocation();
 		List<Vector> basis = VectorUtil.getBasisWithoutPitch(o);
 		double phi = Math.toRadians(-1 * o.getPitch());
-		thrower.message("Pitch rads: " + phi);
 		double cosPhi = Math.cos(phi);
 		double sinPhi = Math.sin(phi);
-		double forwardCoeff = initialVelocity*cosPhi;
-		double upwardCoeff = initialVelocity*sinPhi;
+		double forwardCoefficient = initialVelocity*cosPhi;
+		double upwardCoefficient = initialVelocity*sinPhi;
 		origin = o.add(basis.getFirst().multiply(0.5))
 				.add(basis.get(1).multiply(0.1))
 				.add(basis.getLast().multiply(-0.25));
@@ -179,13 +204,13 @@ public class ThrownItem {
 		prev = cur.clone();
 		Vector flatDir = thrower.getFlatDir().rotateAroundY(Math.PI/85);
 		velocity = flatDir.clone();
-		Vector forwardVelocity = flatDir.clone().multiply(forwardCoeff);
-		Vector upwardVelocity = VectorUtil.UP.clone().multiply(upwardCoeff);
+		Vector forwardVelocity = flatDir.clone().multiply(forwardCoefficient);
+		Vector upwardVelocity = VectorUtil.UP.clone().multiply(upwardCoefficient);
 		
 		double gravDamper = 46;
 		
-		positionFunction = t -> flatDir.clone().multiply(forwardCoeff*t)
-				.add(VectorUtil.UP.clone().multiply((upwardCoeff*t)-(initialVelocity*(1/gravDamper)*t*t)));
+		positionFunction = t -> flatDir.clone().multiply(forwardCoefficient*t)
+				.add(VectorUtil.UP.clone().multiply((upwardCoefficient*t)-(initialVelocity*(1/gravDamper)*t*t)));
 		
 		velocityFunction = t -> forwardVelocity.clone()
 				.add(upwardVelocity.clone().add(VectorUtil.UP.clone().multiply(-initialVelocity*(2/(gravDamper))*t)));
@@ -206,7 +231,13 @@ public class ThrownItem {
                     DisplayUtil.smoothTeleport(display, 1);
                 }
 
-                display.teleport(cur.setDirection(velocity));
+                String name = display.getItemStack().getType().toString();
+                if (name.endsWith("_SWORD")) {
+                    display.teleport(cur.setDirection(velocity));
+                }
+                else {
+                    display.teleport(cur.setDirection(basis.getLast()));
+                }
 
                 rotate();
 				
@@ -216,11 +247,16 @@ public class ThrownItem {
 				
 				evaluate();
 				prev = cur.clone();
-				t++;
+				t++; // Step time value forward for next iteration
 			}
 		}.runTaskTimer(Sword.getInstance(), 0L, 1L);
 	}
-	
+
+    /**
+     * Applies appropriate rotation to the display based on item type.
+     * <p>
+     * Ensures visually realistic spin behavior per tool class.
+     */
 	private void rotate() {
 		Transformation curTr = display.getTransformation();
 		Quaternionf curRotation = curTr.getLeftRotation();
@@ -233,7 +269,7 @@ public class ThrownItem {
 			newRotation = curRotation.rotateZ((float) -Math.PI/8);
 		}
 		else if (display.getItemStack().getType() == Material.SHIELD) {
-			newRotation = curRotation.rotateZ((float) -Math.PI/8);
+			newRotation = curRotation.rotateX((float) -Math.PI/8);
 		}
 		else {
 			newRotation = curRotation.rotateX((float) Math.PI/32);
@@ -248,13 +284,23 @@ public class ThrownItem {
 				)
 		);
 	}
-	
+
+    /**
+     * Called once the throw has completed its trajectory or interaction.
+     * <p>
+     * Delegates to the correct outcome handler depending on state flags.
+     */
 	public void onEnd() {
 		if (caught) onCatch();
 		else if (hit) onHit();
 		else if (grounded) onGrounded();
 	}
-	
+
+    /**
+     * Handles logic when the thrown item hits the ground or block.
+     * <p>
+     * Creates marker particles, positions the display, and schedules timed cleanup.
+     */
 	public void onGrounded() {
 		if (stuckBlock != null)
 			new ParticleWrapper(Particle.DUST_PILLAR, 50, 1, 1, 1, stuckBlock.getBlockData()).display(cur);
@@ -288,7 +334,7 @@ public class ThrownItem {
 			@Override
 			public void run() {
 				if (display.isDead()) {
-					thrower.message("   This item display has been slated for collection!");
+//					thrower.message("   This item display has been slated for collection!");
 					cancel();
 				}
 				
@@ -305,9 +351,13 @@ public class ThrownItem {
 			}
 		}.runTaskTimer(Sword.getInstance(), 1L, 5L);
 	}
-	
+
+    /**
+     * Handles logic when the thrown item successfully hits a living entity.
+     * <p>
+     * Manages impalement, knockback, pinning, and delayed disposal.
+     */
 	public void onHit() {
-		thrower.message("Hit entity");
 		if (hitEntity == null) return;
 		
 		LivingEntity hit = hitEntity.entity();
@@ -315,7 +365,7 @@ public class ThrownItem {
 		if (name.endsWith("_SWORD") || name.endsWith("AXE")) {
 			Vector kb = EntityUtil.isOnGround(hit) ?
 					velocity.clone().multiply(0.7) :
-					VectorUtil.getProjOntoPlan(velocity, VectorUtil.UP).multiply(1);
+					VectorUtil.getProjOntoPlane(velocity, VectorUtil.UP).multiply(1);
 			
 			impale(hit);
 			hitEntity.hit(thrower, 0, 2, 75, 50, kb);
@@ -324,10 +374,9 @@ public class ThrownItem {
 				@Override
 				public void run() {
 					RayTraceResult pinnedBlock = hit.getWorld().rayTraceBlocks(
-							hitEntity.getChestLocation(), velocity,
+							hitEntity.getChestLocation(), velocity.clone().multiply(1.5),
                             0.5, FluidCollisionMode.NEVER,
-                            true,
-                            block -> !block.getType().isCollidable());
+                            true);
 					
 					if (pinnedBlock == null || pinnedBlock.getHitBlock() == null || pinnedBlock.getHitBlock().getType().isAir()) return;
 					
@@ -373,19 +422,32 @@ public class ThrownItem {
             disposeNaturally();
 		}
 	}
-	
+
+    /**
+     * Handles when the thrower catches their own thrown item mid-air.
+     * <p>
+     * Returns the item to inventory and disposes of the display.
+     */
 	public void onCatch() {
         thrower.message("Caught it!");
 		thrower.giveItem(display.getItemStack());
 		dispose();
 	}
-	
+
+    /**
+     * Evaluates the item’s current interaction state each tick.
+     * <p>
+     * Checks for collisions with entities or blocks.
+     */
 	public void evaluate() {
 		if (hit || grounded || caught) return;
 		hitCheck();
 		groundedCheck();
 	}
-	
+
+    /**
+     * Checks if the thrown item has collided with a block and become grounded.
+     */
 	public void groundedCheck() {
 		RayTraceResult hitBlock = display.getWorld().rayTraceBlocks(cur, velocity, initialVelocity, FluidCollisionMode.NEVER, true);
 		
@@ -398,7 +460,12 @@ public class ThrownItem {
 		stuckBlock = hitBlock.getHitBlock();
 		cur = hitBlock.getHitPosition().toLocation(display.getWorld());
 	}
-	
+
+    /**
+     * Checks for collision with entities using ray tracing.
+     * <p>
+     * Determines whether the item hits an enemy or is caught by its thrower.
+     */
 	public void hitCheck() {
 		Predicate<Entity> filter = entity -> (entity instanceof LivingEntity l) && !l.isDead() && l.getType() != EntityType.ARMOR_STAND;
 		Predicate<Entity> effFilter = t < 20 ? entity -> filter.test(entity) && entity.getUniqueId() != thrower.getUniqueId() : filter;
@@ -419,7 +486,12 @@ public class ThrownItem {
 			this.hitEntity = SwordEntityArbiter.getOrAdd(hitEntity.getHitEntity().getUniqueId());
 		}
 	}
-	
+
+    /**
+     * Determines the correct {@link Transformation} for the item display based on its type.
+     * <p>
+     * Ensures proper orientation in-hand and mid-flight.
+     */
 	public void determineOrientation() {
 		String name = display.getItemStack().getType().toString();
 		Vector3f base = new Vector3f(xDisplayOffset, yDisplayOffset, zDisplayOffset);
@@ -459,7 +531,12 @@ public class ThrownItem {
 			));
 		}
 	}
-	
+
+    /**
+     * Impales a {@link LivingEntity} when struck, embedding the item visually and applying follow behavior.
+     *
+     * @param hit The living entity being impaled.
+     */
 	public void impale(LivingEntity hit) {
 		hitEntity.addImpalement();
 		
@@ -474,7 +551,12 @@ public class ThrownItem {
 		boolean followHead = hitEntity.entity().getType() != EntityType.SPIDER && diff >= max;
 		EntityUtil.itemDisplayFollow(hitEntity, display,  velocity.clone().normalize(), heightOffset, followHead);
 	}
-	
+
+    /**
+     * Disposes of the item by naturally dropping its item form into the world.
+     * <p>
+     * Used after hitting entities or ending its trajectory naturally.
+     */
 	public void disposeNaturally() {
 		Location dropLoc = hitEntity != null ? hitEntity.entity().getLocation() : display.getLocation();
         Item dropped = hitEntity.entity().getWorld().dropItemNaturally(hitEntity.entity().getLocation(), display.getItemStack());
@@ -490,7 +572,12 @@ public class ThrownItem {
 		display.remove();
 		if (disposeTask != null && !disposeTask.isCancelled()) disposeTask.cancel();
 	}
-	
+
+    /**
+     * Cleanly disposes of the item display and cancels any running tasks.
+     * <p>
+     * Should be called when the thrown item is collected or deleted.
+     */
 	public void dispose() {
 		display.remove();
 		if (disposeTask != null && !disposeTask.isCancelled()) disposeTask.cancel();

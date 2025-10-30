@@ -19,7 +19,22 @@ import org.bukkit.util.Vector;
 
 import java.util.HashSet;
 
+/**
+ * Utility class for performing grab actions.
+ * <p>
+ * Provides methods to grab either interactive items or living entities within a certain range and
+ * maintain the grab for a duration with continuous velocity updates.
+ */
 public class GrabAction extends SwordAction {
+    /**
+     * Attempts to grab an interactive item or a living entity in front of the executor.
+     * <p>
+     * First checks for an interactive item display within range. If found, triggers the grab on the item.
+     * Otherwise, checks for a living entity and applies pulling forces each tick until the duration ends,
+     * the executor releases the grab, or the target dies.
+     *
+     * @param executor The {@link Combatant} performing the grab.
+     */
 	public static void grab(Combatant executor) {
 		cast(executor, 12L,
 		new BukkitRunnable() {
