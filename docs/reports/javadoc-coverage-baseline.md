@@ -1,15 +1,15 @@
 # Javadoc Coverage Baseline Report
 
-**Generated:** 2025-10-30 19:20:52
+**Generated:** 2025-10-30 19:55:12
 
 ## Summary
 
 | Metric | Count | Percentage |
 |--------|-------|------------|
 | **Total Classes** | 53 | - |
-| **Documented Classes** | 20 | 37.7% |
+| **Documented Classes** | 23 | 43.4% |
 | **Total Public Methods** | 232 | - |
-| **Documented Methods** | 83 | 35.8% |
+| **Documented Methods** | 138 | 59.5% |
 
 ## Classes Needing Documentation (Sorted by Priority)
 
@@ -26,15 +26,15 @@
 | UtilityAction.java | btm\sword\system\action\utility\UtilityAction.java | ✓ | 4 | 0 | 0% |
 | GroundedAffliction.java | btm\sword\system\combat\GroundedAffliction.java | ✓ | 2 | 0 | 0% |
 | DisplayWrapper.java | btm\sword\system\entity\display\DisplayWrapper.java | ✗ | 1 | 0 | 0% |
-| EntityAspects.java | btm\sword\system\entity\EntityAspects.java | ✗ | 32 | 0 | 0% |
-| Hostile.java | btm\sword\system\entity\Hostile.java | ✗ | 16 | 0 | 0% |
-| Passive.java | btm\sword\system\entity\Passive.java | ✗ | 2 | 0 | 0% |
-| Item.java | btm\sword\system\item\Item.java | ✗ | 2 | 0 | 0% |
-| ItemStackBuilder.java | btm\sword\system\item\ItemStackBuilder.java | ✗ | 10 | 0 | 0% |
+| Passive.java | btm\sword\system\entity\Passive.java | ✓ | 2 | 0 | 0% |
 | CombatProfile.java | btm\sword\system\playerdata\CombatProfile.java | ✗ | 6 | 0 | 0% |
 | PlayerData.java | btm\sword\system\playerdata\PlayerData.java | ✗ | 3 | 0 | 0% |
 | EntityUtil.java | btm\sword\util\EntityUtil.java | ✓ | 1 | 0 | 0% |
 | RuntimeTypeAdapterFactory.java | btm\sword\util\gson\RuntimeTypeAdapterFactory.java | ✗ | 4 | 0 | 0% |
+| ThrownItem.java | btm\sword\system\action\utility\thrown\ThrownItem.java | ✗ | 22 | 13 | 59% |
+| Resource.java | btm\sword\system\entity\aspect\Resource.java | ✗ | 19 | 13 | 68% |
+| Hostile.java | btm\sword\system\entity\Hostile.java | ✗ | 16 | 11 | 69% |
+| SwordPlayer.java | btm\sword\system\entity\SwordPlayer.java | ✗ | 34 | 27 | 79% |
 
 *... and 33 more classes*
 
@@ -45,8 +45,10 @@
 | InteractiveItemArbiter.java | btm\sword\system\action\utility\thrown\InteractiveItemArbiter.java | 0 |
 | AspectValue.java | btm\sword\system\entity\aspect\value\AspectValue.java | 2 |
 | ResourceValue.java | btm\sword\system\entity\aspect\value\ResourceValue.java | 4 |
+| EntityAspects.java | btm\sword\system\entity\EntityAspects.java | 32 |
 | SwordEntityArbiter.java | btm\sword\system\entity\SwordEntityArbiter.java | 0 |
 | InputAction.java | btm\sword\system\input\InputAction.java | 4 |
+| ItemStackBuilder.java | btm\sword\system\item\ItemStackBuilder.java | 10 |
 | BezierUtil.java | btm\sword\util\BezierUtil.java | 0 |
 | DisplayUtil.java | btm\sword\util\DisplayUtil.java | 0 |
 | HitboxUtil.java | btm\sword\util\HitboxUtil.java | 0 |
