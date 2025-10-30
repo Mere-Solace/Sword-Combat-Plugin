@@ -5,7 +5,9 @@ This project uses automated tools to maintain code quality without manual effort
 ## Tools Overview
 
 ### 1. Spotless - Auto-formatting
+
 Automatically fixes code formatting issues including:
+
 - Removes unused imports
 - Organizes import statements
 - Converts tabs to spaces (4 spaces)
@@ -13,7 +15,9 @@ Automatically fixes code formatting issues including:
 - Ensures files end with newline
 
 ### 2. Checkstyle - Code quality analysis
+
 Detects code quality issues including:
+
 - Unused imports
 - Empty catch blocks
 - Missing @Override annotations
@@ -22,7 +26,9 @@ Detects code quality issues including:
 - Missing Javadoc (info level)
 
 ### 3. PMD - Advanced static analysis
+
 Detects deeper code issues including:
+
 - Unused local variables
 - Unused private fields and methods
 - Empty method bodies without comments
@@ -30,8 +36,20 @@ Detects deeper code issues including:
 - Performance issues (string concatenation in loops)
 - Code style suggestions
 
-### 4. GitHub Actions - CI/CD
+### 4. Javadoc Coverage - Documentation tracking
+
+Measures and tracks documentation coverage:
+
+- Percentage of classes with Javadoc
+- Percentage of methods with Javadoc
+- Identifies files needing documentation
+- Tracks progress over time
+- Generates detailed reports
+
+### 5. GitHub Actions - CI/CD
+
 Automatically runs checks on:
+
 - Every push to main, dev, gig-dev
 - Every pull request
 - Manual workflow dispatch
@@ -41,17 +59,20 @@ Automatically runs checks on:
 ### Auto-fix Code Formatting
 
 **Fix all formatting issues automatically:**
+
 ```bash
 ./gradlew spotlessApply
 ```
 
 This command will:
+
 - Remove all unused imports
 - Fix indentation
 - Organize imports
 - Clean up whitespace
 
 **Check formatting without fixing:**
+
 ```bash
 ./gradlew spotlessCheck
 ```
@@ -59,6 +80,7 @@ This command will:
 ### Run Code Quality Checks
 
 **Run Checkstyle analysis:**
+
 ```bash
 ./gradlew checkstyleMain
 ```
@@ -66,22 +88,33 @@ This command will:
 View report: `build/reports/checkstyle/main.html`
 
 **Run PMD analysis:**
+
 ```bash
 ./gradlew pmdMain
 ```
 
 View report: `build/reports/pmd/main.html`
 
+**Run Javadoc coverage analysis:**
+
+```bash
+./gradlew javadocCoverage
+```
+
+View report: `docs/reports/javadoc-coverage-baseline.md`
+
 ### Run All Checks
 
 **Build + format check + quality checks:**
+
 ```bash
-./gradlew build spotlessCheck checkstyleMain pmdMain
+./gradlew build spotlessCheck checkstyleMain pmdMain javadocCoverage
 ```
 
 ## Workflow Integration
 
 ### Before Committing
+
 ```bash
 # Auto-fix formatting
 ./gradlew spotlessApply
@@ -96,7 +129,9 @@ View report: `build/reports/pmd/main.html`
 Note: PMD violations are informational only and won't block your commit. Review the report and fix what makes sense for your changes.
 
 ### Pre-commit Hook (Optional)
+
 Create `.git/hooks/pre-commit`:
+
 ```bash
 #!/bin/sh
 ./gradlew spotlessApply --quiet
@@ -110,11 +145,13 @@ Make executable: `chmod +x .git/hooks/pre-commit`
 ### IntelliJ IDEA
 
 **Use project Checkstyle config:**
+
 1. Settings -> Tools -> Checkstyle
 2. Add Configuration File: `config/checkstyle/checkstyle.xml`
 3. Set as active
 
 **Auto-format on save:**
+
 1. Settings -> Tools -> Actions on Save
 2. Enable: Reformat code
 3. Enable: Optimize imports
@@ -124,6 +161,7 @@ Make executable: `chmod +x .git/hooks/pre-commit`
 **Java extension automatically uses Checkstyle config**
 
 **Format on save:**
+
 ```json
 {
     "editor.formatOnSave": true,
@@ -136,6 +174,7 @@ Make executable: `chmod +x .git/hooks/pre-commit`
 ### Automatic Checks
 
 Every push and PR triggers:
+
 1. Build verification
 2. Spotless format check
 3. Checkstyle quality check
@@ -163,6 +202,7 @@ If formatting issues detected, bot comments:
 Edit: `config/checkstyle/checkstyle.xml`
 
 Current configuration:
+
 - Severity: warning (doesn't fail builds)
 - Unused imports: error
 - Line length: 120 characters
@@ -173,6 +213,7 @@ Current configuration:
 Edit: `build.gradle` spotless block
 
 Current configuration:
+
 - Remove unused imports: enabled
 - Import ordering: enabled
 - Indentation: 4 spaces
@@ -183,6 +224,7 @@ Current configuration:
 Edit: `config/pmd/pmd-rules.xml`
 
 Current configuration:
+
 - Unused local variables: Priority 4 (Low - FYI only)
 - Unused private fields: Priority 3 (Medium - should review)
 - Empty catch blocks: Priority 2 (High)
@@ -191,17 +233,32 @@ Current configuration:
 
 PMD respects TODO/FIXME comments - variables marked with these won't be flagged as unused.
 
+### Javadoc Coverage
+
+Edit: `build.gradle` javadocCoverage task
+
+Current metrics (baseline 2025-10-30):
+
+- Total Classes: 53
+- Documented Classes: 15 (28.3%)
+- Total Public Methods: 232
+- Documented Methods: 61 (26.3%)
+
+See [javadoc-coverage-guide.md](javadoc-coverage-guide.md) for detailed usage.
+
 ## Results from Initial Run
 
 **Files automatically fixed: 56**
 
 Common fixes applied:
+
 - Tabs -> 4 spaces
 - Removed unused imports
 - Organized import statements
 - Fixed whitespace
 
 **Example (PlayerListener.java):**
+
 - Removed 7 unused imports
 - Fixed indentation
 - Organized remaining imports
@@ -216,6 +273,7 @@ Common fixes applied:
 ### Checkstyle reports too many issues
 
 **Adjust severity in** `config/checkstyle/checkstyle.xml`:
+
 ```xml
 <property name="severity" value="info"/>
 ```
@@ -223,6 +281,7 @@ Common fixes applied:
 ### Build fails due to formatting
 
 **Quick fix:**
+
 ```bash
 ./gradlew spotlessApply
 ```
