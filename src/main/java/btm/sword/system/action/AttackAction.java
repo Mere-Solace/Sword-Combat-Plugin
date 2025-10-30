@@ -3,6 +3,7 @@ package btm.sword.system.action;
 import btm.sword.Sword;
 import btm.sword.system.SwordScheduler;
 import btm.sword.system.action.type.AttackType;
+import btm.sword.system.combat.Affliction;
 import btm.sword.system.entity.Combatant;
 import btm.sword.system.entity.SwordEntity;
 import btm.sword.system.entity.SwordEntityArbiter;
@@ -30,14 +31,31 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
+/**
+ * Provides attack-related actions for {@link Combatant} entities.
+ * <p>
+ * Supports basic melee attacks, including grounded and aerial variations.
+ * Handles attack execution, hit detection, damage application, particle effects,
+ * knockback, and associated cooldowns.
+ */
 public class AttackAction extends SwordAction {
+    /** Mapping from item suffixes to corresponding attack handlers. */
 	private static final Map<String, BiConsumer<Combatant, AttackType>> attackMap = Map.of(
             "_SWORD", AttackAction::basicSlash,
             "_SHOVEL", AttackAction::basicSlash,
             "_AXE", AttackAction::basicSlash,
             "SHIELD", AttackAction::basicSlash
 	);
-	
+
+    /**
+     * Executes a basic attack for the given {@link Combatant} and {@link AttackType}.
+     * <p>
+     * Selects the correct attack variant based on the item in hand and whether the
+     * executor is grounded or airborne. Aerial attacks reset the executor's combo tree.
+     *
+     * @param executor The combatant performing the attack.
+     * @param type The type of attack being performed.
+     */
 	public static void basicAttack(Combatant executor, AttackType type) {
 		Material item = executor.getItemTypeInHand(true);
 		double dot = executor.entity().getEyeLocation().getDirection().dot(VectorUtil.UP);
@@ -115,7 +133,17 @@ public class AttackAction extends SwordAction {
 	//
 	//  ~ boolean for destroying blocks or not
 	//
-	
+
+    /**
+     * Executes a basic slash attack.
+     * <p>
+     * Generates a cubic Bezier path for the attack based on attack type, applies
+     * knockback, spawns particles, and calls {@link SwordEntity#hit(Combatant source, long hitInvulnerableTickDuration, int baseNumShards, float baseToughnessDamage, float baseSoulfireReduction, Vector knockbackVelocity, Affliction... afflictions)} for each
+     * target intersected by the attack path.
+     *
+     * @param executor The combatant performing the slash.
+     * @param type The attack variant (e.g., grounded, aerial, downward).
+     */
 	public static void basicSlash(Combatant executor, AttackType type) {
 		long castDuration = (long) executor.calcValueReductive(AspectType.FINESSE, 1L, 3L, 0.2);
 		if (executor instanceof SwordPlayer sp) sp.player().setCooldown(sp.getItemTypeInHand(true), (int) castDuration);

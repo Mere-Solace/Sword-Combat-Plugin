@@ -7,8 +7,6 @@ import btm.sword.system.entity.aspect.value.AspectValue;
 import btm.sword.system.entity.aspect.value.ResourceValue;
 import btm.sword.system.playerdata.CombatProfile;
 
-import java.util.ArrayList;
-
 public class EntityAspects {
 	private final Aspect[] stats = new Aspect[12];
 	

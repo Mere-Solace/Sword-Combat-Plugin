@@ -21,9 +21,25 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
+/**
+ * Provides movement-based actions for {@link Combatant} entities.
+ * <p>
+ * Includes dashing, directional movement, and throwing/manipulating
+ * {@link SwordEntity} targets.
+ */
 public class MovementAction extends SwordAction {
+    /**
+     * Performs a dash action for the executor.
+     * <p>
+     * The dash moves the executor forward or backward, handles velocity adjustments,
+     * particle effects, ground checks, and can target {@link ItemDisplay} entities
+     * if within range. Airborne dashes increment the executor's air dash count.
+     *
+     * @param executor The combatant performing the dash.
+     * @param forward  True for forward dash, false for backward dash.
+     */
 	public static void dash(Combatant executor, boolean forward) {
-		double maxDistance = 6;
+		double maxDistance = 10;
 		
 		cast (executor, 5L, new BukkitRunnable() {
 			@Override
@@ -127,7 +143,17 @@ public class MovementAction extends SwordAction {
 			}
 		});
 	}
-	
+
+    /**
+     * Tosses the specified {@link SwordEntity} away from the executor.
+     * <p>
+     * Applies velocity to the target in the executor's facing direction, creates
+     * particle effects along the trajectory, performs collision checks with blocks
+     * and nearby entities, and triggers a small explosion on impact.
+     *
+     * @param executor The combatant performing the toss.
+     * @param target   The sword entity to toss.
+     */
 	public static void toss(Combatant executor, SwordEntity target) {
 		LivingEntity ex = executor.entity();
 		LivingEntity t = target.entity();

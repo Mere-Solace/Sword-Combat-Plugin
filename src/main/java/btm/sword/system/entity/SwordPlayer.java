@@ -3,14 +3,10 @@ package btm.sword.system.entity;
 import btm.sword.Sword;
 import btm.sword.system.SwordScheduler;
 import btm.sword.system.action.utility.thrown.ThrowAction;
-import btm.sword.system.entity.aspect.Aspect;
 import btm.sword.system.input.InputAction;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.input.InputExecutionTree;
 import btm.sword.system.input.InputType;
-import btm.sword.system.inventory.Menu;
-import btm.sword.system.inventory.selection.CustomActionButton;
-import btm.sword.system.item.ItemStackBuilder;
 import btm.sword.system.item.KeyCache;
 import btm.sword.system.playerdata.PlayerData;
 import btm.sword.util.DisplayUtil;
@@ -50,6 +46,15 @@ import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Represents a player-controlled combatant in the Sword plugin system.
+ * Extends {@link Combatant} with player-specific functionality such as input handling,
+ * item display management, and integration with {@link PlayerData}.
+ * <p>
+ * This class maintains state related to player inputs, held items,
+ * throwing mechanics ({@link ThrowAction}), and visual display elements like a sheathed sword.
+ * </p>
+ */
 @Getter
 @Setter
 public class SwordPlayer extends Combatant {
@@ -57,11 +62,6 @@ public class SwordPlayer extends Combatant {
 	private final PlayerProfile profile;
 	private final String username;
 	private final ItemStack playerHead;
-
-	protected final Menu mainMenu;
-	protected final List<Menu> predefinedMenus = new ArrayList<>();
-	protected static final String menuHotKeyId = "menu_hotkey";
-	protected Menu curMenu;
 
     private ItemDisplay sheathed;
     private boolean sheathedReady;
@@ -91,7 +91,14 @@ public class SwordPlayer extends Combatant {
 	
 	private boolean swappingInInv;
 	private boolean droppingInInv;
-	
+
+    /**
+     * Constructs a new SwordPlayer wrapping a Bukkit {@link Player} with associated {@link PlayerData}.
+     * Initializes the input execution tree and player head item.
+     *
+     * @param associatedEntity the Bukkit living entity (player) to wrap
+     * @param data the {@link PlayerData} containing extended player info
+     */
 	public SwordPlayer(LivingEntity associatedEntity, PlayerData data) {
 		super(associatedEntity, data.getCombatProfile());
 		player = (Player) self;
@@ -103,13 +110,6 @@ public class SwordPlayer extends Combatant {
 		
 		skullMeta.setPlayerProfile(profile);
 		playerHead.setItemMeta(skullMeta);
-
-		mainMenu = new Menu(Component.text("+}- ", TextColor.color(72, 72, 72))
-				.append(Component.text("Menu", TextColor.color(30, 150, 180)))
-				.append(Component.text(" -{+", TextColor.color(72, 72, 72))),
-				54);
-		predefinedMenus.add(mainMenu);
-		menuSetup();
 		
 		inputExecutionTree = new InputExecutionTree(inputTimeoutMillis);
 		inputExecutionTree.initializeInputTree();
@@ -135,6 +135,11 @@ public class SwordPlayer extends Combatant {
 		droppingInInv = false;
 	}
 
+    /**
+     * Called each server tick to update the player state.
+     * Extends {@link Combatant#onTick()} to restore food and absorption,
+     * and handle the visual sheathed sword display using {@link ItemDisplay}.
+     */
     @Override
     protected void onTick() {
         super.onTick();
@@ -180,38 +185,10 @@ public class SwordPlayer extends Combatant {
         }
     }
 
-	protected void menuSetup() {
-		setItemAtIndex(new ItemStackBuilder(Material.SILENCE_ARMOR_TRIM_SMITHING_TEMPLATE)
-				.name(Component.text("+}- ", TextColor.color(72, 72, 72))
-						.append(Component.text("Menu", TextColor.color(30, 150, 180)))
-						.append(Component.text(" -{+", TextColor.color(72, 72, 72))))
-				.tag(KeyCache.buttonTag, menuHotKeyId)
-				.hideAll()
-				.build(), 8);
-		
-		ItemStack infoItem = new ItemStack(Material.PLAYER_HEAD);
-		SkullMeta skullMeta = (SkullMeta) playerHead.getItemMeta();
-		skullMeta.itemName(Component.text(username + "'s Profile"));
-		Iterator<Aspect> iterator = Arrays.stream(aspects.aspectSet()).iterator();
-		List<Component> lore = new ArrayList<>(12);
-		while (iterator.hasNext()) {
-			Aspect cur = iterator.next();
-			lore.add(Component.text(cur.type + ": \t\t" + cur.baseValue));
-		}
-		skullMeta.lore(lore);
-		skullMeta.setPlayerProfile(player.getPlayerProfile());
-		infoItem.setItemMeta(skullMeta);
-		mainMenu.setButton(22, new CustomActionButton(infoItem, null));
-		
-		for (int i = 45; i < 54; i++) {
-			mainMenu.setDecoration(i,
-					new ItemStackBuilder(Material.ORANGE_STAINED_GLASS_PANE)
-							.name(Component.text("||| ||| |||", TextColor.color(191, 119, 28), TextDecoration.BOLD))
-							.hideAll()
-							.build());
-		}
-	}
-	
+    /**
+     * Called when the player entity spawns or respawns.
+     * Extends {@link Combatant#onSpawn()}.
+     */
 	@Override
 	public void onSpawn() {
 		super.onSpawn();
@@ -237,18 +214,33 @@ public class SwordPlayer extends Combatant {
 //            setSheathedReady(true);
 //        }, 15L);
 	}
-	
+
+    /**
+     * Called when the player dies.
+     * Cleans up the sheathed sword display entity.
+     */
 	@Override
 	public void onDeath() {
         if (sheathed != null)
 	        sheathed.remove();
 	}
 
+    /**
+     * Called when the player leaves the game.
+     * Removes the sheathed sword display.
+     */
     public void onLeave() {
         if (sheathed != null)
             sheathed.remove();
     }
-	
+
+    /**
+     * Processes a player input of {@link InputType}, executing associated {@link InputAction}s
+     * based on the input execution tree. Handles interrupting throwing, grabbing, swapping,
+     * and cooldowns.
+     *
+     * @param input the input type from the player to process
+     */
 	public void act(InputType input) {
 		if (isAttemptingThrow()) {
 			if (input != InputType.RIGHT && input != InputType.RIGHT_HOLD) {
@@ -275,7 +267,7 @@ public class SwordPlayer extends Combatant {
 		if (input == InputType.RIGHT) {
 			if (rightTask == null)
 				startHoldingRight();
-			else
+            else
 				return;
 		}
 		else if (input == InputType.SHIFT) {
@@ -318,40 +310,30 @@ public class SwordPlayer extends Combatant {
 			}
 		}
 	}
-	
-	// method used to catch input before it's sent to act(), and before the action is cancelled.
-	// true -> the action gets cancelled
-	// false -> the input passes and gets handled by act()
+
+    /**
+     * Evaluates an inventory item input before processing it in {@link #act(InputType)}.
+     * Can be used to filter out inputs or trigger cancellations.
+     *
+     * @param itemStack the item stack involved in the input
+     * @param inputType the input type being evaluated
+     * @return true to cancel the action, false to allow processing
+     */
 	public boolean evaluateItemInput(ItemStack itemStack, InputType inputType) {
 		Material type = itemStack.getType();
 		ItemMeta meta = itemStack.getItemMeta();
 		String id = meta != null ? meta.getPersistentDataContainer().get(KeyCache.buttonTagKey, PersistentDataType.STRING) : null;
-		switch (inputType) {
-			case RIGHT -> {
-//				if (type.isEdible() || type == Material.SHIELD || type == Material.BOW || type == Material.CROSSBOW) {
-//					return false;
-//				}
-//				else
-				if (id != null && id.equals(menuHotKeyId)) {
-					mainMenu.display(player);
-					return true;
-				}
 
-                return false;
-			}
-			case DROP -> {
-				if (id != null && id.equals(menuHotKeyId)) {
-					mainMenu.display(player);
-					return true;
-				}
-			}
-			default -> {
-				return false;
-			}
-		}
-		return false;
+        return false;
 	}
-	
+
+    /**
+     * Handles inventory click events to interact with the player's inventory.
+     * Can be customized to modify behavior based on click type, inventory, and slot.
+     *
+     * @param e the inventory click event to handle
+     * @return true if the event was handled and should be cancelled, false otherwise
+     */
 	public boolean handleInventoryInput(InventoryClickEvent e) {
 		Inventory inv = e.getInventory();
 		ClickType clickType = e.getClick();
@@ -360,44 +342,55 @@ public class SwordPlayer extends Combatant {
 		ItemStack clicked = e.getCurrentItem();
 		int slotNumber = e.getSlot();
 		
-		message("\n\n~|------Beginning of new inventory interact event------|~"
-				+ "\n       Inventory: " + inv.getType()
-				+ "\n       Click type: " + clickType
-				+ "\n       Action type: " + action
-				+ "\n       Item on cursor: " + onCursor
-				+ "\n       Current Item in slot: " + clicked
-				+ "\n       slot number: " + slotNumber);
-		
-		if (curMenu != null) {
-			return curMenu.handleClick(e);
-		}
-		
-		for (Menu menu : predefinedMenus) {
-			if (menu.equateInv(inv)) {
-				return menu.handleClick(e);
-			}
-		}
-		
-		message("Normal click event.");
+//		message("\n\n~|------Beginning of new inventory interact event------|~"
+//				+ "\n       Inventory: " + inv.getType()
+//				+ "\n       Click type: " + clickType
+//				+ "\n       Action type: " + action
+//				+ "\n       Item on cursor: " + onCursor
+//				+ "\n       Current Item in slot: " + clicked
+//				+ "\n       slot number: " + slotNumber);
+//
+//		message("Normal click event.");
 		return false;
 	}
-	
+
+    /**
+     * Returns the underlying {@link Player} entity for this SwordPlayer.
+     *
+     * @return the Bukkit player entity
+     */
 	public Player player() {
 		return player;
 	}
 
+    /**
+     * Checks if the player has performed a drop action recently.
+     *
+     * @return true if a drop action was performed, false otherwise
+     */
     public boolean hasPerformedDropAction() {
 		return performedDropAction;
 	}
 
+    /**
+     * Resets the input execution tree to its root state.
+     */
 	public void resetTree() {
 		inputExecutionTree.reset();
 	}
-	
+
+    /**
+     * Checks if the input execution tree is at its root node.
+     *
+     * @return true if at root, false otherwise
+     */
 	public boolean isAtRoot() {
 		return inputExecutionTree.isAtRoot();
 	}
-	
+
+    /**
+     * Displays the current input sequence progress of the player as a title.
+     */
 	public void displayInputSequence() {
 		self.showTitle(Title.title(
 				Component.text(""),
@@ -407,7 +400,10 @@ public class SwordPlayer extends Combatant {
 						Duration.ofMillis(inputTimeoutMillis),
 						Duration.ofMillis(100))));
 	}
-	
+
+    /**
+     * Displays a visual indication of a mistake in input as a title.
+     */
 	public void displayMistake() {
 		self.showTitle(Title.title(
 				Component.text(""),
@@ -417,7 +413,10 @@ public class SwordPlayer extends Combatant {
 						Duration.ofMillis(inputTimeoutMillis),
 						Duration.ofMillis(100))));
 	}
-	
+
+    /**
+     * Displays a visual indication that the player is disabled, via a title.
+     */
 	public void displayDisablingEffect() {
 		self.showTitle(Title.title(
 				Component.text(""),
@@ -427,7 +426,13 @@ public class SwordPlayer extends Combatant {
 						Duration.ofMillis(inputTimeoutMillis),
 						Duration.ofMillis(100))));
 	}
-	
+
+    /**
+     * Displays a cooldown timer remaining to the player as a title,
+     * showing time in seconds if above 1000ms, else milliseconds.
+     *
+     * @param timeLeft time left on cooldown in milliseconds
+     */
 	public void displayCooldown(long timeLeft) {
 		double timeToDisplay = timeLeft > 1000L ? (double)timeLeft/1000 : timeLeft;
 		String unit = timeLeft > 1000L ? "s" : "ms";
@@ -439,7 +444,16 @@ public class SwordPlayer extends Combatant {
 						Duration.ofMillis(inputTimeoutMillis),
 						Duration.ofMillis(100))));
 	}
-	
+
+    /**
+     * Displays a custom title and subtitle to the player with specified timing.
+     *
+     * @param title main title text component
+     * @param subtitle subtitle text component
+     * @param fadein duration of fade-in in milliseconds
+     * @param duration duration to display the title in milliseconds
+     * @param fadeout duration of fade-out in milliseconds
+     */
 	public void displayTitle(Component title, Component subtitle, long fadein, long duration, long fadeout) {
 		self.showTitle(Title.title(
 				title,
@@ -449,7 +463,14 @@ public class SwordPlayer extends Combatant {
 						Duration.ofMillis(duration),
 						Duration.ofMillis(fadeout))));
 	}
-	
+
+    /**
+     * Changes the display name of the item in the player's main hand temporarily, showing it with a color and style.
+     *
+     * @param toDisplay the string to show as the item name
+     * @param color the {@link TextColor} to apply
+     * @param style the {@link TextDecoration} to apply, or null for none
+     */
 	public void itemNameDisplay(String toDisplay, TextColor color, TextDecoration style) {
 		ItemStack stack = getItemStackInHand(true).clone();
 		if (stack.isEmpty() || stack.getType().isAir()) stack = new ItemStack(Material.GUNPOWDER);
@@ -466,18 +487,32 @@ public class SwordPlayer extends Combatant {
 		stack.setItemMeta(metaData);
 		player.sendEquipmentChange(self, EquipmentSlot.HAND, stack);
 	}
-	
+
+    /**
+     * Adds a base value to a given {@link AspectType} stat on this player.
+     *
+     * @param stat the {@link AspectType} to increment
+     * @param amount the amount to add to the base value
+     */
 	public void addStat(AspectType stat, int amount) {
 		aspects.getAspect(stat).addBaseValue(amount);
 		// invalidate all cached, calculated values with that stat
 	}
-	
+
+    /**
+     * Checks if the input execution tree requires the same item to be used for inputs.
+     *
+     * @return true if input actions are item-specific, false otherwise
+     */
 	public boolean inputReliantOnItem() {
 		return inputExecutionTree.requiresSameItem();
 	}
-	
+
+    /**
+     * Starts holding the right mouse button, tracking the hold time and managing state.
+     * Changes the player's main hand item to a placeholder while holding (gunpowder).
+     */
 	public void startHoldingRight() {
-		message("   Starting to hold right click!");
 		if (holdingRight) return;
 		
 		if (rightTask != null && !rightTask.isCancelled()) rightTask.cancel();
@@ -511,23 +546,32 @@ public class SwordPlayer extends Combatant {
 			}
 		}.runTaskTimer(Sword.getInstance(), 2L, 1L);
 	}
-	
+
+    /**
+     * Resets the holding right state and cancels the associated task.
+     */
 	public void resetHoldingRight() {
 		rightTask = null;
 		holdingRight = false;
 		rightHoldTimeStart = 0L;
 		timeRightHeld = 0L;
 	}
-	
+
+    /**
+     * Ends holding right-click input, restoring item stacks appropriately.
+     */
 	public void endHoldingRight() {
-        message(">>> End of Right Hold, threw item? " + (threwItem ? "yes" : "nope"));
+//        message(">>> End of Right Hold, threw item? " + (threwItem ? "yes" : "nope"));
 		holdingRight = false;
 		timeRightHeld = System.currentTimeMillis() - rightHoldTimeStart;
 		setItemStackInHand(offItemStackAtTimeOfHold, false);
         if (!mainItemStackAtTimeOfHold.isEmpty() && !threwItem)
 		    setItemAtIndex(mainItemStackAtTimeOfHold, indexOfRightHold);
 	}
-	
+
+    /**
+     * Starts sneaking state, tracking the hold time and scheduling updates.
+     */
 	public void startSneaking() {
 		if (sneaking) return;
 		
@@ -551,31 +595,55 @@ public class SwordPlayer extends Combatant {
 			}
 		}.runTaskTimer(Sword.getInstance(), 0L, 1L);
 	}
-	
+
+    /**
+     * Resets sneaking state and cancels the associated task.
+     */
 	public void resetSneaking() {
 		sneakTask = null;
 		sneaking = false;
 		sneakHoldTimeStart = 0L;
 		timeSneakHeld = 0L;
 	}
-	
+
+    /**
+     * Ends sneaking state and calculates how long the player sneaked.
+     */
 	public void endSneaking() {
 		sneaking = false;
 		timeSneakHeld = System.currentTimeMillis() - sneakHoldTimeStart;
 	}
-	
+
+    /**
+     * Records the current held inventory slot index as the thrown item index.
+     */
 	public void setThrownItemIndex() {
 		thrownItemIndex = getCurrentInvIndex();
 	}
-	
+
+    /**
+     * Gets the current inventory slot index the player is holding.
+     *
+     * @return the held item slot index
+     */
 	public int getCurrentInvIndex() {
 		return player.getInventory().getHeldItemSlot();
 	}
-	
+
+    /**
+     * Sets the {@link ItemStack} in the player's inventory at the specified index.
+     *
+     * @param item the {@link ItemStack} to set
+     * @param index the inventory slot index
+     */
 	public void setItemAtIndex(ItemStack item, int index) {
 		player.getInventory().setItem(index, item);
 	}
-	
+
+    /**
+     * Marks that the player is currently swapping items in inventory.
+     * Resets the flag shortly after (1 tick).
+     */
 	public void setSwappingInInv() {
 		swappingInInv = true;
 		new BukkitRunnable() {
@@ -585,7 +653,11 @@ public class SwordPlayer extends Combatant {
 			}
 		}.runTaskLater(Sword.getInstance(), 1L);
 	}
-	
+
+    /**
+     * Marks that the player is currently dropping items in inventory.
+     * Resets the flag shortly after (1 tick).
+     */
 	public void setDroppingInInv() {
 		droppingInInv = true;
 		new BukkitRunnable() {

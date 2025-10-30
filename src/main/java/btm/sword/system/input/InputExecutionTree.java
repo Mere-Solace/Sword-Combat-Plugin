@@ -19,6 +19,15 @@ import org.bukkit.scheduler.BukkitTask;
 import java.util.HashMap;
 import java.util.List;
 
+/**
+ * Represents a finite state tree that tracks sequences of player {@link InputType} inputs,
+ * maps them to corresponding {@link InputAction}s, supports timeout resets,
+ * and manages child nodes representing next steps in input sequences.
+ * <p>
+ * This class is central to handling input combos, timing, and action execution
+ * in the Sword plugin input system.
+ * </p>
+ */
 public class InputExecutionTree {
 	private static final Plugin plugin = Sword.getInstance();
 	
@@ -28,14 +37,27 @@ public class InputExecutionTree {
 	private StringBuilder sequenceToDisplay;
 	private BukkitTask timeoutTimer;
 	private final long timeoutTicks;
-	
+
+    /**
+     * Creates an InputExecutionTree with a specified timeout for input sequences.
+     *
+     * @param timeoutMillis timeout duration in milliseconds before sequence resets
+     */
 	public InputExecutionTree(long timeoutMillis) {
 		currentNode = root;
 		sequenceToDisplay = new StringBuilder();
 		timeoutTimer = null;
 		this.timeoutTicks = (long) (timeoutMillis * (0.02)); // 1/50 (or 0.02) is the conversion from milliseconds to ticks
 	}
-	
+
+    /**
+     * Processes an input step in the execution tree, updating current node and sequence.
+     * Returns the new node reached or null if the input is invalid or sequence is reset.
+     * Automatically resets sequence if current node is a leaf.
+     *
+     * @param input the {@link InputType} input to process
+     * @return the resulting {@link InputNode} or null if invalid/reset
+     */
 	public InputNode step(InputType input) {
 		stopTimeoutTimer();
 		// before taking input, if it is known that the current node is a leaf, reset and take input from the root
@@ -74,7 +96,10 @@ public class InputExecutionTree {
 		
 		return next;
 	}
-	
+
+    /**
+     * Starts the timeout countdown to reset the input sequence after inactivity.
+     */
 	private void startTimeoutTimer() {
 		timeoutTimer = new BukkitRunnable() {
 			@Override
@@ -83,29 +108,59 @@ public class InputExecutionTree {
 			}
 		}.runTaskLater(plugin, timeoutTicks);
 	}
-	
+
+    /**
+     * Stops the currently running timeout timer task.
+     */
 	public void stopTimeoutTimer() {
 		if (timeoutTimer != null && !timeoutTimer.isCancelled()) timeoutTimer.cancel();
 	}
-	
+
+    /**
+     * Restarts the timeout timer by cancelling the existing and starting a new one.
+     */
 	public void restartTimeoutTimer() {
 		stopTimeoutTimer();
 		startTimeoutTimer();
 	}
-	
+
+    /**
+     * Resets the input execution tree to the root node and clears input sequence display.
+     */
 	public void reset() {
 		currentNode = root;
 		sequenceToDisplay = new StringBuilder();
 	}
-	
+
+    /**
+     * Checks if the current node is the root node.
+     *
+     * @return true if at root, false otherwise
+     */
 	public boolean isAtRoot() {
 		return currentNode == root;
 	}
-	
+
+    /**
+     * Checks if the current node has a child corresponding to the specified input.
+     *
+     * @param input the {@link InputType} to check
+     * @return true if a child node exists, false otherwise
+     */
 	public boolean nextExists(InputType input) {
 		return currentNode.getChild(input) != null;
 	}
-	
+
+    /**
+     * Adds an input sequence mapping to an {@link InputAction} to the tree.
+     * Overwrites existing paths or creates new nodes as needed.
+     *
+     * @param inputSequence list of {@link InputType}s representing the input combo
+     * @param action the {@link InputAction} to associate with the final input
+     * @param sameItemRequired whether all inputs require the same held item
+     * @param cancellable whether this input sequence can be cancelled mid-way
+     * @param display whether to display this input sequence progress to the player
+     */
 	public void add(List<InputType> inputSequence, InputAction action,
 	                boolean sameItemRequired,
 	                boolean cancellable,
@@ -123,7 +178,17 @@ public class InputExecutionTree {
 		dummy.setAction(action);
 		dummy.setDisplay(display);
 	}
-	
+
+    /**
+     * Adds an input sequence mapping with a minimum hold time requirement for hold inputs.
+     *
+     * @param inputSequence list of {@link InputType}s representing the input combo
+     * @param action associated {@link InputAction}
+     * @param sameItemRequired whether the same item must be held for all inputs
+     * @param cancellable whether this sequence is cancellable
+     * @param display whether to display input combo progress
+     * @param minHoldTime minimum hold time in milliseconds required for hold inputs to register
+     */
 	public void add(List<InputType> inputSequence, InputAction action,
 	                boolean sameItemRequired,
 	                boolean cancellable,
@@ -147,16 +212,32 @@ public class InputExecutionTree {
 		dummy.setAction(action);
 		dummy.setDisplay(display);
 	}
-	
+
+    /**
+     * Checks whether the current node has children nodes.
+     *
+     * @return true if children exist, false otherwise
+     */
 	public boolean hasChildren() {
 		return !currentNode.children.isEmpty();
 	}
-	
+
+    /**
+     * Returns the string representation of the current input sequence for display.
+     *
+     * @return string representation of input sequence
+     */
 	@Override
 	public String toString() {
 		return sequenceToDisplay.toString();
 	}
-	
+
+    /**
+     * Converts an {@link InputType} to its string representation for sequence display.
+     *
+     * @param type input type to convert
+     * @return string representation such as "L", "R", "_", etc.
+     */
 	private String inputToString(InputType type) {
 		String out;
 		switch (type) {
@@ -171,17 +252,32 @@ public class InputExecutionTree {
 		}
 		return out;
 	}
-	
+
+    /**
+     * Checks if the current input node requires all inputs in the sequence to use the same item.
+     *
+     * @return true if same item is required, false otherwise
+     */
 	public boolean requiresSameItem() {
 		return currentNode.isSameItemRequired();
 	}
-	
+
+    /**
+     * Gets the minimum hold time in milliseconds required for the next input node of the specified hold type.
+     *
+     * @param holdType the hold input type ({@link InputType.RIGHT_HOLD} or {@link InputType.SHIFT_HOLD})
+     * @return minimum hold time in milliseconds, or -1 if no such node exists
+     */
 	public long getMinHoldLengthOfNext(InputType holdType) {
 		InputNode next = currentNode.getChild(holdType);
 		if (next == null) return -1;
 		return next.getMinHoldTime();
 	}
-	
+
+    /**
+     * Initializes the input tree with predefined combos and mapped {@link InputAction}s.
+     * Sets up example combos for movement, grabbing, attacks, throwing, and utility actions.
+     */
 	public void initializeInputTree() {
 		// NOTE: Do not start inputs with swap or drop... those actions work normally if used at the root
 		
@@ -337,6 +433,11 @@ public class InputExecutionTree {
 				true);
 	}
 
+    /**
+     * Represents a node in the {@link InputExecutionTree}, used to map input sequences to actions.
+     * Each node maintains children inputs leading to subsequent nodes,
+     * and stores metadata like whether the sequence requires same item, is cancellable, or displayable.
+     */
 	@Getter
     @Setter
 	public static class InputNode {
@@ -346,28 +447,64 @@ public class InputExecutionTree {
 		private boolean cancellable;
 		private boolean display;
 		private final long minHoldTime;
-		
+
+        /**
+         * Constructs an InputNode with an associated action and hold time.
+         *
+         * @param action the associated {@link InputAction}, or null if none
+         * @param minHoldTime minimum hold time in milliseconds for hold inputs, or -1 if none
+         */
 		public InputNode(InputAction action, long minHoldTime) {
 			this.action = action;
 			this.minHoldTime = minHoldTime;
 		}
-		
+
+        /**
+         * Constructs an InputNode with an associated action and no hold time limit.
+         *
+         * @param action the associated {@link InputAction}, or null if none
+         */
 		public InputNode(InputAction action) {
 			this(action, -1);
 		}
-		
+
+        /**
+         * Adds a child node for the specified input with an associated action and no hold time.
+         *
+         * @param input the {@link InputType} input triggering the child node
+         * @param action the {@link InputAction} associated with the child node, or null
+         */
 		public void addChild(InputType input, InputAction action) {
 			children.putIfAbsent(input, new InputNode(action));
 		}
-		
+
+        /**
+         * Adds a child node for the specified input with an associated action and minimum hold time.
+         *
+         * @param input the input triggering the child node
+         * @param action the action associated with the child node
+         * @param minHoldLength minimum hold time in ms required for this input
+         */
 		public void addChild(InputType input, InputAction action, long minHoldLength) {
 			children.putIfAbsent(input, new InputNode(action, minHoldLength));
 		}
-		
+
+        /**
+         * Checks if there is no child node matching the specified input.
+         *
+         * @param input the input to check for child
+         * @return true if no child exists for input, false otherwise
+         */
 		public boolean noChild(InputType input) {
 			return !children.containsKey(input);
 		}
-		
+
+        /**
+         * Retrieves the child node corresponding to the specified input.
+         *
+         * @param input the input to get the child node for
+         * @return the child {@link InputNode}, or null if none exists
+         */
 		public InputNode getChild(InputType input) {
 			return children.get(input);
 		}

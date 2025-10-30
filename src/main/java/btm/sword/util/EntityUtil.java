@@ -11,7 +11,19 @@ import org.bukkit.util.Vector;
 
 import java.util.List;
 
+/**
+ * Utility class providing helpful static methods for operations on {@link Entity} objects
+ * and {@link SwordEntity} wrappers, particularly checking ground status and managing
+ * visual following behavior of item displays.
+ */
 public class EntityUtil {
+    /**
+     * Checks whether the specified {@link Entity} is currently on the ground.
+     * This method checks blocks slightly below the entity's location to determine if it stands on solid ground.
+     *
+     * @param entity the entity to check
+     * @return true if the entity is on ground, false otherwise
+     */
 	public static boolean isOnGround(Entity entity) {
 		double maxCheckDist = 0.3;
 		Location base = entity.getLocation().add(new Vector(0, -maxCheckDist, 0));
@@ -27,7 +39,21 @@ public class EntityUtil {
 		}
 		return false;
 	}
-	
+
+    /**
+     * Causes an {@link ItemDisplay} entity to follow a {@link SwordEntity} visually,
+     * maintaining a specified direction offset and height, with optional following of the entity's head yaw.
+     * The display is updated every 2 ticks asynchronously until either entity or display is dead or air.
+     * <p>
+     * Uses {@link DisplayUtil#line} and {@link DisplayUtil#smoothTeleport} to create particle trails and smooth motion.
+     * </p>
+     *
+     * @param entity the SwordEntity to follow
+     * @param itemDisplay the {@link ItemDisplay} to move to follow the entity
+     * @param direction the direction {@link Vector} offset relative to the entity
+     * @param heightOffset vertical height offset from the entity's location
+     * @param followHead whether to align the display's direction to the entity's head yaw instead of body yaw
+     */
 	public static void itemDisplayFollow(SwordEntity entity, ItemDisplay itemDisplay, Vector direction, double heightOffset, boolean followHead) {
 		Transformation orientation = itemDisplay.getTransformation();
 		Vector offset = VectorUtil.UP.clone().multiply(heightOffset);

@@ -15,8 +15,26 @@ import org.bukkit.event.player.*;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
 
+/**
+ * Handles all player input events and routes them through the {@link SwordPlayer}
+ * system for unified input handling and action evaluation.
+ * <p>
+ * This listener captures and interprets a wide range of Minecraft input actions —
+ * including attacks, right-clicks, drops, swaps, and sneaking — and delegates
+ * them to the internal {@link InputType}-based system used by the Sword plugin.
+ * </p>
+ */
 public class InputListener implements Listener {
-	
+    /**
+     * Handles standard attack inputs (left-clicking entities).
+     * <p>
+     * This event fires before the normal Bukkit {@code EntityDamageByEntityEvent}
+     * and is used to interpret left-clicks as input actions rather than vanilla attacks.
+     * If the {@link SwordPlayer} recognizes the item input, the vanilla attack is canceled.
+     * </p>
+     *
+     * @param event the {@link PrePlayerAttackEntityEvent} triggered before a player attacks an entity
+     */
 	@EventHandler
 	public void onNormalAttack(PrePlayerAttackEntityEvent event) {
 		SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId());
@@ -31,7 +49,17 @@ public class InputListener implements Listener {
 		
 		event.setCancelled(true);
 	}
-	
+
+    /**
+     * Handles general player interaction events (left and right clicks).
+     * <p>
+     * This includes both air and block interactions. The system distinguishes between
+     * left and right inputs, checks for contextual blocking (e.g., interacting with blocks),
+     * and routes actions through the {@link SwordPlayer#act(InputType)} pipeline.
+     * </p>
+     *
+     * @param event the {@link PlayerInteractEvent} triggered when a player interacts with air or a block
+     */
 	@EventHandler
 	public void onPlayerInteract(PlayerInteractEvent event) {
 		SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId());
@@ -67,6 +95,16 @@ public class InputListener implements Listener {
 		}
 	}
 
+    /**
+     * Handles interactions directly targeting entities (right-clicking them).
+     * <p>
+     * Marks the player as currently interacting with an entity to prevent duplicate
+     * actions and ensures right-clicks are correctly registered as {@link InputType#RIGHT}.
+     * The flag resets one tick later via a scheduled task.
+     * </p>
+     *
+     * @param event the {@link PlayerInteractEntityEvent} triggered when a player right-clicks an entity
+     */
     @EventHandler
     public void onPlayerEntityInteract(PlayerInteractEntityEvent event) {
         Sword.print("Interacted with entity");
@@ -95,21 +133,18 @@ public class InputListener implements Listener {
 
     @EventHandler
     public void onPlayerInteractAtEntity(PlayerInteractAtEntityEvent event) {
-//        SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId());
-//        ItemStack item = swordPlayer.getItemStackInHand(true);
-//
-//        if (swordPlayer.evaluateItemInput(item, InputType.RIGHT)) {
-//            event.setCancelled(true);
-//            return;
-//        }
-//        swordPlayer.act(InputType.RIGHT);
-//
-//        event.setCancelled(true);
-//
-//        event.getRightClicked();
-//        event.getClickedPosition();
+
     }
-	
+
+    /**
+     * Handles player item drops.
+     * <p>
+     * Interprets drop actions as potential inputs for the sword system (e.g., skill triggers).
+     * Sets a temporary flag to prevent misinterpretation as other actions.
+     * </p>
+     *
+     * @param event the {@link PlayerDropItemEvent} triggered when a player drops an item
+     */
 	@EventHandler
 	public void onPlayerDropEvent(PlayerDropItemEvent event) {
 		SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId());
@@ -132,7 +167,17 @@ public class InputListener implements Listener {
 			}
 		}.runTaskLater(Sword.getInstance(), 1);
 	}
-	
+
+    /**
+     * Handles player sneaking (shift key) actions.
+     * <p>
+     * When a player begins sneaking, this is interpreted as a {@link InputType#SHIFT}
+     * input and processed accordingly. When the player stops sneaking, the sneaking
+     * state is cleared via {@link SwordPlayer#endSneaking()}.
+     * </p>
+     *
+     * @param event the {@link PlayerToggleSneakEvent} triggered when a player toggles sneak state
+     */
 	@EventHandler
 	public void onSneakEvent(PlayerToggleSneakEvent event) {
 		SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId());
@@ -144,7 +189,16 @@ public class InputListener implements Listener {
 			swordPlayer.endSneaking();
 		}
 	}
-	
+
+    /**
+     * Handles swapping items between main hand and offhand.
+     * <p>
+     * Interprets hand-swapping as an {@link InputType#SWAP} action unless performed
+     * within an inventory. Prevents normal behavior if the action is recognized.
+     * </p>
+     *
+     * @param event the {@link PlayerSwapHandItemsEvent} triggered when a player presses the swap key
+     */
 	@EventHandler
 	public void onSwapEvent(PlayerSwapHandItemsEvent event) {
 		SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId());
@@ -158,7 +212,16 @@ public class InputListener implements Listener {
 			event.setCancelled(true);
 		}
 	}
-	
+
+    /**
+     * Handles hotbar item switching (scroll wheel or number key).
+     * <p>
+     * Temporarily flags the {@link SwordPlayer} as changing hand index to prevent
+     * conflicting inputs. Cancels ongoing throw actions and resets input trees if needed.
+     * </p>
+     *
+     * @param event the {@link PlayerItemHeldEvent} triggered when a player changes selected hotbar slot
+     */
 	@EventHandler
 	public void onChangeItemEvent(PlayerItemHeldEvent event) {
 		SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId());
@@ -172,6 +235,7 @@ public class InputListener implements Listener {
 			ThrowAction.throwCancel(swordPlayer);
 		}
 
+        // Runnable for quickly resetting this flag
         new BukkitRunnable() {
             @Override
             public void run() {
