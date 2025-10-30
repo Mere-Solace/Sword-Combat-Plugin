@@ -2,7 +2,6 @@ package btm.sword.system.input;
 
 import btm.sword.system.entity.Combatant;
 import btm.sword.system.entity.SwordPlayer;
-
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -17,22 +16,22 @@ import java.util.function.Predicate;
  */
 public class InputAction {
     /** The action to perform when executed, defined as a consumer of a Combatant. */
-	private final Consumer<Combatant> action;
+    private final Consumer<Combatant> action;
 
     /** Function to calculate the cooldown duration in milliseconds for this action, based on the executor. */
-	private final Function<Combatant, Long> cooldownCalculation;
+    private final Function<Combatant, Long> cooldownCalculation;
 
     /** Predicate that tests whether the executor is allowed to cast this ability at a given time. */
-	private final Predicate<Combatant> canCastAbility;
+    private final Predicate<Combatant> canCastAbility;
 
     /** Whether to display the remaining cooldown time to the player if action is on cooldown. */
-	private final boolean displayCooldown;
+    private final boolean displayCooldown;
 
     /** Whether to display a "disabled" effect/message if the action cannot be cast. */
-	private final boolean displayDisabled;
+    private final boolean displayDisabled;
 
     /** Timestamp in milliseconds when this action was last successfully executed. */
-	@lombok.Getter
+    @lombok.Getter
     private long timeLastExecuted = 0;
 
     /**
@@ -44,18 +43,18 @@ public class InputAction {
      * @param displayCooldown whether to visually show cooldown progress on failure
      * @param displayDisabled whether to visually indicate the ability is disabled on failure
      */
-	public InputAction(
-			Consumer<Combatant> action,
-			Function<Combatant, Long> cooldownCalculation,
-			Predicate<Combatant> canCastAbility,
-			boolean displayCooldown,
-			boolean displayDisabled) {
-		this.action = action;
-		this.cooldownCalculation = cooldownCalculation;
-		this.canCastAbility = canCastAbility;
-		this.displayCooldown = displayCooldown;
-		this.displayDisabled = displayDisabled;
-	}
+    public InputAction(
+            Consumer<Combatant> action,
+            Function<Combatant, Long> cooldownCalculation,
+            Predicate<Combatant> canCastAbility,
+            boolean displayCooldown,
+            boolean displayDisabled) {
+        this.action = action;
+        this.cooldownCalculation = cooldownCalculation;
+        this.canCastAbility = canCastAbility;
+        this.displayCooldown = displayCooldown;
+        this.displayDisabled = displayDisabled;
+    }
 
     /**
      * Attempts to execute this action by the specified {@link Combatant} executor.
@@ -65,27 +64,27 @@ public class InputAction {
      * @param executor the Combatant attempting to execute the action
      * @return true if action was executed, false otherwise
      */
-	public boolean execute(Combatant executor) {
-		long currentTime = System.currentTimeMillis();
-		long deltaTime = currentTime - getTimeLastExecuted();
-		long cooldown = calcCooldown(executor);
-		
-		if (deltaTime <= cooldown) {
-			if (displayCooldown)
-				((SwordPlayer) executor).displayCooldown(Math.max(0, cooldown - (currentTime - getTimeLastExecuted())));
-			return false;
-		}
-		if (canCast(executor)) {
-			action.accept(executor);
-			setTimeLastExecuted();
-			return true;
-		}
-		else {
-			if (displayDisabled)
-				((SwordPlayer) executor).displayDisablingEffect();
-			return false;
-		}
-	}
+    public boolean execute(Combatant executor) {
+        long currentTime = System.currentTimeMillis();
+        long deltaTime = currentTime - getTimeLastExecuted();
+        long cooldown = calcCooldown(executor);
+
+        if (deltaTime <= cooldown) {
+            if (displayCooldown)
+                ((SwordPlayer) executor).displayCooldown(Math.max(0, cooldown - (currentTime - getTimeLastExecuted())));
+            return false;
+        }
+        if (canCast(executor)) {
+            action.accept(executor);
+            setTimeLastExecuted();
+            return true;
+        }
+        else {
+            if (displayDisabled)
+                ((SwordPlayer) executor).displayDisablingEffect();
+            return false;
+        }
+    }
 
     /**
      * Calculates the cooldown duration in milliseconds for this action,
@@ -94,9 +93,9 @@ public class InputAction {
      * @param executor the Combatant executing the action
      * @return the cooldown duration in milliseconds
      */
-	public long calcCooldown(Combatant executor) {
-		return cooldownCalculation != null ? cooldownCalculation.apply(executor) : 0;
-	}
+    public long calcCooldown(Combatant executor) {
+        return cooldownCalculation != null ? cooldownCalculation.apply(executor) : 0;
+    }
 
     /**
      * Tests whether the executor meets the conditions to cast this ability.
@@ -105,14 +104,14 @@ public class InputAction {
      * @param executor the Combatant attempting to cast
      * @return true if casting is allowed, false otherwise
      */
-	public boolean canCast(Combatant executor) {
-		return canCastAbility == null || canCastAbility.test(executor);
-	}
+    public boolean canCast(Combatant executor) {
+        return canCastAbility == null || canCastAbility.test(executor);
+    }
 
     /**
      * Sets the timestamp when this action was last executed to the current time.
      */
     public void setTimeLastExecuted() {
-		timeLastExecuted = System.currentTimeMillis();
-	}
+        timeLastExecuted = System.currentTimeMillis();
+    }
 }

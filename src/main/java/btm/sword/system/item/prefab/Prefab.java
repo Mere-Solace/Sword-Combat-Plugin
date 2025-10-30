@@ -1,16 +1,15 @@
 package btm.sword.system.item.prefab;
 
 import btm.sword.system.item.ItemStackBuilder;
+import java.util.List;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 
-import java.util.List;
-
 public class Prefab {
-	public static ItemStack sword = new ItemStackBuilder(Material.DIAMOND_SWORD)
+    public static ItemStack sword = new ItemStackBuilder(Material.DIAMOND_SWORD)
             .name(Component.text("Masamune", TextColor.color(254,56,0), TextDecoration.BOLD))
             .lore(List.of(
                     Component.text().content("Veracity").color(TextColor.color(160,160,160)).build(),
@@ -22,7 +21,7 @@ public class Prefab {
             .baseDamage(35)
             .build();
 
-	public static ItemStack gun = new ItemStackBuilder(Material.IRON_SHOVEL)
+    public static ItemStack gun = new ItemStackBuilder(Material.IRON_SHOVEL)
             .name(Component.text("Gunblade", TextColor.color(0,174,200), TextDecoration.BOLD))
             .lore(List.of(
                     Component.text().content("Veracity").color(TextColor.color(160,160,160)).build(),

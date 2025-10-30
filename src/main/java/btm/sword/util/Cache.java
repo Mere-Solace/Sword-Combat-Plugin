@@ -1,12 +1,11 @@
 package btm.sword.util;
 
+import java.util.ArrayList;
+import java.util.List;
 import org.bukkit.Color;
 import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.util.Vector;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public class Cache {
     public static final List<Vector> basicSword1 = new ArrayList<>(List.of(

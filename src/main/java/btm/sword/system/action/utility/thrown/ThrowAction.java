@@ -43,31 +43,31 @@ public class ThrowAction extends SwordAction {
      *
      * @param executor The combatant beginning a throw action.
      */
-	public static void throwReady(Combatant executor) {
+    public static void throwReady(Combatant executor) {
         executor.setAttemptingThrow(true);
-		executor.setThrowCancelled(false);
-		executor.setThrowSuccessful(false);
-		
-		LivingEntity ex = executor.entity();
-		ItemDisplay display = (ItemDisplay) ex.getWorld().spawnEntity(ex.getEyeLocation(), EntityType.ITEM_DISPLAY);
-		display.setGlowing(true);
-		display.setGlowColorOverride(Color.fromRGB(255, 0, 15));
-		
-		ThrownItem thrownItem;
-		if (executor instanceof SwordPlayer sp && !sp.getItemStackInHand(true).isEmpty()) {
-			display.setItemStack(sp.getMainItemStackAtTimeOfHold());
+        executor.setThrowCancelled(false);
+        executor.setThrowSuccessful(false);
+
+        LivingEntity ex = executor.entity();
+        ItemDisplay display = (ItemDisplay) ex.getWorld().spawnEntity(ex.getEyeLocation(), EntityType.ITEM_DISPLAY);
+        display.setGlowing(true);
+        display.setGlowColorOverride(Color.fromRGB(255, 0, 15));
+
+        ThrownItem thrownItem;
+        if (executor instanceof SwordPlayer sp && !sp.getItemStackInHand(true).isEmpty()) {
+            display.setItemStack(sp.getMainItemStackAtTimeOfHold());
         }
-		else {
-			ItemStack main = executor.getItemStackInHand(true);
-			ItemStack off = executor.getItemStackInHand(false);
-			
-			display.setItemStack(main);
+        else {
+            ItemStack main = executor.getItemStackInHand(true);
+            ItemStack off = executor.getItemStackInHand(false);
+
+            display.setItemStack(main);
         }
         thrownItem = new ThrownItem(executor, display);
         executor.setThrownItem(thrownItem);
 
-		thrownItem.onReady();
-	}
+        thrownItem.onReady();
+    }
 
     /**
      * Cancels a throw action before it is released.
@@ -81,22 +81,22 @@ public class ThrowAction extends SwordAction {
      *
      * @param executor The combatant whose throw action is being canceled.
      */
-	public static void throwCancel(Combatant executor) {
+    public static void throwCancel(Combatant executor) {
         Sword.getInstance().getLogger().info("\nThrow was <CANCELED>\n");
-		executor.setAttemptingThrow(false);
-		executor.setThrowCancelled(true);
-		executor.setThrowSuccessful(false);
-		
-		if (executor instanceof SwordPlayer sp) {
-			sp.setItemAtIndex(sp.getMainHandItemStackDuringThrow(), sp.getThrownItemIndex());
-		}
-		else {
-			executor.setItemStackInHand(executor.getMainHandItemStackDuringThrow(), true);
-		}
-		executor.setItemStackInHand(executor.getOffHandItemStackDuringThrow(), false);
-		
-		executor.setThrownItem(null);
-	}
+        executor.setAttemptingThrow(false);
+        executor.setThrowCancelled(true);
+        executor.setThrowSuccessful(false);
+
+        if (executor instanceof SwordPlayer sp) {
+            sp.setItemAtIndex(sp.getMainHandItemStackDuringThrow(), sp.getThrownItemIndex());
+        }
+        else {
+            executor.setItemStackInHand(executor.getMainHandItemStackDuringThrow(), true);
+        }
+        executor.setItemStackInHand(executor.getOffHandItemStackDuringThrow(), false);
+
+        executor.setThrownItem(null);
+    }
 
     /**
      * Executes the final release of a throw after successful preparation.
@@ -110,18 +110,18 @@ public class ThrowAction extends SwordAction {
      *
      * @param executor The combatant performing the throw.
      */
-	public static void throwItem(Combatant executor) {
-		if (executor.isThrowCancelled()) return;
-		
-		executor.setAttemptingThrow(false);
-		executor.setThrowSuccessful(true);
-		
-		cast(executor, 10L, new BukkitRunnable() {
-			@Override
-			public void run() {
-				executor.getThrownItem().onRelease(2);
+    public static void throwItem(Combatant executor) {
+        if (executor.isThrowCancelled()) return;
+
+        executor.setAttemptingThrow(false);
+        executor.setThrowSuccessful(true);
+
+        cast(executor, 10L, new BukkitRunnable() {
+            @Override
+            public void run() {
+                executor.getThrownItem().onRelease(2);
 //				executor.setItemStackInHand(executor.getMainHandItemStackDuringThrow(), true);
-			}
-		});
-	}
+            }
+        });
+    }
 }
