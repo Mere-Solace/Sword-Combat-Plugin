@@ -37,6 +37,13 @@ dependencies {
 
     compileOnly 'org.projectlombok:lombok:1.18.34'
     annotationProcessor 'org.projectlombok:lombok:1.18.34'
+
+    // Testing dependencies
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.1'
+    testImplementation 'org.mockito:mockito-core:5.7.0'
+    testImplementation 'org.mockito:mockito-junit-jupiter:5.7.0'
+    testImplementation 'com.github.seeseemelk:MockBukkit-v1.20:3.9.0'
+    testImplementation("io.papermc.paper:paper-api:1.21-R0.1-SNAPSHOT")
 }
 
 tasks {
@@ -45,6 +52,16 @@ tasks {
         // This is the only required configuration besides applying the plugin.
         // Your plugin's jar (or shadowJar if present) will be used automatically.
         minecraftVersion("1.21")
+    }
+}
+
+// Configure test task to use JUnit Platform
+test {
+    useJUnitPlatform()
+    testLogging {
+        events "passed", "skipped", "failed"
+        exceptionFormat "full"
+        showStandardStreams = false
     }
 }
 
