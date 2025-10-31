@@ -24,7 +24,31 @@ import org.bukkit.util.Vector;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
+/**
+ * Development and testing utility for experimental attack visualizations.
+ * <p>
+ * This class contains test methods for prototyping attack animations, hitbox shapes,
+ * and visual effects using {@link BlockDisplay} entities. These methods are primarily
+ * used during development to visualize attack arcs, bezier curves, and timing.
+ * </p>
+ *
+ * <p><b>Warning:</b> This class is for internal testing and development only.
+ * Methods here may change frequently and are not intended for production use.</p>
+ *
+ * @see SwordAction
+ * @see BlockDisplay
+ */
 public class TestAction extends SwordAction {
+    /**
+     * Test method that creates a sweeping arc attack visualization using BlockDisplay entities.
+     * <p>
+     * Spawns a series of glowing sculk blocks in a semicircular arc pattern around the executor,
+     * each block scaling down over time before being removed. Useful for visualizing
+     * sweep attack hitboxes and timing.
+     * </p>
+     *
+     * @param executor the combatant executing the test attack
+     */
     public static void testAttack(Combatant executor) {
         LivingEntity ex = executor.entity();
         Location o = ex.getEyeLocation();
@@ -90,6 +114,17 @@ public class TestAction extends SwordAction {
         }
     }
 
+    /**
+     * Test method that visualizes a bezier curve attack path with BlockDisplay entities.
+     * <p>
+     * Generates a 3D cubic bezier curve representing an attack trajectory and spawns
+     * sculk block displays along the path. Each block is oriented along the curve direction
+     * and performs raytrace hit detection against living entities. This is useful for
+     * prototyping curved attack patterns and hitbox behavior.
+     * </p>
+     *
+     * @param executor the combatant executing the test attack
+     */
     public static void testAttack2(Combatant executor) {
         LivingEntity ex = executor.entity();
         Location o = ex.getEyeLocation();
@@ -164,6 +199,20 @@ public class TestAction extends SwordAction {
         }
     }
 
+    /**
+     * Test method for prototyping custom attack animation sequences.
+     * <p>
+     * This is a template/skeleton method for experimenting with custom attack
+     * choreography. It spawns BlockDisplay entities in sequence based on different
+     * cases, allowing developers to quickly iterate on attack timing, positioning,
+     * and visual effects.
+     * </p>
+     *
+     * <p><b>Note:</b> The switch statement is intentionally incomplete and serves
+     * as a starting point for custom attack development.</p>
+     *
+     * @param executor the combatant executing the test attack
+     */
     public static void testCustomAttack(Combatant executor) {
         LivingEntity ex = executor.entity();
         Location o = ex.getEyeLocation();

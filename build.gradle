@@ -161,12 +161,12 @@ task javadocCoverage {
                 def classDocumented = hasClassJavadoc.size() > 0
                 if (classDocumented) stats.documentedClasses++
 
-                // Count public methods
-                def methodMatches = (content =~ /(?m)^\s*public\s+(?!class|interface|enum)\S+\s+\w+\s*\(/)
+                // Count public methods (including static, final, synchronized, abstract)
+                def methodMatches = (content =~ /(?m)^\s*public\s+(?:static\s+|final\s+|synchronized\s+|abstract\s+)*(?!class|interface|enum)\S+\s+\w+\s*\(/)
                 def totalMethodsInClass = methodMatches.size()
 
-                // Count documented methods (/** */ before public method)
-                def docMethodMatches = (content =~ /\/\*\*[\s\S]*?\*\/\s*public\s+(?!class|interface|enum)\S+\s+\w+\s*\(/)
+                // Count documented methods (/** */ before public method, accounting for modifiers)
+                def docMethodMatches = (content =~ /\/\*\*[\s\S]*?\*\/\s*public\s+(?:static\s+|final\s+|synchronized\s+|abstract\s+)*(?!class|interface|enum)\S+\s+\w+\s*\(/)
                 def documentedMethodsInClass = docMethodMatches.size()
 
                 stats.totalMethods += totalMethodsInClass
