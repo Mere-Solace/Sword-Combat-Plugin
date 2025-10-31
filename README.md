@@ -9,7 +9,7 @@
     7. Rerun `java -jar server.jar`
 
 
-2. Download a paper server jar (for minecraft 1.21.8) from https://papermc.io/downloads/paper, and put it in your server directory.
+2. Download a paper server jar (for Minecraft 1.21.8) from https://papermc.io/downloads/paper, and put it in your server directory.
 
 
 3.  Install and/or update java, at least at version OpenJDK 21. Some systems may be defaulted to older versions of java, so ensure that you successfully set it to the appropriate version before continuing
