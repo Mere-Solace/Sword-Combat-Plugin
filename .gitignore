@@ -13,6 +13,24 @@ out/
 # JIRA plugin
 atlassian-ide-plugin.xml
 
+# VS Code
+.vscode/
+
+# Claude Code
+.claude/
+
+# Eclipse
+.classpath
+.project
+.settings/
+bin/
+
+# NetBeans
+nbproject/
+nbbuild/
+dist/
+nbdist/
+
 # Compiled class file
 *.class
 

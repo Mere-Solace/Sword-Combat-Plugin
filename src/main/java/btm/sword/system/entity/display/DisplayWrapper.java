@@ -1,20 +1,15 @@
 package btm.sword.system.entity.display;
 
-import btm.sword.system.SwordScheduler;
-import org.bukkit.entity.Display;
-import org.bukkit.scheduler.BukkitRunnable;
-import org.bukkit.util.Transformation;
-import org.joml.Vector3f;
-
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+import org.bukkit.entity.Display;
 
 public class DisplayWrapper {
-	private Display display;
-	
-	public DisplayWrapper() {}
-	
-	public void shrink(float rate, float threshold, Function<Integer, Integer> period, TimeUnit unit, int max, ShrinkType type) {
+    private Display display;
+
+    public DisplayWrapper() {}
+
+    public void shrink(float rate, float threshold, Function<Integer, Integer> period, TimeUnit unit, int max, ShrinkType type) {
 //		for
 //		SwordScheduler.runLater(new BukkitRunnable() {
 //			@Override
@@ -40,5 +35,5 @@ public class DisplayWrapper {
 //				}
 //			}
 //		}, period.apply(t), unit);
-	}
+    }
 }

@@ -2,8 +2,8 @@ package btm.sword.system.entity;
 
 import btm.sword.system.action.MovementAction;
 import btm.sword.system.action.utility.thrown.ThrownItem;
-import btm.sword.system.playerdata.CombatProfile;
 import btm.sword.system.entity.aspect.AspectType;
+import btm.sword.system.playerdata.CombatProfile;
 import btm.sword.util.Cache;
 import lombok.Getter;
 import lombok.Setter;
@@ -25,19 +25,19 @@ import org.bukkit.util.Vector;
 @Getter
 @Setter
 public abstract class Combatant extends SwordEntity {
-	private BukkitTask abilityCastTask = null;
-	
-	private int airDashesPerformed;
-	
-	private boolean isGrabbing = false;
-	private SwordEntity grabbedEntity;
-	
-	private ThrownItem thrownItem;
-	private ItemStack offHandItemStackDuringThrow;
-	private ItemStack mainHandItemStackDuringThrow;
-	private boolean attemptingThrow;
-	private boolean throwCancelled;
-	private boolean throwSuccessful;
+    private BukkitTask abilityCastTask = null;
+
+    private int airDashesPerformed;
+
+    private boolean isGrabbing = false;
+    private SwordEntity grabbedEntity;
+
+    private ThrownItem thrownItem;
+    private ItemStack offHandItemStackDuringThrow;
+    private ItemStack mainHandItemStackDuringThrow;
+    private boolean attemptingThrow;
+    private boolean throwCancelled;
+    private boolean throwSuccessful;
 
     /**
      * Constructs a new Combatant wrapping the given {@link LivingEntity}
@@ -46,19 +46,19 @@ public abstract class Combatant extends SwordEntity {
      * @param associatedEntity the Bukkit living entity to associate
      * @param combatProfile the combat profile defining combat stats and settings
      */
-	public Combatant(LivingEntity associatedEntity, CombatProfile combatProfile) {
-		super(associatedEntity, combatProfile);
-		airDashesPerformed = 0;
-	}
+    public Combatant(LivingEntity associatedEntity, CombatProfile combatProfile) {
+        super(associatedEntity, combatProfile);
+        airDashesPerformed = 0;
+    }
 
     /**
      * Sets the currently active ability cast task.
      *
      * @param abilityCastTask the BukkitTask representing the ability cast
      */
-	public void setCastTask(BukkitTask abilityCastTask) {
-		this.abilityCastTask = abilityCastTask;
-	}
+    public void setCastTask(BukkitTask abilityCastTask) {
+        this.abilityCastTask = abilityCastTask;
+    }
 
     /**
      * Initiates a grab action on the specified target {@link SwordEntity}.
@@ -66,47 +66,47 @@ public abstract class Combatant extends SwordEntity {
      *
      * @param target the SwordEntity that is being grabbed
      */
-	public void onGrab(SwordEntity target) {
-		LivingEntity t = target.entity();
-		setGrabbing(true);
-		target.setGrabbed(true);
-		setGrabbedEntity(target);
-		t.damage(0.25, self);
-		Cache.grabCloudParticle.display(t.getLocation().add(new Vector(0, 1, 0)));
-	}
+    public void onGrab(SwordEntity target) {
+        LivingEntity t = target.entity();
+        setGrabbing(true);
+        target.setGrabbed(true);
+        setGrabbedEntity(target);
+        t.damage(0.25, self);
+        Cache.grabCloudParticle.display(t.getLocation().add(new Vector(0, 1, 0)));
+    }
 
     /**
      * Releases the currently grabbed entity without further action.
      */
-	public void onGrabLetGo() {
-		isGrabbing = false;
-		grabbedEntity.setGrabbed(false);
-	}
+    public void onGrabLetGo() {
+        isGrabbing = false;
+        grabbedEntity.setGrabbed(false);
+    }
 
     /**
      * Throws the currently grabbed entity, applying movement and damage effects.
      * Resets grab state and calls {@link MovementAction#toss(Combatant, SwordEntity)}.
      */
-	public void onGrabThrow() {
-		onGrabHit();
-		
-		isGrabbing = false;
-		grabbedEntity.setGrabbed(false);
-		MovementAction.toss(this, grabbedEntity);
-	}
+    public void onGrabThrow() {
+        onGrabHit();
+
+        isGrabbing = false;
+        grabbedEntity.setGrabbed(false);
+        MovementAction.toss(this, grabbedEntity);
+    }
 
     /**
      * Performs the hit action during a grab, dealing a fixed amount of damage to the grabbed entity
      * and displaying associated particle effects.
      */
-	public void onGrabHit() {
-		LivingEntity target = grabbedEntity.entity();
-		Location hitLoc = target.getLocation().add(0, target.getEyeHeight()*0.5, 0);
-		Cache.grabHitParticle.display(hitLoc);
-		Cache.grabHitParticle2.display(hitLoc);
-		grabbedEntity.hit(this, 0, 0, 5, 15,
-				target.getEyeLocation().subtract(self.getEyeLocation()).toVector());
-	}
+    public void onGrabHit() {
+        LivingEntity target = grabbedEntity.entity();
+        Location hitLoc = target.getLocation().add(0, target.getEyeHeight()*0.5, 0);
+        Cache.grabHitParticle.display(hitLoc);
+        Cache.grabHitParticle2.display(hitLoc);
+        grabbedEntity.hit(this, 0, 0, 5, 15,
+                target.getEyeLocation().subtract(self.getEyeLocation()).toVector());
+    }
 
     /**
      * Checks if this combatant can perform an action.
@@ -117,9 +117,9 @@ public abstract class Combatant extends SwordEntity {
      *
      * @return true if able to perform actions, false otherwise
      */
-	public boolean canPerformAction() {
-		return abilityCastTask == null && !isGrabbing && !isGrabbed();
-	}
+    public boolean canPerformAction() {
+        return abilityCastTask == null && !isGrabbing && !isGrabbed();
+    }
 
     /**
      * Checks if this combatant can perform an air dash.
@@ -127,9 +127,9 @@ public abstract class Combatant extends SwordEntity {
      *
      * @return true if air dash is possible, false otherwise
      */
-	public boolean canAirDash() {
-		return canPerformAction() && getAirDashesPerformed() < getCombatProfile().getMaxAirDodges();
-	}
+    public boolean canAirDash() {
+        return canPerformAction() && getAirDashesPerformed() < getCombatProfile().getMaxAirDodges();
+    }
 
     /**
      * Checks if the combatant can perform a throw action.
@@ -154,16 +154,16 @@ public abstract class Combatant extends SwordEntity {
     /**
      * Resets the count of air dashes performed to zero.
      */
-	public void resetAirDashesPerformed() {
-		this.airDashesPerformed = 0;
-	}
+    public void resetAirDashesPerformed() {
+        this.airDashesPerformed = 0;
+    }
 
     /**
      * Increments the count of air dashes performed by one.
      */
-	public void increaseAirDashesPerformed() {
-		airDashesPerformed++;
-	}
+    public void increaseAirDashesPerformed() {
+        airDashesPerformed++;
+    }
 
     /**
      * Calculates an additive value for a stat based on an {@link AspectType}.
@@ -174,9 +174,9 @@ public abstract class Combatant extends SwordEntity {
      * @param multiplier multiplier applied to the aspect value before addition
      * @return the calculated additive value capped at max
      */
-	public double calcValueAdditive(AspectType stat, double max, double base, double multiplier) {
-		return Math.min(max, base + (multiplier * aspects.getAspectVal(stat)));
-	}
+    public double calcValueAdditive(AspectType stat, double max, double base, double multiplier) {
+        return Math.min(max, base + (multiplier * aspects.getAspectVal(stat)));
+    }
 
     /**
      * Calculates a reductive value for a stat based on an {@link AspectType}.
@@ -187,9 +187,9 @@ public abstract class Combatant extends SwordEntity {
      * @param multiplier multiplier applied to the aspect value before reduction
      * @return the calculated reductive value floored at min
      */
-	public double calcValueReductive(AspectType stat, double min, double base, double multiplier) {
-		return Math.max(min, base - (multiplier * aspects.getAspectVal(stat)));
-	}
+    public double calcValueReductive(AspectType stat, double min, double base, double multiplier) {
+        return Math.max(min, base - (multiplier * aspects.getAspectVal(stat)));
+    }
 
     /**
      * Calculates a cooldown duration in milliseconds based on an {@link AspectType}.
@@ -200,7 +200,7 @@ public abstract class Combatant extends SwordEntity {
      * @param multiplier multiplier applied to aspect value for reduction
      * @return the calculated cooldown duration floored at min
      */
-	public long calcCooldown(AspectType type, double min, double base, double multiplier) {
-		return (long) Math.max(min, base - (multiplier * aspects.getAspectVal(type)) );
-	}
+    public long calcCooldown(AspectType type, double min, double base, double multiplier) {
+        return (long) Math.max(min, base - (multiplier * aspects.getAspectVal(type)) );
+    }
 }

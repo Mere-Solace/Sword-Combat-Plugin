@@ -1,0 +1,94 @@
+<?xml version="1.0"?>
+<!DOCTYPE module PUBLIC
+    "-//Checkstyle//DTD Checkstyle Configuration 1.3//EN"
+    "https://checkstyle.org/dtds/configuration_1_3.dtd">
+
+<!--
+  Checkstyle configuration for Sword Combat Plugin
+  Focuses on catching common issues while remaining non-intrusive
+-->
+
+<module name="Checker">
+    <property name="charset" value="UTF-8"/>
+    <property name="severity" value="warning"/>
+    <property name="fileExtensions" value="java"/>
+
+    <!-- Checks for whitespace -->
+    <module name="FileTabCharacter">
+        <property name="eachLine" value="true"/>
+    </module>
+
+    <!-- Size violations (Checker level) -->
+    <module name="LineLength">
+        <property name="max" value="120"/>
+        <property name="severity" value="warning"/>
+    </module>
+
+    <module name="TreeWalker">
+        <!-- Checks for imports -->
+        <module name="UnusedImports">
+            <property name="processJavadoc" value="false"/>
+        </module>
+
+        <module name="RedundantImport"/>
+
+        <module name="AvoidStarImport">
+            <property name="severity" value="warning"/>
+            <property name="allowStaticMemberImports" value="true"/>
+        </module>
+
+        <!-- Checks for common coding problems -->
+        <module name="EmptyBlock">
+            <property name="severity" value="warning"/>
+        </module>
+
+        <module name="EmptyCatchBlock">
+            <property name="severity" value="warning"/>
+        </module>
+
+        <module name="MissingOverride"/>
+
+        <!-- Checks for class design -->
+        <module name="FinalClass"/>
+
+        <module name="HideUtilityClassConstructor"/>
+
+        <!-- Miscellaneous -->
+        <module name="ArrayTypeStyle"/>
+
+        <module name="UpperEll"/>
+
+        <!-- Javadoc comments -->
+        <module name="MissingJavadocType">
+            <property name="severity" value="info"/>
+            <property name="scope" value="public"/>
+        </module>
+
+        <module name="MissingJavadocMethod">
+            <property name="severity" value="info"/>
+            <property name="scope" value="public"/>
+        </module>
+
+        <!-- Naming conventions -->
+        <module name="ConstantName"/>
+        <module name="LocalFinalVariableName"/>
+        <module name="LocalVariableName"/>
+        <module name="MemberName"/>
+        <module name="MethodName"/>
+        <module name="PackageName"/>
+        <module name="ParameterName"/>
+        <module name="StaticVariableName"/>
+        <module name="TypeName"/>
+
+        <!-- Whitespace -->
+        <module name="EmptyForIteratorPad"/>
+        <module name="GenericWhitespace"/>
+        <module name="MethodParamPad"/>
+        <module name="NoWhitespaceAfter"/>
+        <module name="NoWhitespaceBefore"/>
+        <module name="ParenPad"/>
+        <module name="TypecastParenPad"/>
+        <module name="WhitespaceAfter"/>
+        <module name="WhitespaceAround"/>
+    </module>
+</module>
