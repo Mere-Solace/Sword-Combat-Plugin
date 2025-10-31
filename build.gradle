@@ -45,6 +45,13 @@ dependencies {
     testImplementation 'org.mockito:mockito-junit-jupiter:5.7.0'
     testImplementation 'com.github.seeseemelk:MockBukkit-v1.20:3.9.0'
     testImplementation("io.papermc.paper:paper-api:1.21-R0.1-SNAPSHOT")
+
+    // Force newer version of commons-lang3 to address CVE-2025-48924
+    constraints {
+        testImplementation('org.apache.commons:commons-lang3:3.17.0') {
+            because 'CVE-2025-48924: Vulnerability in commons-lang3:3.12.0'
+        }
+    }
 }
 
 tasks {
@@ -52,7 +59,7 @@ tasks {
         // Configure the Minecraft version for our task.
         // This is the only required configuration besides applying the plugin.
         // Your plugin's jar (or shadowJar if present) will be used automatically.
-        minecraftVersion("1.21")
+        minecraftVersion("1.21.8")
     }
 }
 
@@ -101,7 +108,7 @@ checkstyle {
     showViolations = true
 }
 
-tasks.withType(Checkstyle) {
+tasks.withType(Checkstyle).configureEach {
     reports {
         xml.required = true
         html.required = true
@@ -117,7 +124,7 @@ pmd {
     ruleSetFiles = files("${rootDir}/config/pmd/pmd-rules.xml")
 }
 
-tasks.withType(Pmd) {
+tasks.withType(Pmd).configureEach {
     reports {
         xml.required = true
         html.required = true
@@ -161,7 +168,7 @@ spotless {
 }
 
 // Javadoc coverage analysis task
-task javadocCoverage {
+tasks.register('javadocCoverage') {
     description = 'Generates a report showing Javadoc documentation coverage'
     group = 'documentation'
 
