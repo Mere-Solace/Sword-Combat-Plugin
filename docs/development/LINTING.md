@@ -9,10 +9,10 @@ This document describes all the linters and code quality tools available in the 
 ./gradlew check
 
 # Individual tools
-./gradlew checkstyleMain      # Java style checker
-./gradlew pmdMain              # Java bug detector
-./gradlew spotlessCheck        # Java + Markdown formatter (check only)
-./gradlew spotlessApply        # Java + Markdown formatter (auto-fix)
+./gradlew checkstyleMain # Java style checker
+./gradlew pmdMain        # Java bug detector
+./gradlew spotlessCheck  # Java + Markdown formatter (check only)
+./gradlew spotlessApply  # Java + Markdown formatter (auto-fix)
 ```
 
 ## Java Linters
