@@ -1,4 +1,6 @@
-name: sword
-version: '1.02'
+name: SwordCombatEvolved
+version: '${version}'
 main: btm.sword.Sword
 api-version: '1.21'
+description: Advanced combat system with throwing mechanics, combos, and RPG stats
+author: btm

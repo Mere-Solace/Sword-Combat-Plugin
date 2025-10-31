@@ -8,7 +8,7 @@ the project.
 ### Prerequisites
 
 - **Java 21** (OpenJDK recommended)
-- **IntelliJ IDEA** (recommended) or any Java IDE
+- **IntelliJ IDEA** (recommended) or **VSCode**
 - **Git** for version control
 
 ### Getting Started

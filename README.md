@@ -1,5 +1,11 @@
 # Sword Combat Plugin
 
+[![Paper](https://img.shields.io/badge/Paper-1.21+-00ADD8?style=for-the-badge&logo=minecraft)](https://papermc.io/)
+[![Java](https://img.shields.io/badge/Java-21+-orange?style=for-the-badge&logo=openjdk)](https://openjdk.org/)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue?style=for-the-badge)](LICENSE)
+[![Discord](https://img.shields.io/badge/Discord-Join-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/n5vty6m7)
+[![Build](https://img.shields.io/badge/Build-Gradle-02303A?style=for-the-badge&logo=gradle)](https://gradle.org/)
+
 An advanced Minecraft combat system featuring throwing mechanics, entity interactions, combo
 attacks, and RPG-style stats. Built for Paper 1.21+.
 
@@ -81,18 +87,18 @@ The plugin JAR will be at: `build/libs/Sword-1.0-SNAPSHOT.jar`
 
 ### Project Structure
 
-```
+```bash
 src/main/java/btm/sword/
-├── commands/         # Command handlers
-├── listeners/        # Event listeners
+├── commands/  # Command handlers
+├── listeners/ # Event listeners
 ├── system/
-│   ├── action/      # Combat actions and skills
-│   ├── combat/      # Combat mechanics (afflictions, etc.)
-│   ├── entity/      # Entity wrappers and AI
-│   ├── input/       # Input combo system
-│   ├── item/        # Custom item handling
-│   └── playerdata/  # Player data persistence
-└── util/            # Utility classes (vectors, bezier, etc.)
+│ ├── action/     # Combat actions and skills
+│ ├── combat/     # Combat mechanics (afflictions, etc.)
+│ ├── entity/     # Entity wrappers and AI
+│ ├── input/      # Input combo system
+│ ├── item/       # Custom item handling
+│ └── playerdata/ # Player data persistence
+└── util/         # Utility classes (vectors, bezier, etc.)
 ```
 
 ### Building

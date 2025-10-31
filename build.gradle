@@ -6,8 +6,9 @@ plugins {
     id 'xyz.jpenilla.run-paper' version '2.3.1'
 }
 
-group = 'btm'
-version = '1.0-SNAPSHOT'
+// Project metadata from gradle.properties
+group = project.property('group')
+version = project.property('version')
 
 repositories {
     mavenCentral()
