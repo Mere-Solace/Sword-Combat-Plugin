@@ -1,7 +1,7 @@
 # Sword Combat Plugin
 
-An advanced Minecraft combat system featuring throwing mechanics, entity interactions, combo attacks,
-and RPG-style stats. Built for Paper 1.21+.
+An advanced Minecraft combat system featuring throwing mechanics, entity interactions, combo
+attacks, and RPG-style stats. Built for Paper 1.21+.
 
 ## Features
 
@@ -41,10 +41,12 @@ The plugin JAR will be at: `build/libs/Sword-1.0-SNAPSHOT.jar`
 ### Manual Setup
 
 1. **Download Paper Server**
+
    - Get Paper 1.21+ from <https://papermc.io/downloads/paper>
    - Place in a server directory
 
 2. **Accept EULA**
+
    - Run the server jar once to generate `eula.txt`
    - Change `eula=false` to `eula=true`
 
@@ -55,6 +57,7 @@ The plugin JAR will be at: `build/libs/Sword-1.0-SNAPSHOT.jar`
    ```
 
 4. **Install Plugin**
+
    - Copy `build/libs/Sword-1.0-SNAPSHOT.jar` to `server/plugins/`
    - Start the server
 
@@ -64,15 +67,15 @@ The plugin JAR will be at: `build/libs/Sword-1.0-SNAPSHOT.jar`
 
 ## Controls
 
-| Action                     | Input                        | Description                                         |
-| -------------------------- | ---------------------------- | --------------------------------------------------- |
-| **Attack Combo**           | `Left → Left → Left`         | Three-hit attack combo                              |
-| **Throw Item**             | `Drop → Right → Hold Right`  | Throw non-consumable items                          |
-| **Grab Entity/Sword**      | `Shift → Left`               | Pull lodged sword or grab enemy                     |
-| **Throw Grabbed Entity**   | `Drop`                       | Hurl the grabbed entity                             |
-| **Dash Forward**           | `Swap Item → Swap Item`      | Quick forward dash                                  |
-| **Dash Backward**          | `Shift → Shift`              | Quick backward dash                                 |
-| **Dash to Thrown Sword**   | Dash while targeting sword   | Dash to lodged sword and retrieve it automatically  |
+| Action                   | Input                       | Description                                        |
+| ------------------------ | --------------------------- | -------------------------------------------------- |
+| **Attack Combo**         | `Left → Left → Left`        | Three-hit attack combo                             |
+| **Throw Item**           | `Drop → Right → Hold Right` | Throw non-consumable items                         |
+| **Grab Entity/Sword**    | `Shift → Left`              | Pull lodged sword or grab enemy                    |
+| **Throw Grabbed Entity** | `Drop`                      | Hurl the grabbed entity                            |
+| **Dash Forward**         | `Swap Item → Swap Item`     | Quick forward dash                                 |
+| **Dash Backward**        | `Shift → Shift`             | Quick backward dash                                |
+| **Dash to Thrown Sword** | Dash while targeting sword  | Dash to lodged sword and retrieve it automatically |
 
 ## Development
 
