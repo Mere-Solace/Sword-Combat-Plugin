@@ -4,7 +4,6 @@ import btm.sword.Sword;
 import btm.sword.system.action.utility.thrown.ThrowAction;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.SwordPlayer;
-
 import btm.sword.system.input.InputType;
 import btm.sword.util.InputUtil;
 import io.papermc.paper.event.player.PrePlayerAttackEntityEvent;
@@ -35,20 +34,20 @@ public class InputListener implements Listener {
      *
      * @param event the {@link PrePlayerAttackEntityEvent} triggered before a player attacks an entity
      */
-	@EventHandler
-	public void onNormalAttack(PrePlayerAttackEntityEvent event) {
-		SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId());
-		ItemStack item = swordPlayer.getItemStackInHand(true);
-		
-		if (swordPlayer.evaluateItemInput(item, InputType.LEFT)) {
-			event.setCancelled(true);
-			return;
-		}
-		
-		swordPlayer.act(InputType.LEFT);
-		
-		event.setCancelled(true);
-	}
+    @EventHandler
+    public void onNormalAttack(PrePlayerAttackEntityEvent event) {
+        SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId());
+        ItemStack item = swordPlayer.getItemStackInHand(true);
+
+        if (swordPlayer.evaluateItemInput(item, InputType.LEFT)) {
+            event.setCancelled(true);
+            return;
+        }
+
+        swordPlayer.act(InputType.LEFT);
+
+        event.setCancelled(true);
+    }
 
     /**
      * Handles general player interaction events (left and right clicks).
@@ -60,24 +59,24 @@ public class InputListener implements Listener {
      *
      * @param event the {@link PlayerInteractEvent} triggered when a player interacts with air or a block
      */
-	@EventHandler
-	public void onPlayerInteract(PlayerInteractEvent event) {
-		SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId());
-		ItemStack item = swordPlayer.getItemStackInHand(true);
-		
-		Action action = event.getAction();
-		
-		if (swordPlayer.hasPerformedDropAction()) return;
-		
-		if ((action == Action.LEFT_CLICK_AIR || action == Action.LEFT_CLICK_BLOCK)) {
-			if (swordPlayer.evaluateItemInput(item, InputType.LEFT)) {
-				event.setCancelled(true);
-				return;
-			}
-			swordPlayer.act(InputType.LEFT);
-		}
-		else if (action == Action.RIGHT_CLICK_AIR || action == Action.RIGHT_CLICK_BLOCK) {
-			if (swordPlayer.isInteractingWithEntity()) {
+    @EventHandler
+    public void onPlayerInteract(PlayerInteractEvent event) {
+        SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId());
+        ItemStack item = swordPlayer.getItemStackInHand(true);
+
+        Action action = event.getAction();
+
+        if (swordPlayer.hasPerformedDropAction()) return;
+
+        if ((action == Action.LEFT_CLICK_AIR || action == Action.LEFT_CLICK_BLOCK)) {
+            if (swordPlayer.evaluateItemInput(item, InputType.LEFT)) {
+                event.setCancelled(true);
+                return;
+            }
+            swordPlayer.act(InputType.LEFT);
+        }
+        else if (action == Action.RIGHT_CLICK_AIR || action == Action.RIGHT_CLICK_BLOCK) {
+            if (swordPlayer.isInteractingWithEntity()) {
                 return;
             }
 
@@ -88,12 +87,12 @@ public class InputListener implements Listener {
             }
 
             if (swordPlayer.evaluateItemInput(item, InputType.RIGHT)) {
-				event.setCancelled(true);
-				return;
-			}
-			swordPlayer.act(InputType.RIGHT);
-		}
-	}
+                event.setCancelled(true);
+                return;
+            }
+            swordPlayer.act(InputType.RIGHT);
+        }
+    }
 
     /**
      * Handles interactions directly targeting entities (right-clicking them).
@@ -145,28 +144,28 @@ public class InputListener implements Listener {
      *
      * @param event the {@link PlayerDropItemEvent} triggered when a player drops an item
      */
-	@EventHandler
-	public void onPlayerDropEvent(PlayerDropItemEvent event) {
-		SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId());
-		ItemStack item = swordPlayer.getItemStackInHand(true);
-		
-		swordPlayer.setPerformedDropAction(true);
-		
-		if (swordPlayer.evaluateItemInput(item, InputType.DROP)) {
-			event.setCancelled(true);
-		}
-		else if (!swordPlayer.isDroppingInInv()) {
-			swordPlayer.act(InputType.DROP);
-			event.setCancelled(true);
-		}
-		
-		new BukkitRunnable() {
-			@Override
-			public void run() {
-				swordPlayer.setPerformedDropAction(false);
-			}
-		}.runTaskLater(Sword.getInstance(), 1);
-	}
+    @EventHandler
+    public void onPlayerDropEvent(PlayerDropItemEvent event) {
+        SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId());
+        ItemStack item = swordPlayer.getItemStackInHand(true);
+
+        swordPlayer.setPerformedDropAction(true);
+
+        if (swordPlayer.evaluateItemInput(item, InputType.DROP)) {
+            event.setCancelled(true);
+        }
+        else if (!swordPlayer.isDroppingInInv()) {
+            swordPlayer.act(InputType.DROP);
+            event.setCancelled(true);
+        }
+
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                swordPlayer.setPerformedDropAction(false);
+            }
+        }.runTaskLater(Sword.getInstance(), 1);
+    }
 
     /**
      * Handles player sneaking (shift key) actions.
@@ -178,17 +177,17 @@ public class InputListener implements Listener {
      *
      * @param event the {@link PlayerToggleSneakEvent} triggered when a player toggles sneak state
      */
-	@EventHandler
-	public void onSneakEvent(PlayerToggleSneakEvent event) {
-		SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId());
-		
-		if (event.isSneaking()) {
-			swordPlayer.act(InputType.SHIFT);
-		}
-		else {
-			swordPlayer.endSneaking();
-		}
-	}
+    @EventHandler
+    public void onSneakEvent(PlayerToggleSneakEvent event) {
+        SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId());
+
+        if (event.isSneaking()) {
+            swordPlayer.act(InputType.SHIFT);
+        }
+        else {
+            swordPlayer.endSneaking();
+        }
+    }
 
     /**
      * Handles swapping items between main hand and offhand.
@@ -199,19 +198,19 @@ public class InputListener implements Listener {
      *
      * @param event the {@link PlayerSwapHandItemsEvent} triggered when a player presses the swap key
      */
-	@EventHandler
-	public void onSwapEvent(PlayerSwapHandItemsEvent event) {
-		SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId());
-		ItemStack item = swordPlayer.getItemStackInHand(true);
-		
-		if (swordPlayer.evaluateItemInput(item, InputType.SWAP)) {
-			event.setCancelled(true);
-		}
-		else if (!swordPlayer.isSwappingInInv()) {
-			swordPlayer.act(InputType.SWAP);
-			event.setCancelled(true);
-		}
-	}
+    @EventHandler
+    public void onSwapEvent(PlayerSwapHandItemsEvent event) {
+        SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId());
+        ItemStack item = swordPlayer.getItemStackInHand(true);
+
+        if (swordPlayer.evaluateItemInput(item, InputType.SWAP)) {
+            event.setCancelled(true);
+        }
+        else if (!swordPlayer.isSwappingInInv()) {
+            swordPlayer.act(InputType.SWAP);
+            event.setCancelled(true);
+        }
+    }
 
     /**
      * Handles hotbar item switching (scroll wheel or number key).
@@ -222,18 +221,18 @@ public class InputListener implements Listener {
      *
      * @param event the {@link PlayerItemHeldEvent} triggered when a player changes selected hotbar slot
      */
-	@EventHandler
-	public void onChangeItemEvent(PlayerItemHeldEvent event) {
-		SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId());
-		swordPlayer.setChangingHandIndex(true);
+    @EventHandler
+    public void onChangeItemEvent(PlayerItemHeldEvent event) {
+        SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId());
+        swordPlayer.setChangingHandIndex(true);
 
-		if (swordPlayer.inputReliantOnItem()) {
-			swordPlayer.resetTree();
-		}
-		
-		if (swordPlayer.isAttemptingThrow()) {
-			ThrowAction.throwCancel(swordPlayer);
-		}
+        if (swordPlayer.inputReliantOnItem()) {
+            swordPlayer.resetTree();
+        }
+
+        if (swordPlayer.isAttemptingThrow()) {
+            ThrowAction.throwCancel(swordPlayer);
+        }
 
         // Runnable for quickly resetting this flag
         new BukkitRunnable() {
@@ -242,5 +241,5 @@ public class InputListener implements Listener {
                 swordPlayer.setChangingHandIndex(false);
             }
         }.runTaskLater(Sword.getInstance(), 1);
-	}
+    }
 }

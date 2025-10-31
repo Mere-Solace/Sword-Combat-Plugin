@@ -10,10 +10,8 @@ import net.kyori.adventure.key.Key;
 import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
-import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.entity.HumanEntity;
-import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -23,13 +21,8 @@ import org.bukkit.event.inventory.*;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
-import org.bukkit.inventory.Inventory;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.scheduler.BukkitRunnable;
 import org.intellij.lang.annotations.Subst;
-import org.spigotmc.event.player.PlayerSpawnLocationEvent;
 
-import java.util.Objects;
 
 /**
  * Handles all player-related lifecycle and inventory events for the Sword plugin.
@@ -49,12 +42,12 @@ public class PlayerListener implements Listener {
      *
      * @param event the {@link PlayerJoinEvent} triggered when a player joins the server
      */
-	@EventHandler
-	public void onPlayerJoin(PlayerJoinEvent event) {
-		Player p = event.getPlayer();
-		SwordEntityArbiter.register(p);
-		p.sendMessage("Hello!");
-	}
+    @EventHandler
+    public void onPlayerJoin(PlayerJoinEvent event) {
+        Player p = event.getPlayer();
+        SwordEntityArbiter.register(p);
+        p.sendMessage("Hello!");
+    }
 
     /**
      * Handles when a player leaves the server.
@@ -66,14 +59,14 @@ public class PlayerListener implements Listener {
      *
      * @param event the {@link PlayerQuitEvent} triggered when a player quits the server
      */
-	@EventHandler
-	public void onPlayerLeave(PlayerQuitEvent event) {
+    @EventHandler
+    public void onPlayerLeave(PlayerQuitEvent event) {
         if (SwordEntityArbiter.get(event.getPlayer().getUniqueId()) instanceof SwordPlayer sp) {
             sp.onLeave();
             SwordEntityArbiter.remove(sp.getUniqueId());
             Sword.getInstance().getLogger().info(event.getPlayer().getName() + " has left the server ;(");
         }
-	}
+    }
 
     /**
      * Handles player death events.
@@ -84,10 +77,10 @@ public class PlayerListener implements Listener {
      *
      * @param event the {@link PlayerDeathEvent} triggered when a player dies
      */
-	@EventHandler
-	public void onPlayerDeath(PlayerDeathEvent event) {
+    @EventHandler
+    public void onPlayerDeath(PlayerDeathEvent event) {
 
-	}
+    }
 
     /**
      * Handles player respawn events.
@@ -98,12 +91,12 @@ public class PlayerListener implements Listener {
      *
      * @param event the {@link PlayerRespawnEvent} triggered when a player respawns
      */
-	@EventHandler
-	public void onPlayerRespawn(PlayerRespawnEvent event) {
-		SwordEntityArbiter.register(event.getPlayer());
-		SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId());
-		swordPlayer.onSpawn();
-	}
+    @EventHandler
+    public void onPlayerRespawn(PlayerRespawnEvent event) {
+        SwordEntityArbiter.register(event.getPlayer());
+        SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId());
+        swordPlayer.onSpawn();
+    }
 
     /**
      * Handles item pickup events.
@@ -114,12 +107,12 @@ public class PlayerListener implements Listener {
      *
      * @param event the {@link EntityPickupItemEvent} triggered when an entity attempts to pick up an item
      */
-	@EventHandler
-	public void onItemPickup(EntityPickupItemEvent event) {
-		SwordEntity e = SwordEntityArbiter.getOrAdd(event.getEntity().getUniqueId());
-		if (!e.isAbleToPickup())
-			event.setCancelled(true);
-	}
+    @EventHandler
+    public void onItemPickup(EntityPickupItemEvent event) {
+        SwordEntity e = SwordEntityArbiter.getOrAdd(event.getEntity().getUniqueId());
+        if (!e.isAbleToPickup())
+            event.setCancelled(true);
+    }
 
     /**
      * Handles general inventory events.
@@ -130,15 +123,15 @@ public class PlayerListener implements Listener {
      *
      * @param event the {@link InventoryEvent} triggered during any inventory interaction
      */
-	@EventHandler
-	public void inventoryEvent(InventoryEvent event) {
+    @EventHandler
+    public void inventoryEvent(InventoryEvent event) {
         // Testing
-		for (HumanEntity h : event.getViewers()) {
-			if (h instanceof Player) {
-				SwordEntityArbiter.get(h.getUniqueId()).message("getInventory(): " + event.getInventory() + "\n  getView(): " + event.getView());
-			}
-		}
-	}
+        for (HumanEntity h : event.getViewers()) {
+            if (h instanceof Player) {
+                SwordEntityArbiter.get(h.getUniqueId()).message("getInventory(): " + event.getInventory() + "\n  getView(): " + event.getView());
+            }
+        }
+    }
 
     /**
      * Handles inventory interaction events (clicks, drags, swaps, drops).
@@ -150,14 +143,14 @@ public class PlayerListener implements Listener {
      *
      * @param event the {@link InventoryClickEvent} triggered when a player interacts with an inventory slot
      */
-	@EventHandler
-	public void inventoryInteractEvent(InventoryClickEvent event) {
-		SwordPlayer sp = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getViewers().getFirst().getUniqueId());
-		
-		if (sp.handleInventoryInput(event)) {
-			event.setCancelled(true);
-		}
-		
+    @EventHandler
+    public void inventoryInteractEvent(InventoryClickEvent event) {
+        SwordPlayer sp = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getViewers().getFirst().getUniqueId());
+
+        if (sp.handleInventoryInput(event)) {
+            event.setCancelled(true);
+        }
+
 //		switch (clickType) {
 //			case SWAP_OFFHAND -> sp.setSwappingInInv();
 //			case DROP, CONTROL_DROP -> sp.setDroppingInInv();
@@ -213,7 +206,7 @@ public class PlayerListener implements Listener {
 //			}
 //			case PLACE_ALL, PLACE_SOME, PLACE_ONE -> sp.message("You placed something");
 //		}
-	}
+    }
 
     /**
      * Handles chat input events.
@@ -225,73 +218,73 @@ public class PlayerListener implements Listener {
      *
      * @param event the {@link AsyncChatEvent} triggered when a player sends a chat message
      */
-	@EventHandler
-	public void onMessage(AsyncChatEvent event) {
-		Player player = event.getPlayer();
-		
-		Component msg = event.message();
-		
-		String cleaned = PlainTextComponentSerializer.plainText().serialize(msg).trim();
-		
-		Sword.getInstance().getLogger().info("Chat input: " + cleaned);
-		
-		if (cleaned.startsWith("sound")) {
-			if (cleaned.startsWith("soundTest ")) {
-				UtilityAction.soundTest(
-						(Combatant) SwordEntityArbiter.getOrAdd(player.getUniqueId()),
-						Integer.parseInt(cleaned.split(" ")[1])
-				);
-				player.sendMessage(Component.text("§cSound test started at index " + cleaned.split(" ")[1]));
-				return;
-			}
-			String[] parts = cleaned.split("\\s+");
-			if (parts.length >= 2) {
-				@Subst("king.phylum.classy") String soundKey = parts[1];
-				float volume = 1f;
-				float pitch = 1f;
-				if (parts.length >= 3) {
-					volume = Float.parseFloat(parts[2]);
-				}
-				if (parts.length >= 4) {
-					pitch = Float.parseFloat(parts[3]);
-				}
-				Sound sound = Sound.sound(
-						Key.key(soundKey),
-						Sound.Source.PLAYER,
-						volume,
-						pitch
-				);
-				player.playSound(sound);
-				player.sendMessage("§aPlayed sound: " + soundKey);
-				event.setCancelled(true);
-			}
-		}
-		else if (cleaned.startsWith("particle ")) {
-			String[] parts = cleaned.split("\\s+");
-			if (parts.length >= 2) {
-				String particleKey = parts[1];
-				int count = 10;
-				if (parts.length >= 3) {
-					count = Integer.parseInt(parts[2]);
-				}
-				try {
-					Particle particle = Particle.valueOf(particleKey.toUpperCase());
-					player.getWorld().spawnParticle(
-							particle,
-							player.getLocation().add(0, 1, 0),
-							count
-					);
-					player.sendMessage("§bDisplayed particle: " + particleKey);
-				} catch (IllegalArgumentException ex) {
-					player.sendMessage("§cUnknown particle: " + particleKey);
-				}
-				event.setCancelled(true);
-			}
-		}
-		else if (cleaned.startsWith("give")) {
-			SwordEntityArbiter.getOrAdd(player.getUniqueId()).giveItem(Prefab.sword);
-		}
-	}
+    @EventHandler
+    public void onMessage(AsyncChatEvent event) {
+        Player player = event.getPlayer();
+
+        Component msg = event.message();
+
+        String cleaned = PlainTextComponentSerializer.plainText().serialize(msg).trim();
+
+        Sword.getInstance().getLogger().info("Chat input: " + cleaned);
+
+        if (cleaned.startsWith("sound")) {
+            if (cleaned.startsWith("soundTest ")) {
+                UtilityAction.soundTest(
+                        (Combatant) SwordEntityArbiter.getOrAdd(player.getUniqueId()),
+                        Integer.parseInt(cleaned.split(" ")[1])
+                );
+                player.sendMessage(Component.text("§cSound test started at index " + cleaned.split(" ")[1]));
+                return;
+            }
+            String[] parts = cleaned.split("\\s+");
+            if (parts.length >= 2) {
+                @Subst("king.phylum.classy") String soundKey = parts[1];
+                float volume = 1f;
+                float pitch = 1f;
+                if (parts.length >= 3) {
+                    volume = Float.parseFloat(parts[2]);
+                }
+                if (parts.length >= 4) {
+                    pitch = Float.parseFloat(parts[3]);
+                }
+                Sound sound = Sound.sound(
+                        Key.key(soundKey),
+                        Sound.Source.PLAYER,
+                        volume,
+                        pitch
+                );
+                player.playSound(sound);
+                player.sendMessage("§aPlayed sound: " + soundKey);
+                event.setCancelled(true);
+            }
+        }
+        else if (cleaned.startsWith("particle ")) {
+            String[] parts = cleaned.split("\\s+");
+            if (parts.length >= 2) {
+                String particleKey = parts[1];
+                int count = 10;
+                if (parts.length >= 3) {
+                    count = Integer.parseInt(parts[2]);
+                }
+                try {
+                    Particle particle = Particle.valueOf(particleKey.toUpperCase());
+                    player.getWorld().spawnParticle(
+                            particle,
+                            player.getLocation().add(0, 1, 0),
+                            count
+                    );
+                    player.sendMessage("§bDisplayed particle: " + particleKey);
+                } catch (IllegalArgumentException ex) {
+                    player.sendMessage("§cUnknown particle: " + particleKey);
+                }
+                event.setCancelled(true);
+            }
+        }
+        else if (cleaned.startsWith("give")) {
+            SwordEntityArbiter.getOrAdd(player.getUniqueId()).giveItem(Prefab.sword);
+        }
+    }
 
     /**
      * Handles player shield disable events.

@@ -9,29 +9,29 @@ import org.bukkit.scheduler.BukkitScheduler;
 import org.bukkit.scheduler.BukkitTask;
 
 public abstract class SwordAction {
-	protected static final BukkitScheduler s = Bukkit.getScheduler();
-	protected static final Plugin plugin = Sword.getInstance();
-	
-	// cast allows each sword action method to cast itself, setting the current ability (cast) task
-	// of the executor, thus not allowing the executor to cast other abilities during this time.
-	//
-	// After the cast duration, the ability task of the executor is set to null, and then only the runnable
-	// itself may cancel its operations internally.
-	//
-	// abilities may still be canceled internally before the cast runnable is up, though.
-	protected static void cast(Combatant executor, long castDuration, Runnable action) {
-		BukkitTask castTask = s.runTask(plugin, action);
-		
-		if (castDuration <= 0) return;
-		
-		executor.setCastTask(castTask);
-		new BukkitRunnable() {
-			@Override
-			public void run() {
-				if (executor.getAbilityCastTask() != null) {
-					executor.setCastTask(null);
-				}
-			}
-		}.runTaskLater(plugin, castDuration);
-	}
+    protected static final BukkitScheduler s = Bukkit.getScheduler();
+    protected static final Plugin plugin = Sword.getInstance();
+
+    // cast allows each sword action method to cast itself, setting the current ability (cast) task
+    // of the executor, thus not allowing the executor to cast other abilities during this time.
+    //
+    // After the cast duration, the ability task of the executor is set to null, and then only the runnable
+    // itself may cancel its operations internally.
+    //
+    // abilities may still be canceled internally before the cast runnable is up, though.
+    protected static void cast(Combatant executor, long castDuration, Runnable action) {
+        BukkitTask castTask = s.runTask(plugin, action);
+
+        if (castDuration <= 0) return;
+
+        executor.setCastTask(castTask);
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                if (executor.getAbilityCastTask() != null) {
+                    executor.setCastTask(null);
+                }
+            }
+        }.runTaskLater(plugin, castDuration);
+    }
 }
