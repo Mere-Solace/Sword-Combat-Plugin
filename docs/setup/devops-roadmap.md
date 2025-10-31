@@ -1,6 +1,7 @@
 # DevOps Roadmap
 
-This document outlines the infrastructure and tooling improvements being implemented to support the project's growth.
+This document outlines the infrastructure and tooling improvements being implemented to support the
+project's growth.
 
 ## Philosophy
 
@@ -19,7 +20,8 @@ This document outlines the infrastructure and tooling improvements being impleme
 
 ### 🔄 In Review (GitHub Issues Created)
 
-- [ ] [#19](https://github.com/Mere-Solace/Sword-Combat-Plugin/issues/19) - Documentation structure review
+- [ ] [#19](https://github.com/Mere-Solace/Sword-Combat-Plugin/issues/19) - Documentation structure
+      review
 - [ ] [#20](https://github.com/Mere-Solace/Sword-Combat-Plugin/issues/20) - Gradle wrapper approval
 - [ ] [#21](https://github.com/Mere-Solace/Sword-Combat-Plugin/issues/21) - Automated linting setup
 
@@ -129,4 +131,4 @@ This document outlines the infrastructure and tooling improvements being impleme
 
 ---
 
-*Last Updated: 2025-10-30*
+_Last Updated: 2025-10-30_

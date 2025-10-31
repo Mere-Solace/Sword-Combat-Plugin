@@ -1,8 +1,6 @@
 # ADR 001: Gradle Wrapper Files in Repository
 
-**Status**: Proposed
-**Date**: 2025-10-30
-**Authors**: Chris R., Mere Solace
+**Status**: Proposed **Date**: 2025-10-30 **Authors**: Chris R., Mere Solace
 
 ## Context
 
@@ -23,10 +21,14 @@ We need to decide whether to commit these files to the repository.
 
 ### Advantages
 
-1. **Gradle Version Consistency**: Ensures all developers and CI/CD systems use the exact same Gradle version (8.8)
-2. **Zero Dependencies**: New contributors can build the project immediately with `./gradlew build` without installing Gradle
-3. **CI/CD Compatibility**: GitHub Actions and other CI systems can build without pre-installed Gradle
-4. **Industry Standard**: This is the recommended practice by Gradle and most open-source Java projects
+1. **Gradle Version Consistency**: Ensures all developers and CI/CD systems use the exact same
+   Gradle version (8.8)
+2. **Zero Dependencies**: New contributors can build the project immediately with `./gradlew build`
+   without installing Gradle
+3. **CI/CD Compatibility**: GitHub Actions and other CI systems can build without pre-installed
+   Gradle
+4. **Industry Standard**: This is the recommended practice by Gradle and most open-source Java
+   projects
 5. **Version Control**: Gradle version changes are tracked in git history
 
 ### Trade-offs
@@ -36,7 +38,8 @@ We need to decide whether to commit these files to the repository.
 
 ### Alternatives Considered
 
-- **Not committing the wrapper**: Would require all contributors to install Gradle manually, reducing accessibility
+- **Not committing the wrapper**: Would require all contributors to install Gradle manually,
+  reducing accessibility
 
 ## Consequences
 

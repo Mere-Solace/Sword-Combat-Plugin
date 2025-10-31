@@ -76,7 +76,7 @@ Generated from Javadoc comments using `./gradlew javadoc`
 
 - Use GitHub Flavored Markdown
 - Headers: Use `#` for titles, `##` for sections, `###` for subsections
-- Code blocks: Always specify language (```java,```bash, etc.)
+- Code blocks: Always specify language (`java,`bash, etc.)
 - Links: Use descriptive text, not raw URLs
 
 ## Comments in Code

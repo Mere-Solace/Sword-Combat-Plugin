@@ -1,23 +1,28 @@
 # Owner Issues - Documentation Enhancement
 
-All existing issues from the repository owner have been enhanced with detailed technical documentation, implementation guidance, and appropriate labels.
+All existing issues from the repository owner have been enhanced with detailed technical
+documentation, implementation guidance, and appropriate labels.
 
 ## Issues Enhanced (7 Total)
 
 ### Issue 2: Add InvUI as a dependency and remove old inventory interaction code
+
 - **Labels Added**: refactor
 - **Documentation**: Implementation steps, affected files, testing checklist, benefits analysis
 - **Technical Details**: Dependency already present, refactoring strategy, InvUI API usage
 - **Related**: Issue 5
 
 ### Issue 5: Clean up interaction logic and improve robustness
+
 - **Labels Added**: refactor
-- **Documentation**: Problem analysis, proposed solution (Drop -> RightClick -> RightClickHold), implementation phases
+- **Documentation**: Problem analysis, proposed solution (Drop -> RightClick -> RightClickHold),
+  implementation phases
 - **Technical Details**: State machine approach, configuration options, edge case handling
 - **Code Examples**: Input sequence detection pseudocode
 - **Related**: Issue 2
 
 ### Issue 12: File Structure and Class Structure R&D
+
 - **Labels Added**: architecture, refactor
 - **Documentation**: Current structure analysis, proposed improvements, research tasks
 - **Package Reorganization**: Detailed proposals for action/, entity/, util/ packages
@@ -25,6 +30,7 @@ All existing issues from the repository owner have been enhanced with detailed t
 - **Success Metrics**: Defined measurable outcomes
 
 ### Issue 13: Research how to get Displays to be perfectly locked to an entity
+
 - **Labels Added**: research
 - **Documentation**: Passenger system approach, transformation matrices, teleport duration
 - **Technical Details**: Bukkit API usage, JOML transformation examples
@@ -33,6 +39,7 @@ All existing issues from the repository owner have been enhanced with detailed t
 - **Related**: Issues 14, 18
 
 ### Issue 14: Display name, health, and toughness status above SwordEntities
+
 - **Labels**: enhancement (existing)
 - **Documentation**: Complete TextDisplay implementation example, visual mockups
 - **Technical Details**: Billboard modes, color coding, update strategies
@@ -42,6 +49,7 @@ All existing issues from the repository owner have been enhanced with detailed t
 - **Related**: Issue 13
 
 ### Issue 15: Thrown Item Marker
+
 - **Labels**: enhancement (existing)
 - **Documentation**: Trajectory calculation physics, visual marker options
 - **Technical Details**: ItemDisplay vs Particles vs BlockDisplay approaches
@@ -51,6 +59,7 @@ All existing issues from the repository owner have been enhanced with detailed t
 - **Edge Cases**: Water, bouncing, void handling
 
 ### Issue 18: ItemDisplay Attack Animation
+
 - **Labels Added**: research
 - **Documentation**: Monster Hunter combat analysis, attack phase breakdown
 - **Technical Details**: ItemDisplay trails, swing arc calculations, particle layering
@@ -62,10 +71,12 @@ All existing issues from the repository owner have been enhanced with detailed t
 ## New Labels Created
 
 1. **refactor** (Color: E99695)
+
    - Code restructuring without changing functionality
    - Applied to: Issues 2, 5, 12
 
 2. **architecture** (Color: 5319E7)
+
    - System design and structure decisions
    - Applied to: Issue 12
 
@@ -76,6 +87,7 @@ All existing issues from the repository owner have been enhanced with detailed t
 ## Documentation Patterns Used
 
 ### Standard Structure for Each Issue
+
 1. **Problem Analysis** - Clear problem statement
 2. **Technical Approach** - Implementation strategy
 3. **Code Examples** - Working code snippets
@@ -105,14 +117,18 @@ Issue 24 (Unused Fields) -> Issue 18 (Animation - may use those fields)
 ## Owner Action Items
 
 ### No Immediate Action Required
+
 All documentation is additive and supportive. The owner can:
+
 - Review enhanced documentation at their convenience
 - Use code examples as implementation starting points
 - Reference technical details when working on features
 - Ignore if focused on other priorities
 
 ### When Ready to Implement
+
 Each issue now contains:
+
 - Step-by-step implementation guides
 - Code examples to copy/adapt
 - Configuration templates
@@ -131,16 +147,17 @@ Each issue now contains:
 ## Next Steps
 
 ### For Owner
+
 - Issues are now self-documenting
 - Can implement features with provided guidance
 - Technical decisions already researched
 
 ### For DevOps
+
 - Continue supporting with implementation when requested
 - Keep documentation updated as features evolve
 - Add more examples based on feedback
 
 ---
 
-Last Updated: 2025-10-30
-Documentation by: Chris R. (iAmGiG)
+Last Updated: 2025-10-30 Documentation by: Chris R. (iAmGiG)

@@ -126,7 +126,8 @@ View report: `docs/reports/javadoc-coverage-baseline.md`
 ./gradlew build
 ```
 
-Note: PMD violations are informational only and won't block your commit. Review the report and fix what makes sense for your changes.
+Note: PMD violations are informational only and won't block your commit. Review the report and fix
+what makes sense for your changes.
 
 ### Pre-commit Hook (Optional)
 
@@ -164,8 +165,8 @@ Make executable: `chmod +x .git/hooks/pre-commit`
 
 ```json
 {
-    "editor.formatOnSave": true,
-    "java.format.settings.url": "config/checkstyle/checkstyle.xml"
+  "editor.formatOnSave": true,
+  "java.format.settings.url": "config/checkstyle/checkstyle.xml"
 }
 ```
 
@@ -183,8 +184,8 @@ Every push and PR triggers:
 ### PR Comments
 
 If formatting issues detected, bot comments:
-> Code formatting issues detected!
-> Run `./gradlew spotlessApply` to auto-fix formatting issues.
+
+> Code formatting issues detected! Run `./gradlew spotlessApply` to auto-fix formatting issues.
 
 ### View Reports
 
@@ -267,8 +268,7 @@ Common fixes applied:
 
 ### Spotless fails to apply
 
-**Issue:** Encoding errors
-**Fix:** Ensure UTF-8 encoding
+**Issue:** Encoding errors **Fix:** Ensure UTF-8 encoding
 
 ### Checkstyle reports too many issues
 

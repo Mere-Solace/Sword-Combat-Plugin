@@ -1,6 +1,7 @@
 # Contributing to Sword Combat Plugin
 
-Thank you for your interest in contributing! This document provides guidelines for contributing to the project.
+Thank you for your interest in contributing! This document provides guidelines for contributing to
+the project.
 
 ## Development Setup
 
@@ -48,6 +49,7 @@ Thank you for your interest in contributing! This document provides guidelines f
 5. **Test your changes**: Verify in a test server
 
 **Note on PMD warnings:** PMD may report unused variables or fields. These are informational only:
+
 - If you're actively developing, you can ignore warnings about variables you plan to use
 - Add `// TODO:` comments to suppress warnings on work-in-progress code
 - Fix obvious issues (truly unused variables) when convenient
@@ -123,18 +125,22 @@ Docs: Documentation changes
 
 ```markdown
 ## Description
+
 Brief description of changes
 
 ## Type of Change
+
 - [ ] Bug fix
 - [ ] New feature
 - [ ] Enhancement
 - [ ] Documentation
 
 ## Testing
+
 How were these changes tested?
 
 ## Checklist
+
 - [ ] Code builds without errors
 - [ ] Added/updated Javadoc
 - [ ] Tested in game
@@ -143,7 +149,8 @@ How were these changes tested?
 
 ## Architecture Decisions
 
-Significant technical decisions are documented in `docs/decisions/` as Architecture Decision Records (ADRs).
+Significant technical decisions are documented in `docs/decisions/` as Architecture Decision Records
+(ADRs).
 
 Before making major architectural changes:
 
@@ -155,16 +162,16 @@ Before making major architectural changes:
 
 ```bash
 Sword-Combat-Plugin/
-├── docs/               # Project documentation
-│   ├── decisions/      # Architecture Decision Records
-│   ├── setup/          # Setup guides
-│   └── standards/      # Code and doc standards
+├── docs/        # Project documentation
+│ ├── decisions/ # Architecture Decision Records
+│ ├── setup/     # Setup guides
+│ └── standards/ # Code and doc standards
 ├── src/
-│   └── main/
-│       ├── java/       # Plugin source code
-│       └── resources/  # Plugin resources
-├── build.gradle        # Build configuration
-└── CONTRIBUTING.md     # This file
+│ └── main/
+│ ├── java/         # Plugin source code
+│ └── resources/    # Plugin resources
+├── build.gradle    # Build configuration
+└── CONTRIBUTING.md # This file
 ```
 
 ## Getting Help

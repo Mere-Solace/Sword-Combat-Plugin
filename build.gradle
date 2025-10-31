@@ -142,6 +142,21 @@ spotless {
         // Optional: Use Google Java Format or Palantir
         // googleJavaFormat()
     }
+
+    // Markdown formatting
+    format 'markdown', {
+        target '**/*.md'
+        targetExclude 'build/**', '.gradle/**', 'gradlew.bat'
+
+        // Prettier for markdown formatting
+        prettier(['prettier': '2.8.8', 'prettier-plugin-sh': '0.12.8'])
+            .config([
+                'parser': 'markdown',
+                'printWidth': 100,
+                'proseWrap': 'always',
+                'tabWidth': 2
+            ])
+    }
 }
 
 // Javadoc coverage analysis task

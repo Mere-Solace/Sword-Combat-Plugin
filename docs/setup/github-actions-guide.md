@@ -1,6 +1,7 @@
 # GitHub Actions CI/CD Guide
 
-The project automatically runs code quality checks on every push and pull request using GitHub Actions.
+The project automatically runs code quality checks on every push and pull request using GitHub
+Actions.
 
 ## What Gets Checked Automatically
 
@@ -34,8 +35,7 @@ The workflow runs on:
 2. See status: Success, Failure, or In Progress
 3. Click "build-and-check" job to see details
 
-**Step 3: View Step Details**
-Each step shows:
+**Step 3: View Step Details** Each step shows:
 
 - Build with Gradle
 - Run Checkstyle
@@ -56,8 +56,7 @@ Each step shows:
 - Red X: Checks failed
 - Yellow dot: Checks running
 
-**Automatic Comments**
-If formatting issues detected, bot posts:
+**Automatic Comments** If formatting issues detected, bot posts:
 
 ```
 Code formatting issues detected!
@@ -88,9 +87,9 @@ Clones the repository
 - name: Set up JDK 21
   uses: actions/setup-java@v4
   with:
-    java-version: '21'
-    distribution: 'microsoft'
-    cache: 'gradle'
+    java-version: "21"
+    distribution: "microsoft"
+    cache: "gradle"
 ```
 
 Installs Java and caches Gradle dependencies for speed
@@ -221,8 +220,7 @@ Shows real-time status of latest workflow run.
 2. Open `main.html`
 3. See specific violations
 
-**Fix:**
-Most issues auto-fixable with `./gradlew spotlessApply`
+**Fix:** Most issues auto-fixable with `./gradlew spotlessApply`
 
 ### Spotless Fails
 
@@ -291,7 +289,7 @@ strategy:
 Already enabled for Gradle dependencies:
 
 ```yaml
-cache: 'gradle'
+cache: "gradle"
 ```
 
 Speeds up builds by 30-50%.
@@ -303,7 +301,7 @@ Run nightly:
 ```yaml
 on:
   schedule:
-    - cron: '0 0 * * *'
+    - cron: "0 0 * * *"
 ```
 
 ## Related Documentation
@@ -340,5 +338,4 @@ on:
 
 ---
 
-Last Updated: 2025-10-30
-Workflow Status: Active and Running
+Last Updated: 2025-10-30 Workflow Status: Active and Running

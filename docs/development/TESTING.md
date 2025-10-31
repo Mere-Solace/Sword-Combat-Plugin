@@ -3,6 +3,7 @@
 This document describes the testing strategy and practices for the Sword Combat Plugin.
 
 ## Table of Contents
+
 - [Overview](#overview)
 - [Testing Framework](#testing-framework)
 - [Running Tests](#running-tests)
@@ -13,20 +14,25 @@ This document describes the testing strategy and practices for the Sword Combat 
 
 ## Overview
 
-The Sword Combat Plugin uses **JUnit 5** for unit testing and **MockBukkit** for mocking Minecraft/Paper APIs. Testing is essential for:
+The Sword Combat Plugin uses **JUnit 5** for unit testing and **MockBukkit** for mocking
+Minecraft/Paper APIs. Testing is essential for:
+
 - Preventing regressions when refactoring
 - Documenting expected behavior
 - Validating combat calculations
 - Ensuring plugin reliability
 
 ### Current Coverage
+
 As of the initial testing setup, we have:
+
 - ✅ **VectorUtil** - 26/27 tests passing (geometric calculations)
 - ✅ **BezierUtil** - 12/12 tests passing (curve generation)
 
 ## Testing Framework
 
 ### Dependencies
+
 ```groovy
 dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.1'
@@ -38,6 +44,7 @@ dependencies {
 ```
 
 ### Test Structure
+
 ```
 src/
 ├── main/
@@ -58,28 +65,35 @@ src/
 ## Running Tests
 
 ### Run All Tests
+
 ```bash
 ./gradlew test
 ```
 
 ### Run Specific Test Class
+
 ```bash
 ./gradlew test --tests btm.sword.util.VectorUtilTest
 ```
 
 ### Run Specific Test Method
+
 ```bash
 ./gradlew test --tests btm.sword.util.VectorUtilTest.testGetPitchHorizontal
 ```
 
 ### View Test Reports
+
 After running tests, open the HTML report at:
+
 ```
 build/reports/tests/test/index.html
 ```
 
 ### Test Output
+
 The test task is configured to show:
+
 - ✅ Passed tests
 - ⏭️ Skipped tests
 - ❌ Failed tests
@@ -88,6 +102,7 @@ The test task is configured to show:
 ## Writing Tests
 
 ### Test Class Template
+
 ```java
 package btm.sword.util;
 
@@ -120,9 +135,11 @@ class YourClassTest {
 ### Naming Conventions
 
 **Test Classes**: `<ClassName>Test.java`
+
 - Example: `VectorUtil.java` → `VectorUtilTest.java`
 
 **Test Methods**: `test<WhatIsBeingTested>()`
+
 - Example: `testGetPitchHorizontal()`
 - Use `@DisplayName` for readable descriptions
 
@@ -148,6 +165,7 @@ assertThrows(IllegalArgumentException.class, () -> {
 ```
 
 ### Floating-Point Comparisons
+
 Always use epsilon for floating-point comparisons:
 
 ```java
@@ -165,16 +183,19 @@ void testVectorLength() {
 ### Test Categories
 
 **1. Pure Utility Tests** (No Minecraft dependencies)
+
 - Math utilities (VectorUtil, BezierUtil)
 - Data structures
 - Algorithms
 
 **2. Mock-Based Tests** (Uses MockBukkit)
+
 - Combat calculations
 - Player state management
 - Entity interactions
 
 **3. Integration Tests** (Future)
+
 - Full plugin behavior
 - Command execution
 - Event handling
@@ -182,6 +203,7 @@ void testVectorLength() {
 ### Test Data Organization
 
 For complex test data, consider using:
+
 - **@BeforeEach** - Setup method that runs before each test
 - **@AfterEach** - Cleanup method that runs after each test
 - **Test fixtures** - Helper methods to create test objects
@@ -270,20 +292,25 @@ void testBezierAtMultipleT(double t) {
 
 ### 1. VectorUtil.getBasis() Test Failure
 
-**Issue**: The `testGetBasisStraightUp()` test fails because `VectorUtil.getBasis()` calls `Cache.testObsidianTearParticle.display()`, which requires a running Bukkit server.
+**Issue**: The `testGetBasisStraightUp()` test fails because `VectorUtil.getBasis()` calls
+`Cache.testObsidianTearParticle.display()`, which requires a running Bukkit server.
 
 **Why It Fails**:
+
 ```java
 // In VectorUtil.java line 20
 Cache.testObsidianTearParticle.display(origin.clone().add(ref));
 ```
 
 This is a debug/visualization call embedded in a utility method, causing:
+
 - `NullPointerException: Cannot invoke "org.bukkit.Server.createBlockData(...)"`
 
-**Workaround**: This test is currently expected to fail. It documents a code smell that should be addressed in the architectural refactor (see Issue #42).
+**Workaround**: This test is currently expected to fail. It documents a code smell that should be
+addressed in the architectural refactor (see Issue #42).
 
 **Proper Fix** (Future): Remove side effects from VectorUtil:
+
 ```java
 // Instead of displaying particles in the utility method,
 // return the debug info and let the caller decide to display it
@@ -296,6 +323,7 @@ public static BasisResult getBasis(Location origin, Vector dir) {
 ### 2. MockBukkit Limitations
 
 MockBukkit doesn't support all Paper/Spigot features. Some advanced features may require:
+
 - Partial mocking
 - Custom mock implementations
 - Integration tests on a real test server
@@ -303,6 +331,7 @@ MockBukkit doesn't support all Paper/Spigot features. Some advanced features may
 ## Best Practices
 
 ### ✅ DO:
+
 - Write tests for all new pure utility methods
 - Test edge cases and boundary conditions
 - Use descriptive test names and `@DisplayName`
@@ -311,6 +340,7 @@ MockBukkit doesn't support all Paper/Spigot features. Some advanced features may
 - Mock external dependencies (Bukkit APIs)
 
 ### ❌ DON'T:
+
 - Test private methods directly (test through public API)
 - Write tests that depend on execution order
 - Hardcode magic numbers without explanation
@@ -327,6 +357,7 @@ MockBukkit doesn't support all Paper/Spigot features. Some advanced features may
 ## Contributing Tests
 
 When contributing tests:
+
 1. Follow the existing patterns in `VectorUtilTest` and `BezierUtilTest`
 2. Ensure tests are deterministic (no randomness, unless testing random behavior)
 3. Include both positive and negative test cases
@@ -344,4 +375,4 @@ When contributing tests:
 
 ---
 
-*"Tests are the programmer's safety net"* - Let's keep our code reliable and maintainable!
+_"Tests are the programmer's safety net"_ - Let's keep our code reliable and maintainable!

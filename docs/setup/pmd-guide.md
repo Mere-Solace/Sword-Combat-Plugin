@@ -1,6 +1,7 @@
 # PMD Static Analysis Guide
 
-PMD is a source code analyzer that detects common programming flaws like unused variables, empty catch blocks, and potential bugs.
+PMD is a source code analyzer that detects common programming flaws like unused variables, empty
+catch blocks, and potential bugs.
 
 ## Philosophy: Developer-Friendly Analysis
 
@@ -14,6 +15,7 @@ This project uses PMD with a **non-blocking, informational approach**:
 ### Why This Approach?
 
 **Development Reality:**
+
 ```java
 // Developer writes this FIRST (planning ahead):
 Player player = event.getPlayer();
@@ -25,6 +27,7 @@ World world = loc.getWorld();         // "Unused" right now
 ```
 
 If we blocked on unused variables, developers would need to:
+
 - Write code in perfect order (can't scaffold)
 - Remove/re-add variables multiple times
 - Lose flow state constantly
@@ -35,31 +38,35 @@ If we blocked on unused variables, developers would need to:
 
 ### Priority Levels
 
-| Priority | Severity | Action Required |
-|----------|----------|----------------|
-| 1 | Critical | Fix ASAP - likely causes bugs |
-| 2 | High | Should fix - potential issues |
-| 3 | Medium | Review and fix if appropriate |
-| 4 | Low | FYI only - fix if convenient |
-| 5 | Info | Suggestions, ignore if preferred |
+| Priority | Severity | Action Required                  |
+| -------- | -------- | -------------------------------- |
+| 1        | Critical | Fix ASAP - likely causes bugs    |
+| 2        | High     | Should fix - potential issues    |
+| 3        | Medium   | Review and fix if appropriate    |
+| 4        | Low      | FYI only - fix if convenient     |
+| 5        | Info     | Suggestions, ignore if preferred |
 
 ### Rules Configured
 
 #### Unused Code (Low Priority)
+
 - **UnusedLocalVariable** (P4) - Local variables declared but never used
 - **UnusedPrivateField** (P3) - Private fields that are never read
 - **UnusedPrivateMethod** (P3) - Private methods never called
 - **UnusedFormalParameter** (P4) - Method parameters not used (often required by interfaces)
 
 #### Potential Bugs (High Priority)
+
 - **EmptyCatchBlock** (P2) - Catch blocks with no error handling
 - **OverrideBothEqualsAndHashcode** (P1) - Override one but not the other
 - **AvoidBranchingStatementAsLastInLoop** (P3) - Break/continue at end of loop
 
 #### Performance (Low Priority)
+
 - **UseStringBufferForStringAppends** (P4) - Use StringBuilder in loops
 
 #### Documentation (Low Priority)
+
 - **UncommentedEmptyMethodBody** (P4) - Empty methods should explain why
 
 ## Usage
@@ -179,7 +186,7 @@ PMD runs automatically on every push and PR:
 ```yaml
 - name: Run PMD analysis
   run: ./gradlew pmdMain --no-daemon
-  continue-on-error: true  # Never blocks
+  continue-on-error: true # Never blocks
 ```
 
 Reports are uploaded as artifacts for review.
@@ -197,12 +204,14 @@ All are informational - none block development.
 ## Best Practices
 
 ### Do:
+
 - Review PMD reports periodically
 - Fix obvious issues (truly unused variables)
 - Add TODO comments for planned code
 - Use suppression for intentional cases
 
 ### Don't:
+
 - Obsess over every violation
 - Remove variables you're actively working with
 - Block PRs based on PMD warnings
@@ -229,22 +238,21 @@ Edit rules in `config/pmd/pmd-rules.xml`:
 
 ## FAQ
 
-**Q: Will PMD block my commits?**
-A: No, PMD is configured with `ignoreFailures = true` and never blocks builds.
+**Q: Will PMD block my commits?** A: No, PMD is configured with `ignoreFailures = true` and never
+blocks builds.
 
-**Q: Should I fix all PMD violations before committing?**
-A: No, fix what makes sense for your changes. Violations are informational.
+**Q: Should I fix all PMD violations before committing?** A: No, fix what makes sense for your
+changes. Violations are informational.
 
-**Q: What if PMD flags code I'm actively working on?**
-A: Add a `// TODO:` comment or ignore it until your implementation is complete.
+**Q: What if PMD flags code I'm actively working on?** A: Add a `// TODO:` comment or ignore it
+until your implementation is complete.
 
-**Q: Can I disable PMD?**
-A: Yes, but it provides valuable feedback. Consider reviewing reports even if you don't fix everything.
+**Q: Can I disable PMD?** A: Yes, but it provides valuable feedback. Consider reviewing reports even
+if you don't fix everything.
 
-**Q: How is PMD different from Checkstyle?**
-A: Checkstyle checks style (formatting, naming). PMD checks logic (unused code, bugs). Both are complementary.
+**Q: How is PMD different from Checkstyle?** A: Checkstyle checks style (formatting, naming). PMD
+checks logic (unused code, bugs). Both are complementary.
 
 ---
 
-Last Updated: 2025-10-30
-PMD Version: 7.0.0
+Last Updated: 2025-10-30 PMD Version: 7.0.0
