@@ -1,61 +1,55 @@
-# Sword Combat Plugin
-### Expanded Minecraft Combat Capabilities: Throwing Swords, Entities, and Non-Consumable Items
+## Installation for Linux
+1. If you do not already have a server directory, follow these instructions, if you do skip to step 2.
+    1.  Open your Minecraft launcher
+    2. Select or create an installation of version 1.21.8.
+    3. Within the edit screen, above the "Version" section you should see a download option for your server, download it, and create a new directory where you want to store your server directory. I recommend naming it the version itself (i.e. "1.21.8") for good organization.
+    4. Place `server.jar` within this new directory
+    5. Open this directory in your terminal, and run `java -jar server.jar`
+    6. Edit `eula.txt` and edit `eula=false` to `eula=true`
+    7. Rerun `java -jar server.jar`
 
 
-## To test this plugin
-**(Assuming you are using a Windows Machine. Otherwise, some steps and commands will be different)**
-
-1 - Download a paper server jar (for minecraft 1.20.8) from https://papermc.io/downloads/paper
-
-2 - Double click the jar - this will start the setup for your local server
-
-3 - find 'eula.txt' in the same directory as the jar file. In the eula.txt, change 'eula=false' to 'eula=true'
-
-4 - Clone the repo
-
-5 - Open the project in IntelliJ > File > Project Strucuture > Artifacts > + > JAR > From Modules with Dependencies > OK
-
-6 - Add the paper-plugin.yml to the output path of the jar by clicking the + (above the .jar output), choose File, and then navigate to the paper-plugin.yml and click Open
-
-7 - Click Apply, and then go to Build > Build Artifacts > Press Enter
-
-8 - In your 'out' directory, go to artifacts, and copy the absolute output path of the .jar file.
-
-9 - With the output path of your plugin in your clipboard, create a start.txt file in your paper server directory, open it, and paste the following:
-  ```
-  copy "*Paste your clipboard here*" "*Path to your server directory*\plugins\Sword.jar"
-  
-  @echo off
-  
-  java -Xms4096M -Xmx4096M -jar paper-1.21.8-60.jar nogui
-  
-  pause
-  ```
-  Then save the start.txt as start.bat 
-
-10 - Run the start.bat file (you may nav to the server folder and execute the command ```./start.bat```)
-
-11 - Join the Server after launching minecraft by either 
-
-  - Using Direct Connect with address ```0```
-  - Adding a new server, also with address ```0``` and selecting that server
+2. Download a paper server jar (for minecraft 1.21.8) from https://papermc.io/downloads/paper, and put it in your server directory.
 
 
-The in game controls are currently:
-| **Action**                    | **Input**                   | **Description / Notes**                                                                                               |
-| ----------------------------- | --------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| **Throw Item**                | `Drop → Right → Hold Right` | Throws a non-consumable or interactable item.                                                                         |
-| **Attack**                    | `Left → Left → Left`        | Executes a combo of three consecutive attacks.                                                                        |
-| **Grab Lodged Sword / Enemy** | `Shift → Left`              | Pulls a lodged sword from the ground or grabs an entity.                                                              |
-| **Throw a grabbed entity**    | `Drop`                      | Hurls the grabbed entity.                                                                                             |
-| **Dash Forward**              | `Swap Item → Swap Item`     | Performs a quick forward dash.                                                                                        |
-| **Dash Backward**             | `Shift → Shift`             | Performs a quick backward dash. <br> Dashing while targeting a lodged sword causes you to dash to it and pull it out. |
+3.  Install and/or update java, at least at version OpenJDK 21. Some systems may be defaulted to older versions of java, so ensure that you successfully set it to the appropriate version before continuing
 
 
-Enjoy testing this combat system!
+4. Run `java -jar {downloaded paper file}`
 
-## Current Work
 
-This is a work in progress, with many features & ideas yet to be implemented. 
+5. Install IntelliJ onto your system if you do not already have it
 
-I encourage collaboration, tips, ideas, or code improvements, you may contact me through discord: https://discord.gg/n5vty6m7
+
+6. Inside of IntelliJ, clone the repository at this link: https://github.com/Mere-Solace/Sword-Combat-Plugin
+
+
+7. After cloning, in IntelliJ, navigate: File > Project Structure > Artifacts > + > JAR > From Modules with Dependencies > OK
+
+
+8. Click '+' above the .jar's output section, and click 'File', now navigate inside of the repo to 'Sword-Combat-Plugin/src/resources/paper-plugin.yml' and press 'OK'.
+
+
+9. Click apply
+
+
+10. Now click the icon with three bars, navigate to Build > Build Artifacts, and then press enter.
+
+
+11. Inside of IntelliJ, look inside of the Sword-Combat-Plugin's directory. Inside of this directory navigate to `out/artifacts/sword_jar`. Right click sword.jar and select Copy Path/Reference, and select Absolute Path
+
+
+12. Enter a terminal inside of your server's directory and do:
+    1. `touch start.bash`
+    2. Enter `start.bash` in a text editor, Vim is recommended but anything works.
+```
+#!/bin/bash
+cp {paste-here} {path to your server directory}/plugins/sword.jar
+java -Xms4096M -Xmx4096M -jar paper-1.21.8-60.jar --nogui
+```
+
+
+13. Go ahead and make it executable by running `chmod +x start.bash`
+
+
+14. You can now initiate your server with the sword plugin at any time by running `./start.bash`, which can be connected to by direct connecting to an address of `0` 
