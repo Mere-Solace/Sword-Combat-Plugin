@@ -72,7 +72,7 @@ The plugin JAR will be at: `build/libs/Sword-1.0-SNAPSHOT.jar`
 | **Attack Combo**         | `Left → Left → Left`        | Three-hit attack combo                             |
 | **Throw Item**           | `Drop → Right → Hold Right` | Throw non-consumable items                         |
 | **Grab Entity/Sword**    | `Shift → Left`              | Pull lodged sword or grab enemy                    |
-| **Throw Grabbed Entity** | `Drop`                      | Hurl the grabbed entity                            |
+| **Throw Grabbed Entity** | `Swap Item`                 | Hurl the grabbed entity                            |
 | **Dash Forward**         | `Swap Item → Swap Item`     | Quick forward dash                                 |
 | **Dash Backward**        | `Shift → Shift`             | Quick backward dash                                |
 | **Dash to Thrown Sword** | Dash while targeting sword  | Dash to lodged sword and retrieve it automatically |

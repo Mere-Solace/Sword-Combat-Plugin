@@ -557,6 +557,7 @@ public class ThrownItem {
      * Used after hitting entities or ending its trajectory naturally.
      */
     public void disposeNaturally() {
+        Location dropLoc = hitEntity != null ? hitEntity.entity().getLocation() : display.getLocation();
         Item dropped = hitEntity.entity().getWorld().dropItemNaturally(hitEntity.entity().getLocation(), display.getItemStack());
         new BukkitRunnable() {
             @Override
