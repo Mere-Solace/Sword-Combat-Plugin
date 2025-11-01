@@ -1,11 +1,12 @@
-package btm.sword.system.entity;
+package btm.sword.system.entity.base;
 
 import btm.sword.Sword;
 import btm.sword.system.combat.Affliction;
+import btm.sword.system.entity.types.Combatant;
 import btm.sword.system.playerdata.CombatProfile;
-import btm.sword.util.Cache;
-import btm.sword.util.EntityUtil;
-import btm.sword.util.SoundUtil;
+import btm.sword.util.display.Prefab;
+import btm.sword.util.entity.EntityUtil;
+import btm.sword.util.sound.SoundUtil;
 import btm.sword.util.sound.SoundType;
 import java.util.HashMap;
 import java.util.Objects;
@@ -241,11 +242,11 @@ public abstract class SwordEntity {
             hit = true;
         this.hitInvulnerableTickDuration = hitInvulnerableTickDuration;
 
-        Cache.testHitParticle.display(getChestLocation());
+        Prefab.Particles.TEST_HIT.display(getChestLocation());
         SoundUtil.playSound(source.entity(), SoundType.ENTITY_PLAYER_ATTACK_STRONG, 0.9f, 1f);
 
         if (aspects.toughness().remove(baseToughnessDamage) && !toughnessBroken) {
-            Cache.toughnessBreakParticle1.display(getChestLocation());
+            Prefab.Particles.TOUGH_BREAK_1.display(getChestLocation());
             onToughnessBroken();
             self.playHurtAnimation(0);
 //			self.damage(0.01);
@@ -320,8 +321,8 @@ public abstract class SwordEntity {
                     aspects.toughness().setEffPeriodPercent(1f);
                     toughnessBroken = false;
                     Location c = getChestLocation();
-                    Cache.toughnessRechargeParticle.display(c);
-                    Cache.toughnessRechargeParticle2.display(c);
+                    Prefab.Particles.TOUGH_RECHARGE_1.display(c);
+                    Prefab.Particles.TOUGH_RECHARGE_2.display(c);
                     cancel();
                 }
             }
@@ -391,7 +392,7 @@ public abstract class SwordEntity {
                     if (dropped.isDead()) {
                         cancel();
                     }
-                    Cache.thrownItemMarkerParticle2.display(dropped.getLocation());
+                    Prefab.Particles.DOPPED_ITEM_MARKER.display(dropped.getLocation());
                 }
             }.runTaskTimer(Sword.getInstance(), 0L, 5L);
         }

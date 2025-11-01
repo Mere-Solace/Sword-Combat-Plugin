@@ -3,7 +3,10 @@ package btm.sword.listeners;
 import btm.sword.Sword;
 import btm.sword.system.action.utility.UtilityAction;
 import btm.sword.system.entity.*;
-import btm.sword.system.item.prefab.Prefab;
+import btm.sword.system.entity.base.SwordEntity;
+import btm.sword.system.entity.types.Combatant;
+import btm.sword.system.entity.types.SwordPlayer;
+import btm.sword.system.item.prefab.ItemLibrary;
 import io.papermc.paper.event.player.AsyncChatEvent;
 import io.papermc.paper.event.player.PlayerShieldDisableEvent;
 import net.kyori.adventure.key.Key;
@@ -282,7 +285,7 @@ public class PlayerListener implements Listener {
             }
         }
         else if (cleaned.startsWith("give")) {
-            SwordEntityArbiter.getOrAdd(player.getUniqueId()).giveItem(Prefab.sword);
+            SwordEntityArbiter.getOrAdd(player.getUniqueId()).giveItem(ItemLibrary.sword);
         }
     }
 

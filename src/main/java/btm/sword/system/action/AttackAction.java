@@ -3,14 +3,20 @@ package btm.sword.system.action;
 import btm.sword.Sword;
 import btm.sword.system.action.type.AttackType;
 import btm.sword.system.combat.Affliction;
-import btm.sword.system.entity.Combatant;
-import btm.sword.system.entity.SwordEntity;
+import btm.sword.system.entity.types.Combatant;
+import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.SwordEntityArbiter;
-import btm.sword.system.entity.SwordPlayer;
+import btm.sword.system.entity.types.SwordPlayer;
 import btm.sword.system.entity.aspect.AspectType;
-import btm.sword.util.*;
+import btm.sword.util.display.ParticleWrapper;
+import btm.sword.util.display.Prefab;
+import btm.sword.util.entity.HitboxUtil;
+import btm.sword.util.math.BezierUtil;
+import btm.sword.util.math.VectorUtil;
 import btm.sword.util.sound.SoundType;
 import java.util.*;
+
+import btm.sword.util.sound.SoundUtil;
 import org.apache.logging.log4j.util.BiConsumer;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -158,26 +164,26 @@ public class AttackAction extends SwordAction {
                     switch (type) {
                         case BASIC_2 -> {
                             rangeMultiplier = 1.4;
-                            controlVectors = new ArrayList<>(Cache.basicSword2);
+                            controlVectors = new ArrayList<>(Prefab.ControlVectors.SLASH2);
                         }
                         case BASIC_3 -> {
                             rangeMultiplier = 1.4;
-                            controlVectors = new ArrayList<>(Cache.basicSword3);
+                            controlVectors = new ArrayList<>(Prefab.ControlVectors.SLASH3);
                         }
                         case N_AIR -> {
                             rangeMultiplier = 1.3;
-                            controlVectors = new ArrayList<>(Cache.aerialNeutralSword);
+                            controlVectors = new ArrayList<>(Prefab.ControlVectors.N_AIR_SLASH);
                             aerial = true;
                         }
                         case DOWN_AIR -> {
                             rangeMultiplier = 1.2;
-                            controlVectors = new ArrayList<>(Cache.aerialSwordDown);
+                            controlVectors = new ArrayList<>(Prefab.ControlVectors.D_AIR_SLASH);
                             withPitch = false;
                             aerial = true;
                         }
                         default -> {
                             rangeMultiplier = 1.4;
-                            controlVectors = new ArrayList<>(Cache.basicSword1);
+                            controlVectors = new ArrayList<>(Prefab.ControlVectors.SLASH1);
                         }
                     }
 
@@ -228,33 +234,33 @@ public class AttackAction extends SwordAction {
                                 Vector n = v.clone().normalize();
                                 Location l = o.clone().add(v);
 
-                                Cache.testSwingParticle.display(l);
+                                Prefab.Particles.TEST_SWING.display(l);
 
                                 if (s > size * (0.1)) {
                                     Location p = l.clone().subtract(v.clone().multiply(0.05 * ((double) s / (size))).add(n.multiply(0.2)));
-                                    Cache.testSwingParticle.display(p);
+                                    Prefab.Particles.TEST_SWING.display(p);
                                 }
                                 if (s > size * (0.3)) {
                                     Location p = l.clone().subtract(v.clone().multiply(0.25 * ((double) s / (size))).add(n.multiply(2)));
-                                    Cache.testSwingParticle.display(p);
+                                    Prefab.Particles.TEST_SWING.display(p);
                                 }
                                 if (s > size * (0.5)) {
                                     Location p = l.clone().subtract(v.clone().multiply(0.1 * ((double) s / (size))).add(n.multiply(0.5)));
-                                    Cache.testSwingParticle.display(p);
+                                    Prefab.Particles.TEST_SWING.display(p);
                                     Location p2 = l.clone().subtract(v.clone().multiply(0.25 * ((double) s / (size))).add(n.multiply(1.75)));
-                                    Cache.testSwingParticle.display(p2);
+                                    Prefab.Particles.TEST_SWING.display(p2);
                                 }
                                 if (s > size * (0.625)) {
                                     Location p = l.clone().subtract(v.clone().multiply(0.05 * ((double) s / (size))).add(n.multiply(2.5)));
-                                    Cache.testSwingParticle.display(p);
+                                    Prefab.Particles.TEST_SWING.display(p);
                                     Location p2 = l.clone().subtract(v.clone().multiply(0.05 * ((double) s / (size))).add(n.multiply(1.5)));
-                                    Cache.testSwingParticle.display(p2);
+                                    Prefab.Particles.TEST_SWING.display(p2);
                                 }
                                 if (s > size * (0.75)) {
                                     Location p = l.clone().subtract(v.clone().multiply(0.15 * ((double) s / (size))).add(n.multiply(0.6)));
-                                    Cache.testSwingParticle.display(p);
+                                    Prefab.Particles.TEST_SWING.display(p);
                                     Location p2 = l.clone().subtract(v.clone().multiply(0.2 * ((double) s / (size))).add(n.multiply(0.55)));
-                                    Cache.testSwingParticle.display(p2);
+                                    Prefab.Particles.TEST_SWING.display(p2);
                                 }
 
                                 // retrieving targets and setting knockback
@@ -283,7 +289,7 @@ public class AttackAction extends SwordAction {
                                             // hit function call
                                             sTarget.hit(executor, 5, 1, (float) d[0], 6, kb);
                                             // hit particles
-                                            Cache.testHitParticle.display(sTarget.getChestLocation());
+                                            Prefab.Particles.TEST_HIT.display(sTarget.getChestLocation());
                                         }
                                         else {
                                             executor.message("Target: " + target + " caused an NPE");
@@ -299,13 +305,13 @@ public class AttackAction extends SwordAction {
                                     if (result != null) {
                                         // enter ground particles
                                         new ParticleWrapper(Particle.BLOCK, 10, 0.5, 0.5, 0.5, Objects.requireNonNull(result.getHitBlock()).getBlockData()).display(l);
-                                        Cache.basicSwordEnterGround.display(l);
+                                        Prefab.Particles.COLLIDE.display(l);
                                         // potential reduction of damage formula
                                         d[0] = Math.max(d[0] *(0.2), d[0]-1);
                                     }
                                     else if (direction.lengthSquared() > (double) 2 / (size*size)) {
                                         // interpolated particle, same as normal particle
-                                        Cache.testSwingParticle.display(l.add(direction.multiply(0.5)));
+                                        Prefab.Particles.TEST_SWING.display(l.add(direction.multiply(0.5)));
                                     }
                                 }
 

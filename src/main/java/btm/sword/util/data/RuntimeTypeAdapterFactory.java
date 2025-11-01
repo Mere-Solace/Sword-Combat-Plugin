@@ -1,4 +1,4 @@
-package btm.sword.util.gson;
+package btm.sword.util.data;
 
 import com.google.gson.*;
 import com.google.gson.internal.Streams;

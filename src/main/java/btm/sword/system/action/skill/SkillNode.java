@@ -1,6 +1,6 @@
 package btm.sword.system.action.skill;
 
-import btm.sword.system.entity.Combatant;
+import btm.sword.system.entity.types.Combatant;
 import btm.sword.util.sound.SoundType;
 import java.util.List;
 import java.util.function.Function;

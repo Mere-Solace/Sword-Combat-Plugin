@@ -1,15 +1,21 @@
 package btm.sword.system.action.utility.thrown;
 
 import btm.sword.Sword;
-import btm.sword.system.entity.Combatant;
-import btm.sword.system.entity.SwordEntity;
+import btm.sword.system.entity.types.Combatant;
+import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.SwordEntityArbiter;
-import btm.sword.system.entity.SwordPlayer;
-import btm.sword.util.*;
+import btm.sword.system.entity.types.SwordPlayer;
+import btm.sword.util.display.DisplayUtil;
+import btm.sword.util.display.ParticleWrapper;
+import btm.sword.util.display.Prefab;
+import btm.sword.util.entity.EntityUtil;
+import btm.sword.util.math.VectorUtil;
 import btm.sword.util.sound.SoundType;
 import java.util.List;
 import java.util.function.Function;
 import java.util.function.Predicate;
+
+import btm.sword.util.sound.SoundUtil;
 import lombok.Getter;
 import lombok.Setter;
 import net.kyori.adventure.text.format.TextColor;
@@ -240,7 +246,7 @@ public class ThrownItem {
 
                 rotate();
 
-                Cache.throwTrailParticle.display(cur);
+                Prefab.Particles.THROW_TRAIl.display(cur);
                 if (blockTrail != null && t % 3 == 0)
                     blockTrail.display(cur);
 
@@ -342,9 +348,9 @@ public class ThrownItem {
                     cancel();
                 }
 
-                Cache.thrownItemMarkerParticle.display(cur.clone().add(step));
-                Cache.thrownItemMarkerParticle.display(cur);
-                Cache.thrownItemMarkerParticle.display(cur.clone().subtract(step));
+                Prefab.Particles.THROWN_ITEM_MARKER.display(cur.clone().add(step));
+                Prefab.Particles.THROWN_ITEM_MARKER.display(cur);
+                Prefab.Particles.THROWN_ITEM_MARKER.display(cur.clone().subtract(step));
 
                 tick += 5;
             }
@@ -565,7 +571,7 @@ public class ThrownItem {
                 if (dropped.isDead()) {
                     cancel();
                 }
-                Cache.thrownItemMarkerParticle2.display(dropped.getLocation());
+                Prefab.Particles.DOPPED_ITEM_MARKER.display(dropped.getLocation());
             }
         }.runTaskTimer(Sword.getInstance(), 0L, 5L);
         display.remove();

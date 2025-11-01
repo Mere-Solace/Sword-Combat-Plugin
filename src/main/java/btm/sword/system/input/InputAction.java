@@ -1,7 +1,7 @@
 package btm.sword.system.input;
 
-import btm.sword.system.entity.Combatant;
-import btm.sword.system.entity.SwordPlayer;
+import btm.sword.system.entity.types.Combatant;
+import btm.sword.system.entity.types.SwordPlayer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;

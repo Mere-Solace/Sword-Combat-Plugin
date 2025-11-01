@@ -8,7 +8,7 @@ import btm.sword.system.action.type.AttackType;
 import btm.sword.system.action.utility.GrabAction;
 import btm.sword.system.action.utility.UtilityAction;
 import btm.sword.system.action.utility.thrown.ThrowAction;
-import btm.sword.system.entity.Combatant;
+import btm.sword.system.entity.types.Combatant;
 import btm.sword.system.entity.aspect.AspectType;
 import java.util.HashMap;
 import java.util.List;

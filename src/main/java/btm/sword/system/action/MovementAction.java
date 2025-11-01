@@ -2,14 +2,20 @@ package btm.sword.system.action;
 
 import btm.sword.Sword;
 import btm.sword.system.action.utility.thrown.InteractiveItemArbiter;
-import btm.sword.system.entity.Combatant;
-import btm.sword.system.entity.SwordEntity;
+import btm.sword.system.entity.types.Combatant;
+import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.aspect.AspectType;
-import btm.sword.util.*;
+import btm.sword.util.display.DisplayUtil;
+import btm.sword.util.display.ParticleWrapper;
+import btm.sword.util.display.Prefab;
+import btm.sword.util.entity.HitboxUtil;
+import btm.sword.util.math.VectorUtil;
 import btm.sword.util.sound.SoundType;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+
+import btm.sword.util.sound.SoundUtil;
 import org.bukkit.FluidCollisionMode;
 import org.bukkit.Location;
 import org.bukkit.Particle;
@@ -70,7 +76,7 @@ public class MovementAction extends SwordAction {
                         int t = 0;
                         @Override
                         public void run() {
-                            DisplayUtil.secant(List.of(Cache.basicSwordBlueTransitionParticle), initial, ex.getLocation(), 0.3);
+                            DisplayUtil.secant(List.of(Prefab.Particles.TEST_SWORD_BLUE), initial, ex.getLocation(), 0.3);
                             t += 2;
                             if (t > 4) cancel();
                         }
@@ -193,7 +199,7 @@ public class MovementAction extends SwordAction {
                     Vector v = t.getVelocity().normalize();
                     Location l = base.add(new Vector(0,h * 0.3,0).add(v));
 
-                    Cache.throwTrailParticle.display(base.add(new Vector(0, h * 0.5, 0)));
+                    Prefab.Particles.THROW_TRAIl.display(base.add(new Vector(0, h * 0.5, 0)));
 
                     if (l.isFinite()) {
                         RayTraceResult blockResult = world.rayTraceBlocks(l, v,

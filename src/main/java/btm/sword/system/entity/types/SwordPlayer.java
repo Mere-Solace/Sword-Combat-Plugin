@@ -1,4 +1,4 @@
-package btm.sword.system.entity;
+package btm.sword.system.entity.types;
 
 import btm.sword.Sword;
 import btm.sword.system.SwordScheduler;
@@ -9,10 +9,9 @@ import btm.sword.system.input.InputExecutionTree;
 import btm.sword.system.input.InputType;
 import btm.sword.system.item.KeyCache;
 import btm.sword.system.playerdata.PlayerData;
-import btm.sword.util.DisplayUtil;
+import btm.sword.util.display.DisplayUtil;
 import com.destroystokyo.paper.profile.PlayerProfile;
 import java.time.Duration;
-import java.util.*;
 import java.util.concurrent.TimeUnit;
 import lombok.Getter;
 import lombok.Setter;

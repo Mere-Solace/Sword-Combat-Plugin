@@ -1,7 +1,7 @@
 package btm.sword.system.action;
 
 import btm.sword.Sword;
-import btm.sword.system.entity.Combatant;
+import btm.sword.system.entity.types.Combatant;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;

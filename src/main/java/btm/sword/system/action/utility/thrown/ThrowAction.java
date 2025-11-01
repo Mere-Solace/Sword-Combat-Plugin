@@ -2,8 +2,8 @@ package btm.sword.system.action.utility.thrown;
 
 import btm.sword.Sword;
 import btm.sword.system.action.SwordAction;
-import btm.sword.system.entity.Combatant;
-import btm.sword.system.entity.SwordPlayer;
+import btm.sword.system.entity.types.Combatant;
+import btm.sword.system.entity.types.SwordPlayer;
 import org.bukkit.Color;
 import org.bukkit.entity.*;
 import org.bukkit.inventory.*;

@@ -1,5 +1,6 @@
-package btm.sword.system.entity;
+package btm.sword.system.entity.types;
 
+import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.playerdata.CombatProfile;
 import org.bukkit.entity.LivingEntity;
 

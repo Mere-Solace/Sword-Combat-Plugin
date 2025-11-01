@@ -1,11 +1,11 @@
 package btm.sword.system.action;
 
 import btm.sword.system.SwordScheduler;
-import btm.sword.system.entity.Combatant;
+import btm.sword.system.entity.types.Combatant;
 import btm.sword.system.entity.SwordEntityArbiter;
-import btm.sword.util.BezierUtil;
-import btm.sword.util.Cache;
-import btm.sword.util.VectorUtil;
+import btm.sword.util.math.BezierUtil;
+import btm.sword.util.display.Prefab;
+import btm.sword.util.math.VectorUtil;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -93,7 +93,7 @@ public class TestAction extends SwordAction {
     public static void testAttack2(Combatant executor) {
         LivingEntity ex = executor.entity();
         Location o = ex.getEyeLocation();
-        List<Vector> controlVectors = Cache.basicSword3;
+        List<Vector> controlVectors = Prefab.ControlVectors.SLASH3;
 
         ArrayList<Vector> basis = VectorUtil.getBasis(o, o.getDirection());
 

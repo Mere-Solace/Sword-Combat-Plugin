@@ -8,7 +8,7 @@ import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 
-public class Prefab {
+public class ItemLibrary {
     public static ItemStack sword = new ItemStackBuilder(Material.DIAMOND_SWORD)
             .name(Component.text("Masamune", TextColor.color(254,56,0), TextDecoration.BOLD))
             .lore(List.of(

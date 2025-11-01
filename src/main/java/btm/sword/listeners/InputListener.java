@@ -3,7 +3,7 @@ package btm.sword.listeners;
 import btm.sword.Sword;
 import btm.sword.system.action.utility.thrown.ThrowAction;
 import btm.sword.system.entity.SwordEntityArbiter;
-import btm.sword.system.entity.SwordPlayer;
+import btm.sword.system.entity.types.SwordPlayer;
 import btm.sword.system.input.InputType;
 import btm.sword.util.InputUtil;
 import io.papermc.paper.event.player.PrePlayerAttackEntityEvent;
