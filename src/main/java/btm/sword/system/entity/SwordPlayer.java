@@ -7,6 +7,7 @@ import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.input.InputAction;
 import btm.sword.system.input.InputExecutionTree;
 import btm.sword.system.input.InputType;
+import btm.sword.system.item.KeyCache;
 import btm.sword.system.playerdata.PlayerData;
 import btm.sword.util.DisplayUtil;
 import com.destroystokyo.paper.profile.PlayerProfile;
@@ -28,11 +29,15 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.entity.ItemDisplay;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
+import org.bukkit.event.inventory.ClickType;
+import org.bukkit.event.inventory.InventoryAction;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.EquipmentSlot;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
+import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Transformation;
@@ -314,6 +319,10 @@ public class SwordPlayer extends Combatant {
      * @return true to cancel the action, false to allow processing
      */
     public boolean evaluateItemInput(ItemStack itemStack, InputType inputType) {
+        Material type = itemStack.getType();
+        ItemMeta meta = itemStack.getItemMeta();
+        String id = meta != null ? meta.getPersistentDataContainer().get(KeyCache.buttonTagKey, PersistentDataType.STRING) : null;
+
         return false;
     }
 
@@ -325,6 +334,12 @@ public class SwordPlayer extends Combatant {
      * @return true if the event was handled and should be cancelled, false otherwise
      */
     public boolean handleInventoryInput(InventoryClickEvent e) {
+        Inventory inv = e.getInventory();
+        ClickType clickType = e.getClick();
+        InventoryAction action = e.getAction();
+        ItemStack onCursor = e.getCursor();
+        ItemStack clicked = e.getCurrentItem();
+        int slotNumber = e.getSlot();
 
 //		message("\n\n~|------Beginning of new inventory interact event------|~"
 //				+ "\n       Inventory: " + inv.getType()
