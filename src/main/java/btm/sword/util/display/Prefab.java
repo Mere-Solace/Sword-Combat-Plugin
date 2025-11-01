@@ -2,7 +2,6 @@ package btm.sword.util.display;
 
 import java.util.ArrayList;
 import java.util.List;
-
 import org.bukkit.Color;
 import org.bukkit.Material;
 import org.bukkit.Particle;

@@ -1,10 +1,10 @@
 package btm.sword.system.action;
 
 import btm.sword.system.SwordScheduler;
-import btm.sword.system.entity.types.Combatant;
 import btm.sword.system.entity.SwordEntityArbiter;
-import btm.sword.util.math.BezierUtil;
+import btm.sword.system.entity.types.Combatant;
 import btm.sword.util.display.Prefab;
+import btm.sword.util.math.BezierUtil;
 import btm.sword.util.math.VectorUtil;
 import java.util.ArrayList;
 import java.util.List;

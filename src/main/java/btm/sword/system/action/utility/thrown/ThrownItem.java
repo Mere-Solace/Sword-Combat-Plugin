@@ -1,9 +1,9 @@
 package btm.sword.system.action.utility.thrown;
 
 import btm.sword.Sword;
-import btm.sword.system.entity.types.Combatant;
-import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.SwordEntityArbiter;
+import btm.sword.system.entity.base.SwordEntity;
+import btm.sword.system.entity.types.Combatant;
 import btm.sword.system.entity.types.SwordPlayer;
 import btm.sword.util.display.DisplayUtil;
 import btm.sword.util.display.ParticleWrapper;
@@ -11,11 +11,10 @@ import btm.sword.util.display.Prefab;
 import btm.sword.util.entity.EntityUtil;
 import btm.sword.util.math.VectorUtil;
 import btm.sword.util.sound.SoundType;
+import btm.sword.util.sound.SoundUtil;
 import java.util.List;
 import java.util.function.Function;
 import java.util.function.Predicate;
-
-import btm.sword.util.sound.SoundUtil;
 import lombok.Getter;
 import lombok.Setter;
 import net.kyori.adventure.text.format.TextColor;

@@ -2,11 +2,10 @@ package btm.sword.util.entity;
 
 import btm.sword.Sword;
 import btm.sword.system.entity.base.SwordEntity;
-import java.util.List;
-
-import btm.sword.util.display.Prefab;
 import btm.sword.util.display.DisplayUtil;
+import btm.sword.util.display.Prefab;
 import btm.sword.util.math.VectorUtil;
+import java.util.List;
 import org.bukkit.Location;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.ItemDisplay;
