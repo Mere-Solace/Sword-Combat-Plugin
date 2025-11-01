@@ -30,8 +30,8 @@ public class Hostile extends Combatant {
     private Location origin;
     private final List<Consumer<Combatant>> possibleAttacks;
 
-    ItemStack itemInLeftHand = new ItemStack(Material.IRON_AXE);
-    ItemStack itemInRightHand = new ItemStack(Material.ENCHANTED_BOOK);
+    ItemStack itemInLeftHand = new ItemStack(Material.SHIELD);
+    ItemStack itemInRightHand = new ItemStack(Material.IRON_AXE);
 
     public Hostile(LivingEntity associatedEntity, CombatProfile combatProfile) {
         super(associatedEntity, combatProfile);
@@ -49,7 +49,7 @@ public class Hostile extends Combatant {
             equipment.setItemInMainHand(itemInLeftHand);
             equipment.setItemInOffHand(itemInRightHand);
 
-//			equipment.setChestplate(new ItemStack(Material.NETHERITE_CHESTPLATE));
+			equipment.setChestplate(new ItemStack(Material.NETHERITE_CHESTPLATE));
         }
     }
 
@@ -60,8 +60,6 @@ public class Hostile extends Combatant {
     @Override
     public void onTick() {
         super.onTick();
-
-
     }
 
     @Override

@@ -3,7 +3,6 @@ package btm.sword.system.input;
 import btm.sword.Sword;
 import btm.sword.system.action.AttackAction;
 import btm.sword.system.action.MovementAction;
-import btm.sword.system.action.TestAction;
 import btm.sword.system.action.type.AttackType;
 import btm.sword.system.action.utility.GrabAction;
 import btm.sword.system.action.utility.UtilityAction;
@@ -278,8 +277,6 @@ public class InputExecutionTree {
      * Sets up example combos for movement, grabbing, attacks, throwing, and utility actions.
      */
     public void initializeInputTree() {
-        // NOTE: Do not start inputs with swap or drop... those actions work normally if used at the root
-
         // Item independent actions:
         // dodge forward, dodge backward
         add(List.of(InputType.SWAP, InputType.SWAP),
@@ -316,19 +313,9 @@ public class InputExecutionTree {
                 true,
                 true);
 
-        add(List.of(InputType.SHIFT, InputType.DROP, InputType.SHIFT, InputType.SHIFT_HOLD),
-                new InputAction(
-                        TestAction::testAttack2,
-                        executor -> 0L,
-                        Combatant::canPerformAction,
-                        false,
-                        true),
-                false,
-                true,
-                true,
-                5L);
 
-            // Item dependent actions:
+        // Item dependent actions:
+
         // basic attacks
         add(List.of(InputType.LEFT),
                 new InputAction(
@@ -387,38 +374,6 @@ public class InputExecutionTree {
                 true,
                 true,
                 600L);
-
-        // testing
-//		add(List.of(InputType.SWAP, InputType.RIGHT, InputType.SHIFT),
-//				new InputAction(
-//						executor -> UtilityAction.soundTest(executor, 0),
-//						executor -> 0L,
-//						Combatant::canPerformAction,
-//						false, false),
-//				true, true, true);
-//
-//		add(List.of(InputType.SWAP, InputType.RIGHT, InputType.DROP),
-//				new InputAction(
-//						UtilityAction::particleTest,
-//						executor -> 0L,
-//						Combatant::canPerformAction,
-//						false, false),
-//				true, false, true);
-//
-        add(List.of(InputType.LEFT, InputType.RIGHT),
-                new InputAction(
-                        TestAction::testAttack,
-                        executor -> 0L,
-                        Combatant::canPerformAction,
-                        false, false),
-                true, true, true);
-
-
-        add(List.of(InputType.RIGHT, InputType.LEFT),
-                null,
-                true,
-                true,
-                true);
 
         add(List.of(InputType.DROP, InputType.DROP),
                 new InputAction(

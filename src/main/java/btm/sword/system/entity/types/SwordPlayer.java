@@ -24,10 +24,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
-import org.bukkit.entity.EntityType;
-import org.bukkit.entity.ItemDisplay;
-import org.bukkit.entity.LivingEntity;
-import org.bukkit.entity.Player;
+import org.bukkit.entity.*;
 import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryAction;
 import org.bukkit.event.inventory.InventoryClickEvent;
@@ -141,45 +138,16 @@ public class SwordPlayer extends Combatant {
     @Override
     protected void onTick() {
         super.onTick();
-        player.setFoodLevel(20);
-        player.setAbsorptionAmount(20);
+        player.setFoodLevel(19);
+        player.setAbsorptionAmount(60);
+        player.sendHealthUpdate();
 
         if ((sheathed == null || sheathed.isDead()) && isSheathedReady()) {
-            setSheathedReady(false);
-            Bukkit.getScheduler().runTaskLater(Sword.getInstance(), () -> {
-                if (!player.isOnline() || !player.isValid()) return;
-
-                World world = player.getWorld();
-                Location loc = player.getLocation();
-
-                if (!loc.getChunk().isLoaded()) loc.getChunk().load();
-
-                sheathed = (ItemDisplay) world.spawnEntity(loc, EntityType.ITEM_DISPLAY);
-                sheathed.setItemStack(new ItemStack(Material.STONE_SWORD));
-
-                sheathed.setTransformation(new Transformation(
-                        new Vector3f(0.28f, 0.06f, -0.5f),
-                        new Quaternionf().rotationY((float) Math.PI / 2).rotateZ(-(float) Math.PI / (1.65f)),
-                        new Vector3f(1f, 1f, 1f),
-                        new Quaternionf()
-                ));
-
-                setSheathedReady(true);
-            }, 5L);
+            RestartSheathedWeapon();
         }
 
-        if (isSheathedReady()) {
-            int its = 3;
-            for (int i = 0; i < its; i++) {
-                SwordScheduler.runLater(new BukkitRunnable() {
-                    @Override
-                    public void run() {
-
-                        DisplayUtil.smoothTeleport(sheathed, 1);
-                        sheathed.teleport(player.getLocation().add(new Vector(0, 0.5, 0)).setDirection(getFlatBodyDir()));
-                    }
-                }, 1000/its * i, TimeUnit.MILLISECONDS);
-            }
+        if (getItemStackInHand(false).getType() != Material.SHIELD) {
+            setItemStackInHand(ItemStack.of(Material.SHIELD), false);
         }
     }
 
@@ -191,26 +159,6 @@ public class SwordPlayer extends Combatant {
     public void onSpawn() {
         super.onSpawn();
 
-//        Bukkit.getScheduler().runTaskLater(Sword.getInstance(), () -> {
-//            if (!player.isOnline() || !player.isValid()) return;
-//
-//            World world = player.getWorld();
-//            Location loc = player.getLocation();
-//
-//            if (!loc.getChunk().isLoaded()) loc.getChunk().load();
-//
-//            sheathed = (ItemDisplay) world.spawnEntity(loc, EntityType.ITEM_DISPLAY);
-//            sheathed.setItemStack(new ItemStack(Material.STONE_SWORD));
-//
-//            sheathed.setTransformation(new Transformation(
-//                    new Vector3f(0.28f, 0.06f, -0.5f),
-//                    new Quaternionf().rotationY((float) Math.PI / 2).rotateZ(-(float) Math.PI / (1.65f)),
-//                    new Vector3f(1f, 1f, 1f),
-//                    new Quaternionf()
-//            ));
-//
-//            setSheathedReady(true);
-//        }, 15L);
     }
 
     /**
@@ -350,6 +298,59 @@ public class SwordPlayer extends Combatant {
 //
 //		message("Normal click event.");
         return false;
+    }
+
+    /**
+     * Recreates and reinitializes the player's sheathed weapon display.
+     * <p>
+     * This method first marks the sheathed weapon as not ready using {@link #setSheathedReady(boolean)}.
+     * After a short delay (5 ticks), it verifies that the player is still valid and online,
+     * ensures the player's current chunk is loaded, and then spawns a new {@link ItemDisplay}
+     * entity at the player's location. This entity visually represents the player's
+     * sheathed weapon (currently a {@link Material#STONE_SWORD}).
+     * </p>
+     *
+     * <p>
+     * The spawned {@link ItemDisplay} is given a custom {@link org.bukkit.util.Transformation}
+     * that positions and rotates the weapon relative to the player's model, making it appear
+     * naturally attached to their side or back. Once the entity is created, the sheathed
+     * state is marked as ready again.
+     * </p>
+     *
+     * <p><b>Threading:</b> Executed on the main server thread using {@link Bukkit#getScheduler()}.</p>
+     *
+     * @implNote The delayed execution (5 ticks) ensures that player and world state
+     *           are stable before spawning the entity, which avoids null or invalid references
+     *           that might occur immediately after player load or teleport events.
+     *
+     * @see ItemDisplay
+     * @see World#spawnEntity(org.bukkit.Location, org.bukkit.entity.EntityType)
+     * @see #setSheathedReady(boolean)
+     */
+    public void RestartSheathedWeapon() {
+        setSheathedReady(false);
+        Bukkit.getScheduler().runTaskLater(Sword.getInstance(), () -> {
+            if (!player.isOnline() || !player.isValid()) return;
+
+            World world = player.getWorld();
+            Location loc = player.getLocation();
+
+            if (!loc.getChunk().isLoaded()) loc.getChunk().load();
+
+            sheathed = (ItemDisplay) world.spawnEntity(loc, EntityType.ITEM_DISPLAY);
+            sheathed.setItemStack(new ItemStack(Material.STONE_SWORD));
+
+            sheathed.setTransformation(new Transformation(
+                    new Vector3f(0.28f, -2f, 0),
+                    new Quaternionf().rotationY((float) Math.PI / 2).rotateZ((float) Math.PI / (1.65f)),
+                    new Vector3f(1f, 1f, 1f),
+                    new Quaternionf()
+            ));
+
+            player.addPassenger(sheathed);
+            sheathed.setBillboard(Display.Billboard.FIXED);
+            setSheathedReady(true);
+        }, 5L);
     }
 
     /**
