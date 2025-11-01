@@ -1,7 +1,7 @@
 package btm.sword.system.combat;
 
-import btm.sword.system.entity.SwordEntity;
-import btm.sword.util.Cache;
+import btm.sword.system.entity.base.SwordEntity;
+import btm.sword.util.display.Prefab;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.util.Vector;
 
@@ -19,6 +19,6 @@ public class GroundedAffliction extends Affliction {
 
     @Override
     public void end(SwordEntity afflicted) {
-        Cache.throwTrailParticle.display(afflicted.entity().getLocation());
+        Prefab.Particles.THROW_TRAIl.display(afflicted.entity().getLocation());
     }
 }

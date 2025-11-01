@@ -1,10 +1,11 @@
-package btm.sword.system.entity;
+package btm.sword.system.entity.types;
 
 import btm.sword.system.action.MovementAction;
 import btm.sword.system.action.utility.thrown.ThrownItem;
 import btm.sword.system.entity.aspect.AspectType;
+import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.playerdata.CombatProfile;
-import btm.sword.util.Cache;
+import btm.sword.util.display.Prefab;
 import lombok.Getter;
 import lombok.Setter;
 import org.bukkit.Location;
@@ -72,7 +73,7 @@ public abstract class Combatant extends SwordEntity {
         target.setGrabbed(true);
         setGrabbedEntity(target);
         t.damage(0.25, self);
-        Cache.grabCloudParticle.display(t.getLocation().add(new Vector(0, 1, 0)));
+        Prefab.Particles.GRAB_CLOUD.display(t.getLocation().add(new Vector(0, 1, 0)));
     }
 
     /**
@@ -102,8 +103,8 @@ public abstract class Combatant extends SwordEntity {
     public void onGrabHit() {
         LivingEntity target = grabbedEntity.entity();
         Location hitLoc = target.getLocation().add(0, target.getEyeHeight()*0.5, 0);
-        Cache.grabHitParticle.display(hitLoc);
-        Cache.grabHitParticle2.display(hitLoc);
+        Prefab.Particles.GRAB_HIT_1.display(hitLoc);
+        Prefab.Particles.GRAB_HIT_2.display(hitLoc);
         grabbedEntity.hit(this, 0, 0, 5, 15,
                 target.getEyeLocation().subtract(self.getEyeLocation()).toVector());
     }

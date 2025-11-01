@@ -1,4 +1,4 @@
-package btm.sword.util;
+package btm.sword.util.display;
 
 import java.util.List;
 import org.bukkit.Location;

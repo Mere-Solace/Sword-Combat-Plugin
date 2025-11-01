@@ -1,7 +1,10 @@
-package btm.sword.util;
+package btm.sword.util.entity;
 
 import btm.sword.Sword;
-import btm.sword.system.entity.SwordEntity;
+import btm.sword.system.entity.base.SwordEntity;
+import btm.sword.util.display.DisplayUtil;
+import btm.sword.util.display.Prefab;
+import btm.sword.util.math.VectorUtil;
 import java.util.List;
 import org.bukkit.Location;
 import org.bukkit.entity.Entity;
@@ -73,9 +76,9 @@ public class EntityUtil {
                 Vector curDir = direction.clone().rotateAroundY(originalYaw-yawRads);
                 l.setDirection(curDir);
                 if (step[0] % 6 == 0) {
-                    DisplayUtil.line(List.of(Cache.thrownItemStickParticle), l.clone().subtract(curDir), curDir, 0.75, 0.25);
+                    DisplayUtil.line(List.of(Prefab.Particles.THROWN_ITEM_IMPALE), l.clone().subtract(curDir), curDir, 0.75, 0.25);
                     if (step[0] % 12 == 0)
-                        DisplayUtil.line(List.of(Cache.testBleedParticle), l.clone().subtract(curDir), curDir, 0.3, 0.25);
+                        DisplayUtil.line(List.of(Prefab.Particles.BLEED), l.clone().subtract(curDir), curDir, 0.3, 0.25);
                 }
 
                 DisplayUtil.smoothTeleport(itemDisplay);

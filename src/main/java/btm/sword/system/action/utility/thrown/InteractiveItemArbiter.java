@@ -1,8 +1,8 @@
 package btm.sword.system.action.utility.thrown;
 
-import btm.sword.system.entity.Combatant;
-import btm.sword.util.Cache;
-import btm.sword.util.ParticleWrapper;
+import btm.sword.system.entity.types.Combatant;
+import btm.sword.util.display.ParticleWrapper;
+import btm.sword.util.display.Prefab;
 import java.util.HashMap;
 import org.bukkit.Location;
 import org.bukkit.Particle;
@@ -86,7 +86,7 @@ public class InteractiveItemArbiter {
                 new ParticleWrapper(Particle.BLOCK, 30, 0.5, 0.5, 0.5, b.getBlockData())
                         .display(i);
             }
-            Cache.grabCloudParticle.display(display.getLocation());
+            Prefab.Particles.GRAB_CLOUD.display(display.getLocation());
             thrownItem.dispose();
         }
     }

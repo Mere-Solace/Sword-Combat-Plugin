@@ -1,7 +1,6 @@
-package btm.sword.util;
+package btm.sword.util.sound;
 
 import btm.sword.Sword;
-import btm.sword.util.sound.SoundType;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.sound.Sound;
 import org.bukkit.entity.LivingEntity;

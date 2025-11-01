@@ -1,8 +1,8 @@
 package btm.sword.listeners;
 
 import btm.sword.Sword;
-import btm.sword.system.entity.SwordEntity;
 import btm.sword.system.entity.SwordEntityArbiter;
+import btm.sword.system.entity.base.SwordEntity;
 import com.destroystokyo.paper.event.entity.EntityAddToWorldEvent;
 import com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent;
 import java.util.Objects;

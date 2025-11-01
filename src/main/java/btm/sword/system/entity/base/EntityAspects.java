@@ -1,4 +1,4 @@
-package btm.sword.system.entity;
+package btm.sword.system.entity.base;
 
 import btm.sword.system.entity.aspect.Aspect;
 import btm.sword.system.entity.aspect.AspectType;

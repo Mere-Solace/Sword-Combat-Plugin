@@ -2,11 +2,11 @@ package btm.sword.system.action.utility;
 
 import btm.sword.Sword;
 import btm.sword.system.action.SwordAction;
-import btm.sword.system.entity.Combatant;
 import btm.sword.system.entity.SwordEntityArbiter;
-import btm.sword.util.ParticleWrapper;
-import btm.sword.util.SoundUtil;
+import btm.sword.system.entity.types.Combatant;
+import btm.sword.util.display.ParticleWrapper;
 import btm.sword.util.sound.SoundType;
+import btm.sword.util.sound.SoundUtil;
 import java.util.ArrayList;
 import java.util.List;
 import org.bukkit.Location;

@@ -1,7 +1,7 @@
 package btm.sword.system.combat;
 
 import btm.sword.Sword;
-import btm.sword.system.entity.SwordEntity;
+import btm.sword.system.entity.base.SwordEntity;
 import org.bukkit.scheduler.BukkitRunnable;
 
 //STUNNED,        // Duration

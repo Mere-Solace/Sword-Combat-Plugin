@@ -1,4 +1,4 @@
-package btm.sword.util;
+package btm.sword.util.entity;
 
 import java.util.ArrayList;
 import java.util.HashSet;

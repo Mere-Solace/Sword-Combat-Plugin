@@ -1,4 +1,4 @@
-package btm.sword.util;
+package btm.sword.util.math;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,7 +17,6 @@ public class VectorUtil {
         if (Math.abs(dot) > 0.999) {
             double yaw = Math.toRadians(origin.getYaw());
             ref = new Vector(-Math.sin(yaw), 0, Math.cos(yaw));
-            Cache.testObsidianTearParticle.display(origin.clone().add(ref));
             right = dot >= 0 ? ref.getCrossProduct(dir).normalize() : dir.getCrossProduct(ref).normalize();
         }
 

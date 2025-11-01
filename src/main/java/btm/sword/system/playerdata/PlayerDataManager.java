@@ -3,7 +3,7 @@ package btm.sword.system.playerdata;
 import btm.sword.Sword;
 import btm.sword.system.entity.aspect.value.AspectValue;
 import btm.sword.system.entity.aspect.value.ResourceValue;
-import btm.sword.util.gson.RuntimeTypeAdapterFactory;
+import btm.sword.util.data.RuntimeTypeAdapterFactory;
 import com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
