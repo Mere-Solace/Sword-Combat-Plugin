@@ -146,6 +146,10 @@ public class SwordPlayer extends Combatant {
             RestartSheathedWeapon();
         }
 
+        if (sheathed != null) {
+            updateSheathedWeapon();
+        }
+
         if (getItemStackInHand(false).getType() != Material.SHIELD) {
             setItemStackInHand(ItemStack.of(Material.SHIELD), false);
         }
@@ -341,8 +345,8 @@ public class SwordPlayer extends Combatant {
             sheathed.setItemStack(new ItemStack(Material.STONE_SWORD));
 
             sheathed.setTransformation(new Transformation(
-                    new Vector3f(0.28f, -2f, 0),
-                    new Quaternionf().rotationY((float) Math.PI / 2).rotateZ((float) Math.PI / (1.65f)),
+                    new Vector3f(0.28f, -1.5f, -0.5f),
+                    new Quaternionf().rotationY((float) Math.PI / 2).rotateZ(-(float) Math.PI / (1.65f)),
                     new Vector3f(1f, 1f, 1f),
                     new Quaternionf()
             ));
@@ -351,6 +355,47 @@ public class SwordPlayer extends Combatant {
             sheathed.setBillboard(Display.Billboard.FIXED);
             setSheathedReady(true);
         }, 5L);
+    }
+
+    /**
+     * Gradually updates the position and orientation of the player's sheathed weapon display
+     * to maintain alignment with the player's current facing direction and location.
+     * <p>
+     * This method performs multiple delayed updates (controlled by the loop count {@code x})
+     * to achieve a smooth visual interpolation using {@link DisplayUtil#smoothTeleport(org.bukkit.entity.Display, int)}.
+     * Each iteration schedules a task via {@link SwordScheduler#runLater(Runnable, int, java.util.concurrent.TimeUnit)}
+     * that repositions the {@link #sheathed} {@link org.bukkit.entity.ItemDisplay} entity relative to the player's location.
+     * <p>
+     * The display entity is temporarily attached as a passenger to the player using
+     * {@link org.bukkit.entity.Player#addPassenger(org.bukkit.entity.Entity)} to ensure its position follows the player.
+     * The direction is recalculated each update using {@link #getFlatDir()} for consistent orientation.
+     * <p>
+     * Once the update sequence completes, the sheathed weapon display is typically finalized by setting
+     * its billboard mode to {@link org.bukkit.entity.Display.Billboard#FIXED} and marking it as ready via
+     * {@link #setSheathedReady(boolean)}.
+     *
+     * @implNote The update uses a fixed delay of {@code 50/x} milliseconds between each scheduled iteration,
+     * producing a brief animation-like effect as the weapon display aligns to the player's orientation.
+     *
+     * @see DisplayUtil#smoothTeleport(org.bukkit.entity.Display, int)
+     * @see SwordScheduler#runLater(Runnable, int, java.util.concurrent.TimeUnit)
+     * @see org.bukkit.entity.Display.Billboard#FIXED
+     * @see org.bukkit.entity.Player#addPassenger(org.bukkit.entity.Entity)
+     * @see #getFlatDir()
+     * @see #setSheathedReady(boolean)
+     */
+    public void updateSheathedWeapon() {
+        int x = 3;
+        for (int i = 0; i < x; i++) {
+            SwordScheduler.runLater(new BukkitRunnable() {
+                @Override
+                public void run() {
+                    DisplayUtil.smoothTeleport(sheathed, 2);
+                    sheathed.teleport(player.getLocation().setDirection(getFlatDir()));
+                    player.addPassenger(sheathed);
+                }
+            }, 50/x, TimeUnit.MILLISECONDS);
+        }
     }
 
     /**
