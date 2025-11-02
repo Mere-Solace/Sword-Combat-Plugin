@@ -4,7 +4,7 @@ import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.types.Hostile;
 import btm.sword.system.entity.types.Passive;
 import btm.sword.system.entity.types.SwordPlayer;
-import btm.sword.system.playerdata.CombatProfile;
+import btm.sword.system.entity.base.CombatProfile;
 import btm.sword.system.playerdata.PlayerDataManager;
 import java.util.*;
 import org.bukkit.Bukkit;

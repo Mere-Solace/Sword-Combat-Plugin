@@ -3,7 +3,6 @@ package btm.sword.system.entity.base;
 import btm.sword.Sword;
 import btm.sword.system.combat.Affliction;
 import btm.sword.system.entity.types.Combatant;
-import btm.sword.system.playerdata.CombatProfile;
 import btm.sword.util.display.Prefab;
 import btm.sword.util.entity.EntityUtil;
 import btm.sword.util.sound.SoundType;
@@ -233,16 +232,13 @@ public abstract class SwordEntity {
      * @param afflictions optional afflictions to apply from the hit
      */
     public void hit(Combatant source, long hitInvulnerableTickDuration, int baseNumShards, float baseToughnessDamage, float baseSoulfireReduction, Vector knockbackVelocity, Affliction... afflictions) {
-//		if (self.getActiveItem().getType() != Material.SHIELD) {
-//			source.message("That lad is raisin 'is shield!");
-//		}
         if (hit)
             return;
         else
             hit = true;
         this.hitInvulnerableTickDuration = hitInvulnerableTickDuration;
 
-        self.damage(0.01);
+        self.damage(10);
 
         Prefab.Particles.TEST_HIT.display(getChestLocation());
         SoundUtil.playSound(source.entity(), SoundType.ENTITY_PLAYER_ATTACK_STRONG, 0.9f, 1f);
@@ -251,8 +247,6 @@ public abstract class SwordEntity {
             Prefab.Particles.TOUGH_BREAK_1.display(getChestLocation());
             onToughnessBroken();
             self.playHurtAnimation(0);
-
-//			self.heal(7474040);
             displayShardLoss();
         }
 
@@ -279,9 +273,9 @@ public abstract class SwordEntity {
             affliction.start(this);
         }
 
-//		source.message("Hit that guy. He now has:\n" + aspects.shards().cur() + " shards,\n"
-//				+ aspects.toughness().cur() + " toughness,\n"
-//				+ aspects.soulfire().cur() + " soulfire.");
+		source.message("Hit that guy. He now has:\n" + aspects.shards().cur() + " shards,\n"
+				+ aspects.toughness().cur() + " toughness,\n"
+				+ aspects.soulfire().cur() + " soulfire.");
     }
 
     /**

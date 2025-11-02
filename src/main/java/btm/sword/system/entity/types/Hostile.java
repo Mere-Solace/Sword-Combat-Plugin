@@ -3,7 +3,7 @@ package btm.sword.system.entity.types;
 import btm.sword.Sword;
 import btm.sword.system.action.utility.GrabAction;
 import btm.sword.system.entity.base.SwordEntity;
-import btm.sword.system.playerdata.CombatProfile;
+import btm.sword.system.entity.base.CombatProfile;
 import btm.sword.util.math.VectorUtil;
 import com.destroystokyo.paper.entity.Pathfinder;
 import java.util.ArrayList;
