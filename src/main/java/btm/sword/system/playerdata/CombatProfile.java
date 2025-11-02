@@ -13,7 +13,7 @@ public class CombatProfile {
     private int maxAirDodges = 1;
 
     public CombatProfile() {
-        swordClass = SwordClassType.LOSAH;
+        swordClass = SwordClassType.SWORD_THROWER;
 
         for (AspectType stat : AspectType.values()) {
             switch (stat) {
