@@ -49,7 +49,7 @@ public class Hostile extends Combatant {
             equipment.setItemInMainHand(itemInLeftHand);
             equipment.setItemInOffHand(itemInRightHand);
 
-			equipment.setChestplate(new ItemStack(Material.NETHERITE_CHESTPLATE));
+            equipment.setChestplate(new ItemStack(Material.NETHERITE_CHESTPLATE));
         }
     }
 
