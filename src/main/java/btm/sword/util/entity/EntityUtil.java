@@ -5,13 +5,14 @@ import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.util.display.DisplayUtil;
 import btm.sword.util.display.Prefab;
 import btm.sword.util.math.VectorUtil;
-import java.util.List;
 import org.bukkit.Location;
+import org.bukkit.entity.Display;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.ItemDisplay;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Transformation;
 import org.bukkit.util.Vector;
+import org.joml.Vector3f;
 
 /**
  * Utility class providing helpful static methods for operations on {@link Entity} objects
@@ -58,12 +59,16 @@ public class EntityUtil {
      */
     public static void itemDisplayFollow(SwordEntity entity, ItemDisplay itemDisplay, Vector direction, double heightOffset, boolean followHead) {
         Transformation orientation = itemDisplay.getTransformation();
+        Vector3f tr_offset = orientation.getTranslation();
+
         Vector offset = VectorUtil.UP.clone().multiply(heightOffset);
 
         double originalYaw = Math.toRadians(entity.entity().getBodyYaw());
 
-        int[] step = {0};
+        itemDisplay.setBillboard(Display.Billboard.FIXED);
+
         new BukkitRunnable() {
+            int step = 0;
             @Override
             public void run() {
                 if (entity.isDead() || itemDisplay.isDead() || itemDisplay.getItemStack().getType().isAir()) {
@@ -75,17 +80,17 @@ public class EntityUtil {
                 double yawRads = Math.toRadians(followHead ? entity.entity().getYaw() : entity.entity().getBodyYaw());
                 Vector curDir = direction.clone().rotateAroundY(originalYaw-yawRads);
                 l.setDirection(curDir);
-                if (step[0] % 6 == 0) {
-                    DisplayUtil.line(List.of(Prefab.Particles.THROWN_ITEM_IMPALE), l.clone().subtract(curDir), curDir, 0.75, 0.25);
-                    if (step[0] % 12 == 0)
-                        DisplayUtil.line(List.of(Prefab.Particles.BLEED), l.clone().subtract(curDir), curDir, 0.3, 0.25);
+                if (step % 9 == 0)
+                    Prefab.Particles.BLEED.display(l);
+                if (step % 6 == 0) {
+//                    DisplayUtil.line(List.of(Prefab.Particles.THROWN_ITEM_IMPALE), l.clone().subtract(curDir), curDir, 0.75, 0.25);
+
                 }
 
-                DisplayUtil.smoothTeleport(itemDisplay);
+                DisplayUtil.smoothTeleport(itemDisplay, 2);
                 itemDisplay.teleport(l);
-                itemDisplay.setTransformation(orientation);
-
-                step[0]++;
+                entity.entity().addPassenger(itemDisplay);
+                step++;
             }
         }.runTaskTimer(Sword.getInstance(), 0L, 2L);
     }

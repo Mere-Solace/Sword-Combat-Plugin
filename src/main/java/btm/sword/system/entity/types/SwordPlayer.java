@@ -145,7 +145,7 @@ public class SwordPlayer extends Combatant {
             RestartSheathedWeapon();
         }
 
-        if (sheathed != null) {
+        if (sheathed != null && isSheathedReady()) {
             updateSheathedWeapon();
         }
 
@@ -344,7 +344,7 @@ public class SwordPlayer extends Combatant {
             sheathed.setItemStack(new ItemStack(Material.STONE_SWORD));
 
             sheathed.setTransformation(new Transformation(
-                    new Vector3f(0.28f, -1.5f, -0.5f),
+                    new Vector3f(0.28f, -1.3f, -0.5f),
                     new Quaternionf().rotationY((float) Math.PI / 2).rotateZ(-(float) Math.PI / (1.65f)),
                     new Vector3f(1f, 1f, 1f),
                     new Quaternionf()
@@ -395,6 +395,11 @@ public class SwordPlayer extends Combatant {
                 }
             }, 50/x, TimeUnit.MILLISECONDS);
         }
+    }
+
+    public void endSheathedWeapon() {
+        sheathed.remove();
+        setSheathedReady(false);
     }
 
     /**

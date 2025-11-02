@@ -242,6 +242,8 @@ public abstract class SwordEntity {
             hit = true;
         this.hitInvulnerableTickDuration = hitInvulnerableTickDuration;
 
+        self.damage(0.01);
+
         Prefab.Particles.TEST_HIT.display(getChestLocation());
         SoundUtil.playSound(source.entity(), SoundType.ENTITY_PLAYER_ATTACK_STRONG, 0.9f, 1f);
 
@@ -249,7 +251,7 @@ public abstract class SwordEntity {
             Prefab.Particles.TOUGH_BREAK_1.display(getChestLocation());
             onToughnessBroken();
             self.playHurtAnimation(0);
-//			self.damage(0.01);
+
 //			self.heal(7474040);
             displayShardLoss();
         }
