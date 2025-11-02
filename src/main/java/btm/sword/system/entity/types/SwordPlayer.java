@@ -24,6 +24,8 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
+import org.bukkit.attribute.Attribute;
+import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.entity.*;
 import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryAction;
@@ -56,6 +58,9 @@ public class SwordPlayer extends Combatant {
     private final PlayerProfile profile;
     private final String username;
     private final ItemStack playerHead;
+
+    private final AttributeInstance attrAbsorption;
+    private static final int baseMaxAbsorption = 20;
 
     private ItemDisplay sheathed;
     private boolean sheathedReady;
@@ -99,6 +104,9 @@ public class SwordPlayer extends Combatant {
         profile = player.getPlayerProfile();
         username = profile.getName();
 
+        attrAbsorption = player.getAttribute(Attribute.MAX_ABSORPTION);
+        if (attrAbsorption != null) attrAbsorption.setBaseValue(baseMaxAbsorption);
+
         playerHead = new ItemStack(Material.PLAYER_HEAD);
         SkullMeta skullMeta = (SkullMeta) playerHead.getItemMeta();
 
@@ -137,8 +145,8 @@ public class SwordPlayer extends Combatant {
     @Override
     protected void onTick() {
         super.onTick();
-        player.setFoodLevel(19);
-        player.setAbsorptionAmount(60);
+        player.setFoodLevel(16);
+        player.setAbsorptionAmount(20);
         player.sendHealthUpdate();
 
         if ((sheathed == null || sheathed.isDead()) && isSheathedReady()) {

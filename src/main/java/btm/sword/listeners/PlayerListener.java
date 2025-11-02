@@ -50,7 +50,7 @@ public class PlayerListener implements Listener {
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
         Player p = event.getPlayer();
-        SwordEntityArbiter.register(p);
+//        SwordEntityArbiter.register(p);
         p.sendMessage("Hello!");
     }
 

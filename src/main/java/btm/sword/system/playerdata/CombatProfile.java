@@ -4,8 +4,11 @@ import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.aspect.value.AspectValue;
 import btm.sword.system.entity.aspect.value.ResourceValue;
 import java.util.HashMap;
+import lombok.Getter;
 
+@Getter
 public class CombatProfile {
+    @lombok.Setter
     private SwordClassType swordClass;
 
     private final HashMap<AspectType, AspectValue> stats = new HashMap<>(); // max Stats
@@ -27,14 +30,6 @@ public class CombatProfile {
         // replace item material type with a specific item metadata in the future
     }
 
-    public SwordClassType getSwordClass() {
-        return swordClass;
-    }
-
-    public void setSwordClass(SwordClassType swordClass) {
-        this.swordClass = swordClass;
-    }
-
     public void setStat(AspectType type, AspectValue values) {
         stats.put(type, values);
     }
@@ -45,9 +40,5 @@ public class CombatProfile {
 
     public void increaseNumAirDodges() {
         maxAirDodges++;
-    }
-
-    public int getMaxAirDodges() {
-        return maxAirDodges;
     }
 }
