@@ -1,6 +1,7 @@
 package btm.sword.system.action;
 
 import btm.sword.Sword;
+import btm.sword.config.ConfigManager;
 import btm.sword.system.action.type.AttackType;
 import btm.sword.system.combat.Affliction;
 import btm.sword.system.entity.SwordEntityArbiter;
@@ -66,7 +67,8 @@ public class AttackAction extends SwordAction {
             ((SwordPlayer) executor).resetTree(); // can't combo aerials
 
             AttackType attackType = AttackType.N_AIR;
-            if (dot < -0.5) attackType = AttackType.DOWN_AIR;
+            double downAirThreshold = ConfigManager.getInstance().getCombat().getAttacks().getDownAirThreshold();
+            if (dot < downAirThreshold) attackType = AttackType.DOWN_AIR;
 
             for (var entry : attackMap.entrySet()) {
                 if (item.name().endsWith(entry.getKey())) {
@@ -88,7 +90,12 @@ public class AttackAction extends SwordAction {
      * @param type The attack variant (e.g., grounded, aerial, downward).
      */
     public static void basicSlash(Combatant executor, AttackType type) {
-        long castDuration = (long) executor.calcValueReductive(AspectType.FINESSE, 1L, 3L, 0.2);
+        var attacksConfig = ConfigManager.getInstance().getCombat().getAttacks();
+        var castTiming = attacksConfig.getCastTiming();
+        long castDuration = (long) executor.calcValueReductive(AspectType.FINESSE,
+                castTiming.getMinDuration(),
+                castTiming.getMaxDuration(),
+                castTiming.getReductionRate());
         if (executor instanceof SwordPlayer sp) sp.player().setCooldown(sp.getItemTypeInHand(true), (int) castDuration);
         cast(executor, castDuration,
             new BukkitRunnable() {
@@ -101,16 +108,18 @@ public class AttackAction extends SwordAction {
 //                    executor.message("After: Soulfire 'Hunger': " + 20 * (executor.getAspects().soulfireCur()/executor.getAspects().soulfireVal()));
 //                    //
 
-                    SoundUtil.playSound(executor.entity(), SoundType.ENTITY_ENDER_DRAGON_FLAP, 0.35f, 0.6f);
+                    var attackSound = ConfigManager.getInstance().getAudio().getAttackSound();
+                    SoundUtil.playSound(executor.entity(), attackSound.getSound(), attackSound.getVolume(), attackSound.getPitch());
 
                     executor.setTimeOfLastAttack(System.currentTimeMillis());
-                    executor.setDurationOfLastAttack((int) castDuration * 500);
+                    executor.setDurationOfLastAttack((int) castDuration * attacksConfig.getDurationMultiplier());
 
                     LivingEntity ex = executor.entity();
-                    double damage = 20;
+                    double damage = attacksConfig.getBaseDamage();
 
-                    int numSteps = 50;
+                    int numSteps = ConfigManager.getInstance().getDisplay().getBezier().getNumSteps();
 
+                    var rangeMultipliers = attacksConfig.getRangeMultipliers();
                     double rangeMultiplier;
                     List<Vector> controlVectors;
                     List<Vector> bezierVectors;
@@ -118,26 +127,26 @@ public class AttackAction extends SwordAction {
                     boolean aerial = false;
                     switch (type) {
                         case BASIC_2 -> {
-                            rangeMultiplier = 1.4;
+                            rangeMultiplier = rangeMultipliers.getBasic2();
                             controlVectors = new ArrayList<>(Prefab.ControlVectors.SLASH2);
                         }
                         case BASIC_3 -> {
-                            rangeMultiplier = 1.4;
+                            rangeMultiplier = rangeMultipliers.getBasic3();
                             controlVectors = new ArrayList<>(Prefab.ControlVectors.SLASH3);
                         }
                         case N_AIR -> {
-                            rangeMultiplier = 1.3;
+                            rangeMultiplier = rangeMultipliers.getNeutralAir();
                             controlVectors = new ArrayList<>(Prefab.ControlVectors.N_AIR_SLASH);
                             aerial = true;
                         }
                         case DOWN_AIR -> {
-                            rangeMultiplier = 1.2;
+                            rangeMultiplier = rangeMultipliers.getDownAir();
                             controlVectors = new ArrayList<>(Prefab.ControlVectors.D_AIR_SLASH);
                             withPitch = false;
                             aerial = true;
                         }
                         default -> {
-                            rangeMultiplier = 1.4;
+                            rangeMultiplier = rangeMultipliers.getBasic1();
                             controlVectors = new ArrayList<>(Prefab.ControlVectors.SLASH1);
                         }
                     }
@@ -165,11 +174,12 @@ public class AttackAction extends SwordAction {
                     if (aerial) o.add(VectorUtil.UP.clone().multiply(ex.getVelocity().getY()));
 
                     if (!aerial) {
+                        var damping = ConfigManager.getInstance().getPhysics().getAttackVelocity().getGroundedDamping();
                         Vector curV = ex.getVelocity();
                         ex.setVelocity(new Vector(
-                                curV.getX() * 0.3,
-                                curV.getY() * 0.4,
-                                curV.getZ() * 0.3));
+                                curV.getX() * damping.getHorizontal(),
+                                curV.getY() * damping.getVertical(),
+                                curV.getZ() * damping.getHorizontal()));
                     }
 
                     double[] d = {damage};
@@ -218,11 +228,13 @@ public class AttackAction extends SwordAction {
                                 }
 
                                 // retrieving targets and setting knockback
-                                Vector kb =  new Vector(0,0.25,0);
-                                Vector r = right.clone().multiply(0.1);
+                                var knockback = ConfigManager.getInstance().getPhysics().getAttackVelocity().getKnockback();
+                                Vector kb =  new Vector(0, knockback.getVerticalBase(), 0);
+                                Vector r = right.clone().multiply(knockback.getHorizontalModifier());
 
                                 // enum map to hitbox Consumer function accepting executor
-                                HashSet<LivingEntity> curHit = HitboxUtil.secant(ex, o, l, 0.4, true);
+                                double secantRadius = ConfigManager.getInstance().getCombat().getHitboxes().getSecantRadius();
+                                HashSet<LivingEntity> curHit = HitboxUtil.secant(ex, o, l, secantRadius, true);
 
                                 for (LivingEntity target : curHit)
                                     if (!hit.contains(target)) {
@@ -231,8 +243,8 @@ public class AttackAction extends SwordAction {
                                             case BASIC_2 -> kb = kb.clone().add(r.clone().multiply(-1));
                                             case BASIC_3 -> kb = target.getLocation().toVector()
                                                     .subtract(o.toVector()).normalize()
-                                                    .subtract(new Vector(0,0.5,0));
-                                            default -> kb = v.clone().normalize().multiply(0.7);
+                                                    .subtract(new Vector(0, knockback.getVerticalBase() * 2, 0));
+                                            default -> kb = v.clone().normalize().multiply(knockback.getNormalMultiplier());
                                         }
 
                                         SwordEntity sTarget = SwordEntityArbiter.getOrAdd(target.getUniqueId());

@@ -1,6 +1,7 @@
 package btm.sword.util.entity;
 
 import btm.sword.Sword;
+import btm.sword.config.ConfigManager;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.util.display.DisplayUtil;
 import btm.sword.util.display.Prefab;
@@ -26,7 +27,7 @@ public class EntityUtil {
      * @return true if the entity is on ground, false otherwise
      */
     public static boolean isOnGround(Entity entity) {
-        double maxCheckDist = 0.3;
+        double maxCheckDist = ConfigManager.getInstance().getDetection().getGroundCheck().getMaxDistance();
         Location base = entity.getLocation().add(new Vector(0, -maxCheckDist, 0));
 
         double[] offsets = {0};
@@ -67,7 +68,8 @@ public class EntityUtil {
         double originalYaw = Math.toRadians(entity.entity().getBodyYaw());
         Vector offset = Prefab.Direction.UP.clone().multiply(heightOffset);
 
-        itemDisplay.setBillboard(Display.Billboard.FIXED);
+        var displayFollow = ConfigManager.getInstance().getDisplay().getItemDisplayFollow();
+        itemDisplay.setBillboard(displayFollow.getBillboardMode());
         entity.entity().addPassenger(itemDisplay);
 
         new BukkitRunnable() {
@@ -84,14 +86,14 @@ public class EntityUtil {
                 l.setDirection(curDir);
 
 
-                DisplayUtil.smoothTeleport(itemDisplay, 2);
+                DisplayUtil.smoothTeleport(itemDisplay, displayFollow.getUpdateInterval());
                 itemDisplay.teleport(l);
 
-                if (step % 4 == 0)
+                if (step % displayFollow.getParticleInterval() == 0)
                     Prefab.Particles.BLEED.display(l);
 
                 step++;
             }
-        }.runTaskTimer(Sword.getInstance(), 0L, 2L);
+        }.runTaskTimer(Sword.getInstance(), 0L, displayFollow.getUpdateInterval());
     }
 }
