@@ -4,13 +4,6 @@ main: btm.sword.Sword
 api-version: '1.21.8'
 loader: btm.sword.SwordPluginLoader
 
-commands:
-  sword:
-    description: Main command for Sword Combat Evolved
-    usage: /sword <reload>
-    permission: sword.use
-    aliases: [sce, swordce]
-
 permissions:
   sword.use:
     description: Allows use of /sword command
