@@ -353,6 +353,50 @@ entities:
     # Velocity reset (prevents movement)
     reset_velocity: true
 
+  # Default combat profile stat values
+  # Source: CombatProfile.java:84, 95-99
+  # Controls base RPG stats for entities (SHARDS, TOUGHNESS, SOULFIRE, FORM)
+  # Format: current/max/regen per resource
+  combat_profile:
+    # SHARDS: Primary combat resource for abilities
+    # Format: ResourceValue(current, max, regen_per_tick)
+    # Default: 10 current, 50 max, 1.0 regen/tick
+    shards:
+      current: 10
+      max: 50
+      regen: 1.0
+
+    # TOUGHNESS: Damage resistance and armor
+    # Format: ResourceValue(current, max, regen_per_tick)
+    # Default: 20 current, 20 max, 0.5 regen/tick
+    toughness:
+      current: 20
+      max: 20
+      regen: 0.5
+
+    # SOULFIRE: Special energy resource
+    # Format: ResourceValue(current, max, regen_per_tick)
+    # Default: 100 current, 5 max, 0.2 regen/tick
+    # Note: High current with low max creates unique mechanic
+    soulfire:
+      current: 100
+      max: 5
+      regen: 0.2
+
+    # FORM: Stance and positioning resource
+    # Format: ResourceValue(current, max, regen_per_tick)
+    # Default: 10 current, 60 max, 1.0 regen/tick
+    form:
+      current: 10
+      max: 60
+      regen: 1.0
+
+    # Maximum consecutive air dodges before landing
+    # Source: CombatProfile.java:84
+    # Default: 1 (single air dodge)
+    # Increased by ability upgrades
+    max_air_dodges: 1
+
 # ==============================================================================
 # WORLD INTERACTION
 # Block detection, marker placement, explosion settings
