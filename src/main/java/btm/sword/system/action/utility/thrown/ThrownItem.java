@@ -472,8 +472,7 @@ public class ThrownItem {
      */
     public void hitCheck() {
         Predicate<Entity> filter = entity -> (entity instanceof LivingEntity l) && !l.isDead() && l.getType() != EntityType.ARMOR_STAND;
-        Predicate<Entity> effFilter = t < 20 ? entity -> filter.test(entity) /*&& entity.getUniqueId() != thrower.getUniqueId()*/ : filter;
-        // TODO: uncomment
+        Predicate<Entity> effFilter = t < 20 ? entity -> filter.test(entity) && entity.getUniqueId() != thrower.getUniqueId() : filter;
 
         if (prev == null) disposeNaturally();
 
@@ -547,13 +546,11 @@ public class ThrownItem {
 
         double max = hit.getEyeLocation().getY();
         double feet = hit.getLocation().getY();
-        double min = feet + hitEntity.getEyeHeight()*0.2;
+        double diff = max - feet;
 
-        double diff = cur.getY();
-        double worldOffset = Math.min(Math.max(diff, min), max);
-        double heightOffset = worldOffset - feet;
+        double heightOffset = Math.max(0, Math.min(cur.getY() - feet, hit.getHeight()));
 
-        boolean followHead = hitEntity.entity().getType() != EntityType.SPIDER && diff >= max;
+        boolean followHead = hitEntity.entity().getType() != EntityType.SPIDER && heightOffset >= diff*0.8;
         EntityUtil.itemDisplayFollow(hitEntity, display,  velocity.clone().normalize(), heightOffset, followHead);
     }
 

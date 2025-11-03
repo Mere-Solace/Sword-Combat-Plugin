@@ -309,8 +309,12 @@ public abstract class SwordEntity {
         new BukkitRunnable() {
             @Override
             public void run() {
-                if (self == null || self.isDead())
+                if (self == null || self.isDead()) {
+                    aspects.toughness().setEffAmountPercent(1f);
+                    aspects.toughness().setEffPeriodPercent(1f);
+                    toughnessBroken = false;
                     cancel();
+                }
 
                 if (aspects.toughness().curPercent() > 0.6) {
                     aspects.toughness().setEffAmountPercent(1f);

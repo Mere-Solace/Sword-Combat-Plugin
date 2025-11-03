@@ -92,9 +92,9 @@ public class CombatProfile {
 
         for (AspectType stat : AspectType.values()) {
             switch (stat) {
-                case SHARDS -> stats.put(stat, new ResourceValue(30, 30, 1));
-                case TOUGHNESS -> stats.put(stat, new ResourceValue(30, 20, 0.5f));
-                case SOULFIRE -> stats.put(stat, new ResourceValue(100, 1, 0.2f));
+                case SHARDS -> stats.put(stat, new ResourceValue(5, 50, 1));
+                case TOUGHNESS -> stats.put(stat, new ResourceValue(10, 20, 0.5f));
+                case SOULFIRE -> stats.put(stat, new ResourceValue(100, 5, 0.2f));
                 case FORM -> stats.put(stat, new ResourceValue(10, 60, 1));
                 default -> stats.put(stat, new AspectValue(1));
             }
