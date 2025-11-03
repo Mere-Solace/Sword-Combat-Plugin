@@ -3,13 +3,15 @@ package btm.sword.system.entity.types;
 import btm.sword.system.action.MovementAction;
 import btm.sword.system.action.utility.thrown.ThrownItem;
 import btm.sword.system.entity.aspect.AspectType;
+import btm.sword.system.entity.base.CombatProfile;
 import btm.sword.system.entity.base.SwordEntity;
-import btm.sword.system.playerdata.CombatProfile;
 import btm.sword.util.display.Prefab;
 import lombok.Getter;
 import lombok.Setter;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.attribute.Attribute;
+import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitTask;
@@ -40,6 +42,11 @@ public abstract class Combatant extends SwordEntity {
     private boolean throwCancelled;
     private boolean throwSuccessful;
 
+    private final AttributeInstance attrHealth;
+    private final AttributeInstance attrAbsorption;
+    private final AttributeInstance attrArmor;
+    private final AttributeInstance attrInteractionRange;
+
     /**
      * Constructs a new Combatant wrapping the given {@link LivingEntity}
      * and using the specified {@link CombatProfile}.
@@ -50,6 +57,17 @@ public abstract class Combatant extends SwordEntity {
     public Combatant(LivingEntity associatedEntity, CombatProfile combatProfile) {
         super(associatedEntity, combatProfile);
         airDashesPerformed = 0;
+
+        attrHealth = entity().getAttribute(Attribute.MAX_HEALTH);
+        if (attrHealth != null) attrHealth.setBaseValue(combatProfile.getStat(AspectType.SHARDS).getValue());
+
+        attrAbsorption = entity().getAttribute(Attribute.MAX_ABSORPTION);
+        if (attrAbsorption != null) attrAbsorption.setBaseValue(combatProfile.getStat(AspectType.TOUGHNESS).getValue());
+
+        attrArmor = entity().getAttribute(Attribute.ARMOR);
+        if (attrArmor != null) attrArmor.setBaseValue(combatProfile.getStat(AspectType.FORM).getValue());
+
+        attrInteractionRange = entity().getAttribute(Attribute.ENTITY_INTERACTION_RANGE);
     }
 
     /**

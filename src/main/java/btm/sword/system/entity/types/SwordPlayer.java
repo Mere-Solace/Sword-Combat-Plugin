@@ -12,6 +12,7 @@ import btm.sword.system.playerdata.PlayerData;
 import btm.sword.util.display.DisplayUtil;
 import com.destroystokyo.paper.profile.PlayerProfile;
 import java.time.Duration;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import lombok.Getter;
 import lombok.Setter;
@@ -56,6 +57,8 @@ public class SwordPlayer extends Combatant {
     private final PlayerProfile profile;
     private final String username;
     private final ItemStack playerHead;
+
+    private static final int baseMaxAbsorption = 20;
 
     private ItemDisplay sheathed;
     private boolean sheathedReady;
@@ -137,21 +140,25 @@ public class SwordPlayer extends Combatant {
     @Override
     protected void onTick() {
         super.onTick();
-        player.setFoodLevel(19);
-        player.setAbsorptionAmount(60);
-        player.sendHealthUpdate();
 
         if ((sheathed == null || sheathed.isDead()) && isSheathedReady()) {
             RestartSheathedWeapon();
         }
 
-        if (sheathed != null) {
+        if (sheathed != null && isSheathedReady()) {
             updateSheathedWeapon();
         }
 
         if (getItemStackInHand(false).getType() != Material.SHIELD) {
             setItemStackInHand(ItemStack.of(Material.SHIELD), false);
         }
+
+        if (player.getEquipment().getChestplate().isEmpty() ||
+                !player.getEquipment().getChestplate().getType().equals(Material.NETHERITE_CHESTPLATE)) {
+            player.getEquipment().setChestplate(ItemStack.of(Material.NETHERITE_CHESTPLATE));
+        }
+
+        if (player.getHealth() > 0) updateVisualStats();
     }
 
     /**
@@ -303,6 +310,16 @@ public class SwordPlayer extends Combatant {
         return false;
     }
 
+    public void updateVisualStats() {
+        player.setAbsorptionAmount(aspects.toughnessCur());
+        player.setHealth(Math.max(1, aspects.shardsCur()));
+        player.setFoodLevel((int) (20 * (aspects.soulfireCur()/aspects.soulfireVal())));
+//        EntityEquipment equipment = player.getEquipment();
+//        ItemStack chestplate = equipment.getChestplate();
+//        if (chestplate == null || chestplate.isEmpty()) return;
+//        ItemMeta meta = chestplate.getItemMeta();
+    }
+
     /**
      * Recreates and reinitializes the player's sheathed weapon display.
      * <p>
@@ -344,7 +361,7 @@ public class SwordPlayer extends Combatant {
             sheathed.setItemStack(new ItemStack(Material.STONE_SWORD));
 
             sheathed.setTransformation(new Transformation(
-                    new Vector3f(0.28f, -1.5f, -0.5f),
+                    new Vector3f(0.28f, -1.3f, -0.5f),
                     new Quaternionf().rotationY((float) Math.PI / 2).rotateZ(-(float) Math.PI / (1.65f)),
                     new Vector3f(1f, 1f, 1f),
                     new Quaternionf()
@@ -395,6 +412,11 @@ public class SwordPlayer extends Combatant {
                 }
             }, 50/x, TimeUnit.MILLISECONDS);
         }
+    }
+
+    public void endSheathedWeapon() {
+        sheathed.remove();
+        setSheathedReady(false);
     }
 
     /**

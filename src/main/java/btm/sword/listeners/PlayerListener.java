@@ -13,6 +13,7 @@ import net.kyori.adventure.key.Key;
 import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
+import org.bukkit.GameMode;
 import org.bukkit.Particle;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
@@ -21,6 +22,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityPickupItemEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.inventory.*;
+import org.bukkit.event.player.PlayerGameModeChangeEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
@@ -48,7 +50,7 @@ public class PlayerListener implements Listener {
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
         Player p = event.getPlayer();
-        SwordEntityArbiter.register(p);
+//        SwordEntityArbiter.register(p);
         p.sendMessage("Hello!");
     }
 
@@ -301,5 +303,17 @@ public class PlayerListener implements Listener {
     @EventHandler
     public void playerShieldBreakEvent(PlayerShieldDisableEvent event) {
         event.setCancelled(true);
+    }
+
+    @EventHandler
+    public void gameChangeEvent(PlayerGameModeChangeEvent event) {
+        SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId());
+
+        if (event.getNewGameMode().equals(GameMode.SPECTATOR)) {
+            swordPlayer.endSheathedWeapon();
+        }
+        else {
+            swordPlayer.setSheathedReady(true);
+        }
     }
 }

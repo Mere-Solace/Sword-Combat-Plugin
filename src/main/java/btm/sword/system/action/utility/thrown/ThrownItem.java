@@ -428,7 +428,7 @@ public class ThrownItem {
     }
 
     /**
-     * Handles when the thrower catches their own thrown item mid-air.
+     * Handles when the thrower catches their own thrown item midair.
      * <p>
      * Returns the item to inventory and disposes of the display.
      */
@@ -546,13 +546,11 @@ public class ThrownItem {
 
         double max = hit.getEyeLocation().getY();
         double feet = hit.getLocation().getY();
-        double min = feet + hitEntity.getEyeHeight()*0.2;
+        double diff = max - feet;
 
-        double diff = cur.getY();
-        double worldOffset = Math.min(Math.max(diff, min), max);
-        double heightOffset = worldOffset - feet;
+        double heightOffset = Math.max(0, Math.min(cur.getY() - feet, hit.getHeight()));
 
-        boolean followHead = hitEntity.entity().getType() != EntityType.SPIDER && diff >= max;
+        boolean followHead = hitEntity.entity().getType() != EntityType.SPIDER && heightOffset >= diff*0.8;
         EntityUtil.itemDisplayFollow(hitEntity, display,  velocity.clone().normalize(), heightOffset, followHead);
     }
 

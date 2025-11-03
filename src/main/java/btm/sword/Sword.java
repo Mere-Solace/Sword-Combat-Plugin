@@ -34,7 +34,7 @@ public final class Sword extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        PlayerDataManager.shutdown();
+//        PlayerDataManager.shutdown();
 
         getLogger().info("~ Sword Plugin has been disabled ~");
     }

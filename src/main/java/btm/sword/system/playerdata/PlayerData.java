@@ -1,8 +1,11 @@
 package btm.sword.system.playerdata;
 
+import btm.sword.system.entity.base.CombatProfile;
 import java.util.Date;
 import java.util.UUID;
+import lombok.Getter;
 
+@Getter
 public class PlayerData {
     private final UUID uuid;
     private final Date dateOfFirstLogin;
@@ -16,13 +19,5 @@ public class PlayerData {
 
     public UUID getUniqueId() {
         return uuid;
-    }
-
-    public Date getDateOfFirstLogin() {
-        return dateOfFirstLogin;
-    }
-
-    public CombatProfile getCombatProfile() {
-        return combatProfile;
     }
 }
