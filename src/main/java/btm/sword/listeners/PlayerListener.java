@@ -115,8 +115,14 @@ public class PlayerListener implements Listener {
     @EventHandler
     public void onItemPickup(EntityPickupItemEvent event) {
         SwordEntity e = SwordEntityArbiter.getOrAdd(event.getEntity().getUniqueId());
-        if (!e.isAbleToPickup())
+
+        if (!e.isAbleToPickup()) event.setCancelled(true);
+
+        if (e.getItemStackInHand(true).isEmpty()) {
+            event.getItem().remove();
+            e.setItemStackInHand(event.getItem().getItemStack(), true);
             event.setCancelled(true);
+        }
     }
 
     /**

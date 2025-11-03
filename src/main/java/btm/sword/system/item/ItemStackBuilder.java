@@ -195,7 +195,16 @@ public class ItemStackBuilder {
      * @return this builder, for chaining
      */
     public ItemStackBuilder hideAll() {
-        meta.addItemFlags(ItemFlag.values());
+        meta.addItemFlags(
+                ItemFlag.HIDE_ARMOR_TRIM,
+                ItemFlag.HIDE_ATTRIBUTES,
+                ItemFlag.HIDE_DESTROYS,
+                ItemFlag.HIDE_DYE,
+                ItemFlag.HIDE_ENCHANTS,
+                ItemFlag.HIDE_PLACED_ON,
+                ItemFlag.HIDE_STORED_ENCHANTS,
+                ItemFlag.HIDE_UNBREAKABLE
+        );
         return this;
     }
 
