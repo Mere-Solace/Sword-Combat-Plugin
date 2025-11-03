@@ -1,4 +1,10 @@
-# Sword Combat Plugin
+# Sword: Combat Evolved
+
+[![Paper](https://img.shields.io/badge/Paper-1.21+-00ADD8?style=for-the-badge&logo=minecraft)](https://papermc.io/)
+[![Java](https://img.shields.io/badge/Java-21+-orange?style=for-the-badge&logo=openjdk)](https://openjdk.org/)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue?style=for-the-badge)](LICENSE)
+[![Discord](https://img.shields.io/badge/Discord-Join-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/n5vty6m7)
+[![Build](https://img.shields.io/badge/Build-Gradle-02303A?style=for-the-badge&logo=gradle)](https://gradle.org/)
 
 An advanced Minecraft combat system featuring throwing mechanics, entity interactions, combo
 attacks, and RPG-style stats. Built for Paper 1.21+.

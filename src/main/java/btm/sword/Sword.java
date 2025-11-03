@@ -29,14 +29,14 @@ public final class Sword extends JavaPlugin {
 
         PlayerDataManager.initialize();
 
-        getLogger().info("~ Sword Plugin has been enabled ~");
+        getLogger().info("~ Sword: Combat Evolved has been enabled ~");
     }
 
     @Override
     public void onDisable() {
 //        PlayerDataManager.shutdown();
 
-        getLogger().info("~ Sword Plugin has been disabled ~");
+        getLogger().info("~ Sword: Combat Evolved has been disabled ~");
     }
 
     public static void print(String str) {
