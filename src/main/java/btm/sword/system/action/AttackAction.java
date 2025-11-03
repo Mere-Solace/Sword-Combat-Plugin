@@ -108,8 +108,7 @@ public class AttackAction extends SwordAction {
 //                    executor.message("After: Soulfire 'Hunger': " + 20 * (executor.getAspects().soulfireCur()/executor.getAspects().soulfireVal()));
 //                    //
 
-                    var attackSound = ConfigManager.getInstance().getAudio().getAttackSound();
-                    SoundUtil.playSound(executor.entity(), attackSound.getSound(), attackSound.getVolume(), attackSound.getPitch());
+                    Prefab.Sounds.ATTACK.play(executor.entity());
 
                     executor.setTimeOfLastAttack(System.currentTimeMillis());
                     executor.setDurationOfLastAttack((int) castDuration * attacksConfig.getDurationMultiplier());

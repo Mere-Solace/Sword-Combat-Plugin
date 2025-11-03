@@ -186,7 +186,7 @@ public class ThrownItem {
             }.runTaskLater(Sword.getInstance(), 2);
         }
 
-        SoundUtil.playSound(thrower.entity(), SoundType.ENTITY_ENDER_DRAGON_FLAP, 0.5f, 0.4f);
+        Prefab.Sounds.THROW.play(thrower.entity());
 
         thrower.setItemStackInHand(ItemStack.of(Material.AIR), true);
         InteractiveItemArbiter.put(this);

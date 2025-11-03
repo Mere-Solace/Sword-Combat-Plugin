@@ -1,5 +1,6 @@
 package btm.sword.util.display;
 
+import btm.sword.util.sound.SoundWrapper;
 import java.util.ArrayList;
 import java.util.List;
 import org.bukkit.Color;
@@ -99,5 +100,38 @@ public class Prefab {
         public static final Vector DOWN = new Vector(0, -1, 0);
         public static final Vector NORTH = new Vector(0, 0, -1);
         public static final Vector SOUTH = new Vector(0, 0, 1);
+    }
+
+    /**
+     * Prefab sound effects that internally use the configuration system.
+     * <p>
+     * Provides pre-configured {@link SoundWrapper} instances that fetch properties
+     * from config.yaml at play time, enabling hot-reload functionality.
+     * Sound properties (type, volume, pitch) are dynamically loaded from the
+     * configuration system when {@link SoundWrapper#play(org.bukkit.entity.LivingEntity)}
+     * is called.
+     * </p>
+     * <p>
+     * Usage: {@code Prefab.Sounds.ATTACK.play(entity);}
+     * </p>
+     */
+    public static class Sounds {
+        /**
+         * Attack sound effect for melee combat.
+         * <p>
+         * Used for basic slashes, aerial attacks, and other melee actions.
+         * Properties configured in config.yaml under audio.attack.
+         * </p>
+         */
+        public static final SoundWrapper ATTACK = new SoundWrapper(audio -> audio.getAttackSound());
+
+        /**
+         * Throw sound effect for thrown items.
+         * <p>
+         * Used when throwing swords, axes, and other throwable items.
+         * Properties configured in config.yaml under audio.throw.
+         * </p>
+         */
+        public static final SoundWrapper THROW = new SoundWrapper(audio -> audio.getThrowSound());
     }
 }
