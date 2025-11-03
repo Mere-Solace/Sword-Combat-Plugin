@@ -281,6 +281,37 @@ The configuration system supports hot-reloading without server restart:
 - New values are applied to the active configuration
 - If errors occur, previous values remain in effect
 
+### Live Testing Workflow
+
+**You can modify values while the server is running!**
+
+```bash
+# 1. Keep server running (no restart needed)
+./gradlew runServer
+
+# 2. In another terminal, edit the live config
+nano run/plugins/Sword/config.yaml
+# Or: vim plugins/Sword/config.yaml
+# Or: Use your IDE to edit the file
+
+# 3. Change a value
+combat:
+  attacks:
+    base_damage: 15.0  # Changed from 20.0
+
+# 4. Save the file (no server action needed yet)
+
+# 5. In-game, reload config
+/sword reload
+
+# 6. Test immediately - new values are now active!
+# (throw items, test combat, check changes)
+
+# 7. Iterate: Edit again, save, /sword reload, test
+```
+
+**Key Point:** You edit `plugins/Sword/config.yaml` on the server filesystem while it's running, then use `/sword reload` to apply changes instantly. No server restart required!
+
 ### What Gets Reloaded
 
 ✅ **Reloaded:**
@@ -353,6 +384,51 @@ Some values affect each other:
 - **Attack Range + Cast Duration** = Hit windows
 
 ## Common Tuning Scenarios
+
+### Example: Live Tuning Thrown Item Gravity
+
+**Goal:** Make thrown items stay in the air longer
+
+**Live Testing Process:**
+
+```bash
+# Start server
+./gradlew runServer
+
+# Connect and test current behavior
+# Items falling too fast!
+
+# Edit config while server runs
+vim run/plugins/Sword/config.yaml
+
+# Try increasing gravity damper
+physics:
+  thrown_items:
+    gravity_damper: 55.0  # Up from 46.0
+
+# Save and reload
+/sword reload  # In-game
+
+# Test - still too fast!
+# Edit again (server still running)
+gravity_damper: 65.0  # Try higher
+
+# Save and reload
+/sword reload
+
+# Test - too floaty now!
+# Edit one more time
+gravity_damper: 60.0  # Sweet spot!
+
+# Save and reload
+/sword reload
+
+# Perfect! Keep this value
+```
+
+**Result:** Found optimal value (60.0) through live iteration without any server restarts.
+
+---
 
 ### Scenario: Thrown items fall too fast
 
