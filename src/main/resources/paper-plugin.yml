@@ -1,5 +1,5 @@
 name: sword
-version: '1.02'
+version: '${version}'
 main: btm.sword.Sword
 api-version: '1.21.8'
 loader: btm.sword.SwordPluginLoader
