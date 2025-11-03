@@ -71,7 +71,7 @@ eula=true
             // Set resource pack configuration
             props.setProperty('resource-pack', 'https://www.dropbox.com/scl/fi/xl8c0zu4fvrqwf1q6m018/gun4.zip?rlkey=8kxveifnxj0sq8cgdhs54x2eb&e=1&st=6rjfts8v&dl=1')
             props.setProperty('resource-pack-id', '')
-            props.setProperty('resource-pack-prompt', 'Recommended for cool things to happen.')
+            props.setProperty('resource-pack-prompt', '{"text":"Recommended for cool things to happen."}')
             props.setProperty('resource-pack-sha1', '8b4957f9c59d5e1e6804921150af9646c6c6a295')
 
             serverPropsFile.withOutputStream { props.store(it, 'Auto-configured by Gradle runServer task') }
