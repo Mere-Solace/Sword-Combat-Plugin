@@ -2,6 +2,7 @@ package btm.sword.system.action;
 
 import btm.sword.Sword;
 import btm.sword.system.action.utility.thrown.InteractiveItemArbiter;
+import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.types.Combatant;
@@ -24,6 +25,7 @@ import org.bukkit.entity.*;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
+
 
 /**
  * Provides movement-based actions for {@link Combatant} entities.
@@ -55,11 +57,12 @@ public class MovementAction extends SwordAction {
 
                 // check for an item that may be the target of the dash
                 Entity targetedItem = HitboxUtil.ray(o, o.getDirection(), maxDistance, 0.7,
-                        entity -> entity.getType() == EntityType.ITEM_DISPLAY &&
+                        entity -> (entity.getType() == EntityType.ITEM_DISPLAY &&
                                 !entity.isDead() &&
                                 entity instanceof ItemDisplay id &&
-                                InteractiveItemArbiter.checkIfInteractive(id));
-                executor.message("Targeted: " + targetedItem);
+                                InteractiveItemArbiter.checkIfInteractive(id)) &&
+                                !InteractiveItemArbiter.isImaplingEntity(SwordEntityArbiter.get(ex.getUniqueId()), id));
+//                executor.message("Targeted: " + targetedItem);
 
                 if (targetedItem instanceof ItemDisplay id &&
                         !id.isDead() &&

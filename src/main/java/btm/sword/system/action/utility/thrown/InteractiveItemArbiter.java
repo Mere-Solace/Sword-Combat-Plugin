@@ -1,5 +1,6 @@
 package btm.sword.system.action.utility.thrown;
 
+import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.types.Combatant;
 import btm.sword.util.display.ParticleWrapper;
 import btm.sword.util.display.Prefab;
@@ -21,7 +22,7 @@ public class InteractiveItemArbiter {
     /**
      * Registry of all active thrown items mapped by their associated {@link ItemDisplay}.
      */
-    public static final HashMap<ItemDisplay, ThrownItem> thrownItems = new HashMap<>();
+    private static final HashMap<ItemDisplay, ThrownItem> thrownItems = new HashMap<>();
 
     /**
      * Registers a new {@link ThrownItem} with its {@link ItemDisplay} as the key.
@@ -40,6 +41,12 @@ public class InteractiveItemArbiter {
      */
     public static boolean checkIfInteractive(ItemDisplay id) {
         return thrownItems.containsKey(id);
+    }
+
+
+    public static boolean isImaplingEntity(SwordEntity self, ItemDisplay targeted) {
+        ThrownItem thrown = thrownItems.getOrDefault(targeted, null);
+        return thrown != null && thrown.getHitEntity() != null && thrown.getHitEntity().equals(self);
     }
 
     /**

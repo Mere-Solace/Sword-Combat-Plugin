@@ -90,6 +90,8 @@ public class GrabAction extends SwordAction {
                 SwordEntity swordTarget = SwordEntityArbiter.getOrAdd(target.getUniqueId());
                 if (swordTarget.isHit()) return;
 
+                if (swordTarget instanceof Combatant c && c.isAttemptingThrow()) c.setThrowCancelled(true);
+
                 executor.onGrab(swordTarget);
 
                 final int[] ticks = {0};

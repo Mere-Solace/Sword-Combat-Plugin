@@ -12,6 +12,7 @@ import btm.sword.system.playerdata.PlayerData;
 import btm.sword.util.display.DisplayUtil;
 import com.destroystokyo.paper.profile.PlayerProfile;
 import java.time.Duration;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import lombok.Getter;
 import lombok.Setter;
@@ -151,6 +152,13 @@ public class SwordPlayer extends Combatant {
         if (getItemStackInHand(false).getType() != Material.SHIELD) {
             setItemStackInHand(ItemStack.of(Material.SHIELD), false);
         }
+
+        if (player.getEquipment().getChestplate().isEmpty() ||
+                !player.getEquipment().getChestplate().getType().equals(Material.NETHERITE_CHESTPLATE)) {
+            player.getEquipment().setChestplate(ItemStack.of(Material.NETHERITE_CHESTPLATE));
+        }
+
+        if (player.getHealth() > 0) updateVisualStats();
     }
 
     /**
@@ -304,8 +312,12 @@ public class SwordPlayer extends Combatant {
 
     public void updateVisualStats() {
         player.setAbsorptionAmount(aspects.toughnessCur());
-        player.setHealth(aspects.shardsCur());
-        player.setFoodLevel((int) aspects.soulfireCur());
+        player.setHealth(Math.max(1, aspects.shardsCur()));
+        player.setFoodLevel((int) (20 * (aspects.soulfireCur()/aspects.soulfireVal())));
+//        EntityEquipment equipment = player.getEquipment();
+//        ItemStack chestplate = equipment.getChestplate();
+//        if (chestplate == null || chestplate.isEmpty()) return;
+//        ItemMeta meta = chestplate.getItemMeta();
     }
 
     /**

@@ -94,6 +94,12 @@ public class AttackAction extends SwordAction {
             new BukkitRunnable() {
                 @Override
                 public void run() {
+                    // Testing:
+                    executor.hit(executor, 5, 1, 60, 6, Prefab.Direction.UP);
+
+                    executor.message("Soulfire 'Hunger': " + 20 * (executor.getAspects().soulfireCur()/executor.getAspects().soulfireVal()));
+                    //
+
                     SoundUtil.playSound(executor.entity(), SoundType.ENTITY_ENDER_DRAGON_FLAP, 0.35f, 0.6f);
 
                     executor.setTimeOfLastAttack(System.currentTimeMillis());

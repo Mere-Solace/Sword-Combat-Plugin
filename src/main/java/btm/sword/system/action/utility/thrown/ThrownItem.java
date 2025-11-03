@@ -428,7 +428,7 @@ public class ThrownItem {
     }
 
     /**
-     * Handles when the thrower catches their own thrown item mid-air.
+     * Handles when the thrower catches their own thrown item midair.
      * <p>
      * Returns the item to inventory and disposes of the display.
      */
@@ -472,7 +472,8 @@ public class ThrownItem {
      */
     public void hitCheck() {
         Predicate<Entity> filter = entity -> (entity instanceof LivingEntity l) && !l.isDead() && l.getType() != EntityType.ARMOR_STAND;
-        Predicate<Entity> effFilter = t < 20 ? entity -> filter.test(entity) && entity.getUniqueId() != thrower.getUniqueId() : filter;
+        Predicate<Entity> effFilter = t < 20 ? entity -> filter.test(entity) /*&& entity.getUniqueId() != thrower.getUniqueId()*/ : filter;
+        // TODO: uncomment
 
         if (prev == null) disposeNaturally();
 

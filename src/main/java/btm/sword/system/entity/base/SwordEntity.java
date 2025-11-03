@@ -238,7 +238,7 @@ public abstract class SwordEntity {
             hit = true;
         this.hitInvulnerableTickDuration = hitInvulnerableTickDuration;
 
-        self.damage(10);
+        self.damage(0.01);
 
         Prefab.Particles.TEST_HIT.display(getChestLocation());
         SoundUtil.playSound(source.entity(), SoundType.ENTITY_PLAYER_ATTACK_STRONG, 0.9f, 1f);
@@ -273,9 +273,9 @@ public abstract class SwordEntity {
             affliction.start(this);
         }
 
-		source.message("Hit that guy. He now has:\n" + aspects.shards().cur() + " shards,\n"
-				+ aspects.toughness().cur() + " toughness,\n"
-				+ aspects.soulfire().cur() + " soulfire.");
+        source.message("Hit that guy. He now has:\n" + aspects.shards().cur() + " shards,\n"
+                + aspects.toughness().cur() + " toughness,\n"
+                + aspects.soulfire().cur() + " soulfire.");
     }
 
     /**

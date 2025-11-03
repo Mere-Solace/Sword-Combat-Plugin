@@ -7,8 +7,19 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 
 /**
- * Represents an Aspect that is a regenerating resource with a current value, regen period, and amount.
- * Handles automatic regeneration using a Bukkit scheduled task.
+ * Represents an {@link Aspect} that behaves as a regenerating resource.
+ * <p>
+ * A {@code Resource} has a current value that automatically regenerates over time
+ * according to its base regeneration period and amount. The regeneration process
+ * is managed by a repeating Bukkit task that periodically restores the resource,
+ * up to its effective maximum.
+ * </p>
+ *
+ * <p>
+ * The regeneration rate and amount can be dynamically modified using
+ * percentage-based multipliers ({@code effPeriodPercent}, {@code effAmountPercent}),
+ * allowing for buffs, debuffs, or temporary effects to affect recovery behavior.
+ * </p>
  */
 @Getter
 @Setter
@@ -43,10 +54,17 @@ public class Resource extends Aspect {
         this.baseRegenPeriod = baseRegenPeriod;
         this.baseRegenAmount = baseRegenAmount;
         curValue = baseValue;
+
+        effPeriodPercent = 1.0f;
+        effAmountPercent = 1.0f;
     }
 
     /**
-     * Starts the scheduled task that automatically regenerates resource, if not at cap.
+     * Starts a scheduled task that automatically regenerates the resource over time.
+     * <p>
+     * If the resource is already full, it will wait until the next cycle before checking again.
+     * The task runs indefinitely until manually stopped via {@link #stopRegenTask()}.
+     * </p>
      */
     public void startRegenTask() {
         regenTask = new BukkitRunnable() {
@@ -60,7 +78,10 @@ public class Resource extends Aspect {
     }
 
     /**
-     * Cancels the regeneration task, if active.
+     * Stops the ongoing regeneration task, if one is active.
+     * <p>
+     * Safe to call even if no task is running.
+     * </p>
      */
     public void stopRegenTask() {
         if (regenTask != null && !regenTask.isCancelled() && regenTask.getTaskId() != -1)
@@ -68,7 +89,10 @@ public class Resource extends Aspect {
     }
 
     /**
-     * Restarts the regeneration task, applying any changed parameters.
+     * Restarts the regeneration task, reapplying any modified regeneration parameters.
+     * <p>
+     * Useful after changing period or amount multipliers.
+     * </p>
      */
     public void restartRegenTask() {
         stopRegenTask();
