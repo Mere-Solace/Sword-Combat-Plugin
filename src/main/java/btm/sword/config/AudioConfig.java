@@ -1,7 +1,7 @@
 package btm.sword.config;
 
+import btm.sword.util.sound.SoundType;
 import lombok.Getter;
-import org.bukkit.Sound;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 
@@ -26,7 +26,7 @@ public class AudioConfig {
 
     @Getter
     public static class SoundConfig {
-        private final Sound sound;
+        private final SoundType sound;
         private final float volume;
         private final float pitch;
 
@@ -37,11 +37,11 @@ public class AudioConfig {
         public SoundConfig(ConfigurationSection section, String defaultSound, float defaultVolume, float defaultPitch) {
             if (section != null) {
                 String soundName = section.getString("sound", defaultSound);
-                this.sound = Sound.valueOf(soundName);
+                this.sound = SoundType.valueOf(soundName);
                 this.volume = (float) section.getDouble("volume", defaultVolume);
                 this.pitch = (float) section.getDouble("pitch", defaultPitch);
             } else {
-                this.sound = Sound.valueOf(defaultSound);
+                this.sound = SoundType.valueOf(defaultSound);
                 this.volume = defaultVolume;
                 this.pitch = defaultPitch;
             }
