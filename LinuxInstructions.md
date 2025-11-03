@@ -27,7 +27,7 @@
 7. After cloning, in IntelliJ, navigate: File > Project Structure > Artifacts > + > JAR > From Modules with Dependencies > OK
 
 
-8. Select '+' above the .jar's output section, and click 'File', now navigate inside of the repo to 'Sword-Combat-Plugin/src/resources/paper-plugin.yml' and press 'OK'.
+8. Select '+' above the .jar's output section, and click 'File', now navigate inside of the repo to 'Sword-Combat-Plugin/src/resources/paper-plugin.yaml' and press 'OK'.
 
 
 9. Click apply

@@ -67,7 +67,7 @@ Run `./gradlew spotlessApply` to auto-fix formatting issues.
 
 ## Workflow File Location
 
-`.github/workflows/code-quality.yml`
+`.github/workflows/code-quality.yaml`
 
 ## How It Works
 
@@ -184,7 +184,7 @@ Useful for:
 Add to README.md:
 
 ```markdown
-![Code Quality](https://github.com/Mere-Solace/Sword-Combat-Plugin/actions/workflows/code-quality.yml/badge.svg)
+![Code Quality](https://github.com/Mere-Solace/Sword-Combat-Plugin/actions/workflows/code-quality.yaml/badge.svg)
 ```
 
 Shows real-time status of latest workflow run.
@@ -195,7 +195,7 @@ Shows real-time status of latest workflow run.
 
 **Check:**
 
-1. Workflow file exists: `.github/workflows/code-quality.yml`
+1. Workflow file exists: `.github/workflows/code-quality.yaml`
 2. Branch is pushed to GitHub
 3. Repository has Actions enabled (Settings -> Actions)
 

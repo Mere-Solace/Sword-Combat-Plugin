@@ -98,7 +98,7 @@ processResources {
     def props = [version: version]
     inputs.properties props
     filteringCharset 'UTF-8'
-    filesMatching('paper-plugin.yml') {
+    filesMatching('paper-plugin.yaml') {
         expand props
     }
 }
