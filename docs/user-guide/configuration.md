@@ -6,10 +6,26 @@ This guide explains how to configure Sword: Combat Evolved using the `config.yam
 
 Sword: Combat Evolved uses a comprehensive configuration system that allows server administrators to tune gameplay without modifying code. All configuration values are hot-reloadable via the `/sword reload` command.
 
-**Configuration File Location:**
+### Configuration File Locations
+
+**Live Configuration (Edit This):**
 ```
 plugins/Sword/config.yaml
 ```
+
+**Default Template (Don't Edit):**
+```
+src/main/resources/config.yaml (inside the plugin JAR)
+```
+
+### How It Works
+
+1. **First Startup**: When the plugin loads for the first time, it automatically extracts the default `config.yaml` from the JAR to `plugins/Sword/config.yaml`
+2. **Configuration Editing**: Server administrators edit `plugins/Sword/config.yaml` on the file system
+3. **Hot Reload**: `/sword reload` re-reads values from `plugins/Sword/config.yaml`
+4. **Template**: The config.yaml inside the JAR is never modified - it only serves as the initial template
+
+**Important:** Changes to the JAR's internal config.yaml have no effect on a running server. Always edit `plugins/Sword/config.yaml` in the plugins folder.
 
 ## Quick Start
 
