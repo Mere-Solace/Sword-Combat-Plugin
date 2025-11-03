@@ -1,0 +1,416 @@
+# ==============================================================================
+# Sword: Combat Evolved - Configuration File
+# ==============================================================================
+# This file externalizes hardcoded values to allow for dynamic tuning without
+# recompilation. Values are organized by game system for maintainability.
+#
+# After editing, reload with: /sword reload
+# ==============================================================================
+
+# ==============================================================================
+# PHYSICS SYSTEM
+# Controls projectile motion, gravity, and velocity calculations
+# ==============================================================================
+physics:
+  # Thrown item projectile physics
+  thrown_items:
+    # Gravity dampening coefficient
+    # Source: ThrownItem.java:214
+    # Range: 30-60 (lower = faster fall, higher = floatier arc)
+    # Note: 46 approximates realistic gravity at ~20 ticks/second
+    gravity_damper: 46.0
+
+    # Trajectory angle adjustment (radians)
+    # Source: ThrownItem.java:209
+    # Value: π/85 ≈ 0.037 radians ≈ 2.12 degrees
+    # Range: π/120 to π/60 (0.026-0.052 rad)
+    # Purpose: Slight rightward curve compensation
+    trajectory_rotation: 0.03696  # Math.PI/85
+
+    # Initial display position offsets (relative to player eye location)
+    # Source: ThrownItem.java:96-98
+    # Coordinates in blocks: (right/left, up/down, forward/back)
+    display_offset:
+      x: -0.5  # Negative = left of player
+      y: 0.1   # Above eye level
+      z: 0.5   # In front of player
+
+    # Throw origin offsets (eye location adjustments)
+    # Source: ThrownItem.java:204-206
+    # Applied to basis vectors: [forward, up, right]
+    origin_offset:
+      forward: 0.5   # Half block ahead
+      up: 0.1        # Slightly raised
+      back: -0.25    # Quarter block adjustment
+
+    # Rotation speeds per tick for different item types (radians/tick)
+    # Source: ThrownItem.java:273-279
+    # Visual effect only, doesn't affect physics
+    rotation_speed:
+      sword: 0.0              # Swords don't rotate (stay pointed forward)
+      axe: -0.39269908169     # -π/8 per tick (fast tumble)
+      hoe: -0.39269908169     # -π/8 per tick
+      pickaxe: -0.39269908169 # -π/8 per tick
+      shovel: -0.39269908169  # -π/8 per tick
+      shield: -0.39269908169  # -π/8 per tick (X-axis rotation)
+      default: 0.09817477042  # π/32 per tick (gentle spin)
+
+  # Attack velocity modifications
+  attack_velocity:
+    # Velocity dampening when performing grounded attacks
+    # Source: AttackAction.java:169-172
+    # Multiplies current velocity to slow player during swing
+    grounded_damping:
+      horizontal: 0.3  # 70% speed reduction on X/Z axes
+      vertical: 0.4    # 60% speed reduction on Y axis
+
+    # Knockback base values
+    # Source: AttackAction.java:221
+    knockback:
+      vertical_base: 0.25      # Base upward launch
+      horizontal_modifier: 0.1  # Directional adjustment per attack
+      normal_multiplier: 0.7    # Default knockback magnitude
+
+# ==============================================================================
+# COMBAT SYSTEM
+# Damage calculations, hitboxes, attack patterns, and combat mechanics
+# ==============================================================================
+combat:
+  # Basic melee attack parameters
+  attacks:
+    # Base damage value (before modifiers)
+    # Source: AttackAction.java:110
+    # Range: 10-30 (Minecraft hearts: 5-15)
+    # Note: Final damage affected by aspects/stats
+    base_damage: 20.0
+
+    # Attack range multipliers by type
+    # Source: AttackAction.java:121-138
+    # Multiplied against base reach to determine hitbox range
+    # Golden ratio (φ ≈ 1.618) appears near these values
+    range_multipliers:
+      basic_1: 1.4      # First combo hit
+      basic_2: 1.4      # Second combo hit
+      basic_3: 1.4      # Third combo hit (finisher)
+      neutral_air: 1.3  # Aerial attack
+      down_air: 1.2     # Downward aerial spike
+
+    # Down-air attack trigger threshold
+    # Source: AttackAction.java:69
+    # Dot product of look direction vs UP vector
+    # -1.0 = looking straight down, 0.0 = horizontal, 1.0 = straight up
+    # Range: -1.0 to 0.0 (currently triggers at 30° below horizon)
+    down_air_threshold: -0.5
+
+    # Cast duration calculation (affects attack speed)
+    # Source: AttackAction.java:91
+    # Formula: calcValueReductive(FINESSE, min, max, reduction_rate)
+    cast_timing:
+      min_duration: 1    # Minimum ticks (20 ticks = 1 second)
+      max_duration: 3    # Maximum ticks
+      reduction_rate: 0.2  # How much FINESSE stat reduces duration
+
+    # Attack duration multiplier for animation/cooldown
+    # Source: AttackAction.java:107
+    # Multiplies cast_duration (ticks) to get milliseconds
+    duration_multiplier: 500
+
+  # Hitbox detection settings
+  hitboxes:
+    # Secant method detection radius
+    # Source: AttackAction.java:225
+    # Radius around attack path to check for entities (in blocks)
+    # Range: 0.3-0.6 (0.3 = precise, 0.6 = generous)
+    # Note: 0.4 = 40cm radius, roughly arm's reach
+    secant_radius: 0.4
+
+    # Ray trace settings for thrown items
+    # Source: ThrownItem.java:456, 479
+    thrown_item:
+      # Collision detection uses initial_velocity as max distance
+      # Hitbox radius for entity detection
+      entity_radius: 0.5
+      # Whether to check fluid collisions
+      check_fluids: false
+
+  # Thrown item combat values
+  thrown_damage:
+    # Impalement damage and knockback
+    # Source: ThrownItem.java:375, 424
+    # Format: hit(source, invuln_ticks, shards, toughness_dmg, soulfire_reduction, knockback)
+    sword_axe:
+      invulnerability_ticks: 0     # No iframes on hit
+      base_shards: 2                # Shard damage component
+      toughness_damage: 75.0        # Armor penetration value
+      soulfire_reduction: 50.0      # Resource drain on hit
+      knockback_grounded: 0.7       # Multiplier if target on ground
+      knockback_airborne: 1.0       # Multiplier if target in air
+
+    # Non-bladed thrown items (tools, blocks)
+    other:
+      invulnerability_ticks: 0
+      base_shards: 2
+      toughness_damage: 75.0
+      soulfire_reduction: 50.0
+      knockback_multiplier: 0.7
+      explosion_power: 1.0          # Blast radius on impact
+
+  # Impalement mechanic (weapons sticking to enemies)
+  # Source: ThrownItem.java:544-555
+  impalement:
+    # Ratio of entity height that determines head vs body hit
+    # 0.8 = top 20% of entity is "head" zone
+    # Range: 0.6-0.9 (affects head-follow behavior)
+    head_zone_ratio: 0.8
+
+    # Entities that never use head-following (always body-locked)
+    # Source: ThrownItem.java:553
+    head_follow_exceptions:
+      - SPIDER      # Low-profile mob
+
+    # Pin duration when enemy is stuck to wall
+    # Source: ThrownItem.java:395
+    # Measured in iterations (50 iter × 2 ticks = 100 ticks = 5 seconds)
+    pin_max_iterations: 50
+    pin_check_interval: 2  # Ticks between pin checks
+
+# ==============================================================================
+# DISPLAY & VISUAL EFFECTS
+# Particle systems, animations, teleportation, and rendering
+# ==============================================================================
+display:
+  # Smooth teleportation for entity displays
+  # Source: DisplayUtil.java:16
+  # Bukkit teleport interpolation duration
+  # Range: 1-5 ticks (1 = instant, 5 = very smooth but laggy)
+  # Note: 2 ticks ≈ 100ms at 20 TPS (golden standard for responsiveness)
+  default_teleport_duration: 2
+
+  # Item display following behavior
+  # Source: EntityUtil.java:73-95
+  item_display_follow:
+    # Update frequency (ticks between position updates)
+    # Source: EntityUtil.java:95
+    # Fibonacci sequence: 1, 1, 2, 3, 5, 8... (2 chosen for smooth motion)
+    update_interval: 2
+
+    # Particle display frequency
+    # Source: EntityUtil.java:90-91
+    # Displays particle every N ticks (4 = 5 times/second)
+    particle_interval: 4
+
+    # Billboard mode for display orientation
+    # Options: FIXED, VERTICAL, HORIZONTAL, CENTER
+    billboard_mode: FIXED
+
+  # Particle effects configuration
+  # Note: Detailed particle configs will be migrated in Phase 3
+  particles:
+    # Bleed effect intervals (combat visuals)
+    # Source: EntityUtil.java:76-78
+    bleed:
+      line_length: 0.75    # Particle line length (blocks)
+      line_width: 0.25     # Spacing between particles
+      stick_length: 0.3    # Length when stuck
+      stick_width: 0.25    # Spacing when stuck
+
+    # Thrown item trail particles
+    # Source: ThrownItem.java:248-250
+    trail:
+      display_interval: 1       # Every tick
+      block_trail_interval: 3   # Every 3 ticks for block items
+
+    # Grounded item marker particles
+    # Source: ThrownItem.java:350-352
+    grounded_marker:
+      update_interval: 5   # Ticks between updates (Fibonacci: 5)
+      offset_step: 0.1     # Distance between marker points
+
+  # Bezier curve visualization for attacks
+  # Source: AttackAction.java:112
+  bezier:
+    # Number of steps in cubic Bezier path
+    # Range: 30-100 (higher = smoother but more expensive)
+    # Note: 50 = good balance (10 steps per combat tick at 5-tick duration)
+    num_steps: 50
+
+    # Particle density thresholds (% along attack path)
+    # Source: AttackAction.java:193-218
+    # Each threshold adds more particle layers for visual intensity
+    particle_thresholds:
+      layer_1: 0.1    # 10% - start showing trailing particles
+      layer_2: 0.3    # 30% - add second layer
+      layer_3: 0.5    # 50% - add third layer (halfway point)
+      layer_4: 0.625  # 62.5% - note: 5/8 ratio (golden-ish)
+      layer_5: 0.75   # 75% - maximum visual intensity
+
+# ==============================================================================
+# DETECTION & COLLISION
+# Ground detection, entity detection, ray tracing
+# ==============================================================================
+detection:
+  # Ground proximity detection
+  # Source: EntityUtil.java:29
+  ground_check:
+    # Maximum downward distance to check for solid blocks
+    # Range: 0.1-0.5 blocks (0.3 handles stairs/slabs well)
+    # Note: 0.3 blocks ≈ 30cm, roughly foot height
+    max_distance: 0.3
+
+    # Block check offset positions
+    # Currently checks single center point (0,0)
+    # Future: Could expand to corners for better detection
+    offsets:
+      - x: 0.0
+        z: 0.0
+
+# ==============================================================================
+# TIMING & COOLDOWNS
+# Grace periods, timeouts, delays, and duration values
+# ==============================================================================
+timing:
+  # Thrown item timing configurations
+  thrown_items:
+    # Grace period before thrower can catch their own throw
+    # Source: ThrownItem.java:475
+    # Measured in ticks (20 = 1 second)
+    # Purpose: Prevents immediate re-catch exploits
+    catch_grace_period: 20
+
+    # Disposal timeout for grounded items
+    # Source: ThrownItem.java:345
+    # Items disappear after this many ticks if not collected
+    # 1000 ticks = 50 seconds (Fibonacci: nearby 987 or 1597)
+    disposal_timeout: 1000
+
+    # Disposal check interval
+    # Source: ThrownItem.java:356
+    # Fibonacci: 5 ticks = 4 checks/second
+    disposal_check_interval: 5
+
+    # Delay before impalement disposal check
+    # Source: ThrownItem.java:407
+    pin_delay: 3  # Small delay for physics to settle
+
+    # Throw animation timing
+    # Source: ThrownItem.java:185
+    throw_completion_delay: 2  # Ticks after throw before reset
+
+  # Attack timing windows
+  attacks:
+    # Delay before marking attack as completed
+    # Affects combo window timing
+    # Source: AttackAction.java:91 (cast_duration)
+    # Note: Dynamic based on FINESSE stat (1-3 ticks base)
+    combo_window_base: 3  # Maximum ticks for slowest attack
+
+  # Update intervals for various systems
+  intervals:
+    # General-purpose task intervals (ticks)
+    item_motion_update: 1      # ThrownItem physics loop
+    display_follow_update: 2   # ItemDisplay following
+    pin_check: 2               # Pin stability check
+    marker_particle: 5         # Grounded item markers
+    impalement_check: 1        # Stuck item validation
+
+# ==============================================================================
+# AUDIO
+# Sound effect parameters (volume, pitch)
+# ==============================================================================
+audio:
+  # Throw sound effect
+  # Source: ThrownItem.java:188
+  throw:
+    sound: ENTITY_ENDER_DRAGON_FLAP
+    volume: 0.5   # Range: 0.0-1.0 (50% volume)
+    pitch: 0.4    # Range: 0.5-2.0 (lower = deeper sound)
+
+  # Attack swing sound
+  # Source: AttackAction.java:104
+  attack:
+    sound: ENTITY_ENDER_DRAGON_FLAP
+    volume: 0.35  # Quieter than throw
+    pitch: 0.6    # Slightly higher pitch
+
+# ==============================================================================
+# ENTITY BEHAVIOR
+# Movement modifiers, slowness effects, entity-specific settings
+# ==============================================================================
+entities:
+  # Throw preparation slowness
+  # Source: ThrownItem.java:160
+  throw_preparation:
+    # Applies SLOWNESS effect while holding item ready to throw
+    effect: SLOWNESS
+    duration: 1      # Ticks (refreshed every tick)
+    amplifier: 2     # Slowness II (40% speed)
+
+  # Rotation behavior for impaled entities
+  # Source: ThrownItem.java:389-400
+  pinned_rotation:
+    # Whether to lock entity body rotation when pinned
+    lock_rotation: true
+    # Velocity reset (prevents movement)
+    reset_velocity: true
+
+# ==============================================================================
+# WORLD INTERACTION
+# Block detection, marker placement, explosion settings
+# ==============================================================================
+world:
+  # Grounded item marker placement
+  # Source: ThrownItem.java:319-324
+  marker_placement:
+    # Step size for finding valid placement (blocks)
+    pullback_step: 0.1
+    # Maximum iterations to find non-solid location
+    max_pullback_iterations: 30
+
+  # Explosion settings for non-bladed thrown items
+  # Source: ThrownItem.java:425
+  explosions:
+    power: 1.0             # Blast radius
+    set_fire: false        # Don't ignite blocks
+    break_blocks: false    # Don't destroy terrain
+
+# ==============================================================================
+# DEVELOPER / DEBUG
+# Testing values, experimental features, performance tuning
+# ==============================================================================
+debug:
+  # Enable verbose logging for config reloads
+  verbose_reload: false
+
+  # Performance monitoring
+  # Track timing for expensive operations
+  profile_bezier_generation: false
+  profile_hitbox_detection: false
+
+  # Visual debugging aids
+  show_hitbox_particles: false
+  show_bezier_control_points: false
+
+# ==============================================================================
+# NOTES & REFERENCES
+# ==============================================================================
+# Math Constants Used:
+#   π (Pi) ≈ 3.14159265359
+#   φ (Phi/Golden Ratio) ≈ 1.618033988749
+#   Fibonacci Sequence: 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233...
+#
+# Minecraft Time Reference:
+#   1 tick = 50ms (at 20 TPS)
+#   20 ticks = 1 second
+#   1200 ticks = 1 minute
+#
+# Common Game Design Values:
+#   0.3-0.5: Typical reaction time windows (seconds)
+#   2-3: "Rule of thirds" for difficulty/intensity scaling
+#   5-7: Magic number for comfortable choice count
+#   0.618/1.618: Golden ratio for pleasing proportions
+#
+# Sources:
+#   - Minecraft Wiki: https://minecraft.wiki/w/Tick
+#   - Game Programming Patterns: http://gameprogrammingpatterns.com/
+#   - The Art of Game Design (Schell): Lens of Balance
+# ==============================================================================

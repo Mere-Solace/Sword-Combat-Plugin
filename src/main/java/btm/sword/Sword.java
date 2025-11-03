@@ -1,6 +1,7 @@
 package btm.sword;
 
 import btm.sword.commands.CommandManager;
+import btm.sword.config.ConfigManager;
 import btm.sword.listeners.EntityListener;
 import btm.sword.listeners.InputListener;
 import btm.sword.listeners.PlayerListener;
@@ -21,6 +22,9 @@ public final class Sword extends JavaPlugin {
     public void onEnable() {
         instance = this;
         scheduler = Executors.newSingleThreadScheduledExecutor();
+
+        // Initialize configuration system (must be first for other systems to use it)
+        ConfigManager.initialize(this);
 
         InvUI.getInstance().setPlugin(this);
 
