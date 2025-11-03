@@ -41,7 +41,8 @@ public abstract class SwordEntity {
 
     protected EntityAspects aspects;
 
-    protected boolean tick;
+    /** Boolean value for whether onTick() should be run or not */
+    protected boolean shouldTick;
     protected long ticks;
 
     private long timeOfLastAttack;
@@ -84,7 +85,7 @@ public abstract class SwordEntity {
         this.combatProfile = combatProfile;
         aspects = new EntityAspects(combatProfile);
 
-        tick = true;
+        shouldTick = true;
         ticks = 0L;
 
         timeOfLastAttack = 0L;
@@ -113,7 +114,7 @@ public abstract class SwordEntity {
         new BukkitRunnable() {
             @Override
             public void run() {
-                if (tick) {
+                if (shouldTick) {
                     onTick();
                 }
                 ticks++;

@@ -9,6 +9,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import lombok.Getter;
 import org.bukkit.plugin.java.JavaPlugin;
+import xyz.xenondevs.invui.InvUI;
 
 public final class Sword extends JavaPlugin {
     @Getter
@@ -20,6 +21,8 @@ public final class Sword extends JavaPlugin {
     public void onEnable() {
         instance = this;
         scheduler = Executors.newSingleThreadScheduledExecutor();
+
+        InvUI.getInstance().setPlugin(this);
 
         getServer().getPluginManager().registerEvents(new InputListener(), this);
         getServer().getPluginManager().registerEvents(new PlayerListener(), this);

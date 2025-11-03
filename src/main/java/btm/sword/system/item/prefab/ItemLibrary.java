@@ -9,8 +9,8 @@ import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 
 public class ItemLibrary {
-    public static ItemStack sword = new ItemStackBuilder(Material.DIAMOND_SWORD)
-            .name(Component.text("Masamune", TextColor.color(254,56,0), TextDecoration.BOLD))
+    public static ItemStack sword = new ItemStackBuilder(Material.STONE_SWORD)
+            .name(Component.text("Falchion", TextColor.color(254,56,0), TextDecoration.BOLD))
             .lore(List.of(
                     Component.text().content("Veracity").color(TextColor.color(160,160,160)).build(),
                     Component.text().content("&").color(TextColor.color(89,89,89)).build(),
