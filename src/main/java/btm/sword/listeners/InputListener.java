@@ -39,7 +39,7 @@ public class InputListener implements Listener {
         SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId());
         ItemStack item = swordPlayer.getItemStackInHand(true);
 
-        if (swordPlayer.evaluateItemInput(item, InputType.LEFT)) {
+        if (swordPlayer.cancelItemInteraction(item, InputType.LEFT)) {
             event.setCancelled(true);
             return;
         }
@@ -69,7 +69,7 @@ public class InputListener implements Listener {
         if (swordPlayer.hasPerformedDropAction()) return;
 
         if ((action == Action.LEFT_CLICK_AIR || action == Action.LEFT_CLICK_BLOCK)) {
-            if (swordPlayer.evaluateItemInput(item, InputType.LEFT)) {
+            if (swordPlayer.cancelItemInteraction(item, InputType.LEFT)) {
                 event.setCancelled(true);
                 return;
             }
@@ -86,7 +86,7 @@ public class InputListener implements Listener {
                 return;
             }
 
-            if (swordPlayer.evaluateItemInput(item, InputType.RIGHT)) {
+            if (swordPlayer.cancelItemInteraction(item, InputType.RIGHT)) {
                 event.setCancelled(true);
                 return;
             }
@@ -112,7 +112,7 @@ public class InputListener implements Listener {
 
         swordPlayer.setInteractingWithEntity(true);
 
-        if (swordPlayer.evaluateItemInput(item, InputType.RIGHT)) {
+        if (swordPlayer.cancelItemInteraction(item, InputType.RIGHT)) {
             event.setCancelled(true);
             return;
         }
@@ -151,7 +151,7 @@ public class InputListener implements Listener {
 
         swordPlayer.setPerformedDropAction(true);
 
-        if (swordPlayer.evaluateItemInput(item, InputType.DROP)) {
+        if (swordPlayer.cancelItemInteraction(item, InputType.DROP)) {
             event.setCancelled(true);
         }
         else if (!swordPlayer.isDroppingInInv()) {
@@ -203,7 +203,7 @@ public class InputListener implements Listener {
         SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId());
         ItemStack item = swordPlayer.getItemStackInHand(true);
 
-        if (swordPlayer.evaluateItemInput(item, InputType.SWAP)) {
+        if (swordPlayer.cancelItemInteraction(item, InputType.SWAP)) {
             event.setCancelled(true);
         }
         else if (!swordPlayer.isSwappingInInv()) {

@@ -7,12 +7,13 @@ import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.input.InputAction;
 import btm.sword.system.input.InputExecutionTree;
 import btm.sword.system.input.InputType;
-import btm.sword.system.item.KeyCache;
+import btm.sword.system.inventory.InventoryManager;
+import btm.sword.system.item.ItemStackBuilder;
+import btm.sword.system.item.KeyRegistry;
 import btm.sword.system.playerdata.PlayerData;
 import btm.sword.util.display.DisplayUtil;
 import com.destroystokyo.paper.profile.PlayerProfile;
 import java.time.Duration;
-import java.util.*;
 import java.util.concurrent.TimeUnit;
 import lombok.Getter;
 import lombok.Setter;
@@ -34,7 +35,6 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
-import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Transformation;
@@ -58,7 +58,7 @@ public class SwordPlayer extends Combatant {
     private final String username;
     private final ItemStack playerHead;
 
-    private static final int baseMaxAbsorption = 20;
+    private ItemStack menuButton;
 
     private ItemDisplay sheathed;
     private boolean sheathedReady;
@@ -108,6 +108,13 @@ public class SwordPlayer extends Combatant {
         skullMeta.setPlayerProfile(profile);
         playerHead.setItemMeta(skullMeta);
 
+        ItemStackBuilder menuItemBuilder = new ItemStackBuilder(Material.FLOW_ARMOR_TRIM_SMITHING_TEMPLATE);
+        menuButton = menuItemBuilder
+                .name(Component.text("| Main Menu |").color(TextColor.color(218, 133, 3)))
+                .hideAll()
+                .tag(KeyRegistry.MAIN_MENU_BUTTON_KEY, KeyRegistry.MAIN_MENU_BUTTON)
+                .build();
+
         inputExecutionTree = new InputExecutionTree(inputTimeoutMillis);
         inputExecutionTree.initializeInputTree();
 
@@ -141,24 +148,30 @@ public class SwordPlayer extends Combatant {
     protected void onTick() {
         super.onTick();
 
-        if ((sheathed == null || sheathed.isDead()) && isSheathedReady()) {
-            RestartSheathedWeapon();
-        }
-
         if (sheathed != null && isSheathedReady()) {
             updateSheathedWeapon();
         }
 
-        if (getItemStackInHand(false).getType() != Material.SHIELD) {
-            setItemStackInHand(ItemStack.of(Material.SHIELD), false);
-        }
-
-        if (player.getEquipment().getChestplate().isEmpty() ||
-                !player.getEquipment().getChestplate().getType().equals(Material.NETHERITE_CHESTPLATE)) {
-            player.getEquipment().setChestplate(ItemStack.of(Material.NETHERITE_CHESTPLATE));
-        }
-
         if (player.getHealth() > 0) updateVisualStats();
+
+        if (ticks % 2 == 0) {
+            if ((sheathed == null || sheathed.isDead()) && isSheathedReady()) {
+                RestartSheathedWeapon();
+            }
+
+            if (getItemStackInHand(false).getType() != Material.SHIELD) {
+                setItemStackInHand(ItemStack.of(Material.SHIELD), false);
+            }
+
+            if (player.getEquipment().getChestplate().isEmpty() ||
+                    !player.getEquipment().getChestplate().getType().equals(Material.NETHERITE_CHESTPLATE)) {
+                player.getEquipment().setChestplate(ItemStack.of(Material.NETHERITE_CHESTPLATE));
+            }
+
+            if (!KeyRegistry.hasKey(player.getInventory().getItem(8), KeyRegistry.MAIN_MENU_BUTTON_KEY)) {
+                player.getInventory().setItem(8, menuButton);
+            }
+        }
     }
 
     /**
@@ -275,10 +288,14 @@ public class SwordPlayer extends Combatant {
      * @param inputType the input type being evaluated
      * @return true to cancel the action, false to allow processing
      */
-    public boolean evaluateItemInput(ItemStack itemStack, InputType inputType) {
+    public boolean cancelItemInteraction(ItemStack itemStack, InputType inputType) {
         Material type = itemStack.getType();
         ItemMeta meta = itemStack.getItemMeta();
-        String id = meta != null ? meta.getPersistentDataContainer().get(KeyCache.buttonTagKey, PersistentDataType.STRING) : null;
+
+        if (KeyRegistry.hasKey(itemStack, KeyRegistry.MAIN_MENU_BUTTON_KEY)) {
+            InventoryManager.createBasic(this);
+            return true;
+        }
 
         return false;
     }
@@ -298,15 +315,15 @@ public class SwordPlayer extends Combatant {
         ItemStack clicked = e.getCurrentItem();
         int slotNumber = e.getSlot();
 
-//		message("\n\n~|------Beginning of new inventory interact event------|~"
-//				+ "\n       Inventory: " + inv.getType()
-//				+ "\n       Click type: " + clickType
-//				+ "\n       Action type: " + action
-//				+ "\n       Item on cursor: " + onCursor
-//				+ "\n       Current Item in slot: " + clicked
-//				+ "\n       slot number: " + slotNumber);
-//
-//		message("Normal click event.");
+        message("\n\n~|------Beginning of new inventory interact event------|~"
+                + "\n       Inventory: " + inv.getType()
+                + "\n       Click type: " + clickType
+                + "\n       Action type: " + action
+                + "\n       Item on cursor: " + onCursor
+                + "\n       Current Item in slot: " + clicked
+                + "\n       slot number: " + slotNumber);
+
+        message("Normal click event.");
         return false;
     }
 
@@ -370,7 +387,7 @@ public class SwordPlayer extends Combatant {
             player.addPassenger(sheathed);
             sheathed.setBillboard(Display.Billboard.FIXED);
             setSheathedReady(true);
-        }, 5L);
+        }, 2L);
     }
 
     /**

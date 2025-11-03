@@ -1,4 +1,5 @@
 name: sword
 version: '1.02'
 main: btm.sword.Sword
-api-version: '1.21'
+api-version: '1.21.8'
+loader: btm.sword.SwordPluginLoader
