@@ -89,11 +89,10 @@ public class AttackAction extends SwordAction {
      */
     public static void basicSlash(Combatant executor, AttackType type) {
         var attacksConfig = ConfigManager.getInstance().getCombat().getAttacks();
-        var castTiming = attacksConfig.getCastTiming();
         long castDuration = (long) executor.calcValueReductive(AspectType.FINESSE,
-                castTiming.getMinDuration(),
-                castTiming.getMaxDuration(),
-                castTiming.getReductionRate());
+                attacksConfig.getCastTimingMinDuration(),
+                attacksConfig.getCastTimingMaxDuration(),
+                attacksConfig.getCastTimingReductionRate());
         if (executor instanceof SwordPlayer sp) sp.player().setCooldown(sp.getItemTypeInHand(true), (int) castDuration);
         cast(executor, castDuration,
             new BukkitRunnable() {
@@ -114,7 +113,7 @@ public class AttackAction extends SwordAction {
                     LivingEntity ex = executor.entity();
                     double damage = attacksConfig.getBaseDamage();
 
-                    int numSteps = ConfigManager.getInstance().getDisplay().getBezier().getNumSteps();
+                    int numSteps = ConfigManager.getInstance().getDisplay().getBezierNumSteps();
 
                     var rangeMultipliers = attacksConfig.getRangeMultipliers();
                     double rangeMultiplier;

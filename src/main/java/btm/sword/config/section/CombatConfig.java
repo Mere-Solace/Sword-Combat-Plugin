@@ -12,6 +12,8 @@ import org.bukkit.entity.EntityType;
  * Type-safe accessor for combat-related configuration values.
  * <p>
  * Handles damage, knockback, hitboxes, attack ranges, and combat mechanics.
+ * Uses hybrid pattern: Simple 2-3 value groups flattened to direct fields,
+ * complex groups with 4+ fields kept nested.
  * </p>
  */
 @Getter
@@ -41,22 +43,39 @@ public class CombatConfig {
         private final double baseDamage;
         private final RangeMultipliersConfig rangeMultipliers;
         private final double downAirThreshold;
-        private final CastTimingConfig castTiming;
         private final int durationMultiplier;
+
+        // Flattened cast timing config (3 simple values - no wrapper class needed)
+        private final long castTimingMinDuration;
+        private final long castTimingMaxDuration;
+        private final double castTimingReductionRate;
 
         public AttacksConfig(ConfigurationSection section) {
             if (section != null) {
                 this.baseDamage = section.getDouble("base_damage", 20.0);
                 this.rangeMultipliers = new RangeMultipliersConfig(section.getConfigurationSection("range_multipliers"));
                 this.downAirThreshold = section.getDouble("down_air_threshold", -0.5);
-                this.castTiming = new CastTimingConfig(section.getConfigurationSection("cast_timing"));
                 this.durationMultiplier = section.getInt("duration_multiplier", 500);
+
+                // Load cast timing values directly
+                ConfigurationSection castTiming = section.getConfigurationSection("cast_timing");
+                if (castTiming != null) {
+                    this.castTimingMinDuration = castTiming.getLong("min_duration", 1L);
+                    this.castTimingMaxDuration = castTiming.getLong("max_duration", 3L);
+                    this.castTimingReductionRate = castTiming.getDouble("reduction_rate", 0.2);
+                } else {
+                    this.castTimingMinDuration = 1L;
+                    this.castTimingMaxDuration = 3L;
+                    this.castTimingReductionRate = 0.2;
+                }
             } else {
                 this.baseDamage = 20.0;
                 this.rangeMultipliers = new RangeMultipliersConfig(null);
                 this.downAirThreshold = -0.5;
-                this.castTiming = new CastTimingConfig(null);
                 this.durationMultiplier = 500;
+                this.castTimingMinDuration = 1L;
+                this.castTimingMaxDuration = 3L;
+                this.castTimingReductionRate = 0.2;
             }
         }
     }
@@ -87,52 +106,30 @@ public class CombatConfig {
     }
 
     @Getter
-    public static class CastTimingConfig {
-        private final long minDuration;
-        private final long maxDuration;
-        private final double reductionRate;
-
-        public CastTimingConfig(ConfigurationSection section) {
-            if (section != null) {
-                this.minDuration = section.getLong("min_duration", 1L);
-                this.maxDuration = section.getLong("max_duration", 3L);
-                this.reductionRate = section.getDouble("reduction_rate", 0.2);
-            } else {
-                this.minDuration = 1L;
-                this.maxDuration = 3L;
-                this.reductionRate = 0.2;
-            }
-        }
-    }
-
-    @Getter
     public static class HitboxesConfig {
         private final double secantRadius;
-        private final ThrownItemHitboxConfig thrownItem;
+
+        // Flattened thrown item hitbox config (2 simple values - no wrapper class needed)
+        private final double thrownItemEntityRadius;
+        private final boolean thrownItemCheckFluids;
 
         public HitboxesConfig(ConfigurationSection section) {
             if (section != null) {
                 this.secantRadius = section.getDouble("secant_radius", 0.4);
-                this.thrownItem = new ThrownItemHitboxConfig(section.getConfigurationSection("thrown_item"));
+
+                // Load thrown item values directly
+                ConfigurationSection thrownItem = section.getConfigurationSection("thrown_item");
+                if (thrownItem != null) {
+                    this.thrownItemEntityRadius = thrownItem.getDouble("entity_radius", 0.5);
+                    this.thrownItemCheckFluids = thrownItem.getBoolean("check_fluids", false);
+                } else {
+                    this.thrownItemEntityRadius = 0.5;
+                    this.thrownItemCheckFluids = false;
+                }
             } else {
                 this.secantRadius = 0.4;
-                this.thrownItem = new ThrownItemHitboxConfig(null);
-            }
-        }
-    }
-
-    @Getter
-    public static class ThrownItemHitboxConfig {
-        private final double entityRadius;
-        private final boolean checkFluids;
-
-        public ThrownItemHitboxConfig(ConfigurationSection section) {
-            if (section != null) {
-                this.entityRadius = section.getDouble("entity_radius", 0.5);
-                this.checkFluids = section.getBoolean("check_fluids", false);
-            } else {
-                this.entityRadius = 0.5;
-                this.checkFluids = false;
+                this.thrownItemEntityRadius = 0.5;
+                this.thrownItemCheckFluids = false;
             }
         }
     }

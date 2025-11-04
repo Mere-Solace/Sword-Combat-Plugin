@@ -505,7 +505,7 @@ public class ThrownItem {
 
         if (prev == null) disposeNaturally();
 
-        double entityRadius = ConfigManager.getInstance().getCombat().getHitboxes().getThrownItem().getEntityRadius();
+        double entityRadius = ConfigManager.getInstance().getCombat().getHitboxes().getThrownItemEntityRadius();
         RayTraceResult hitEntity = display.getWorld().rayTraceEntities(prev, velocity, initialVelocity, entityRadius, effFilter);
 
         if (hitEntity == null) return;
