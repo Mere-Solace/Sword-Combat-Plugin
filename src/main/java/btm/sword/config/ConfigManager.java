@@ -1,13 +1,12 @@
 package btm.sword.config;
 
 import btm.sword.Sword;
+import btm.sword.config.section.*;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.util.logging.Level;
-
-import btm.sword.config.section.*;
 import lombok.Getter;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -48,6 +47,8 @@ public class ConfigManager {
     private AudioConfig audio;
     @Getter
     private EntityConfig entities;
+    @Getter
+    private MovementConfig movement;
     @Getter
     private WorldConfig world;
     @Getter
@@ -137,6 +138,7 @@ public class ConfigManager {
             timing = new TimingConfig(config);
             audio = new AudioConfig(config);
             entities = new EntityConfig(config);
+            movement = new MovementConfig(config);
             world = new WorldConfig(config);
             debug = new DebugConfig(config);
 

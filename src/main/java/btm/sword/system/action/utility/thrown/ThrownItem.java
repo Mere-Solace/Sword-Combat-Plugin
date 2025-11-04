@@ -11,8 +11,6 @@ import btm.sword.util.display.ParticleWrapper;
 import btm.sword.util.display.Prefab;
 import btm.sword.util.entity.EntityUtil;
 import btm.sword.util.math.VectorUtil;
-import btm.sword.util.sound.SoundType;
-import btm.sword.util.sound.SoundUtil;
 import java.util.List;
 import java.util.function.Function;
 import java.util.function.Predicate;

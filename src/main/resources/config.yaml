@@ -356,46 +356,124 @@ entities:
   # Default combat profile stat values
   # Source: CombatProfile.java:84, 95-99
   # Controls base RPG stats for entities (SHARDS, TOUGHNESS, SOULFIRE, FORM)
-  # Format: current/max/regen per resource
+  # Format: ResourceValue(current, regenPeriod, regenAmount)
   combat_profile:
     # SHARDS: Primary combat resource for abilities
-    # Format: ResourceValue(current, max, regen_per_tick)
-    # Default: 10 current, 50 max, 1.0 regen/tick
+    # Format: ResourceValue(current, regenPeriod, regenAmount)
+    # current: Initial/starting value
+    # regen_period: Ticks between regeneration (20 ticks = 1 second)
+    # regen_amount: Amount restored per regen period
     shards:
       current: 10
-      max: 50
-      regen: 1.0
+      regen_period: 50       # Regenerates every 2.5 seconds
+      regen_amount: 1.0
 
     # TOUGHNESS: Damage resistance and armor
-    # Format: ResourceValue(current, max, regen_per_tick)
-    # Default: 20 current, 20 max, 0.5 regen/tick
+    # Format: ResourceValue(current, regenPeriod, regenAmount)
     toughness:
       current: 20
-      max: 20
-      regen: 0.5
+      regen_period: 20       # Regenerates every 1 second
+      regen_amount: 0.5
 
     # SOULFIRE: Special energy resource
-    # Format: ResourceValue(current, max, regen_per_tick)
-    # Default: 100 current, 5 max, 0.2 regen/tick
-    # Note: High current with low max creates unique mechanic
+    # Format: ResourceValue(current, regenPeriod, regenAmount)
     soulfire:
       current: 100
-      max: 5
-      regen: 0.2
+      regen_period: 5        # Regenerates every 0.25 seconds (fast)
+      regen_amount: 0.2
 
     # FORM: Stance and positioning resource
-    # Format: ResourceValue(current, max, regen_per_tick)
-    # Default: 10 current, 60 max, 1.0 regen/tick
+    # Format: ResourceValue(current, regenPeriod, regenAmount)
     form:
       current: 10
-      max: 60
-      regen: 1.0
+      regen_period: 60       # Regenerates every 3 seconds
+      regen_amount: 1.0
 
     # Maximum consecutive air dodges before landing
     # Source: CombatProfile.java:84
     # Default: 1 (single air dodge)
     # Increased by ability upgrades
     max_air_dodges: 1
+
+# ==============================================================================
+# MOVEMENT SYSTEM
+# Dash mechanics, toss actions, and movement physics
+# ==============================================================================
+movement:
+  # Dash action configuration
+  # Source: MovementAction.java:47-152
+  dash:
+    # Range and casting
+    max_distance: 10.0           # Maximum dash/target detection range (blocks)
+    cast_duration: 5             # Cast time in ticks
+    base_power: 0.7              # Base dash velocity multiplier
+
+    # Position offsets
+    initial_offset_y: 0.3        # Y offset for initial position check
+    impedance_check_offset_y: 0.5  # Y offset for block impedance ray trace
+    forward_multiplier: 0.5      # Velocity multiplier for forward/backward dash
+    upward_multiplier: 0.15      # Upward velocity boost multiplier
+    upward_boost: 0.05           # Additional upward velocity on grounded dash
+
+    # Detection and hitboxes
+    ray_hitbox_radius: 0.7       # Radius for ray trace entity detection
+    secant_radius: 0.3           # Secant particle display radius
+    grab_distance_squared: 8.5   # Distance threshold for successful item grab
+    block_check_offset_y: -0.75  # Y offset for ground block check
+
+    # Velocity adjustments
+    velocity_damping: 0.6        # Velocity damping factor when dash fails
+
+    # Timing configuration (all in ticks)
+    particle_task_delay: 0       # Initial delay before particle task
+    particle_task_period: 2      # Ticks between particle updates
+    particle_timer_increment: 2  # Increment value for particle timer
+    particle_timer_threshold: 4  # Timer threshold to cancel particle task
+    grab_check_delay: 4          # Delay before checking if grab was successful
+    velocity_task_delay: 0       # Initial delay for velocity application
+    velocity_task_period: 1      # Ticks between velocity applications
+
+    # Particle effects
+    particle_count: 100          # Number of DUST_PILLAR particles on successful grab
+    particle_spread_x: 1.25      # Particle spread on X axis
+    particle_spread_y: 1.25      # Particle spread on Y axis
+    particle_spread_z: 1.25      # Particle spread on Z axis
+
+    # Sound effects
+    flap_sound_volume: 0.6       # Volume for ENDER_DRAGON_FLAP sound
+    flap_sound_pitch: 1.0        # Pitch for ENDER_DRAGON_FLAP sound
+    sweep_sound_volume: 0.3      # Volume for PLAYER_ATTACK_SWEEP sound
+    sweep_sound_pitch: 0.6       # Pitch for PLAYER_ATTACK_SWEEP sound
+
+  # Toss action configuration
+  # Source: MovementAction.java:164-229
+  toss:
+    # Force and power
+    base_force: 1.5                    # Base toss force
+    might_multiplier_base: 2.5         # Base multiplier for MIGHT stat calculation
+    might_multiplier_increment: 0.1    # Increment per MIGHT level
+
+    # Velocity phases (iterations and values)
+    upward_phase_iterations: 2         # Number of ticks for upward velocity phase
+    upward_velocity_y: 0.25            # Y velocity during upward phase
+    forward_phase_iterations: 3        # Number of ticks for forward velocity phase
+    animation_iterations: 15           # Total animation/check iterations
+
+    # Position and offset multipliers
+    location_offset_multiplier: 0.3    # Eye height multiplier for location offset
+    particle_height_multiplier: 0.5    # Eye height multiplier for particle display
+    ray_trace_distance_multiplier: 0.6 # Eye height multiplier for ray trace distance
+
+    # Collision detection
+    entity_detection_radius: 0.4       # Radius for nearby entity detection
+    knockback_multiplier: 0.3          # Knockback force multiplier on collision
+
+    # Damage and impact
+    explosion_power: 2.0               # Explosion power on impact
+    hit_invulnerability_ticks: 3       # Invulnerability ticks after hit
+    hit_shard_damage: 2                # Shard damage value
+    hit_toughness_damage: 30.0         # Toughness damage value
+    hit_soulfire_reduction: 5.0        # Soulfire reduction value
 
 # ==============================================================================
 # WORLD INTERACTION

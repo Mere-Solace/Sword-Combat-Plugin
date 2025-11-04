@@ -5,7 +5,6 @@ import btm.sword.system.action.utility.GrabAction;
 import btm.sword.system.entity.base.CombatProfile;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.util.display.Prefab;
-import btm.sword.util.math.VectorUtil;
 import com.destroystokyo.paper.entity.Pathfinder;
 import java.util.ArrayList;
 import java.util.List;

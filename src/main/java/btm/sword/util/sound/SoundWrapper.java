@@ -1,10 +1,9 @@
 package btm.sword.util.sound;
 
-import btm.sword.config.section.AudioConfig;
 import btm.sword.config.ConfigManager;
-import org.bukkit.entity.LivingEntity;
-
+import btm.sword.config.section.AudioConfig;
 import java.util.function.Function;
+import org.bukkit.entity.LivingEntity;
 
 /**
  * Wrapper class for handling sound effects with configuration system integration.

@@ -93,34 +93,30 @@ public class CombatProfile {
     public CombatProfile() {
         swordClass = SwordClassType.SWORD_THROWER;
 
-        // Load combat profile values from config
-        EntityConfig.CombatProfileConfig config = ConfigManager.getInstance().getEntity().getCombatProfile();
-        EntityConfig.ResourceValuesConfig shardsConfig = config.getShards();
-        EntityConfig.ResourceValuesConfig toughnessConfig = config.getToughness();
-        EntityConfig.ResourceValuesConfig soulfireConfig = config.getSoulfire();
-        EntityConfig.ResourceValuesConfig formConfig = config.getForm();
+        // Load combat profile values from config - direct field access (hybrid pattern)
+        EntityConfig.CombatProfileConfig config = ConfigManager.getInstance().getEntities().getCombatProfile();
 
         for (AspectType stat : AspectType.values()) {
             switch (stat) {
                 case SHARDS -> stats.put(stat, new ResourceValue(
-                    shardsConfig.getCurrent(),
-                    shardsConfig.getMax(),
-                    shardsConfig.getRegen()
+                    config.getShardsCurrent(),
+                    config.getShardsRegenPeriod(),
+                    config.getShardsRegenAmount()
                 ));
                 case TOUGHNESS -> stats.put(stat, new ResourceValue(
-                    toughnessConfig.getCurrent(),
-                    toughnessConfig.getMax(),
-                    toughnessConfig.getRegen()
+                    config.getToughnessCurrent(),
+                    config.getToughnessRegenPeriod(),
+                    config.getToughnessRegenAmount()
                 ));
                 case SOULFIRE -> stats.put(stat, new ResourceValue(
-                    soulfireConfig.getCurrent(),
-                    soulfireConfig.getMax(),
-                    soulfireConfig.getRegen()
+                    config.getSoulfireCurrent(),
+                    config.getSoulfireRegenPeriod(),
+                    config.getSoulfireRegenAmount()
                 ));
                 case FORM -> stats.put(stat, new ResourceValue(
-                    formConfig.getCurrent(),
-                    formConfig.getMax(),
-                    formConfig.getRegen()
+                    config.getFormCurrent(),
+                    config.getFormRegenPeriod(),
+                    config.getFormRegenAmount()
                 ));
                 default -> stats.put(stat, new AspectValue(1));
             }
