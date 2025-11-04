@@ -1,5 +1,6 @@
 package btm.sword.util.display;
 
+import btm.sword.config.ConfigManager;
 import java.util.List;
 import org.bukkit.Location;
 import org.bukkit.entity.Display;
@@ -13,8 +14,6 @@ import org.bukkit.util.Vector;
  * </p>
  */
 public class DisplayUtil {
-    public static int defaultTeleportDuration = 2;
-
     /**
      * Performs a smooth teleport of a {@link Display} using the default duration.
      * Sets the teleport duration on the display, creating an animated transition.
@@ -22,7 +21,7 @@ public class DisplayUtil {
      * @param display the {@link Display} to teleport smoothly
      */
     public static void smoothTeleport(Display display) {
-        display.setTeleportDuration(defaultTeleportDuration);
+        display.setTeleportDuration(ConfigManager.getInstance().getDisplay().getDefaultTeleportDuration());
     }
 
     /**

@@ -4,7 +4,7 @@ import btm.sword.Sword;
 import btm.sword.system.action.utility.GrabAction;
 import btm.sword.system.entity.base.CombatProfile;
 import btm.sword.system.entity.base.SwordEntity;
-import btm.sword.util.math.VectorUtil;
+import btm.sword.util.display.Prefab;
 import com.destroystokyo.paper.entity.Pathfinder;
 import java.util.ArrayList;
 import java.util.List;
@@ -132,7 +132,7 @@ public class Hostile extends Combatant {
             @Override
             public void run() {
                 if (i >= 1) cancel();
-                mob.setVelocity(VectorUtil.UP.clone().multiply(1));
+                mob.setVelocity(Prefab.Direction.UP.clone().multiply(1));
                 i++;
             }
         }.runTaskTimer(Sword.getInstance(), 0L, 1L);

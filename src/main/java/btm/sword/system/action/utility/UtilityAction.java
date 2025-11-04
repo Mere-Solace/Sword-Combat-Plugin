@@ -47,7 +47,7 @@ public class UtilityAction extends SwordAction {
                 @Override
                 public void run() {
                     SoundUtil.playSound(executor.entity(), soundType, 1f, 1f);
-                    executor.message("i: " + finalI + ", " + soundType.getKey());
+                    executor.message("i: " + finalI + ", " + soundType.key());
                 }
             }.runTaskLater(Sword.getInstance(), 30L * (i-startIndex));
             i++;

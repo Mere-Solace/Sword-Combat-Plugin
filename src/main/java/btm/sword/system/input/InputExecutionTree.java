@@ -326,7 +326,7 @@ public class InputExecutionTree {
                         true),
                 true,
                 true,
-                false);
+                true);
 
         add(List.of(InputType.LEFT, InputType.LEFT),
                 new InputAction(
@@ -337,7 +337,7 @@ public class InputExecutionTree {
                         true),
                 true,
                 true,
-                false);
+                true);
 
         add(List.of(InputType.LEFT, InputType.LEFT, InputType.LEFT),
                 new InputAction(
@@ -348,7 +348,7 @@ public class InputExecutionTree {
                         true),
                 true,
                 true,
-                false);
+                true);
 
         // throw hold action
         add(List.of(InputType.DROP, InputType.RIGHT),

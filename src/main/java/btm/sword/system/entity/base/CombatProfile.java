@@ -1,5 +1,7 @@
 package btm.sword.system.entity.base;
 
+import btm.sword.config.ConfigManager;
+import btm.sword.config.section.EntityConfig;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.aspect.value.AspectValue;
 import btm.sword.system.entity.aspect.value.ResourceValue;
@@ -38,18 +40,19 @@ import lombok.Getter;
  * </ul>
  *
  * <h2>Default Initialization</h2>
- * Upon construction, the profile assigns baseline values for all {@link AspectType}s:
+ * Upon construction, the profile loads baseline values for all {@link AspectType}s from configuration:
  * <ul>
- *   <li>{@link AspectType#SHARDS}: {@code new ResourceValue(5, 40, 1)}</li>
- *   <li>{@link AspectType#TOUGHNESS}: {@code new ResourceValue(100, 20, 0.5f)}</li>
- *   <li>{@link AspectType#SOULFIRE}: {@code new ResourceValue(50, 2, 0.2f)}</li>
- *   <li>{@link AspectType#FORM}: {@code new ResourceValue(10, 60, 1)}</li>
+ *   <li>{@link AspectType#SHARDS}: Loaded from {@code entities.combat_profile.shards} (default: 10/50/1.0)</li>
+ *   <li>{@link AspectType#TOUGHNESS}: Loaded from {@code entities.combat_profile.toughness} (default: 20/20/0.5)</li>
+ *   <li>{@link AspectType#SOULFIRE}: Loaded from {@code entities.combat_profile.soulfire} (default: 100/5/0.2)</li>
+ *   <li>{@link AspectType#FORM}: Loaded from {@code entities.combat_profile.form} (default: 10/60/1.0)</li>
  *   <li>All other aspects: {@code new AspectValue(1)}</li>
  * </ul>
  *
  * <p>
- * These defaults define the regeneration behavior and maximums for each resource.
- * Values can later be overridden using {@link #setStat(AspectType, AspectValue)}.
+ * These values define the regeneration behavior and maximums for each resource, and can be
+ * tuned via {@code config.yaml} with hot-reload support. Values can also be overridden at
+ * runtime using {@link #setStat(AspectType, AspectValue)}.
  * </p>
  *
  * @see btm.sword.system.entity.base.SwordEntity
@@ -81,24 +84,45 @@ public class CombatProfile {
      * The maximum number of consecutive air-dodges the entity can perform
      * before landing. Reset in {@link btm.sword.system.entity.types.Combatant#resetAirDashesPerformed()}.
      */
-    private int maxAirDodges = 1;
+    private int maxAirDodges;
 
     /**
      * Constructs a new {@code CombatProfile} with the default {@link SwordClassType#SWORD_THROWER}
-     * and baseline {@link AspectType} stat distributions.
+     * and baseline {@link AspectType} stat distributions loaded from configuration.
      */
     public CombatProfile() {
         swordClass = SwordClassType.SWORD_THROWER;
 
+        // Load combat profile values from config - direct field access (hybrid pattern)
+        EntityConfig.CombatProfileConfig config = ConfigManager.getInstance().getEntities().getCombatProfile();
+
         for (AspectType stat : AspectType.values()) {
             switch (stat) {
-                case SHARDS -> stats.put(stat, new ResourceValue(10, 50, 1));
-                case TOUGHNESS -> stats.put(stat, new ResourceValue(20, 20, 0.5f));
-                case SOULFIRE -> stats.put(stat, new ResourceValue(100, 5, 0.2f));
-                case FORM -> stats.put(stat, new ResourceValue(10, 60, 1));
+                case SHARDS -> stats.put(stat, new ResourceValue(
+                    config.getShardsCurrent(),
+                    config.getShardsRegenPeriod(),
+                    config.getShardsRegenAmount()
+                ));
+                case TOUGHNESS -> stats.put(stat, new ResourceValue(
+                    config.getToughnessCurrent(),
+                    config.getToughnessRegenPeriod(),
+                    config.getToughnessRegenAmount()
+                ));
+                case SOULFIRE -> stats.put(stat, new ResourceValue(
+                    config.getSoulfireCurrent(),
+                    config.getSoulfireRegenPeriod(),
+                    config.getSoulfireRegenAmount()
+                ));
+                case FORM -> stats.put(stat, new ResourceValue(
+                    config.getFormCurrent(),
+                    config.getFormRegenPeriod(),
+                    config.getFormRegenAmount()
+                ));
                 default -> stats.put(stat, new AspectValue(1));
             }
         }
+
+        this.maxAirDodges = config.getMaxAirDodges();
     }
 
     /**

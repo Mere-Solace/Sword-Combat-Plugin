@@ -1,6 +1,7 @@
 package btm.sword.system.action.utility.thrown;
 
 import btm.sword.Sword;
+import btm.sword.config.ConfigManager;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.types.Combatant;
@@ -10,8 +11,6 @@ import btm.sword.util.display.ParticleWrapper;
 import btm.sword.util.display.Prefab;
 import btm.sword.util.entity.EntityUtil;
 import btm.sword.util.math.VectorUtil;
-import btm.sword.util.sound.SoundType;
-import btm.sword.util.sound.SoundUtil;
 import java.util.List;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -93,9 +92,9 @@ public class ThrownItem {
             thrower.setOffHandItemStackDuringThrow(thrower.getItemStackInHand(false));
         }
         // Base values for where the ItemDisplay is held in relation to the player's eye location
-        xDisplayOffset = -0.5f;
-        yDisplayOffset = 0.1f;
-        zDisplayOffset = 0.5f;
+        xDisplayOffset = ConfigManager.getInstance().getPhysics().getThrownItems().getDisplayOffsetX();
+        yDisplayOffset = ConfigManager.getInstance().getPhysics().getThrownItems().getDisplayOffsetY();
+        zDisplayOffset = ConfigManager.getInstance().getPhysics().getThrownItems().getDisplayOffsetZ();
     }
 
     /**
@@ -185,7 +184,7 @@ public class ThrownItem {
             }.runTaskLater(Sword.getInstance(), 2);
         }
 
-        SoundUtil.playSound(thrower.entity(), SoundType.ENTITY_ENDER_DRAGON_FLAP, 0.5f, 0.4f);
+        Prefab.Sounds.THROW.play(thrower.entity());
 
         thrower.setItemStackInHand(ItemStack.of(Material.AIR), true);
         InteractiveItemArbiter.put(this);
@@ -201,23 +200,23 @@ public class ThrownItem {
         double sinPhi = Math.sin(phi);
         double forwardCoefficient = initialVelocity*cosPhi;
         double upwardCoefficient = initialVelocity*sinPhi;
-        origin = o.add(basis.getFirst().multiply(0.5))
-                .add(basis.get(1).multiply(0.1))
-                .add(basis.getLast().multiply(-0.25));
+        origin = o.add(basis.getFirst().multiply(ConfigManager.getInstance().getPhysics().getThrownItems().getOriginOffsetForward()))
+                .add(basis.get(1).multiply(ConfigManager.getInstance().getPhysics().getThrownItems().getOriginOffsetUp()))
+                .add(basis.getLast().multiply(ConfigManager.getInstance().getPhysics().getThrownItems().getOriginOffsetBack()));
         cur = origin.clone();
         prev = cur.clone();
-        Vector flatDir = thrower.getFlatDir().rotateAroundY(Math.PI/85);
+        Vector flatDir = thrower.getFlatDir().rotateAroundY(ConfigManager.getInstance().getPhysics().getThrownItems().getTrajectoryRotation());
         velocity = flatDir.clone();
         Vector forwardVelocity = flatDir.clone().multiply(forwardCoefficient);
-        Vector upwardVelocity = VectorUtil.UP.clone().multiply(upwardCoefficient);
+        Vector upwardVelocity = Prefab.Direction.UP.clone().multiply(upwardCoefficient);
 
-        double gravDamper = 46;
+        double gravDamper = ConfigManager.getInstance().getPhysics().getThrownItems().getGravityDamper();
 
         positionFunction = t -> flatDir.clone().multiply(forwardCoefficient*t)
-                .add(VectorUtil.UP.clone().multiply((upwardCoefficient*t)-(initialVelocity*(1/gravDamper)*t*t)));
+                .add(Prefab.Direction.UP.clone().multiply((upwardCoefficient*t)-(initialVelocity*(1/gravDamper)*t*t)));
 
         velocityFunction = t -> forwardVelocity.clone()
-                .add(upwardVelocity.clone().add(VectorUtil.UP.clone().multiply(-initialVelocity*(2/(gravDamper))*t)));
+                .add(upwardVelocity.clone().add(Prefab.Direction.UP.clone().multiply(-initialVelocity*(2/(gravDamper))*t)));
 
         new BukkitRunnable() {
             @Override
@@ -266,17 +265,29 @@ public class ThrownItem {
         Quaternionf curRotation = curTr.getLeftRotation();
         Quaternionf newRotation;
         String name = display.getItemStack().getType().toString();
+
+        var rotationSpeed = ConfigManager.getInstance().getPhysics().getThrownItems().getRotationSpeed();
+
         if (name.endsWith("_SWORD")) {
-            newRotation = curRotation;
+            newRotation = curRotation.rotateZ((float) rotationSpeed.getSword());
         }
-        else if (name.endsWith("_AXE") || name.endsWith("_HOE") || name.endsWith("_PICKAXE") || name.endsWith("_SHOVEL")) {
-            newRotation = curRotation.rotateZ((float) -Math.PI/8);
+        else if (name.endsWith("_AXE")) {
+            newRotation = curRotation.rotateZ((float) rotationSpeed.getAxe());
+        }
+        else if (name.endsWith("_HOE")) {
+            newRotation = curRotation.rotateZ((float) rotationSpeed.getHoe());
+        }
+        else if (name.endsWith("_PICKAXE")) {
+            newRotation = curRotation.rotateZ((float) rotationSpeed.getPickaxe());
+        }
+        else if (name.endsWith("_SHOVEL")) {
+            newRotation = curRotation.rotateZ((float) rotationSpeed.getShovel());
         }
         else if (display.getItemStack().getType() == Material.SHIELD) {
-            newRotation = curRotation.rotateX((float) -Math.PI/8);
+            newRotation = curRotation.rotateX((float) rotationSpeed.getShield());
         }
         else {
-            newRotation = curRotation.rotateX((float) Math.PI/32);
+            newRotation = curRotation.rotateX((float) rotationSpeed.getDefaultSpeed());
         }
 
         display.setTransformation(
@@ -333,6 +344,7 @@ public class ThrownItem {
             }
         }.runTaskLater(Sword.getInstance(), 1L);
 
+        var timingConfig = ConfigManager.getInstance().getTiming().getThrownItems();
         disposeTask = new BukkitRunnable() {
             int tick = 0;
             @Override
@@ -342,7 +354,7 @@ public class ThrownItem {
                     cancel();
                 }
 
-                if (tick >= 1000) {
+                if (tick >= timingConfig.getDisposalTimeout()) {
                     if (!display.isDead()) display.remove();
                     cancel();
                 }
@@ -351,9 +363,9 @@ public class ThrownItem {
                 Prefab.Particles.THROWN_ITEM_MARKER.display(cur);
                 Prefab.Particles.THROWN_ITEM_MARKER.display(cur.clone().subtract(step));
 
-                tick += 5;
+                tick += timingConfig.getDisposalCheckInterval();
             }
-        }.runTaskTimer(Sword.getInstance(), 1L, 5L);
+        }.runTaskTimer(Sword.getInstance(), 1L, timingConfig.getDisposalCheckInterval());
     }
 
     /**
@@ -366,13 +378,19 @@ public class ThrownItem {
 
         LivingEntity hit = hitEntity.entity();
         String name = display.getItemStack().getType().toString();
+        var swordAxeDamage = ConfigManager.getInstance().getCombat().getThrownDamage().getSwordAxe();
         if (name.endsWith("_SWORD") || name.endsWith("AXE")) {
             Vector kb = EntityUtil.isOnGround(hit) ?
-                    velocity.clone().multiply(0.7) :
-                    VectorUtil.getProjOntoPlane(velocity, VectorUtil.UP).multiply(1);
+                    velocity.clone().multiply(swordAxeDamage.getKnockbackGrounded()) :
+                    VectorUtil.getProjOntoPlane(velocity, Prefab.Direction.UP).multiply(swordAxeDamage.getKnockbackAirborne());
 
             impale(hit);
-            hitEntity.hit(thrower, 0, 2, 75, 50, kb);
+            hitEntity.hit(thrower,
+                swordAxeDamage.getInvulnerabilityTicks(),
+                swordAxeDamage.getBaseShards(),
+                swordAxeDamage.getToughnessDamage(),
+                swordAxeDamage.getSoulfireReduction(),
+                kb);
 
             new BukkitRunnable() {
                 @Override
@@ -388,11 +406,12 @@ public class ThrownItem {
                     float yaw = cur.setDirection(velocity.clone().multiply(-1)).getYaw();
                     hitEntity.entity().setBodyYaw(yaw);
                     hitEntity.setPinned(true);
+                    var impalementConfig = ConfigManager.getInstance().getCombat().getImpalement();
                     new BukkitRunnable() {
                         int i = 0;
                         @Override
                         public void run() {
-                            if (display.isDead() || i > 50) {
+                            if (display.isDead() || i > impalementConfig.getPinMaxIterations()) {
                                 hitEntity.setPinned(false);
                                 if (!display.isDead()) disposeNaturally();
                                 cancel();
@@ -400,11 +419,11 @@ public class ThrownItem {
                             hitEntity.entity().setBodyYaw(yaw);
                             hitEntity.entity().setVelocity(new Vector());
 
-                            i += 2;
+                            i += impalementConfig.getPinCheckInterval();
                         }
-                    }.runTaskTimer(Sword.getInstance(), 0L, 2L);
+                    }.runTaskTimer(Sword.getInstance(), 0L, impalementConfig.getPinCheckInterval());
                 }
-            }.runTaskLater(Sword.getInstance(), 3L);
+            }.runTaskLater(Sword.getInstance(), ConfigManager.getInstance().getTiming().getThrownItems().getPinDelay());
 
             new BukkitRunnable() {
                 @Override
@@ -421,8 +440,17 @@ public class ThrownItem {
             }.runTaskTimer(Sword.getInstance(), 0L, 1L);
         }
         else {
-            hitEntity.hit(thrower, 0, 2, 75, 50, velocity.clone().multiply(0.7));
-            hit.getWorld().createExplosion(hitEntity.getChestLocation(), 1, false, false);
+            var otherDamage = ConfigManager.getInstance().getCombat().getThrownDamage().getOther();
+            hitEntity.hit(thrower,
+                otherDamage.getInvulnerabilityTicks(),
+                otherDamage.getBaseShards(),
+                otherDamage.getToughnessDamage(),
+                otherDamage.getSoulfireReduction(),
+                velocity.clone().multiply(otherDamage.getKnockbackMultiplier()));
+            hit.getWorld().createExplosion(hitEntity.getChestLocation(),
+                otherDamage.getExplosionPower(),
+                ConfigManager.getInstance().getWorld().isExplosionsSetFire(),
+                ConfigManager.getInstance().getWorld().isExplosionsBreakBlocks());
             disposeNaturally();
         }
     }
@@ -472,11 +500,13 @@ public class ThrownItem {
      */
     public void hitCheck() {
         Predicate<Entity> filter = entity -> (entity instanceof LivingEntity l) && !l.isDead() && l.getType() != EntityType.ARMOR_STAND;
-        Predicate<Entity> effFilter = t < 20 ? entity -> filter.test(entity) && entity.getUniqueId() != thrower.getUniqueId() : filter;
+        int gracePeriod = ConfigManager.getInstance().getTiming().getThrownItems().getCatchGracePeriod();
+        Predicate<Entity> effFilter = t < gracePeriod ? entity -> filter.test(entity) && entity.getUniqueId() != thrower.getUniqueId() : filter;
 
         if (prev == null) disposeNaturally();
 
-        RayTraceResult hitEntity = display.getWorld().rayTraceEntities(prev, velocity, initialVelocity, 0.5, effFilter);
+        double entityRadius = ConfigManager.getInstance().getCombat().getHitboxes().getThrownItemEntityRadius();
+        RayTraceResult hitEntity = display.getWorld().rayTraceEntities(prev, velocity, initialVelocity, entityRadius, effFilter);
 
         if (hitEntity == null) return;
 
@@ -550,7 +580,9 @@ public class ThrownItem {
 
         double heightOffset = Math.max(0, Math.min(cur.getY() - feet, hit.getHeight()));
 
-        boolean followHead = hitEntity.entity().getType() != EntityType.SPIDER && heightOffset >= diff*0.8;
+        var impalementConfig = ConfigManager.getInstance().getCombat().getImpalement();
+        boolean followHead = !impalementConfig.getHeadFollowExceptions().contains(hitEntity.entity().getType())
+                && heightOffset >= diff * impalementConfig.getHeadZoneRatio();
         EntityUtil.itemDisplayFollow(hitEntity, display,  velocity.clone().normalize(), heightOffset, followHead);
     }
 

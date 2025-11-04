@@ -6,8 +6,6 @@ import org.bukkit.Location;
 import org.bukkit.util.Vector;
 
 public class VectorUtil {
-    public static final Vector UP = new Vector(0,1,0);
-
     public static ArrayList<Vector> getBasis(Location origin, Vector dir) {
         Vector ref = new Vector(0,1,0);
         Vector right = null;

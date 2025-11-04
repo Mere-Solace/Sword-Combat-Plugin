@@ -58,6 +58,16 @@ Thank you for your interest in contributing! This document provides guidelines f
   - Constants: `UPPER_SNAKE_CASE`
   - Packages: `lowercase`
 
+### Configuration Development
+
+When adding new configuration values, follow the **[Hybrid Configuration Pattern](docs/decisions/003-hybrid-configuration-pattern.md)**:
+
+- **Simple configs (2-3 values)**: Use direct fields with `@Getter` (no nested classes)
+- **Complex configs (5+ values)**: Use nested static classes when structure adds value
+- **Fully flat configs**: Use for 30+ independent parameters without natural grouping
+
+See [ADR 003](docs/decisions/003-hybrid-configuration-pattern.md) for detailed guidelines and examples.
+
 ### Documentation
 
 - Follow [Microsoft Java Documentation Standards](docs/standards/documentation-standards.md)

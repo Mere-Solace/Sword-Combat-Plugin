@@ -1,9 +1,10 @@
 package btm.sword.util.sound;
 
-import org.intellij.lang.annotations.Subst;
+import net.kyori.adventure.key.Key;
+import net.kyori.adventure.sound.Sound;
 import org.jetbrains.annotations.NotNull;
 
-public enum SoundType {
+public enum SoundType implements Sound.Type {
     //#region Custom Sounds:
     RANDOM_BANE_SLASH("random.baneslash"),
     RANDOM_CLASH("random.clash"),
@@ -1200,14 +1201,14 @@ public enum SoundType {
     WEATHER_RAIN_ABOVE("weather.rain.above");
     //#endregion
 
-    private final String key;
+    private final Key key;
 
-    SoundType(String key) {
-        this.key = key;
+    SoundType(String keyString) {
+        this.key = Key.key(keyString);
     }
 
-    @Subst("class.item.type")
-    public @NotNull String  getKey() {
+    @Override
+    public @NotNull Key key() {
         return key;
     }
 }

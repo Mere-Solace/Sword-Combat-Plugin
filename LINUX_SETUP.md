@@ -1,6 +1,6 @@
 ## Installation for Linux
 1. If you do not already have a server directory, follow these instructions, if you already do skip to step 2.
-    1.  Open your Minecraft launcher
+    1. Open your Minecraft launcher
     2. Select or create an installation of version 1.21.8.
     3. Within the edit screen, above the "Version" section you should see a download option for your server, download it, and create a new directory where you want to store your server directory. I recommend naming it the version itself (i.e. "1.21.8") for good organization.
     4. Place `server.jar` within this new directory
@@ -53,3 +53,11 @@ java -Xms4096M -Xmx4096M -jar paper-1.21.8-60.jar --nogui
 
 
 14. You can now initiate your server with the sword plugin at any time by running `./start.bash`, which can be connected to by direct connecting to an address of `0` 
+
+***
+
+~~~
+
+Thank you to loqt-cb for this writeup
+
+~~~
