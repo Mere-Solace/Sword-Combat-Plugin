@@ -26,7 +26,7 @@ public class EntityUtil {
      * @return true if the entity is on ground, false otherwise
      */
     public static boolean isOnGround(Entity entity) {
-        double maxCheckDist = ConfigManager.getInstance().getDetection().getGroundCheck().getMaxDistance();
+        double maxCheckDist = ConfigManager.getInstance().getDetection().getGroundCheckMaxDistance();
         Location base = entity.getLocation().add(new Vector(0, -maxCheckDist, 0));
 
         double[] offsets = {0};

@@ -6,30 +6,26 @@ import org.bukkit.configuration.file.FileConfiguration;
 
 /**
  * Type-safe accessor for detection and collision configuration values.
+ * <p>
+ * Uses hybrid pattern: Single value flattened to direct field (no wrapper class needed).
+ * </p>
  */
 @Getter
 public class DetectionConfig {
-    private final GroundCheckConfig groundCheck;
+    // Flattened ground check config (1 simple value - no wrapper class needed)
+    private final double groundCheckMaxDistance;
 
     public DetectionConfig(FileConfiguration config) {
         ConfigurationSection detection = config.getConfigurationSection("detection");
         if (detection != null) {
-            this.groundCheck = new GroundCheckConfig(detection.getConfigurationSection("ground_check"));
-        } else {
-            this.groundCheck = new GroundCheckConfig(null);
-        }
-    }
-
-    @Getter
-    public static class GroundCheckConfig {
-        private final double maxDistance;
-
-        public GroundCheckConfig(ConfigurationSection section) {
-            if (section != null) {
-                this.maxDistance = section.getDouble("max_distance", 0.3);
+            ConfigurationSection groundCheck = detection.getConfigurationSection("ground_check");
+            if (groundCheck != null) {
+                this.groundCheckMaxDistance = groundCheck.getDouble("max_distance", 0.3);
             } else {
-                this.maxDistance = 0.3;
+                this.groundCheckMaxDistance = 0.3;
             }
+        } else {
+            this.groundCheckMaxDistance = 0.3;
         }
     }
 }

@@ -171,12 +171,12 @@ public class AttackAction extends SwordAction {
                     if (aerial) o.add(Prefab.Direction.UP.clone().multiply(ex.getVelocity().getY()));
 
                     if (!aerial) {
-                        var damping = ConfigManager.getInstance().getPhysics().getAttackVelocity().getGroundedDamping();
+                        var attackVelocity = ConfigManager.getInstance().getPhysics().getAttackVelocity();
                         Vector curV = ex.getVelocity();
                         ex.setVelocity(new Vector(
-                                curV.getX() * damping.getHorizontal(),
-                                curV.getY() * damping.getVertical(),
-                                curV.getZ() * damping.getHorizontal()));
+                                curV.getX() * attackVelocity.getGroundedDampingHorizontal(),
+                                curV.getY() * attackVelocity.getGroundedDampingVertical(),
+                                curV.getZ() * attackVelocity.getGroundedDampingHorizontal()));
                     }
 
                     double[] d = {damage};
@@ -225,9 +225,9 @@ public class AttackAction extends SwordAction {
                                 }
 
                                 // retrieving targets and setting knockback
-                                var knockback = ConfigManager.getInstance().getPhysics().getAttackVelocity().getKnockback();
-                                Vector kb =  new Vector(0, knockback.getVerticalBase(), 0);
-                                Vector r = right.clone().multiply(knockback.getHorizontalModifier());
+                                var attackVelocity = ConfigManager.getInstance().getPhysics().getAttackVelocity();
+                                Vector kb =  new Vector(0, attackVelocity.getKnockbackVerticalBase(), 0);
+                                Vector r = right.clone().multiply(attackVelocity.getKnockbackHorizontalModifier());
 
                                 // enum map to hitbox Consumer function accepting executor
                                 double secantRadius = ConfigManager.getInstance().getCombat().getHitboxes().getSecantRadius();
@@ -240,8 +240,8 @@ public class AttackAction extends SwordAction {
                                             case BASIC_2 -> kb = kb.clone().add(r.clone().multiply(-1));
                                             case BASIC_3 -> kb = target.getLocation().toVector()
                                                     .subtract(o.toVector()).normalize()
-                                                    .subtract(new Vector(0, knockback.getVerticalBase() * 2, 0));
-                                            default -> kb = v.clone().normalize().multiply(knockback.getNormalMultiplier());
+                                                    .subtract(new Vector(0, attackVelocity.getKnockbackVerticalBase() * 2, 0));
+                                            default -> kb = v.clone().normalize().multiply(attackVelocity.getKnockbackNormalMultiplier());
                                         }
 
                                         SwordEntity sTarget = SwordEntityArbiter.getOrAdd(target.getUniqueId());

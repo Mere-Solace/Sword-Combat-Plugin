@@ -6,23 +6,35 @@ import org.bukkit.configuration.file.FileConfiguration;
 
 /**
  * Type-safe accessor for timing and cooldown configuration values.
+ * <p>
+ * Uses hybrid pattern: Single value flattened to direct field, complex groups kept nested.
+ * </p>
  */
 @Getter
 public class TimingConfig {
     private final ThrownItemsConfig thrownItems;
-    private final AttacksConfig attacks;
     private final IntervalsConfig intervals;
+
+    // Flattened attacks config (1 simple value - no wrapper class needed)
+    private final int attacksComboWindowBase;
 
     public TimingConfig(FileConfiguration config) {
         ConfigurationSection timing = config.getConfigurationSection("timing");
         if (timing != null) {
             this.thrownItems = new ThrownItemsConfig(timing.getConfigurationSection("thrown_items"));
-            this.attacks = new AttacksConfig(timing.getConfigurationSection("attacks"));
             this.intervals = new IntervalsConfig(timing.getConfigurationSection("intervals"));
+
+            // Load attacks value directly
+            ConfigurationSection attacks = timing.getConfigurationSection("attacks");
+            if (attacks != null) {
+                this.attacksComboWindowBase = attacks.getInt("combo_window_base", 3);
+            } else {
+                this.attacksComboWindowBase = 3;
+            }
         } else {
             this.thrownItems = new ThrownItemsConfig(null);
-            this.attacks = new AttacksConfig(null);
             this.intervals = new IntervalsConfig(null);
+            this.attacksComboWindowBase = 3;
         }
     }
 
@@ -47,19 +59,6 @@ public class TimingConfig {
                 this.disposalCheckInterval = 5;
                 this.pinDelay = 3;
                 this.throwCompletionDelay = 2;
-            }
-        }
-    }
-
-    @Getter
-    public static class AttacksConfig {
-        private final int comboWindowBase;
-
-        public AttacksConfig(ConfigurationSection section) {
-            if (section != null) {
-                this.comboWindowBase = section.getInt("combo_window_base", 3);
-            } else {
-                this.comboWindowBase = 3;
             }
         }
     }
