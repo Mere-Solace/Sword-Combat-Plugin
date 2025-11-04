@@ -12,11 +12,12 @@ import java.util.Objects;
 import java.util.UUID;
 import lombok.Getter;
 import lombok.Setter;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.entity.Item;
-import org.bukkit.entity.LivingEntity;
-import org.bukkit.entity.Player;
+import org.bukkit.entity.*;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -44,6 +45,9 @@ public abstract class SwordEntity {
     /** Boolean value for whether onTick() should be run or not */
     protected boolean shouldTick;
     protected long ticks;
+
+    private TextDisplay statusDisplay;
+    private boolean statusActive;
 
     private long timeOfLastAttack;
     private int durationOfLastAttack;
@@ -87,6 +91,8 @@ public abstract class SwordEntity {
 
         shouldTick = true;
         ticks = 0L;
+
+        statusActive = true;
 
         timeOfLastAttack = 0L;
         durationOfLastAttack = 0;
@@ -149,6 +155,65 @@ public abstract class SwordEntity {
                 }
             }
         }
+
+        if (isStatusActive()) {
+            if (statusDisplay != null) {
+                updateStatusDisplay();
+            } else {
+                restartStatusDisplay();
+            }
+        }
+    }
+
+    private void updateStatusDisplay() {
+        String name = "§f[§bEntity Name§f]";
+        int shards = (int) aspects.shardsCur();
+        int maxEffShards = (int) aspects.shardsCur();
+        float toughness = aspects.toughnessCur();
+        float maxEffToughness = aspects.toughnessVal();
+
+        String bar = "§7[§a" + // green for filled
+                "█".repeat(shards) +
+                "§8" + // dark gray for missing
+                "░".repeat(maxEffShards - shards) +
+                "§7]";
+
+        Component displayText = Component.text()
+                .append(Component.text(name + "\n", NamedTextColor.AQUA, TextDecoration.BOLD))
+                .append(Component.text(bar + " ", NamedTextColor.GRAY))
+                .append(Component.text(String.format("§7%d§f/§7%d HP", shards, maxEffShards)))
+                .append(Component.text(String.format("§7%.0f§f/§7%.0f Toughness", toughness, maxEffToughness), NamedTextColor.DARK_GRAY))
+                .append(Component.text(toughness, NamedTextColor.GOLD, TextDecoration.BOLD))
+                .build();
+
+        statusDisplay.text(displayText);
+    }
+
+    private void restartStatusDisplay() {
+        setStatusActive(false);
+
+        statusDisplay = (TextDisplay) entity().getWorld().spawnEntity(entity().getEyeLocation(), EntityType.TEXT_DISPLAY);
+        statusDisplay.setNoPhysics(true);
+        statusDisplay.setBillboard(Display.Billboard.CENTER);
+        statusDisplay.setDisplayHeight(1.0f); // TODO: move to config
+        statusDisplay.setShadowed(true);
+        statusDisplay.setBrightness(new Display.Brightness(15, 15));
+
+        updateStatusDisplay();
+
+        entity().addPassenger(statusDisplay);
+        statusDisplay.setBillboard(Display.Billboard.HORIZONTAL); // TODO: Config maybe
+
+        setStatusActive(true);
+    }
+
+    public void endStatusDisplay() {
+        setStatusActive(false);
+        removeStatusDisplay();
+    }
+
+    private void removeStatusDisplay() {
+        if (statusDisplay != null) statusDisplay.remove();
     }
 
     /**
@@ -458,12 +523,12 @@ public abstract class SwordEntity {
     }
 
     /**
-     * Checks if the entity has an item in its main hand.
+     * Checks if the entity does not have an item in its main hand.
      *
-     * @return true if main hand is not empty, false otherwise
+     * @return true if main hand is empty, false otherwise
      */
-    public boolean hasItemInMainHand() {
-        return !getItemStackInHand(true).isEmpty();
+    public boolean isMainHandEmpty() {
+        return getItemStackInHand(true).isEmpty();
     }
 
     /**

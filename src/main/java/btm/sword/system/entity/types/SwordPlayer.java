@@ -60,8 +60,8 @@ public class SwordPlayer extends Combatant {
 
     private ItemStack menuButton;
 
-    private ItemDisplay sheathed;
-    private boolean sheathedReady;
+    private ItemDisplay sheathedDisplay;
+    private boolean sheathedActive;
 
     private final InputExecutionTree inputExecutionTree;
     private final long inputTimeoutMillis = 1200L;
@@ -118,7 +118,7 @@ public class SwordPlayer extends Combatant {
         inputExecutionTree = new InputExecutionTree(inputTimeoutMillis);
         inputExecutionTree.initializeInputTree();
 
-        sheathedReady = true;
+        sheathedActive = true;
 
         performedDropAction = false;
         changingHandIndex = false;
@@ -148,14 +148,14 @@ public class SwordPlayer extends Combatant {
     protected void onTick() {
         super.onTick();
 
-        if (sheathed != null && isSheathedReady()) {
+        if (sheathedDisplay != null && isSheathedActive()) {
             updateSheathedWeapon();
         }
 
         if (player.getHealth() > 0) updateVisualStats();
 
         if (ticks % 2 == 0) {
-            if ((sheathed == null || sheathed.isDead()) && isSheathedReady()) {
+            if ((sheathedDisplay == null || sheathedDisplay.isDead()) && isSheathedActive()) {
                 RestartSheathedWeapon();
             }
 
@@ -190,17 +190,14 @@ public class SwordPlayer extends Combatant {
      */
     @Override
     public void onDeath() {
-        if (sheathed != null)
-            sheathed.remove();
+        removeSheathedWeaponDisplay();
     }
 
     /**
      * Called when the player leaves the game.
-     * Removes the sheathed sword display.
      */
     public void onLeave() {
-        if (sheathed != null)
-            sheathed.remove();
+        removeSheathedWeaponDisplay();
     }
 
     /**
@@ -340,7 +337,7 @@ public class SwordPlayer extends Combatant {
     /**
      * Recreates and reinitializes the player's sheathed weapon display.
      * <p>
-     * This method first marks the sheathed weapon as not ready using {@link #setSheathedReady(boolean)}.
+     * This method first marks the sheathed weapon as not ready using {@link #setSheathedActive(boolean)}.
      * After a short delay (5 ticks), it verifies that the player is still valid and online,
      * ensures the player's current chunk is loaded, and then spawns a new {@link ItemDisplay}
      * entity at the player's location. This entity visually represents the player's
@@ -362,10 +359,10 @@ public class SwordPlayer extends Combatant {
      *
      * @see ItemDisplay
      * @see World#spawnEntity(org.bukkit.Location, org.bukkit.entity.EntityType)
-     * @see #setSheathedReady(boolean)
+     * @see #setSheathedActive(boolean)
      */
     public void RestartSheathedWeapon() {
-        setSheathedReady(false);
+        setSheathedActive(false);
         Bukkit.getScheduler().runTaskLater(Sword.getInstance(), () -> {
             if (!player.isOnline() || !player.isValid()) return;
 
@@ -374,19 +371,19 @@ public class SwordPlayer extends Combatant {
 
             if (!loc.getChunk().isLoaded()) loc.getChunk().load();
 
-            sheathed = (ItemDisplay) world.spawnEntity(loc, EntityType.ITEM_DISPLAY);
-            sheathed.setItemStack(new ItemStack(Material.STONE_SWORD));
+            sheathedDisplay = (ItemDisplay) world.spawnEntity(loc, EntityType.ITEM_DISPLAY);
+            sheathedDisplay.setItemStack(new ItemStack(Material.STONE_SWORD));
 
-            sheathed.setTransformation(new Transformation(
+            sheathedDisplay.setTransformation(new Transformation(
                     new Vector3f(0.28f, -1.3f, -0.5f),
                     new Quaternionf().rotationY((float) Math.PI / 2).rotateZ(-(float) Math.PI / (1.65f)),
                     new Vector3f(1f, 1f, 1f),
                     new Quaternionf()
             ));
 
-            player.addPassenger(sheathed);
-            sheathed.setBillboard(Display.Billboard.FIXED);
-            setSheathedReady(true);
+            player.addPassenger(sheathedDisplay);
+            sheathedDisplay.setBillboard(Display.Billboard.FIXED);
+            setSheathedActive(true);
         }, 2L);
     }
 
@@ -397,7 +394,7 @@ public class SwordPlayer extends Combatant {
      * This method performs multiple delayed updates (controlled by the loop count {@code x})
      * to achieve a smooth visual interpolation using {@link DisplayUtil#smoothTeleport(org.bukkit.entity.Display, int)}.
      * Each iteration schedules a task via {@link SwordScheduler#runLater(Runnable, int, java.util.concurrent.TimeUnit)}
-     * that repositions the {@link #sheathed} {@link org.bukkit.entity.ItemDisplay} entity relative to the player's location.
+     * that repositions the {@link #sheathedDisplay} {@link org.bukkit.entity.ItemDisplay} entity relative to the player's location.
      * <p>
      * The display entity is temporarily attached as a passenger to the player using
      * {@link org.bukkit.entity.Player#addPassenger(org.bukkit.entity.Entity)} to ensure its position follows the player.
@@ -405,7 +402,7 @@ public class SwordPlayer extends Combatant {
      * <p>
      * Once the update sequence completes, the sheathed weapon display is typically finalized by setting
      * its billboard mode to {@link org.bukkit.entity.Display.Billboard#FIXED} and marking it as ready via
-     * {@link #setSheathedReady(boolean)}.
+     * {@link #setSheathedActive(boolean)}.
      *
      * @implNote The update uses a fixed delay of {@code 50/x} milliseconds between each scheduled iteration,
      * producing a brief animation-like effect as the weapon display aligns to the player's orientation.
@@ -415,7 +412,7 @@ public class SwordPlayer extends Combatant {
      * @see org.bukkit.entity.Display.Billboard#FIXED
      * @see org.bukkit.entity.Player#addPassenger(org.bukkit.entity.Entity)
      * @see #getFlatDir()
-     * @see #setSheathedReady(boolean)
+     * @see #setSheathedActive(boolean)
      */
     public void updateSheathedWeapon() {
         int x = 3;
@@ -423,17 +420,28 @@ public class SwordPlayer extends Combatant {
             SwordScheduler.runLater(new BukkitRunnable() {
                 @Override
                 public void run() {
-                    DisplayUtil.smoothTeleport(sheathed, 2);
-                    sheathed.teleport(player.getLocation().setDirection(getFlatDir()));
-                    player.addPassenger(sheathed);
+                    DisplayUtil.smoothTeleport(sheathedDisplay, 2);
+                    sheathedDisplay.teleport(player.getLocation().setDirection(getFlatDir()));
+                    player.addPassenger(sheathedDisplay);
                 }
             }, 50/x, TimeUnit.MILLISECONDS);
         }
     }
 
+    /**
+     * Safely remove the sheathed weapon item display and disallow the re-spawning and updating of it.
+     */
     public void endSheathedWeapon() {
-        sheathed.remove();
-        setSheathedReady(false);
+        removeSheathedWeaponDisplay();
+        setSheathedActive(false);
+    }
+
+    /**
+     * Safely remove the sheathed item weapon display.
+     */
+    public void removeSheathedWeaponDisplay() {
+        if (sheathedDisplay != null)
+            sheathedDisplay.remove();
     }
 
     /**

@@ -116,4 +116,14 @@ public class SwordEntityArbiter {
             }
         }
     }
+
+    public static void removeAllDisplays() {
+        for (SwordEntity entity : existingSwordNPCs.values()) {
+            entity.endStatusDisplay();
+        }
+
+        for (SwordEntity player : onlineSwordPlayers.values()) {
+            ((SwordPlayer) player).endSheathedWeapon();
+        }
+    }
 }

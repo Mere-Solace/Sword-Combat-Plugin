@@ -5,6 +5,7 @@ import btm.sword.config.ConfigManager;
 import btm.sword.listeners.EntityListener;
 import btm.sword.listeners.InputListener;
 import btm.sword.listeners.PlayerListener;
+import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.playerdata.PlayerDataManager;
 import io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
@@ -49,6 +50,8 @@ public final class Sword extends JavaPlugin {
     @Override
     public void onDisable() {
 //        PlayerDataManager.shutdown();
+
+        SwordEntityArbiter.removeAllDisplays();
 
         getLogger().info("~ Sword: Combat Evolved has been disabled ~");
     }
