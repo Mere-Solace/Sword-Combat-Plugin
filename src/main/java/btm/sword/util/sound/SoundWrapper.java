@@ -1,6 +1,6 @@
 package btm.sword.util.sound;
 
-import btm.sword.config.AudioConfig;
+import btm.sword.config.section.AudioConfig;
 import btm.sword.config.ConfigManager;
 import org.bukkit.entity.LivingEntity;
 

@@ -6,7 +6,6 @@ import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.util.display.DisplayUtil;
 import btm.sword.util.display.Prefab;
 import org.bukkit.Location;
-import org.bukkit.entity.Display;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.ItemDisplay;
 import org.bukkit.scheduler.BukkitRunnable;

@@ -1,12 +1,12 @@
-package btm.sword.config;
+package btm.sword.config.section;
 
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 import lombok.Getter;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.EntityType;
-
-import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Type-safe accessor for combat-related configuration values.
@@ -227,7 +227,7 @@ public class CombatConfig {
                                 return null;
                             }
                         })
-                        .filter(t -> t != null)
+                        .filter(Objects::nonNull)
                         .collect(Collectors.toList());
                 this.pinMaxIterations = section.getInt("pin_max_iterations", 50);
                 this.pinCheckInterval = section.getInt("pin_check_interval", 2);

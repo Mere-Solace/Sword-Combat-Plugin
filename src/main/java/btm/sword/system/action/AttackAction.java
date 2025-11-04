@@ -14,8 +14,6 @@ import btm.sword.util.display.Prefab;
 import btm.sword.util.entity.HitboxUtil;
 import btm.sword.util.math.BezierUtil;
 import btm.sword.util.math.VectorUtil;
-import btm.sword.util.sound.SoundType;
-import btm.sword.util.sound.SoundUtil;
 import java.util.*;
 import org.apache.logging.log4j.util.BiConsumer;
 import org.bukkit.Location;
@@ -53,7 +51,7 @@ public class AttackAction extends SwordAction {
      */
     public static void basicAttack(Combatant executor, AttackType type) {
         Material item = executor.getItemTypeInHand(true);
-        double dot = executor.entity().getEyeLocation().getDirection().dot(VectorUtil.UP);
+        double dot = executor.entity().getEyeLocation().getDirection().dot(Prefab.Direction.UP);
 
         if (executor.isGrounded()) {
             for (var entry : attackMap.entrySet()) {
@@ -170,7 +168,7 @@ public class AttackAction extends SwordAction {
 
                     HashSet<LivingEntity> hit = new HashSet<>();
 
-                    if (aerial) o.add(VectorUtil.UP.clone().multiply(ex.getVelocity().getY()));
+                    if (aerial) o.add(Prefab.Direction.UP.clone().multiply(ex.getVelocity().getY()));
 
                     if (!aerial) {
                         var damping = ConfigManager.getInstance().getPhysics().getAttackVelocity().getGroundedDamping();

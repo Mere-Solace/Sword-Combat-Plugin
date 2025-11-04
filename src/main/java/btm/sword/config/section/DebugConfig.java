@@ -1,4 +1,4 @@
-package btm.sword.config;
+package btm.sword.config.section;
 
 import lombok.Getter;
 import org.bukkit.configuration.ConfigurationSection;
@@ -9,7 +9,6 @@ import org.bukkit.configuration.file.FileConfiguration;
  */
 @Getter
 public class DebugConfig {
-    private final boolean verboseReload;
     private final boolean profileBezierGeneration;
     private final boolean profileHitboxDetection;
     private final boolean showHitboxParticles;
@@ -18,13 +17,11 @@ public class DebugConfig {
     public DebugConfig(FileConfiguration config) {
         ConfigurationSection debug = config.getConfigurationSection("debug");
         if (debug != null) {
-            this.verboseReload = debug.getBoolean("verbose_reload", false);
             this.profileBezierGeneration = debug.getBoolean("profile_bezier_generation", false);
             this.profileHitboxDetection = debug.getBoolean("profile_hitbox_detection", false);
             this.showHitboxParticles = debug.getBoolean("show_hitbox_particles", false);
             this.showBezierControlPoints = debug.getBoolean("show_bezier_control_points", false);
         } else {
-            this.verboseReload = false;
             this.profileBezierGeneration = false;
             this.profileHitboxDetection = false;
             this.showHitboxParticles = false;

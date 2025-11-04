@@ -1,7 +1,6 @@
 package btm.sword.util.display;
 
 import btm.sword.config.ConfigManager;
-
 import java.util.List;
 import org.bukkit.Location;
 import org.bukkit.entity.Display;

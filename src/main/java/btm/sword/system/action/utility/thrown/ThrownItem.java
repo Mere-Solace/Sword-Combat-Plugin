@@ -210,15 +210,15 @@ public class ThrownItem {
         Vector flatDir = thrower.getFlatDir().rotateAroundY(ConfigManager.getInstance().getPhysics().getThrownItems().getTrajectoryRotation());
         velocity = flatDir.clone();
         Vector forwardVelocity = flatDir.clone().multiply(forwardCoefficient);
-        Vector upwardVelocity = VectorUtil.UP.clone().multiply(upwardCoefficient);
+        Vector upwardVelocity = Prefab.Direction.UP.clone().multiply(upwardCoefficient);
 
         double gravDamper = ConfigManager.getInstance().getPhysics().getThrownItems().getGravityDamper();
 
         positionFunction = t -> flatDir.clone().multiply(forwardCoefficient*t)
-                .add(VectorUtil.UP.clone().multiply((upwardCoefficient*t)-(initialVelocity*(1/gravDamper)*t*t)));
+                .add(Prefab.Direction.UP.clone().multiply((upwardCoefficient*t)-(initialVelocity*(1/gravDamper)*t*t)));
 
         velocityFunction = t -> forwardVelocity.clone()
-                .add(upwardVelocity.clone().add(VectorUtil.UP.clone().multiply(-initialVelocity*(2/(gravDamper))*t)));
+                .add(upwardVelocity.clone().add(Prefab.Direction.UP.clone().multiply(-initialVelocity*(2/(gravDamper))*t)));
 
         new BukkitRunnable() {
             @Override
@@ -267,7 +267,9 @@ public class ThrownItem {
         Quaternionf curRotation = curTr.getLeftRotation();
         Quaternionf newRotation;
         String name = display.getItemStack().getType().toString();
+
         var rotationSpeed = ConfigManager.getInstance().getPhysics().getThrownItems().getRotationSpeed();
+
         if (name.endsWith("_SWORD")) {
             newRotation = curRotation.rotateZ((float) rotationSpeed.getSword());
         }
@@ -382,7 +384,7 @@ public class ThrownItem {
         if (name.endsWith("_SWORD") || name.endsWith("AXE")) {
             Vector kb = EntityUtil.isOnGround(hit) ?
                     velocity.clone().multiply(swordAxeDamage.getKnockbackGrounded()) :
-                    VectorUtil.getProjOntoPlane(velocity, VectorUtil.UP).multiply(swordAxeDamage.getKnockbackAirborne());
+                    VectorUtil.getProjOntoPlane(velocity, Prefab.Direction.UP).multiply(swordAxeDamage.getKnockbackAirborne());
 
             impale(hit);
             hitEntity.hit(thrower,

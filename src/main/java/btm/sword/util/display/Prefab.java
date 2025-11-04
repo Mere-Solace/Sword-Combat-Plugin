@@ -1,5 +1,6 @@
 package btm.sword.util.display;
 
+import btm.sword.config.section.AudioConfig;
 import btm.sword.util.sound.SoundWrapper;
 import java.util.ArrayList;
 import java.util.List;
@@ -123,7 +124,7 @@ public class Prefab {
          * Properties configured in config.yaml under audio.attack.
          * </p>
          */
-        public static final SoundWrapper ATTACK = new SoundWrapper(audio -> audio.getAttackSound());
+        public static final SoundWrapper ATTACK = new SoundWrapper(AudioConfig::getAttackSound);
 
         /**
          * Throw sound effect for thrown items.
@@ -132,6 +133,6 @@ public class Prefab {
          * Properties configured in config.yaml under audio.throw.
          * </p>
          */
-        public static final SoundWrapper THROW = new SoundWrapper(audio -> audio.getThrowSound());
+        public static final SoundWrapper THROW = new SoundWrapper(AudioConfig::getThrowSound);
     }
 }

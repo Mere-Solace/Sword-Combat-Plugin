@@ -4,11 +4,10 @@ import btm.sword.config.ConfigManager;
 import com.mojang.brigadier.Command;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
+import java.util.List;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.command.CommandSender;
-
-import java.util.List;
 
 /**
  * Brigadier-based command registration for Sword: Combat Evolved.

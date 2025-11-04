@@ -1,4 +1,4 @@
-package btm.sword.config;
+package btm.sword.config.section;
 
 import lombok.Getter;
 import org.bukkit.configuration.ConfigurationSection;

@@ -1,7 +1,7 @@
 package btm.sword.system.entity.base;
 
 import btm.sword.config.ConfigManager;
-import btm.sword.config.EntityConfig;
+import btm.sword.config.section.EntityConfig;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.aspect.value.AspectValue;
 import btm.sword.system.entity.aspect.value.ResourceValue;

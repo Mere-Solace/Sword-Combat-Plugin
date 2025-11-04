@@ -1,4 +1,4 @@
-package btm.sword.config;
+package btm.sword.config.section;
 
 import btm.sword.util.sound.SoundType;
 import lombok.Getter;

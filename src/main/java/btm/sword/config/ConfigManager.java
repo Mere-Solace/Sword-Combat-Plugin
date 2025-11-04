@@ -1,15 +1,16 @@
 package btm.sword.config;
 
 import btm.sword.Sword;
-import lombok.Getter;
-import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.configuration.file.YamlConfiguration;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.util.logging.Level;
+
+import btm.sword.config.section.*;
+import lombok.Getter;
+import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
 
 /**
  * Centralized configuration manager for Sword: Combat Evolved.
@@ -95,6 +96,7 @@ public class ConfigManager {
     /**
      * Sets up the config file, creating it from default resource if needed.
      */
+    @SuppressWarnings("all")
     private void setupConfig() {
         configFile = new File(plugin.getDataFolder(), "config.yaml");
 
@@ -137,13 +139,6 @@ public class ConfigManager {
             entities = new EntityConfig(config);
             world = new WorldConfig(config);
             debug = new DebugConfig(config);
-
-            if (debug.isVerboseReload()) {
-                plugin.getLogger().info("Configuration loaded successfully:");
-                plugin.getLogger().info("  - Physics: " + physics.getThrownItems().getGravityDamper());
-                plugin.getLogger().info("  - Combat: " + combat.getAttacks().getBaseDamage());
-                plugin.getLogger().info("  - Display: " + display.getDefaultTeleportDuration());
-            }
 
             return true;
         } catch (Exception e) {
@@ -205,6 +200,7 @@ public class ConfigManager {
      *
      * @return true if reset was successful
      */
+    @SuppressWarnings("all")
     public boolean resetToDefaults() {
         try {
             // Backup current config

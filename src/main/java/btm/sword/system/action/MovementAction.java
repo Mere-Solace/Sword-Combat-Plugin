@@ -93,7 +93,7 @@ public class MovementAction extends SwordAction {
 
                         executor.setVelocity(ex.getEyeLocation().getDirection().multiply(Math.log(length)));
 
-                        Vector u = executor.getFlatDir().multiply(forward ? 0.5 : -0.5).add(VectorUtil.UP.clone().multiply(0.15));
+                        Vector u = executor.getFlatDir().multiply(forward ? 0.5 : -0.5).add(Prefab.Direction.UP.clone().multiply(0.15));
 
                         new BukkitRunnable() {
                             @Override
@@ -122,7 +122,7 @@ public class MovementAction extends SwordAction {
 
                 double dashPower = 0.7;
                 double s = forward ? dashPower : -dashPower;
-                Vector up = VectorUtil.UP.clone().multiply(0.05);
+                Vector up = Prefab.Direction.UP.clone().multiply(0.05);
                 new BukkitRunnable() {
                     int i = 0;
                     @Override
