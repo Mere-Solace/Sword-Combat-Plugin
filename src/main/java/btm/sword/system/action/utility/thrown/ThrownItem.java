@@ -92,9 +92,9 @@ public class ThrownItem {
             thrower.setOffHandItemStackDuringThrow(thrower.getItemStackInHand(false));
         }
         // Base values for where the ItemDisplay is held in relation to the player's eye location
-        xDisplayOffset = ConfigManager.getInstance().getPhysics().getThrownItems().getDisplayOffset().getX();
-        yDisplayOffset = ConfigManager.getInstance().getPhysics().getThrownItems().getDisplayOffset().getY();
-        zDisplayOffset = ConfigManager.getInstance().getPhysics().getThrownItems().getDisplayOffset().getZ();
+        xDisplayOffset = ConfigManager.getInstance().getPhysics().getThrownItems().getDisplayOffsetX();
+        yDisplayOffset = ConfigManager.getInstance().getPhysics().getThrownItems().getDisplayOffsetY();
+        zDisplayOffset = ConfigManager.getInstance().getPhysics().getThrownItems().getDisplayOffsetZ();
     }
 
     /**
@@ -200,9 +200,9 @@ public class ThrownItem {
         double sinPhi = Math.sin(phi);
         double forwardCoefficient = initialVelocity*cosPhi;
         double upwardCoefficient = initialVelocity*sinPhi;
-        origin = o.add(basis.getFirst().multiply(ConfigManager.getInstance().getPhysics().getThrownItems().getOriginOffset().getForward()))
-                .add(basis.get(1).multiply(ConfigManager.getInstance().getPhysics().getThrownItems().getOriginOffset().getUp()))
-                .add(basis.getLast().multiply(ConfigManager.getInstance().getPhysics().getThrownItems().getOriginOffset().getBack()));
+        origin = o.add(basis.getFirst().multiply(ConfigManager.getInstance().getPhysics().getThrownItems().getOriginOffsetForward()))
+                .add(basis.get(1).multiply(ConfigManager.getInstance().getPhysics().getThrownItems().getOriginOffsetUp()))
+                .add(basis.getLast().multiply(ConfigManager.getInstance().getPhysics().getThrownItems().getOriginOffsetBack()));
         cur = origin.clone();
         prev = cur.clone();
         Vector flatDir = thrower.getFlatDir().rotateAroundY(ConfigManager.getInstance().getPhysics().getThrownItems().getTrajectoryRotation());
@@ -449,8 +449,8 @@ public class ThrownItem {
                 velocity.clone().multiply(otherDamage.getKnockbackMultiplier()));
             hit.getWorld().createExplosion(hitEntity.getChestLocation(),
                 otherDamage.getExplosionPower(),
-                ConfigManager.getInstance().getWorld().getExplosions().isSetFire(),
-                ConfigManager.getInstance().getWorld().getExplosions().isBreakBlocks());
+                ConfigManager.getInstance().getWorld().isExplosionsSetFire(),
+                ConfigManager.getInstance().getWorld().isExplosionsBreakBlocks());
             disposeNaturally();
         }
     }

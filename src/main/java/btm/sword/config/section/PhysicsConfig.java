@@ -8,7 +8,8 @@ import org.bukkit.configuration.file.FileConfiguration;
  * Type-safe accessor for physics-related configuration values.
  * <p>
  * Handles projectile motion, gravity, velocity, and rotation settings.
- * Values are cached on construction for performance.
+ * Uses hybrid pattern: Simple coordinate triples and 2-value configs flattened,
+ * complex rotation speeds kept nested.
  * </p>
  */
 @Getter
@@ -31,62 +32,61 @@ public class PhysicsConfig {
     public static class ThrownItemsConfig {
         private final double gravityDamper;
         private final double trajectoryRotation;
-        private final DisplayOffsetConfig displayOffset;
-        private final OriginOffsetConfig originOffset;
+
+        // Flattened display offset (3 coordinate values - no wrapper class needed)
+        private final float displayOffsetX;
+        private final float displayOffsetY;
+        private final float displayOffsetZ;
+
+        // Flattened origin offset (3 coordinate values - no wrapper class needed)
+        private final double originOffsetForward;
+        private final double originOffsetUp;
+        private final double originOffsetBack;
+
+        // Keep nested for complex rotation speeds (7 values - justified)
         private final RotationSpeedConfig rotationSpeed;
 
         public ThrownItemsConfig(ConfigurationSection section) {
             if (section != null) {
                 this.gravityDamper = section.getDouble("gravity_damper", 46.0);
                 this.trajectoryRotation = section.getDouble("trajectory_rotation", 0.03696);
-                this.displayOffset = new DisplayOffsetConfig(section.getConfigurationSection("display_offset"));
-                this.originOffset = new OriginOffsetConfig(section.getConfigurationSection("origin_offset"));
+
+                // Load display offset values directly
+                ConfigurationSection displayOffset = section.getConfigurationSection("display_offset");
+                if (displayOffset != null) {
+                    this.displayOffsetX = (float) displayOffset.getDouble("x", -0.5);
+                    this.displayOffsetY = (float) displayOffset.getDouble("y", 0.1);
+                    this.displayOffsetZ = (float) displayOffset.getDouble("z", 0.5);
+                } else {
+                    this.displayOffsetX = -0.5f;
+                    this.displayOffsetY = 0.1f;
+                    this.displayOffsetZ = 0.5f;
+                }
+
+                // Load origin offset values directly
+                ConfigurationSection originOffset = section.getConfigurationSection("origin_offset");
+                if (originOffset != null) {
+                    this.originOffsetForward = originOffset.getDouble("forward", 0.5);
+                    this.originOffsetUp = originOffset.getDouble("up", 0.1);
+                    this.originOffsetBack = originOffset.getDouble("back", -0.25);
+                } else {
+                    this.originOffsetForward = 0.5;
+                    this.originOffsetUp = 0.1;
+                    this.originOffsetBack = -0.25;
+                }
+
                 this.rotationSpeed = new RotationSpeedConfig(section.getConfigurationSection("rotation_speed"));
             } else {
                 // Defaults if section missing
                 this.gravityDamper = 46.0;
                 this.trajectoryRotation = 0.03696;
-                this.displayOffset = new DisplayOffsetConfig(null);
-                this.originOffset = new OriginOffsetConfig(null);
+                this.displayOffsetX = -0.5f;
+                this.displayOffsetY = 0.1f;
+                this.displayOffsetZ = 0.5f;
+                this.originOffsetForward = 0.5;
+                this.originOffsetUp = 0.1;
+                this.originOffsetBack = -0.25;
                 this.rotationSpeed = new RotationSpeedConfig(null);
-            }
-        }
-    }
-
-    @Getter
-    public static class DisplayOffsetConfig {
-        private final float x;
-        private final float y;
-        private final float z;
-
-        public DisplayOffsetConfig(ConfigurationSection section) {
-            if (section != null) {
-                this.x = (float) section.getDouble("x", -0.5);
-                this.y = (float) section.getDouble("y", 0.1);
-                this.z = (float) section.getDouble("z", 0.5);
-            } else {
-                this.x = -0.5f;
-                this.y = 0.1f;
-                this.z = 0.5f;
-            }
-        }
-    }
-
-    @Getter
-    public static class OriginOffsetConfig {
-        private final double forward;
-        private final double up;
-        private final double back;
-
-        public OriginOffsetConfig(ConfigurationSection section) {
-            if (section != null) {
-                this.forward = section.getDouble("forward", 0.5);
-                this.up = section.getDouble("up", 0.1);
-                this.back = section.getDouble("back", -0.25);
-            } else {
-                this.forward = 0.5;
-                this.up = 0.1;
-                this.back = -0.25;
             }
         }
     }
@@ -124,51 +124,44 @@ public class PhysicsConfig {
 
     @Getter
     public static class AttackVelocityConfig {
-        private final GroundedDampingConfig groundedDamping;
-        private final KnockbackConfig knockback;
+        // Flattened grounded damping (2 simple values - no wrapper class needed)
+        private final double groundedDampingHorizontal;
+        private final double groundedDampingVertical;
+
+        // Flattened knockback (3 simple values - no wrapper class needed)
+        private final double knockbackVerticalBase;
+        private final double knockbackHorizontalModifier;
+        private final double knockbackNormalMultiplier;
 
         public AttackVelocityConfig(ConfigurationSection section) {
             if (section != null) {
-                this.groundedDamping = new GroundedDampingConfig(section.getConfigurationSection("grounded_damping"));
-                this.knockback = new KnockbackConfig(section.getConfigurationSection("knockback"));
+                // Load grounded damping values directly
+                ConfigurationSection groundedDamping = section.getConfigurationSection("grounded_damping");
+                if (groundedDamping != null) {
+                    this.groundedDampingHorizontal = groundedDamping.getDouble("horizontal", 0.3);
+                    this.groundedDampingVertical = groundedDamping.getDouble("vertical", 0.4);
+                } else {
+                    this.groundedDampingHorizontal = 0.3;
+                    this.groundedDampingVertical = 0.4;
+                }
+
+                // Load knockback values directly
+                ConfigurationSection knockback = section.getConfigurationSection("knockback");
+                if (knockback != null) {
+                    this.knockbackVerticalBase = knockback.getDouble("vertical_base", 0.25);
+                    this.knockbackHorizontalModifier = knockback.getDouble("horizontal_modifier", 0.1);
+                    this.knockbackNormalMultiplier = knockback.getDouble("normal_multiplier", 0.7);
+                } else {
+                    this.knockbackVerticalBase = 0.25;
+                    this.knockbackHorizontalModifier = 0.1;
+                    this.knockbackNormalMultiplier = 0.7;
+                }
             } else {
-                this.groundedDamping = new GroundedDampingConfig(null);
-                this.knockback = new KnockbackConfig(null);
-            }
-        }
-    }
-
-    @Getter
-    public static class GroundedDampingConfig {
-        private final double horizontal;
-        private final double vertical;
-
-        public GroundedDampingConfig(ConfigurationSection section) {
-            if (section != null) {
-                this.horizontal = section.getDouble("horizontal", 0.3);
-                this.vertical = section.getDouble("vertical", 0.4);
-            } else {
-                this.horizontal = 0.3;
-                this.vertical = 0.4;
-            }
-        }
-    }
-
-    @Getter
-    public static class KnockbackConfig {
-        private final double verticalBase;
-        private final double horizontalModifier;
-        private final double normalMultiplier;
-
-        public KnockbackConfig(ConfigurationSection section) {
-            if (section != null) {
-                this.verticalBase = section.getDouble("vertical_base", 0.25);
-                this.horizontalModifier = section.getDouble("horizontal_modifier", 0.1);
-                this.normalMultiplier = section.getDouble("normal_multiplier", 0.7);
-            } else {
-                this.verticalBase = 0.25;
-                this.horizontalModifier = 0.1;
-                this.normalMultiplier = 0.7;
+                this.groundedDampingHorizontal = 0.3;
+                this.groundedDampingVertical = 0.4;
+                this.knockbackVerticalBase = 0.25;
+                this.knockbackHorizontalModifier = 0.1;
+                this.knockbackNormalMultiplier = 0.7;
             }
         }
     }

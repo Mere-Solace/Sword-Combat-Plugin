@@ -6,55 +6,51 @@ import org.bukkit.configuration.file.FileConfiguration;
 
 /**
  * Type-safe accessor for world interaction configuration values.
+ * <p>
+ * Uses hybrid pattern: Simple 2-3 value groups flattened to direct fields.
+ * </p>
  */
 @Getter
 public class WorldConfig {
-    private final MarkerPlacementConfig markerPlacement;
-    private final ExplosionsConfig explosions;
+    // Flattened marker placement config (2 simple values - no wrapper class needed)
+    private final double markerPlacementPullbackStep;
+    private final int markerPlacementMaxPullbackIterations;
+
+    // Flattened explosions config (3 simple values - no wrapper class needed)
+    private final float explosionsPower;
+    private final boolean explosionsSetFire;
+    private final boolean explosionsBreakBlocks;
 
     public WorldConfig(FileConfiguration config) {
         ConfigurationSection world = config.getConfigurationSection("world");
         if (world != null) {
-            this.markerPlacement = new MarkerPlacementConfig(world.getConfigurationSection("marker_placement"));
-            this.explosions = new ExplosionsConfig(world.getConfigurationSection("explosions"));
+            // Load marker placement values directly
+            ConfigurationSection markerPlacement = world.getConfigurationSection("marker_placement");
+            if (markerPlacement != null) {
+                this.markerPlacementPullbackStep = markerPlacement.getDouble("pullback_step", 0.1);
+                this.markerPlacementMaxPullbackIterations = markerPlacement.getInt("max_pullback_iterations", 30);
+            } else {
+                this.markerPlacementPullbackStep = 0.1;
+                this.markerPlacementMaxPullbackIterations = 30;
+            }
+
+            // Load explosions values directly
+            ConfigurationSection explosions = world.getConfigurationSection("explosions");
+            if (explosions != null) {
+                this.explosionsPower = (float) explosions.getDouble("power", 1.0);
+                this.explosionsSetFire = explosions.getBoolean("set_fire", false);
+                this.explosionsBreakBlocks = explosions.getBoolean("break_blocks", false);
+            } else {
+                this.explosionsPower = 1.0f;
+                this.explosionsSetFire = false;
+                this.explosionsBreakBlocks = false;
+            }
         } else {
-            this.markerPlacement = new MarkerPlacementConfig(null);
-            this.explosions = new ExplosionsConfig(null);
-        }
-    }
-
-    @Getter
-    public static class MarkerPlacementConfig {
-        private final double pullbackStep;
-        private final int maxPullbackIterations;
-
-        public MarkerPlacementConfig(ConfigurationSection section) {
-            if (section != null) {
-                this.pullbackStep = section.getDouble("pullback_step", 0.1);
-                this.maxPullbackIterations = section.getInt("max_pullback_iterations", 30);
-            } else {
-                this.pullbackStep = 0.1;
-                this.maxPullbackIterations = 30;
-            }
-        }
-    }
-
-    @Getter
-    public static class ExplosionsConfig {
-        private final float power;
-        private final boolean setFire;
-        private final boolean breakBlocks;
-
-        public ExplosionsConfig(ConfigurationSection section) {
-            if (section != null) {
-                this.power = (float) section.getDouble("power", 1.0);
-                this.setFire = section.getBoolean("set_fire", false);
-                this.breakBlocks = section.getBoolean("break_blocks", false);
-            } else {
-                this.power = 1.0f;
-                this.setFire = false;
-                this.breakBlocks = false;
-            }
+            this.markerPlacementPullbackStep = 0.1;
+            this.markerPlacementMaxPullbackIterations = 30;
+            this.explosionsPower = 1.0f;
+            this.explosionsSetFire = false;
+            this.explosionsBreakBlocks = false;
         }
     }
 }
