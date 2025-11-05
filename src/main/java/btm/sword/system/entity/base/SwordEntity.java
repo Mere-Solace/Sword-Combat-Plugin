@@ -7,13 +7,16 @@ import btm.sword.util.display.Prefab;
 import btm.sword.util.entity.EntityUtil;
 import btm.sword.util.sound.SoundType;
 import btm.sword.util.sound.SoundUtil;
+import com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent;
 import java.util.HashMap;
 import java.util.Objects;
 import java.util.UUID;
 import lombok.Getter;
 import lombok.Setter;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -39,6 +42,7 @@ public abstract class SwordEntity {
     protected LivingEntity self;
     protected UUID uuid;
     protected CombatProfile combatProfile;
+    protected String displayName;
 
     protected EntityAspects aspects;
 
@@ -156,34 +160,35 @@ public abstract class SwordEntity {
             }
         }
 
-        if (isStatusActive()) {
-            if (statusDisplay != null) {
-                updateStatusDisplay();
-            } else {
-                restartStatusDisplay();
-            }
+        if (statusDisplay != null && isStatusActive()) {
+            updateStatusDisplayText();
+        }
+
+        if ((statusDisplay == null || statusDisplay.isDead() && isStatusActive())) {
+            restartStatusDisplay();
         }
     }
 
-    private void updateStatusDisplay() {
-        String name = "§f[§bEntity Name§f]";
+    private void updateStatusDisplayText() {
         int shards = (int) aspects.shardsCur();
-        int maxEffShards = (int) aspects.shardsCur();
+        int maxEffShards = (int) aspects.shardsVal();
         float toughness = aspects.toughnessCur();
         float maxEffToughness = aspects.toughnessVal();
 
-        String bar = "§7[§a" + // green for filled
-                "█".repeat(shards) +
-                "§8" + // dark gray for missing
-                "░".repeat(maxEffShards - shards) +
-                "§7]";
+        String bar = "█".repeat(shards);
+        TextComponent filledHealth = Component.text(bar, TextColor.color(5, 200, 7));
+
+        String rest = "░".repeat(maxEffShards - shards);
+        TextComponent unfilledHealth = Component.text(rest, TextColor.color(170, 170, 170));
 
         Component displayText = Component.text()
-                .append(Component.text(name + "\n", NamedTextColor.AQUA, TextDecoration.BOLD))
-                .append(Component.text(bar + " ", NamedTextColor.GRAY))
-                .append(Component.text(String.format("§7%d§f/§7%d HP", shards, maxEffShards)))
-                .append(Component.text(String.format("§7%.0f§f/§7%.0f Toughness", toughness, maxEffToughness), NamedTextColor.DARK_GRAY))
-                .append(Component.text(toughness, NamedTextColor.GOLD, TextDecoration.BOLD))
+                .append(Component.text(getDisplayName() + "\n", NamedTextColor.AQUA, TextDecoration.BOLD))
+                .append(Component.text("|[", NamedTextColor.GRAY))
+                .append(filledHealth)
+                .append(unfilledHealth)
+                .append(Component.text("]|", NamedTextColor.GRAY))
+                .append(Component.text(String.format("%d/%d HP\n", shards, maxEffShards)))
+                .append(Component.text(String.format("%.0f/%.0f Toughness", toughness, maxEffToughness), NamedTextColor.GOLD))
                 .build();
 
         statusDisplay.text(displayText);
@@ -192,17 +197,17 @@ public abstract class SwordEntity {
     private void restartStatusDisplay() {
         setStatusActive(false);
 
-        statusDisplay = (TextDisplay) entity().getWorld().spawnEntity(entity().getEyeLocation(), EntityType.TEXT_DISPLAY);
+        statusDisplay = (TextDisplay) entity().getWorld().spawnEntity(entity().getEyeLocation().setDirection(Prefab.Direction.NORTH), EntityType.TEXT_DISPLAY);
         statusDisplay.setNoPhysics(true);
         statusDisplay.setBillboard(Display.Billboard.CENTER);
         statusDisplay.setDisplayHeight(1.0f); // TODO: move to config
         statusDisplay.setShadowed(true);
         statusDisplay.setBrightness(new Display.Brightness(15, 15));
 
-        updateStatusDisplay();
+        updateStatusDisplayText();
 
         entity().addPassenger(statusDisplay);
-        statusDisplay.setBillboard(Display.Billboard.HORIZONTAL); // TODO: Config maybe
+        statusDisplay.setBillboard(Display.Billboard.VERTICAL); // TODO: Config maybe
 
         setStatusActive(true);
     }
@@ -226,9 +231,12 @@ public abstract class SwordEntity {
     }
 
     /**
-     * Abstract method to be implemented by subclasses to define behavior when this entity dies.
+     * Clean up for use in {@link btm.sword.listeners.EntityListener#entityRemoveEvent(EntityRemoveFromWorldEvent)}.
      */
-    public abstract void onDeath();
+    public void onDeath() {
+        endStatusDisplay();
+        aspects.stopAllResourceProcesses();
+    }
 
     /**
      * Gets the underlying {@link LivingEntity} wrapped by this SwordEntity.

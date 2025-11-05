@@ -171,7 +171,7 @@ combat:
     # Pin duration when enemy is stuck to wall
     # Source: ThrownItem.java:395
     # Measured in iterations (50 iter × 2 ticks = 100 ticks = 5 seconds)
-    pin_max_iterations: 50
+    pin_max_iterations: 1000
     pin_check_interval: 2  # Ticks between pin checks
 
 # ==============================================================================
@@ -364,14 +364,14 @@ entities:
     # regen_period: Ticks between regeneration (20 ticks = 1 second)
     # regen_amount: Amount restored per regen period
     shards:
-      current: 10
-      regen_period: 50       # Regenerates every 2.5 seconds
+      current: 6
+      regen_period: 400       # Regenerates every 10 seconds
       regen_amount: 1.0
 
     # TOUGHNESS: Damage resistance and armor
     # Format: ResourceValue(current, regenPeriod, regenAmount)
     toughness:
-      current: 20
+      current: 40
       regen_period: 20       # Regenerates every 1 second
       regen_amount: 0.5
 

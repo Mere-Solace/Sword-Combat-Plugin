@@ -254,4 +254,11 @@ public class EntityAspects {
                 "\nSoulfire: " + soulfireCur() +
                 "\nForm: " + formCur();
     }
+
+    public void stopAllResourceProcesses() {
+        shards().stopRegenTask();
+        toughness().stopRegenTask();
+        soulfire().stopRegenTask();
+        form().stopRegenTask();
+    }
 }

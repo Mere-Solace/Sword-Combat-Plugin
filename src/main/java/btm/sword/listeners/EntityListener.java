@@ -3,10 +3,13 @@ package btm.sword.listeners;
 import btm.sword.Sword;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.base.SwordEntity;
+import btm.sword.system.entity.types.Combatant;
 import com.destroystokyo.paper.event.entity.EntityAddToWorldEvent;
 import com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent;
 import java.util.Objects;
+import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
+import org.bukkit.damage.DamageSource;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.EventHandler;
@@ -14,6 +17,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityPickupItemEvent;
 import org.bukkit.persistence.PersistentDataType;
+import org.bukkit.util.Vector;
 
 public class EntityListener implements Listener {
     /**
@@ -71,10 +75,25 @@ public class EntityListener implements Listener {
      */
     @EventHandler
     public void entityDamageEvent(EntityDamageEvent event) {
+        SwordEntity hurt = SwordEntityArbiter.getOrAdd(event.getEntity().getUniqueId());
+
+        DamageSource damageSource = event.getDamageSource();
+
+        SwordEntity aggressor;
+        if (damageSource.getCausingEntity() != null) {
+            Location loc = damageSource.getDamageLocation();
+            Vector kb = loc != null ? loc.getDirection() : new Vector();
+            aggressor = SwordEntityArbiter.get(damageSource.getCausingEntity().getUniqueId());
+            if (aggressor instanceof Combatant c)
+                hurt.hit(c, 2, 1, 10, 10, kb);
+        }
+
         if(event.getEntity() instanceof LivingEntity && event.getDamage() < 7474040) {
             event.setDamage(0.01);
             ((LivingEntity) event.getEntity()).heal(100);
         }
+
+
     }
 
     /**

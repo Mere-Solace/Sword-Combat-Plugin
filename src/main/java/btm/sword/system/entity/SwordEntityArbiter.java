@@ -124,6 +124,7 @@ public class SwordEntityArbiter {
 
         for (SwordEntity player : onlineSwordPlayers.values()) {
             ((SwordPlayer) player).endSheathedWeapon();
+            player.endStatusDisplay();
         }
     }
 }

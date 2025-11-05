@@ -190,6 +190,7 @@ public class SwordPlayer extends Combatant {
      */
     @Override
     public void onDeath() {
+        super.onDeath();
         removeSheathedWeaponDisplay();
     }
 

@@ -70,6 +70,7 @@ public class Hostile extends Combatant {
 
     @Override
     public void onDeath() {
+        super.onDeath();
 
     }
 
