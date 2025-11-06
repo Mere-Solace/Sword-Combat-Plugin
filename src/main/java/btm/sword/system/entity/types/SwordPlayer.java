@@ -315,6 +315,12 @@ public class SwordPlayer extends Combatant {
         ItemStack clicked = e.getCurrentItem();
         int slotNumber = e.getSlot();
 
+        // Protect menu button from being moved or modified
+        if (KeyRegistry.hasKey(clicked, KeyRegistry.MAIN_MENU_BUTTON_KEY) ||
+                KeyRegistry.hasKey(onCursor, KeyRegistry.MAIN_MENU_BUTTON_KEY)) {
+            return true; // Cancel the action
+        }
+
         message("\n\n~|------Beginning of new inventory interact event------|~"
                 + "\n       Inventory: " + inv.getType()
                 + "\n       Click type: " + clickType
