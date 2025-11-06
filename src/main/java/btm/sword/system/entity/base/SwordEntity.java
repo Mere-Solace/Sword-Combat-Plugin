@@ -18,7 +18,6 @@ import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
-import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.*;
@@ -200,6 +199,9 @@ public abstract class SwordEntity {
 
     private void restartStatusDisplay() {
         setStatusActive(false);
+
+        if (!(entity() instanceof LivingEntity living) || living instanceof ArmorStand) return;
+        if (entity().getType() == EntityType.ITEM_DISPLAY || entity().getType() == EntityType.ITEM) return;
 
         statusDisplay = (TextDisplay) entity().getWorld().spawnEntity(entity().getEyeLocation().setDirection(Prefab.Direction.NORTH), EntityType.TEXT_DISPLAY);
         statusDisplay.addScoreboardTag("remove_on_shutdown");
