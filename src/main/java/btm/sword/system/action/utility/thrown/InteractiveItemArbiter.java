@@ -96,4 +96,15 @@ public class InteractiveItemArbiter {
             thrownItem.dispose();
         }
     }
+
+    /**
+     * Cleans up all active thrown item displays during server shutdown.
+     * Disposes of all registered thrown items and clears the registry.
+     */
+    public static void cleanupAll() {
+        for (ThrownItem thrownItem : thrownItems.values()) {
+            thrownItem.dispose();
+        }
+        thrownItems.clear();
+    }
 }
