@@ -181,7 +181,8 @@ public class SwordPlayer extends Combatant {
     @Override
     public void onSpawn() {
         super.onSpawn();
-
+        // Force initial stat display render to ensure visibility on spawn
+        updateVisualStats();
     }
 
     /**
