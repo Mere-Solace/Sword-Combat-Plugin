@@ -171,7 +171,7 @@ combat:
     # Pin duration when enemy is stuck to wall
     # Source: ThrownItem.java:395
     # Measured in iterations (50 iter × 2 ticks = 100 ticks = 5 seconds)
-    pin_max_iterations: 50
+    pin_max_iterations: 1000
     pin_check_interval: 2  # Ticks between pin checks
 
 # ==============================================================================
@@ -322,15 +322,15 @@ audio:
   # Source: ThrownItem.java:188
   throw:
     sound: ENTITY_ENDER_DRAGON_FLAP
-    volume: 0.5   # Range: 0.0-1.0 (50% volume)
+    volume: 0.35   # Range: 0.0-1.0 (50% volume)
     pitch: 0.4    # Range: 0.5-2.0 (lower = deeper sound)
 
   # Attack swing sound
   # Source: AttackAction.java:104
   attack:
-    sound: ENTITY_ENDER_DRAGON_FLAP
-    volume: 0.35  # Quieter than throw
-    pitch: 0.6    # Slightly higher pitch
+    sound: ITEM_TRIDENT_THROW
+    volume: 0.055
+    pitch: 1.5
 
 # ==============================================================================
 # ENTITY BEHAVIOR
@@ -364,14 +364,14 @@ entities:
     # regen_period: Ticks between regeneration (20 ticks = 1 second)
     # regen_amount: Amount restored per regen period
     shards:
-      current: 10
-      regen_period: 50       # Regenerates every 2.5 seconds
+      current: 6
+      regen_period: 400       # Regenerates every 10 seconds
       regen_amount: 1.0
 
     # TOUGHNESS: Damage resistance and armor
     # Format: ResourceValue(current, regenPeriod, regenAmount)
     toughness:
-      current: 20
+      current: 40
       regen_period: 20       # Regenerates every 1 second
       regen_amount: 0.5
 

@@ -1,18 +1,19 @@
 package btm.sword.listeners;
 
 import btm.sword.Sword;
+import btm.sword.system.SwordScheduler;
 import btm.sword.system.action.utility.thrown.ThrowAction;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.types.SwordPlayer;
 import btm.sword.system.input.InputType;
 import btm.sword.util.InputUtil;
 import io.papermc.paper.event.player.PrePlayerAttackEntityEvent;
+import java.util.function.Consumer;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.player.*;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.scheduler.BukkitRunnable;
 
 /**
  * Handles all player input events and routes them through the {@link SwordPlayer}
@@ -118,12 +119,9 @@ public class InputListener implements Listener {
         }
         swordPlayer.act(InputType.RIGHT);
 
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                swordPlayer.setInteractingWithEntity(false);
-            }
-        }.runTaskLater(Sword.getInstance(), 1);
+        Consumer<SwordPlayer> resetInteractingFlag =
+                sp -> sp.setInteractingWithEntity(false);
+        SwordScheduler.runConsumerNextTick(resetInteractingFlag, swordPlayer);
 
         event.setCancelled(true);
 
@@ -159,12 +157,9 @@ public class InputListener implements Listener {
             event.setCancelled(true);
         }
 
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                swordPlayer.setPerformedDropAction(false);
-            }
-        }.runTaskLater(Sword.getInstance(), 1);
+        Consumer<SwordPlayer> resetDroppingFlag =
+                sp -> sp.setPerformedDropAction(false);
+        SwordScheduler.runConsumerNextTick(resetDroppingFlag, swordPlayer);
     }
 
     /**
@@ -234,12 +229,8 @@ public class InputListener implements Listener {
             ThrowAction.throwCancel(swordPlayer);
         }
 
-        // Runnable for quickly resetting this flag
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                swordPlayer.setChangingHandIndex(false);
-            }
-        }.runTaskLater(Sword.getInstance(), 1);
+        Consumer<SwordPlayer> resetChangingHandFlag =
+                sp -> sp.setChangingHandIndex(false);
+        SwordScheduler.runConsumerNextTick(resetChangingHandFlag, swordPlayer);
     }
 }

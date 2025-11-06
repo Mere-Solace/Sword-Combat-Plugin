@@ -7,21 +7,28 @@ import btm.sword.util.display.Prefab;
 import btm.sword.util.entity.EntityUtil;
 import btm.sword.util.sound.SoundType;
 import btm.sword.util.sound.SoundUtil;
+import com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent;
 import java.util.HashMap;
 import java.util.Objects;
 import java.util.UUID;
 import lombok.Getter;
 import lombok.Setter;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.TextComponent;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.entity.Item;
-import org.bukkit.entity.LivingEntity;
-import org.bukkit.entity.Player;
+import org.bukkit.entity.*;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.util.Transformation;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
+import org.joml.Quaternionf;
+import org.joml.Vector3f;
 
 /**
  * Abstract base class representing an entity in the Sword plugin system.
@@ -38,12 +45,16 @@ public abstract class SwordEntity {
     protected LivingEntity self;
     protected UUID uuid;
     protected CombatProfile combatProfile;
+    protected String displayName;
 
     protected EntityAspects aspects;
 
     /** Boolean value for whether onTick() should be run or not */
     protected boolean shouldTick;
     protected long ticks;
+
+    private TextDisplay statusDisplay;
+    private boolean statusActive;
 
     private long timeOfLastAttack;
     private int durationOfLastAttack;
@@ -87,6 +98,8 @@ public abstract class SwordEntity {
 
         shouldTick = true;
         ticks = 0L;
+
+        statusActive = true;
 
         timeOfLastAttack = 0L;
         durationOfLastAttack = 0;
@@ -149,6 +162,115 @@ public abstract class SwordEntity {
                 }
             }
         }
+
+        if (statusDisplay != null && isStatusActive()) {
+            updateStatusDisplayText();
+        }
+
+        if ((statusDisplay == null || statusDisplay.isDead()) && isStatusActive()) {
+            restartStatusDisplay();
+        }
+    }
+
+    private void updateStatusDisplayText() {
+        int shards = (int) aspects.shardsCur();
+        int maxEffShards = (int) aspects.shardsVal();
+        float toughness = aspects.toughnessCur();
+        float maxEffToughness = aspects.toughnessVal();
+
+        String bar = "█".repeat(shards);
+        TextComponent filledHealth = Component.text(bar, TextColor.color(5, 200, 7));
+
+        String rest = "░".repeat(maxEffShards - shards);
+        TextComponent unfilledHealth = Component.text(rest, TextColor.color(170, 170, 170));
+
+        Component displayText = Component.text()
+                .append(Component.text(getDisplayName() + "\n", NamedTextColor.AQUA, TextDecoration.BOLD))
+                .append(Component.text(String.format("%d/%d HP\n", shards, maxEffShards)))
+                .append(Component.text("|[", NamedTextColor.GRAY))
+                .append(filledHealth)
+                .append(unfilledHealth)
+                .append(Component.text("]|\n", NamedTextColor.GRAY))
+                .append(Component.text(String.format("%.0f/%.0f Toughness", toughness, maxEffToughness), NamedTextColor.GOLD))
+                .build();
+
+        statusDisplay.text(displayText);
+    }
+
+    private void restartStatusDisplay() {
+        setStatusActive(false);
+
+        if (!(entity() instanceof LivingEntity living) || living instanceof ArmorStand) return;
+        if (entity().getType() == EntityType.ITEM_DISPLAY || entity().getType() == EntityType.ITEM) return;
+
+        statusDisplay = (TextDisplay) entity().getWorld().spawnEntity(entity().getEyeLocation().setDirection(Prefab.Direction.NORTH), EntityType.TEXT_DISPLAY);
+        statusDisplay.addScoreboardTag("remove_on_shutdown");
+        statusDisplay.setNoPhysics(true);
+        statusDisplay.setBillboard(Display.Billboard.CENTER);
+        statusDisplay.setTransformation(
+                new Transformation(
+                        new Vector3f(0, 0.1f, 0),
+                        new Quaternionf(),
+                        new Vector3f(0.75f,0.75f,0.75f),
+                        new Quaternionf()
+                )
+        );
+        statusDisplay.setShadowed(true);
+        statusDisplay.setBrightness(new Display.Brightness(15, 15)); // TODO: Config
+        statusDisplay.setPersistent(false);
+
+        updateStatusDisplayText();
+
+        entity().addPassenger(statusDisplay);
+        statusDisplay.setBillboard(Display.Billboard.VERTICAL);
+
+        if (entity() instanceof Player p) {
+            p.hideEntity(Sword.getInstance(), statusDisplay);
+        }
+
+        setStatusActive(true);
+    }
+
+    public void endStatusDisplay() {
+        setStatusActive(false);
+        removeStatusDisplay();
+    }
+
+    private void removeStatusDisplay() {
+        if (statusDisplay == null) return;
+        Entity display = statusDisplay;
+        statusDisplay = null;
+
+        if (!Sword.getInstance().isEnabled()) return;
+
+        new BukkitRunnable() {
+            int attempts = 0;
+
+            @Override
+            public void run() {
+                if (!display.isValid()) {
+                    cancel();
+                    return;
+                }
+
+                // Check if the chunk is loaded and not in transition
+                if (display.getWorld().isChunkLoaded(display.getLocation().getBlockX() >> 4, display.getLocation().getBlockZ() >> 4)) {
+                    try {
+                        display.remove();
+                    } catch (Throwable ignored) {
+                        attempts++;
+                        if (attempts > 20) cancel();
+                        return;
+                    }
+                    cancel();
+                } else {
+                    display.getChunk().load();
+                }
+
+                attempts++;
+                if (attempts > 40) cancel();
+            }
+        }.runTaskTimer(Sword.getInstance(), 1L, 2L);
     }
 
     /**
@@ -161,9 +283,12 @@ public abstract class SwordEntity {
     }
 
     /**
-     * Abstract method to be implemented by subclasses to define behavior when this entity dies.
+     * Clean up for use in {@link btm.sword.listeners.EntityListener#entityRemoveEvent(EntityRemoveFromWorldEvent)}.
      */
-    public abstract void onDeath();
+    public void onDeath() {
+        endStatusDisplay();
+        aspects.stopAllResourceProcesses();
+    }
 
     /**
      * Gets the underlying {@link LivingEntity} wrapped by this SwordEntity.
@@ -458,12 +583,12 @@ public abstract class SwordEntity {
     }
 
     /**
-     * Checks if the entity has an item in its main hand.
+     * Checks if the entity does not have an item in its main hand.
      *
-     * @return true if main hand is not empty, false otherwise
+     * @return true if main hand is empty, false otherwise
      */
-    public boolean hasItemInMainHand() {
-        return !getItemStackInHand(true).isEmpty();
+    public boolean isMainHandEmpty() {
+        return getItemStackInHand(true).isEmpty();
     }
 
     /**

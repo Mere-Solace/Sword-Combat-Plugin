@@ -43,7 +43,6 @@ public class InteractiveItemArbiter {
         return thrownItems.containsKey(id);
     }
 
-
     public static boolean isImaplingEntity(SwordEntity self, ItemDisplay targeted) {
         ThrownItem thrown = thrownItems.getOrDefault(targeted, null);
         return thrown != null && thrown.getHitEntity() != null && thrown.getHitEntity().equals(self);

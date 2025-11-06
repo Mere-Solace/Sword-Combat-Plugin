@@ -17,6 +17,7 @@ public class Passive extends SwordEntity {
 
     @Override
     public void onDeath() {
+        super.onDeath();
 
     }
 }

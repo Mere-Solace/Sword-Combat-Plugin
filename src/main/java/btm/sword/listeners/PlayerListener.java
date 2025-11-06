@@ -84,7 +84,7 @@ public class PlayerListener implements Listener {
      */
     @EventHandler
     public void onPlayerDeath(PlayerDeathEvent event) {
-
+        SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId()).endStatusDisplay();
     }
 
     /**
@@ -118,7 +118,7 @@ public class PlayerListener implements Listener {
 
         if (!e.isAbleToPickup()) event.setCancelled(true);
 
-        if (e.getItemStackInHand(true).isEmpty()) {
+        if (e.isMainHandEmpty()) {
             event.getItem().remove();
             e.setItemStackInHand(event.getItem().getItemStack(), true);
             event.setCancelled(true);
@@ -319,7 +319,7 @@ public class PlayerListener implements Listener {
             swordPlayer.endSheathedWeapon();
         }
         else {
-            swordPlayer.setSheathedReady(true);
+            swordPlayer.setSheathedActive(true);
         }
     }
 }

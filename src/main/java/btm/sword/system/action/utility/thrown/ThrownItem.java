@@ -28,6 +28,7 @@ import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Transformation;
 import org.bukkit.util.Vector;
+import org.jetbrains.annotations.NotNull;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
@@ -66,6 +67,8 @@ public class ThrownItem {
     private SwordEntity hitEntity;
 
     private boolean caught;
+
+    private boolean inFlight;
 
     private BukkitTask disposeTask;
 
@@ -188,6 +191,7 @@ public class ThrownItem {
 
         thrower.setItemStackInHand(ItemStack.of(Material.AIR), true);
         InteractiveItemArbiter.put(this);
+
         xDisplayOffset = yDisplayOffset = zDisplayOffset = 0;
         determineOrientation();
 
@@ -499,9 +503,7 @@ public class ThrownItem {
      * Determines whether the item hits an enemy or is caught by its thrower.
      */
     public void hitCheck() {
-        Predicate<Entity> filter = entity -> (entity instanceof LivingEntity l) && !l.isDead() && l.getType() != EntityType.ARMOR_STAND;
-        int gracePeriod = ConfigManager.getInstance().getTiming().getThrownItems().getCatchGracePeriod();
-        Predicate<Entity> effFilter = t < gracePeriod ? entity -> filter.test(entity) && entity.getUniqueId() != thrower.getUniqueId() : filter;
+        Predicate<Entity> effFilter = getFilter();
 
         if (prev == null) disposeNaturally();
 
@@ -519,6 +521,16 @@ public class ThrownItem {
             hit = true;
             this.hitEntity = SwordEntityArbiter.getOrAdd(hitEntity.getHitEntity().getUniqueId());
         }
+    }
+
+    private @NotNull Predicate<Entity> getFilter() {
+        Predicate<Entity> filter = entity ->
+                        entity.getUniqueId() != display.getUniqueId() &&
+                        (entity instanceof LivingEntity l) &&
+                        !l.isDead() &&
+                        l.getType() != EntityType.ARMOR_STAND;
+        int gracePeriod = ConfigManager.getInstance().getTiming().getThrownItems().getCatchGracePeriod();
+        return t < gracePeriod ? entity -> filter.test(entity) && entity.getUniqueId() != thrower.getUniqueId() : filter;
     }
 
     /**
