@@ -84,7 +84,7 @@ public class PlayerListener implements Listener {
      */
     @EventHandler
     public void onPlayerDeath(PlayerDeathEvent event) {
-
+        SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId()).endStatusDisplay();
     }
 
     /**

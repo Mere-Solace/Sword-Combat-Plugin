@@ -18,14 +18,18 @@ import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.*;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.util.Transformation;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
+import org.joml.Quaternionf;
+import org.joml.Vector3f;
 
 /**
  * Abstract base class representing an entity in the Sword plugin system.
@@ -164,7 +168,7 @@ public abstract class SwordEntity {
             updateStatusDisplayText();
         }
 
-        if ((statusDisplay == null || statusDisplay.isDead() && isStatusActive())) {
+        if ((statusDisplay == null || statusDisplay.isDead()) && isStatusActive()) {
             restartStatusDisplay();
         }
     }
@@ -183,11 +187,11 @@ public abstract class SwordEntity {
 
         Component displayText = Component.text()
                 .append(Component.text(getDisplayName() + "\n", NamedTextColor.AQUA, TextDecoration.BOLD))
+                .append(Component.text(String.format("%d/%d HP\n", shards, maxEffShards)))
                 .append(Component.text("|[", NamedTextColor.GRAY))
                 .append(filledHealth)
                 .append(unfilledHealth)
-                .append(Component.text("]|", NamedTextColor.GRAY))
-                .append(Component.text(String.format("%d/%d HP\n", shards, maxEffShards)))
+                .append(Component.text("]|\n", NamedTextColor.GRAY))
                 .append(Component.text(String.format("%.0f/%.0f Toughness", toughness, maxEffToughness), NamedTextColor.GOLD))
                 .build();
 
@@ -198,16 +202,29 @@ public abstract class SwordEntity {
         setStatusActive(false);
 
         statusDisplay = (TextDisplay) entity().getWorld().spawnEntity(entity().getEyeLocation().setDirection(Prefab.Direction.NORTH), EntityType.TEXT_DISPLAY);
+        statusDisplay.addScoreboardTag("remove_on_shutdown");
         statusDisplay.setNoPhysics(true);
         statusDisplay.setBillboard(Display.Billboard.CENTER);
-        statusDisplay.setDisplayHeight(1.0f); // TODO: move to config
+        statusDisplay.setTransformation(
+                new Transformation(
+                        new Vector3f(0, 0.1f, 0),
+                        new Quaternionf(),
+                        new Vector3f(0.75f,0.75f,0.75f),
+                        new Quaternionf()
+                )
+        );
         statusDisplay.setShadowed(true);
-        statusDisplay.setBrightness(new Display.Brightness(15, 15));
+        statusDisplay.setBrightness(new Display.Brightness(15, 15)); // TODO: Config
+        statusDisplay.setPersistent(false);
 
         updateStatusDisplayText();
 
         entity().addPassenger(statusDisplay);
-        statusDisplay.setBillboard(Display.Billboard.VERTICAL); // TODO: Config maybe
+        statusDisplay.setBillboard(Display.Billboard.VERTICAL);
+
+        if (entity() instanceof Player p) {
+            p.hideEntity(Sword.getInstance(), statusDisplay);
+        }
 
         setStatusActive(true);
     }
@@ -218,7 +235,40 @@ public abstract class SwordEntity {
     }
 
     private void removeStatusDisplay() {
-        if (statusDisplay != null) statusDisplay.remove();
+        if (statusDisplay == null) return;
+        Entity display = statusDisplay;
+        statusDisplay = null;
+
+        if (!Sword.getInstance().isEnabled()) return;
+
+        new BukkitRunnable() {
+            int attempts = 0;
+
+            @Override
+            public void run() {
+                if (!display.isValid()) {
+                    cancel();
+                    return;
+                }
+
+                // Check if the chunk is loaded and not in transition
+                if (display.getWorld().isChunkLoaded(display.getLocation().getBlockX() >> 4, display.getLocation().getBlockZ() >> 4)) {
+                    try {
+                        display.remove();
+                    } catch (Throwable ignored) {
+                        attempts++;
+                        if (attempts > 20) cancel();
+                        return;
+                    }
+                    cancel();
+                } else {
+                    display.getChunk().load();
+                }
+
+                attempts++;
+                if (attempts > 40) cancel();
+            }
+        }.runTaskTimer(Sword.getInstance(), 1L, 2L);
     }
 
     /**

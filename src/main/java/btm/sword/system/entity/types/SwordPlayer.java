@@ -199,6 +199,7 @@ public class SwordPlayer extends Combatant {
      */
     public void onLeave() {
         removeSheathedWeaponDisplay();
+        endStatusDisplay();
     }
 
     /**
@@ -374,13 +375,13 @@ public class SwordPlayer extends Combatant {
 
             sheathedDisplay = (ItemDisplay) world.spawnEntity(loc, EntityType.ITEM_DISPLAY);
             sheathedDisplay.setItemStack(new ItemStack(Material.STONE_SWORD));
-
             sheathedDisplay.setTransformation(new Transformation(
                     new Vector3f(0.28f, -1.3f, -0.5f),
                     new Quaternionf().rotationY((float) Math.PI / 2).rotateZ(-(float) Math.PI / (1.65f)),
                     new Vector3f(1f, 1f, 1f),
                     new Quaternionf()
             ));
+            sheathedDisplay.setPersistent(false);
 
             player.addPassenger(sheathedDisplay);
             sheathedDisplay.setBillboard(Display.Billboard.FIXED);
@@ -394,7 +395,7 @@ public class SwordPlayer extends Combatant {
      * <p>
      * This method performs multiple delayed updates (controlled by the loop count {@code x})
      * to achieve a smooth visual interpolation using {@link DisplayUtil#smoothTeleport(org.bukkit.entity.Display, int)}.
-     * Each iteration schedules a task via {@link SwordScheduler#runLater(Runnable, int, java.util.concurrent.TimeUnit)}
+     * Each iteration schedules a task via {@link SwordScheduler#runBukkitTaskLater(Runnable, int, java.util.concurrent.TimeUnit)}
      * that repositions the {@link #sheathedDisplay} {@link org.bukkit.entity.ItemDisplay} entity relative to the player's location.
      * <p>
      * The display entity is temporarily attached as a passenger to the player using
@@ -409,7 +410,7 @@ public class SwordPlayer extends Combatant {
      * producing a brief animation-like effect as the weapon display aligns to the player's orientation.
      *
      * @see DisplayUtil#smoothTeleport(org.bukkit.entity.Display, int)
-     * @see SwordScheduler#runLater(Runnable, int, java.util.concurrent.TimeUnit)
+     * @see SwordScheduler#runBukkitTaskLater(Runnable, int, java.util.concurrent.TimeUnit)
      * @see org.bukkit.entity.Display.Billboard#FIXED
      * @see org.bukkit.entity.Player#addPassenger(org.bukkit.entity.Entity)
      * @see #getFlatDir()
@@ -418,7 +419,7 @@ public class SwordPlayer extends Combatant {
     public void updateSheathedWeapon() {
         int x = 3;
         for (int i = 0; i < x; i++) {
-            SwordScheduler.runLater(new BukkitRunnable() {
+            SwordScheduler.runBukkitTaskLater(new BukkitRunnable() {
                 @Override
                 public void run() {
                     DisplayUtil.smoothTeleport(sheathedDisplay, 2);

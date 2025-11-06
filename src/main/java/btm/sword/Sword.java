@@ -57,6 +57,8 @@ public final class Sword extends JavaPlugin {
         getLogger().info("~ Sword: Combat Evolved has been disabled ~");
     }
 
+
+
     public static void print(String str) {
         instance.getLogger().info(str);
     }
