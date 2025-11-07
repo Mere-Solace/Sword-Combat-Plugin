@@ -628,4 +628,17 @@ public abstract class SwordEntity {
     public void setVelocity(Vector v) {
         self.setVelocity(v);
     }
+
+    /**
+     * Updates the visual stats of this entity based on current aspects.
+     * Sets absorption amount from toughness, health from shards, and food level from soulfire.
+     * This ensures status displays render correctly on spawn.
+     */
+    public void updateVisualStats() {
+        self.setAbsorptionAmount(aspects.toughnessCur());
+        self.setHealth(Math.max(1, aspects.shardsCur()));
+        if (self instanceof Player player) {
+            player.setFoodLevel((int) (20 * (aspects.soulfireCur() / aspects.soulfireVal())));
+        }
+    }
 }
