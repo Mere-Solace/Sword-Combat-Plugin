@@ -2,6 +2,7 @@ package btm.sword.system.entity.base;
 
 import btm.sword.Sword;
 import btm.sword.system.combat.Affliction;
+import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.types.Combatant;
 import btm.sword.util.display.Prefab;
 import btm.sword.util.entity.EntityUtil;
@@ -92,6 +93,7 @@ public abstract class SwordEntity {
     public SwordEntity(@NotNull LivingEntity self, @NotNull CombatProfile combatProfile) {
         this.self = self;
         uuid = self.getUniqueId();
+        displayName = self.getName();
 
         this.combatProfile = combatProfile;
         aspects = new EntityAspects(combatProfile);
@@ -198,6 +200,9 @@ public abstract class SwordEntity {
     }
 
     private void restartStatusDisplay() {
+        if (!entity().isValid() || (statusDisplay != null && !statusDisplay.isDead()))
+            return;
+
         setStatusActive(false);
 
         if (!(entity() instanceof LivingEntity living) || living instanceof ArmorStand) return;
@@ -273,13 +278,22 @@ public abstract class SwordEntity {
         }.runTaskTimer(Sword.getInstance(), 1L, 2L);
     }
 
+    public void onRegister() {
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                restartStatusDisplay();
+            }
+        }.runTaskLater(Sword.getInstance(), 2L);
+    }
+
     /**
      * Called when this entity is spawned or re-spawned.
      * Resets resources and tick counter.
      */
     public void onSpawn() {
-        resetResources();
         ticks = 0;
+        resetResources();
     }
 
     /**
@@ -287,7 +301,7 @@ public abstract class SwordEntity {
      */
     public void onDeath() {
         endStatusDisplay();
-        aspects.stopAllResourceProcesses();
+        aspects.stopAllResourceTasks();
     }
 
     /**
@@ -369,11 +383,14 @@ public abstract class SwordEntity {
         Prefab.Particles.TEST_HIT.display(getChestLocation());
         SoundUtil.playSound(source.entity(), SoundType.ENTITY_PLAYER_ATTACK_STRONG, 0.9f, 1f);
 
-        if (aspects.toughness().remove(baseToughnessDamage) && !toughnessBroken) {
-            Prefab.Particles.TOUGH_BREAK_1.display(getChestLocation());
-            onToughnessBroken();
+        if (aspects.toughness().remove(baseToughnessDamage)) {
+            if (!toughnessBroken) {
+                Prefab.Particles.TOUGH_BREAK_1.display(getChestLocation());
+                onToughnessBroken();
+            }
             self.playHurtAnimation(0);
             displayShardLoss();
+            aspects.restartResourceProcessAfterDelay(AspectType.SHARDS);
         }
 
         // remove returns true only if the value reaches or goes below 0
@@ -627,18 +644,5 @@ public abstract class SwordEntity {
      */
     public void setVelocity(Vector v) {
         self.setVelocity(v);
-    }
-
-    /**
-     * Updates the visual stats of this entity based on current aspects.
-     * Sets absorption amount from toughness, health from shards, and food level from soulfire.
-     * This ensures status displays render correctly on spawn.
-     */
-    public void updateVisualStats() {
-        self.setAbsorptionAmount(aspects.toughnessCur());
-        self.setHealth(Math.max(1, aspects.shardsCur()));
-        if (self instanceof Player player) {
-            player.setFoodLevel((int) (20 * (aspects.soulfireCur() / aspects.soulfireVal())));
-        }
     }
 }

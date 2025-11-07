@@ -222,5 +222,4 @@ public abstract class Combatant extends SwordEntity {
     public long calcCooldown(AspectType type, double min, double base, double multiplier) {
         return (long) Math.max(min, base - (multiplier * aspects.getAspectVal(type)) );
     }
-
 }

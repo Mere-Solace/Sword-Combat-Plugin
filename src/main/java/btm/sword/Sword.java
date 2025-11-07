@@ -44,6 +44,9 @@ public final class Sword extends JavaPlugin {
             SwordCommands.register(event.registrar());
         });
 
+        // Catch and register all entities whose data is already cached by the server
+        SwordEntityArbiter.registerAllExistingEntities();
+
         PlayerDataManager.initialize();
 
         getLogger().info("~ Sword: Combat Evolved has been enabled ~");

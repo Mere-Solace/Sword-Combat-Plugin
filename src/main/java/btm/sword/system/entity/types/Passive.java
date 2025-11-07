@@ -13,7 +13,7 @@ public class Passive extends SwordEntity {
     @Override
     public void onSpawn() {
         super.onSpawn();
-        updateVisualStats();
+
     }
 
     @Override
