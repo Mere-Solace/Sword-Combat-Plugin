@@ -1,6 +1,5 @@
 package btm.sword.system.attack;
 
-import btm.sword.Sword;
 import btm.sword.config.ConfigManager;
 import btm.sword.config.section.CombatConfig;
 import btm.sword.system.SwordScheduler;
@@ -19,6 +18,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import org.bukkit.Color;
+import org.bukkit.Location;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.ItemDisplay;
 import org.bukkit.entity.LivingEntity;
@@ -43,8 +43,6 @@ public class Attack extends SwordAction implements Runnable {
     private final List<Vector> controlVectors;
     private Function<Double, Vector> weaponPathFunction;
 
-    private final List<Vector> r_controlVectors;
-
     private Vector curRight;
     private Vector curUp;
     private Vector curForward;
@@ -65,14 +63,18 @@ public class Attack extends SwordAction implements Runnable {
 
     int recoverMilliseconds;
 
+    private final float displayOffsetX;
+    private final float displayOffsetY;
+    private final float displayOffsetZ;
     private final float displayScaleX;
     private final float displayScaleY;
-
     private final float displayScaleZ;
     private final float displayRotationY;
     private final float displayRotationZ;
+    private final float displayRotationX;
 
     private final Color displayGlowColor;
+    private final Color attackGlowColor;
 
     private final int displaySmoothSteps;
 
@@ -86,7 +88,6 @@ public class Attack extends SwordAction implements Runnable {
 
     public Attack (AttackType type, boolean orientWithPitch, Predicate<LivingEntity> filter) {
         controlVectors = getAttackVectors(type);
-        r_controlVectors = getRecoveryVectors(type);
         this.orientWithPitch = orientWithPitch;
         this.filter = filter;
         attackConfig = ConfigManager.getInstance().getCombat().getAttackClass();
@@ -103,12 +104,18 @@ public class Attack extends SwordAction implements Runnable {
 
         this.recoverMilliseconds = attackConfig.getTiming().getRecoveryDuration();
 
+        this.displayOffsetX = attackConfig.getDisplay().getOffsetX();
+        this.displayOffsetY = attackConfig.getDisplay().getOffsetY();
+        this.displayOffsetZ = attackConfig.getDisplay().getOffsetZ();
         this.displayScaleX = attackConfig.getDisplay().getScaleX();
         this.displayScaleY = attackConfig.getDisplay().getScaleY();
         this.displayScaleZ = attackConfig.getDisplay().getScaleZ();
         this.displayRotationY = attackConfig.getDisplay().getRotationY();
         this.displayRotationZ = attackConfig.getDisplay().getRotationZ();
+        this.displayRotationX = attackConfig.getDisplay().getRotationX();
+
         this.displayGlowColor = ColorUtil.fromHex(attackConfig.getDisplay().getGlowColor());
+        this.attackGlowColor = ColorUtil.fromHex(attackConfig.getDisplay().getAttackGlowColor());
 
         this.displaySmoothSteps = attackConfig.getMotion().getDisplaySmoothSteps();
 
@@ -150,8 +157,11 @@ public class Attack extends SwordAction implements Runnable {
         weaponDisplay.setGlowColorOverride(displayGlowColor);
         weaponDisplay.setTransformation(
                 new Transformation(
-                        new Vector3f(),
-                        new Quaternionf().rotateY(displayRotationY).rotateZ(displayRotationZ),
+                        new Vector3f(displayOffsetX, displayOffsetY, displayOffsetZ),
+                        new Quaternionf()
+                                .rotateY(displayRotationY)
+                                .rotateZ(displayRotationZ)
+                                .rotateX(displayRotationX),
                         new Vector3f(displayScaleX, displayScaleY, displayScaleZ),
                         new Quaternionf()
                 )
@@ -170,7 +180,8 @@ public class Attack extends SwordAction implements Runnable {
     }
 
     public void applyConsistentEffects() {
-        a.setVelocity(new Vector(a.getVelocity().getX(), 0, a.getVelocity().getZ()));
+        // stay put and drop
+        a.setVelocity(new Vector(a.getVelocity().getX(), Math.min(0, a.getVelocity().getY()), a.getVelocity().getZ()));
     }
 
     public void applySelfWindupEffects() {
@@ -182,7 +193,7 @@ public class Attack extends SwordAction implements Runnable {
 
     // While winding up, can change direction, so basis must be recalculated often
     public void startWindup() {
-        applySelfWindupEffects();
+//        applySelfWindupEffects();
 
         double windupRange = windupEndValue - windupStartValue;
         double step = windupRange/windupIterations;
@@ -199,7 +210,7 @@ public class Attack extends SwordAction implements Runnable {
                     }
                     applyConsistentEffects();
 
-                    generateBezierFunction(true);
+                    generateBezierFunction();
                     cur = weaponPathFunction.apply(windupStartValue + (step * idx));
 
                     DisplayUtil.smoothTeleport(weaponDisplay,
@@ -223,18 +234,19 @@ public class Attack extends SwordAction implements Runnable {
     }
 
     public void startAttack() {
-        applySelfAttackEffects();
+//        applySelfAttackEffects();
 
         double attackRange = attackEndValue - attackStartValue;
         double step = attackRange / attackIterations;
         int msPerIteration = attackMilliseconds / attackIterations;
 
-        generateBezierFunction(true);
+        generateBezierFunction();
 
         final Vector[] prev = { weaponPathFunction.apply(attackStartValue - step) };
 
         for (int i = 0; i <= attackIterations; i++) {
             final int idx = i;
+            final Location origin = a.getEyeLocation();
             SwordScheduler.runBukkitTaskLater(new BukkitRunnable() {
                 @Override
                 public void run() {
@@ -242,12 +254,14 @@ public class Attack extends SwordAction implements Runnable {
                         cancel();
                         return;
                     }
+                    if (idx == 1) weaponDisplay.setGlowColorOverride(attackGlowColor);
+
                     applyConsistentEffects();
 
                     cur = weaponPathFunction.apply(attackStartValue + (step * idx));
                     DisplayUtil.smoothTeleport(weaponDisplay,
                             Math.max(displaySmoothSteps, msPerIteration/Prefab.Value.MILLISECONDS_PER_TICK));
-                    weaponDisplay.teleport(a.getEyeLocation().add(cur).setDirection(cur));
+                    weaponDisplay.teleport(origin.add(cur).setDirection(cur));
 
                     applyHitEffects(collectHitEntities(cur, prev[0]));
 
@@ -282,31 +296,15 @@ public class Attack extends SwordAction implements Runnable {
     }
 
     public void startRecovery() {
-        applySelfRecoveryEffects();
+//        applySelfRecoveryEffects();
 
         SwordScheduler.runBukkitTaskLater(
                 () -> { finished = true; if (weaponDisplay.isValid()) weaponDisplay.remove(); },
                 recoverMilliseconds, TimeUnit.MILLISECONDS);
-
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                if (finished || !weaponDisplay.isValid()) {
-                    cancel();
-                    return;
-                }
-                applyConsistentEffects();
-
-                generateBezierFunction(false);
-                cur = weaponPathFunction.apply(0.1);
-                DisplayUtil.smoothTeleport(weaponDisplay, displaySmoothSteps);
-                weaponDisplay.teleport(a.getEyeLocation().add(cur).setDirection(cur));
-            }
-        }.runTaskTimer(Sword.getInstance(), 0, 1L);
     }
 
     // static function oriented with the players current basis to be used when the attack is executed.
-    public void generateBezierFunction(boolean attack) {
+    public void generateBezierFunction() {
         ArrayList<Vector> basis = orientWithPitch ?
                 VectorUtil.getBasis(a.getEyeLocation(), a.getEyeLocation().getDirection()) :
                 VectorUtil.getBasisWithoutPitch(a.getEyeLocation());
@@ -314,11 +312,7 @@ public class Attack extends SwordAction implements Runnable {
         curUp = basis.get(1);
         curForward = basis.getLast();
 
-        List<Vector> adjusted = BezierUtil.adjustCtrlToBasis(
-                basis,
-                attack ? controlVectors : r_controlVectors,
-                rangeMultiplier);
-
+        List<Vector> adjusted = BezierUtil.adjustCtrlToBasis(basis, controlVectors, rangeMultiplier);
         weaponPathFunction = BezierUtil.cubicBezier3D(adjusted.get(0), adjusted.get(1), adjusted.get(2), adjusted.get(3));
     }
 
@@ -329,24 +323,6 @@ public class Attack extends SwordAction implements Runnable {
             case BASIC_2 -> ctrlVectors = Prefab.ControlVectors.SLASH2;
             case BASIC_3 -> ctrlVectors = Prefab.ControlVectors.SLASH3;
             case HEAVY_1 -> ctrlVectors = Prefab.ControlVectors.UP_SMASH;
-            case D_AIR -> ctrlVectors = Prefab.ControlVectors.D_AIR_SLASH;
-            case N_AIR -> ctrlVectors = Prefab.ControlVectors.N_AIR_SLASH;
-            default -> ctrlVectors = List.of(
-                    Prefab.Direction.UP,
-                    Prefab.Direction.DOWN,
-                    Prefab.Direction.OUT_UP,
-                    Prefab.Direction.OUT_DOWN);
-        }
-        return ctrlVectors;
-    }
-
-    private static @NotNull List<Vector> getRecoveryVectors(AttackType attackType) {
-        List<Vector> ctrlVectors = null;
-        switch (attackType) {
-            case BASIC_1 -> ctrlVectors = Prefab.ControlVectors.SLASH1;
-            case BASIC_2 -> ctrlVectors = Prefab.ControlVectors.SLASH2;
-            case BASIC_3 -> ctrlVectors = Prefab.ControlVectors.SLASH3;
-            case HEAVY_1 -> ctrlVectors = Prefab.ControlVectors.UP_SMASH_RECOVERY;
             case D_AIR -> ctrlVectors = Prefab.ControlVectors.D_AIR_SLASH;
             case N_AIR -> ctrlVectors = Prefab.ControlVectors.N_AIR_SLASH;
             default -> ctrlVectors = List.of(

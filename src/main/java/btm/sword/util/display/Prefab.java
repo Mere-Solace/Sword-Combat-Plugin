@@ -65,15 +65,10 @@ public class Prefab {
                 new Vector(-1.1,-1.77,5)));
 
         public static final List<Vector> UP_SMASH = new ArrayList<>(List.of(
-                new Vector(0.66,-1.03,-0.2),
-                new Vector(-0.5,1.13,-0.54),
-                new Vector(0.86,-1.53,2),
-                new Vector(-0.76,1.54,1.35)));
-        public static final List<Vector> UP_SMASH_RECOVERY = new ArrayList<>(List.of(
-                new Vector(-0.1,0.77,-0.25),
-                new Vector(0.44,-0.16,-0.1),
-                new Vector(0.1,0.2,0.2),
-                new Vector(0.3,-0.09,0.2)));
+                new Vector(0.66,-1.53,-0.5),
+                new Vector(-0.4,0.67,-0.9),
+                new Vector(0.56,-0.89,2.1),
+                new Vector(-0.4,1.37,1.65)));
 
         public static final List<Vector> SIDE_SWORD_SLASH_R = new ArrayList<>(List.of(
                 new Vector(-1.3,1.03,2),

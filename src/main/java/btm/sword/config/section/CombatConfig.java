@@ -326,15 +326,31 @@ public class CombatConfig {
          */
         @Getter
         public static class DisplayConfig {
+            private final float offsetX;
+            private final float offsetY;
+            private final float offsetZ;
             private final float scaleX;
             private final float scaleY;
             private final float scaleZ;
             private final float rotationY;
             private final float rotationZ;
+            private final float rotationX;
             private final String glowColor;
+            private final String attackGlowColor;
 
             public DisplayConfig(ConfigurationSection section) {
                 if (section != null) {
+                    ConfigurationSection offset = section.getConfigurationSection("offset");
+                    if (offset != null) {
+                        this.offsetX = (float) offset.getDouble("x", 0.0);
+                        this.offsetY = (float) offset.getDouble("y", 0.0);
+                        this.offsetZ = (float) offset.getDouble("z", 1.0);
+                    } else {
+                        this.offsetX = 0.0f;
+                        this.offsetY = 0.0f;
+                        this.offsetZ = 1.0f;
+                    }
+
                     ConfigurationSection scale = section.getConfigurationSection("scale");
                     if (scale != null) {
                         this.scaleX = (float) scale.getDouble("x", 3.0);
@@ -348,14 +364,21 @@ public class CombatConfig {
 
                     this.rotationY = (float) section.getDouble("rotation_y", 1.5708);
                     this.rotationZ = (float) section.getDouble("rotation_z", 1.5708);
+                    this.rotationX = (float) section.getDouble("rotation_x", 1.5708);
                     this.glowColor = section.getString("glow_color", "#000000");
+                    this.attackGlowColor = section.getString("attack_glow_color", "#FF0000");
                 } else {
+                    this.offsetX = 0.0f;
+                    this.offsetY = 0.0f;
+                    this.offsetZ = 1.0f;
                     this.scaleX = 3.0f;
                     this.scaleY = 2.5f;
                     this.scaleZ = 2.0f;
                     this.rotationY = 1.5708f;
                     this.rotationZ = 1.5708f;
+                    this.rotationX = 1.5708f;
                     this.glowColor = "#000000";
+                    this.attackGlowColor = "#FF0000";
                 }
             }
         }

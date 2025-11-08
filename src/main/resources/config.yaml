@@ -176,7 +176,7 @@ combat:
 
   attack_class:
     modifiers:
-      range_multiplier: 3
+      range_multiplier: 3.5
 
     # Timing configuration (in milliseconds)
     # These control how long each attack phase lasts.
@@ -187,7 +187,7 @@ combat:
       # Source: Attack.java:74
       # Duration of windup phase before the weapon swing
       # Affects anticipation and player vulnerability
-      windup_duration: 750
+      windup_duration: 500
 
       # Source: Attack.java:75
       # Number of intermediate updates during the windup phase
@@ -227,6 +227,11 @@ combat:
     # --------------------------------------------------------------------------
     display:
 
+      offset:
+        x: 0
+        y: 0
+        z: 1.0
+
       # Source: Attack.java:128–133
       # Scale of the weapon ItemDisplay
       # (x, y, z) multipliers relative to the item’s model size
@@ -239,12 +244,15 @@ combat:
       # Source: Attack.java:129
       # Rotation applied to the display for alignment
       # π/2 (≈1.5708) corresponds to a 90° rotation
-      rotation_y: 1.5708   # radians
-      rotation_z: 1.5708   # radians
+      rotation_y: 0   # radians
+      rotation_z: 0   # radians
+      rotation_x: 1.5708   # radians
 
       # Glow outline color for active attack
       # Source: Attack.java:127
       glow_color: "#000000"
+
+      attack_glow_color: "#FF0000"
 
 
     # Movement & interpolation configuration

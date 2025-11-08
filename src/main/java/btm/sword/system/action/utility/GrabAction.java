@@ -7,6 +7,7 @@ import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.types.Combatant;
+import btm.sword.util.display.Prefab;
 import btm.sword.util.entity.HitboxUtil;
 import java.util.HashSet;
 import org.bukkit.FluidCollisionMode;
@@ -47,6 +48,8 @@ public class GrabAction extends SwordAction {
                 double range = executor.calcValueAdditive(AspectType.WILLPOWER, 4.5, baseGrabRange, 0.1);
                 double grabThickness = executor.calcValueAdditive(AspectType.WILLPOWER, 0.75, baseGrabThickness, 0.1);
 
+                Prefab.Particles.
+
                 LivingEntity ex = executor.entity();
                 Location o = ex.getEyeLocation();
 
@@ -83,7 +86,7 @@ public class GrabAction extends SwordAction {
 
                 if (impedanceCheck != null &&
                         impedanceCheck.getHitBlock() != null &&
-                        !impedanceCheck.getHitBlock().getType().isEmpty()) {
+                        !impedanceCheck.getHitBlock().getType().isAir()) {
                     return;
                 }
 
