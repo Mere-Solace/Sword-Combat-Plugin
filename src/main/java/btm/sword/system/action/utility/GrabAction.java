@@ -48,8 +48,6 @@ public class GrabAction extends SwordAction {
                 double range = executor.calcValueAdditive(AspectType.WILLPOWER, 4.5, baseGrabRange, 0.1);
                 double grabThickness = executor.calcValueAdditive(AspectType.WILLPOWER, 0.75, baseGrabThickness, 0.1);
 
-                Prefab.Particles.
-
                 LivingEntity ex = executor.entity();
                 Location o = ex.getEyeLocation();
 
@@ -63,19 +61,25 @@ public class GrabAction extends SwordAction {
                         !id.isDead() &&
                         !id.getItemStack().isEmpty()) {
                     InteractiveItemArbiter.onGrab(id, executor);
+
+                    Prefab.Particles.GRAB_ATTEMPT.display(id.getLocation());
                     return;
                 }
 
                 HashSet<LivingEntity> hit = HitboxUtil.line(ex, o, o.getDirection(), range, grabThickness);
                 if (hit.isEmpty()) {
+                    Prefab.Particles.GRAB_ATTEMPT.display(ex.getEyeLocation().add(ex.getEyeLocation().getDirection().multiply(range)));
                     return;
                 }
 
                 LivingEntity target = hit.stream().toList().getFirst();
 
                 if (target == null) {
+                    Prefab.Particles.GRAB_ATTEMPT.display(ex.getEyeLocation().add(ex.getEyeLocation().getDirection().multiply(range)));
                     return;
                 }
+
+                Prefab.Particles.GRAB_ATTEMPT.display(target.getLocation());
 
                 RayTraceResult impedanceCheck = ex.getWorld().rayTraceBlocks(
                         ex.getLocation().add(new Vector(0,0.5,0)),
