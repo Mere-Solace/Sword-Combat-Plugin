@@ -35,7 +35,7 @@ public class GrabAction extends SwordAction {
      * @param executor The {@link Combatant} performing the grab.
      */
     public static void grab(Combatant executor) {
-        cast(executor, 12L,
+        cast(executor, 12,
         new BukkitRunnable() {
             @Override
             public void run() {

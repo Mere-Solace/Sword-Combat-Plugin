@@ -1,7 +1,9 @@
 package btm.sword.system.action;
 
 import btm.sword.Sword;
+import btm.sword.system.SwordScheduler;
 import btm.sword.system.entity.types.Combatant;
+import java.util.concurrent.TimeUnit;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -19,19 +21,19 @@ public abstract class SwordAction {
     // itself may cancel its operations internally.
     //
     // abilities may still be canceled internally before the cast runnable is up, though.
-    protected static void cast(Combatant executor, long castDuration, Runnable action) {
+    protected static void cast(Combatant executor, int castDuration, Runnable action) {
         BukkitTask castTask = s.runTask(plugin, action);
 
         if (castDuration <= 0) return;
 
         executor.setCastTask(castTask);
-        new BukkitRunnable() {
+        SwordScheduler.runLater(new BukkitRunnable() {
             @Override
             public void run() {
                 if (executor.getAbilityCastTask() != null) {
                     executor.setCastTask(null);
                 }
             }
-        }.runTaskLater(plugin, castDuration);
+        }, castDuration, TimeUnit.MILLISECONDS);
     }
 }

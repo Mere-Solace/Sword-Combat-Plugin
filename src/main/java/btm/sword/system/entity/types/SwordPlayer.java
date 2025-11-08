@@ -115,7 +115,7 @@ public class SwordPlayer extends Combatant {
                 .tag(KeyRegistry.MAIN_MENU_BUTTON_KEY, KeyRegistry.MAIN_MENU_BUTTON)
                 .build();
 
-        inputExecutionTree = new InputExecutionTree(inputTimeoutMillis);
+        inputExecutionTree = new InputExecutionTree(this, inputTimeoutMillis);
         inputExecutionTree.initializeInputTree();
 
         sheathedActive = true;

@@ -1,7 +1,9 @@
 package btm.sword.system.entity.types;
 
 import btm.sword.system.action.MovementAction;
+import btm.sword.system.action.type.AttackType;
 import btm.sword.system.action.utility.thrown.ThrownItem;
+import btm.sword.system.attack.Attack;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.base.CombatProfile;
 import btm.sword.system.entity.base.SwordEntity;
@@ -29,6 +31,7 @@ import org.bukkit.util.Vector;
 @Setter
 public abstract class Combatant extends SwordEntity {
     private BukkitTask abilityCastTask = null;
+    private Attack basic;
 
     private int airDashesPerformed;
 
@@ -57,6 +60,8 @@ public abstract class Combatant extends SwordEntity {
     public Combatant(LivingEntity associatedEntity, CombatProfile combatProfile) {
         super(associatedEntity, combatProfile);
         airDashesPerformed = 0;
+
+        attackInitialization();
 
         attrHealth = entity().getAttribute(Attribute.MAX_HEALTH);
         if (attrHealth != null) attrHealth.setBaseValue(combatProfile.getStat(AspectType.SHARDS).getValue());
@@ -165,7 +170,7 @@ public abstract class Combatant extends SwordEntity {
                         !main.getType().equals(Material.CROSSBOW) &&
                         !main.getType().equals(Material.BOW) &&
                         !main.getType().isEdible() &&
-                        !main.getType().isEmpty();
+                        !main.getType().isAir();
 
         return canPerformAction() && throwable && off.getType().equals(Material.SHIELD);
     }
@@ -221,5 +226,14 @@ public abstract class Combatant extends SwordEntity {
      */
     public long calcCooldown(AspectType type, double min, double base, double multiplier) {
         return (long) Math.max(min, base - (multiplier * aspects.getAspectVal(type)) );
+    }
+
+    public void attackInitialization() {
+        basic = new Attack(AttackType.HEAVY_1,
+                false,
+                livingEntity -> livingEntity != entity() &&
+                        livingEntity.getUniqueId() != getUniqueId() &&
+                        livingEntity.isValid()
+        );
     }
 }

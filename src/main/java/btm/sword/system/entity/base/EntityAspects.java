@@ -9,7 +9,6 @@ import btm.sword.system.entity.aspect.value.ResourceValue;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 
-import java.util.function.Consumer;
 
 /**
  * Manages and provides access to all {@link Aspect} and {@link Resource} values associated with an entity.

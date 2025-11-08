@@ -17,7 +17,7 @@ public class MovementConfig {
 
     // Dash mechanics
     private final double dashMaxDistance;
-    private final long dashCastDuration;
+    private final int dashCastDuration;
     private final double dashBasePower;
 
     // Dash offsets and positioning
@@ -94,7 +94,7 @@ public class MovementConfig {
             ConfigurationSection dash = movement.getConfigurationSection("dash");
             if (dash != null) {
                 this.dashMaxDistance = dash.getDouble("max_distance", 10.0);
-                this.dashCastDuration = dash.getLong("cast_duration", 5L);
+                this.dashCastDuration = dash.getInt("cast_duration", 5);
                 this.dashBasePower = dash.getDouble("base_power", 0.7);
 
                 this.dashInitialOffsetY = dash.getDouble("initial_offset_y", 0.3);
@@ -130,7 +130,7 @@ public class MovementConfig {
             } else {
                 // Dash defaults
                 this.dashMaxDistance = 10.0;
-                this.dashCastDuration = 5L;
+                this.dashCastDuration = 5;
                 this.dashBasePower = 0.7;
                 this.dashInitialOffsetY = 0.3;
                 this.dashImpedanceCheckOffsetY = 0.5;
@@ -206,7 +206,7 @@ public class MovementConfig {
         } else {
             // Movement section missing - use all defaults
             this.dashMaxDistance = 10.0;
-            this.dashCastDuration = 5L;
+            this.dashCastDuration = 5;
             this.dashBasePower = 0.7;
             this.dashInitialOffsetY = 0.3;
             this.dashImpedanceCheckOffsetY = 0.5;

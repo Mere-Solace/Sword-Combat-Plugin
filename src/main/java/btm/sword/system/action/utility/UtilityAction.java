@@ -1,11 +1,8 @@
 package btm.sword.system.action.utility;
 
-import btm.sword.Sword;
 import btm.sword.system.action.SwordAction;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.types.Combatant;
-import btm.sword.util.sound.SoundType;
-import btm.sword.util.sound.SoundUtil;
 import org.bukkit.Location;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
@@ -14,7 +11,7 @@ import org.bukkit.util.RayTraceResult;
 
 public class UtilityAction extends SwordAction {
     public static void death(Combatant executor) {
-        cast(executor, 0L, new BukkitRunnable() {
+        cast(executor, 0, new BukkitRunnable() {
             @Override
             public void run() {
                 LivingEntity ex = executor.entity();
@@ -33,24 +30,5 @@ public class UtilityAction extends SwordAction {
                 }
             }
         });
-    }
-
-    public static void soundTest(Combatant executor, int startIndex) {
-        int i = 0;
-        for (SoundType soundType : SoundType.values()) {
-            if (i < startIndex) {
-                i++;
-                continue;
-            }
-            int finalI = i;
-            new BukkitRunnable() {
-                @Override
-                public void run() {
-                    SoundUtil.playSound(executor.entity(), soundType, 1f, 1f);
-                    executor.message("i: " + finalI + ", " + soundType.key());
-                }
-            }.runTaskLater(Sword.getInstance(), 30L * (i-startIndex));
-            i++;
-        }
     }
 }

@@ -64,6 +64,17 @@ public class Prefab {
                 new Vector(1.74,1.96,4.3),
                 new Vector(-1.1,-1.77,5)));
 
+        public static final List<Vector> UP_SMASH = new ArrayList<>(List.of(
+                new Vector(0.66,-1.03,-0.2),
+                new Vector(-0.5,1.13,-0.54),
+                new Vector(0.86,-1.53,2),
+                new Vector(-0.76,1.54,1.35)));
+        public static final List<Vector> UP_SMASH_RECOVERY = new ArrayList<>(List.of(
+                new Vector(-0.1,0.77,-0.25),
+                new Vector(0.44,-0.16,-0.1),
+                new Vector(0.1,0.2,0.2),
+                new Vector(0.3,-0.09,0.2)));
+
         public static final List<Vector> SIDE_SWORD_SLASH_R = new ArrayList<>(List.of(
                 new Vector(-1.3,1.03,2),
                 new Vector(8.2,1.03,-1.9),
@@ -101,6 +112,12 @@ public class Prefab {
         public static final Vector DOWN = new Vector(0, -1, 0);
         public static final Vector NORTH = new Vector(0, 0, -1);
         public static final Vector SOUTH = new Vector(0, 0, 1);
+        public static final Vector OUT_UP = new Vector(0, 1, 1);
+        public static final Vector OUT_DOWN = new Vector(0, -1, 1);
+    }
+
+    public static class Value {
+        public static final int MILLISECONDS_PER_TICK = 50; // 1000/20 = 50
     }
 
     /**

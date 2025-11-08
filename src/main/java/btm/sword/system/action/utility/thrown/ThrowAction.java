@@ -116,11 +116,10 @@ public class ThrowAction extends SwordAction {
         executor.setAttemptingThrow(false);
         executor.setThrowSuccessful(true);
 
-        cast(executor, 10L, new BukkitRunnable() {
+        cast(executor, 10, new BukkitRunnable() {
             @Override
             public void run() {
                 executor.getThrownItem().onRelease(2);
-//				executor.setItemStackInHand(executor.getMainHandItemStackDuringThrow(), true);
             }
         });
     }

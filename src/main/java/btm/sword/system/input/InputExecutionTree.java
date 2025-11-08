@@ -9,6 +9,7 @@ import btm.sword.system.action.utility.UtilityAction;
 import btm.sword.system.action.utility.thrown.ThrowAction;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.types.Combatant;
+import btm.sword.system.entity.types.SwordPlayer;
 import java.util.HashMap;
 import java.util.List;
 import lombok.Getter;
@@ -30,6 +31,7 @@ public class InputExecutionTree {
     private static final Plugin plugin = Sword.getInstance();
 
     private final InputNode root = new InputNode(null);
+    private final SwordPlayer owner;
 
     private InputNode currentNode;
     private StringBuilder sequenceToDisplay;
@@ -41,7 +43,8 @@ public class InputExecutionTree {
      *
      * @param timeoutMillis timeout duration in milliseconds before sequence resets
      */
-    public InputExecutionTree(long timeoutMillis) {
+    public InputExecutionTree(SwordPlayer owner, long timeoutMillis) {
+        this.owner = owner;
         currentNode = root;
         sequenceToDisplay = new StringBuilder();
         timeoutTimer = null;
@@ -319,7 +322,11 @@ public class InputExecutionTree {
         // basic attacks
         add(List.of(InputType.LEFT),
                 new InputAction(
-                        executor -> AttackAction.basicAttack(executor, AttackType.BASIC_1),
+                        executor -> {
+                            owner.attackInitialization(); // TODO: waste of re-init of all other methods, change later (only for testing)
+                            owner.getBasic().execute(executor);
+                        },
+//                        executor -> AttackAction.basicAttack(executor, AttackType.BASIC_1),
                         executor -> Math.max(0, (executor.getTimeOfLastAttack() + executor.getDurationOfLastAttack()) - System.currentTimeMillis()),
                         Combatant::canPerformAction,
                         false,

@@ -66,7 +66,7 @@ public class AttackAction extends SwordAction {
 
             AttackType attackType = AttackType.N_AIR;
             double downAirThreshold = ConfigManager.getInstance().getCombat().getAttacks().getDownAirThreshold();
-            if (dot < downAirThreshold) attackType = AttackType.DOWN_AIR;
+            if (dot < downAirThreshold) attackType = AttackType.D_AIR;
 
             for (var entry : attackMap.entrySet()) {
                 if (item.name().endsWith(entry.getKey())) {
@@ -76,6 +76,7 @@ public class AttackAction extends SwordAction {
             }
         }
     }
+
 
     /**
      * Executes a basic slash attack.
@@ -89,26 +90,19 @@ public class AttackAction extends SwordAction {
      */
     public static void basicSlash(Combatant executor, AttackType type) {
         var attacksConfig = ConfigManager.getInstance().getCombat().getAttacks();
-        long castDuration = (long) executor.calcValueReductive(AspectType.FINESSE,
+        int castDuration = (int) executor.calcValueReductive(AspectType.FINESSE,
                 attacksConfig.getCastTimingMinDuration(),
                 attacksConfig.getCastTimingMaxDuration(),
                 attacksConfig.getCastTimingReductionRate());
-        if (executor instanceof SwordPlayer sp) sp.player().setCooldown(sp.getItemTypeInHand(true), (int) castDuration);
+        if (executor instanceof SwordPlayer sp) sp.player().setCooldown(sp.getItemTypeInHand(true), castDuration);
         cast(executor, castDuration,
             new BukkitRunnable() {
                 @Override
                 public void run() {
-//                    // Testing:
-//                    executor.message("Before: Soulfire 'Hunger': " + 20 * (executor.getAspects().soulfireCur()/executor.getAspects().soulfireVal()));
-//                    executor.hit(executor, 5, 1, 10, 6, Prefab.Direction.UP);
-//
-//                    executor.message("After: Soulfire 'Hunger': " + 20 * (executor.getAspects().soulfireCur()/executor.getAspects().soulfireVal()));
-//                    //
-
                     Prefab.Sounds.ATTACK.play(executor.entity());
 
                     executor.setTimeOfLastAttack(System.currentTimeMillis());
-                    executor.setDurationOfLastAttack((int) castDuration * attacksConfig.getDurationMultiplier());
+                    executor.setDurationOfLastAttack(castDuration * attacksConfig.getDurationMultiplier());
 
                     LivingEntity ex = executor.entity();
                     double damage = attacksConfig.getBaseDamage();
@@ -135,7 +129,7 @@ public class AttackAction extends SwordAction {
                             controlVectors = new ArrayList<>(Prefab.ControlVectors.N_AIR_SLASH);
                             aerial = true;
                         }
-                        case DOWN_AIR -> {
+                        case D_AIR -> {
                             rangeMultiplier = rangeMultipliers.getDownAir();
                             controlVectors = new ArrayList<>(Prefab.ControlVectors.D_AIR_SLASH);
                             withPitch = false;
@@ -156,8 +150,12 @@ public class AttackAction extends SwordAction {
                             .map(v -> VectorUtil.transformWithNewBasis(basis, v).multiply(rangeMultiplier))
                             .toList();
 
-                    bezierVectors = BezierUtil.cubicBezier3D(transformedControlVectors.getFirst(),transformedControlVectors.get(1), transformedControlVectors.get(2), transformedControlVectors.getLast(),
-                            numSteps);
+                    try {
+                        bezierVectors = BezierUtil.cubicBezier3D(transformedControlVectors.getFirst(),transformedControlVectors.get(1), transformedControlVectors.get(2), transformedControlVectors.getLast(),
+                                numSteps);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
 
                     int duration = (int) castDuration;
                     int period = 1;
