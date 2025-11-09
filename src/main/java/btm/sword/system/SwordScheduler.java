@@ -7,17 +7,16 @@ import org.bukkit.Bukkit;
 import org.bukkit.scheduler.BukkitRunnable;
 
 /**
- * A lightweight scheduler utility that bridges between Bukkit's synchronous scheduler
- * and a general-purpose {@link java.util.concurrent.ScheduledExecutorService}
- * managed by {@link Sword}.
+ * A Scheduler utility that provides scheduling more granular than Minecraft's tick system.
  * <p>
  * This class provides methods for running tasks later either:
+ * </p>
  * <ul>
  *     <li>Asynchronously, through the internal Sword scheduler.</li>
  *     <li>Synchronously (on the main server thread), by wrapping a Bukkit task.</li>
  * </ul>
  * <p>
- * ⚠️ <b>Important:</b> Directly interacting with the Bukkit API from
+ * <b>Important:</b> Directly interacting with the Bukkit API from
  * {@link #runLater(Runnable, int, TimeUnit)} is <em>not thread-safe</em>.
  * Use {@link #runBukkitTaskLater(Runnable, int, TimeUnit)} or
  * {@link #runConsumerNextTick(Consumer, Object)} when you need to interact with entities,
@@ -48,8 +47,6 @@ public class SwordScheduler {
      * Internally, this first schedules an async delay, and then enqueues the runnable
      * into Bukkit's main-thread scheduler via {@link Bukkit#getScheduler()}.
      * <p>
-     * This is useful when you want to perform delayed Bukkit operations without blocking
-     * the main thread for the delay duration.
      *
      * @param runnable the code to execute on the Bukkit main thread
      * @param delay    how long to wait before execution
