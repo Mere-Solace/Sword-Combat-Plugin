@@ -322,14 +322,10 @@ public class InputExecutionTree {
         // basic attacks
         add(List.of(InputType.LEFT),
                 new InputAction(
-                        executor -> {
-                            owner.attackInitialization(); // TODO: waste of re-init of all other methods, change later (only for testing)
-                            owner.getBasic().execute(executor);
-                        },
-//                        executor -> AttackAction.basicAttack(executor, AttackType.BASIC_1),
+                        executor -> AttackAction.basicAttack(executor, AttackType.BASIC_1, true),
                         executor -> Math.max(0, (executor.getTimeOfLastAttack() + executor.getDurationOfLastAttack()) - System.currentTimeMillis()),
                         Combatant::canPerformAction,
-                        false,
+                        true,
                         true),
                 true,
                 true,
@@ -337,7 +333,7 @@ public class InputExecutionTree {
 
         add(List.of(InputType.LEFT, InputType.LEFT),
                 new InputAction(
-                        executor -> AttackAction.basicAttack(executor, AttackType.BASIC_2),
+                        executor -> AttackAction.basicAttack(executor, AttackType.BASIC_2, true),
                         executor -> 0L,
                         Combatant::canPerformAction,
                         false,
@@ -348,7 +344,7 @@ public class InputExecutionTree {
 
         add(List.of(InputType.LEFT, InputType.LEFT, InputType.LEFT),
                 new InputAction(
-                        executor -> AttackAction.basicAttack(executor, AttackType.BASIC_3),
+                        executor -> AttackAction.basicAttack(executor, AttackType.BASIC_3, true),
                         executor -> 0L,
                         Combatant::canPerformAction,
                         false,

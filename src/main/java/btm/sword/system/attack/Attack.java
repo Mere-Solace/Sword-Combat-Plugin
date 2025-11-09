@@ -5,40 +5,39 @@ import btm.sword.config.section.CombatConfig;
 import btm.sword.system.SwordScheduler;
 import btm.sword.system.action.SwordAction;
 import btm.sword.system.action.type.AttackType;
+import btm.sword.system.entity.SwordEntityArbiter;
+import btm.sword.system.entity.aspect.AspectType;
+import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.types.Combatant;
-import btm.sword.util.display.ColorUtil;
-import btm.sword.util.display.DisplayUtil;
+import btm.sword.util.display.ParticleWrapper;
 import btm.sword.util.display.Prefab;
+import btm.sword.util.entity.HitboxUtil;
 import btm.sword.util.math.BezierUtil;
 import btm.sword.util.math.VectorUtil;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import org.bukkit.Color;
 import org.bukkit.Location;
-import org.bukkit.entity.EntityType;
-import org.bukkit.entity.ItemDisplay;
+import org.bukkit.Particle;
 import org.bukkit.entity.LivingEntity;
-import org.bukkit.potion.PotionEffect;
-import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
-import org.bukkit.util.Transformation;
+import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
-import org.joml.Quaternionf;
-import org.joml.Vector3f;
 
 public class Attack extends SwordAction implements Runnable {
-    private Combatant attacker;
-    private LivingEntity a;
+    private final CombatConfig.AttacksConfig attacksConfig;
     private final CombatConfig.AttackClassConfig attackConfig;
 
-    private final boolean orientWithPitch;
+    private Combatant attacker;
+    private LivingEntity attackingEntity;
+    private final AttackType attackType;
 
-    private ItemDisplay weaponDisplay;
+    private final boolean orientWithPitch;
 
     private final List<Vector> controlVectors;
     private Function<Double, Vector> weaponPathFunction;
@@ -47,194 +46,84 @@ public class Attack extends SwordAction implements Runnable {
     private Vector curUp;
     private Vector curForward;
 
+    private Location origin;
+    private Location attackLocation;
     private Vector cur;
+    private Vector prev;
 
+    private final HashSet<LivingEntity> hitDuringAttack;
     private Predicate<LivingEntity> filter;
-
-    private int windupMilliseconds;
-    private int windupIterations;
-    private double windupStartValue;
-    private double windupEndValue;
 
     private int attackMilliseconds;
     private int attackIterations;
     private double attackStartValue;
     private double attackEndValue;
 
-    int recoverMilliseconds;
-
-    private final float displayOffsetX;
-    private final float displayOffsetY;
-    private final float displayOffsetZ;
-    private final float displayScaleX;
-    private final float displayScaleY;
-    private final float displayScaleZ;
-    private final float displayRotationY;
-    private final float displayRotationZ;
-    private final float displayRotationX;
-
-    private final Color displayGlowColor;
-    private final Color attackGlowColor;
-
-    private final int displaySmoothSteps;
-
-    private final int windupSlownessAmplifier;
-    private final int attackSlownessAmplifier;
-
     private final double rangeMultiplier;
 
-    private boolean cancelled;
-    private boolean finished;
-
-    public Attack (AttackType type, boolean orientWithPitch, Predicate<LivingEntity> filter) {
+    public Attack (AttackType type, boolean orientWithPitch) {
         controlVectors = getAttackVectors(type);
+        this.attackType = type;
         this.orientWithPitch = orientWithPitch;
-        this.filter = filter;
+        attacksConfig = ConfigManager.getInstance().getCombat().getAttacks();
         attackConfig = ConfigManager.getInstance().getCombat().getAttackClass();
 
-        this.windupMilliseconds = attackConfig.getTiming().getWindupDuration();
-        this.windupIterations = attackConfig.getTiming().getWindupIterations();
-        this.windupStartValue = attackConfig.getTiming().getWindupStartValue();
-        this.windupEndValue = attackConfig.getTiming().getWindupEndValue();
+        hitDuringAttack = new HashSet<>();
 
         this.attackMilliseconds = attackConfig.getTiming().getAttackDuration();
         this.attackIterations = attackConfig.getTiming().getAttackIterations();
         this.attackStartValue = attackConfig.getTiming().getAttackStartValue();
         this.attackEndValue = attackConfig.getTiming().getAttackEndValue();
 
-        this.recoverMilliseconds = attackConfig.getTiming().getRecoveryDuration();
-
-        this.displayOffsetX = attackConfig.getDisplay().getOffsetX();
-        this.displayOffsetY = attackConfig.getDisplay().getOffsetY();
-        this.displayOffsetZ = attackConfig.getDisplay().getOffsetZ();
-        this.displayScaleX = attackConfig.getDisplay().getScaleX();
-        this.displayScaleY = attackConfig.getDisplay().getScaleY();
-        this.displayScaleZ = attackConfig.getDisplay().getScaleZ();
-        this.displayRotationY = attackConfig.getDisplay().getRotationY();
-        this.displayRotationZ = attackConfig.getDisplay().getRotationZ();
-        this.displayRotationX = attackConfig.getDisplay().getRotationX();
-
-        this.displayGlowColor = ColorUtil.fromHex(attackConfig.getDisplay().getGlowColor());
-        this.attackGlowColor = ColorUtil.fromHex(attackConfig.getDisplay().getAttackGlowColor());
-
-        this.displaySmoothSteps = attackConfig.getMotion().getDisplaySmoothSteps();
-
-        this.windupSlownessAmplifier = attackConfig.getEffects().getWindupSlownessAmplifier();
-        this.attackSlownessAmplifier = attackConfig.getEffects().getAttackSlownessAmplifier();
-
         this.rangeMultiplier = attackConfig.getModifiers().getRangeMultiplier();
-
-        cancelled = false;
-        finished = false;
     }
 
-    public Attack(AttackType type, boolean orientWithPitch, Predicate<LivingEntity> filter,
-                  int windupMilliseconds, int windupIterations, double windupStartValue, double windupEndValue,
-                  int attackMilliseconds, int attackIterations, double attackStartValue, double attackEndValue,
-                  int recoverMilliseconds) {
-        this(type, orientWithPitch, filter);
-        this.windupMilliseconds = windupMilliseconds;
-        this.windupIterations = windupIterations;
-        this.windupStartValue = windupStartValue;
-        this.windupEndValue = windupEndValue;
+    public Attack(AttackType type, boolean orientWithPitch,
+                  int attackMilliseconds, int attackIterations, double attackStartValue, double attackEndValue) {
+        this(type, orientWithPitch);
         this.attackMilliseconds = attackMilliseconds;
         this.attackIterations = attackIterations;
         this.attackStartValue = attackStartValue;
         this.attackEndValue = attackEndValue;
-        this.recoverMilliseconds = recoverMilliseconds;
     }
 
     public void execute(Combatant attacker) {
         this.attacker = attacker;
-        a = attacker.entity();
-
-        int castDuration = windupMilliseconds + attackMilliseconds + recoverMilliseconds;
-
-        weaponDisplay = (ItemDisplay) a.getWorld().spawnEntity(a.getLocation(), EntityType.ITEM_DISPLAY);
-        weaponDisplay.setInvisible(true);
-        weaponDisplay.setItemStack(attacker.getItemStackInHand(true));
-        weaponDisplay.setGlowing(true);
-        weaponDisplay.setGlowColorOverride(displayGlowColor);
-        weaponDisplay.setTransformation(
-                new Transformation(
-                        new Vector3f(displayOffsetX, displayOffsetY, displayOffsetZ),
-                        new Quaternionf()
-                                .rotateY(displayRotationY)
-                                .rotateZ(displayRotationZ)
-                                .rotateX(displayRotationX),
-                        new Vector3f(displayScaleX, displayScaleY, displayScaleZ),
-                        new Quaternionf()
-                )
-        );
-
-        cast(attacker, castDuration, this);
+        this.attackingEntity = attacker.entity();
+        this.filter = livingEntity -> livingEntity != attackingEntity &&
+                livingEntity.getUniqueId() != attacker.getUniqueId() &&
+                livingEntity.isValid();
+        attackMilliseconds = (int) attacker.calcValueReductive(AspectType.FINESSE,
+                attacksConfig.getCastTimingMinDuration(),
+                attacksConfig.getCastTimingMaxDuration(),
+                attacksConfig.getCastTimingReductionRate());
+        cast(attacker, attackMilliseconds, this);
     }
 
     @Override
     public void run() {
-        start();
+        onRun();
     }
 
-    public void start() {
-        startWindup();
+    private void onRun() {
+        attacker.setTimeOfLastAttack(System.currentTimeMillis());
+        attacker.setDurationOfLastAttack(attackMilliseconds * attacksConfig.getDurationMultiplier());
+        startAttack();
     }
 
-    public void applyConsistentEffects() {
-        // stay put and drop
-        a.setVelocity(new Vector(a.getVelocity().getX(), Math.min(0, a.getVelocity().getY()), a.getVelocity().getZ()));
+    private void playSwingSoundEffects() {
+        Prefab.Sounds.ATTACK.play(attacker.entity());
     }
 
-    public void applySelfWindupEffects() {
-        PotionEffect slowness = new PotionEffect(PotionEffectType.SLOWNESS,
-                windupMilliseconds/Prefab.Value.MILLISECONDS_PER_TICK,
-                windupSlownessAmplifier);
-        attacker.entity().addPotionEffect(slowness);
-    }
-
-    // While winding up, can change direction, so basis must be recalculated often
-    public void startWindup() {
-//        applySelfWindupEffects();
-
-        double windupRange = windupEndValue - windupStartValue;
-        double step = windupRange/windupIterations;
-        int msPerIteration = windupMilliseconds/windupIterations;
-
-        for (int i = 0; i < windupIterations; i++) {
-            final int idx = i;
-            SwordScheduler.runBukkitTaskLater(new BukkitRunnable() {
-                @Override
-                public void run() {
-                    if (cancelled) {
-                        cancel();
-                        return;
-                    }
-                    applyConsistentEffects();
-
-                    generateBezierFunction();
-                    cur = weaponPathFunction.apply(windupStartValue + (step * idx));
-
-                    DisplayUtil.smoothTeleport(weaponDisplay,
-                            Math.max(displaySmoothSteps, msPerIteration/Prefab.Value.MILLISECONDS_PER_TICK));
-                    weaponDisplay.teleport(a.getEyeLocation().add(cur).setDirection(cur));
-                    weaponDisplay.setInvisible(false);
-
-                    if (idx == windupIterations - 1) {
-                        startAttack();
-                    }
-                }
-            }, idx * msPerIteration, TimeUnit.MILLISECONDS);
-        }
+    private void applyConsistentEffects() {
     }
 
     private void applySelfAttackEffects() {
-        PotionEffect slowness = new PotionEffect(PotionEffectType.SLOWNESS,
-                attackMilliseconds/Prefab.Value.MILLISECONDS_PER_TICK,
-                attackSlownessAmplifier);
-        attacker.entity().addPotionEffect(slowness);
     }
 
-    public void startAttack() {
-//        applySelfAttackEffects();
+    private void startAttack() {
+        applySelfAttackEffects();
+        playSwingSoundEffects();
 
         double attackRange = attackEndValue - attackStartValue;
         double step = attackRange / attackIterations;
@@ -242,72 +131,85 @@ public class Attack extends SwordAction implements Runnable {
 
         generateBezierFunction();
 
-        final Vector[] prev = { weaponPathFunction.apply(attackStartValue - step) };
+        origin = attackingEntity.getLocation().add(attacker.getChestVector());
+        prev = weaponPathFunction.apply(attackStartValue - step);
 
         for (int i = 0; i <= attackIterations; i++) {
             final int idx = i;
-            final Location origin = a.getEyeLocation();
+
             SwordScheduler.runBukkitTaskLater(new BukkitRunnable() {
                 @Override
                 public void run() {
-                    if (cancelled) {
-                        cancel();
-                        return;
-                    }
-                    if (idx == 1) weaponDisplay.setGlowColorOverride(attackGlowColor);
-
                     applyConsistentEffects();
 
                     cur = weaponPathFunction.apply(attackStartValue + (step * idx));
-                    DisplayUtil.smoothTeleport(weaponDisplay,
-                            Math.max(displaySmoothSteps, msPerIteration/Prefab.Value.MILLISECONDS_PER_TICK));
-                    weaponDisplay.teleport(origin.add(cur).setDirection(cur));
+                    attackLocation = origin.clone().add(cur);
 
-                    applyHitEffects(collectHitEntities(cur, prev[0]));
+                    drawAttackEffects(idx);
+                    applyHitEffects(collectHitEntities());
+                    swingTest();
 
-                    prev[0] = cur;
-                    if (idx == attackIterations) {
-                        startRecovery();
-                    }
+                    prev = cur;
                 }
             }, idx * msPerIteration, TimeUnit.MILLISECONDS);
         }
     }
 
-    public void applyHitEffects(HashSet<LivingEntity> targets) {
-
+    private void drawAttackEffects(int step) {
+        Prefab.Particles.TEST_SWING.display(attackLocation);
     }
 
-    public HashSet<LivingEntity> collectHitEntities(Vector cur, Vector prev) {
-        HashSet<LivingEntity> targets = new HashSet<>();
+    private void applyHitEffects(HashSet<LivingEntity> targets) {
+        for (LivingEntity target : targets) {
+            if (!hitDuringAttack.contains(target)) {
+                SwordEntity sTarget = SwordEntityArbiter.getOrAdd(target.getUniqueId());
 
-        // use filter predicate
+                if (sTarget == null)
+                    continue;
 
+                if (!sTarget.entity().isDead()) {
+                    sTarget.hit(attacker,
+                            5, 1, 15, 6,
+                            getKnockBackVector(attackType, target));
 
-
-        return targets;
+                    Prefab.Particles.TEST_HIT.display(sTarget.getChestLocation());
+                } else {
+                    attacker.message("Target: " + target + " caused an NPE");
+                }
+            }
+        }
+        hitDuringAttack.addAll(targets);
     }
 
-    public void applySelfRecoveryEffects() {
-        PotionEffect slowness = new PotionEffect(PotionEffectType.SLOWNESS,
-                recoverMilliseconds/Prefab.Value.MILLISECONDS_PER_TICK,
-                attackSlownessAmplifier);
-        attacker.entity().addPotionEffect(slowness);
+    private HashSet<LivingEntity> collectHitEntities() {
+        double secantRadius = ConfigManager.getInstance().getCombat().getHitboxes().getSecantRadius();
+        return HitboxUtil.secant( attackingEntity, origin, attackLocation, secantRadius,
+                true, filter);
     }
 
-    public void startRecovery() {
-//        applySelfRecoveryEffects();
-
-        SwordScheduler.runBukkitTaskLater(
-                () -> { finished = true; if (weaponDisplay.isValid()) weaponDisplay.remove(); },
-                recoverMilliseconds, TimeUnit.MILLISECONDS);
+    private void swingTest() {
+        // check if attack entered the ground
+        // enter ground and interpolation function
+        Vector direction = cur.clone().subtract(prev);
+        RayTraceResult result = attackingEntity.getWorld().rayTraceBlocks(attackLocation, direction, 0.3);
+        if (result != null) {
+            // enter ground particles
+            new ParticleWrapper(Particle.BLOCK, 10, 0.5, 0.5, 0.5,
+                    Objects.requireNonNull(result.getHitBlock()).getBlockData()).display(attackLocation);
+            Prefab.Particles.COLLIDE.display(attackLocation);
+            // potential reduction of damage formula
+        }
+        else if (direction.lengthSquared() > (double) 2 / (attackIterations*attackIterations)) {
+            // interpolated particle, same as normal particle
+            Prefab.Particles.TEST_SWING.display(attackLocation.clone().add(direction.multiply(0.5)));
+        }
     }
 
     // static function oriented with the players current basis to be used when the attack is executed.
-    public void generateBezierFunction() {
+    private void generateBezierFunction() {
         ArrayList<Vector> basis = orientWithPitch ?
-                VectorUtil.getBasis(a.getEyeLocation(), a.getEyeLocation().getDirection()) :
-                VectorUtil.getBasisWithoutPitch(a.getEyeLocation());
+                VectorUtil.getBasis(attackingEntity.getEyeLocation(), attackingEntity.getEyeLocation().getDirection()) :
+                VectorUtil.getBasisWithoutPitch(attackingEntity.getEyeLocation());
         curRight = basis.getFirst();
         curUp = basis.get(1);
         curForward = basis.getLast();
@@ -317,7 +219,7 @@ public class Attack extends SwordAction implements Runnable {
     }
 
     private static @NotNull List<Vector> getAttackVectors(AttackType attackType) {
-        List<Vector> ctrlVectors = null;
+        List<Vector> ctrlVectors;
         switch (attackType) {
             case BASIC_1 -> ctrlVectors = Prefab.ControlVectors.SLASH1;
             case BASIC_2 -> ctrlVectors = Prefab.ControlVectors.SLASH2;
@@ -332,5 +234,27 @@ public class Attack extends SwordAction implements Runnable {
                     Prefab.Direction.OUT_DOWN);
         }
         return ctrlVectors;
+    }
+
+    private @NotNull Vector getKnockBackVector(AttackType attackType, LivingEntity target) {
+        var attackVelocity = ConfigManager.getInstance().getPhysics().getAttackVelocity();
+        Vector base =  Prefab.Direction.UP.clone().multiply(attackVelocity.getKnockbackVerticalBase());
+        Vector r = curRight.clone().multiply(attackVelocity.getKnockbackHorizontalModifier());
+
+        Vector knockback;
+        switch (attackType) {
+            case BASIC_1 -> knockback = base.add(r);
+            case BASIC_2 -> knockback = base.add(r.multiply(-1));
+            case BASIC_3 -> knockback = target.getLocation().toVector()
+                    .subtract(origin.toVector()).normalize()
+                    .subtract(new Vector(0, attackVelocity.getKnockbackVerticalBase() * 2, 0));
+            case HEAVY_1 -> knockback = base.multiply(2);
+            case D_AIR -> knockback = base.multiply(-2);
+            case N_AIR -> knockback = target.getLocation().toVector()
+                    .subtract(origin.toVector()).normalize().multiply(attackVelocity.getKnockbackNormalMultiplier());
+
+            default -> knockback = cur.clone().normalize().multiply(attackVelocity.getKnockbackNormalMultiplier());
+        }
+        return knockback;
     }
 }
