@@ -1,10 +1,14 @@
 package btm.sword.system.entity.base;
 
+import btm.sword.Sword;
 import btm.sword.system.entity.aspect.Aspect;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.aspect.Resource;
 import btm.sword.system.entity.aspect.value.AspectValue;
 import btm.sword.system.entity.aspect.value.ResourceValue;
+import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
+
 
 /**
  * Manages and provides access to all {@link Aspect} and {@link Resource} values associated with an entity.
@@ -103,6 +107,8 @@ public class EntityAspects {
     private final Aspect fortitude;
     private final Aspect celerity;
     private final Aspect willpower;
+
+    private BukkitTask restartTask;
 
     /**
      * Constructs all resource and aspect objects for a given {@link CombatProfile}.
@@ -255,10 +261,31 @@ public class EntityAspects {
                 "\nForm: " + formCur();
     }
 
-    public void stopAllResourceProcesses() {
+    public void stopAllResourceTasks() {
+        if (restartTask != null && !restartTask.isCancelled()) restartTask.cancel();
         shards().stopRegenTask();
         toughness().stopRegenTask();
         soulfire().stopRegenTask();
         form().stopRegenTask();
+    }
+
+    public void restartResourceProcessAfterDelay(AspectType type) {
+        if (restartTask != null && !restartTask.isCancelled()) return;
+
+        Resource r = null;
+        switch (type) {
+            case SHARDS -> r = shards;
+            case TOUGHNESS -> r = toughness;
+            case SOULFIRE -> r = soulfire;
+            case FORM ->  r = form;
+        }
+        if (r == null) return;
+        final Resource R = r;
+        restartTask = new BukkitRunnable() {
+            @Override
+            public void run() {
+                R.restartRegenTask();
+            }
+        }.runTaskLater(Sword.getInstance(), r.getBaseRegenPeriod());
     }
 }

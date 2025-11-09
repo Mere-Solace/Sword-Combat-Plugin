@@ -5,6 +5,7 @@ import btm.sword.config.ConfigManager;
 import btm.sword.listeners.EntityListener;
 import btm.sword.listeners.InputListener;
 import btm.sword.listeners.PlayerListener;
+import btm.sword.system.action.utility.thrown.InteractiveItemArbiter;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.playerdata.PlayerDataManager;
 import io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager;
@@ -43,6 +44,9 @@ public final class Sword extends JavaPlugin {
             SwordCommands.register(event.registrar());
         });
 
+        // Catch and register all entities whose data is already cached by the server
+        SwordEntityArbiter.registerAllExistingEntities();
+
         PlayerDataManager.initialize();
 
         getLogger().info("~ Sword: Combat Evolved has been enabled ~");
@@ -50,9 +54,14 @@ public final class Sword extends JavaPlugin {
 
     @Override
     public void onDisable() {
-//        PlayerDataManager.shutdown();
-
+        // Clean up all entity displays (sheathed weapons, status displays)
         SwordEntityArbiter.removeAllDisplays();
+
+        // Clean up all active thrown item displays
+        InteractiveItemArbiter.cleanupAll();
+
+        // TODO: Uncomment when persistent data is ready
+        // PlayerDataManager.shutdown();
 
         getLogger().info("~ Sword: Combat Evolved has been disabled ~");
     }

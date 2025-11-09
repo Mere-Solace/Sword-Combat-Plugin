@@ -39,7 +39,10 @@ public class EntityListener implements Listener {
         if (entity instanceof LivingEntity) {
             SwordEntityArbiter.register(entity);
             SwordEntity swordEntity = SwordEntityArbiter.get(entity.getUniqueId());
-            if (swordEntity != null) swordEntity.resetResources();
+            if (swordEntity != null) {
+                swordEntity.resetResources();
+                swordEntity.onSpawn();
+            }
         }
     }
 

@@ -6,6 +6,7 @@ import btm.sword.system.action.utility.thrown.ThrowAction;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.types.SwordPlayer;
 import btm.sword.system.input.InputType;
+import btm.sword.system.item.KeyRegistry;
 import btm.sword.util.InputUtil;
 import io.papermc.paper.event.player.PrePlayerAttackEntityEvent;
 import java.util.function.Consumer;
@@ -146,6 +147,12 @@ public class InputListener implements Listener {
     public void onPlayerDropEvent(PlayerDropItemEvent event) {
         SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId());
         ItemStack item = swordPlayer.getItemStackInHand(true);
+
+        // Prevent dropping the menu button
+        if (KeyRegistry.hasKey(item, KeyRegistry.MAIN_MENU_BUTTON_KEY)) {
+            event.setCancelled(true);
+            return;
+        }
 
         swordPlayer.setPerformedDropAction(true);
 

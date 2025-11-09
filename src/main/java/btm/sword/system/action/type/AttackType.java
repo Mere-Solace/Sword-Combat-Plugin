@@ -11,7 +11,7 @@ public enum AttackType {
     HEAVY_2,
     HEAVY_3,
 
-    DOWN_AIR,
+    D_AIR,
     N_AIR,
 
     HEAVY_AIR,

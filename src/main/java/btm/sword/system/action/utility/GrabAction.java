@@ -7,6 +7,7 @@ import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.types.Combatant;
+import btm.sword.util.display.Prefab;
 import btm.sword.util.entity.HitboxUtil;
 import java.util.HashSet;
 import org.bukkit.FluidCollisionMode;
@@ -35,7 +36,7 @@ public class GrabAction extends SwordAction {
      * @param executor The {@link Combatant} performing the grab.
      */
     public static void grab(Combatant executor) {
-        cast(executor, 12L,
+        cast(executor, 12,
         new BukkitRunnable() {
             @Override
             public void run() {
@@ -60,19 +61,25 @@ public class GrabAction extends SwordAction {
                         !id.isDead() &&
                         !id.getItemStack().isEmpty()) {
                     InteractiveItemArbiter.onGrab(id, executor);
+
+                    Prefab.Particles.GRAB_ATTEMPT.display(id.getLocation());
                     return;
                 }
 
                 HashSet<LivingEntity> hit = HitboxUtil.line(ex, o, o.getDirection(), range, grabThickness);
                 if (hit.isEmpty()) {
+                    Prefab.Particles.GRAB_ATTEMPT.display(ex.getEyeLocation().add(ex.getEyeLocation().getDirection().multiply(range)));
                     return;
                 }
 
                 LivingEntity target = hit.stream().toList().getFirst();
 
                 if (target == null) {
+                    Prefab.Particles.GRAB_ATTEMPT.display(ex.getEyeLocation().add(ex.getEyeLocation().getDirection().multiply(range)));
                     return;
                 }
+
+                Prefab.Particles.GRAB_ATTEMPT.display(target.getLocation());
 
                 RayTraceResult impedanceCheck = ex.getWorld().rayTraceBlocks(
                         ex.getLocation().add(new Vector(0,0.5,0)),
@@ -83,7 +90,7 @@ public class GrabAction extends SwordAction {
 
                 if (impedanceCheck != null &&
                         impedanceCheck.getHitBlock() != null &&
-                        !impedanceCheck.getHitBlock().getType().isEmpty()) {
+                        !impedanceCheck.getHitBlock().getType().isAir()) {
                     return;
                 }
 

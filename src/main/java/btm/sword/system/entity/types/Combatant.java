@@ -121,8 +121,7 @@ public abstract class Combatant extends SwordEntity {
     public void onGrabHit() {
         LivingEntity target = grabbedEntity.entity();
         Location hitLoc = target.getLocation().add(0, target.getEyeHeight()*0.5, 0);
-        Prefab.Particles.GRAB_HIT_1.display(hitLoc);
-        Prefab.Particles.GRAB_HIT_2.display(hitLoc);
+        Prefab.Particles.GRAB_ATTEMPT.display(hitLoc);
         grabbedEntity.hit(this, 0, 0, 5, 15,
                 target.getEyeLocation().subtract(self.getEyeLocation()).toVector());
     }
@@ -165,7 +164,7 @@ public abstract class Combatant extends SwordEntity {
                         !main.getType().equals(Material.CROSSBOW) &&
                         !main.getType().equals(Material.BOW) &&
                         !main.getType().isEdible() &&
-                        !main.getType().isEmpty();
+                        !main.getType().isAir();
 
         return canPerformAction() && throwable && off.getType().equals(Material.SHIELD);
     }

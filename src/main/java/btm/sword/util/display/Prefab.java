@@ -34,6 +34,7 @@ public class Prefab {
         public static final ParticleWrapper COLLIDE = new ParticleWrapper(Particle.CRIT, 10, 0.1, 0.1, 0.1, 0.5);
 
         public static final ParticleWrapper GRAB_CLOUD = new ParticleWrapper(Particle.POOF, 20, 0.5, 0.5, 0.5, 0.1);
+        public static final ParticleWrapper GRAB_ATTEMPT = new ParticleWrapper(Particle.GUST, 2, 0.1, 0.1, 0.1);
         public static final ParticleWrapper THROW_TRAIl = new ParticleWrapper(Particle.DUST, 1, 0.2, 0.2, 0.2,
                 new Particle.DustOptions(Color.WHITE, 2.5f));
 
@@ -63,6 +64,12 @@ public class Prefab {
                 new Vector(-1.1,-2.2,-0.9),
                 new Vector(1.74,1.96,4.3),
                 new Vector(-1.1,-1.77,5)));
+
+        public static final List<Vector> UP_SMASH = new ArrayList<>(List.of(
+                new Vector(0.66,-1.53,-0.5),
+                new Vector(-0.4,0.67,-0.9),
+                new Vector(0.56,-0.89,2.1),
+                new Vector(-0.4,1.37,1.65)));
 
         public static final List<Vector> SIDE_SWORD_SLASH_R = new ArrayList<>(List.of(
                 new Vector(-1.3,1.03,2),
@@ -101,6 +108,12 @@ public class Prefab {
         public static final Vector DOWN = new Vector(0, -1, 0);
         public static final Vector NORTH = new Vector(0, 0, -1);
         public static final Vector SOUTH = new Vector(0, 0, 1);
+        public static final Vector OUT_UP = new Vector(0, 1, 1);
+        public static final Vector OUT_DOWN = new Vector(0, -1, 1);
+    }
+
+    public static class Value {
+        public static final int MILLISECONDS_PER_TICK = 50; // 1000/20 = 50
     }
 
     /**

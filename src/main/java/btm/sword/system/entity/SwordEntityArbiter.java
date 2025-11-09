@@ -1,5 +1,6 @@
 package btm.sword.system.entity;
 
+import btm.sword.Sword;
 import btm.sword.system.entity.base.CombatProfile;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.types.Hostile;
@@ -8,9 +9,11 @@ import btm.sword.system.entity.types.SwordPlayer;
 import btm.sword.system.playerdata.PlayerDataManager;
 import java.util.*;
 import org.bukkit.Bukkit;
+import org.bukkit.World;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
+import org.bukkit.scheduler.BukkitRunnable;
 
 /**
  * Manages registration, storage, and retrieval of SwordEntity instances,
@@ -46,12 +49,31 @@ public class SwordEntityArbiter {
             if (onlineSwordPlayers.get(entityUUID) == null) {
                 onlineSwordPlayers.put(entityUUID, new SwordPlayer(player, PlayerDataManager.getPlayerData(entityUUID)));
             }
-            else
+            else {
                 onlineSwordPlayers.get(entityUUID).setSelf(player);
-
+            }
+            if (Sword.getInstance().isEnabled()) {
+                new BukkitRunnable() {
+                    @Override
+                    public void run() {
+                        onlineSwordPlayers.get(entityUUID).onRegister();
+                    }
+                }.runTaskLater(Sword.getInstance(), 2L);
+            }
         }
-        else if (!entity.isDead())
+        else if (!entity.isDead()) {
             existingSwordNPCs.putIfAbsent(entityUUID, initializeNPC((LivingEntity) entity));
+            if (Sword.getInstance().isEnabled()) {
+                new BukkitRunnable() {
+                    @Override
+                    public void run() {
+                        SwordEntity swordEntity = existingSwordNPCs.get(entityUUID);
+                        if (swordEntity == null) return;
+                        swordEntity.onRegister();
+                    }
+                }.runTaskLater(Sword.getInstance(), 2L);
+            }
+        }
     }
 
     /**
@@ -122,5 +144,17 @@ public class SwordEntityArbiter {
             ((SwordPlayer) player).endSheathedWeapon();
             player.endStatusDisplay();
         }
+    }
+
+    public static void registerAllExistingEntities() {
+        Bukkit.getScheduler().runTaskLater(Sword.getInstance(),
+            bukkitTask -> {
+                for (World world : Bukkit.getWorlds()) {
+                    for (Entity entity : world.getEntities()) {
+                        register(entity);
+                    }
+                }
+            }, 2L
+        );
     }
 }

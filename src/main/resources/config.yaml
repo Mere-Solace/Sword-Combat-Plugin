@@ -174,6 +174,110 @@ combat:
     pin_max_iterations: 1000
     pin_check_interval: 2  # Ticks between pin checks
 
+  attack_class:
+    modifiers:
+      range_multiplier: 3.5
+
+    # Timing configuration (in milliseconds)
+    # These control how long each attack phase lasts.
+    # Each phase determines when Bezier motion or entity effects occur.
+    # --------------------------------------------------------------------------
+    timing:
+
+      # Source: Attack.java:74
+      # Duration of windup phase before the weapon swing
+      # Affects anticipation and player vulnerability
+      windup_duration: 500
+
+      # Source: Attack.java:75
+      # Number of intermediate updates during the windup phase
+      # More iterations = smoother motion, but more scheduler load
+      windup_iterations: 20
+
+      # Source: Attack.java:76–77
+      # Start/end values (t-parameters) of the Bezier motion curve
+      # Controls how far along the swing path the windup travels visually
+      windup_start_value: 0.25
+      windup_end_value: -0.05
+
+      # Source: Attack.java:78
+      # Active swing duration
+      # Determines how long the attack hitbox is active
+      attack_duration: 300
+
+      # Source: Attack.java:79
+      # Number of iterations (frames) during attack phase
+      # Typically fewer than windup for faster apparent motion
+      attack_iterations: 10
+
+      # Source: Attack.java:80–81
+      # Start/end Bezier parameters for swing path (0=start, 1=end)
+      attack_start_value: 0.0
+      attack_end_value: 1.0
+
+      # Source: Attack.java:82
+      # Time before next action can begin (recovery period)
+      # Prevents immediate chaining; affects combo pacing
+      recovery_duration: 250
+
+
+    # Visual transformation configuration
+    # These determine how the ItemDisplay representing the weapon
+    # is scaled and oriented in space.
+    # --------------------------------------------------------------------------
+    display:
+
+      offset:
+        x: 0
+        y: 0
+        z: 1.0
+
+      # Source: Attack.java:128–133
+      # Scale of the weapon ItemDisplay
+      # (x, y, z) multipliers relative to the item’s model size
+      # Larger values exaggerate weapon reach visually
+      scale:
+        x: 2.0
+        y: 2.5
+        z: 2.0
+
+      # Source: Attack.java:129
+      # Rotation applied to the display for alignment
+      # π/2 (≈1.5708) corresponds to a 90° rotation
+      rotation_y: 0   # radians
+      rotation_z: 0   # radians
+      rotation_x: 1.5708   # radians
+
+      # Glow outline color for active attack
+      # Source: Attack.java:127
+      glow_color: "#000000"
+
+      attack_glow_color: "#FF0000"
+
+
+    # Movement & interpolation configuration
+    # These affect the smoothness and responsiveness of weapon visuals.
+    # --------------------------------------------------------------------------
+    motion:
+
+      # Source: Attack.java:188, 231
+      # Number of interpolation steps for smooth teleportation
+      # Higher = smoother motion but slightly higher overhead
+      display_smooth_steps: 3
+
+
+    # Self-applied effects during windup
+    # Source: Attack.java:158
+    # --------------------------------------------------------------------------
+    effects:
+
+      # Potion effect applied during windup to simulate slower movement
+      # Duration = windup_duration / 50 (ticks per second)
+      # Amplifier: 1 → Slowness II
+      windup_slowness_amplifier: 4
+
+      attack_slowness_amplifier: 7
+
 # ==============================================================================
 # DISPLAY & VISUAL EFFECTS
 # Particle systems, animations, teleportation, and rendering

@@ -115,7 +115,7 @@ public class SwordPlayer extends Combatant {
                 .tag(KeyRegistry.MAIN_MENU_BUTTON_KEY, KeyRegistry.MAIN_MENU_BUTTON)
                 .build();
 
-        inputExecutionTree = new InputExecutionTree(inputTimeoutMillis);
+        inputExecutionTree = new InputExecutionTree(this, inputTimeoutMillis);
         inputExecutionTree.initializeInputTree();
 
         sheathedActive = true;
@@ -181,7 +181,8 @@ public class SwordPlayer extends Combatant {
     @Override
     public void onSpawn() {
         super.onSpawn();
-
+        // Force initial stat display render to ensure visibility on spawn
+        updateVisualStats();
     }
 
     /**
@@ -313,6 +314,12 @@ public class SwordPlayer extends Combatant {
         ItemStack onCursor = e.getCursor();
         ItemStack clicked = e.getCurrentItem();
         int slotNumber = e.getSlot();
+
+        // Protect menu button from being moved or modified
+        if (KeyRegistry.hasKey(clicked, KeyRegistry.MAIN_MENU_BUTTON_KEY) ||
+                KeyRegistry.hasKey(onCursor, KeyRegistry.MAIN_MENU_BUTTON_KEY)) {
+            return true; // Cancel the action
+        }
 
         message("\n\n~|------Beginning of new inventory interact event------|~"
                 + "\n       Inventory: " + inv.getType()

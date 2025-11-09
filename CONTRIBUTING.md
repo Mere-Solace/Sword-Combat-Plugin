@@ -68,6 +68,36 @@ When adding new configuration values, follow the **[Hybrid Configuration Pattern
 
 See [ADR 003](docs/decisions/003-hybrid-configuration-pattern.md) for detailed guidelines and examples.
 
+### Code Quality
+
+When writing code, avoid these common issues:
+
+#### Unused Private Fields
+```java
+// ❌ Don't leave unused private fields
+private String unusedField;
+
+// ✅ If intentional (future feature), suppress and document
+@SuppressWarnings("unused")
+private String futureFeature; // TODO: Implement feature X in issue #123
+```
+
+#### Empty or Placeholder Classes
+- Don't create empty classes or stubs without a plan
+- If implementing a future feature, create a GitHub issue and reference it in a TODO comment
+- Remove empty classes once it's clear they won't be implemented
+
+#### Example of Proper Placeholder
+```java
+/**
+ * TODO: Implement basic AI for hostile entities.
+ * See: https://github.com/Mere-Solace/Sword-Combat-Plugin/issues/XXX
+ */
+public class HostileAI {
+    // Implementation in progress
+}
+```
+
 ### Documentation
 
 - Follow [Microsoft Java Documentation Standards](docs/standards/documentation-standards.md)

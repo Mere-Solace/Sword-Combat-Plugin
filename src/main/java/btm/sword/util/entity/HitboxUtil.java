@@ -105,6 +105,45 @@ public class HitboxUtil {
     }
 
     /**
+     * Returns all {@link LivingEntity} instances near points equally spaced along a secant
+     * between two {@link Location}s, with a given thickness, optionally removing the executor.
+     *
+     * @param executor the living entity performing the check (optional removal)
+     * @param origin the start location of the secant
+     * @param end the end location of the secant
+     * @param thickness radius of hit checks around points on the secant
+     * @param removeExecutor whether to exclude the executor from results
+     * @param filter Predicate for allowing or disallowing certain entities to be detected
+     * @return a set of living entities detected near the secant
+     */
+    public static HashSet<LivingEntity> secant(LivingEntity executor, Location origin, Location end, double thickness, boolean removeExecutor, Predicate<LivingEntity> filter) {
+        HashSet<LivingEntity> hit = new HashSet<>();
+
+        Vector direction = end.clone().subtract(origin).toVector();
+        int steps = (int) (direction.length() / (thickness));
+        if (steps == 0) steps = 1;
+
+        Vector step = direction.clone().normalize().multiply(thickness);
+        Location cur = origin.clone();
+
+        for (int i = 0; i <= steps; i++) {
+            for (Entity e : cur.getNearbyLivingEntities(thickness)) {
+                if (e instanceof LivingEntity entity &&
+                        !entity.isDead() &&
+                        filter.test(entity)) { // only change
+                    hit.add(entity);
+                }
+            }
+            cur.add(step);
+        }
+
+        if (removeExecutor)
+            hit.remove(executor);
+
+        return hit;
+    }
+
+    /**
      * Returns all {@link LivingEntity} instances within a spherical radius around a location,
      * optionally removing the executor.
      *

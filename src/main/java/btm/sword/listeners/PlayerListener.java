@@ -1,10 +1,8 @@
 package btm.sword.listeners;
 
 import btm.sword.Sword;
-import btm.sword.system.action.utility.UtilityAction;
 import btm.sword.system.entity.*;
 import btm.sword.system.entity.base.SwordEntity;
-import btm.sword.system.entity.types.Combatant;
 import btm.sword.system.entity.types.SwordPlayer;
 import btm.sword.system.item.prefab.ItemLibrary;
 import io.papermc.paper.event.player.AsyncChatEvent;
@@ -240,14 +238,6 @@ public class PlayerListener implements Listener {
         Sword.getInstance().getLogger().info("Chat input: " + cleaned);
 
         if (cleaned.startsWith("sound")) {
-            if (cleaned.startsWith("soundTest ")) {
-                UtilityAction.soundTest(
-                        (Combatant) SwordEntityArbiter.getOrAdd(player.getUniqueId()),
-                        Integer.parseInt(cleaned.split(" ")[1])
-                );
-                player.sendMessage(Component.text("§cSound test started at index " + cleaned.split(" ")[1]));
-                return;
-            }
             String[] parts = cleaned.split("\\s+");
             if (parts.length >= 2) {
                 @Subst("king.phylum.classy") String soundKey = parts[1];

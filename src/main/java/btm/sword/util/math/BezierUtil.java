@@ -25,7 +25,7 @@ public class BezierUtil {
      * @param c2 the second control {@link Vector}
      * @return a function from {@code t} to a {@link Vector} point on the curve
      */
-    public static Function<Double, Vector> cubicBezier3d(Vector start, Vector end, Vector c1, Vector c2) {
+    public static Function<Double, Vector> cubicBezier3D(Vector start, Vector end, Vector c1, Vector c2) {
         return t -> {
             double t2 = t*t;
             double t3 = t*t2;
@@ -38,8 +38,26 @@ public class BezierUtil {
             Vector p2 = c2.clone().multiply(3*mt*t2);
             Vector p3 = end.clone().multiply(t3);
 
+            // performed 4 multiplications, 4 scaler multiplications of vectors, and then 3 vector additions.
+            // Not extremely intensive.
+
             return p0.add(p1).add(p2).add(p3);
         };
+    }
+
+    public static Vector one_cubicBezier3D(Vector start, Vector end, Vector c1, Vector c2, double t) {
+        double t2 = t*t;
+        double t3 = t*t2;
+        double mt = 1-t;
+        double mt2 = mt*mt;
+        double mt3 = mt*mt2;
+
+        Vector p0 = start.clone().multiply(mt3);
+        Vector p1 = c1.clone().multiply(3*mt2*t);
+        Vector p2 = c2.clone().multiply(3*mt*t2);
+        Vector p3 = end.clone().multiply(t3);
+
+        return p0.add(p1).add(p2).add(p3);
     }
 
     /**
@@ -57,7 +75,7 @@ public class BezierUtil {
     }
 
     /**
-     * Computes discrete sample points along a cubic Bezier curve in 3D space.
+     * Computes discrete sample points along a cubic Bézier curve in 3D space.
      * Returns a list of {@link Vector}s representing the curve points between start and end,
      * using two control points and the given number of steps.
      *
@@ -68,22 +86,35 @@ public class BezierUtil {
      * @param steps the number of steps (points) to interpolate along the curve
      * @return list of {@link Vector} sample points along the curve
      */
-    public static List<Vector> cubicBezier3D(Vector start, Vector end, Vector c1, Vector c2, int steps) {
+    public static List<Vector> cubicBezier3D(Vector start, Vector end, Vector c1, Vector c2, int steps) throws InterruptedException {
         List<Vector> vectors = new ArrayList<>(steps);
 
+        final double[] t = {0};
+        final double[] t2 = {0};
+        final double[] t3 = {0};
+        final double[] mt = {0};
+        final double[] mt2 = {0};
+        final double[] mt3 = {0};
+
         for (int i = 0; i < steps; i++) {
-            double t = (double) i /steps;
+            int I = i;
+            Runnable calculation = () -> {
+                t[0] = (double) I /steps;
+                t2[0] = t[0] * t[0];
+                t3[0] = t2[0] * t[0];
+                mt[0] = 1 - t[0];
+                mt2[0] = mt[0] * mt[0];
+                mt3[0] = mt2[0] * mt[0];
+            };
+            // Run multiplication calculations on another thread
+            Thread thread = new Thread(calculation);
+            thread.start();
+            thread.join();
 
-            double t2 = t * t;
-            double t3 = t2 * t;
-            double mt = 1 - t;
-            double mt2 = mt * mt;
-            double mt3 = mt2 * mt;
-
-            Vector p0 = start.clone().multiply(mt3);
-            Vector p1 = c1.clone().multiply(3 * mt2 * t);
-            Vector p2 = c2.clone().multiply(3 * mt * t2);
-            Vector p3 = end.clone().multiply(t3);
+            Vector p0 = start.clone().multiply(mt3[0]);
+            Vector p1 = c1.clone().multiply(3 * mt2[0] * t[0]);
+            Vector p2 = c2.clone().multiply(3 * mt[0] * t2[0]);
+            Vector p3 = end.clone().multiply(t3[0]);
 
             vectors.add(p0.add(p1).add(p2).add(p3));
         }
@@ -92,7 +123,7 @@ public class BezierUtil {
     }
 
     /**
-     * Computes sample points along a rational cubic Bezier curve in 3D space.
+     * Computes sample points along a rational cubic Bézier curve in 3D space.
      * Each curve point is weighted by the provided rational weights for each control point.
      * Attempts to fill gaps between points by midpoint interpolation if angular difference is small.
      *

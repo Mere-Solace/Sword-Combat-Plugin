@@ -22,6 +22,7 @@ public class CombatConfig {
     private final HitboxesConfig hitboxes;
     private final ThrownDamageConfig thrownDamage;
     private final ImpalementConfig impalement;
+    private final AttackClassConfig attackClass;
 
     public CombatConfig(FileConfiguration config) {
         ConfigurationSection combat = config.getConfigurationSection("combat");
@@ -30,11 +31,13 @@ public class CombatConfig {
             this.hitboxes = new HitboxesConfig(combat.getConfigurationSection("hitboxes"));
             this.thrownDamage = new ThrownDamageConfig(combat.getConfigurationSection("thrown_damage"));
             this.impalement = new ImpalementConfig(combat.getConfigurationSection("impalement"));
+            this.attackClass = new AttackClassConfig(combat.getConfigurationSection("attack_class"));
         } else {
             this.attacks = new AttacksConfig(null);
             this.hitboxes = new HitboxesConfig(null);
             this.thrownDamage = new ThrownDamageConfig(null);
             this.impalement = new ImpalementConfig(null);
+            this.attackClass = new AttackClassConfig(null);
         }
     }
 
@@ -233,6 +236,185 @@ public class CombatConfig {
                 this.headFollowExceptions = List.of(EntityType.SPIDER);
                 this.pinMaxIterations = 50;
                 this.pinCheckInterval = 2;
+            }
+        }
+    }
+
+    @Getter
+    public static class AttackClassConfig {
+        private final ModifiersConfig modifiers;
+        private final TimingConfig timing;
+        private final DisplayConfig display;
+        private final MotionConfig motion;
+        private final EffectsConfig effects;
+
+        public AttackClassConfig(ConfigurationSection section) {
+            if (section != null) {
+                this.timing = new TimingConfig(section.getConfigurationSection("timing"));
+                this.display = new DisplayConfig(section.getConfigurationSection("display"));
+                this.motion = new MotionConfig(section.getConfigurationSection("motion"));
+                this.effects = new EffectsConfig(section.getConfigurationSection("effects"));
+                this.modifiers = new ModifiersConfig(section.getConfigurationSection("modifiers"));
+            } else {
+                this.timing = new TimingConfig(null);
+                this.display = new DisplayConfig(null);
+                this.motion = new MotionConfig(null);
+                this.effects = new EffectsConfig(null);
+                this.modifiers = new ModifiersConfig(null);
+            }
+        }
+
+        @Getter
+        public static class ModifiersConfig {
+            private final double rangeMultiplier;
+
+            public ModifiersConfig(ConfigurationSection section) {
+                if (section != null) {
+                    this.rangeMultiplier = section.getDouble("range_multiplier");
+                } else {
+                  this.rangeMultiplier = 2.0;
+                }
+            }
+        }
+
+        /**
+         * Timing configuration for each attack phase (windup, attack, recovery).
+         * Controls how long animations and active hitboxes last.
+         * <p>
+         * Each field corresponds directly to a timing value in milliseconds or a Bezier t-parameter.
+         */
+        @Getter
+        public static class TimingConfig {
+            private final int windupDuration;
+            private final int windupIterations;
+            private final double windupStartValue;
+            private final double windupEndValue;
+            private final int attackDuration;
+            private final int attackIterations;
+            private final double attackStartValue;
+            private final double attackEndValue;
+            private final int recoveryDuration;
+
+            public TimingConfig(ConfigurationSection section) {
+                if (section != null) {
+                    this.windupDuration = section.getInt("windup_duration", 1000);
+                    this.windupIterations = section.getInt("windup_iterations", 5);
+                    this.windupStartValue = section.getDouble("windup_start_value", 0.25);
+                    this.windupEndValue = section.getDouble("windup_end_value", -0.25);
+                    this.attackDuration = section.getInt("attack_duration", 750);
+                    this.attackIterations = section.getInt("attack_iterations", 5);
+                    this.attackStartValue = section.getDouble("attack_start_value", 0.0);
+                    this.attackEndValue = section.getDouble("attack_end_value", 1.0);
+                    this.recoveryDuration = section.getInt("recovery_duration", 250);
+                } else {
+                    this.windupDuration = 1000;
+                    this.windupIterations = 5;
+                    this.windupStartValue = 0.25;
+                    this.windupEndValue = -0.25;
+                    this.attackDuration = 750;
+                    this.attackIterations = 5;
+                    this.attackStartValue = 0.0;
+                    this.attackEndValue = 1.0;
+                    this.recoveryDuration = 250;
+                }
+            }
+        }
+
+        /**
+         * Visual transformation configuration for weapon display entities.
+         * Defines scaling, rotation, and glow color of the weapon during attacks.
+         */
+        @Getter
+        public static class DisplayConfig {
+            private final float offsetX;
+            private final float offsetY;
+            private final float offsetZ;
+            private final float scaleX;
+            private final float scaleY;
+            private final float scaleZ;
+            private final float rotationY;
+            private final float rotationZ;
+            private final float rotationX;
+            private final String glowColor;
+            private final String attackGlowColor;
+
+            public DisplayConfig(ConfigurationSection section) {
+                if (section != null) {
+                    ConfigurationSection offset = section.getConfigurationSection("offset");
+                    if (offset != null) {
+                        this.offsetX = (float) offset.getDouble("x", 0.0);
+                        this.offsetY = (float) offset.getDouble("y", 0.0);
+                        this.offsetZ = (float) offset.getDouble("z", 1.0);
+                    } else {
+                        this.offsetX = 0.0f;
+                        this.offsetY = 0.0f;
+                        this.offsetZ = 1.0f;
+                    }
+
+                    ConfigurationSection scale = section.getConfigurationSection("scale");
+                    if (scale != null) {
+                        this.scaleX = (float) scale.getDouble("x", 3.0);
+                        this.scaleY = (float) scale.getDouble("y", 2.5);
+                        this.scaleZ = (float) scale.getDouble("z", 2.0);
+                    } else {
+                        this.scaleX = 3.0f;
+                        this.scaleY = 2.5f;
+                        this.scaleZ = 2.0f;
+                    }
+
+                    this.rotationY = (float) section.getDouble("rotation_y", 1.5708);
+                    this.rotationZ = (float) section.getDouble("rotation_z", 1.5708);
+                    this.rotationX = (float) section.getDouble("rotation_x", 1.5708);
+                    this.glowColor = section.getString("glow_color", "#000000");
+                    this.attackGlowColor = section.getString("attack_glow_color", "#FF0000");
+                } else {
+                    this.offsetX = 0.0f;
+                    this.offsetY = 0.0f;
+                    this.offsetZ = 1.0f;
+                    this.scaleX = 3.0f;
+                    this.scaleY = 2.5f;
+                    this.scaleZ = 2.0f;
+                    this.rotationY = 1.5708f;
+                    this.rotationZ = 1.5708f;
+                    this.rotationX = 1.5708f;
+                    this.glowColor = "#000000";
+                    this.attackGlowColor = "#FF0000";
+                }
+            }
+        }
+
+        /**
+         * Motion configuration for interpolation and smoothness of weapon movement.
+         * Controls how many interpolation steps are used when teleporting or animating displays.
+         */
+        @Getter
+        public static class MotionConfig {
+            private final int displaySmoothSteps;
+
+            public MotionConfig(ConfigurationSection section) {
+                this.displaySmoothSteps = (section != null)
+                        ? section.getInt("display_smooth_steps", 2)
+                        : 2;
+            }
+        }
+
+        /**
+         * Self-applied effects configuration.
+         * Controls potion effects applied to the executor during specific phases.
+         */
+        @Getter
+        public static class EffectsConfig {
+            private final int windupSlownessAmplifier;
+            private final int attackSlownessAmplifier;
+
+            public EffectsConfig(ConfigurationSection section) {
+                if (section != null) {
+                    this.windupSlownessAmplifier = section.getInt("windup_slowness_amplifier", 4);
+                    this.attackSlownessAmplifier = section.getInt("attack_slowness_amplifier", 7);
+                } else {
+                    this.windupSlownessAmplifier = 4;
+                    this.attackSlownessAmplifier = 7;
+                }
             }
         }
     }
