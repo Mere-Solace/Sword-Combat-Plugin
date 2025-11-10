@@ -1,21 +1,36 @@
 package btm.sword.system.entity.types;
 
+import btm.sword.Sword;
+import btm.sword.system.SwordScheduler;
 import btm.sword.system.action.MovementAction;
 import btm.sword.system.action.utility.thrown.ThrownItem;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.base.CombatProfile;
 import btm.sword.system.entity.base.SwordEntity;
+import btm.sword.system.entity.umbral.UmbralBlade;
+import btm.sword.system.entity.umbral.UmbralState;
+import btm.sword.util.display.DisplayUtil;
 import btm.sword.util.display.Prefab;
+import java.util.concurrent.TimeUnit;
 import lombok.Getter;
 import lombok.Setter;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
+import org.bukkit.entity.Display;
+import org.bukkit.entity.EntityType;
+import org.bukkit.entity.ItemDisplay;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
+import org.bukkit.util.Transformation;
 import org.bukkit.util.Vector;
+import org.joml.Quaternionf;
+import org.joml.Vector3f;
 
 /**
  * Abstract class representing combat-capable entities within the Sword plugin.
@@ -34,6 +49,9 @@ public abstract class Combatant extends SwordEntity {
 
     private boolean isGrabbing = false;
     private SwordEntity grabbedEntity;
+
+    private UmbralBlade umbralBlade;
+    private boolean umbralBladeActive;
 
     private ThrownItem thrownItem;
     private ItemStack offHandItemStackDuringThrow;
@@ -56,18 +74,73 @@ public abstract class Combatant extends SwordEntity {
      */
     public Combatant(LivingEntity associatedEntity, CombatProfile combatProfile) {
         super(associatedEntity, combatProfile);
-        airDashesPerformed = 0;
+        this.airDashesPerformed = 0;
 
-        attrHealth = entity().getAttribute(Attribute.MAX_HEALTH);
+        this.attrHealth = entity().getAttribute(Attribute.MAX_HEALTH);
         if (attrHealth != null) attrHealth.setBaseValue(combatProfile.getStat(AspectType.SHARDS).getValue());
 
-        attrAbsorption = entity().getAttribute(Attribute.MAX_ABSORPTION);
+        this.attrAbsorption = entity().getAttribute(Attribute.MAX_ABSORPTION);
         if (attrAbsorption != null) attrAbsorption.setBaseValue(combatProfile.getStat(AspectType.TOUGHNESS).getValue());
 
-        attrArmor = entity().getAttribute(Attribute.ARMOR);
+        this.attrArmor = entity().getAttribute(Attribute.ARMOR);
         if (attrArmor != null) attrArmor.setBaseValue(combatProfile.getStat(AspectType.FORM).getValue());
 
-        attrInteractionRange = entity().getAttribute(Attribute.ENTITY_INTERACTION_RANGE);
+        this.attrInteractionRange = entity().getAttribute(Attribute.ENTITY_INTERACTION_RANGE);
+
+        this.umbralBladeActive = false;
+    }
+
+    /**
+     * Called when the entity dies.
+     * Cleans up the sheathed sword display entity.
+     */
+    @Override
+    public void onDeath() {
+        super.onDeath();
+        removeUmbralBlade();
+    }
+
+    @Override
+    protected void onTick() {
+        super.onTick();
+
+        handleUmbralBladeTick();
+    }
+
+    public void handleUmbralBladeTick() {
+        if (entity().isValid() && umbralBlade == null && !isUmbralBladeActive()) {
+            message("Starting Umbral Blade");
+            startUmbralBlade();
+            return;
+        }
+
+        if (!entity().isValid()) {
+            message("Ending Umbral Blade");
+            endUmbralBlade();
+        }
+
+        if (umbralBlade.getWeaponDisplay() != null && isUmbralBladeActive() && umbralBlade.getState().equals(UmbralState.SHEATHED)) {
+            message("Updating UmbralBlade to Sheathed Position");
+            updateUmbralBlade();
+        }
+
+        if (ticks % 2 == 0) {
+            if ((umbralBlade.getWeaponDisplay() == null || umbralBlade.getWeaponDisplay().isDead()) && isUmbralBladeActive()) {
+                message("Restarting UmbralBlade Display");
+                restartUmbralBladeDisplay();
+            }
+        }
+    }
+
+    public void startUmbralBlade() {
+        Combatant pass = this;
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                umbralBlade = new UmbralBlade(pass, ItemStack.of(Material.STONE_SWORD));
+                setUmbralBladeActive(true);
+            }
+        }.runTaskLater(Sword.getInstance(), 4L);
     }
 
     /**
@@ -77,6 +150,116 @@ public abstract class Combatant extends SwordEntity {
      */
     public void setCastTask(BukkitTask abilityCastTask) {
         this.abilityCastTask = abilityCastTask;
+    }
+
+//    /**
+//     * Recreates and reinitializes the entity's sheathed weapon display.
+//     * <p>
+//     * This method first marks the sheathed weapon as not ready using {@link #setSheathedActive(boolean)}.
+//     * After a short delay (5 ticks), it verifies that the entity is still valid and online,
+//     * ensures the entity's current chunk is loaded, and then spawns a new {@link ItemDisplay}
+//     * entity at the entity's location. This entity visually represents the entity's
+//     * sheathed weapon (currently a {@link Material#STONE_SWORD}).
+//     * </p>
+//     *
+//     * <p>
+//     * The spawned {@link ItemDisplay} is given a custom {@link org.bukkit.util.Transformation}
+//     * that positions and rotates the weapon relative to the entity's model, making it appear
+//     * naturally attached to their side or back. Once the entity is created, the sheathed
+//     * state is marked as ready again.
+//     * </p>
+//     *
+//     * <p><b>Threading:</b> Executed on the main server thread using {@link Bukkit#getScheduler()}.</p>
+//     *
+//     * @implNote The delayed execution (5 ticks) ensures that entity and world state
+//     *           are stable before spawning the entity, which avoids null or invalid references
+//     *           that might occur immediately after entity load or teleport events.
+//     *
+//     * @see ItemDisplay
+//     * @see World#spawnEntity(org.bukkit.Location, org.bukkit.entity.EntityType)
+//     * @see #setSheathedActive(boolean)
+//     */
+    public void restartUmbralBladeDisplay() {
+        setUmbralBladeActive(false);
+        Bukkit.getScheduler().runTaskLater(Sword.getInstance(), () -> {
+            if (!entity().isValid()) return;
+
+            World world = entity().getWorld();
+            Location loc = entity().getLocation();
+
+            if (!loc.getChunk().isLoaded()) loc.getChunk().load();
+
+            umbralBlade.setWeaponDisplay((ItemDisplay) world.spawnEntity(loc, EntityType.ITEM_DISPLAY));
+            umbralBlade.getWeaponDisplay().setItemStack(new ItemStack(Material.STONE_SWORD)); // TODO: Later - make dynamic
+            umbralBlade.getWeaponDisplay().setTransformation(new Transformation(
+                    new Vector3f(0.28f, -1.4f, -0.75f),
+                    new Quaternionf().rotationY((float) Math.PI / 2).rotateZ(-(float) Math.PI / (1.65f)),
+                    new Vector3f(0.85f, 1.5f, 1f),
+                    new Quaternionf()
+            ));
+            umbralBlade.getWeaponDisplay().setPersistent(false);
+
+            entity().addPassenger(umbralBlade.getWeaponDisplay());
+            umbralBlade.getWeaponDisplay().setBillboard(Display.Billboard.FIXED);
+            setUmbralBladeActive(true);
+        }, 2L);
+    }
+
+//    /**
+//     * Gradually updates the position and orientation of the entity's sheathed weapon display
+//     * to maintain alignment with the entity's current facing direction and location.
+//     * <p>
+//     * This method performs multiple delayed updates (controlled by the loop count {@code x})
+//     * to achieve a smooth visual interpolation using {@link DisplayUtil#smoothTeleport(org.bukkit.entity.Display, int)}.
+//     * Each iteration schedules a task via {@link SwordScheduler#runBukkitTaskLater(Runnable, int, java.util.concurrent.TimeUnit)}
+//     * that repositions the {@link UmbralBlade#getWeaponDisplay()} {@link org.bukkit.entity.ItemDisplay} entity relative to the entity's location.
+//     * <p>
+//     * The display entity is temporarily attached as a passenger to the entity using
+//     * {@link org.bukkit.entity.Player#addPassenger(org.bukkit.entity.Entity)} to ensure its position follows the entity.
+//     * The direction is recalculated each update using {@link #getFlatDir()} for consistent orientation.
+//     * <p>
+//     * Once the update sequence completes, the sheathed weapon display is typically finalized by setting
+//     * its billboard mode to {@link org.bukkit.entity.Display.Billboard#FIXED} and marking it as ready via
+//     * {@link #setSheathedActive(boolean)}.
+//     *
+//     * @implNote The update uses a fixed delay of {@code 50/x} milliseconds between each scheduled iteration,
+//     * producing a brief animation-like effect as the weapon display aligns to the entity's orientation.
+//     *
+//     * @see DisplayUtil#smoothTeleport(org.bukkit.entity.Display, int)
+//     * @see SwordScheduler#runBukkitTaskLater(Runnable, int, java.util.concurrent.TimeUnit)
+//     * @see org.bukkit.entity.Display.Billboard#FIXED
+//     * @see org.bukkit.entity.Player#addPassenger(org.bukkit.entity.Entity)
+//     * @see #getFlatDir()
+//     * @see #setSheathedActive(boolean)
+//     */
+    public void updateUmbralBlade() {
+        int x = 3;
+        for (int i = 0; i < x; i++) {
+            SwordScheduler.runBukkitTaskLater(new BukkitRunnable() {
+                @Override
+                public void run() {
+                    DisplayUtil.smoothTeleport(umbralBlade.getWeaponDisplay(), 2);
+                    umbralBlade.getWeaponDisplay().teleport(entity().getLocation().setDirection(getFlatDir()));
+                    entity().addPassenger(umbralBlade.getWeaponDisplay());
+                }
+            }, 50/x, TimeUnit.MILLISECONDS);
+        }
+    }
+
+    /**
+     * Safely remove the sheathed weapon item display and disallow the re-spawning and updating of it.
+     */
+    public void endUmbralBlade() {
+        removeUmbralBlade();
+        setUmbralBladeActive(false);
+    }
+
+    /**
+     * Safely remove the sheathed item weapon display.
+     */
+    public void removeUmbralBlade() {
+        if (umbralBlade != null && umbralBlade.getWeaponDisplay() != null)
+            umbralBlade.getWeaponDisplay().remove();
     }
 
     /**

@@ -1,7 +1,6 @@
 package btm.sword.system.entity.types;
 
 import btm.sword.Sword;
-import btm.sword.system.SwordScheduler;
 import btm.sword.system.action.utility.thrown.ThrowAction;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.input.InputAction;
@@ -11,10 +10,8 @@ import btm.sword.system.inventory.InventoryManager;
 import btm.sword.system.item.ItemStackBuilder;
 import btm.sword.system.item.KeyRegistry;
 import btm.sword.system.playerdata.PlayerData;
-import btm.sword.util.display.DisplayUtil;
 import com.destroystokyo.paper.profile.PlayerProfile;
 import java.time.Duration;
-import java.util.concurrent.TimeUnit;
 import lombok.Getter;
 import lombok.Setter;
 import net.kyori.adventure.text.Component;
@@ -22,10 +19,7 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.title.Title;
-import org.bukkit.Bukkit;
-import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.World;
 import org.bukkit.entity.*;
 import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryAction;
@@ -37,9 +31,6 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
-import org.bukkit.util.Transformation;
-import org.joml.Quaternionf;
-import org.joml.Vector3f;
 
 /**
  * Represents a player-controlled combatant in the Sword plugin system.
@@ -60,9 +51,6 @@ public class SwordPlayer extends Combatant {
 
     private ItemStack menuButton;
 
-    private ItemDisplay sheathedDisplay;
-    private boolean sheathedActive;
-
     private final InputExecutionTree inputExecutionTree;
     private final long inputTimeoutMillis = 1200L;
 
@@ -70,6 +58,7 @@ public class SwordPlayer extends Combatant {
     private boolean changingHandIndex;
     private boolean interactingWithEntity;
     private boolean threwItem;
+    private boolean blocking;
 
     private BukkitTask rightTask;
     private boolean holdingRight;
@@ -118,8 +107,6 @@ public class SwordPlayer extends Combatant {
         inputExecutionTree = new InputExecutionTree(this, inputTimeoutMillis);
         inputExecutionTree.initializeInputTree();
 
-        sheathedActive = true;
-
         performedDropAction = false;
         changingHandIndex = false;
         interactingWithEntity = false;
@@ -148,17 +135,9 @@ public class SwordPlayer extends Combatant {
     protected void onTick() {
         super.onTick();
 
-        if (sheathedDisplay != null && isSheathedActive()) {
-            updateSheathedWeapon();
-        }
-
         if (player.getHealth() > 0) updateVisualStats();
 
         if (ticks % 2 == 0) {
-            if ((sheathedDisplay == null || sheathedDisplay.isDead()) && isSheathedActive()) {
-                RestartSheathedWeapon();
-            }
-
             if (getItemStackInHand(false).getType() != Material.SHIELD) {
                 setItemStackInHand(ItemStack.of(Material.SHIELD), false);
             }
@@ -192,14 +171,13 @@ public class SwordPlayer extends Combatant {
     @Override
     public void onDeath() {
         super.onDeath();
-        removeSheathedWeaponDisplay();
     }
 
     /**
      * Called when the player leaves the game.
      */
     public void onLeave() {
-        removeSheathedWeaponDisplay();
+        getUmbralBlade().dispose();
         endStatusDisplay();
     }
 
@@ -337,120 +315,6 @@ public class SwordPlayer extends Combatant {
         player.setAbsorptionAmount(aspects.toughnessCur());
         player.setHealth(Math.max(1, aspects.shardsCur()));
         player.setFoodLevel((int) (20 * (aspects.soulfireCur()/aspects.soulfireVal())));
-//        EntityEquipment equipment = player.getEquipment();
-//        ItemStack chestplate = equipment.getChestplate();
-//        if (chestplate == null || chestplate.isEmpty()) return;
-//        ItemMeta meta = chestplate.getItemMeta();
-    }
-
-    /**
-     * Recreates and reinitializes the player's sheathed weapon display.
-     * <p>
-     * This method first marks the sheathed weapon as not ready using {@link #setSheathedActive(boolean)}.
-     * After a short delay (5 ticks), it verifies that the player is still valid and online,
-     * ensures the player's current chunk is loaded, and then spawns a new {@link ItemDisplay}
-     * entity at the player's location. This entity visually represents the player's
-     * sheathed weapon (currently a {@link Material#STONE_SWORD}).
-     * </p>
-     *
-     * <p>
-     * The spawned {@link ItemDisplay} is given a custom {@link org.bukkit.util.Transformation}
-     * that positions and rotates the weapon relative to the player's model, making it appear
-     * naturally attached to their side or back. Once the entity is created, the sheathed
-     * state is marked as ready again.
-     * </p>
-     *
-     * <p><b>Threading:</b> Executed on the main server thread using {@link Bukkit#getScheduler()}.</p>
-     *
-     * @implNote The delayed execution (5 ticks) ensures that player and world state
-     *           are stable before spawning the entity, which avoids null or invalid references
-     *           that might occur immediately after player load or teleport events.
-     *
-     * @see ItemDisplay
-     * @see World#spawnEntity(org.bukkit.Location, org.bukkit.entity.EntityType)
-     * @see #setSheathedActive(boolean)
-     */
-    public void RestartSheathedWeapon() {
-        setSheathedActive(false);
-        Bukkit.getScheduler().runTaskLater(Sword.getInstance(), () -> {
-            if (!player.isOnline() || !player.isValid()) return;
-
-            World world = player.getWorld();
-            Location loc = player.getLocation();
-
-            if (!loc.getChunk().isLoaded()) loc.getChunk().load();
-
-            sheathedDisplay = (ItemDisplay) world.spawnEntity(loc, EntityType.ITEM_DISPLAY);
-            sheathedDisplay.setItemStack(new ItemStack(Material.STONE_SWORD));
-            sheathedDisplay.setTransformation(new Transformation(
-                    new Vector3f(0.28f, -1.3f, -0.5f),
-                    new Quaternionf().rotationY((float) Math.PI / 2).rotateZ(-(float) Math.PI / (1.65f)),
-                    new Vector3f(1f, 1f, 1f),
-                    new Quaternionf()
-            ));
-            sheathedDisplay.setPersistent(false);
-
-            player.addPassenger(sheathedDisplay);
-            sheathedDisplay.setBillboard(Display.Billboard.FIXED);
-            setSheathedActive(true);
-        }, 2L);
-    }
-
-    /**
-     * Gradually updates the position and orientation of the player's sheathed weapon display
-     * to maintain alignment with the player's current facing direction and location.
-     * <p>
-     * This method performs multiple delayed updates (controlled by the loop count {@code x})
-     * to achieve a smooth visual interpolation using {@link DisplayUtil#smoothTeleport(org.bukkit.entity.Display, int)}.
-     * Each iteration schedules a task via {@link SwordScheduler#runBukkitTaskLater(Runnable, int, java.util.concurrent.TimeUnit)}
-     * that repositions the {@link #sheathedDisplay} {@link org.bukkit.entity.ItemDisplay} entity relative to the player's location.
-     * <p>
-     * The display entity is temporarily attached as a passenger to the player using
-     * {@link org.bukkit.entity.Player#addPassenger(org.bukkit.entity.Entity)} to ensure its position follows the player.
-     * The direction is recalculated each update using {@link #getFlatDir()} for consistent orientation.
-     * <p>
-     * Once the update sequence completes, the sheathed weapon display is typically finalized by setting
-     * its billboard mode to {@link org.bukkit.entity.Display.Billboard#FIXED} and marking it as ready via
-     * {@link #setSheathedActive(boolean)}.
-     *
-     * @implNote The update uses a fixed delay of {@code 50/x} milliseconds between each scheduled iteration,
-     * producing a brief animation-like effect as the weapon display aligns to the player's orientation.
-     *
-     * @see DisplayUtil#smoothTeleport(org.bukkit.entity.Display, int)
-     * @see SwordScheduler#runBukkitTaskLater(Runnable, int, java.util.concurrent.TimeUnit)
-     * @see org.bukkit.entity.Display.Billboard#FIXED
-     * @see org.bukkit.entity.Player#addPassenger(org.bukkit.entity.Entity)
-     * @see #getFlatDir()
-     * @see #setSheathedActive(boolean)
-     */
-    public void updateSheathedWeapon() {
-        int x = 3;
-        for (int i = 0; i < x; i++) {
-            SwordScheduler.runBukkitTaskLater(new BukkitRunnable() {
-                @Override
-                public void run() {
-                    DisplayUtil.smoothTeleport(sheathedDisplay, 2);
-                    sheathedDisplay.teleport(player.getLocation().setDirection(getFlatDir()));
-                    player.addPassenger(sheathedDisplay);
-                }
-            }, 50/x, TimeUnit.MILLISECONDS);
-        }
-    }
-
-    /**
-     * Safely remove the sheathed weapon item display and disallow the re-spawning and updating of it.
-     */
-    public void endSheathedWeapon() {
-        removeSheathedWeaponDisplay();
-        setSheathedActive(false);
-    }
-
-    /**
-     * Safely remove the sheathed item weapon display.
-     */
-    public void removeSheathedWeaponDisplay() {
-        if (sheathedDisplay != null)
-            sheathedDisplay.remove();
     }
 
     /**
@@ -622,6 +486,10 @@ public class SwordPlayer extends Combatant {
         mainItemStackAtTimeOfHold = getItemStackInHand(true);
         offItemStackAtTimeOfHold = getItemStackInHand(false);
 
+        if (offItemStackAtTimeOfHold.getType().equals(Material.SHIELD)) {
+            setBlocking(true);
+        }
+
         indexOfRightHold = getCurrentInvIndex();
 
         if (!mainItemStackAtTimeOfHold.isEmpty())
@@ -654,15 +522,16 @@ public class SwordPlayer extends Combatant {
         holdingRight = false;
         rightHoldTimeStart = 0L;
         timeRightHeld = 0L;
+        setBlocking(false);
     }
 
     /**
      * Ends holding right-click input, restoring item stacks appropriately.
      */
     public void endHoldingRight() {
-//        message(">>> End of Right Hold, threw item? " + (threwItem ? "yes" : "nope"));
         holdingRight = false;
         timeRightHeld = System.currentTimeMillis() - rightHoldTimeStart;
+        setBlocking(false);
         setItemStackInHand(offItemStackAtTimeOfHold, false);
         if (!mainItemStackAtTimeOfHold.isEmpty() && !threwItem)
             setItemAtIndex(mainItemStackAtTimeOfHold, indexOfRightHold);

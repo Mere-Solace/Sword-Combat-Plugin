@@ -4,6 +4,7 @@ import btm.sword.Sword;
 import btm.sword.system.action.SwordAction;
 import btm.sword.system.entity.types.Combatant;
 import btm.sword.system.entity.types.SwordPlayer;
+import java.util.function.Consumer;
 import org.bukkit.Color;
 import org.bukkit.entity.*;
 import org.bukkit.inventory.*;
@@ -48,24 +49,26 @@ public class ThrowAction extends SwordAction {
         executor.setThrowCancelled(false);
         executor.setThrowSuccessful(false);
 
-        LivingEntity ex = executor.entity();
-        ItemDisplay display = (ItemDisplay) ex.getWorld().spawnEntity(ex.getEyeLocation(), EntityType.ITEM_DISPLAY);
-        display.setGlowing(true);
-        display.setGlowColorOverride(Color.fromRGB(255, 0, 15));
 
+        Consumer<ItemDisplay> setupInstructions;
         ThrownItem thrownItem;
         if (executor instanceof SwordPlayer sp && !sp.getItemStackInHand(true).isEmpty()) {
-            display.setItemStack(sp.getMainItemStackAtTimeOfHold());
+            setupInstructions = display -> {
+                display.setItemStack(sp.getMainItemStackAtTimeOfHold());
+                display.setGlowing(true);
+                display.setGlowColorOverride(Color.fromRGB(255, 0, 15));
+            };
         }
         else {
-            ItemStack main = executor.getItemStackInHand(true);
-            ItemStack off = executor.getItemStackInHand(false);
-
-            display.setItemStack(main);
+            setupInstructions = display -> {
+                display.setItemStack(executor.getItemStackInHand(true));
+                display.setGlowing(true);
+                display.setGlowColorOverride(Color.fromRGB(255, 0, 15));
+            };
         }
-        thrownItem = new ThrownItem(executor, display);
-        executor.setThrownItem(thrownItem);
 
+        thrownItem = new ThrownItem(executor, setupInstructions);
+        executor.setThrownItem(thrownItem);
         thrownItem.onReady();
     }
 

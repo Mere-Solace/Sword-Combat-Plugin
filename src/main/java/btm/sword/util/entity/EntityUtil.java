@@ -1,15 +1,9 @@
 package btm.sword.util.entity;
 
-import btm.sword.Sword;
 import btm.sword.config.ConfigManager;
 import btm.sword.system.entity.base.SwordEntity;
-import btm.sword.util.display.DisplayUtil;
-import btm.sword.util.display.Prefab;
 import org.bukkit.Location;
 import org.bukkit.entity.Entity;
-import org.bukkit.entity.ItemDisplay;
-import org.bukkit.scheduler.BukkitRunnable;
-import org.bukkit.util.Transformation;
 import org.bukkit.util.Vector;
 
 /**
@@ -39,60 +33,5 @@ public class EntityUtil {
             }
         }
         return false;
-    }
-
-    /**
-     * Causes an {@link ItemDisplay} entity to follow a {@link SwordEntity} visually,
-     * maintaining a specified direction offset and height, with optional following of the entity's head yaw.
-     * The display is updated every 2 ticks asynchronously until either entity or display is dead or air.
-     * <p>
-     * Uses {@link DisplayUtil#line} and {@link DisplayUtil#smoothTeleport} to create particle trails and smooth motion.
-     * </p>
-     *
-     * @param entity the SwordEntity to follow
-     * @param itemDisplay the {@link ItemDisplay} to move to follow the entity
-     * @param direction the direction {@link Vector} offset relative to the entity
-     * @param heightOffset vertical height offset from the entity's location
-     * @param followHead whether to align the display's direction to the entity's head yaw instead of body yaw
-     */
-    public static void itemDisplayFollow(SwordEntity entity, ItemDisplay itemDisplay, Vector direction, double heightOffset, boolean followHead) {
-        double eyeHeight = entity.getEyeHeight();
-        Transformation orientation = itemDisplay.getTransformation();
-//        Transformation trOffset = new Transformation(
-//                orientation.getTranslation().add(0, (float)(heightOffset-eyeHeight), 0),
-//                orientation.getLeftRotation(),
-//                orientation.getScale(),
-//                orientation.getRightRotation());
-//        itemDisplay.setTransformation(trOffset);
-        double originalYaw = Math.toRadians(entity.entity().getBodyYaw());
-        Vector offset = Prefab.Direction.UP.clone().multiply(heightOffset);
-
-        var displayFollow = ConfigManager.getInstance().getDisplay().getItemDisplayFollow();
-        itemDisplay.setBillboard(displayFollow.getBillboardMode());
-        entity.entity().addPassenger(itemDisplay);
-
-        new BukkitRunnable() {
-            int step = 0;
-            @Override
-            public void run() {
-                if (entity.isDead() || itemDisplay.isDead() || itemDisplay.getItemStack().getType().isAir()) {
-                    cancel();
-                }
-                Location l = entity.entity().getLocation().add(offset);
-
-                double yawRads = Math.toRadians(followHead ? entity.entity().getYaw() : entity.entity().getBodyYaw());
-                Vector curDir = direction.clone().rotateAroundY(originalYaw-yawRads);
-                l.setDirection(curDir);
-
-
-                DisplayUtil.smoothTeleport(itemDisplay, displayFollow.getUpdateInterval());
-                itemDisplay.teleport(l);
-
-                if (step % displayFollow.getParticleInterval() == 0)
-                    Prefab.Particles.BLEED.display(l);
-
-                step++;
-            }
-        }.runTaskTimer(Sword.getInstance(), 0L, displayFollow.getUpdateInterval());
     }
 }

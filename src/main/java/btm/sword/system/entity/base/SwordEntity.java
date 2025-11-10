@@ -2,14 +2,18 @@ package btm.sword.system.entity.base;
 
 import btm.sword.Sword;
 import btm.sword.system.combat.Affliction;
+import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.types.Combatant;
 import btm.sword.util.display.Prefab;
 import btm.sword.util.entity.EntityUtil;
+import btm.sword.util.entity.HitboxUtil;
+import btm.sword.util.math.VectorUtil;
 import btm.sword.util.sound.SoundType;
 import btm.sword.util.sound.SoundUtil;
 import com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 import lombok.Getter;
@@ -43,9 +47,9 @@ import org.joml.Vector3f;
 @Getter
 @Setter
 public abstract class SwordEntity {
+    protected final UUID uuid;
+    protected final CombatProfile combatProfile;
     protected LivingEntity self;
-    protected UUID uuid;
-    protected CombatProfile combatProfile;
     protected String displayName;
 
     protected EntityAspects aspects;
@@ -83,6 +87,9 @@ public abstract class SwordEntity {
 
     protected boolean ableToPickup;
 
+    protected List<Vector> currentEyeDirectionBasis;
+    protected long timeOfLastBasisCalculation;
+
     /**
      * Constructs a new SwordEntity wrapping the specified {@link LivingEntity} and combat profile.
      * Initializes resources, afflictions, and starts ticking updates.
@@ -117,6 +124,8 @@ public abstract class SwordEntity {
         chestVector = new Vector(0, eyeHeight * 0.45, 0);
 
         ableToPickup = true;
+
+        timeOfLastBasisCalculation = 0L;
 
         startTicking();
     }
@@ -644,5 +653,41 @@ public abstract class SwordEntity {
      */
     public void setVelocity(Vector v) {
         self.setVelocity(v);
+    }
+
+    public SwordEntity getTargetedEntity(double range) {
+        LivingEntity target = (LivingEntity) HitboxUtil.ray(
+                entity().getEyeLocation(), entity().getEyeLocation().getDirection(), range, 1,
+                entity -> entity instanceof LivingEntity e &&
+                        !(e.getUniqueId() == getUniqueId()) &&
+                        e.isValid());
+
+        return target == null ? null :SwordEntityArbiter.getOrAdd(target.getUniqueId());
+    }
+
+    public Vector upBasisVector() {
+        calcEyeDirBasis();
+        return currentEyeDirectionBasis.getFirst().clone();
+    }
+
+    public Vector rightBasisVector() {
+        calcEyeDirBasis();
+        return currentEyeDirectionBasis.get(1).clone();
+    }
+
+    public Vector forwardBasisVector() {
+        calcEyeDirBasis();
+        return currentEyeDirectionBasis.getLast().clone();
+    }
+
+    private void calcEyeDirBasis() {
+        if (currentEyeDirectionBasis == null || System.currentTimeMillis() - timeOfLastBasisCalculation > 5) {
+            updateEyeDirectionBasis();
+        }
+    }
+
+    private void updateEyeDirectionBasis() {
+        currentEyeDirectionBasis = VectorUtil.getBasis(entity().getEyeLocation(), entity().getEyeLocation().getDirection());
+        timeOfLastBasisCalculation = System.currentTimeMillis();
     }
 }

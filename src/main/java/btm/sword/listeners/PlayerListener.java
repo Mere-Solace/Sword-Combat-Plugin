@@ -306,10 +306,10 @@ public class PlayerListener implements Listener {
         SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId());
 
         if (event.getNewGameMode().equals(GameMode.SPECTATOR)) {
-            swordPlayer.endSheathedWeapon();
+            swordPlayer.endUmbralBlade();
         }
         else {
-            swordPlayer.setSheathedActive(true);
+            swordPlayer.setUmbralBladeActive(true);
         }
     }
 }

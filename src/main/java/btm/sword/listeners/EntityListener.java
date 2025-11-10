@@ -87,16 +87,19 @@ public class EntityListener implements Listener {
             Location loc = damageSource.getDamageLocation();
             Vector kb = loc != null ? loc.getDirection() : new Vector();
             aggressor = SwordEntityArbiter.get(damageSource.getCausingEntity().getUniqueId());
-            if (aggressor instanceof Combatant c)
-                hurt.hit(c, 2, 1, 10, 10, kb);
+            if (aggressor instanceof Combatant c) {
+//                if (c instanceof SwordPlayer s && s.isBlocking()) {
+//                    s.message("Blocked that tomfoolery with ease!");
+//                    return;
+//                }
+                hurt.hit(c, 15, 1, 10, 10, kb);
+            }
         }
 
         if(event.getEntity() instanceof LivingEntity && event.getDamage() < 7474040) {
             event.setDamage(0.01);
             ((LivingEntity) event.getEntity()).heal(100);
         }
-
-
     }
 
     /**

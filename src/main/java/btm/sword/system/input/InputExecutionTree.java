@@ -3,6 +3,7 @@ package btm.sword.system.input;
 import btm.sword.Sword;
 import btm.sword.system.action.AttackAction;
 import btm.sword.system.action.MovementAction;
+import btm.sword.system.action.UmbralBladeAction;
 import btm.sword.system.action.type.AttackType;
 import btm.sword.system.action.utility.GrabAction;
 import btm.sword.system.action.utility.UtilityAction;
@@ -14,6 +15,7 @@ import java.util.HashMap;
 import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.SneakyThrows;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
@@ -279,6 +281,7 @@ public class InputExecutionTree {
      * Initializes the input tree with predefined combos and mapped {@link InputAction}s.
      * Sets up example combos for movement, grabbing, attacks, throwing, and utility actions.
      */
+    @SneakyThrows
     public void initializeInputTree() {
         // Item independent actions:
         // dodge forward, dodge backward
@@ -388,6 +391,19 @@ public class InputExecutionTree {
                 true,
                 true,
                 true);
+
+        // umbral blade
+        add(List.of(InputType.DROP, InputType.SWAP),
+                new InputAction(
+                        UmbralBladeAction::toggleUmbralBlade,
+                        executor -> 10L,
+                        Combatant::canPerformAction,
+                        true,
+                        true),
+                true,
+                true,
+                true
+                );
     }
 
     /**

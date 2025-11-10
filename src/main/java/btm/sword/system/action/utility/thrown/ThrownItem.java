@@ -12,6 +12,7 @@ import btm.sword.util.display.Prefab;
 import btm.sword.util.entity.EntityUtil;
 import btm.sword.util.math.VectorUtil;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import lombok.Getter;
@@ -72,15 +73,14 @@ public class ThrownItem {
 
     private BukkitTask disposeTask;
 
-    /**
-     * Constructs a new thrown item instance with the given thrower and display.
-     *
-     * @param thrower The entity performing the throw.
-     * @param display The {@link ItemDisplay} representing the thrown object.
-     */
-    public ThrownItem(Combatant thrower, ItemDisplay display) {
+
+    public ThrownItem(Combatant thrower, Consumer<ItemDisplay> displaySetupInstructions) {
         this.thrower = thrower;
-        this.display = display;
+        LivingEntity e = thrower.getSelf();
+        this.display = (ItemDisplay) e.getWorld().spawnEntity(e.getEyeLocation(), EntityType.ITEM_DISPLAY);
+
+        if (displaySetupInstructions != null)
+            displaySetupInstructions.accept(display);
 
         blockTrail = display.getItemStack().getType().isBlock() ?
                 new ParticleWrapper(Particle.BLOCK, 5, 0.25,  0.25,  0.25, display.getItemStack().getType().createBlockData()) :
@@ -595,7 +595,7 @@ public class ThrownItem {
         var impalementConfig = ConfigManager.getInstance().getCombat().getImpalement();
         boolean followHead = !impalementConfig.getHeadFollowExceptions().contains(hitEntity.entity().getType())
                 && heightOffset >= diff * impalementConfig.getHeadZoneRatio();
-        EntityUtil.itemDisplayFollow(hitEntity, display,  velocity.clone().normalize(), heightOffset, followHead);
+        DisplayUtil.itemDisplayFollow(hitEntity, display,  velocity.clone().normalize(), heightOffset, followHead);
     }
 
     /**

@@ -141,7 +141,7 @@ public class SwordEntityArbiter {
 
     public static void removeAllDisplays() {
         for (SwordEntity player : onlineSwordPlayers.values()) {
-            ((SwordPlayer) player).endSheathedWeapon();
+            ((SwordPlayer) player).endUmbralBlade();
             player.endStatusDisplay();
         }
     }

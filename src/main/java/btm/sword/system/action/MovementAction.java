@@ -8,7 +8,7 @@ import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.types.Combatant;
-import btm.sword.util.display.DisplayUtil;
+import btm.sword.util.display.DrawUtil;
 import btm.sword.util.display.ParticleWrapper;
 import btm.sword.util.display.Prefab;
 import btm.sword.util.entity.HitboxUtil;
@@ -80,7 +80,7 @@ public class MovementAction extends SwordAction {
                         int t = 0;
                         @Override
                         public void run() {
-                            DisplayUtil.secant(List.of(Prefab.Particles.TEST_SWORD_BLUE), initial, ex.getLocation(), cfg.getDashSecantRadius());
+                            DrawUtil.secant(List.of(Prefab.Particles.TEST_SWORD_BLUE), initial, ex.getLocation(), cfg.getDashSecantRadius());
                             t += cfg.getDashParticleTimerIncrement();
                             if (t > cfg.getDashParticleTimerThreshold()) cancel();
                         }
