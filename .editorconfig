@@ -1,0 +1,40 @@
+# EditorConfig helps maintain consistent coding styles across different IDEs
+# https://editorconfig.org
+
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.java]
+indent_style = space
+indent_size = 4
+max_line_length = 120
+
+# IMPORTANT: Never use star imports (import java.util.*)
+# IDEs should expand all imports explicitly for optimization
+ij_java_use_single_class_imports = true
+ij_java_class_count_to_use_import_on_demand = 99
+ij_java_names_count_to_use_import_on_demand = 99
+
+# Import order: java, javax, org, com, then everything else
+ij_java_imports_layout = java.**,javax.**,|,org.**,|,com.**,|,*
+
+[*.{yaml,yml}]
+indent_style = space
+indent_size = 2
+
+[*.xml]
+indent_style = space
+indent_size = 4
+
+[*.gradle]
+indent_style = space
+indent_size = 4
+
+[*.md]
+trim_trailing_whitespace = false
+max_line_length = off

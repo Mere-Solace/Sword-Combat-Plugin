@@ -33,8 +33,8 @@
         <module name="RedundantImport"/>
 
         <module name="AvoidStarImport">
-            <property name="severity" value="warning"/>
-            <property name="allowStaticMemberImports" value="true"/>
+            <property name="severity" value="error"/>
+            <property name="allowStaticMemberImports" value="false"/>
         </module>
 
         <!-- Checks for common coding problems -->

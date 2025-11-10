@@ -16,6 +16,7 @@ public class UmbralBladeAction extends SwordAction {
         switch (blade.getState()) {
             case SHEATHED -> blade.setState(UmbralState.STANDBY);
             case STANDBY -> blade.setState(UmbralState.SHEATHED);
+            default -> {} // Other states (FLYING, ATTACKING, RECALLING, LODGED) cannot be toggled
         }
     }
 

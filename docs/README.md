@@ -7,8 +7,11 @@ This directory contains technical decisions, development guides, user documentat
 - `user-guide/` - **Server administrator and player documentation**
   - [Command Reference](user-guide/commands.md) - Available commands and usage
   - [Configuration Guide](user-guide/configuration.md) - How to configure `config.yaml`
+- `setup/` - **Development environment setup guides**
+  - [Development Environment](setup/development-environment.md) - IDE and Java setup
+  - [Automation Tools](setup/automation-tools.md) - Spotless, Checkstyle, CI/CD
+  - [GitHub Actions](setup/github-actions-guide.md) - CI/CD workflows
 - `decisions/` - Architecture Decision Records (ADRs) documenting significant technical decisions
-- `setup/` - Development environment setup guides
 - `standards/` - Coding and documentation standards
 
 ## Quick Links
