@@ -12,7 +12,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 /**
  * Handles the sequence of actions involved in a {@code Combatant} performing a throw action.
  * <p>
- * A throw in this context is a multi-phase process composed of:
+ * A throw in this context is a multiphase process composed of:
  * <ul>
  *     <li><b>Preparation</b> – The entity begins aiming or charging a throw.</li>
  *     <li><b>Cancellation</b> – The throw is interrupted before release.</li>
@@ -48,7 +48,6 @@ public class ThrowAction extends SwordAction {
         executor.setThrowCancelled(false);
         executor.setThrowSuccessful(false);
 
-
         Consumer<ItemDisplay> setupInstructions;
         ThrownItem thrownItem;
         if (executor instanceof SwordPlayer sp && !sp.getItemStackInHand(true).isEmpty()) {
@@ -66,7 +65,7 @@ public class ThrowAction extends SwordAction {
             };
         }
 
-        thrownItem = new ThrownItem(executor, setupInstructions);
+        thrownItem = new ThrownItem(executor, setupInstructions, 0);
         executor.setThrownItem(thrownItem);
         thrownItem.onReady();
     }

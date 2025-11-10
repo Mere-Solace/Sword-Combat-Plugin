@@ -2,7 +2,11 @@ package btm.sword.util.math;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import btm.sword.util.display.Prefab;
 import org.bukkit.Location;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
 
 /**
@@ -72,9 +76,16 @@ public class VectorUtil {
      * @param origin The {@link Location} providing yaw orientation.
      * @return An {@link ArrayList} of three orthonormal basis vectors: [right, up, forward].
      */
-    public static ArrayList<Vector> getBasisWithoutPitch(Location origin) {
-        Vector up = new Vector(0,1,0);
-        double yaw = Math.toRadians(origin.getYaw());
+    public static ArrayList<Vector> getBasisWithoutPitch(Entity origin) {
+        Vector up = Prefab.Direction.UP.clone();
+
+        double yaw;
+        if (origin instanceof Player player) {
+            yaw = Math.toRadians(player.getBodyYaw());
+        }
+        else {
+            yaw = Math.toRadians(origin.getYaw());
+        }
         Vector dir = new Vector(-Math.sin(yaw), 0, Math.cos(yaw));
 
         Vector right = dir.getCrossProduct(up).normalize();

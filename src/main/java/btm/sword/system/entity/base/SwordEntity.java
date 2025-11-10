@@ -88,7 +88,9 @@ public abstract class SwordEntity {
     protected boolean ableToPickup;
 
     protected List<Vector> currentEyeDirectionBasis;
-    protected long timeOfLastBasisCalculation;
+    protected List<Vector> currentBodyDirectionBasis;
+    protected long timeOfLastEyeBasisCalculation;
+    protected long timeOfLastBodyBasisCalculation;
 
     /**
      * Constructs a new SwordEntity wrapping the specified {@link LivingEntity} and combat profile.
@@ -125,7 +127,7 @@ public abstract class SwordEntity {
 
         ableToPickup = true;
 
-        timeOfLastBasisCalculation = 0L;
+        timeOfLastEyeBasisCalculation = 0L;
 
         startTicking();
     }
@@ -306,6 +308,7 @@ public abstract class SwordEntity {
      */
     public void onSpawn() {
         ticks = 0;
+        setShouldTick(true);
         resetResources();
     }
 
@@ -314,6 +317,7 @@ public abstract class SwordEntity {
      */
     public void onDeath() {
         endStatusDisplay();
+        setShouldTick(false);
         aspects.stopAllResourceTasks();
     }
 
@@ -324,6 +328,10 @@ public abstract class SwordEntity {
      */
     public LivingEntity entity() {
         return self;
+    }
+
+    public boolean isValid() {
+        return entity().isValid();
     }
 
     /**
@@ -669,29 +677,52 @@ public abstract class SwordEntity {
         return target == null ? null :SwordEntityArbiter.getOrAdd(target.getUniqueId());
     }
 
-    public Vector upBasisVector() {
-        calcEyeDirBasis();
-        return currentEyeDirectionBasis.getFirst().clone();
+    public Vector rightBasisVector(boolean withPitch) {
+        if (withPitch) {
+            calcEyeDirBasis();
+            return currentEyeDirectionBasis.getFirst().clone();
+        }
+        calcBodyDirBasis();
+        return currentBodyDirectionBasis.getFirst().clone();
     }
 
-    public Vector rightBasisVector() {
-        calcEyeDirBasis();
-        return currentEyeDirectionBasis.get(1).clone();
+    public Vector upBasisVector(boolean withPitch) {
+        if (withPitch) {
+            calcEyeDirBasis();
+            return currentEyeDirectionBasis.get(1).clone();
+        }
+        calcBodyDirBasis();
+        return currentBodyDirectionBasis.get(1).clone();
     }
 
-    public Vector forwardBasisVector() {
-        calcEyeDirBasis();
-        return currentEyeDirectionBasis.getLast().clone();
+    public Vector forwardBasisVector(boolean withPitch) {
+        if (withPitch) {
+            calcEyeDirBasis();
+            return currentEyeDirectionBasis.getLast().clone();
+        }
+        calcBodyDirBasis();
+        return currentBodyDirectionBasis.getLast().clone();
     }
 
     private void calcEyeDirBasis() {
-        if (currentEyeDirectionBasis == null || System.currentTimeMillis() - timeOfLastBasisCalculation > 5) {
+        if (currentEyeDirectionBasis == null || System.currentTimeMillis() - timeOfLastEyeBasisCalculation > 5) {
             updateEyeDirectionBasis();
+        }
+    }
+
+    private void calcBodyDirBasis() {
+        if (currentBodyDirectionBasis == null || System.currentTimeMillis() - timeOfLastBodyBasisCalculation > 5) {
+            updateBodyDirectionBasis();
         }
     }
 
     private void updateEyeDirectionBasis() {
         currentEyeDirectionBasis = VectorUtil.getBasis(entity().getEyeLocation(), entity().getEyeLocation().getDirection());
-        timeOfLastBasisCalculation = System.currentTimeMillis();
+        timeOfLastEyeBasisCalculation = System.currentTimeMillis();
+    }
+
+    private void updateBodyDirectionBasis() {
+        currentBodyDirectionBasis = VectorUtil.getBasisWithoutPitch(entity());
+        timeOfLastBodyBasisCalculation = System.currentTimeMillis();
     }
 }

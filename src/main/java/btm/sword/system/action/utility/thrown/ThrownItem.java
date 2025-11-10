@@ -43,47 +43,72 @@ import org.joml.Vector3f;
 @Getter
 @Setter
 public class ThrownItem {
-    private final ItemDisplay display;
-    private final Combatant thrower;
-    private final ParticleWrapper blockTrail;
+    protected final Combatant thrower;
+    private ParticleWrapper blockTrail;
+    protected ItemDisplay display;
+    protected Consumer<ItemDisplay> displaySetupInstructions;
 
-    private float xDisplayOffset;
-    private float yDisplayOffset;
-    private float zDisplayOffset;
+    protected float xDisplayOffset;
+    protected float yDisplayOffset;
+    protected float zDisplayOffset;
 
-    private Location origin;
-    private Location cur;
-    private Location prev;
-    private Vector velocity;
-    private double initialVelocity;
+    protected Location origin;
+    protected Location cur;
+    protected Location prev;
+    protected Vector velocity;
+    protected double initialVelocity;
 
     int t = 0;
-    private Function<Integer, Vector> positionFunction;
-    private Function<Integer, Vector> velocityFunction;
+    protected Function<Integer, Vector> positionFunction;
+    protected Function<Integer, Vector> velocityFunction;
 
-    private boolean grounded;
-    private Block stuckBlock;
+    protected boolean grounded;
+    protected Block stuckBlock;
 
-    private boolean hit;
-    private SwordEntity hitEntity;
+    protected boolean hit;
+    protected SwordEntity hitEntity;
 
-    private boolean caught;
+    protected boolean caught;
 
-    private boolean inFlight;
+    protected boolean inFlight;
 
-    private BukkitTask disposeTask;
+    protected BukkitTask disposeTask;
 
+    protected boolean setupSuccessful;
 
-    public ThrownItem(Combatant thrower, Consumer<ItemDisplay> displaySetupInstructions) {
+    public ThrownItem(Combatant thrower, Consumer<ItemDisplay> displaySetupInstructions, int setupPeriod) {
         this.thrower = thrower;
-        LivingEntity e = thrower.getSelf();
-        this.display = (ItemDisplay) e.getWorld().spawnEntity(e.getEyeLocation(), EntityType.ITEM_DISPLAY);
+        this.displaySetupInstructions = displaySetupInstructions;
+        setupSuccessful = false;
 
-        if (displaySetupInstructions != null)
-            displaySetupInstructions.accept(display);
+        setup(true, setupPeriod);
+    }
 
+    protected BukkitTask setup(boolean firstTime, int period) {
+        return new BukkitRunnable() {
+            @Override
+            public void run() {
+                if (setupSuccessful) {
+                    if (firstTime) afterSpawn();
+                    cancel();
+                    return;
+                }
+                try {
+                    LivingEntity e = thrower.getSelf();
+                    display = (ItemDisplay) e.getWorld().spawnEntity(e.getEyeLocation(), EntityType.ITEM_DISPLAY);
+                    displaySetupInstructions.accept(display);
+                    setupSuccessful = true;
+                } catch(Exception e){
+                    e.addSuppressed(e);
+                }
+            }
+        }.runTaskTimer(Sword.getInstance(), 0L, period);
+    }
+
+    private void afterSpawn() {
         blockTrail = display.getItemStack().getType().isBlock() ?
-                new ParticleWrapper(Particle.BLOCK, 5, 0.25,  0.25,  0.25, display.getItemStack().getType().createBlockData()) :
+                new ParticleWrapper(Particle.BLOCK, 5, 0.25,  0.25,  0.25,
+                        display.getItemStack().getType().createBlockData()) :
                 null;
 
         if (thrower instanceof SwordPlayer sp) {
@@ -195,29 +220,33 @@ public class ThrownItem {
         this.initialVelocity = initialVelocity;
         LivingEntity ex = thrower.entity();
         Location o = ex.getEyeLocation();
-        List<Vector> basis = VectorUtil.getBasisWithoutPitch(o);
+        List<Vector> basis = VectorUtil.getBasisWithoutPitch(ex);
         double phi = Math.toRadians(-1 * o.getPitch());
         double cosPhi = Math.cos(phi);
         double sinPhi = Math.sin(phi);
-        double forwardCoefficient = initialVelocity*cosPhi;
-        double upwardCoefficient = initialVelocity*sinPhi;
-        origin = o.add(basis.getFirst().multiply(ConfigManager.getInstance().getPhysics().getThrownItems().getOriginOffsetForward()))
-                .add(basis.get(1).multiply(ConfigManager.getInstance().getPhysics().getThrownItems().getOriginOffsetUp()))
-                .add(basis.getLast().multiply(ConfigManager.getInstance().getPhysics().getThrownItems().getOriginOffsetBack()));
+        double forwardCoefficient = initialVelocity * cosPhi;
+        double upwardCoefficient = initialVelocity * sinPhi;
+        origin = o.add(basis.getFirst().multiply(ConfigManager.getInstance()
+                        .getPhysics().getThrownItems().getOriginOffsetForward()))
+                .add(basis.get(1).multiply(ConfigManager.getInstance()
+                        .getPhysics().getThrownItems().getOriginOffsetUp()))
+                .add(basis.getLast().multiply(ConfigManager.getInstance()
+                        .getPhysics().getThrownItems().getOriginOffsetBack()));
         cur = origin.clone();
         prev = cur.clone();
-        Vector flatDir = thrower.getFlatDir().rotateAroundY(ConfigManager.getInstance().getPhysics().getThrownItems().getTrajectoryRotation());
+        Vector flatDir = thrower.getFlatDir().rotateAroundY(ConfigManager.getInstance()
+                .getPhysics().getThrownItems().getTrajectoryRotation());
         velocity = flatDir.clone();
         Vector forwardVelocity = flatDir.clone().multiply(forwardCoefficient);
         Vector upwardVelocity = Prefab.Direction.UP.clone().multiply(upwardCoefficient);
 
         double gravDamper = ConfigManager.getInstance().getPhysics().getThrownItems().getGravityDamper();
 
-        positionFunction = t -> flatDir.clone().multiply(forwardCoefficient*t)
-                .add(Prefab.Direction.UP.clone().multiply((upwardCoefficient*t)-(initialVelocity*(1/gravDamper)*t*t)));
+        positionFunction = t -> flatDir.clone().multiply(forwardCoefficient * t)
+                .add(Prefab.Direction.UP.clone().multiply((upwardCoefficient * t) - (initialVelocity * (1 / gravDamper) * t * t)));
 
         velocityFunction = t -> forwardVelocity.clone()
-                .add(upwardVelocity.clone().add(Prefab.Direction.UP.clone().multiply(-initialVelocity*(2/(gravDamper))*t)));
+                .add(upwardVelocity.clone().add(Prefab.Direction.UP.clone().multiply(-initialVelocity * (2 / (gravDamper)) * t)));
 
         new BukkitRunnable() {
             @Override
@@ -330,7 +359,7 @@ public class ThrownItem {
 
         int x = 1;
         while (!marker.getLocation().getBlock().isPassable()) { // changed from getType().isAir()
-            marker.teleport(cur.clone().add(velocity.normalize().multiply(-0.1*x)));
+            marker.teleport(cur.clone().add(velocity.normalize().multiply(-0.1 * x)));
             x++;
             if (x > 30) break;
         }
@@ -340,7 +369,7 @@ public class ThrownItem {
             public void run() {
                 cur = marker.getLocation();
                 DisplayUtil.smoothTeleport(display, 1);
-                display.teleport(cur.clone().setDirection(velocityFunction.apply(t+1)));
+                display.teleport(cur.clone().setDirection(velocityFunction.apply(t + 1)));
                 marker.remove();
             }
         }.runTaskLater(Sword.getInstance(), 1L);
@@ -351,7 +380,6 @@ public class ThrownItem {
             @Override
             public void run() {
                 if (display.isDead()) {
-//					thrower.message("   This item display has been slated for collection!");
                     cancel();
                 }
 
@@ -612,8 +640,7 @@ public class ThrownItem {
                 Prefab.Particles.DOPPED_ITEM_MARKER.display(dropped.getLocation());
             }
         }.runTaskTimer(Sword.getInstance(), 0L, 5L);
-        display.remove();
-        if (disposeTask != null && !disposeTask.isCancelled()) disposeTask.cancel();
+        dispose();
     }
 
     /**

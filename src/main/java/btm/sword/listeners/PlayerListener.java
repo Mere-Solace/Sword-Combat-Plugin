@@ -83,7 +83,7 @@ public class PlayerListener implements Listener {
      */
     @EventHandler
     public void onPlayerDeath(PlayerDeathEvent event) {
-        SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId()).endStatusDisplay();
+        SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId()).onDeath();
     }
 
     /**
@@ -310,7 +310,7 @@ public class PlayerListener implements Listener {
             swordPlayer.endUmbralBlade();
         }
         else {
-            swordPlayer.setUmbralBladeActive(true);
+            swordPlayer.getUmbralBlade().setActive(true);
         }
     }
 }

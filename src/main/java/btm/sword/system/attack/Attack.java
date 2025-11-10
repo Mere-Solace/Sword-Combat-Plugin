@@ -209,7 +209,7 @@ public class Attack extends SwordAction implements Runnable {
     private void generateBezierFunction() {
         ArrayList<Vector> basis = orientWithPitch ?
                 VectorUtil.getBasis(attackingEntity.getEyeLocation(), attackingEntity.getEyeLocation().getDirection()) :
-                VectorUtil.getBasisWithoutPitch(attackingEntity.getEyeLocation());
+                VectorUtil.getBasisWithoutPitch(attackingEntity);
         curRight = basis.getFirst();
         curUp = basis.get(1);
         curForward = basis.getLast();

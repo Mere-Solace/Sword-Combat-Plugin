@@ -53,8 +53,41 @@ public class DisplayUtil {
     }
 
     // returns a task for use in detecting when finished
-    public static BukkitTask itemDisplayFollowSmoothly(SwordEntity entity, ItemDisplay display, Vector offset, double speed, double endDistanceBuffer, boolean removeOnArrival) {
-        return null;
+    public static BukkitTask displaySlerpToOffset(SwordEntity entity, ItemDisplay display, Vector offset, double speed, int tpDuration, int period, double endDistance, boolean removeOnArrival) {
+        return new BukkitRunnable() {
+            @Override
+            public void run() {
+                if (!entity.isValid() || !display.isValid()) {
+                    if (display.isValid() && removeOnArrival) display.remove();
+                    notifyAll();
+                    cancel();
+                    return;
+                }
+
+                Location curTarget = entity.entity().getLocation().add(
+                        entity.rightBasisVector(false).multiply(offset.getX()).add(
+                                entity.upBasisVector(false).multiply(offset.getY()).add(
+                                        entity.forwardBasisVector(false).multiply(offset.getZ())
+                                )
+                        ));
+
+                Vector diff = curTarget.toVector().subtract(display.getLocation().toVector());
+
+                if (diff.isZero() || diff.lengthSquared() < endDistance*endDistance) {
+                    if (display.isValid() && removeOnArrival) display.remove();
+                    notifyAll();
+                    cancel();
+                    return;
+                }
+
+                Vector scaledDiff = diff.normalize().multiply(speed);
+
+                Location update = display.getLocation().add(scaledDiff);
+
+                smoothTeleport(display, tpDuration);
+                display.teleport(update);
+            }
+        }.runTaskTimer(Sword.getInstance(), 0L, period);
     }
 
     /**
@@ -101,7 +134,7 @@ public class DisplayUtil {
     }
 
     // x = right, y = up, z = forward
-    public static <T> void itemDisplayFollowLerp(SwordEntity entity, ItemDisplay display, Vector offset, int tpDuration, int period, Predicate<T> endCondition, T toTest) {
+    public static <T> void itemDisplayFollowLerp(SwordEntity entity, ItemDisplay display, Vector offset, int tpDuration, int period, boolean withPitch, Predicate<T> endCondition, T toTest) {
         new BukkitRunnable() {
             @Override
             public void run() {
@@ -113,9 +146,9 @@ public class DisplayUtil {
                 DisplayUtil.smoothTeleport(display, tpDuration);
 
                 display.teleport(entity.entity().getLocation().add(
-                        entity.rightBasisVector().multiply(offset.getX()).add(
-                                entity.upBasisVector().multiply(offset.getY()).add(
-                                        entity.forwardBasisVector().multiply(offset.getZ())
+                        entity.rightBasisVector(withPitch).multiply(offset.getX()).add(
+                                entity.upBasisVector(withPitch).multiply(offset.getY()).add(
+                                        entity.forwardBasisVector(withPitch).multiply(offset.getZ())
                                 )
                         )
                 ));
