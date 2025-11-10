@@ -135,7 +135,6 @@ public class UmbralBlade extends ThrownItem {
         Bukkit.getScheduler().runTaskLater(Sword.getInstance(), () -> {
             if (!thrower.isValid()) return;
 
-            World world = thrower.entity().getWorld();
             Location loc = thrower.entity().getLocation();
 
             if (!loc.getChunk().isLoaded()) loc.getChunk().load();
@@ -195,10 +194,8 @@ public class UmbralBlade extends ThrownItem {
 
     public void lungeToTarget(SwordEntity target) {
         if (target == null) return;
-        Location start = display.getLocation();
-        Location end = target.entity().getLocation().clone().add(0, 1, 0);
         DisplayUtil.smoothTeleport(this.display, 6);
-        // optional: particle trail + impalement call
+        // TODO: Add particle trail and impalement call
     }
 
     public void recall() throws InterruptedException {
