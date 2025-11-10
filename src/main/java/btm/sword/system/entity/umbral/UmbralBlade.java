@@ -44,6 +44,8 @@ public class UmbralBlade extends ThrownItem {
 
     private Vector3f scale = new Vector3f(0.85f, 1.3f, 1f);
 
+    private BukkitTask idleMovement;
+
     public UmbralBlade(Combatant thrower, ItemStack weapon) {
         super(thrower, display -> {
             display.setItemStack(new ItemStack(Material.STONE_SWORD)); // TODO: Later - make dynamic
@@ -74,6 +76,10 @@ public class UmbralBlade extends ThrownItem {
             case STANDBY -> hoverBehindWielder();
             case ATTACKING -> display.remove();
         }
+    }
+
+    public boolean inState(UmbralState state) {
+        return getState().equals(state);
     }
 
     public void onTick() {
@@ -163,10 +169,6 @@ public class UmbralBlade extends ThrownItem {
         }
     }
 
-    public boolean inState(UmbralState state) {
-        return getState().equals(state);
-    }
-
     public void hoverBehindWielder() {
         // Play unsheathing animation
 
@@ -175,7 +177,7 @@ public class UmbralBlade extends ThrownItem {
                 new Vector(0.7, 0.7, -0.5),
                 5, 3, false, endHoverPredicate, this);
 
-        // play idle animations ever so often
+
     }
 
     public void returnToSheath() throws InterruptedException {

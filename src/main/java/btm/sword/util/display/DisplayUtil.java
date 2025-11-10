@@ -3,7 +3,11 @@ package btm.sword.util.display;
 import btm.sword.Sword;
 import btm.sword.config.ConfigManager;
 import btm.sword.system.entity.base.SwordEntity;
+
+import java.util.List;
 import java.util.function.Predicate;
+
+import btm.sword.util.math.VectorUtil;
 import org.bukkit.Location;
 import org.bukkit.entity.Display;
 import org.bukkit.entity.ItemDisplay;
@@ -151,7 +155,7 @@ public class DisplayUtil {
                                         entity.forwardBasisVector(withPitch).multiply(offset.getZ())
                                 )
                         )
-                ));
+                ).setDirection(entity.forwardBasisVector(withPitch)));
             }
         }.runTaskTimer(Sword.getInstance(), 0L, period);
     }

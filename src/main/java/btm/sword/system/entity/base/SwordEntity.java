@@ -5,6 +5,7 @@ import btm.sword.system.combat.Affliction;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.types.Combatant;
+import btm.sword.util.display.DrawUtil;
 import btm.sword.util.display.Prefab;
 import btm.sword.util.entity.EntityUtil;
 import btm.sword.util.entity.HitboxUtil;
@@ -724,5 +725,15 @@ public abstract class SwordEntity {
     private void updateBodyDirectionBasis() {
         currentBodyDirectionBasis = VectorUtil.getBasisWithoutPitch(entity());
         timeOfLastBodyBasisCalculation = System.currentTimeMillis();
+    }
+
+    public void drawBasis() {
+        List<Vector> testBasis = VectorUtil.getBasisWithoutPitch(entity());
+        DrawUtil.line(List.of(Prefab.Particles.TEST_SWORD_BLUE),
+                entity().getEyeLocation(), testBasis.getFirst(), 4, 0.25);
+        DrawUtil.line(List.of(Prefab.Particles.TEST_SWORD_BLUE),
+                entity().getEyeLocation(), testBasis.get(1), 4, 0.25);
+        DrawUtil.line(List.of(Prefab.Particles.TEST_SWORD_BLUE),
+                entity().getEyeLocation(), testBasis.getLast(), 4, 0.25);
     }
 }
