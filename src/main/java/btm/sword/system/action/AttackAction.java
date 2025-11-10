@@ -6,7 +6,7 @@ import btm.sword.system.attack.Attack;
 import btm.sword.system.entity.types.Combatant;
 import btm.sword.system.entity.types.SwordPlayer;
 import btm.sword.util.display.Prefab;
-import java.util.*;
+import java.util.Map;
 import org.apache.logging.log4j.util.TriConsumer;
 import org.bukkit.Material;
 
@@ -63,7 +63,7 @@ public class AttackAction extends SwordAction {
         }
     }
 
-    public static void basicSlash(Combatant executor, AttackType type, boolean orientWithPitch) {
+    public static void basicSlash(Combatant executor, AttackType type, Boolean orientWithPitch) {
         new Attack(type, orientWithPitch).execute(executor);
     }
 }

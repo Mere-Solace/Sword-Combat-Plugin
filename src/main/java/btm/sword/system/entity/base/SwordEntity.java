@@ -230,7 +230,11 @@ public abstract class SwordEntity {
                 )
         );
         statusDisplay.setShadowed(true);
-        statusDisplay.setBrightness(new Display.Brightness(15, 15)); // TODO: Config
+        var displayConfig = btm.sword.config.ConfigManager.getInstance().getDisplay();
+        statusDisplay.setBrightness(new Display.Brightness(
+            displayConfig.getStatusDisplayBlockBrightness(),
+            displayConfig.getStatusDisplaySkyBrightness()
+        ));
         statusDisplay.setPersistent(false);
 
         updateStatusDisplayText();

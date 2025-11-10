@@ -12,6 +12,10 @@ import org.bukkit.util.Vector;
  * visual following behavior of item displays.
  */
 public class EntityUtil {
+    private EntityUtil() {
+        throw new UnsupportedOperationException("Utility class");
+    }
+
     /**
      * Checks whether the specified {@link Entity} is currently on the ground.
      * This method checks blocks slightly below the entity's location to determine if it stands on solid ground.

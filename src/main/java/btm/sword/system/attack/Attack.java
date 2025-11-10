@@ -43,8 +43,8 @@ public class Attack extends SwordAction implements Runnable {
     private Function<Double, Vector> weaponPathFunction;
 
     private Vector curRight;
-    private Vector curUp;
-    private Vector curForward;
+    private Vector curUp; // Reserved for future vertical knockback calculations
+    private Vector curForward; // Reserved for future forward knockback calculations
 
     private Location origin;
     private Location attackLocation;

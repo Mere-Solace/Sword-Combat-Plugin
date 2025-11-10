@@ -125,11 +125,10 @@ public class ThrownItem {
 
         determineOrientation();
 
-        LivingEntity ex = thrower.entity();
+        final LivingEntity throwerEntity = thrower.entity();
 
         new BukkitRunnable() {
             int i = 0;
-            int step = 0;
             @Override
             public void run() {
                 if (thrower.isThrowCancelled()) {
@@ -159,12 +158,10 @@ public class ThrownItem {
                     }
                 }
 
-                ex.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 1, 2));
+                throwerEntity.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 1, 2));
 
                 DisplayUtil.smoothTeleport(display, 2);
-                display.teleport(ex.getEyeLocation());
-
-                step++;
+                display.teleport(throwerEntity.getEyeLocation());
             }
         }.runTaskTimer(Sword.getInstance(), 0L, 1L);
     }
@@ -604,8 +601,8 @@ public class ThrownItem {
      * Used after hitting entities or ending its trajectory naturally.
      */
     public void disposeNaturally() {
-        Location dropLoc = hitEntity != null ? hitEntity.entity().getLocation() : display.getLocation();
-        Item dropped = hitEntity.entity().getWorld().dropItemNaturally(hitEntity.entity().getLocation(), display.getItemStack());
+        final Location dropLocation = hitEntity != null ? hitEntity.entity().getLocation() : display.getLocation();
+        Item dropped = dropLocation.getWorld().dropItemNaturally(dropLocation, display.getItemStack());
         new BukkitRunnable() {
             @Override
             public void run() {

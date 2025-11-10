@@ -7,7 +7,6 @@ import btm.sword.system.entity.types.SwordPlayer;
 import java.util.function.Consumer;
 import org.bukkit.Color;
 import org.bukkit.entity.*;
-import org.bukkit.inventory.*;
 import org.bukkit.scheduler.BukkitRunnable;
 
 /**
