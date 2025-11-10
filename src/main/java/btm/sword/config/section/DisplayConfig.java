@@ -18,6 +18,10 @@ public class DisplayConfig {
     private final ItemDisplayFollowConfig itemDisplayFollow;
     private final ParticlesConfig particles;
 
+    // Flattened status display brightness (2 simple values)
+    private final int statusDisplayBlockBrightness;
+    private final int statusDisplaySkyBrightness;
+
     // Flattened bezier config (merged with particle thresholds - 6 related values)
     private final int bezierNumSteps;
     private final double bezierParticleThresholdLayer1;
@@ -30,6 +34,8 @@ public class DisplayConfig {
         ConfigurationSection display = config.getConfigurationSection("display");
         if (display != null) {
             this.defaultTeleportDuration = display.getInt("default_teleport_duration", 2);
+            this.statusDisplayBlockBrightness = display.getInt("status_display_block_brightness", 15);
+            this.statusDisplaySkyBrightness = display.getInt("status_display_sky_brightness", 15);
             this.itemDisplayFollow = new ItemDisplayFollowConfig(display.getConfigurationSection("item_display_follow"));
             this.particles = new ParticlesConfig(display.getConfigurationSection("particles"));
 
@@ -61,6 +67,8 @@ public class DisplayConfig {
             }
         } else {
             this.defaultTeleportDuration = 2;
+            this.statusDisplayBlockBrightness = 15;
+            this.statusDisplaySkyBrightness = 15;
             this.itemDisplayFollow = new ItemDisplayFollowConfig(null);
             this.particles = new ParticlesConfig(null);
             this.bezierNumSteps = 50;

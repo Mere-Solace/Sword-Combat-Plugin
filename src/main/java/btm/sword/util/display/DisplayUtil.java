@@ -9,7 +9,6 @@ import org.bukkit.entity.Display;
 import org.bukkit.entity.ItemDisplay;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
-import org.bukkit.util.Transformation;
 import org.bukkit.util.Vector;
 
 /**
@@ -70,8 +69,6 @@ public class DisplayUtil {
      * @param followHead whether to align the display's direction to the entity's head yaw instead of body yaw
      */
     public static void itemDisplayFollow(SwordEntity entity, ItemDisplay itemDisplay, Vector direction, double heightOffset, boolean followHead) {
-        double eyeHeight = entity.getEyeHeight();
-        Transformation orientation = itemDisplay.getTransformation();
         double originalYaw = Math.toRadians(entity.entity().getBodyYaw());
         Vector offset = Prefab.Direction.UP.clone().multiply(heightOffset);
 
@@ -106,7 +103,6 @@ public class DisplayUtil {
     // x = right, y = up, z = forward
     public static <T> void itemDisplayFollowLerp(SwordEntity entity, ItemDisplay display, Vector offset, int tpDuration, int period, Predicate<T> endCondition, T toTest) {
         new BukkitRunnable() {
-            int t = 0;
             @Override
             public void run() {
                 if (endCondition.test(toTest)) {
@@ -123,8 +119,6 @@ public class DisplayUtil {
                                 )
                         )
                 ));
-
-                t++;
             }
         }.runTaskTimer(Sword.getInstance(), 0L, period);
     }

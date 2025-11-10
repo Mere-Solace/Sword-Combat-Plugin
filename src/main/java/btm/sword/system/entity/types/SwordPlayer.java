@@ -267,9 +267,6 @@ public class SwordPlayer extends Combatant {
      * @return true to cancel the action, false to allow processing
      */
     public boolean cancelItemInteraction(ItemStack itemStack, InputType inputType) {
-        Material type = itemStack.getType();
-        ItemMeta meta = itemStack.getItemMeta();
-
         if (KeyRegistry.hasKey(itemStack, KeyRegistry.MAIN_MENU_BUTTON_KEY)) {
             InventoryManager.createBasic(this);
             return true;

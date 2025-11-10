@@ -278,6 +278,7 @@ public class EntityAspects {
             case TOUGHNESS -> r = toughness;
             case SOULFIRE -> r = soulfire;
             case FORM ->  r = form;
+            default -> { }  // Non-resource aspects don't have regen tasks
         }
         if (r == null) return;
         final Resource R = r;

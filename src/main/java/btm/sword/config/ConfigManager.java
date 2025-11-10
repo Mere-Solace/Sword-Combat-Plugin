@@ -1,7 +1,16 @@
 package btm.sword.config;
 
 import btm.sword.Sword;
-import btm.sword.config.section.*;
+import btm.sword.config.section.AudioConfig;
+import btm.sword.config.section.CombatConfig;
+import btm.sword.config.section.DebugConfig;
+import btm.sword.config.section.DetectionConfig;
+import btm.sword.config.section.DisplayConfig;
+import btm.sword.config.section.EntityConfig;
+import btm.sword.config.section.MovementConfig;
+import btm.sword.config.section.PhysicsConfig;
+import btm.sword.config.section.TimingConfig;
+import btm.sword.config.section.WorldConfig;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -23,7 +32,7 @@ import org.bukkit.configuration.file.YamlConfiguration;
  *
  * @see <a href="https://github.com/Mere-Solace/Sword-Combat-Plugin/issues/66">Issue #66</a>
  */
-public class ConfigManager {
+public final class ConfigManager {
     private static ConfigManager instance;
 
     @Getter

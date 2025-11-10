@@ -53,7 +53,7 @@ public class MovementAction extends SwordAction {
             @Override
             public void run() {
                 LivingEntity ex = executor.entity();
-                Location initial = ex.getLocation().add(new Vector(0, cfg.getDashInitialOffsetY(), 0));
+                final Location dashStartLocation = ex.getLocation().add(new Vector(0, cfg.getDashInitialOffsetY(), 0));
                 boolean onGround = executor.isGrounded();
                 Location o = ex.getEyeLocation();
 
@@ -80,7 +80,7 @@ public class MovementAction extends SwordAction {
                         int t = 0;
                         @Override
                         public void run() {
-                            DrawUtil.secant(List.of(Prefab.Particles.TEST_SWORD_BLUE), initial, ex.getLocation(), cfg.getDashSecantRadius());
+                            DrawUtil.secant(List.of(Prefab.Particles.TEST_SWORD_BLUE), dashStartLocation, ex.getLocation(), cfg.getDashSecantRadius());
                             t += cfg.getDashParticleTimerIncrement();
                             if (t > cfg.getDashParticleTimerThreshold()) cancel();
                         }

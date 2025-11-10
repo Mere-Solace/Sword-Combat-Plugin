@@ -17,7 +17,10 @@ import org.bukkit.command.CommandSender;
  * - /sword reload - Hot reloads configuration from disk
  * </p>
  */
-public class SwordCommands {
+public final class SwordCommands {
+    private SwordCommands() {
+        throw new UnsupportedOperationException("Utility class");
+    }
 
     /**
      * Registers all plugin commands using Paper's Brigadier command system.
@@ -71,14 +74,27 @@ public class SwordCommands {
             boolean success = ConfigManager.getInstance().reload();
 
             if (success) {
-                sender.sendMessage(Component.text("✓ Configuration reloaded successfully!", NamedTextColor.GREEN));
-                sender.sendMessage(Component.text("  All values have been updated from config.yaml", NamedTextColor.GRAY));
+                sender.sendMessage(
+                    Component.text("✓ Configuration reloaded successfully!", NamedTextColor.GREEN)
+                );
+                sender.sendMessage(
+                    Component.text("  All values have been updated from config.yaml", NamedTextColor.GRAY)
+                );
             } else {
-                sender.sendMessage(Component.text("✗ Configuration reload failed!", NamedTextColor.RED));
-                sender.sendMessage(Component.text("  Check console for error details. Using previous values.", NamedTextColor.GRAY));
+                sender.sendMessage(
+                    Component.text("✗ Configuration reload failed!", NamedTextColor.RED)
+                );
+                sender.sendMessage(
+                    Component.text(
+                        "  Check console for error details. Using previous values.",
+                        NamedTextColor.GRAY
+                    )
+                );
             }
         } catch (Exception e) {
-            sender.sendMessage(Component.text("✗ Fatal error during reload: " + e.getMessage(), NamedTextColor.DARK_RED));
+            sender.sendMessage(
+                Component.text("✗ Fatal error during reload: " + e.getMessage(), NamedTextColor.DARK_RED)
+            );
             sender.sendMessage(Component.text("  Check console for full stack trace.", NamedTextColor.GRAY));
         }
 
