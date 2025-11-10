@@ -130,8 +130,18 @@ spotless {
         // Remove unused imports
         removeUnusedImports()
 
-        // Format imports
-        importOrder()
+        // Format imports with explicit ordering (never consolidate to star imports)
+        // Order: java, javax, org, com, then everything else
+        importOrder('java', 'javax', 'org', 'com', '')
+
+        // Custom import formatter to prevent star imports
+        // This replaces any wildcard imports with explicit imports
+        custom 'prevent-star-imports', {
+            if (it.contains('import ') && it.contains('.*')) {
+                throw new AssertionError("Star imports are not allowed. Found: ${it.find(/import .*\.\*/)}. Use explicit imports instead.")
+            }
+            return it
+        }
 
         // Apply formatting
         indentWithSpaces(4)

@@ -119,6 +119,13 @@ echo $JAVA_HOME
    - Settings → Plugins → Install "Lombok"
    - Settings → Build → Compiler → Annotation Processors → Enable annotation processing
 
+4. **Configure Import Settings** (prevents star imports):
+   - Settings → Editor → Code Style → Java → Imports tab
+   - Set "Class count to use import with '*'" to **99**
+   - Set "Names count to use static import with '*'" to **99**
+   - Import order: `java`, `javax`, blank line, `org`, blank line, `com`, blank line, all other imports
+   - **Note**: `.editorconfig` auto-configures this if EditorConfig plugin is enabled
+
 ## Project Setup
 
 ### Clone Repository
@@ -188,15 +195,30 @@ java -version
 ### Code Quality
 
 ```bash
-# Auto-fix formatting
+# Auto-fix formatting and imports
 ./gradlew spotlessApply
 
 # Check formatting
 ./gradlew spotlessCheck
 
-# Run code quality checks
+# Run code quality checks (includes star import detection)
 ./gradlew checkstyle
+
+# Run all quality checks
+./gradlew check
 ```
+
+**Import Standards:**
+- ✅ **Explicit imports only** - Never use star imports (`import java.util.*`)
+- ✅ **Automatic enforcement** - Checkstyle fails build on star imports
+- ✅ **Auto-fix available** - `./gradlew spotlessApply` removes unused imports
+- ✅ **IDE alignment** - `.editorconfig` and `.vscode/settings.json` prevent star generation
+
+**Why no star imports?**
+- **Performance**: JVM loads only needed classes (optimization)
+- **Clarity**: Explicitly shows all dependencies
+- **Conflict prevention**: Avoids ambiguous class names
+- **IDE support**: Better autocomplete and refactoring
 
 ### Clean
 
