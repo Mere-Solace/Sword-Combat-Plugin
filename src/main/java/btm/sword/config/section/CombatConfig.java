@@ -3,10 +3,12 @@ package btm.sword.config.section;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
-import lombok.Getter;
+
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.EntityType;
+
+import lombok.Getter;
 
 /**
  * Type-safe accessor for combat-related configuration values.

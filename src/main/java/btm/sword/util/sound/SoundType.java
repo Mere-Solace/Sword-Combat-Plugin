@@ -1,8 +1,9 @@
 package btm.sword.util.sound;
 
+import org.jetbrains.annotations.NotNull;
+
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.sound.Sound;
-import org.jetbrains.annotations.NotNull;
 
 public enum SoundType implements Sound.Type {
     //#region Custom Sounds:

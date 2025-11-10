@@ -1,6 +1,7 @@
 package btm.sword.util.display;
 
 import java.util.List;
+
 import org.bukkit.Location;
 import org.bukkit.util.Vector;
 

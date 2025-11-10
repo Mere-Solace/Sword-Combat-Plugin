@@ -1,16 +1,18 @@
 package btm.sword.system.action.utility.thrown;
 
-import btm.sword.system.entity.base.SwordEntity;
-import btm.sword.system.entity.types.Combatant;
-import btm.sword.util.display.ParticleWrapper;
-import btm.sword.util.display.Prefab;
 import java.util.HashMap;
+
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.block.Block;
 import org.bukkit.entity.ItemDisplay;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
+
+import btm.sword.system.entity.base.SwordEntity;
+import btm.sword.system.entity.types.Combatant;
+import btm.sword.util.display.ParticleWrapper;
+import btm.sword.util.display.Prefab;
 
 /**
  * Manages {@link ThrownItem} instances that are currently active and displayed in the world.

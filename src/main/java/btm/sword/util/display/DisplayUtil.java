@@ -1,19 +1,17 @@
 package btm.sword.util.display;
 
-import btm.sword.Sword;
-import btm.sword.config.ConfigManager;
-import btm.sword.system.entity.base.SwordEntity;
-
-import java.util.List;
 import java.util.function.Predicate;
 
-import btm.sword.util.math.VectorUtil;
 import org.bukkit.Location;
 import org.bukkit.entity.Display;
 import org.bukkit.entity.ItemDisplay;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
+
+import btm.sword.Sword;
+import btm.sword.config.ConfigManager;
+import btm.sword.system.entity.base.SwordEntity;
 
 /**
  * Utility class for manipulating {@link Display} objects in Bukkit.

@@ -1,5 +1,21 @@
 package btm.sword.system.attack;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
+import java.util.function.Predicate;
+
+import org.bukkit.Location;
+import org.bukkit.Particle;
+import org.bukkit.entity.LivingEntity;
+import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.util.RayTraceResult;
+import org.bukkit.util.Vector;
+import org.jetbrains.annotations.NotNull;
+
 import btm.sword.config.ConfigManager;
 import btm.sword.config.section.CombatConfig;
 import btm.sword.system.SwordScheduler;
@@ -14,20 +30,6 @@ import btm.sword.util.display.Prefab;
 import btm.sword.util.entity.HitboxUtil;
 import btm.sword.util.math.BezierUtil;
 import btm.sword.util.math.VectorUtil;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
-import java.util.function.Predicate;
-import org.bukkit.Location;
-import org.bukkit.Particle;
-import org.bukkit.entity.LivingEntity;
-import org.bukkit.scheduler.BukkitRunnable;
-import org.bukkit.util.RayTraceResult;
-import org.bukkit.util.Vector;
-import org.jetbrains.annotations.NotNull;
 
 public class Attack extends SwordAction implements Runnable {
     private final CombatConfig.AttacksConfig attacksConfig;

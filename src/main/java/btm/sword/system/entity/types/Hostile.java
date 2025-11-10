@@ -1,17 +1,10 @@
 package btm.sword.system.entity.types;
 
-import btm.sword.Sword;
-import btm.sword.system.action.utility.GrabAction;
-import btm.sword.system.entity.base.CombatProfile;
-import btm.sword.system.entity.base.SwordEntity;
-import btm.sword.util.display.Prefab;
-import com.destroystokyo.paper.entity.Pathfinder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.function.Consumer;
-import lombok.Getter;
-import lombok.Setter;
+
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.LivingEntity;
@@ -20,6 +13,16 @@ import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
+
+import com.destroystokyo.paper.entity.Pathfinder;
+
+import btm.sword.Sword;
+import btm.sword.system.action.utility.GrabAction;
+import btm.sword.system.entity.base.CombatProfile;
+import btm.sword.system.entity.base.SwordEntity;
+import btm.sword.util.display.Prefab;
+import lombok.Getter;
+import lombok.Setter;
 
 @Getter
 @Setter

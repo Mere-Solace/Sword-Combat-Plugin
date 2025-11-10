@@ -1,13 +1,15 @@
 package btm.sword.system.item;
 
-import btm.sword.Sword;
 import java.util.Set;
+
 import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.Plugin;
+
+import btm.sword.Sword;
 
 /**
  * Centralized registry and utility class for {@link NamespacedKey} management

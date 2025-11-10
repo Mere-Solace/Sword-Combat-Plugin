@@ -1,13 +1,15 @@
 package btm.sword.system.action.utility.thrown;
 
+import java.util.function.Consumer;
+
+import org.bukkit.Color;
+import org.bukkit.entity.ItemDisplay;
+import org.bukkit.scheduler.BukkitRunnable;
+
 import btm.sword.Sword;
 import btm.sword.system.action.SwordAction;
 import btm.sword.system.entity.types.Combatant;
 import btm.sword.system.entity.types.SwordPlayer;
-import java.util.function.Consumer;
-import org.bukkit.Color;
-import org.bukkit.entity.*;
-import org.bukkit.scheduler.BukkitRunnable;
 
 /**
  * Handles the sequence of actions involved in a {@code Combatant} performing a throw action.

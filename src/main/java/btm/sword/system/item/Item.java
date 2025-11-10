@@ -1,13 +1,15 @@
 package btm.sword.system.item;
 
-import btm.sword.Sword;
 import java.util.UUID;
-import lombok.Getter;
+
 import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
+
+import btm.sword.Sword;
+import lombok.Getter;
 
 /**
  * Represents a wrapped item within the Sword system.

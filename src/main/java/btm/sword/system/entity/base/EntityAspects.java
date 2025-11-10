@@ -1,13 +1,14 @@
 package btm.sword.system.entity.base;
 
+import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
+
 import btm.sword.Sword;
 import btm.sword.system.entity.aspect.Aspect;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.aspect.Resource;
 import btm.sword.system.entity.aspect.value.AspectValue;
 import btm.sword.system.entity.aspect.value.ResourceValue;
-import org.bukkit.scheduler.BukkitRunnable;
-import org.bukkit.scheduler.BukkitTask;
 
 
 /**

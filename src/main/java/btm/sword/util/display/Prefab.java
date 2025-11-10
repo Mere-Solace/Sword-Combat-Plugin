@@ -1,13 +1,15 @@
 package btm.sword.util.display;
 
-import btm.sword.config.section.AudioConfig;
-import btm.sword.util.sound.SoundWrapper;
 import java.util.ArrayList;
 import java.util.List;
+
 import org.bukkit.Color;
 import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.util.Vector;
+
+import btm.sword.config.section.AudioConfig;
+import btm.sword.util.sound.SoundWrapper;
 
 public class Prefab {
     public static class Particles {

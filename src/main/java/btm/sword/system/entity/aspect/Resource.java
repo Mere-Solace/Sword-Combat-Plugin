@@ -1,10 +1,11 @@
 package btm.sword.system.entity.aspect;
 
+import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
+
 import btm.sword.Sword;
 import lombok.Getter;
 import lombok.Setter;
-import org.bukkit.scheduler.BukkitRunnable;
-import org.bukkit.scheduler.BukkitTask;
 
 /**
  * Represents an {@link Aspect} that behaves as a regenerating resource.

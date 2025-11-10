@@ -1,5 +1,14 @@
 package btm.sword.config;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.util.logging.Level;
+
+import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
+
 import btm.sword.Sword;
 import btm.sword.config.section.AudioConfig;
 import btm.sword.config.section.CombatConfig;
@@ -11,14 +20,7 @@ import btm.sword.config.section.MovementConfig;
 import btm.sword.config.section.PhysicsConfig;
 import btm.sword.config.section.TimingConfig;
 import btm.sword.config.section.WorldConfig;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.util.logging.Level;
 import lombok.Getter;
-import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.configuration.file.YamlConfiguration;
 
 /**
  * Centralized configuration manager for Sword: Combat Evolved.

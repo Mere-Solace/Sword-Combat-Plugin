@@ -1,13 +1,14 @@
 package btm.sword.system.action.utility;
 
-import btm.sword.system.action.SwordAction;
-import btm.sword.system.entity.SwordEntityArbiter;
-import btm.sword.system.entity.types.Combatant;
 import org.bukkit.Location;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.RayTraceResult;
+
+import btm.sword.system.action.SwordAction;
+import btm.sword.system.entity.SwordEntityArbiter;
+import btm.sword.system.entity.types.Combatant;
 
 public class UtilityAction extends SwordAction {
     public static void death(Combatant executor) {

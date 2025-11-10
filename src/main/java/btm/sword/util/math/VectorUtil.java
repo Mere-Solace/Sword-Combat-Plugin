@@ -3,11 +3,12 @@ package btm.sword.util.math;
 import java.util.ArrayList;
 import java.util.List;
 
-import btm.sword.util.display.Prefab;
 import org.bukkit.Location;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
+
+import btm.sword.util.display.Prefab;
 
 /**
  * Utility class providing mathematical operations and geometric transformations for {@link Vector}s.

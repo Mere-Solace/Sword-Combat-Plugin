@@ -1,8 +1,9 @@
 package btm.sword.config.section;
 
-import lombok.Getter;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
+
+import lombok.Getter;
 
 /**
  * Type-safe accessor for movement action configuration values.

@@ -1,20 +1,11 @@
 package btm.sword.system.entity.umbral;
 
-import btm.sword.Sword;
-import btm.sword.system.SwordScheduler;
-import btm.sword.system.action.utility.thrown.ThrownItem;
-import btm.sword.system.attack.Attack;
-import btm.sword.system.entity.base.SwordEntity;
-import btm.sword.system.entity.types.Combatant;
-import btm.sword.util.display.DisplayUtil;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
-import lombok.Getter;
-import lombok.Setter;
+
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.World;
 import org.bukkit.entity.Display;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -23,6 +14,16 @@ import org.bukkit.util.Transformation;
 import org.bukkit.util.Vector;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
+
+import btm.sword.Sword;
+import btm.sword.system.SwordScheduler;
+import btm.sword.system.action.utility.thrown.ThrownItem;
+import btm.sword.system.attack.Attack;
+import btm.sword.system.entity.base.SwordEntity;
+import btm.sword.system.entity.types.Combatant;
+import btm.sword.util.display.DisplayUtil;
+import lombok.Getter;
+import lombok.Setter;
 
 // while flying and attacking on its own, no soulfire is reaped on attacks
 // while in hand, higher soulfire intake on hit

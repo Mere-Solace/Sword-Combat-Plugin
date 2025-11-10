@@ -1,8 +1,10 @@
 package btm.sword.system.inventory;
 
-import btm.sword.system.entity.types.SwordPlayer;
 import java.util.Objects;
+
 import org.bukkit.Material;
+
+import btm.sword.system.entity.types.SwordPlayer;
 import xyz.xenondevs.invui.gui.Gui;
 import xyz.xenondevs.invui.item.builder.ItemBuilder;
 import xyz.xenondevs.invui.item.impl.SimpleItem;

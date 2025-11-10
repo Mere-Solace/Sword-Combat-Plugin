@@ -1,13 +1,20 @@
 package btm.sword.util.data;
 
-import com.google.gson.*;
+
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
+import com.google.gson.TypeAdapter;
+import com.google.gson.TypeAdapterFactory;
 import com.google.gson.internal.Streams;
 import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 
 public class RuntimeTypeAdapterFactory<T> implements TypeAdapterFactory {
     private final Class<?> baseType;
@@ -50,7 +57,8 @@ public class RuntimeTypeAdapterFactory<T> implements TypeAdapterFactory {
         final Map<Class<?>, TypeAdapter<?>> subtypeToDelegate = new HashMap<>();
 
         for (Map.Entry<String, Class<?>> entry : labelToSubtype.entrySet()) {
-            TypeAdapter<?> delegate = gson.getDelegateAdapter(this, TypeToken.get(entry.getValue()));
+            TypeAdapter<?> delegate;
+            delegate = gson.getDelegateAdapter(this, TypeToken.get(entry.getValue()));
             labelToDelegate.put(entry.getKey(), delegate);
             subtypeToDelegate.put(entry.getValue(), delegate);
         }

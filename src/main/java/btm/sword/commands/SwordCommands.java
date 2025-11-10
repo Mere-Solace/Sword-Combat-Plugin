@@ -1,13 +1,16 @@
 package btm.sword.commands;
 
-import btm.sword.config.ConfigManager;
+import java.util.List;
+
+import org.bukkit.command.CommandSender;
+
 import com.mojang.brigadier.Command;
+
+import btm.sword.config.ConfigManager;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
-import java.util.List;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
-import org.bukkit.command.CommandSender;
 
 /**
  * Brigadier-based command registration for Sword: Combat Evolved.

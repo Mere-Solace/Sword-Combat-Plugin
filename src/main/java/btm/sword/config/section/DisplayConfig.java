@@ -1,9 +1,10 @@
 package btm.sword.config.section;
 
-import lombok.Getter;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Display;
+
+import lombok.Getter;
 
 /**
  * Type-safe accessor for display and visual effect configuration values.

@@ -1,14 +1,16 @@
 package btm.sword.system.action;
 
-import btm.sword.Sword;
-import btm.sword.system.SwordScheduler;
-import btm.sword.system.entity.types.Combatant;
 import java.util.concurrent.TimeUnit;
+
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitScheduler;
 import org.bukkit.scheduler.BukkitTask;
+
+import btm.sword.Sword;
+import btm.sword.system.SwordScheduler;
+import btm.sword.system.entity.types.Combatant;
 
 public abstract class SwordAction {
     protected static final BukkitScheduler s = Bukkit.getScheduler();

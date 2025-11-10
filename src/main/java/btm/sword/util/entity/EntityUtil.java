@@ -1,10 +1,11 @@
 package btm.sword.util.entity;
 
-import btm.sword.config.ConfigManager;
-import btm.sword.system.entity.base.SwordEntity;
 import org.bukkit.Location;
 import org.bukkit.entity.Entity;
 import org.bukkit.util.Vector;
+
+import btm.sword.config.ConfigManager;
+import btm.sword.system.entity.base.SwordEntity;
 
 /**
  * Utility class providing helpful static methods for operations on {@link Entity} objects

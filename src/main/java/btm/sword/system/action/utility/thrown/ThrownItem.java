@@ -1,26 +1,21 @@
 package btm.sword.system.action.utility.thrown;
 
-import btm.sword.Sword;
-import btm.sword.config.ConfigManager;
-import btm.sword.system.entity.SwordEntityArbiter;
-import btm.sword.system.entity.base.SwordEntity;
-import btm.sword.system.entity.types.Combatant;
-import btm.sword.system.entity.types.SwordPlayer;
-import btm.sword.util.display.DisplayUtil;
-import btm.sword.util.display.ParticleWrapper;
-import btm.sword.util.display.Prefab;
-import btm.sword.util.entity.EntityUtil;
-import btm.sword.util.math.VectorUtil;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import lombok.Getter;
-import lombok.Setter;
-import net.kyori.adventure.text.format.TextColor;
-import org.bukkit.*;
+
+import org.bukkit.FluidCollisionMode;
+import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.Particle;
 import org.bukkit.block.Block;
-import org.bukkit.entity.*;
+import org.bukkit.entity.ArmorStand;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.EntityType;
+import org.bukkit.entity.Item;
+import org.bukkit.entity.ItemDisplay;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
@@ -32,6 +27,21 @@ import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
+
+import btm.sword.Sword;
+import btm.sword.config.ConfigManager;
+import btm.sword.system.entity.SwordEntityArbiter;
+import btm.sword.system.entity.base.SwordEntity;
+import btm.sword.system.entity.types.Combatant;
+import btm.sword.system.entity.types.SwordPlayer;
+import btm.sword.util.display.DisplayUtil;
+import btm.sword.util.display.ParticleWrapper;
+import btm.sword.util.display.Prefab;
+import btm.sword.util.entity.EntityUtil;
+import btm.sword.util.math.VectorUtil;
+import lombok.Getter;
+import lombok.Setter;
+import net.kyori.adventure.text.format.TextColor;
 
 /**
  * Represents a thrown item entity that is actively simulated in the world.

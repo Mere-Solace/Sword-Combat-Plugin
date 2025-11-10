@@ -1,12 +1,5 @@
 package btm.sword.system.playerdata;
 
-import btm.sword.Sword;
-import btm.sword.system.entity.aspect.value.AspectValue;
-import btm.sword.system.entity.aspect.value.ResourceValue;
-import btm.sword.util.data.RuntimeTypeAdapterFactory;
-import com.google.common.reflect.TypeToken;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -15,8 +8,18 @@ import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
+
+import com.google.common.reflect.TypeToken;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
+import btm.sword.Sword;
+import btm.sword.system.entity.aspect.value.AspectValue;
+import btm.sword.system.entity.aspect.value.ResourceValue;
+import btm.sword.util.data.RuntimeTypeAdapterFactory;
 
 public class PlayerDataManager {
     static RuntimeTypeAdapterFactory<AspectValue> aspectFactory = RuntimeTypeAdapterFactory

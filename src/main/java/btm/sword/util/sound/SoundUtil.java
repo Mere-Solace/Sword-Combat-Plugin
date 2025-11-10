@@ -1,8 +1,9 @@
 package btm.sword.util.sound;
 
+import org.bukkit.entity.LivingEntity;
+
 import btm.sword.Sword;
 import net.kyori.adventure.sound.Sound;
-import org.bukkit.entity.LivingEntity;
 
 public class SoundUtil {
     public static void playSound(LivingEntity target, SoundType type, float volume, float pitch) {

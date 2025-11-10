@@ -1,9 +1,10 @@
 package btm.sword.config.section;
 
-import btm.sword.util.sound.SoundType;
-import lombok.Getter;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
+
+import btm.sword.util.sound.SoundType;
+import lombok.Getter;
 
 /**
  * Type-safe accessor for audio configuration values.

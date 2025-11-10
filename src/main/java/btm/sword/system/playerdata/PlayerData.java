@@ -1,8 +1,9 @@
 package btm.sword.system.playerdata;
 
-import btm.sword.system.entity.base.CombatProfile;
 import java.util.Date;
 import java.util.UUID;
+
+import btm.sword.system.entity.base.CombatProfile;
 import lombok.Getter;
 
 @Getter

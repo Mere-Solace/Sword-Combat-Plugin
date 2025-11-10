@@ -1,11 +1,12 @@
 package btm.sword.config.section;
 
-import lombok.Getter;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.potion.PotionEffectType;
+
+import lombok.Getter;
 
 /**
  * Type-safe accessor for entity behavior configuration values.

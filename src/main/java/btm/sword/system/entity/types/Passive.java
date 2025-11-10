@@ -1,8 +1,9 @@
 package btm.sword.system.entity.types;
 
+import org.bukkit.entity.LivingEntity;
+
 import btm.sword.system.entity.base.CombatProfile;
 import btm.sword.system.entity.base.SwordEntity;
-import org.bukkit.entity.LivingEntity;
 
 public class Passive extends SwordEntity {
 

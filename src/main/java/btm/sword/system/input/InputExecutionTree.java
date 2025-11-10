@@ -1,5 +1,12 @@
 package btm.sword.system.input;
 
+import java.util.HashMap;
+import java.util.List;
+
+import org.bukkit.plugin.Plugin;
+import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
+
 import btm.sword.Sword;
 import btm.sword.system.action.AttackAction;
 import btm.sword.system.action.MovementAction;
@@ -11,14 +18,9 @@ import btm.sword.system.action.utility.thrown.ThrowAction;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.types.Combatant;
 import btm.sword.system.entity.types.SwordPlayer;
-import java.util.HashMap;
-import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.SneakyThrows;
-import org.bukkit.plugin.Plugin;
-import org.bukkit.scheduler.BukkitRunnable;
-import org.bukkit.scheduler.BukkitTask;
 
 /**
  * Represents a finite state tree that tracks sequences of player {@link InputType} inputs,

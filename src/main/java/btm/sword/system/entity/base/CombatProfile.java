@@ -1,5 +1,7 @@
 package btm.sword.system.entity.base;
 
+import java.util.HashMap;
+
 import btm.sword.config.ConfigManager;
 import btm.sword.config.section.EntityConfig;
 import btm.sword.system.action.type.AttackType;
@@ -8,7 +10,6 @@ import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.aspect.value.AspectValue;
 import btm.sword.system.entity.aspect.value.ResourceValue;
 import btm.sword.system.playerdata.SwordClassType;
-import java.util.HashMap;
 import lombok.Getter;
 
 /**

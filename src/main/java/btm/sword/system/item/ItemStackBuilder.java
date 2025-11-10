@@ -1,9 +1,7 @@
 package btm.sword.system.item;
 
-import btm.sword.Sword;
-import com.destroystokyo.paper.profile.PlayerProfile;
 import java.util.List;
-import net.kyori.adventure.text.Component;
+
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.ItemFlag;
@@ -14,6 +12,11 @@ import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.inventory.meta.components.CustomModelDataComponent;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.Plugin;
+
+import com.destroystokyo.paper.profile.PlayerProfile;
+
+import btm.sword.Sword;
+import net.kyori.adventure.text.Component;
 
 /**
  * Builder utility for creating and customizing {@link ItemStack} instances in a fluent style.

@@ -1,5 +1,15 @@
 package btm.sword.system.entity.types;
 
+import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.attribute.Attribute;
+import org.bukkit.attribute.AttributeInstance;
+import org.bukkit.entity.LivingEntity;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
+import org.bukkit.util.Vector;
+
 import btm.sword.Sword;
 import btm.sword.system.action.MovementAction;
 import btm.sword.system.action.utility.thrown.ThrownItem;
@@ -10,15 +20,6 @@ import btm.sword.system.entity.umbral.UmbralBlade;
 import btm.sword.util.display.Prefab;
 import lombok.Getter;
 import lombok.Setter;
-import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.attribute.Attribute;
-import org.bukkit.attribute.AttributeInstance;
-import org.bukkit.entity.LivingEntity;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.scheduler.BukkitRunnable;
-import org.bukkit.scheduler.BukkitTask;
-import org.bukkit.util.Vector;
 
 /**
  * Abstract class representing combat-capable entities within the Sword plugin.

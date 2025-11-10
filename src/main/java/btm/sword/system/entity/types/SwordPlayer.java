@@ -1,26 +1,11 @@
 package btm.sword.system.entity.types;
 
-import btm.sword.Sword;
-import btm.sword.system.action.utility.thrown.ThrowAction;
-import btm.sword.system.entity.aspect.AspectType;
-import btm.sword.system.input.InputAction;
-import btm.sword.system.input.InputExecutionTree;
-import btm.sword.system.input.InputType;
-import btm.sword.system.inventory.InventoryManager;
-import btm.sword.system.item.ItemStackBuilder;
-import btm.sword.system.item.KeyRegistry;
-import btm.sword.system.playerdata.PlayerData;
-import com.destroystokyo.paper.profile.PlayerProfile;
 import java.time.Duration;
-import lombok.Getter;
-import lombok.Setter;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
-import net.kyori.adventure.text.format.TextColor;
-import net.kyori.adventure.text.format.TextDecoration;
-import net.kyori.adventure.title.Title;
+
 import org.bukkit.Material;
-import org.bukkit.entity.*;
+import org.bukkit.entity.ItemDisplay;
+import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryAction;
 import org.bukkit.event.inventory.InventoryClickEvent;
@@ -31,6 +16,26 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
+
+import com.destroystokyo.paper.profile.PlayerProfile;
+
+import btm.sword.Sword;
+import btm.sword.system.action.utility.thrown.ThrowAction;
+import btm.sword.system.entity.aspect.AspectType;
+import btm.sword.system.input.InputAction;
+import btm.sword.system.input.InputExecutionTree;
+import btm.sword.system.input.InputType;
+import btm.sword.system.inventory.InventoryManager;
+import btm.sword.system.item.ItemStackBuilder;
+import btm.sword.system.item.KeyRegistry;
+import btm.sword.system.playerdata.PlayerData;
+import lombok.Getter;
+import lombok.Setter;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextColor;
+import net.kyori.adventure.text.format.TextDecoration;
+import net.kyori.adventure.title.Title;
 
 /**
  * Represents a player-controlled combatant in the Sword plugin system.

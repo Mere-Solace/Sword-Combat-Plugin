@@ -1,14 +1,16 @@
 package btm.sword.system.action;
 
+import java.util.Map;
+
+import org.apache.logging.log4j.util.TriConsumer;
+import org.bukkit.Material;
+
 import btm.sword.config.ConfigManager;
 import btm.sword.system.action.type.AttackType;
 import btm.sword.system.attack.Attack;
 import btm.sword.system.entity.types.Combatant;
 import btm.sword.system.entity.types.SwordPlayer;
 import btm.sword.util.display.Prefab;
-import java.util.Map;
-import org.apache.logging.log4j.util.TriConsumer;
-import org.bukkit.Material;
 
 /**
  * Provides attack-related actions for {@link Combatant} entities.

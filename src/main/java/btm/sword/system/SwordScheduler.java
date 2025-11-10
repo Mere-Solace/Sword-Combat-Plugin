@@ -1,10 +1,12 @@
 package btm.sword.system;
 
-import btm.sword.Sword;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
+
 import org.bukkit.Bukkit;
 import org.bukkit.scheduler.BukkitRunnable;
+
+import btm.sword.Sword;
 
 /**
  * A Scheduler utility that provides scheduling more granular than Minecraft's tick system.

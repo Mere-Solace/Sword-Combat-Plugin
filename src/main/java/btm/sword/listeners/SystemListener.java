@@ -1,13 +1,15 @@
 package btm.sword.listeners;
 
-import btm.sword.system.entity.SwordEntityArbiter;
-import com.destroystokyo.paper.event.server.ServerExceptionEvent;
-import com.destroystokyo.paper.event.server.ServerTickEndEvent;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.TextDisplay;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.world.WorldUnloadEvent;
+
+import com.destroystokyo.paper.event.server.ServerExceptionEvent;
+import com.destroystokyo.paper.event.server.ServerTickEndEvent;
+
+import btm.sword.system.entity.SwordEntityArbiter;
 
 public class SystemListener implements Listener {
     @EventHandler

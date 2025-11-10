@@ -1,5 +1,12 @@
 package btm.sword;
 
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+
+import org.bukkit.plugin.Plugin;
+import org.bukkit.plugin.java.JavaPlugin;
+import org.jetbrains.annotations.NotNull;
+
 import btm.sword.commands.SwordCommands;
 import btm.sword.config.ConfigManager;
 import btm.sword.listeners.EntityListener;
@@ -10,12 +17,7 @@ import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.playerdata.PlayerDataManager;
 import io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 import lombok.Getter;
-import org.bukkit.plugin.Plugin;
-import org.bukkit.plugin.java.JavaPlugin;
-import org.jetbrains.annotations.NotNull;
 import xyz.xenondevs.invui.InvUI;
 
 public final class Sword extends JavaPlugin {

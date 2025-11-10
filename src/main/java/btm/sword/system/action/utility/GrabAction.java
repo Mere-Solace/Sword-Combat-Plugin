@@ -1,5 +1,19 @@
 package btm.sword.system.action.utility;
 
+import java.util.HashSet;
+
+import org.bukkit.FluidCollisionMode;
+import org.bukkit.Location;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.EntityType;
+import org.bukkit.entity.ItemDisplay;
+import org.bukkit.entity.LivingEntity;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
+import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.util.RayTraceResult;
+import org.bukkit.util.Vector;
+
 import btm.sword.Sword;
 import btm.sword.system.action.SwordAction;
 import btm.sword.system.action.utility.thrown.InteractiveItemArbiter;
@@ -9,15 +23,6 @@ import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.types.Combatant;
 import btm.sword.util.display.Prefab;
 import btm.sword.util.entity.HitboxUtil;
-import java.util.HashSet;
-import org.bukkit.FluidCollisionMode;
-import org.bukkit.Location;
-import org.bukkit.entity.*;
-import org.bukkit.potion.PotionEffect;
-import org.bukkit.potion.PotionEffectType;
-import org.bukkit.scheduler.BukkitRunnable;
-import org.bukkit.util.RayTraceResult;
-import org.bukkit.util.Vector;
 
 /**
  * Utility class for performing grab actions.
