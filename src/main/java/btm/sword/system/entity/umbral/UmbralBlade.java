@@ -73,6 +73,7 @@ public class UmbralBlade extends ThrownItem {
             case RECALLING -> returnToSheath();
             case STANDBY -> hoverBehindWielder();
             case ATTACKING -> display.remove();
+            default -> {} // FLYING, LODGED, SHEATHED don't require special transition logic
         }
     }
 

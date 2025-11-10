@@ -192,12 +192,18 @@ tracks input sequences and triggers actions with cooldowns.
 
 Contributions are welcome! This is a work in progress with many features yet to be implemented.
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on:
+### Getting Started
 
-- Code style and formatting
-- Submitting pull requests
-- Reporting issues
-- Development workflow
+1. **Setup Development Environment**
+   - See [Development Environment Setup](docs/setup/development-environment.md) for Java 21 and IDE configuration
+   - Includes troubleshooting for common setup issues
+
+2. **Read Guidelines**
+   - See [CONTRIBUTING.md](CONTRIBUTING.md) for:
+     - Code style and formatting
+     - Submitting pull requests
+     - Reporting issues
+     - Development workflow
 
 ## Contact & Community
 
