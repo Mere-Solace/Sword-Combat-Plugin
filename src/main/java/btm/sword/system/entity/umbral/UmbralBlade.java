@@ -126,6 +126,7 @@ public class UmbralBlade extends ThrownItem {
                     new Quaternionf(),
                     scale,
                     new Quaternionf()));
+            default -> {} // ATTACKING, LODGED don't set display transformations
         }
     }
 
