@@ -5,7 +5,6 @@ import java.util.function.Predicate;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
-import org.bukkit.Material;
 import org.bukkit.entity.Display;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -49,7 +48,7 @@ public class UmbralBlade extends ThrownItem {
 
     public UmbralBlade(Combatant thrower, ItemStack weapon) {
         super(thrower, display -> {
-            display.setItemStack(new ItemStack(Material.STONE_SWORD)); // TODO: Later - make dynamic
+            display.setItemStack(weapon);
             display.setTransformation(new Transformation(
                     new Vector3f(0, 0, 0),
                     new Quaternionf().rotationY((float) Math.PI / 2).rotateZ(-(float) Math.PI / (1.65f)),
@@ -60,7 +59,6 @@ public class UmbralBlade extends ThrownItem {
 
             thrower.entity().addPassenger(display);
             display.setBillboard(Display.Billboard.FIXED);
-            display.setItemStack(weapon);
         }, 5);
         this.weapon = weapon;
         this.basicAttacks = loadBasicAttacks();
