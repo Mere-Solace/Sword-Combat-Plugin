@@ -143,18 +143,7 @@ public class SwordPlayer extends Combatant {
         if (player.getHealth() > 0) updateVisualStats();
 
         if (ticks % 2 == 0) {
-            if (getItemStackInHand(false).getType() != Material.SHIELD) {
-                setItemStackInHand(ItemStack.of(Material.SHIELD), false);
-            }
-
-            if (player.getEquipment().getChestplate().isEmpty() ||
-                    !player.getEquipment().getChestplate().getType().equals(Material.NETHERITE_CHESTPLATE)) {
-                player.getEquipment().setChestplate(ItemStack.of(Material.NETHERITE_CHESTPLATE));
-            }
-
-            if (!KeyRegistry.hasKey(player.getInventory().getItem(8), KeyRegistry.MAIN_MENU_BUTTON_KEY)) {
-                player.getInventory().setItem(8, menuButton);
-            }
+            inventoryUpkeep();
         }
     }
 
@@ -246,7 +235,7 @@ public class SwordPlayer extends Combatant {
                 return;
             }
         }
-
+        
         InputExecutionTree.InputNode node = inputExecutionTree.step(input);
 
         if (node == null)
@@ -260,6 +249,25 @@ public class SwordPlayer extends Combatant {
             if (!action.execute(this)) {
                 resetTree();
             }
+        }
+    }
+
+    private void inventoryUpkeep() {
+        if (getItemStackInHand(false).getType() != Material.SHIELD) {
+            setItemStackInHand(ItemStack.of(Material.SHIELD), false);
+        }
+
+        if (player.getEquipment().getChestplate().isEmpty() ||
+            !player.getEquipment().getChestplate().getType().equals(Material.NETHERITE_CHESTPLATE)) {
+            player.getEquipment().setChestplate(ItemStack.of(Material.NETHERITE_CHESTPLATE));
+        }
+
+        if (!KeyRegistry.hasKey(player.getInventory().getItem(8), KeyRegistry.MAIN_MENU_BUTTON_KEY)) {
+            player.getInventory().setItem(8, menuButton);
+        }
+
+        if (!KeyRegistry.hasKey(player.getInventory().getItem(0), KeyRegistry.SOUL_LINK_KEY)) {
+            player.getInventory().setItem(0, getUmbralBlade().getLink());
         }
     }
 

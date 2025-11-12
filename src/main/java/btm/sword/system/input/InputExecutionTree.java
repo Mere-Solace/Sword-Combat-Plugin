@@ -11,7 +11,7 @@ import btm.sword.Sword;
 import btm.sword.system.action.AttackAction;
 import btm.sword.system.action.MovementAction;
 import btm.sword.system.action.UmbralBladeAction;
-import btm.sword.system.action.type.AttackType;
+import btm.sword.system.attack.AttackType;
 import btm.sword.system.action.utility.GrabAction;
 import btm.sword.system.action.utility.UtilityAction;
 import btm.sword.system.action.utility.thrown.ThrowAction;
@@ -321,8 +321,12 @@ public class InputExecutionTree {
                 true,
                 true);
 
-
         // Item dependent actions:
+
+        // TODO: define possible better way of differentiating between normal attacks and umbral attacks
+        // my main concern with this was not being able to dynamically change cooldowns if umbral blade or normal blade was used
+        // those were erroneous since my cooldown calc is a Function! I love Functional Interfaces!
+        // TODO: make inputExecution tree timeout value dynamic for usage in longer cooldown input chains
 
         // basic attacks
         add(List.of(InputType.LEFT),
@@ -395,10 +399,14 @@ public class InputExecutionTree {
                 true);
 
         // umbral blade
+        // toggling of umbral blade can only occur if holding an item (since it begins with drop)
+        // but can be done regardless of which item is being held.
+        //
+        // Most umbral blade actions will require the player to be holding the soul link item, though.
         add(List.of(InputType.DROP, InputType.SWAP),
                 new InputAction(
                         UmbralBladeAction::toggleUmbralBlade,
-                        executor -> 10L,
+                        executor -> 400L,
                         Combatant::canPerformAction,
                         true,
                         true),
@@ -406,6 +414,19 @@ public class InputExecutionTree {
                 true,
                 true
                 );
+
+        // wield it
+        add(List.of(InputType.SWAP, InputType.LEFT),
+            new InputAction(
+                    UmbralBladeAction::wieldUmbralBlade,
+                    executor -> 400L,
+                    Combatant::canPerformAction,
+                    true,
+                    true),
+            true,
+            true,
+            true
+        );
     }
 
     /**

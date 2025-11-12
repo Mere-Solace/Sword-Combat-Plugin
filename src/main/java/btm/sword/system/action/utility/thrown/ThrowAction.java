@@ -69,7 +69,22 @@ public class ThrowAction extends SwordAction {
 
         thrownItem = new ThrownItem(executor, setupInstructions, 0);
         executor.setThrownItem(thrownItem);
-        thrownItem.onReady();
+        executor.message("On ready is getting called! WHAT THE HECK");
+        new BukkitRunnable() {
+            int misses = 0;
+            @Override
+            public void run() {
+                if (misses > 20) {
+                    cancel();
+                }
+                if (thrownItem.getDisplay() == null) {
+                    misses++;
+                } else {
+                    thrownItem.onReady();
+                    cancel();
+                }
+            }
+        }.runTaskTimer(Sword.getInstance(), 0L, 3L);
     }
 
     /**

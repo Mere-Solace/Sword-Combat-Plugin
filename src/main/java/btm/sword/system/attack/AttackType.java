@@ -1,7 +1,9 @@
-package btm.sword.system.action.type;
+package btm.sword.system.attack;
 
 public enum AttackType {
     BASIC_1,
+    WINDUP_1,
+
     BASIC_2,
     BASIC_3,
     BASIC_4,

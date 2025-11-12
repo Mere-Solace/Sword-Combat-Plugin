@@ -2,6 +2,7 @@ package btm.sword.util.display;
 
 import java.util.function.Predicate;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Display;
 import org.bukkit.entity.ItemDisplay;
@@ -55,13 +56,18 @@ public class DisplayUtil {
     }
 
     // returns a task for use in detecting when finished
-    public static BukkitTask displaySlerpToOffset(SwordEntity entity, ItemDisplay display, Vector offset, double speed, int tpDuration, int period, double endDistance, boolean removeOnArrival) {
+    public static BukkitTask displaySlerpToOffset(SwordEntity entity, ItemDisplay display, Vector offset,
+                                                  double speed, int tpDuration, int period,
+                                                  double endDistance, boolean removeOnArrival,
+                                                  Runnable callback) {
         return new BukkitRunnable() {
             @Override
             public void run() {
                 if (!entity.isValid() || !display.isValid()) {
                     if (display.isValid() && removeOnArrival) display.remove();
-                    notifyAll();
+                    if (callback != null) {
+                        Bukkit.getScheduler().runTask(Sword.getInstance(), callback);
+                    }
                     cancel();
                     return;
                 }
@@ -77,7 +83,9 @@ public class DisplayUtil {
 
                 if (diff.isZero() || diff.lengthSquared() < endDistance*endDistance) {
                     if (display.isValid() && removeOnArrival) display.remove();
-                    notifyAll();
+                    if (callback != null) {
+                        Bukkit.getScheduler().runTask(Sword.getInstance(), callback);
+                    }
                     cancel();
                     return;
                 }

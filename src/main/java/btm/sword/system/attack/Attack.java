@@ -8,6 +8,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
+import btm.sword.Sword;
+import lombok.Getter;
+import lombok.Setter;
+
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.entity.LivingEntity;
@@ -20,7 +25,6 @@ import btm.sword.config.ConfigManager;
 import btm.sword.config.section.CombatConfig;
 import btm.sword.system.SwordScheduler;
 import btm.sword.system.action.SwordAction;
-import btm.sword.system.action.type.AttackType;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.base.SwordEntity;
@@ -48,22 +52,31 @@ public class Attack extends SwordAction implements Runnable {
     private Vector curUp; // Reserved for future vertical knockback calculations
     private Vector curForward; // Reserved for future forward knockback calculations
 
-    private Location origin;
-    private Location attackLocation;
-    private Vector cur;
-    private Vector prev;
+    @Setter // origin can be set for stationary attacks
+    protected Location origin;
+    protected Location attackLocation; // current bezier vec + origin
+    protected Vector cur;
+    protected Vector prev;
 
     private final HashSet<LivingEntity> hitDuringAttack;
     private Predicate<LivingEntity> filter;
 
-    private int attackMilliseconds;
-    private int attackIterations;
-    private double attackStartValue;
-    private double attackEndValue;
+    protected int curIteration;
+
+    protected int attackMilliseconds;
+    protected int attackIterations;
+    protected double attackStartValue;
+    protected double attackEndValue;
 
     private final double rangeMultiplier;
 
-    public Attack (AttackType type, boolean orientWithPitch) {
+    protected Runnable callback;
+
+    @Getter
+    protected Attack nextAttack;
+    protected int millisecondDelayBeforeNextAttack;
+
+    public Attack (AttackType type, boolean orientWithPitch, Runnable callback) {
         controlVectors = getAttackVectors(type);
         this.attackType = type;
         this.orientWithPitch = orientWithPitch;
@@ -78,15 +91,27 @@ public class Attack extends SwordAction implements Runnable {
         this.attackEndValue = attackConfig.getTiming().getAttackEndValue();
 
         this.rangeMultiplier = attackConfig.getModifiers().getRangeMultiplier();
+
+        this.callback = callback;
     }
 
-    public Attack(AttackType type, boolean orientWithPitch,
+    public Attack(AttackType type, boolean orientWithPitch, Runnable callback,
                   int attackMilliseconds, int attackIterations, double attackStartValue, double attackEndValue) {
-        this(type, orientWithPitch);
+        this(type, orientWithPitch, callback);
         this.attackMilliseconds = attackMilliseconds;
         this.attackIterations = attackIterations;
         this.attackStartValue = attackStartValue;
         this.attackEndValue = attackEndValue;
+    }
+
+    public Attack setNextAttack(Attack nextAttack, int millisecondDelayBeforeNextAttack) {
+        this.nextAttack = nextAttack;
+        this.millisecondDelayBeforeNextAttack = millisecondDelayBeforeNextAttack;
+        return this; // for initialization chaining
+    }
+
+    public boolean hasNextAttack() {
+        return nextAttack != null;
     }
 
     public void execute(Combatant attacker) {
@@ -133,12 +158,13 @@ public class Attack extends SwordAction implements Runnable {
 
         generateBezierFunction();
 
-        origin = attackingEntity.getLocation().add(attacker.getChestVector());
+        determineOrigin();
+
         prev = weaponPathFunction.apply(attackStartValue - step);
 
+        curIteration = 0;
         for (int i = 0; i <= attackIterations; i++) {
             final int idx = i;
-
             SwordScheduler.runBukkitTaskLater(new BukkitRunnable() {
                 @Override
                 public void run() {
@@ -147,21 +173,48 @@ public class Attack extends SwordAction implements Runnable {
                     cur = weaponPathFunction.apply(attackStartValue + (step * idx));
                     attackLocation = origin.clone().add(cur);
 
-                    drawAttackEffects(idx);
-                    applyHitEffects(collectHitEntities());
+                    drawAttackEffects();
+                    hit();
                     swingTest();
 
+                    // allows for chaining of attack logic
+                    if (idx == attackIterations) {
+                        if (callback != null) {
+                            Bukkit.getScheduler().runTask(Sword.getInstance(), callback);
+                        }
+                        if (nextAttack != null) {
+                            SwordScheduler.runBukkitTaskLater(
+                                new BukkitRunnable() {
+                                    @Override
+                                    public void run() {
+                                        nextAttack.execute(attacker);
+                                    }
+                                }, millisecondDelayBeforeNextAttack, TimeUnit.MILLISECONDS
+                            );
+                        }
+                    }
                     prev = cur;
+                    curIteration++;
                 }
-            }, idx * msPerIteration, TimeUnit.MILLISECONDS);
+            }, curIteration * msPerIteration, TimeUnit.MILLISECONDS);
         }
     }
 
-    private void drawAttackEffects(int step) {
+    private void determineOrigin() {
+        if (origin == null)
+            origin = attackingEntity.getLocation().add(attacker.getChestVector());
+    }
+
+    // TODO: Make Particle Effects more dynamic. Low prio.
+    protected void drawAttackEffects() {
         Prefab.Particles.TEST_SWING.display(attackLocation);
     }
 
-    private void applyHitEffects(HashSet<LivingEntity> targets) {
+    protected void hit() {
+        applyHitEffects(collectHitEntities());
+    }
+
+    protected void applyHitEffects(HashSet<LivingEntity> targets) {
         for (LivingEntity target : targets) {
             if (!hitDuringAttack.contains(target)) {
                 SwordEntity sTarget = SwordEntityArbiter.getOrAdd(target.getUniqueId());
@@ -183,16 +236,16 @@ public class Attack extends SwordAction implements Runnable {
         hitDuringAttack.addAll(targets);
     }
 
-    private HashSet<LivingEntity> collectHitEntities() {
+    protected HashSet<LivingEntity> collectHitEntities() {
         double secantRadius = ConfigManager.getInstance().getCombat().getHitboxes().getSecantRadius();
-        return HitboxUtil.secant( attackingEntity, origin, attackLocation, secantRadius,
-                true, filter);
+        return HitboxUtil.secant(origin, attackLocation, secantRadius, filter);
     }
 
     private void swingTest() {
         // check if attack entered the ground
         // enter ground and interpolation function
         Vector direction = cur.clone().subtract(prev);
+        if (direction.isZero()) return;
         RayTraceResult result = attackingEntity.getWorld().rayTraceBlocks(attackLocation, direction, 0.3);
         if (result != null) {
             // enter ground particles
@@ -224,6 +277,7 @@ public class Attack extends SwordAction implements Runnable {
         List<Vector> ctrlVectors;
         switch (attackType) {
             case BASIC_1 -> ctrlVectors = Prefab.ControlVectors.SLASH1;
+            case WINDUP_1 -> ctrlVectors = Prefab.ControlVectors.SLASH1_WINDUP;
             case BASIC_2 -> ctrlVectors = Prefab.ControlVectors.SLASH2;
             case BASIC_3 -> ctrlVectors = Prefab.ControlVectors.SLASH3;
             case HEAVY_1 -> ctrlVectors = Prefab.ControlVectors.UP_SMASH;

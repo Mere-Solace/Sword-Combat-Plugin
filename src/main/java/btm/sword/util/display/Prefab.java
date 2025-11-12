@@ -56,6 +56,12 @@ public class Prefab {
                 new Vector(3.26, 0.79, -0.4),
                 new Vector(-2.3, -0.16,3),
                 new Vector(1.9, 0.21, 5)));
+        public static final List<Vector> SLASH1_WINDUP = new ArrayList<>(List.of(
+            new Vector(-1.86,0.13,-0.2),
+            new Vector(-1.03,-0.83,-1.9),
+            new Vector(-1.9,-0.03,-0.54),
+            new Vector(-1.6,-0.43,-1.43)));
+
         public static final List<Vector> SLASH2 = new ArrayList<>(List.of(
                 new Vector(2.6, -1.21, -1.2),
                 new Vector(-1.47, 1.99, 0),

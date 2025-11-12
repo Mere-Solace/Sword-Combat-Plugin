@@ -144,6 +144,31 @@ public class HitboxUtil {
         return hit;
     }
 
+
+    public static HashSet<LivingEntity> secant(Location origin, Location end, double thickness, Predicate<LivingEntity> filter) {
+        HashSet<LivingEntity> hit = new HashSet<>();
+
+        Vector direction = end.clone().subtract(origin).toVector();
+        int steps = (int) (direction.length() / (thickness));
+        if (steps == 0) steps = 1;
+
+        Vector step = direction.clone().normalize().multiply(thickness);
+        Location cur = origin.clone();
+
+        for (int i = 0; i <= steps; i++) {
+            for (Entity e : cur.getNearbyLivingEntities(thickness)) {
+                if (e instanceof LivingEntity entity &&
+                    !entity.isDead() &&
+                    filter.test(entity)) { // only change
+                    hit.add(entity);
+                }
+            }
+            cur.add(step);
+        }
+
+        return hit;
+    }
+
     /**
      * Returns all {@link LivingEntity} instances within a spherical radius around a location,
      * optionally removing the executor.

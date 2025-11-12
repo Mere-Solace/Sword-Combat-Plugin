@@ -4,7 +4,7 @@ import java.util.HashMap;
 
 import btm.sword.config.ConfigManager;
 import btm.sword.config.section.EntityConfig;
-import btm.sword.system.action.type.AttackType;
+import btm.sword.system.attack.AttackType;
 import btm.sword.system.attack.Attack;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.aspect.value.AspectValue;
@@ -102,13 +102,13 @@ public class CombatProfile {
 
         // I think I'll keep this for a potential customization of the umbral blade, but it's not used anywhere right now
         basicAttacks = new Attack[]{
-                new Attack(AttackType.BASIC_1, true),
-                new Attack(AttackType.BASIC_2, true),
-                new Attack(AttackType.BASIC_3, true)
+                new Attack(AttackType.BASIC_1, true, null),
+                new Attack(AttackType.BASIC_2, true, null),
+                new Attack(AttackType.BASIC_3, true, null)
         };
 
         heavyAttacks = new Attack[]{
-                new Attack(AttackType.HEAVY_1, false)
+                new Attack(AttackType.HEAVY_1, false, null)
         };
 
         // Load combat profile values from config - direct field access (hybrid pattern)

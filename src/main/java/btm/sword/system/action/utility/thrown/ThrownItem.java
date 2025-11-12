@@ -69,7 +69,7 @@ public class ThrownItem {
     protected double initialVelocity;
 
     int t = 0;
-    protected Function<Integer, Vector> positionFunction;
+    protected Function<Integer, Vector> positionFunction; // TODO: make pos and velocity funcs not hardcoded
     protected Function<Integer, Vector> velocityFunction;
 
     protected boolean grounded;
@@ -90,6 +90,10 @@ public class ThrownItem {
         this.thrower = thrower;
         this.displaySetupInstructions = displaySetupInstructions;
         setupSuccessful = false;
+
+        xDisplayOffset = -0.75f;
+        yDisplayOffset = 0.25f;
+        zDisplayOffset = -0.25f;
 
         setup(true, setupPeriod);
     }
@@ -115,7 +119,7 @@ public class ThrownItem {
         }.runTaskTimer(Sword.getInstance(), 0L, period);
     }
 
-    private void afterSpawn() {
+    protected void afterSpawn() {
         blockTrail = display.getItemStack().getType().isBlock() ?
                 new ParticleWrapper(Particle.BLOCK, 5, 0.25,  0.25,  0.25,
                         display.getItemStack().getType().createBlockData()) :
@@ -175,8 +179,6 @@ public class ThrownItem {
                 }
                 else if (thrower.isThrowSuccessful()) {
                     thrower.setItemTypeInHand(Material.AIR, true);
-//					ItemStack toReturn = thrower.getOffHandItemStackDuringThrow();
-//					thrower.setItemStackInHand(toReturn, false);
                     cancel();
                     return;
                 }
@@ -227,6 +229,7 @@ public class ThrownItem {
         xDisplayOffset = yDisplayOffset = zDisplayOffset = 0;
         determineOrientation();
 
+        //region <Physics calculations>
         this.initialVelocity = initialVelocity;
         LivingEntity ex = thrower.entity();
         Location o = ex.getEyeLocation();
@@ -252,11 +255,13 @@ public class ThrownItem {
 
         double gravDamper = ConfigManager.getInstance().getPhysics().getThrownItems().getGravityDamper();
 
+        // TODO: make these as params in constructor or mke dynamic in some other way so that umbral blade can reassign it's funcs
         positionFunction = t -> flatDir.clone().multiply(forwardCoefficient * t)
                 .add(Prefab.Direction.UP.clone().multiply((upwardCoefficient * t) - (initialVelocity * (1 / gravDamper) * t * t)));
 
         velocityFunction = t -> forwardVelocity.clone()
                 .add(upwardVelocity.clone().add(Prefab.Direction.UP.clone().multiply(-initialVelocity * (2 / (gravDamper)) * t)));
+        //endregion
 
         new BukkitRunnable() {
             @Override

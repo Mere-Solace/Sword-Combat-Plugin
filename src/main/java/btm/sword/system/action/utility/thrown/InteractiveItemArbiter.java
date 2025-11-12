@@ -2,6 +2,8 @@ package btm.sword.system.action.utility.thrown;
 
 import java.util.HashMap;
 
+import btm.sword.system.entity.umbral.UmbralBlade;
+
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.block.Block;
@@ -83,6 +85,16 @@ public class InteractiveItemArbiter {
         ItemStack item = display.getItemStack();
 
         if (!item.isEmpty()) {
+            if (thrownItem instanceof UmbralBlade umbralBlade) {
+                if (!umbralBlade.isOwnedBy(executor)) {
+                    // TODO maybe play some cool rejection animation here
+                    return;
+                }
+
+                umbralBlade.returnToSheath(); // TODO add umbral blade onPickup()
+                return;
+            }
+
             executor.giveItem(item);
             Location i = display.getLocation();
             if (item.getType().isBlock()) {

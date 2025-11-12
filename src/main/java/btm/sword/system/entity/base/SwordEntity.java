@@ -93,6 +93,7 @@ public abstract class SwordEntity {
     protected boolean toughnessBroken;
     protected int shardsLost;
 
+    // TODO: override all getters of vectors and locations to return a .clone() of that instance
     protected final double eyeHeight;
     protected final Vector chestVector;
 

@@ -47,6 +47,10 @@ public final class KeyRegistry {
     //  Commonly Used Keys
     // ------------------------------
 
+    public static final String SOUL_LINK = "soul_link";
+
+    public static final NamespacedKey SOUL_LINK_KEY = key(SOUL_LINK);
+
     /** Persistent data key for GUI buttons or menu items. */
     public static final String MAIN_MENU_BUTTON = "main_menu_button";
 
