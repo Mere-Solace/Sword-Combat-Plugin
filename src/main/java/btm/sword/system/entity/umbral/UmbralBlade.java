@@ -88,7 +88,18 @@ public class UmbralBlade extends ThrownItem {
                     TextColor.color(204, 0, 0), TextDecoration.BOLD))
                 .append(Component.text(" ~", TextColor.color(160, 17, 17))))
             .lore(List.of(
-                // TODO: instructions for use here
+                Component.text(""),
+                Component.text("Controls:", TextColor.color(200, 200, 200), TextDecoration.ITALIC),
+                Component.text("Q + F", TextColor.color(255, 100, 100))
+                    .append(Component.text(" - Toggle Standby/Sheathed", TextColor.color(150, 150, 150))),
+                Component.text("  • Standby: ", TextColor.color(180, 180, 180))
+                    .append(Component.text("Blade hovers, ready to attack", TextColor.color(120, 120, 120))),
+                Component.text("  • Sheathed: ", TextColor.color(180, 180, 180))
+                    .append(Component.text("Blade stored on back", TextColor.color(120, 120, 120))),
+                Component.text(""),
+                Component.text("F + Left Click", TextColor.color(255, 100, 100))
+                    .append(Component.text(" - Wield Blade", TextColor.color(150, 150, 150))),
+                Component.text("  • Equip as weapon in hand", TextColor.color(120, 120, 120))
             ))
             .unbreakable(true)
             .tag(KeyRegistry.SOUL_LINK_KEY, thrower.getUniqueId().toString())
@@ -101,7 +112,12 @@ public class UmbralBlade extends ThrownItem {
                     TextColor.color(17, 17, 17), TextDecoration.BOLD))
                 .append(Component.text(" ~", TextColor.color(219, 17, 17))))
             .lore(List.of(
-                // TODO: instructions for use here
+                Component.text(""),
+                Component.text("Wielded Form", TextColor.color(200, 200, 200), TextDecoration.ITALIC),
+                Component.text("Use normal combat inputs", TextColor.color(150, 150, 150)),
+                Component.text(""),
+                Component.text("Q + F", TextColor.color(255, 100, 100))
+                    .append(Component.text(" - Return to Standby", TextColor.color(150, 150, 150)))
             ))
             .unbreakable(true)
             .tag(KeyRegistry.SOUL_LINK_KEY, thrower.getUniqueId().toString())
@@ -412,11 +428,11 @@ public class UmbralBlade extends ThrownItem {
                 if (attack instanceof ItemDisplayAttack ida) {
                     ida.setWeaponDisplay(display);
                     Attack cur = ida;
-                    while (ida.hasNextAttack()) {
-                        if (ida.getNextAttack() instanceof ItemDisplayAttack nextIda) {
+                    while (cur.hasNextAttack()) {
+                        cur = cur.getNextAttack();
+                        if (cur instanceof ItemDisplayAttack nextIda) {
                             nextIda.setWeaponDisplay(display);
                         }
-                        cur = ida.getNextAttack();
                     }
                 }
             }
@@ -426,11 +442,11 @@ public class UmbralBlade extends ThrownItem {
                 if (attack instanceof ItemDisplayAttack ida) {
                     ida.setWeaponDisplay(display);
                     Attack cur = ida;
-                    while (ida.hasNextAttack()) {
-                        if (ida.getNextAttack() instanceof ItemDisplayAttack nextIda) {
+                    while (cur.hasNextAttack()) {
+                        cur = cur.getNextAttack();
+                        if (cur instanceof ItemDisplayAttack nextIda) {
                             nextIda.setWeaponDisplay(display);
                         }
-                        cur = ida.getNextAttack();
                     }
                 }
             }

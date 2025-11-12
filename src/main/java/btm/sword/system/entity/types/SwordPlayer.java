@@ -171,7 +171,9 @@ public class SwordPlayer extends Combatant {
      * Called when the player leaves the game.
      */
     public void onLeave() {
-        getUmbralBlade().dispose();
+        if (getUmbralBlade() != null) {
+            getUmbralBlade().dispose();
+        }
         endStatusDisplay();
     }
 
@@ -266,7 +268,7 @@ public class SwordPlayer extends Combatant {
             player.getInventory().setItem(8, menuButton);
         }
 
-        if (!KeyRegistry.hasKey(player.getInventory().getItem(0), KeyRegistry.SOUL_LINK_KEY)) {
+        if (getUmbralBlade() != null && !KeyRegistry.hasKey(player.getInventory().getItem(0), KeyRegistry.SOUL_LINK_KEY)) {
             player.getInventory().setItem(0, getUmbralBlade().getLink());
         }
     }
