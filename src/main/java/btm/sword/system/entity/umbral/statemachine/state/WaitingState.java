@@ -1,5 +1,6 @@
 package btm.sword.system.entity.umbral.statemachine.state;
 
+import btm.sword.system.action.utility.thrown.InteractiveItemArbiter;
 import btm.sword.system.entity.umbral.UmbralBlade;
 import btm.sword.system.entity.umbral.statemachine.UmbralState;
 import btm.sword.system.statemachine.State;
@@ -48,7 +49,7 @@ public class WaitingState extends State<UmbralBlade> {
         blade.setDisplayTransformation(UmbralState.WAITING);
         // Call the public methods directly since registerAsInteractableItem is private
         blade.startIdleMovement();
-        btm.sword.system.action.utility.thrown.InteractiveItemArbiter.put(blade);
+        InteractiveItemArbiter.put(blade);
     }
 
     @Override

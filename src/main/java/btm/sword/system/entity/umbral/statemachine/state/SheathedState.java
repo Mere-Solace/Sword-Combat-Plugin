@@ -16,7 +16,9 @@ public class SheathedState extends State<UmbralBlade> {
     }
 
     @Override
-    public void onExit(UmbralBlade blade) { }
+    public void onExit(UmbralBlade blade) {
+
+    }
 
     @Override
     public void onTick(UmbralBlade blade) {

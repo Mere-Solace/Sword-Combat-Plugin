@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 
+import btm.sword.system.statemachine.State;
+
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -87,6 +89,8 @@ public class UmbralBlade extends ThrownItem {
     private final Predicate<UmbralBlade> endHoverPredicate;
     private final Runnable attackEndCallback;
 
+    private static final int inputTimeout = 60;
+
     public UmbralBlade(Combatant thrower, ItemStack weapon) {
         super(thrower, display -> {
             display.setItemStack(weapon);
@@ -102,13 +106,14 @@ public class UmbralBlade extends ThrownItem {
             display.setBillboard(Display.Billboard.FIXED);
         }, 5);
 
-        generateUmbralItems();
-
         this.weapon = weapon;
+
+        generateUmbralItems();
 
         this.attackEndCallback = () -> {
             setState(UmbralState.WAITING);
         };
+
         loadBasicAttacks();
         loadHeavyAttacks();
 
@@ -279,7 +284,7 @@ public class UmbralBlade extends ThrownItem {
     }
 
     public void setState(UmbralState newState) {
-        btm.sword.system.statemachine.State<UmbralBlade> targetState = switch (newState) {
+        State<UmbralBlade> targetState = switch (newState) {
             case SHEATHED -> new SheathedState();
             case STANDBY -> new StandbyState();
             case WIELD -> new WieldState();
@@ -300,24 +305,30 @@ public class UmbralBlade extends ThrownItem {
         return UmbralState.valueOf(stateName);
     }
 
+    // reset 60 ms later (1.2 ticks) to give state machine time to process.
     public void requestToggle() {
         toggleRequested = true;
+        SwordScheduler.runLater(() -> toggleRequested = false, inputTimeout, TimeUnit.MILLISECONDS);
     }
 
     public void requestWield() {
         wieldRequested = true;
+        SwordScheduler.runLater(() -> wieldRequested = false, inputTimeout, TimeUnit.MILLISECONDS);
     }
 
     public void requestAttackQuick() {
         attackQuickRequested = true;
+        SwordScheduler.runLater(() -> attackQuickRequested = false, inputTimeout, TimeUnit.MILLISECONDS);
     }
 
     public void requestAttackHeavy() {
         attackHeavyRequested = true;
+        SwordScheduler.runLater(() -> attackHeavyRequested = false, inputTimeout, TimeUnit.MILLISECONDS);
     }
 
     public void requestRecall() {
         recallRequested = true;
+        SwordScheduler.runLater(() -> recallRequested = false, inputTimeout, TimeUnit.MILLISECONDS);
     }
 
     private void clearRequestFlags() {
@@ -340,10 +351,6 @@ public class UmbralBlade extends ThrownItem {
             dispose();
         }
 
-        if (display != null && active && inState(UmbralState.SHEATHED)) {
-            updateSheathedPosition();
-        }
-
         if (thrower.getTicks() % 2 == 0) {
             if ((display == null || display.isDead()) && active) {
                 thrower.message("Restarting UmbralBlade Display");
@@ -352,10 +359,13 @@ public class UmbralBlade extends ThrownItem {
         }
 
         bladeStateMachine.tick();
-        clearRequestFlags();
     }
 
     public void setDisplayTransformation(UmbralState state) {
+        if (display == null) {
+            restartDisplay();
+            return;
+        }
         DisplayUtil.setInterpolationValues(display, 0, 4);
         switch (state) {
             case SHEATHED -> display.setTransformation(new Transformation(
@@ -401,13 +411,7 @@ public class UmbralBlade extends ThrownItem {
 
             if (!loc.getChunk().isLoaded()) loc.getChunk().load();
 
-            BukkitTask setupTask = setup(false, 5);
-            try {
-                setupTask.wait();
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-            active = true;
+            setup(false, 5);
         }, 2L);
     }
 
@@ -428,6 +432,7 @@ public class UmbralBlade extends ThrownItem {
                     // >>>
                     reassignDisplayToAttacks();
 
+                    active = true;
                     setupSuccessful = true;
                 } catch(Exception e){
                     e.addSuppressed(e);
@@ -445,6 +450,8 @@ public class UmbralBlade extends ThrownItem {
         // don't waste computing power to update resources while wielding the blade.
         if (inState(UmbralState.WIELD)) return;
 
+        long[] lastTimeSent = { System.currentTimeMillis() };
+
         int x = 3;
         for (int i = 0; i < x; i++) {
             SwordScheduler.runBukkitTaskLater(new BukkitRunnable() {
@@ -453,6 +460,13 @@ public class UmbralBlade extends ThrownItem {
                     DisplayUtil.smoothTeleport(display, 2);
                     display.teleport(thrower.entity().getLocation().setDirection(thrower.getFlatDir()));
                     thrower.entity().addPassenger(display);
+
+                    //TODO: Remove later
+                    if (System.currentTimeMillis() - lastTimeSent[0] > 1500) {
+                        lastTimeSent[0] = System.currentTimeMillis();
+                        thrower.message("Updating pos apparently...");
+                    }
+
                 }
             }, 50/x, TimeUnit.MILLISECONDS);  // 50 because that's the millisecond value of a tick
                                                     // TODO Prefab or config value
@@ -538,16 +552,16 @@ public class UmbralBlade extends ThrownItem {
     private void loadBasicAttacks() {
         // load from config or registry later
         basicAttacks = new Attack[]{
-            new ItemDisplayAttack(display, AttackType.BASIC_1,
-                true, attackEndCallback, false, 2,
-                5, 10, 30,
+            new ItemDisplayAttack(display, AttackType.WINDUP_1,
+                true, null, true, 5,
+                20, 1, 700,
                 0, 1)
                 .setNextAttack(
-                    new ItemDisplayAttack(display, AttackType.WINDUP_1,
-                        true, null, true, 5,
-                        20, 1, 700,
-                        0, 1),
-                    50)
+                    new ItemDisplayAttack(display, AttackType.BASIC_1,
+                        true, attackEndCallback, false, 2,
+                        5, 10, 30,
+                        0, 1), 100)
+
         };
     }
 

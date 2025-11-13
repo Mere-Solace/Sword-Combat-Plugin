@@ -1,11 +1,12 @@
 package btm.sword.system.statemachine;
 
+import org.bukkit.Bukkit;
+
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Predicate;
 
-// TODO: Use some of this logic in the new UmbralStateMachine class
-// TODO: Make Umbral State machine have globally defined transitions
 public class StateMachine<T> {
     private final T context;
     private State<T> currentState;
@@ -20,10 +21,10 @@ public class StateMachine<T> {
     public void tick() {
         currentState.onTick(context);
 
-        // Then global transitions
         for (var entry : transitions.entrySet()) {
             var transition = entry.getKey();
-            if (transition.from().equals(currentState) && transition.condition().test(context)) {
+
+            if (transition.from().getClass().equals(currentState.getClass()) && transition.condition().test(context)) {
                 transition.onTransition().accept(context);
                 setState(transition.to());
                 return;
@@ -31,7 +32,6 @@ public class StateMachine<T> {
         }
     }
 
-    // Keep your API simple:
     public void addTransition(Transition<T> transition) {
         transitions.put(transition, transition.condition());
     }
