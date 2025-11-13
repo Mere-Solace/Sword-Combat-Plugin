@@ -71,6 +71,14 @@ public class UmbralBlade extends ThrownItem {
     private long lastActionTime = 0;
     private Location lastTargetLocation;
 
+    // Transition request flags for external input
+    private boolean toggleRequested = false;
+    private boolean wieldRequested = false;
+    private boolean attackQuickRequested = false;
+    private boolean attackHeavyRequested = false;
+    private boolean recallRequested = false;
+    private boolean attackCompleted = false;
+
     private Vector3f scale = new Vector3f(0.85f, 1.3f, 1f);
 
     private static final int idleMovementPeriod = 7;
@@ -115,7 +123,14 @@ public class UmbralBlade extends ThrownItem {
         bladeStateMachine.addTransition(new Transition<>(
             new SheathedState(),
             new StandbyState(),
-            UmbralBlade::isActive,
+            blade -> blade.isActive() && blade.toggleRequested,
+            blade -> {}
+        ));
+
+        bladeStateMachine.addTransition(new Transition<>(
+            new SheathedState(),
+            new WieldState(),
+            blade -> blade.wieldRequested,
             blade -> {}
         ));
 
@@ -123,28 +138,28 @@ public class UmbralBlade extends ThrownItem {
         bladeStateMachine.addTransition(new Transition<>(
             new StandbyState(),
             new SheathedState(),
-            blade -> !blade.isActive(),
+            blade -> blade.toggleRequested,
             blade -> {}
         ));
 
         bladeStateMachine.addTransition(new Transition<>(
             new StandbyState(),
             new WieldState(),
-            blade -> true,
+            blade -> blade.wieldRequested,
             blade -> {}
         ));
 
         bladeStateMachine.addTransition(new Transition<>(
             new StandbyState(),
             new AttackingQuickState(),
-            blade -> true,
+            blade -> blade.attackQuickRequested,
             blade -> {}
         ));
 
         bladeStateMachine.addTransition(new Transition<>(
             new StandbyState(),
             new AttackingHeavyState(),
-            blade -> true,
+            blade -> blade.attackHeavyRequested,
             blade -> {}
         ));
 
@@ -152,14 +167,7 @@ public class UmbralBlade extends ThrownItem {
         bladeStateMachine.addTransition(new Transition<>(
             new WieldState(),
             new StandbyState(),
-            blade -> true,
-            blade -> {}
-        ));
-
-        bladeStateMachine.addTransition(new Transition<>(
-            new WieldState(),
-            new SheathedState(),
-            blade -> true,
+            blade -> blade.toggleRequested,
             blade -> {}
         ));
 
@@ -167,14 +175,14 @@ public class UmbralBlade extends ThrownItem {
         bladeStateMachine.addTransition(new Transition<>(
             new AttackingQuickState(),
             new WaitingState(),
-            blade -> true,
+            blade -> blade.attackCompleted,
             blade -> {}
         ));
 
         bladeStateMachine.addTransition(new Transition<>(
             new AttackingHeavyState(),
             new WaitingState(),
-            blade -> true,
+            blade -> blade.attackCompleted,
             blade -> {}
         ));
 
@@ -226,7 +234,7 @@ public class UmbralBlade extends ThrownItem {
         bladeStateMachine.addTransition(new Transition<>(
             new FlyingState(),
             new RecallingState(),
-            blade -> true,
+            blade -> blade.recallRequested,
             blade -> {}
         ));
 
@@ -234,7 +242,7 @@ public class UmbralBlade extends ThrownItem {
         bladeStateMachine.addTransition(new Transition<>(
             new LodgedState(),
             new RecallingState(),
-            blade -> true,
+            blade -> blade.recallRequested,
             blade -> {}
         ));
 
@@ -292,6 +300,35 @@ public class UmbralBlade extends ThrownItem {
         return UmbralState.valueOf(stateName);
     }
 
+    public void requestToggle() {
+        toggleRequested = true;
+    }
+
+    public void requestWield() {
+        wieldRequested = true;
+    }
+
+    public void requestAttackQuick() {
+        attackQuickRequested = true;
+    }
+
+    public void requestAttackHeavy() {
+        attackHeavyRequested = true;
+    }
+
+    public void requestRecall() {
+        recallRequested = true;
+    }
+
+    private void clearRequestFlags() {
+        toggleRequested = false;
+        wieldRequested = false;
+        attackQuickRequested = false;
+        attackHeavyRequested = false;
+        recallRequested = false;
+        attackCompleted = false;
+    }
+
     public void onTick() {
         if (!active) {
             thrower.message("Umbral Blade Not active.");
@@ -312,8 +349,10 @@ public class UmbralBlade extends ThrownItem {
                 thrower.message("Restarting UmbralBlade Display");
                 restartDisplay();
             }
-        bladeStateMachine.tick();
         }
+
+        bladeStateMachine.tick();
+        clearRequestFlags();
     }
 
     public void setDisplayTransformation(UmbralState state) {
