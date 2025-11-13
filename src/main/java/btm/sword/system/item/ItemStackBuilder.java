@@ -208,6 +208,7 @@ public class ItemStackBuilder {
                 ItemFlag.HIDE_STORED_ENCHANTS,
                 ItemFlag.HIDE_UNBREAKABLE
         );
+        item.setItemMeta(meta);
         return this;
     }
 

@@ -102,7 +102,7 @@ public class SwordPlayer extends Combatant {
         skullMeta.setPlayerProfile(profile);
         playerHead.setItemMeta(skullMeta);
 
-        ItemStackBuilder menuItemBuilder = new ItemStackBuilder(Material.FLOW_ARMOR_TRIM_SMITHING_TEMPLATE);
+        ItemStackBuilder menuItemBuilder = new ItemStackBuilder(Material.ECHO_SHARD);
         menuButton = menuItemBuilder
                 .name(Component.text("| Main Menu |").color(TextColor.color(218, 133, 3)))
                 .hideAll()

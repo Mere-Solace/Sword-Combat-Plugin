@@ -129,7 +129,7 @@ public class UmbralBlade extends ThrownItem {
                     cancel();
                 }
             }
-        }.runTaskTimer(Sword.getInstance(), 10L, 5L);
+        }.runTaskTimer(Sword.getInstance(), 4L, 4L);
 
         endHoverPredicate = blade -> !bladeStateMachine.inState(new StandbyState());
     }
