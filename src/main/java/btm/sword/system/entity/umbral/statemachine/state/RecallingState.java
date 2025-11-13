@@ -25,8 +25,6 @@ import btm.sword.system.statemachine.State;
  * </ul>
  * </p>
  *
- * @author Claude Code
- * @since 1.0
  */
 public class RecallingState extends State<UmbralBlade> {
     @Override

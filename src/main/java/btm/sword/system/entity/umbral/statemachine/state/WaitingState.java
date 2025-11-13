@@ -35,8 +35,6 @@ import btm.sword.system.statemachine.State;
  * </ul>
  * </p>
  *
- * @author Claude Code
- * @since 1.0
  */
 public class WaitingState extends State<UmbralBlade> {
     @Override
@@ -55,7 +53,8 @@ public class WaitingState extends State<UmbralBlade> {
     @Override
     public void onExit(UmbralBlade blade) {
         blade.endIdleMovement();
-        // TODO: Unregister from InteractiveItemArbiter when leaving this state
+        // TODO: Unregister from InteractiveItemArbiter when leaving this state,
+        // TODO: issues #103 & #99
     }
 
     @Override

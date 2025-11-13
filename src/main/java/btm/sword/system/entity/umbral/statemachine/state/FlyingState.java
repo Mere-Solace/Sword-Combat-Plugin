@@ -36,8 +36,6 @@ import btm.sword.system.statemachine.State;
  * </ul>
  * </p>
  *
- * @author Claude Code
- * @since 1.0
  */
 public class FlyingState extends State<UmbralBlade> {
     @Override
