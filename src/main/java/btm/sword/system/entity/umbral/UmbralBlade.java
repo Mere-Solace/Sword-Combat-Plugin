@@ -4,8 +4,6 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 
-import btm.sword.system.statemachine.State;
-
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -44,6 +42,7 @@ import btm.sword.system.entity.umbral.statemachine.state.WaitingState;
 import btm.sword.system.entity.umbral.statemachine.state.WieldState;
 import btm.sword.system.item.ItemStackBuilder;
 import btm.sword.system.item.KeyRegistry;
+import btm.sword.system.statemachine.State;
 import btm.sword.system.statemachine.StateMachine;
 import btm.sword.system.statemachine.Transition;
 import btm.sword.util.display.DisplayUtil;

@@ -1,10 +1,8 @@
 package btm.sword.system.statemachine;
 
-import org.bukkit.Bukkit;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 import java.util.function.Predicate;
 
 public class StateMachine<T> {
