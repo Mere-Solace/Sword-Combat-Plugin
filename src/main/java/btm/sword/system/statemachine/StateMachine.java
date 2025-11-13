@@ -40,7 +40,7 @@ public class StateMachine<T> {
         return check.getClass().equals(currentState.getClass());
     }
 
-    private void setState(State<T> next) {
+    public void setState(State<T> next) {
         currentState.onExit(context);
         currentState = next;
         currentState.onEnter(context);

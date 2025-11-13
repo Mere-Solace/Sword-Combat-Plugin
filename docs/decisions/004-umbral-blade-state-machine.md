@@ -2,7 +2,6 @@
 
 **Status**: Accepted
 **Date**: 2025-11-12
-**Authors**: Claude Code, Mere Solace
 
 ## Context
 

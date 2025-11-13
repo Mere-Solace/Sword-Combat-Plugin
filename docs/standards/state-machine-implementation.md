@@ -509,4 +509,3 @@ public void testBasicStateTransitions() {
 ---
 
 **Last Updated**: 2025-11-12
-**Maintainer**: Claude Code, Mere Solace
