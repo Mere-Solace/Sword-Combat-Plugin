@@ -107,7 +107,7 @@ public class UmbralBlade extends ThrownItem {
         this.weapon = weapon;
 
         this.attackEndCallback = () -> {
-            setState(UmbralState.WAITING);
+            attackCompleted = true;
         };
         loadBasicAttacks();
         loadHeavyAttacks();
