@@ -4,7 +4,17 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 
+import btm.sword.system.entity.types.SwordPlayer;
+
+import btm.sword.system.entity.umbral.input.BladeRequest;
+import btm.sword.system.entity.umbral.input.InputBuffer;
+import btm.sword.system.entity.umbral.statemachine.UmbralStateFacade;
+import btm.sword.system.entity.umbral.statemachine.state.InactiveState;
+
+import btm.sword.system.entity.umbral.statemachine.state.RecoverState;
+
 import org.bukkit.Bukkit;
+import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Display;
@@ -65,20 +75,13 @@ public class UmbralBlade extends ThrownItem {
     private ItemStack link;
     private ItemStack blade;
 
-    boolean active;
+    public boolean active;
+    private boolean restartingDisplay = false;
 
     private ItemStack weapon;
 
     private long lastActionTime = 0;
     private Location lastTargetLocation;
-
-    // Transition request flags for external input
-    private boolean toggleRequested = false;
-    private boolean wieldRequested = false;
-    private boolean attackQuickRequested = false;
-    private boolean attackHeavyRequested = false;
-    private boolean recallRequested = false;
-    private boolean attackCompleted = false;
 
     private Vector3f scale = new Vector3f(0.85f, 1.3f, 1f);
 
@@ -87,14 +90,20 @@ public class UmbralBlade extends ThrownItem {
 
     private final Predicate<UmbralBlade> endHoverPredicate;
     private final Runnable attackEndCallback;
+    private boolean attackCompleted = false;
 
     private static final int inputTimeout = 60;
+    private final InputBuffer inputBuffer = new InputBuffer();
+
+    public InputBuffer inputs() {
+        return inputBuffer;
+    }
 
     public UmbralBlade(Combatant thrower, ItemStack weapon) {
         super(thrower, display -> {
             display.setItemStack(weapon);
             display.setTransformation(new Transformation(
-                    new Vector3f(0, 0, 0),
+                    new Vector3f(0.28f, -1.35f, -0.42f),
                     new Quaternionf().rotationY((float) Math.PI / 2).rotateZ(-(float) Math.PI / (1.65f)),
                     new Vector3f(0.85f, 1.3f, 1f),
                     new Quaternionf()
@@ -110,7 +119,7 @@ public class UmbralBlade extends ThrownItem {
         generateUmbralItems();
 
         this.attackEndCallback = () -> {
-            setState(UmbralState.WAITING);
+            attackCompleted = true;
         };
 
         loadBasicAttacks();
@@ -119,170 +128,217 @@ public class UmbralBlade extends ThrownItem {
         this.bladeStateMachine = new UmbralStateMachine(this, new SheathedState());
         initStateMachine();
 
-        // Runnable to correctly set up blade
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                if (bladeStateMachine.inState(new SheathedState())) {
-                    bladeStateMachine.setState(new StandbyState());
-                    bladeStateMachine.setState(new SheathedState());
-                    cancel();
-                }
-            }
-        }.runTaskTimer(Sword.getInstance(), 4L, 4L);
-
         endHoverPredicate = blade -> !bladeStateMachine.inState(new StandbyState());
     }
 
     private void initStateMachine() {
-        // SHEATHED transitions
+        // =====================================================================
+        // UNIVERSAL — wildcard transitions
+        // =====================================================================
+
+        // 1) Enter inactive from ANYTHING
         bladeStateMachine.addTransition(new Transition<>(
-            new SheathedState(),
-            new StandbyState(),
-            blade -> blade.isActive() && blade.toggleRequested,
+            UmbralStateFacade.class,
+            InactiveState.class,
+            blade -> false, //blade.forceInactive,
+            blade -> {} //blade.stopAllMotion()
+        ));
+
+        // 2) Enter recover from ANYTHING when display is invalid
+        bladeStateMachine.addTransition(new Transition<>(
+            UmbralStateFacade.class,
+            RecoverState.class,
+            blade -> blade.getDisplay() == null || blade.display.isDead() || !blade.display.isValid(),
+            blade -> {} //blade.prepareRecover()
+        ));
+
+
+        // =====================================================================
+        // SHEATHED
+        // =====================================================================
+        bladeStateMachine.addTransition(new Transition<>(
+            SheathedState.class,
+            StandbyState.class,
+            blade -> isRequestedAndActive(BladeRequest.TOGGLE),
             blade -> {}
         ));
 
         bladeStateMachine.addTransition(new Transition<>(
-            new SheathedState(),
-            new WieldState(),
-            blade -> blade.wieldRequested,
+            SheathedState.class,
+            WieldState.class,
+            blade -> isRequestedAndActive(BladeRequest.WIELD),
             blade -> {}
         ));
 
-        // STANDBY transitions
-        bladeStateMachine.addTransition(new Transition<>(
-            new StandbyState(),
-            new SheathedState(),
-            blade -> blade.toggleRequested,
-            blade -> {}
-        ));
 
+        // =====================================================================
+        // STANDBY
+        // =====================================================================
         bladeStateMachine.addTransition(new Transition<>(
-            new StandbyState(),
-            new WieldState(),
-            blade -> blade.wieldRequested,
+            StandbyState.class,
+            SheathedState.class,
+            blade -> isRequestedAndActive(BladeRequest.TOGGLE),
             blade -> {}
         ));
 
         bladeStateMachine.addTransition(new Transition<>(
-            new StandbyState(),
-            new AttackingQuickState(),
-            blade -> blade.attackQuickRequested,
+            StandbyState.class,
+            WieldState.class,
+            blade -> isRequestedAndActive(BladeRequest.WIELD),
             blade -> {}
         ));
 
         bladeStateMachine.addTransition(new Transition<>(
-            new StandbyState(),
-            new AttackingHeavyState(),
-            blade -> blade.attackHeavyRequested,
+            StandbyState.class,
+            AttackingQuickState.class,
+            blade -> isRequestedAndActive(BladeRequest.ATTACK_QUICK),
             blade -> {}
         ));
 
-        // WIELD transitions
         bladeStateMachine.addTransition(new Transition<>(
-            new WieldState(),
-            new StandbyState(),
-            blade -> blade.toggleRequested,
+            StandbyState.class,
+            AttackingHeavyState.class,
+            blade -> isRequestedAndActive(BladeRequest.ATTACK_HEAVY),
             blade -> {}
         ));
 
-        // ATTACKING transitions
+
+        // =====================================================================
+        // WIELD
+        // =====================================================================
         bladeStateMachine.addTransition(new Transition<>(
-            new AttackingQuickState(),
-            new WaitingState(),
+            WieldState.class,
+            StandbyState.class,
+            blade -> isRequestedAndActive(BladeRequest.TOGGLE),
+            blade -> {}
+        ));
+
+
+        // =====================================================================
+        // ATTACKING (Quick + Heavy)
+        // =====================================================================
+        bladeStateMachine.addTransition(new Transition<>(
+            AttackingQuickState.class,
+            WaitingState.class,
             blade -> blade.attackCompleted,
             blade -> {}
         ));
 
         bladeStateMachine.addTransition(new Transition<>(
-            new AttackingHeavyState(),
-            new WaitingState(),
+            AttackingHeavyState.class,
+            WaitingState.class,
             blade -> blade.attackCompleted,
             blade -> {}
         ));
 
-        // WAITING transitions
+
+        // =====================================================================
+        // WAITING
+        // =====================================================================
         bladeStateMachine.addTransition(new Transition<>(
-            new WaitingState(),
-            new StandbyState(),
-            blade -> true,
+            WaitingState.class,
+            StandbyState.class,
+            blade -> true, //!blade.shouldReturn(), // immediate fallback
             blade -> {}
         ));
 
         bladeStateMachine.addTransition(new Transition<>(
-            new WaitingState(),
-            new ReturningState(),
+            WaitingState.class,
+            ReturningState.class,
             UmbralBlade::isTooFarOrIdleTooLong,
             blade -> {}
         ));
 
-        // RECALLING/RETURNING transitions
+
+        // =====================================================================
+        // RECALLING / RETURNING
+        // =====================================================================
         bladeStateMachine.addTransition(new Transition<>(
-            new RecallingState(),
-            new SheathedState(),
+            RecallingState.class,
+            SheathedState.class,
             blade -> true,
             blade -> {}
         ));
 
         bladeStateMachine.addTransition(new Transition<>(
-            new ReturningState(),
-            new SheathedState(),
+            ReturningState.class,
+            SheathedState.class,
             blade -> true,
             blade -> {}
         ));
 
-        // FLYING transitions
+
+        // =====================================================================
+        // FLYING
+        // =====================================================================
         bladeStateMachine.addTransition(new Transition<>(
-            new FlyingState(),
-            new LodgedState(),
+            FlyingState.class,
+            LodgedState.class,
             UmbralBlade::hasHitTarget,
             blade -> {}
         ));
 
         bladeStateMachine.addTransition(new Transition<>(
-            new FlyingState(),
-            new WaitingState(),
+            FlyingState.class,
+            WaitingState.class,
             UmbralBlade::hasLanded,
             blade -> {}
         ));
 
         bladeStateMachine.addTransition(new Transition<>(
-            new FlyingState(),
-            new RecallingState(),
-            blade -> blade.recallRequested,
+            FlyingState.class,
+            RecallingState.class,
+            blade -> isRequestedAndActive(BladeRequest.RECALL),
             blade -> {}
         ));
 
-        // LODGED transitions
+
+        // =====================================================================
+        // LODGED
+        // =====================================================================
         bladeStateMachine.addTransition(new Transition<>(
-            new LodgedState(),
-            new RecallingState(),
-            blade -> blade.recallRequested,
+            LodgedState.class,
+            RecallingState.class,
+            blade -> isRequestedAndActive(BladeRequest.RECALL),
             blade -> {}
         ));
 
         bladeStateMachine.addTransition(new Transition<>(
-            new LodgedState(),
-            new WaitingState(),
+            LodgedState.class,
+            WaitingState.class,
             UmbralBlade::isTargetDestroyed,
             blade -> {}
         ));
 
-        // LUNGING transitions
+
+        // =====================================================================
+        // LUNGING
+        // =====================================================================
         bladeStateMachine.addTransition(new Transition<>(
-            new LungingState(),
-            new LodgedState(),
+            LungingState.class,
+            LodgedState.class,
             UmbralBlade::hasHitTarget,
             blade -> {}
         ));
 
         bladeStateMachine.addTransition(new Transition<>(
-            new LungingState(),
-            new WaitingState(),
+            LungingState.class,
+            WaitingState.class,
             UmbralBlade::lungeMissed,
             blade -> {}
         ));
+    }
+
+    public void request(BladeRequest request) {
+        inputBuffer.push(request);
+    }
+
+    public boolean isRequested(BladeRequest request) {
+        return inputBuffer.consumeIfPresent(request);
+    }
+
+    public boolean isRequestedAndActive(BladeRequest request) {
+        return isRequested(request) && isActive();
     }
 
     public boolean isOwnedBy(Combatant combatant) {
@@ -315,58 +371,28 @@ public class UmbralBlade extends ThrownItem {
         return UmbralState.valueOf(stateName);
     }
 
-    // TODO: make this one method and make some data struct to store the bools or find a better soln.
-    // reset 60 ms later (1.2 ticks) to give state machine time to process.
-    public void requestToggle() {
-        toggleRequested = true;
-        SwordScheduler.runLater(() -> toggleRequested = false, inputTimeout, TimeUnit.MILLISECONDS);
-    }
-
-    public void requestWield() {
-        wieldRequested = true;
-        SwordScheduler.runLater(() -> wieldRequested = false, inputTimeout, TimeUnit.MILLISECONDS);
-    }
-
-    public void requestAttackQuick() {
-        attackQuickRequested = true;
-        SwordScheduler.runLater(() -> attackQuickRequested = false, inputTimeout, TimeUnit.MILLISECONDS);
-    }
-
-    public void requestAttackHeavy() {
-        attackHeavyRequested = true;
-        SwordScheduler.runLater(() -> attackHeavyRequested = false, inputTimeout, TimeUnit.MILLISECONDS);
-    }
-
-    public void requestRecall() {
-        recallRequested = true;
-        SwordScheduler.runLater(() -> recallRequested = false, inputTimeout, TimeUnit.MILLISECONDS);
-    }
-
-    private void clearRequestFlags() {
-        toggleRequested = false;
-        wieldRequested = false;
-        attackQuickRequested = false;
-        attackHeavyRequested = false;
-        recallRequested = false;
-        attackCompleted = false;
-    }
-
     public void onTick() {
-        if (!active) {
-            thrower.message("Umbral Blade Not active.");
+        if (restartingDisplay) return;
+
+        if (!active &&
+            thrower instanceof SwordPlayer sp &&
+            sp.player().getGameMode().equals(GameMode.SPECTATOR)) {
+            if (sp.getTicks() % 20 == 0) {
+                sp.message("Blade No Activo.");
+            }
             return;
         }
+        // TODO: This works, but is there a better way?
+        active = true;
 
         if (!thrower.isValid()) {
             thrower.message("Ending Umbral Blade");
             dispose();
         }
 
-        if (thrower.getTicks() % 2 == 0) {
-            if ((display == null || display.isDead()) && active) {
-                thrower.message("Restarting UmbralBlade Display");
-                restartDisplay();
-            }
+        if ((display == null || !display.isValid()) && active) {
+            thrower.message("Restarting UmbralBlade Display");
+            restartDisplay();
         }
 
         if (bladeStateMachine != null)
@@ -374,10 +400,8 @@ public class UmbralBlade extends ThrownItem {
     }
 
     public void setDisplayTransformation(Class<? extends State<UmbralBlade>> state) {
-        if (display == null) {
-            restartDisplay();
-            return;
-        }
+        if (display == null) return;
+
         DisplayUtil.setInterpolationValues(display, 0, 4);
 
         if (state == SheathedState.class) {
@@ -422,6 +446,7 @@ public class UmbralBlade extends ThrownItem {
     }
 
     public void restartDisplay() {
+        restartingDisplay = true;
         active = false;
         Bukkit.getScheduler().runTaskLater(Sword.getInstance(), () -> {
             if (!thrower.isValid()) return;
@@ -453,6 +478,7 @@ public class UmbralBlade extends ThrownItem {
 
                     active = true;
                     setupSuccessful = true;
+                    restartingDisplay = false;
                 } catch(Exception e){
                     e.addSuppressed(e);
                 }
@@ -546,6 +572,8 @@ public class UmbralBlade extends ThrownItem {
 
         attack.setOrigin(attackOrigin);
         attack.execute(thrower);
+
+
     }
 
     private boolean isTooFarOrIdleTooLong() {

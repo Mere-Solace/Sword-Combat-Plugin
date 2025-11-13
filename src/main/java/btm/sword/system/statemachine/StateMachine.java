@@ -18,15 +18,22 @@ public class StateMachine<T> {
 
     public void tick() {
         currentState.onTick(context);
+        for (var t : transitions.keySet()) {
+            if (t.from().isAssignableFrom(currentState.getClass())
+                && t.condition().test(context)) {
 
-        for (var entry : transitions.entrySet()) {
-            var transition = entry.getKey();
-
-            if (transition.from().getClass().equals(currentState.getClass()) && transition.condition().test(context)) {
-                transition.onTransition().accept(context);
-                setState(transition.to());
+                t.onTransition().accept(context);
+                setState(createState(t.to()));
                 return;
             }
+        }
+    }
+
+    private State<T> createState(Class<? extends State<T>> clazz) {
+        try {
+            return clazz.getDeclaredConstructor().newInstance();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 

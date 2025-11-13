@@ -1,7 +1,7 @@
 package btm.sword.system.entity.umbral.statemachine.state;
 
 import btm.sword.system.entity.umbral.UmbralBlade;
-import btm.sword.system.statemachine.State;
+import btm.sword.system.entity.umbral.statemachine.UmbralStateFacade;
 
 /**
  * State where the UmbralBlade is performing a quick attack.
@@ -33,7 +33,7 @@ import btm.sword.system.statemachine.State;
  * </p>
  *
  */
-public class AttackingQuickState extends State<UmbralBlade> {
+public class AttackingQuickState extends UmbralStateFacade {
     @Override
     public String name() {
         return "ATTACKING_QUICK";
@@ -47,7 +47,7 @@ public class AttackingQuickState extends State<UmbralBlade> {
 
     @Override
     public void onExit(UmbralBlade blade) {
-        // Attack cleanup if needed
+
     }
 
     @Override

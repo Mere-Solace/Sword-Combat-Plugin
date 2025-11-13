@@ -92,6 +92,12 @@ public abstract class Combatant extends SwordEntity {
     @Override
     public void onDeath() {
         super.onDeath();
+        if (umbralBlade.getDisplay().isValid()) {
+            Prefab.Particles.UMBRAL_POOF.display(umbralBlade.getDisplay().getLocation());
+        }
+        if (umbralBlade.getDisplay() == null || !umbralBlade.getDisplay().isValid()) {
+            message("Display is null.");
+        }
         umbralBlade.dispose();
         // TODO: on death umbral blade logic... What should happen here?
     }

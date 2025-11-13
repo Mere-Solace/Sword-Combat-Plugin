@@ -4,22 +4,24 @@ import btm.sword.system.entity.umbral.UmbralBlade;
 import btm.sword.system.entity.umbral.statemachine.UmbralStateFacade;
 import btm.sword.system.statemachine.State;
 
-public class StandbyState extends UmbralStateFacade {
+public class RecoverState extends UmbralStateFacade {
     @Override
-    public String name() { return "STANDBY"; }
+    public String name() {
+        return "FLYING";
+    }
 
     @Override
     public void onEnter(UmbralBlade blade) {
-        blade.hoverBehindWielder();
+
     }
 
     @Override
     public void onExit(UmbralBlade blade) {
-        blade.endIdleMovement();
+
     }
 
     @Override
     public void onTick(UmbralBlade blade) {
-        // Idle movement handled by BukkitRunnable; tick may monitor attack triggers
+
     }
 }

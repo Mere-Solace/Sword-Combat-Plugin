@@ -49,7 +49,7 @@ public class AttackAction extends SwordAction {
         if (KeyRegistry.hasKey(itemStack, KeyRegistry.SOUL_LINK_KEY) &&
                 executor.getUmbralBlade() != null) {
             if (executor.getUmbralBlade().inState(UmbralState.STANDBY)) {
-                UmbralBladeAction.performAttack(executor);
+                UmbralBladeAction.performQuickAttack(executor);
                 return;
             }
 

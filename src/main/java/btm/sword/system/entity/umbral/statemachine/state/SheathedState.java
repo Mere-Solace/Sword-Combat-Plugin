@@ -1,9 +1,9 @@
 package btm.sword.system.entity.umbral.statemachine.state;
 
 import btm.sword.system.entity.umbral.UmbralBlade;
-import btm.sword.system.statemachine.State;
+import btm.sword.system.entity.umbral.statemachine.UmbralStateFacade;
 
-public class SheathedState extends State<UmbralBlade> {
+public class SheathedState extends UmbralStateFacade {
     @Override
     public String name() { return "SHEATHED"; }
 

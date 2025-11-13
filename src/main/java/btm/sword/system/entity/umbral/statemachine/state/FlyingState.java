@@ -1,6 +1,7 @@
 package btm.sword.system.entity.umbral.statemachine.state;
 
 import btm.sword.system.entity.umbral.UmbralBlade;
+import btm.sword.system.entity.umbral.statemachine.UmbralStateFacade;
 import btm.sword.system.statemachine.State;
 
 /**
@@ -36,7 +37,7 @@ import btm.sword.system.statemachine.State;
  * </p>
  *
  */
-public class FlyingState extends State<UmbralBlade> {
+public class FlyingState extends UmbralStateFacade {
     @Override
     public String name() {
         return "FLYING";

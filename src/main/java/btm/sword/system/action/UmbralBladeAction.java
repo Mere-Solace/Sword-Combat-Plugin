@@ -2,33 +2,34 @@ package btm.sword.system.action;
 
 import btm.sword.system.entity.types.Combatant;
 import btm.sword.system.entity.umbral.UmbralBlade;
+import btm.sword.system.entity.umbral.input.BladeRequest;
 
 public class UmbralBladeAction extends SwordAction {
     public static void wieldUmbralBlade(Combatant wielder) {
         UmbralBlade blade = wielder.getUmbralBlade();
         if (blade == null) return;
 
-        blade.requestWield();
+        blade.request(BladeRequest.WIELD);
     }
 
     public static void toggleUmbralBlade(Combatant wielder) {
         UmbralBlade blade = wielder.getUmbralBlade();
         if (blade == null) return;
 
-        blade.requestToggle();
+        blade.request(BladeRequest.TOGGLE);
     }
 
-    public static void performAttack(Combatant wielder) {
+    public static void performQuickAttack(Combatant wielder) {
         UmbralBlade blade = wielder.getUmbralBlade();
         if (blade == null) return;
 
-        blade.requestAttackQuick();
+        blade.request(BladeRequest.ATTACK_QUICK);
     }
 
     public static void recallBlade(Combatant wielder) {
         UmbralBlade blade = wielder.getUmbralBlade();
         if (blade == null) return;
 
-        blade.requestRecall();
+        blade.request(BladeRequest.RECALL);
     }
 }
