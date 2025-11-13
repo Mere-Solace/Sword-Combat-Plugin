@@ -1,4 +1,4 @@
-package btm.sword.system.entity.umbral;
+package btm.sword.system.entity.umbral.state;
 
 public enum UmbralState {
     WIELD,  // display is invis and all update ops stop (still keep as passenger for quick retrieval, though

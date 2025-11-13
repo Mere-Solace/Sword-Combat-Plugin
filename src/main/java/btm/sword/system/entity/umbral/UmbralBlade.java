@@ -7,6 +7,7 @@ import java.util.function.Predicate;
 import btm.sword.system.attack.AttackType;
 import btm.sword.system.action.utility.thrown.InteractiveItemArbiter;
 import btm.sword.system.attack.ItemDisplayAttack;
+import btm.sword.system.entity.umbral.state.UmbralState;
 import btm.sword.system.item.ItemStackBuilder;
 import btm.sword.system.item.KeyRegistry;
 import net.kyori.adventure.text.Component;
@@ -45,7 +46,7 @@ import lombok.Setter;
 public class UmbralBlade extends ThrownItem {
     private Attack[] basicAttacks;
     private Attack[] heavyAttacks;
-    private UmbralState state = UmbralState.SHEATHED;
+    private UmbralState state;
 
     private final ItemStack link;
     private final ItemStack blade;

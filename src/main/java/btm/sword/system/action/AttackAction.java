@@ -2,7 +2,7 @@ package btm.sword.system.action;
 
 import java.util.Map;
 
-import btm.sword.system.entity.umbral.UmbralState;
+import btm.sword.system.entity.umbral.state.UmbralState;
 import btm.sword.system.item.KeyRegistry;
 
 import org.apache.logging.log4j.util.TriConsumer;
