@@ -1,12 +1,8 @@
 package btm.sword.system.statemachine;
 
-import java.util.Map;
-import java.util.function.Predicate;
-
-public interface State<T> {
-    String name();
-    void onEnter(T context);
-    void onExit(T context);
-    void onTick(T context);
-    Map<Class<? extends State<T>>, Predicate<T>> transitions();
+public abstract class State<T> {
+    public abstract String name();
+    public abstract void onEnter(T context);
+    public abstract void onExit(T context);
+    public abstract void onTick(T context);
 }

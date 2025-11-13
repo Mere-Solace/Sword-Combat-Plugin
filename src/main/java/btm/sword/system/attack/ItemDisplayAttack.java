@@ -1,10 +1,9 @@
 package btm.sword.system.attack;
 
-import btm.sword.util.display.DisplayUtil;
-
-import lombok.Setter;
-
 import org.bukkit.entity.ItemDisplay;
+
+import btm.sword.util.display.DisplayUtil;
+import lombok.Setter;
 
 public class ItemDisplayAttack extends Attack {
     @Setter
