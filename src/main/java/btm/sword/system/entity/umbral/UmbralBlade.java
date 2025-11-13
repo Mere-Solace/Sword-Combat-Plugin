@@ -81,7 +81,7 @@ public class UmbralBlade extends ThrownItem {
 
     private Vector3f scale = new Vector3f(0.85f, 1.3f, 1f);
 
-    private static final int idleMovementPeriod = 7;
+    private static final int idleMovementPeriod = 5;
     private BukkitTask idleMovement;
 
     private final Predicate<UmbralBlade> endHoverPredicate;
@@ -435,11 +435,11 @@ public class UmbralBlade extends ThrownItem {
             }
         }.runTaskTimer(Sword.getInstance(), 0L, period);
     }
+
     private void registerAsInteractableItem() {
         startIdleMovement();
         InteractiveItemArbiter.put(this);
     }
-
 
     public void updateSheathedPosition() {
         // don't waste computing power to update resources while wielding the blade.
@@ -461,49 +461,13 @@ public class UmbralBlade extends ThrownItem {
 
     public void startIdleMovement() {
         idleMovement = new BukkitRunnable() {
-            int step = 0;
+            double step = 0;
             @Override
             public void run() {
 
-                boolean change = true;
-                Transformation newTr;
-                Transformation old;
-                switch (step) {
-                    case 1:
-                        old = display.getTransformation();
-                        newTr = new Transformation(
-                            old.getTranslation().add(0.005f, -0.3f, 0),
-                            old.getLeftRotation(),
-                            old.getScale(),
-                            old.getRightRotation()
-                        );
-                        break;
+                // TODO implement a sinusoidal solution.
 
-                    case 3:
-                        old = display.getTransformation();
-                        newTr = new Transformation(
-                            old.getTranslation().add(-0.005f, 0.3f, 0),
-                            old.getLeftRotation(),
-                            old.getScale(),
-                            old.getRightRotation()
-                        );
-                        break;
-
-                    default:
-                        setDisplayTransformation(UmbralState.STANDBY);
-                        newTr = display.getTransformation();
-                        change = false;
-                        if (step >= 4) step = 0;
-                        break;
-
-                }
-                if (change) {
-                    DisplayUtil.setInterpolationValues(display, 0, idleMovementPeriod*2);
-                    display.setTransformation(newTr);
-                }
-
-                change = true;
-                step++;
+                step += Math.PI/3;
             }
         }.runTaskTimer(Sword.getInstance(), 0L, idleMovementPeriod);
     }
