@@ -2,20 +2,18 @@ package btm.sword.system.action;
 
 import java.util.Map;
 
-import btm.sword.system.entity.umbral.statemachine.UmbralState;
-import btm.sword.system.item.KeyRegistry;
-
 import org.apache.logging.log4j.util.TriConsumer;
 import org.bukkit.Material;
+import org.bukkit.inventory.ItemStack;
 
 import btm.sword.config.ConfigManager;
-import btm.sword.system.attack.AttackType;
 import btm.sword.system.attack.Attack;
+import btm.sword.system.attack.AttackType;
 import btm.sword.system.entity.types.Combatant;
 import btm.sword.system.entity.types.SwordPlayer;
+import btm.sword.system.entity.umbral.statemachine.UmbralState;
+import btm.sword.system.item.KeyRegistry;
 import btm.sword.util.display.Prefab;
-
-import org.bukkit.inventory.ItemStack;
 
 /**
  * Provides attack-related actions for {@link Combatant} entities.

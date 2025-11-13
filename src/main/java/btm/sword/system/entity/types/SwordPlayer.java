@@ -237,7 +237,7 @@ public class SwordPlayer extends Combatant {
                 return;
             }
         }
-        
+
         InputExecutionTree.InputNode node = inputExecutionTree.step(input);
 
         if (node == null)

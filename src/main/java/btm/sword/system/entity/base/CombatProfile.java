@@ -4,8 +4,8 @@ import java.util.HashMap;
 
 import btm.sword.config.ConfigManager;
 import btm.sword.config.section.EntityConfig;
-import btm.sword.system.attack.AttackType;
 import btm.sword.system.attack.Attack;
+import btm.sword.system.attack.AttackType;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.aspect.value.AspectValue;
 import btm.sword.system.entity.aspect.value.ResourceValue;

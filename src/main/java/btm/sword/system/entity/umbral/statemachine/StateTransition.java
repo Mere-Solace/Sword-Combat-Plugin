@@ -1,9 +1,9 @@
 package btm.sword.system.entity.umbral.statemachine;
 
-import btm.sword.system.entity.umbral.UmbralBlade;
-
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+
+import btm.sword.system.entity.umbral.UmbralBlade;
 
 public record StateTransition(
     UmbralState from,

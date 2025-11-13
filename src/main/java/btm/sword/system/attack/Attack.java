@@ -8,10 +8,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-import btm.sword.Sword;
-import lombok.Getter;
-import lombok.Setter;
-
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Particle;
@@ -21,6 +17,7 @@ import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 
+import btm.sword.Sword;
 import btm.sword.config.ConfigManager;
 import btm.sword.config.section.CombatConfig;
 import btm.sword.system.SwordScheduler;
@@ -34,6 +31,8 @@ import btm.sword.util.display.Prefab;
 import btm.sword.util.entity.HitboxUtil;
 import btm.sword.util.math.BezierUtil;
 import btm.sword.util.math.VectorUtil;
+import lombok.Getter;
+import lombok.Setter;
 
 public class Attack extends SwordAction implements Runnable {
     private final CombatConfig.AttacksConfig attacksConfig;

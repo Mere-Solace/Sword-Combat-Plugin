@@ -4,21 +4,6 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 
-import btm.sword.system.attack.AttackType;
-import btm.sword.system.action.utility.thrown.InteractiveItemArbiter;
-import btm.sword.system.attack.ItemDisplayAttack;
-import btm.sword.system.entity.umbral.statemachine.state.SheathedState;
-import btm.sword.system.entity.umbral.statemachine.state.StandbyState;
-import btm.sword.system.entity.umbral.statemachine.UmbralState;
-import btm.sword.system.entity.umbral.statemachine.state.WieldState;
-import btm.sword.system.item.ItemStackBuilder;
-import btm.sword.system.item.KeyRegistry;
-import btm.sword.system.statemachine.StateMachine;
-import btm.sword.system.statemachine.Transition;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.TextColor;
-import net.kyori.adventure.text.format.TextDecoration;
-
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -36,13 +21,27 @@ import org.joml.Vector3f;
 
 import btm.sword.Sword;
 import btm.sword.system.SwordScheduler;
+import btm.sword.system.action.utility.thrown.InteractiveItemArbiter;
 import btm.sword.system.action.utility.thrown.ThrownItem;
 import btm.sword.system.attack.Attack;
+import btm.sword.system.attack.AttackType;
+import btm.sword.system.attack.ItemDisplayAttack;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.types.Combatant;
+import btm.sword.system.entity.umbral.statemachine.UmbralState;
+import btm.sword.system.entity.umbral.statemachine.state.SheathedState;
+import btm.sword.system.entity.umbral.statemachine.state.StandbyState;
+import btm.sword.system.entity.umbral.statemachine.state.WieldState;
+import btm.sword.system.item.ItemStackBuilder;
+import btm.sword.system.item.KeyRegistry;
+import btm.sword.system.statemachine.StateMachine;
+import btm.sword.system.statemachine.Transition;
 import btm.sword.util.display.DisplayUtil;
 import lombok.Getter;
 import lombok.Setter;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.TextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 
 // while flying and attacking on its own, no soulfire is reaped on attacks
 // while in hand, higher soulfire intake on hit

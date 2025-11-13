@@ -1,0 +1,53 @@
+package btm.sword.system.entity.umbral.statemachine.state;
+
+import btm.sword.system.entity.umbral.UmbralBlade;
+import btm.sword.system.entity.umbral.statemachine.UmbralState;
+import btm.sword.system.statemachine.State;
+
+/**
+ * State where the UmbralBlade is automatically returning to sheath.
+ * <p>
+ * Similar to RECALLING but triggered automatically when the blade has been
+ * idle for too long or the wielder moves too far away.
+ * </p>
+ * <p>
+ * <b>Entry Actions:</b>
+ * <ul>
+ *   <li>Set display transformation for return animation</li>
+ *   <li>Stop idle movement</li>
+ *   <li>Begin automatic return to sheath</li>
+ * </ul>
+ * </p>
+ * <p>
+ * <b>Typical Transitions:</b>
+ * <ul>
+ *   <li>RETURNING → SHEATHED (when return completes)</li>
+ * </ul>
+ * </p>
+ *
+ * @author Claude Code
+ * @since 1.0
+ */
+public class ReturningState extends State<UmbralBlade> {
+    @Override
+    public String name() {
+        return "RETURNING";
+    }
+
+    @Override
+    public void onEnter(UmbralBlade blade) {
+        blade.setDisplayTransformation(UmbralState.RETURNING);
+        blade.endIdleMovement();
+        blade.returnToSheath();
+    }
+
+    @Override
+    public void onExit(UmbralBlade blade) {
+        // Return animation cleanup if needed
+    }
+
+    @Override
+    public void onTick(UmbralBlade blade) {
+        // Monitor return progress
+    }
+}

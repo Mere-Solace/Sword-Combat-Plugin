@@ -2,8 +2,6 @@ package btm.sword.system.action.utility.thrown;
 
 import java.util.HashMap;
 
-import btm.sword.system.entity.umbral.UmbralBlade;
-
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.block.Block;
@@ -13,6 +11,7 @@ import org.bukkit.util.Vector;
 
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.types.Combatant;
+import btm.sword.system.entity.umbral.UmbralBlade;
 import btm.sword.util.display.ParticleWrapper;
 import btm.sword.util.display.Prefab;
 
