@@ -7,9 +7,14 @@ import java.util.function.Predicate;
 import btm.sword.system.attack.AttackType;
 import btm.sword.system.action.utility.thrown.InteractiveItemArbiter;
 import btm.sword.system.attack.ItemDisplayAttack;
-import btm.sword.system.entity.umbral.state.UmbralState;
+import btm.sword.system.entity.umbral.statemachine.state.SheathedState;
+import btm.sword.system.entity.umbral.statemachine.state.StandbyState;
+import btm.sword.system.entity.umbral.statemachine.UmbralState;
+import btm.sword.system.entity.umbral.statemachine.state.WieldState;
 import btm.sword.system.item.ItemStackBuilder;
 import btm.sword.system.item.KeyRegistry;
+import btm.sword.system.statemachine.StateMachine;
+import btm.sword.system.statemachine.Transition;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -44,12 +49,13 @@ import lombok.Setter;
 @Getter
 @Setter
 public class UmbralBlade extends ThrownItem {
+    private final StateMachine<UmbralBlade> bladeStateMachine;
+
     private Attack[] basicAttacks;
     private Attack[] heavyAttacks;
-    private UmbralState state;
 
-    private final ItemStack link;
-    private final ItemStack blade;
+    private ItemStack link;
+    private ItemStack blade;
 
     boolean active;
 
@@ -58,14 +64,12 @@ public class UmbralBlade extends ThrownItem {
     private long lastActionTime = 0;
     private Location lastTargetLocation;
 
-    private Predicate<UmbralBlade> endHoverPredicate;
-
     private Vector3f scale = new Vector3f(0.85f, 1.3f, 1f);
 
     private static final int idleMovementPeriod = 7;
     private BukkitTask idleMovement;
 
-    private final Runnable attackEndCallback;
+    private final Predicate<UmbralBlade> endHoverPredicate;
 
     public UmbralBlade(Combatant thrower, ItemStack weapon) {
         super(thrower, display -> {
@@ -82,82 +86,46 @@ public class UmbralBlade extends ThrownItem {
             display.setBillboard(Display.Billboard.FIXED);
         }, 5);
 
-        // item Stack used for determining umbral blade inputs
-        this.link = new ItemStackBuilder(Material.HEAVY_CORE)
-            .name(Component.text("~ ", TextColor.color(160, 17, 17))
-                .append(Component.text(thrower.getDisplayName() + "'s Soul Link",
-                    TextColor.color(204, 0, 0), TextDecoration.BOLD))
-                .append(Component.text(" ~", TextColor.color(160, 17, 17))))
-            .lore(List.of(
-                Component.text(""),
-                Component.text("Controls:", TextColor.color(200, 200, 200), TextDecoration.ITALIC),
-                Component.text("Q + F", TextColor.color(255, 100, 100))
-                    .append(Component.text(" - Toggle Standby/Sheathed", TextColor.color(150, 150, 150))),
-                Component.text("  • Standby: ", TextColor.color(180, 180, 180))
-                    .append(Component.text("Blade hovers, ready to attack", TextColor.color(120, 120, 120))),
-                Component.text("  • Sheathed: ", TextColor.color(180, 180, 180))
-                    .append(Component.text("Blade stored on back", TextColor.color(120, 120, 120))),
-                Component.text(""),
-                Component.text("F + Left Click", TextColor.color(255, 100, 100))
-                    .append(Component.text(" - Wield Blade", TextColor.color(150, 150, 150))),
-                Component.text("  • Equip as weapon in hand", TextColor.color(120, 120, 120))
-            ))
-            .unbreakable(true)
-            .tag(KeyRegistry.SOUL_LINK_KEY, thrower.getUniqueId().toString())
-            .hideAll()
-            .build();
-
-        this.blade = new ItemStackBuilder(weapon.getType())
-            .name(Component.text("~ ", TextColor.color(219, 17, 17))
-                .append(Component.text(thrower.getDisplayName() + "'s Blade",
-                    TextColor.color(17, 17, 17), TextDecoration.BOLD))
-                .append(Component.text(" ~", TextColor.color(219, 17, 17))))
-            .lore(List.of(
-                Component.text(""),
-                Component.text("Wielded Form", TextColor.color(200, 200, 200), TextDecoration.ITALIC),
-                Component.text("Use normal combat inputs", TextColor.color(150, 150, 150)),
-                Component.text(""),
-                Component.text("Q + F", TextColor.color(255, 100, 100))
-                    .append(Component.text(" - Return to Standby", TextColor.color(150, 150, 150)))
-            ))
-            .unbreakable(true)
-            .tag(KeyRegistry.SOUL_LINK_KEY, thrower.getUniqueId().toString())
-            .hideAll()
-            .build();
-
-        UmbralBlade pass = this;
-        attackEndCallback = new BukkitRunnable() {
-            @Override
-            public void run() {
-                pass.setState(UmbralState.WAITING);
-            }
-        };
+        generateUmbralItems();
 
         this.weapon = weapon;
-        this.endHoverPredicate = umbralBlade -> !umbralBlade.getState().equals(UmbralState.STANDBY);
-        this.state = null;
 
         loadBasicAttacks();
         loadHeavyAttacks();
+
+        this.bladeStateMachine = new StateMachine<>(this, new SheathedState());
+        initStateMachine();
+
+        endHoverPredicate = blade -> !bladeStateMachine.inState(new StandbyState());
+    }
+    // TODO: Convert All logic and setup into the new architecture to match the UmbralStateMachine setup.
+    private void initStateMachine() {
+        bladeStateMachine.addTransition(new Transition<>(
+            new SheathedState(),
+            new StandbyState(),
+            UmbralBlade::isActive,
+            UmbralBlade::hoverBehindWielder
+        ));
+
+        bladeStateMachine.addTransition(new Transition<>(
+            new StandbyState(),
+            new WieldState(),
+            blade -> true,
+            blade -> ((UmbralBlade) blade).onWield()
+        ));
+
+        bladeStateMachine.addTransition(new Transition<>(
+            new WieldState(),
+            new SheathedState(),
+            blade -> true,
+            UmbralBlade::returnToSheath
+        ));
     }
 
     public boolean isOwnedBy(Combatant combatant) {
         return combatant.getUniqueId() == thrower.getUniqueId();
     }
 
-    public void setState(UmbralState newState) {
-        this.state = newState;
-        thrower.message("Updating state: " + newState.name());
-        handleStateChange(newState); // TODO make a State Wrapper with defined transitions for stronger architecture
-        switch (newState) {
-            case RECALLING, RETURNING -> returnToSheath();
-            case STANDBY -> hoverBehindWielder();
-            case ATTACKING_QUICK -> performAttack(3, false);
-            case WAITING -> registerAsInteractableItem();
-            case WIELD -> onWield();
-            default -> {} // FLYING, LODGED, SHEATHED don't require special transition logic
-        }
-    }
 
     private void handleStateChange(UmbralState newState) {
         setDisplayTransformation(newState);
@@ -170,17 +138,13 @@ public class UmbralBlade extends ThrownItem {
     }
 
     public boolean inState(UmbralState state) {
-        return getState().equals(state);
+        return bladeStateMachine.getState().name().equals(state.name());
     }
 
     public void onTick() {
         if (!active) {
             thrower.message("Umbral Blade Not active.");
             return;
-        }
-
-        if (state == null) {
-            setState(UmbralState.SHEATHED);
         }
 
         if (!thrower.isValid()) {
@@ -224,6 +188,17 @@ public class UmbralBlade extends ThrownItem {
                 scale,
                 new Quaternionf())); // ATTACKING, LODGED don't set display transformations
         }
+    }
+
+    public void hoverBehindWielder() {
+        // Play unsheathing animation
+
+        // follows player shoulder position smoothly
+        DisplayUtil.itemDisplayFollowLerp(thrower, display,
+            new Vector(0.7, 0.7, -0.5),
+            5, 3, false, endHoverPredicate, this);
+
+        startIdleMovement();
     }
 
     public void restartDisplay() {
@@ -288,25 +263,9 @@ public class UmbralBlade extends ThrownItem {
         }
     }
 
-    private void hoverBehindWielder() {
-        // Play unsheathing animation
-
-        // follows player shoulder position smoothly
-        DisplayUtil.itemDisplayFollowLerp(thrower, display,
-                new Vector(0.7, 0.7, -0.5),
-                5, 3, false, endHoverPredicate, this);
-
-        startIdleMovement();
-    }
-
     private void registerAsInteractableItem() {
         startIdleMovement();
         InteractiveItemArbiter.put(this);
-    }
-
-    public void onWield() {
-        display.setInvisible(true);
-        thrower.setItemStackInHand(blade, true);
     }
 
     public void startIdleMovement() {
@@ -398,11 +357,6 @@ public class UmbralBlade extends ThrownItem {
         attack.execute(thrower);
     }
 
-    public void recall() {
-        // if too far or idle too long, return automatically
-
-    }
-
     private void loadBasicAttacks() {
         // load from config or registry later
         basicAttacks = new Attack[]{
@@ -452,6 +406,51 @@ public class UmbralBlade extends ThrownItem {
                 }
             }
         }
+    }
+
+    private void generateUmbralItems() {
+        // item Stack used for determining umbral blade inputs
+        this.link = new ItemStackBuilder(Material.HEAVY_CORE)
+            .name(Component.text("~ ", TextColor.color(160, 17, 17))
+                .append(Component.text(thrower.getDisplayName() + "'s Soul Link",
+                    TextColor.color(204, 0, 0), TextDecoration.BOLD))
+                .append(Component.text(" ~", TextColor.color(160, 17, 17))))
+            .lore(List.of(
+                Component.text(""),
+                Component.text("Controls:", TextColor.color(200, 200, 200), TextDecoration.ITALIC),
+                Component.text("Drop + Swap", TextColor.color(255, 100, 100))
+                    .append(Component.text(" - Toggle Standby/Sheathed", TextColor.color(150, 150, 150))),
+                Component.text("  • Standby: ", TextColor.color(180, 180, 180))
+                    .append(Component.text("Blade hovers, ready to attack", TextColor.color(120, 120, 120))),
+                Component.text("  • Sheathed: ", TextColor.color(180, 180, 180))
+                    .append(Component.text("Blade stored on back", TextColor.color(120, 120, 120))),
+                Component.text(""),
+                Component.text("Swap + Left Click", TextColor.color(255, 100, 100))
+                    .append(Component.text(" - Wield Blade", TextColor.color(150, 150, 150))),
+                Component.text("  • Equip as weapon in hand", TextColor.color(120, 120, 120))
+            ))
+            .unbreakable(true)
+            .tag(KeyRegistry.SOUL_LINK_KEY, thrower.getUniqueId().toString())
+            .hideAll()
+            .build();
+
+        this.blade = new ItemStackBuilder(weapon.getType())
+            .name(Component.text("~ ", TextColor.color(219, 17, 17))
+                .append(Component.text(thrower.getDisplayName() + "'s Blade",
+                    TextColor.color(17, 17, 17), TextDecoration.BOLD))
+                .append(Component.text(" ~", TextColor.color(219, 17, 17))))
+            .lore(List.of(
+                Component.text(""),
+                Component.text("Wielded Form", TextColor.color(200, 200, 200), TextDecoration.ITALIC),
+                Component.text("Use normal combat inputs", TextColor.color(150, 150, 150)),
+                Component.text(""),
+                Component.text("Q + F", TextColor.color(255, 100, 100))
+                    .append(Component.text(" - Return to Standby", TextColor.color(150, 150, 150)))
+            ))
+            .unbreakable(true)
+            .tag(KeyRegistry.SOUL_LINK_KEY, thrower.getUniqueId().toString())
+            .hideAll()
+            .build();
     }
 
     public void removeWeaponDisplay() {

@@ -2,7 +2,7 @@ package btm.sword.system.action;
 
 import btm.sword.system.entity.types.Combatant;
 import btm.sword.system.entity.umbral.UmbralBlade;
-import btm.sword.system.entity.umbral.state.UmbralState;
+import btm.sword.system.entity.umbral.statemachine.UmbralState;
 
 public class UmbralBladeAction extends SwordAction {
     public static void wieldUmbralBlade(Combatant wielder) {
