@@ -1,5 +1,7 @@
 package btm.sword.system.entity.types;
 
+import btm.sword.system.item.KeyRegistry;
+
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.attribute.Attribute;
@@ -77,6 +79,12 @@ public abstract class Combatant extends SwordEntity {
         this.attrInteractionRange = entity().getAttribute(Attribute.ENTITY_INTERACTION_RANGE);
     }
 
+    @Override
+    public void onSpawn() {
+        super.onSpawn();
+
+    }
+
     /**
      * Called when the entity dies.
      * Cleans up the sheathed sword display entity.
@@ -85,6 +93,7 @@ public abstract class Combatant extends SwordEntity {
     public void onDeath() {
         super.onDeath();
         umbralBlade.dispose();
+        // TODO: on death umbral blade logic... What should happen here?
     }
 
     @Override
@@ -101,6 +110,7 @@ public abstract class Combatant extends SwordEntity {
             return;
         }
         if (umbralBlade == null) return;
+
         umbralBlade.onTick();
     }
 
@@ -178,6 +188,12 @@ public abstract class Combatant extends SwordEntity {
         Prefab.Particles.GRAB_ATTEMPT.display(hitLoc);
         grabbedEntity.hit(this, 0, 0, 5, 15,
                 target.getEyeLocation().subtract(self.getEyeLocation()).toVector());
+    }
+
+    public boolean holdingUmbralItem() {
+        ItemStack stack = getItemStackInHand(true);
+        return !stack.isEmpty() &&
+            KeyRegistry.hasKey(stack, KeyRegistry.SOUL_LINK_KEY);
     }
 
     /**

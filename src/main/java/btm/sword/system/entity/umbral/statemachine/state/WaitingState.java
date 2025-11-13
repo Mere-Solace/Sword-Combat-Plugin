@@ -1,8 +1,6 @@
 package btm.sword.system.entity.umbral.statemachine.state;
 
-import btm.sword.system.action.utility.thrown.InteractiveItemArbiter;
 import btm.sword.system.entity.umbral.UmbralBlade;
-import btm.sword.system.entity.umbral.statemachine.UmbralState;
 import btm.sword.system.statemachine.State;
 
 /**
@@ -44,15 +42,16 @@ public class WaitingState extends State<UmbralBlade> {
 
     @Override
     public void onEnter(UmbralBlade blade) {
-        blade.setDisplayTransformation(UmbralState.WAITING);
-        // Call the public methods directly since registerAsInteractableItem is private
+        blade.setDisplayTransformation(this.getClass());
+        blade.registerAsInteractableItem();
         blade.startIdleMovement();
-        InteractiveItemArbiter.put(blade);
     }
 
     @Override
     public void onExit(UmbralBlade blade) {
         blade.endIdleMovement();
+
+        blade.unregisterAsInteractableItem();
         // TODO: Unregister from InteractiveItemArbiter when leaving this state,
         // TODO: issues #103 & #99
     }

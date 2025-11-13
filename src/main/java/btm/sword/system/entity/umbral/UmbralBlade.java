@@ -29,6 +29,7 @@ import btm.sword.system.attack.ItemDisplayAttack;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.types.Combatant;
 import btm.sword.system.entity.umbral.statemachine.UmbralState;
+import btm.sword.system.entity.umbral.statemachine.UmbralStateMachine;
 import btm.sword.system.entity.umbral.statemachine.state.AttackingHeavyState;
 import btm.sword.system.entity.umbral.statemachine.state.AttackingQuickState;
 import btm.sword.system.entity.umbral.statemachine.state.FlyingState;
@@ -43,7 +44,6 @@ import btm.sword.system.entity.umbral.statemachine.state.WieldState;
 import btm.sword.system.item.ItemStackBuilder;
 import btm.sword.system.item.KeyRegistry;
 import btm.sword.system.statemachine.State;
-import btm.sword.system.statemachine.StateMachine;
 import btm.sword.system.statemachine.Transition;
 import btm.sword.util.display.DisplayUtil;
 import lombok.Getter;
@@ -57,7 +57,7 @@ import net.kyori.adventure.text.format.TextDecoration;
 @Getter
 @Setter
 public class UmbralBlade extends ThrownItem {
-    private final StateMachine<UmbralBlade> bladeStateMachine;
+    private UmbralStateMachine bladeStateMachine;
 
     private Attack[] basicAttacks;
     private Attack[] heavyAttacks;
@@ -116,8 +116,20 @@ public class UmbralBlade extends ThrownItem {
         loadBasicAttacks();
         loadHeavyAttacks();
 
-        this.bladeStateMachine = new StateMachine<>(this, new SheathedState());
+        this.bladeStateMachine = new UmbralStateMachine(this, new SheathedState());
         initStateMachine();
+
+        // Runnable to correctly set up blade
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                if (bladeStateMachine.inState(new SheathedState())) {
+                    bladeStateMachine.setState(new StandbyState());
+                    bladeStateMachine.setState(new SheathedState());
+                    cancel();
+                }
+            }
+        }.runTaskTimer(Sword.getInstance(), 10L, 5L);
 
         endHoverPredicate = blade -> !bladeStateMachine.inState(new StandbyState());
     }
@@ -277,7 +289,6 @@ public class UmbralBlade extends ThrownItem {
         return combatant.getUniqueId() == thrower.getUniqueId();
     }
 
-
     public boolean inState(UmbralState state) {
         return bladeStateMachine.getState().name().equals(state.name());
     }
@@ -304,6 +315,7 @@ public class UmbralBlade extends ThrownItem {
         return UmbralState.valueOf(stateName);
     }
 
+    // TODO: make this one method and make some data struct to store the bools or find a better soln.
     // reset 60 ms later (1.2 ticks) to give state machine time to process.
     public void requestToggle() {
         toggleRequested = true;
@@ -357,36 +369,44 @@ public class UmbralBlade extends ThrownItem {
             }
         }
 
-        bladeStateMachine.tick();
+        if (bladeStateMachine != null)
+            bladeStateMachine.tick();
     }
 
-    public void setDisplayTransformation(UmbralState state) {
+    public void setDisplayTransformation(Class<? extends State<UmbralBlade>> state) {
         if (display == null) {
             restartDisplay();
             return;
         }
         DisplayUtil.setInterpolationValues(display, 0, 4);
-        switch (state) {
-            case SHEATHED -> display.setTransformation(new Transformation(
-                    new Vector3f(0.28f, -1.35f, -0.42f),
-                    new Quaternionf().rotationY((float) Math.PI / 2).rotateZ(-(float) Math.PI / (1.65f)),
-                    scale,
-                    new Quaternionf()));
-            case STANDBY -> display.setTransformation(new Transformation(
-                    new Vector3f(0, 0, 0),
-                    new Quaternionf().rotationY(0).rotateZ((float) Math.PI),
-                    scale,
-                    new Quaternionf()));
-            case FLYING, RECALLING -> display.setTransformation(new Transformation(
-                    new Vector3f(0, 0, 0),
-                    new Quaternionf(),
-                    scale,
-                    new Quaternionf()));
-            default -> display.setTransformation(new Transformation(
+
+        if (state == SheathedState.class) {
+            display.setTransformation(new Transformation(
+                new Vector3f(0.28f, -1.35f, -0.42f),
+                new Quaternionf().rotationY((float) Math.PI / 2).rotateZ(-(float) Math.PI / 1.65f),
+                scale,
+                new Quaternionf()));
+        }
+        else if (state == StandbyState.class) {
+            display.setTransformation(new Transformation(
+                new Vector3f(0, 0, 0),
+                new Quaternionf().rotationY(0).rotateZ((float) Math.PI),
+                scale,
+                new Quaternionf()));
+        }
+        else if (state == FlyingState.class || state == RecallingState.class) {
+            display.setTransformation(new Transformation(
                 new Vector3f(0, 0, 0),
                 new Quaternionf(),
                 scale,
-                new Quaternionf())); // ATTACKING, LODGED don't set display transformations
+                new Quaternionf()));
+        }
+        else {
+            display.setTransformation(new Transformation(
+                new Vector3f(0, 0, 0),
+                new Quaternionf(),
+                scale,
+                new Quaternionf()));
         }
     }
 
@@ -440,13 +460,15 @@ public class UmbralBlade extends ThrownItem {
         }.runTaskTimer(Sword.getInstance(), 0L, period);
     }
 
-    private void registerAsInteractableItem() {
-        startIdleMovement();
+    public void registerAsInteractableItem() {
         InteractiveItemArbiter.put(this);
     }
 
+    public void unregisterAsInteractableItem() {
+        InteractiveItemArbiter.remove(display);
+    }
+
     public void updateSheathedPosition() {
-        // don't waste computing power to update resources while wielding the blade.
         if (inState(UmbralState.WIELD)) return;
 
         long[] lastTimeSent = { System.currentTimeMillis() };
@@ -517,6 +539,7 @@ public class UmbralBlade extends ThrownItem {
         else {
             Vector to = target.getChestVector().clone().subtract(thrower.getChestVector());
             attackOrigin = target.getChestLocation().clone().subtract(to);
+            thrower.message("Targeted this guy: " + target.getDisplayName());
         }
 
         attack = heavy ? heavyAttacks[0] : basicAttacks[0]; // TODO dynamic.
@@ -532,6 +555,7 @@ public class UmbralBlade extends ThrownItem {
         return distance > 20.0 || timeSinceLastAction > 30000;
     }
 
+    // TODO probably gonna have to make  better checks for these methods, but good template
     private boolean hasHitTarget() {
         return lastTargetLocation != null;
     }

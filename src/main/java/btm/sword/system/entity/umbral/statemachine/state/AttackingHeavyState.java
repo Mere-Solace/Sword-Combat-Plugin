@@ -1,7 +1,6 @@
 package btm.sword.system.entity.umbral.statemachine.state;
 
 import btm.sword.system.entity.umbral.UmbralBlade;
-import btm.sword.system.entity.umbral.statemachine.UmbralState;
 import btm.sword.system.statemachine.State;
 
 /**
@@ -41,7 +40,6 @@ public class AttackingHeavyState extends State<UmbralBlade> {
 
     @Override
     public void onEnter(UmbralBlade blade) {
-        blade.setDisplayTransformation(UmbralState.ATTACKING_HEAVY);
         blade.endIdleMovement();
         // Heavy attack execution
         blade.performAttack(5.0, true); // range=5, heavy=true

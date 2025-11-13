@@ -1,7 +1,6 @@
 package btm.sword.system.entity.umbral.statemachine.state;
 
 import btm.sword.system.entity.umbral.UmbralBlade;
-import btm.sword.system.entity.umbral.statemachine.UmbralState;
 import btm.sword.system.statemachine.State;
 
 /**
@@ -42,8 +41,6 @@ public class AttackingQuickState extends State<UmbralBlade> {
 
     @Override
     public void onEnter(UmbralBlade blade) {
-        blade.setDisplayTransformation(UmbralState.ATTACKING_QUICK);
-        blade.endIdleMovement();
         // Attack execution is handled by performAttack method
         blade.performAttack(3.0, false); // range=3, heavy=false
     }

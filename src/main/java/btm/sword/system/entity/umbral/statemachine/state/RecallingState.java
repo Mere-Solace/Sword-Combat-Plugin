@@ -1,7 +1,6 @@
 package btm.sword.system.entity.umbral.statemachine.state;
 
 import btm.sword.system.entity.umbral.UmbralBlade;
-import btm.sword.system.entity.umbral.statemachine.UmbralState;
 import btm.sword.system.statemachine.State;
 
 /**
@@ -34,7 +33,6 @@ public class RecallingState extends State<UmbralBlade> {
 
     @Override
     public void onEnter(UmbralBlade blade) {
-        blade.setDisplayTransformation(UmbralState.RECALLING);
         blade.endIdleMovement();
         blade.returnToSheath();
     }

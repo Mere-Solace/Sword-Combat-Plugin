@@ -1,7 +1,6 @@
 package btm.sword.system.entity.umbral.statemachine.state;
 
 import btm.sword.system.entity.umbral.UmbralBlade;
-import btm.sword.system.entity.umbral.statemachine.UmbralState;
 import btm.sword.system.statemachine.State;
 
 /**
@@ -44,7 +43,6 @@ public class LungingState extends State<UmbralBlade> {
 
     @Override
     public void onEnter(UmbralBlade blade) {
-        blade.setDisplayTransformation(UmbralState.LUNGING);
         blade.endIdleMovement();
         // TODO: Implement lungeToTarget logic when target system is ready
         // blade.lungeToTarget(blade.getLastTargetLocation());

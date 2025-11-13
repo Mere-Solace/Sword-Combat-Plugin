@@ -9,16 +9,19 @@ public class WieldState extends State<UmbralBlade> {
 
     @Override
     public void onEnter(UmbralBlade blade) {
-        blade.getDisplay().setInvisible(true);
+        blade.getDisplay().setViewRange(0);
         blade.getThrower().setItemStackInHand(blade.getBlade(), true);
     }
 
     @Override
     public void onExit(UmbralBlade blade) {
-        blade.getDisplay().setInvisible(false);
+        blade.getDisplay().setViewRange(300);
         blade.getThrower().setItemStackInHand(blade.getLink(), true);
     }
 
     @Override
-    public void onTick(UmbralBlade blade) {}
+    public void onTick(UmbralBlade blade) {
+        // TODO some cool functionality for while you wield the blade
+        //
+    }
 }

@@ -6,9 +6,9 @@ import java.util.Map;
 import java.util.function.Predicate;
 
 public class StateMachine<T> {
-    private final T context;
-    private State<T> currentState;
-    private final Map<Transition<T>, Predicate<T>> transitions = new HashMap<>();
+    protected final T context;
+    protected State<T> currentState;
+    protected final Map<Transition<T>, Predicate<T>> transitions = new HashMap<>();
 
     public StateMachine(T context, State<T> initialState) {
         this.context = context;
