@@ -278,7 +278,7 @@ public class UmbralBlade extends ThrownItem {
             blade -> isRequestedAndActive(BladeRequest.STANDBY),
             blade -> {}
         ));
-
+        // TODO: may time out sometimes upon returning to the player. Make a check for this and a time-out feature.
         bladeStateMachine.addTransition(new Transition<>(
             ReturningState.class,
             StandbyState.class,
@@ -410,10 +410,17 @@ public class UmbralBlade extends ThrownItem {
                 scale,
                 new Quaternionf()));
         }
-        else {
+        else if (state == AttackingQuickState.class || state == AttackingHeavyState.class) {
             display.setTransformation(new Transformation(
                 new Vector3f(0, 0, 0),
                 new Quaternionf(),
+                scale,
+                new Quaternionf()));
+        }
+        else {
+            display.setTransformation(new Transformation(
+                new Vector3f(0, 0, 0),
+                new Quaternionf().rotationX((float) Math.PI / 2),
                 scale,
                 new Quaternionf()));
         }
@@ -540,19 +547,20 @@ public class UmbralBlade extends ThrownItem {
         return !hasHitTarget();
     }
 
+    @SuppressWarnings("unchecked")
     private void loadBasicAttacks() {
         // load from config or registry later
         basicAttacks = new Function[]{
             combatant -> new ItemDisplayAttack(display, AttackType.WINDUP_1,
-                true, null, true, 5,
-                30, 1, 2000,
+                true, null, true, 2,
+                50, 1, 2000,
                 0, 1)
                 .setInitialMovementTicks(5)
                 .setDrawParticles(false)
                 .setNextAttack(
                     new ItemDisplayAttack(display, AttackType.BASIC_1,
                         true, attackEndCallback, false, 2,
-                        5, 10, 30,
+                        20, 3, 1000,
                         0, 1), 500)
         };
     }

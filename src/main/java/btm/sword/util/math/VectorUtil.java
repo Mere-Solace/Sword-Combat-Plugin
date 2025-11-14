@@ -79,7 +79,6 @@ public class VectorUtil {
      */
     public static ArrayList<Vector> getBasisWithoutPitch(Entity origin) {
         Vector up = Prefab.Direction.UP.clone();
-
         double yaw;
         if (origin instanceof Player player) {
             yaw = Math.toRadians(player.getBodyYaw());
@@ -88,15 +87,23 @@ public class VectorUtil {
             yaw = Math.toRadians(origin.getYaw());
         }
         Vector dir = new Vector(-Math.sin(yaw), 0, Math.cos(yaw));
-
         Vector right = dir.getCrossProduct(up).normalize();
-
         ArrayList<Vector> basis = new ArrayList<>(3);
-
         basis.add(right);
         basis.add(up);
         basis.add(dir);
+        return basis;
+    }
 
+    public static ArrayList<Vector> getBasisWithoutPitch(Location location) {
+        Vector up = Prefab.Direction.UP.clone();
+        double yaw = Math.toRadians(location.getYaw());
+        Vector dir = new Vector(-Math.sin(yaw), 0, Math.cos(yaw));
+        Vector right = dir.getCrossProduct(up).normalize();
+        ArrayList<Vector> basis = new ArrayList<>(3);
+        basis.add(right);
+        basis.add(up);
+        basis.add(dir);
         return basis;
     }
 

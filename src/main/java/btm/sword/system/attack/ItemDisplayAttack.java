@@ -1,14 +1,19 @@
 package btm.sword.system.attack;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import org.bukkit.Bukkit;
 import org.bukkit.entity.ItemDisplay;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.util.Vector;
 
 import btm.sword.Sword;
 import btm.sword.system.SwordScheduler;
 import btm.sword.util.display.DisplayUtil;
+import btm.sword.util.math.BezierUtil;
+import btm.sword.util.math.VectorUtil;
 import lombok.Setter;
 
 public class ItemDisplayAttack extends Attack {
@@ -51,6 +56,12 @@ public class ItemDisplayAttack extends Attack {
     protected void hit() {
         if (displayOnly) return;
         super.hit();
+    }
+
+    @Override
+    void swingTest() {
+        if (displayOnly) return;
+        super.swingTest();
     }
 
     @Override
@@ -121,6 +132,19 @@ public class ItemDisplayAttack extends Attack {
             }, ticksSpentMovingToInitialLocation + curIteration * msPerIteration,
                 TimeUnit.MILLISECONDS);
         }
+    }
+
+    @Override
+    void generateBezierFunction() {
+        ArrayList<Vector> basis = orientWithPitch ?
+            VectorUtil.getBasis(origin, origin.getDirection()) :
+            VectorUtil.getBasisWithoutPitch(origin);
+        curRight = basis.getFirst();
+        curUp = basis.get(1);
+        curForward = basis.getLast();
+
+        List<Vector> adjusted = BezierUtil.adjustCtrlToBasis(basis, controlVectors, rangeMultiplier);
+        weaponPathFunction = BezierUtil.cubicBezier3D(adjusted.get(0), adjusted.get(1), adjusted.get(2), adjusted.get(3));
     }
 
     public ItemDisplayAttack setInitialMovementTicks(int ticksSpentMovingToInitialLocation) {

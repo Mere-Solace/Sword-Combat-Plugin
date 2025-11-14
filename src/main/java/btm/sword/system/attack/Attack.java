@@ -35,21 +35,20 @@ import lombok.Getter;
 import lombok.Setter;
 
 public class Attack extends SwordAction implements Runnable {
-    private final CombatConfig.AttacksConfig attacksConfig;
-    private final CombatConfig.AttackClassConfig attackConfig;
+    protected final CombatConfig.AttacksConfig attacksConfig;
+    protected final CombatConfig.AttackClassConfig attackConfig;
 
     protected Combatant attacker;
-    private LivingEntity attackingEntity;
-    private final AttackType attackType;
+    protected LivingEntity attackingEntity;
+    protected final AttackType attackType;
+    protected final boolean orientWithPitch;
 
-    private final boolean orientWithPitch;
-
-    private final List<Vector> controlVectors;
+    protected final List<Vector> controlVectors;
     protected Function<Double, Vector> weaponPathFunction;
 
-    private Vector curRight;
-    private Vector curUp; // Reserved for future vertical knockback calculations
-    private Vector curForward; // Reserved for future forward knockback calculations
+    protected Vector curRight;
+    protected Vector curUp; // Reserved for future vertical knockback calculations
+    protected Vector curForward; // Reserved for future forward knockback calculations
 
     @Setter // origin can be set for stationary attacks
     protected Location origin;
@@ -57,8 +56,8 @@ public class Attack extends SwordAction implements Runnable {
     protected Vector cur;
     protected Vector prev;
 
-    private final HashSet<LivingEntity> hitDuringAttack;
-    private Predicate<LivingEntity> filter;
+    protected final HashSet<LivingEntity> hitDuringAttack;
+    protected Predicate<LivingEntity> filter;
 
     protected int curIteration;
 
@@ -67,7 +66,7 @@ public class Attack extends SwordAction implements Runnable {
     protected double attackStartValue;
     protected double attackEndValue;
 
-    private final double rangeMultiplier;
+    protected final double rangeMultiplier;
 
     protected Runnable callback;
 
