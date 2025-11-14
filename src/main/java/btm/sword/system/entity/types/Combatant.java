@@ -1,7 +1,5 @@
 package btm.sword.system.entity.types;
 
-import btm.sword.system.item.KeyRegistry;
-
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.attribute.Attribute;
@@ -19,6 +17,8 @@ import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.base.CombatProfile;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.umbral.UmbralBlade;
+import btm.sword.system.entity.umbral.input.BladeRequest;
+import btm.sword.system.item.KeyRegistry;
 import btm.sword.util.display.Prefab;
 import lombok.Getter;
 import lombok.Setter;
@@ -129,7 +129,6 @@ public abstract class Combatant extends SwordEntity {
                 if (umbralBlade != null) return;
                 message("Starting Umbral Blade");
                 umbralBlade = new UmbralBlade(pass, ItemStack.of(Material.STONE_SWORD));
-                umbralBlade.setActive(true);
                 setStartingBlade(false);
             }
         }.runTaskLater(Sword.getInstance(), 4L);
@@ -138,6 +137,10 @@ public abstract class Combatant extends SwordEntity {
     public void endUmbralBlade() {
         if (umbralBlade == null) return;
         umbralBlade.dispose();
+    }
+
+    public void requestUmbralBladeState(BladeRequest request) {
+        umbralBlade.request(request);
     }
 
     /**

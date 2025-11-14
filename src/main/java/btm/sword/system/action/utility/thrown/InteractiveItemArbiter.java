@@ -12,6 +12,7 @@ import org.bukkit.util.Vector;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.types.Combatant;
 import btm.sword.system.entity.umbral.UmbralBlade;
+import btm.sword.system.entity.umbral.input.BladeRequest;
 import btm.sword.util.display.ParticleWrapper;
 import btm.sword.util.display.Prefab;
 
@@ -59,10 +60,10 @@ public class InteractiveItemArbiter {
      * @param display The display entity to remove.
      * @return The removed {@link ThrownItem}, or {@code null} if none was registered.
      */
-    public static ThrownItem remove(ItemDisplay display) {
+    public static ThrownItem remove(ItemDisplay display, boolean dispose) {
         ThrownItem thrownItem = thrownItems.remove(display);
         if (thrownItem != null) {
-            thrownItem.dispose();
+            if (dispose) thrownItem.dispose();
             return thrownItem;
         }
         else return null;
@@ -78,7 +79,7 @@ public class InteractiveItemArbiter {
      * @param executor The combatant performing the grab.
      */
     public static void onGrab(ItemDisplay display, Combatant executor) {
-        ThrownItem thrownItem = remove(display); // Stop displaying the ItemDisplay
+        ThrownItem thrownItem = remove(display, true); // Stop displaying the ItemDisplay
         if (thrownItem == null) return;
 
         ItemStack item = display.getItemStack();
@@ -90,7 +91,7 @@ public class InteractiveItemArbiter {
                     return;
                 }
 
-                umbralBlade.returnToSheath(); // TODO add umbral blade onPickup()
+                umbralBlade.returnToWielderAndRequestState(BladeRequest.SHEATH); // TODO add umbral blade onPickup()
                 return;
             }
 

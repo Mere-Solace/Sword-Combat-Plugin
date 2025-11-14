@@ -2,7 +2,6 @@ package btm.sword.system.entity.umbral.statemachine.state;
 
 import btm.sword.system.entity.umbral.UmbralBlade;
 import btm.sword.system.entity.umbral.statemachine.UmbralStateFacade;
-import btm.sword.system.statemachine.State;
 
 /**
  * State where the UmbralBlade is lodged in an entity or block.

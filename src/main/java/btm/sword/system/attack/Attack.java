@@ -38,14 +38,14 @@ public class Attack extends SwordAction implements Runnable {
     private final CombatConfig.AttacksConfig attacksConfig;
     private final CombatConfig.AttackClassConfig attackConfig;
 
-    private Combatant attacker;
+    protected Combatant attacker;
     private LivingEntity attackingEntity;
     private final AttackType attackType;
 
     private final boolean orientWithPitch;
 
     private final List<Vector> controlVectors;
-    private Function<Double, Vector> weaponPathFunction;
+    protected Function<Double, Vector> weaponPathFunction;
 
     private Vector curRight;
     private Vector curUp; // Reserved for future vertical knockback calculations
@@ -137,17 +137,17 @@ public class Attack extends SwordAction implements Runnable {
         startAttack();
     }
 
-    private void playSwingSoundEffects() {
+    void playSwingSoundEffects() {
         Prefab.Sounds.ATTACK.play(attacker.entity());
     }
 
-    private void applyConsistentEffects() {
+    void applyConsistentEffects() {
     }
 
-    private void applySelfAttackEffects() {
+    void applySelfAttackEffects() {
     }
 
-    private void startAttack() {
+    protected void startAttack() {
         applySelfAttackEffects();
         playSwingSoundEffects();
 
@@ -186,6 +186,7 @@ public class Attack extends SwordAction implements Runnable {
                                 new BukkitRunnable() {
                                     @Override
                                     public void run() {
+                                        prepareForNextUse();
                                         nextAttack.execute(attacker);
                                     }
                                 }, millisecondDelayBeforeNextAttack, TimeUnit.MILLISECONDS
@@ -199,9 +200,23 @@ public class Attack extends SwordAction implements Runnable {
         }
     }
 
-    private void determineOrigin() {
+    private void prepareForNextUse() {
+        hitDuringAttack.clear();
+        origin = null;
+    }
+
+    void determineOrigin() {
         if (origin == null)
             origin = attackingEntity.getLocation().add(attacker.getChestVector());
+    }
+
+    public void setOriginOfAll(Location origin) {
+        this.origin = origin;
+        Attack cur = getNextAttack();
+        while (cur != null) {
+            cur.setOrigin(origin);
+            cur = cur.getNextAttack();
+        }
     }
 
     // TODO: Make Particle Effects more dynamic. Low prio.
@@ -240,7 +255,7 @@ public class Attack extends SwordAction implements Runnable {
         return HitboxUtil.secant(origin, attackLocation, secantRadius, filter);
     }
 
-    private void swingTest() {
+    void swingTest() {
         // check if attack entered the ground
         // enter ground and interpolation function
         Vector direction = cur.clone().subtract(prev);
@@ -260,7 +275,7 @@ public class Attack extends SwordAction implements Runnable {
     }
 
     // static function oriented with the players current basis to be used when the attack is executed.
-    private void generateBezierFunction() {
+    void generateBezierFunction() {
         ArrayList<Vector> basis = orientWithPitch ?
                 VectorUtil.getBasis(attackingEntity.getEyeLocation(), attackingEntity.getEyeLocation().getDirection()) :
                 VectorUtil.getBasisWithoutPitch(attackingEntity);

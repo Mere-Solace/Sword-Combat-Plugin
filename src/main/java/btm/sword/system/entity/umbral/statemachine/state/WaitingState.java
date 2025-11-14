@@ -2,7 +2,6 @@ package btm.sword.system.entity.umbral.statemachine.state;
 
 import btm.sword.system.entity.umbral.UmbralBlade;
 import btm.sword.system.entity.umbral.statemachine.UmbralStateFacade;
-import btm.sword.system.statemachine.State;
 
 /**
  * State where the UmbralBlade is waiting after an attack completes.
@@ -43,7 +42,6 @@ public class WaitingState extends UmbralStateFacade {
 
     @Override
     public void onEnter(UmbralBlade blade) {
-        blade.setDisplayTransformation(this.getClass());
         blade.registerAsInteractableItem();
         blade.startIdleMovement();
     }

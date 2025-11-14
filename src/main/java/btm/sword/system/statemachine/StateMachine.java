@@ -29,7 +29,7 @@ public class StateMachine<T> {
         }
     }
 
-    private State<T> createState(Class<? extends State<T>> clazz) {
+    protected State<T> createState(Class<? extends State<T>> clazz) {
         try {
             return clazz.getDeclaredConstructor().newInstance();
         } catch (Exception e) {

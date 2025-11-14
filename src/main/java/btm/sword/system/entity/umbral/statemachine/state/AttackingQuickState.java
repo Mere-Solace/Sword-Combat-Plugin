@@ -47,7 +47,7 @@ public class AttackingQuickState extends UmbralStateFacade {
 
     @Override
     public void onExit(UmbralBlade blade) {
-
+        blade.setAttackCompleted(false);
     }
 
     @Override

@@ -1,8 +1,8 @@
 package btm.sword.system.entity.umbral.statemachine.state;
 
 import btm.sword.system.entity.umbral.UmbralBlade;
+import btm.sword.system.entity.umbral.input.BladeRequest;
 import btm.sword.system.entity.umbral.statemachine.UmbralStateFacade;
-import btm.sword.system.statemachine.State;
 
 /**
  * State where the UmbralBlade is being recalled to the wielder.
@@ -35,7 +35,7 @@ public class RecallingState extends UmbralStateFacade {
     @Override
     public void onEnter(UmbralBlade blade) {
         blade.endIdleMovement();
-        blade.returnToSheath();
+        blade.returnToWielderAndRequestState(BladeRequest.STANDBY);
     }
 
     @Override

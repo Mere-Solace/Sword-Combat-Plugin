@@ -1,5 +1,7 @@
 package btm.sword.listeners;
 
+import java.util.Objects;
+
 import org.bukkit.GameMode;
 import org.bukkit.Particle;
 import org.bukkit.entity.HumanEntity;
@@ -20,6 +22,7 @@ import btm.sword.Sword;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.types.SwordPlayer;
+import btm.sword.system.entity.umbral.input.BladeRequest;
 import btm.sword.system.item.prefab.ItemLibrary;
 import io.papermc.paper.event.player.AsyncChatEvent;
 import io.papermc.paper.event.player.PlayerShieldDisableEvent;
@@ -308,10 +311,10 @@ public class PlayerListener implements Listener {
         SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId());
 
         if (event.getNewGameMode().equals(GameMode.SPECTATOR)) {
-            swordPlayer.endUmbralBlade();
+            swordPlayer.requestUmbralBladeState(BladeRequest.DEACTIVATE);
         }
-        else {
-            swordPlayer.getUmbralBlade().setActive(true);
+        else if (Objects.equals(event.getPlayer().getGameMode(), GameMode.SPECTATOR)) {
+            swordPlayer.requestUmbralBladeState(BladeRequest.ACTIVATE_AS_SHEATHED);
         }
     }
 }

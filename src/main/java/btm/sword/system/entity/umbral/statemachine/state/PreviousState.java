@@ -3,24 +3,24 @@ package btm.sword.system.entity.umbral.statemachine.state;
 import btm.sword.system.entity.umbral.UmbralBlade;
 import btm.sword.system.entity.umbral.statemachine.UmbralStateFacade;
 
-public class InactiveState extends UmbralStateFacade {
+public final class PreviousState extends UmbralStateFacade {
     @Override
     public String name() {
-        return "FLYING";
+        return "PREVIOUS";
     }
 
     @Override
-    public void onEnter(UmbralBlade blade) {
-
-    }
-
-    @Override
-    public void onExit(UmbralBlade blade) {
+    public void onEnter(UmbralBlade context) {
 
     }
 
     @Override
-    public void onTick(UmbralBlade blade) {
+    public void onExit(UmbralBlade context) {
+
+    }
+
+    @Override
+    public void onTick(UmbralBlade context) {
 
     }
 }

@@ -11,7 +11,8 @@ import btm.sword.system.attack.Attack;
 import btm.sword.system.attack.AttackType;
 import btm.sword.system.entity.types.Combatant;
 import btm.sword.system.entity.types.SwordPlayer;
-import btm.sword.system.entity.umbral.statemachine.UmbralState;
+import btm.sword.system.entity.umbral.statemachine.state.StandbyState;
+import btm.sword.system.entity.umbral.statemachine.state.WieldState;
 import btm.sword.system.item.KeyRegistry;
 import btm.sword.util.display.Prefab;
 
@@ -48,12 +49,12 @@ public class AttackAction extends SwordAction {
         // handle potential umbral blade usage
         if (KeyRegistry.hasKey(itemStack, KeyRegistry.SOUL_LINK_KEY) &&
                 executor.getUmbralBlade() != null) {
-            if (executor.getUmbralBlade().inState(UmbralState.STANDBY)) {
+            if (executor.getUmbralBlade().inState(StandbyState.class)) {
                 UmbralBladeAction.performQuickAttack(executor);
                 return;
             }
 
-            if (!executor.getUmbralBlade().inState(UmbralState.WIELD)) {
+            if (!executor.getUmbralBlade().inState(WieldState.class)) {
                 return;
             }
         }
