@@ -26,7 +26,7 @@ import btm.sword.system.action.utility.thrown.InteractiveItemArbiter;
 import btm.sword.system.action.utility.thrown.ThrownItem;
 import btm.sword.system.attack.Attack;
 import btm.sword.system.attack.AttackType;
-import btm.sword.system.attack.ItemDisplayAttack;
+import btm.sword.system.attack.UmbralBladeAttack;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.types.Combatant;
 import btm.sword.system.entity.types.SwordPlayer;
@@ -52,7 +52,9 @@ import btm.sword.system.item.ItemStackBuilder;
 import btm.sword.system.item.KeyRegistry;
 import btm.sword.system.statemachine.State;
 import btm.sword.system.statemachine.Transition;
+import btm.sword.util.Prefab;
 import btm.sword.util.display.DisplayUtil;
+import btm.sword.util.display.DrawUtil;
 import lombok.Getter;
 import lombok.Setter;
 import net.kyori.adventure.text.Component;
@@ -224,14 +226,14 @@ public class UmbralBlade extends ThrownItem {
         // =====================================================================
         bladeStateMachine.addTransition(new Transition<>(
             AttackingQuickState.class,
-            WaitingState.class,
+            ReturningState.class,
             blade -> blade.attackCompleted,
             blade -> {}
         ));
 
         bladeStateMachine.addTransition(new Transition<>(
             AttackingHeavyState.class,
-            WaitingState.class,
+            ReturningState.class,
             blade -> blade.attackCompleted,
             blade -> {}
         ));
@@ -283,6 +285,13 @@ public class UmbralBlade extends ThrownItem {
             ReturningState.class,
             StandbyState.class,
             blade -> isRequestedAndActive(BladeRequest.STANDBY),
+            blade -> {}
+        ));
+
+        bladeStateMachine.addTransition(new Transition<>(
+            ReturningState.class,
+            LungingState.class,
+            blade -> isRequestedAndActive(BladeRequest.LUNGE),
             blade -> {}
         ));
 
@@ -384,45 +393,60 @@ public class UmbralBlade extends ThrownItem {
             bladeStateMachine.tick();
     }
 
+    // TODO: make a method for calculating correct orientation of blade for edge to align with plane of swing on attack
     public void setDisplayTransformation(Class<? extends State<UmbralBlade>> state) {
         if (display == null) return;
 
-        DisplayUtil.setInterpolationValues(display, 0, 4);
+        display.setTransformation(new Transformation(
+            new Vector3f(0, 0, 0),
+            new Quaternionf(),
+            scale,
+            new Quaternionf()));
 
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                DisplayUtil.setInterpolationValues(display, 0, 2); // TODO: make duration dynamic
+                display.setTransformation(getStateDisplayTransformation(state));
+            }
+        }.runTaskLater(Sword.getInstance(), 1L);
+    }
+
+    public Transformation getStateDisplayTransformation(Class<? extends State<UmbralBlade>> state) {
         if (state == SheathedState.class) {
-            display.setTransformation(new Transformation(
+            return new Transformation(
                 new Vector3f(0.28f, -1.35f, -0.42f),
                 new Quaternionf().rotationY((float) Math.PI / 2).rotateZ(-(float) Math.PI / 1.65f),
                 scale,
-                new Quaternionf()));
+                new Quaternionf());
         }
         else if (state == StandbyState.class) {
-            display.setTransformation(new Transformation(
+            return new Transformation(
                 new Vector3f(0, 0, 0),
                 new Quaternionf().rotationY(0).rotateZ((float) Math.PI),
                 scale,
-                new Quaternionf()));
+                new Quaternionf());
         }
-        else if (state == FlyingState.class || state == RecallingState.class) {
-            display.setTransformation(new Transformation(
+        else if (state == ReturningState.class) {
+            return new Transformation(
                 new Vector3f(0, 0, 0),
-                new Quaternionf(),
+                new Quaternionf().rotateX((float) -Math.PI/2),
                 scale,
-                new Quaternionf()));
+                new Quaternionf());
         }
         else if (state == AttackingQuickState.class || state == AttackingHeavyState.class) {
-            display.setTransformation(new Transformation(
+            return new Transformation(
                 new Vector3f(0, 0, 0),
-                new Quaternionf(),
+                new Quaternionf().rotateX((float) Math.PI/2), // TODO - test
                 scale,
-                new Quaternionf()));
+                new Quaternionf());
         }
         else {
-            display.setTransformation(new Transformation(
+            return new Transformation(
                 new Vector3f(0, 0, 0),
                 new Quaternionf().rotationX((float) Math.PI / 2),
                 scale,
-                new Quaternionf()));
+                new Quaternionf());
         }
     }
 
@@ -489,10 +513,14 @@ public class UmbralBlade extends ThrownItem {
         }
     }
 
+    // TODO: fix
+
+    // TODO: Make item Display changes look less jerky
+
     // TODO make a stronger and more dynamic verison of this ( could return the task if need be)
     public void returnToWielderAndRequestState(BladeRequest request) {
         BukkitTask lerpTask = DisplayUtil.displaySlerpToOffset(thrower, display,
-            new Vector(), 1, 5, 4, 1, false,
+            thrower.getChestVector(), 1, 5, 2, 1.5, false,
             new BukkitRunnable() {
                 @Override
                 public void run() {
@@ -509,11 +537,19 @@ public class UmbralBlade extends ThrownItem {
         Location attackOrigin;
 
         if (target == null || !target.isValid()) {
-            attackOrigin = thrower.getChestLocation().clone().add(thrower.entity().getEyeLocation().getDirection().multiply(range));
+            attackOrigin = thrower.getChestLocation().clone()
+                .add(thrower.entity().getEyeLocation().getDirection().multiply(range));
         }
         else {
-            Vector to = target.getChestVector().clone().subtract(thrower.getChestVector());
-            attackOrigin = target.getChestLocation().clone().subtract(to);
+            // From the bladeDisplay TO the target
+            Vector to = target.getChestLocation().toVector()
+                .subtract(display.getLocation().toVector());
+
+            DrawUtil.line(List.of(Prefab.Particles.TEST_SPARKLE), display.getLocation(), to.normalize(), 20, 0.25);
+
+            attackOrigin = target.getChestLocation().clone()
+                .subtract(to).setDirection(to.normalize());
+
             thrower.message("Targeted this guy: " + target.getDisplayName());
         }
 
@@ -551,17 +587,23 @@ public class UmbralBlade extends ThrownItem {
     private void loadBasicAttacks() {
         // load from config or registry later
         basicAttacks = new Function[]{
-            combatant -> new ItemDisplayAttack(display, AttackType.WINDUP_1,
-                true, null, true, 2,
-                50, 1, 2000,
+            // TODO: fix how display step and attack steps work, confusing and incorrect rn
+            combatant -> new UmbralBladeAttack(display, AttackType.WIDE_UMBRAL_SLASH1_WINDUP,
+                true, true, 1,
+                10, 30, 500,
                 0, 1)
+                .setBlade(this)
                 .setInitialMovementTicks(5)
                 .setDrawParticles(false)
                 .setNextAttack(
-                    new ItemDisplayAttack(display, AttackType.BASIC_1,
-                        true, attackEndCallback, false, 2,
-                        20, 3, 1000,
-                        0, 1), 500)
+                    new UmbralBladeAttack(display, AttackType.WIDE_UMBRAL_SLASH1,
+                        true, false, 0,
+                        20, 10, 100,
+                        0, 1)
+                        .setBlade(this)
+                        .setCallback(attackEndCallback, 200),
+                    100)
+
         };
     }
 
@@ -631,8 +673,8 @@ public class UmbralBlade extends ThrownItem {
     }
 
     @Override
-    protected BukkitTask setup(boolean firstTime, int period) {
-        return new BukkitRunnable() {
+    protected void setup(boolean firstTime, int period) {
+        new BukkitRunnable() {
             @Override
             public void run() {
                 if (setupSuccessful) {
@@ -643,7 +685,7 @@ public class UmbralBlade extends ThrownItem {
                 try {
                     resetWeaponDisplay();
                     setupSuccessful = true;
-                } catch(Exception e){
+                } catch (Exception e) {
                     e.addSuppressed(e);
                 }
             }

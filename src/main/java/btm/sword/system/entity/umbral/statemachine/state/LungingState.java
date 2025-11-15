@@ -45,7 +45,7 @@ public class LungingState extends UmbralStateFacade {
     public void onEnter(UmbralBlade blade) {
         blade.endIdleMovement();
         // TODO: Implement lungeToTarget logic when target system is ready
-        // blade.lungeToTarget(blade.getLastTargetLocation());
+
     }
 
     @Override

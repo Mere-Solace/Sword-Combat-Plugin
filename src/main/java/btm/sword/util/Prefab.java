@@ -1,7 +1,5 @@
-package btm.sword.util.display;
+package btm.sword.util;
 
-import java.util.ArrayList;
-import java.util.List;
 
 import org.bukkit.Color;
 import org.bukkit.Material;
@@ -9,6 +7,7 @@ import org.bukkit.Particle;
 import org.bukkit.util.Vector;
 
 import btm.sword.config.section.AudioConfig;
+import btm.sword.util.display.ParticleWrapper;
 import btm.sword.util.sound.SoundWrapper;
 
 public class Prefab {
@@ -33,11 +32,13 @@ public class Prefab {
         public static final ParticleWrapper TEST_SWORD_WHITE = new ParticleWrapper(Particle.DUST_COLOR_TRANSITION, 5, 0.025, 0.025, 0.025, 1,
                 new Particle.DustTransition(Color.fromRGB(235, 243, 255), Color.fromRGB(120, 121, 255), 0.65f));
 
+        public static final ParticleWrapper TEST_SPARKLE = new ParticleWrapper(Particle.ELECTRIC_SPARK, 2, 0, 0, 0, 0);
+
         public static final ParticleWrapper COLLIDE = new ParticleWrapper(Particle.CRIT, 10, 0.1, 0.1, 0.1, 0.5);
 
         public static final ParticleWrapper GRAB_CLOUD = new ParticleWrapper(Particle.POOF, 20, 0.5, 0.5, 0.5, 0.1);
-        public static final ParticleWrapper GRAB_ATTEMPT = new ParticleWrapper(Particle.GUST, 2, 0.1, 0.1, 0.1);
-        public static final ParticleWrapper UMBRAL_POOF = new ParticleWrapper(Particle.CAMPFIRE_SIGNAL_SMOKE, 20, 0.5, 0.5, 0.5, 0.1);
+        public static final ParticleWrapper GRAB_ATTEMPT = new ParticleWrapper(Particle.GUST, 3, 0.01, 0.01, 0.01);
+        public static final ParticleWrapper UMBRAL_POOF = new ParticleWrapper(Particle.LARGE_SMOKE, 50, 0.5, 0.5, 0.5, 0.001);
 
         public static final ParticleWrapper THROW_TRAIl = new ParticleWrapper(Particle.DUST, 1, 0.2, 0.2, 0.2,
                 new Particle.DustOptions(Color.WHITE, 2.5f));
@@ -50,67 +51,6 @@ public class Prefab {
 
         public static final ParticleWrapper TOUGH_RECHARGE_1 = new ParticleWrapper(Particle.LAVA, 10, 0.1, 0.1, 0.1, 0.25);
         public static final ParticleWrapper TOUGH_RECHARGE_2 = new ParticleWrapper(Particle.FLAME, 100, 0.5, 0.5, 0.5, 0.5);
-    }
-
-    public static class ControlVectors {
-        public static final List<Vector> SLASH1 = new ArrayList<>(List.of(
-                new Vector(-2.06, -1.26, -0.5),
-                new Vector(3.26, 0.79, -0.4),
-                new Vector(-2.3, -0.16,3),
-                new Vector(1.9, 0.21, 5)));
-        public static final List<Vector> SLASH1_WINDUP = new ArrayList<>(List.of(
-            new Vector(-1.86,0.13,-0.2),
-            new Vector(-1.03,-0.83,-1.9),
-            new Vector(-1.9,-0.03,-0.54),
-            new Vector(-1.6,-0.43,-1.43)));
-
-        public static final List<Vector> SLASH2 = new ArrayList<>(List.of(
-                new Vector(2.6, -1.21, -1.2),
-                new Vector(-1.47, 1.99, 0),
-                new Vector(1.6, -0.11, 7),
-                new Vector(-3.66, 0.26, 1.85)));
-        public static final List<Vector> SLASH3 = new ArrayList<>(List.of(
-                new Vector(-0.15,2.8,-1.5),
-                new Vector(-1.1,-2.2,-0.9),
-                new Vector(1.74,1.96,4.3),
-                new Vector(-1.1,-1.77,5)));
-
-        public static final List<Vector> UP_SMASH = new ArrayList<>(List.of(
-                new Vector(0.66,-1.53,-0.5),
-                new Vector(-0.4,0.67,-0.9),
-                new Vector(0.56,-0.89,2.1),
-                new Vector(-0.4,1.37,1.65)));
-
-        public static final List<Vector> SIDE_SWORD_SLASH_R = new ArrayList<>(List.of(
-                new Vector(-1.3,1.03,2),
-                new Vector(8.2,1.03,-1.9),
-                new Vector(-7,-1.73,3.3),
-                new Vector(9,-0.93,5)));
-        public static final List<Vector> SIDE_SWORD_SLASH_L = new ArrayList<>(List.of(
-                new Vector(1.3,1.03,2),
-                new Vector(-8.2,1.03,-1.9),
-                new Vector(7,-1.73,3.3),
-                new Vector(-9,-0.93,5)));
-
-        public static final List<Vector> DRAGON_KILLER = new ArrayList<>(List.of(
-                new Vector(0.26, 2.23, -2.5),
-                new Vector(0, -1.53, 2.66),
-                new Vector(-0.63, 4.04, 0.74),
-                new Vector(0.14, 1.8, 3.4)));
-        public static final List<Double> dragonKillerArcRatios = new ArrayList<>(List.of(
-                0.86, 2.13, 2.3, 0.87));
-
-        public static final List<Vector> N_AIR_SLASH = new ArrayList<>(List.of(
-                new Vector(1.0961, 1.742, -1.13),
-                new Vector(0, -1.987, -0.791),
-                new Vector(-0.2825, 0.951, 9.153),
-                new Vector(-0.7458, -5.151, -1.808)));
-
-        public static final List<Vector> D_AIR_SLASH = new ArrayList<>(List.of(
-                new Vector(-0.35, 2.53, 0.56),
-                new Vector(0, -3.42, -0.581),
-                new Vector(0.329, -0.165, 4.97),
-                new Vector(-0.07, -6.15, 0.98)));
     }
 
     public static class Direction {

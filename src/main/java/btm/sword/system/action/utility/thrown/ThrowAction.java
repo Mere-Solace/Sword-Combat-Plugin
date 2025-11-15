@@ -48,7 +48,7 @@ public class ThrowAction extends SwordAction {
     public static void throwReady(Combatant executor) {
         // Guard against throwing the Umbral Items
         // TODO: Add logic here for lunging/directing/hurling the umbral blade
-        if (executor.holdingUmbralItem() && executor instanceof SwordPlayer swordPlayer) {
+        if (executor instanceof SwordPlayer swordPlayer && swordPlayer.isUmbralItem(swordPlayer.getMainItemStackAtTimeOfHold())) {
             swordPlayer.resetTree();
             swordPlayer.displayMistake();
             return;
@@ -77,7 +77,7 @@ public class ThrowAction extends SwordAction {
 
         thrownItem = new ThrownItem(executor, setupInstructions, 0);
         executor.setThrownItem(thrownItem);
-        executor.message("On ready is getting called! WHAT THE HECK");
+
         new BukkitRunnable() {
             int misses = 0;
             @Override

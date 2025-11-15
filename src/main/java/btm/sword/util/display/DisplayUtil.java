@@ -13,6 +13,7 @@ import org.bukkit.util.Vector;
 import btm.sword.Sword;
 import btm.sword.config.ConfigManager;
 import btm.sword.system.entity.base.SwordEntity;
+import btm.sword.util.Prefab;
 
 /**
  * Utility class for manipulating {@link Display} objects in Bukkit.
@@ -95,7 +96,8 @@ public class DisplayUtil {
                 Location update = display.getLocation().add(scaledDiff);
 
                 smoothTeleport(display, tpDuration);
-                display.teleport(update);
+
+                display.teleport(update.setDirection(update.toVector().subtract(display.getLocation().toVector())));
             }
         }.runTaskTimer(Sword.getInstance(), 0L, period);
     }
@@ -172,13 +174,16 @@ public class DisplayUtil {
             public void run() {
                 DisplayUtil.smoothTeleport(display, tpDuration);
 
-                display.teleport(entity.entity().getLocation().add(
+                Vector current =
                     entity.rightBasisVector(withPitch).multiply(offset.getX()).add(
                         entity.upBasisVector(withPitch).multiply(offset.getY()).add(
                             entity.forwardBasisVector(withPitch).multiply(offset.getZ())
                         )
-                    )
-                ).setDirection(entity.forwardBasisVector(withPitch)));
+                    );
+                Location updated = entity.entity()
+                    .getLocation()
+                    .add(current);
+                display.teleport(updated.setDirection(entity.forwardBasisVector(withPitch)));
             }
         }.runTaskTimer(Sword.getInstance(), 0L, period);
     }

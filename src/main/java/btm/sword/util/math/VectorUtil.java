@@ -8,7 +8,7 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
 
-import btm.sword.util.display.Prefab;
+import btm.sword.util.Prefab;
 
 /**
  * Utility class providing mathematical operations and geometric transformations for {@link Vector}s.

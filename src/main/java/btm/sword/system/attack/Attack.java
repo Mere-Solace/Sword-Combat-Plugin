@@ -8,7 +8,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.entity.LivingEntity;
@@ -17,7 +16,6 @@ import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 
-import btm.sword.Sword;
 import btm.sword.config.ConfigManager;
 import btm.sword.config.section.CombatConfig;
 import btm.sword.system.SwordScheduler;
@@ -26,8 +24,8 @@ import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.types.Combatant;
+import btm.sword.util.Prefab;
 import btm.sword.util.display.ParticleWrapper;
-import btm.sword.util.display.Prefab;
 import btm.sword.util.entity.HitboxUtil;
 import btm.sword.util.math.BezierUtil;
 import btm.sword.util.math.VectorUtil;
@@ -65,17 +63,20 @@ public class Attack extends SwordAction implements Runnable {
     protected int attackIterations;
     protected double attackStartValue;
     protected double attackEndValue;
+    protected int ticks;
+    protected int tickPeriod;
 
     protected final double rangeMultiplier;
 
     protected Runnable callback;
+    protected int msBeforeCallbackSchedule;
 
     @Getter
     protected Attack nextAttack;
     protected int millisecondDelayBeforeNextAttack;
 
-    public Attack (AttackType type, boolean orientWithPitch, Runnable callback) {
-        controlVectors = getAttackVectors(type);
+    public Attack (AttackType type, boolean orientWithPitch) {
+        controlVectors = type.controlVectors();
         this.attackType = type;
         this.orientWithPitch = orientWithPitch;
         attacksConfig = ConfigManager.getInstance().getCombat().getAttacks();
@@ -89,17 +90,23 @@ public class Attack extends SwordAction implements Runnable {
         this.attackEndValue = attackConfig.getTiming().getAttackEndValue();
 
         this.rangeMultiplier = attackConfig.getModifiers().getRangeMultiplier();
-
-        this.callback = callback;
     }
 
-    public Attack(AttackType type, boolean orientWithPitch, Runnable callback,
+    public Attack(AttackType type, boolean orientWithPitch,
                   int attackMilliseconds, int attackIterations, double attackStartValue, double attackEndValue) {
-        this(type, orientWithPitch, callback);
+        this(type, orientWithPitch);
         this.attackMilliseconds = attackMilliseconds;
         this.attackIterations = attackIterations;
         this.attackStartValue = attackStartValue;
         this.attackEndValue = attackEndValue;
+    }
+
+    public void calcTickValues() {
+        int numOfTicks = attackMilliseconds/50;
+        this.ticks = numOfTicks <= 0 ? 1 : numOfTicks + 1;
+        int msPerIteration = attackMilliseconds/attackIterations;
+        int ticksPerIteration = msPerIteration/50;
+        this.tickPeriod = ticksPerIteration <= 0 ? 1 : ticksPerIteration;
     }
 
     public Attack setNextAttack(Attack nextAttack, int millisecondDelayBeforeNextAttack) {
@@ -108,32 +115,41 @@ public class Attack extends SwordAction implements Runnable {
         return this; // for initialization chaining
     }
 
+    public Attack setCallback(Runnable callback, int msBeforeCallbackSchedule) {
+        this.callback = callback;
+        this.msBeforeCallbackSchedule = msBeforeCallbackSchedule;
+        return this;
+    }
+
     public boolean hasNextAttack() {
         return nextAttack != null;
     }
 
     public void execute(Combatant attacker) {
         this.attacker = attacker;
+
         this.attackingEntity = attacker.entity();
         this.filter = livingEntity -> livingEntity != attackingEntity &&
                 livingEntity.getUniqueId() != attacker.getUniqueId() &&
                 livingEntity.isValid();
-        attackMilliseconds = (int) attacker.calcValueReductive(AspectType.FINESSE,
-                attacksConfig.getCastTimingMinDuration(),
-                attacksConfig.getCastTimingMaxDuration(),
-                attacksConfig.getCastTimingReductionRate());
-        cast(attacker, attackMilliseconds, this);
+
+        cast(attacker, 5, this);
+    }
+
+    // TODO change cast time and duration of last attack
+    private void onRun() {
+        attacker.setTimeOfLastAttack(System.currentTimeMillis());
+        int cooldown = (int) attacker.calcValueReductive(AspectType.FINESSE,
+            attacksConfig.getCastTimingMinDuration(),
+            attacksConfig.getCastTimingMaxDuration(),
+            attacksConfig.getCastTimingReductionRate());
+        attacker.setDurationOfLastAttack(cooldown * attacksConfig.getDurationMultiplier());
+        startAttack();
     }
 
     @Override
     public void run() {
         onRun();
-    }
-
-    private void onRun() {
-        attacker.setTimeOfLastAttack(System.currentTimeMillis());
-        attacker.setDurationOfLastAttack(attackMilliseconds * attacksConfig.getDurationMultiplier());
-        startAttack();
     }
 
     void playSwingSoundEffects() {
@@ -160,10 +176,13 @@ public class Attack extends SwordAction implements Runnable {
 
         prev = weaponPathFunction.apply(attackStartValue - step);
 
+        calcTickValues();
+
         curIteration = 0;
         for (int i = 0; i <= attackIterations; i++) {
             final int idx = i;
-            SwordScheduler.runBukkitTaskLater(new BukkitRunnable() {
+            SwordScheduler.runBukkitTaskLater(
+                new BukkitRunnable() {
                 @Override
                 public void run() {
                     applyConsistentEffects();
@@ -177,9 +196,7 @@ public class Attack extends SwordAction implements Runnable {
 
                     // allows for chaining of attack logic
                     if (idx == attackIterations) {
-                        if (callback != null) {
-                            Bukkit.getScheduler().runTask(Sword.getInstance(), callback);
-                        }
+                        handleCallback();
                         if (nextAttack != null) {
                             SwordScheduler.runBukkitTaskLater(
                                 new BukkitRunnable() {
@@ -199,6 +216,13 @@ public class Attack extends SwordAction implements Runnable {
         }
     }
 
+    public void handleCallback() {
+        if (callback != null) {
+            SwordScheduler.runBukkitTaskLater(callback, msBeforeCallbackSchedule, TimeUnit.MILLISECONDS);
+        }
+    }
+
+    // TODO: Either remove this, or make attack a consumable class and never re-use. it gets a little messy for some reason.
     private void prepareForNextUse() {
         hitDuringAttack.clear();
         origin = null;
@@ -286,44 +310,22 @@ public class Attack extends SwordAction implements Runnable {
         weaponPathFunction = BezierUtil.cubicBezier3D(adjusted.get(0), adjusted.get(1), adjusted.get(2), adjusted.get(3));
     }
 
-    private static @NotNull List<Vector> getAttackVectors(AttackType attackType) {
-        List<Vector> ctrlVectors;
-        switch (attackType) {
-            case BASIC_1 -> ctrlVectors = Prefab.ControlVectors.SLASH1;
-            case WINDUP_1 -> ctrlVectors = Prefab.ControlVectors.SLASH1_WINDUP;
-            case BASIC_2 -> ctrlVectors = Prefab.ControlVectors.SLASH2;
-            case BASIC_3 -> ctrlVectors = Prefab.ControlVectors.SLASH3;
-            case HEAVY_1 -> ctrlVectors = Prefab.ControlVectors.UP_SMASH;
-            case D_AIR -> ctrlVectors = Prefab.ControlVectors.D_AIR_SLASH;
-            case N_AIR -> ctrlVectors = Prefab.ControlVectors.N_AIR_SLASH;
-            default -> ctrlVectors = List.of(
-                    Prefab.Direction.UP,
-                    Prefab.Direction.DOWN,
-                    Prefab.Direction.OUT_UP,
-                    Prefab.Direction.OUT_DOWN);
-        }
-        return ctrlVectors;
-    }
-
     private @NotNull Vector getKnockBackVector(AttackType attackType, LivingEntity target) {
         var attackVelocity = ConfigManager.getInstance().getPhysics().getAttackVelocity();
         Vector base =  Prefab.Direction.UP.clone().multiply(attackVelocity.getKnockbackVerticalBase());
         Vector r = curRight.clone().multiply(attackVelocity.getKnockbackHorizontalModifier());
 
-        Vector knockback;
-        switch (attackType) {
-            case BASIC_1 -> knockback = base.add(r);
-            case BASIC_2 -> knockback = base.add(r.multiply(-1));
-            case BASIC_3 -> knockback = target.getLocation().toVector()
+        return switch (attackType) {
+            case SLASH1 -> base.add(r);
+            case SLASH2 -> base.add(r.multiply(-1));
+            case SLASH3 -> target.getLocation().toVector()
                     .subtract(origin.toVector()).normalize()
                     .subtract(new Vector(0, attackVelocity.getKnockbackVerticalBase() * 2, 0));
-            case HEAVY_1 -> knockback = base.multiply(2);
-            case D_AIR -> knockback = base.multiply(-2);
-            case N_AIR -> knockback = target.getLocation().toVector()
+            case D_AIR -> base.multiply(-2);
+            case N_AIR -> target.getLocation().toVector()
                     .subtract(origin.toVector()).normalize().multiply(attackVelocity.getKnockbackNormalMultiplier());
 
-            default -> knockback = cur.clone().normalize().multiply(attackVelocity.getKnockbackNormalMultiplier());
-        }
-        return knockback;
+            default -> cur.clone().normalize().multiply(attackVelocity.getKnockbackNormalMultiplier());
+        };
     }
 }

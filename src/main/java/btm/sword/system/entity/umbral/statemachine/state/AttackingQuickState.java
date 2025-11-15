@@ -42,7 +42,7 @@ public class AttackingQuickState extends UmbralStateFacade {
     @Override
     public void onEnter(UmbralBlade blade) {
         // Attack execution is handled by performAttack method
-        blade.performAttack(3.0, false); // range=3, heavy=false
+        blade.performAttack(5.0, false);
     }
 
     @Override

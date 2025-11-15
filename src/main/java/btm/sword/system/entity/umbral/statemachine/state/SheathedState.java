@@ -10,7 +10,7 @@ public class SheathedState extends UmbralStateFacade {
     @Override
     public void onEnter(UmbralBlade blade) {
         blade.endIdleMovement();
-        blade.getThrower().setItemStackInHand(blade.getLink(), true);
+        blade.getThrower().setItemInInventory(0, blade.getLink());
     }
 
     @Override

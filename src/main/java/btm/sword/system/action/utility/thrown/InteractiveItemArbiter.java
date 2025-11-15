@@ -13,8 +13,8 @@ import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.types.Combatant;
 import btm.sword.system.entity.umbral.UmbralBlade;
 import btm.sword.system.entity.umbral.input.BladeRequest;
+import btm.sword.util.Prefab;
 import btm.sword.util.display.ParticleWrapper;
-import btm.sword.util.display.Prefab;
 
 /**
  * Manages {@link ThrownItem} instances that are currently active and displayed in the world.

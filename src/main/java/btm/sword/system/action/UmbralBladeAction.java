@@ -5,11 +5,17 @@ import btm.sword.system.entity.umbral.UmbralBlade;
 import btm.sword.system.entity.umbral.input.BladeRequest;
 
 public class UmbralBladeAction extends SwordAction {
+    // TODO: Wielding when not holding blade should attack
     public static void wieldUmbralBlade(Combatant wielder) {
         UmbralBlade blade = wielder.getUmbralBlade();
         if (blade == null) return;
 
-        blade.request(BladeRequest.WIELD);
+        if (wielder.holdingUmbralItemInMainHand()) {
+            blade.request(BladeRequest.WIELD);
+        }
+        else {
+            blade.request(BladeRequest.ATTACK_QUICK);
+        }
     }
 
     public static void toggleUmbralBlade(Combatant wielder) {

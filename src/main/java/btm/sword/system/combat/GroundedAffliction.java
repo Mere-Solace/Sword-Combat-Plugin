@@ -4,7 +4,7 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.util.Vector;
 
 import btm.sword.system.entity.base.SwordEntity;
-import btm.sword.util.display.Prefab;
+import btm.sword.util.Prefab;
 
 public class GroundedAffliction extends Affliction {
     public GroundedAffliction(long tickDuration, double strength) {

@@ -102,8 +102,7 @@ public class SwordPlayer extends Combatant {
         skullMeta.setPlayerProfile(profile);
         playerHead.setItemMeta(skullMeta);
 
-        ItemStackBuilder menuItemBuilder = new ItemStackBuilder(Material.ECHO_SHARD);
-        menuButton = menuItemBuilder
+        menuButton = new ItemStackBuilder(Material.ECHO_SHARD)
                 .name(Component.text("| Main Menu |").color(TextColor.color(218, 133, 3)))
                 .hideAll()
                 .tag(KeyRegistry.MAIN_MENU_BUTTON_KEY, KeyRegistry.MAIN_MENU_BUTTON)
@@ -154,7 +153,7 @@ public class SwordPlayer extends Combatant {
     @Override
     public void onSpawn() {
         super.onSpawn();
-        // Force initial stat display render to ensure visibility on spawn
+        player().getInventory().setItem(8, menuButton);
         updateVisualStats();
     }
 
@@ -495,6 +494,7 @@ public class SwordPlayer extends Combatant {
         holdingRight = true;
         rightHoldTimeStart = System.currentTimeMillis();
 
+        // TODO: handle umbral blade holding
         mainItemStackAtTimeOfHold = getItemStackInHand(true);
         offItemStackAtTimeOfHold = getItemStackInHand(false);
 

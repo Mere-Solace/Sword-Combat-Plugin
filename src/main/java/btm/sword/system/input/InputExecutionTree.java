@@ -331,7 +331,7 @@ public class InputExecutionTree {
         // basic attacks
         add(List.of(InputType.LEFT),
                 new InputAction(
-                        executor -> AttackAction.basicAttack(executor, AttackType.BASIC_1, true),
+                        executor -> AttackAction.basicAttack(executor, AttackType.SLASH1, true),
                         executor -> Math.max(0, (executor.getTimeOfLastAttack() + executor.getDurationOfLastAttack()) - System.currentTimeMillis()),
                         Combatant::canPerformAction,
                         true,
@@ -342,7 +342,7 @@ public class InputExecutionTree {
 
         add(List.of(InputType.LEFT, InputType.LEFT),
                 new InputAction(
-                        executor -> AttackAction.basicAttack(executor, AttackType.BASIC_2, true),
+                        executor -> AttackAction.basicAttack(executor, AttackType.SLASH2, true),
                         executor -> 0L,
                         Combatant::canPerformAction,
                         false,
@@ -353,7 +353,7 @@ public class InputExecutionTree {
 
         add(List.of(InputType.LEFT, InputType.LEFT, InputType.LEFT),
                 new InputAction(
-                        executor -> AttackAction.basicAttack(executor, AttackType.BASIC_3, true),
+                        executor -> AttackAction.basicAttack(executor, AttackType.SLASH3, true),
                         executor -> 0L,
                         Combatant::canPerformAction,
                         false,

@@ -11,10 +11,9 @@ import btm.sword.system.attack.Attack;
 import btm.sword.system.attack.AttackType;
 import btm.sword.system.entity.types.Combatant;
 import btm.sword.system.entity.types.SwordPlayer;
-import btm.sword.system.entity.umbral.statemachine.state.StandbyState;
-import btm.sword.system.entity.umbral.statemachine.state.WieldState;
+import btm.sword.system.entity.umbral.input.BladeRequest;
 import btm.sword.system.item.KeyRegistry;
-import btm.sword.util.display.Prefab;
+import btm.sword.util.Prefab;
 
 /**
  * Provides attack-related actions for {@link Combatant} entities.
@@ -49,14 +48,7 @@ public class AttackAction extends SwordAction {
         // handle potential umbral blade usage
         if (KeyRegistry.hasKey(itemStack, KeyRegistry.SOUL_LINK_KEY) &&
                 executor.getUmbralBlade() != null) {
-            if (executor.getUmbralBlade().inState(StandbyState.class)) {
-                UmbralBladeAction.performQuickAttack(executor);
-                return;
-            }
-
-            if (!executor.getUmbralBlade().inState(WieldState.class)) {
-                return;
-            }
+            executor.requestUmbralBladeState(BladeRequest.ATTACK_QUICK);
         }
 
         double dot = executor.entity().getEyeLocation().getDirection().dot(Prefab.Direction.UP);
@@ -86,6 +78,6 @@ public class AttackAction extends SwordAction {
     }
 
     public static void basicSlash(Combatant executor, AttackType type, Boolean orientWithPitch) {
-        new Attack(type, orientWithPitch, null).execute(executor);
+        new Attack(type, orientWithPitch).execute(executor);
     }
 }

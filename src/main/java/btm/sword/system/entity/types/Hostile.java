@@ -20,7 +20,7 @@ import btm.sword.Sword;
 import btm.sword.system.action.utility.GrabAction;
 import btm.sword.system.entity.base.CombatProfile;
 import btm.sword.system.entity.base.SwordEntity;
-import btm.sword.util.display.Prefab;
+import btm.sword.util.Prefab;
 import lombok.Getter;
 import lombok.Setter;
 

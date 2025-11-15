@@ -21,7 +21,7 @@ import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.types.Combatant;
-import btm.sword.util.display.Prefab;
+import btm.sword.util.Prefab;
 import btm.sword.util.entity.HitboxUtil;
 
 /**

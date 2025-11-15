@@ -4,12 +4,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import org.bukkit.Bukkit;
 import org.bukkit.entity.ItemDisplay;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
-import btm.sword.Sword;
 import btm.sword.system.SwordScheduler;
 import btm.sword.util.display.DisplayUtil;
 import btm.sword.util.math.BezierUtil;
@@ -31,9 +29,9 @@ public class ItemDisplayAttack extends Attack {
     // Takes in an already created weapon display and changes it's position around.
     // once the attack is done, the display should either be removed or control of
     // its movement should be handed back to previous controller.
-    public ItemDisplayAttack(ItemDisplay weaponDisplay, AttackType type, boolean orientWithPitch, Runnable callback,
+    public ItemDisplayAttack(ItemDisplay weaponDisplay, AttackType type, boolean orientWithPitch,
                              boolean displayOnly, int tpDuration) {
-        super(type, orientWithPitch, callback);
+        super(type, orientWithPitch);
         this.weaponDisplay = weaponDisplay;
         this.displayOnly = displayOnly;
         this.displaySteps = 10; //TODO config pls
@@ -41,10 +39,10 @@ public class ItemDisplayAttack extends Attack {
         this.tpDuration = tpDuration;
     }
 
-    public ItemDisplayAttack(ItemDisplay weaponDisplay, AttackType type, boolean orientWithPitch, Runnable callback,
+    public ItemDisplayAttack(ItemDisplay weaponDisplay, AttackType type, boolean orientWithPitch,
                              boolean displayOnly, int tpDuration, int displaySteps, int attackStepsPerDisplayStep,
                              int attackMilliseconds, double attackStartValue, double attackEndValue) {
-        super(type, orientWithPitch, callback, attackMilliseconds, displaySteps * attackStepsPerDisplayStep, attackStartValue, attackEndValue);
+        super(type, orientWithPitch, attackMilliseconds, displaySteps * attackStepsPerDisplayStep, attackStartValue, attackEndValue);
         this.weaponDisplay = weaponDisplay;
         this.displayOnly = displayOnly;
         this.displaySteps = displaySteps;
@@ -69,7 +67,9 @@ public class ItemDisplayAttack extends Attack {
         if (drawParticles) super.drawAttackEffects();
         if (curIteration % displaySteps == 0) {
             DisplayUtil.smoothTeleport(weaponDisplay, tpDuration);
-            weaponDisplay.teleport(attackLocation);
+            weaponDisplay.teleport(attackLocation.setDirection(cur));
+
+//            DrawUtil.secant(List.of(Prefab.Particles.TEST_SWORD_BLUE), origin, attackLocation, 0.2);
         }
     }
 
@@ -80,7 +80,8 @@ public class ItemDisplayAttack extends Attack {
 
         double attackRange = attackEndValue - attackStartValue;
         double step = attackRange / attackIterations;
-        int msPerIteration = attackMilliseconds / attackIterations;
+        int calculation = attackMilliseconds / attackIterations;
+        int msPerIteration = calculation <= 0 ? 1 : attackMilliseconds / attackIterations;
 
         generateBezierFunction();
 
@@ -95,8 +96,10 @@ public class ItemDisplayAttack extends Attack {
 
         curIteration = 0;
         for (int i = 0; i <= attackIterations; i++) {
-            final int idx = i;
-            SwordScheduler.runBukkitTaskLater(new BukkitRunnable() {
+            int pass = i;
+            SwordScheduler.runBukkitTaskLater(
+                new BukkitRunnable() {
+                final int idx = pass;
                 @Override
                 public void run() {
                     applyConsistentEffects();
@@ -110,9 +113,7 @@ public class ItemDisplayAttack extends Attack {
 
                     // allows for chaining of attack logic
                     if (idx == attackIterations) {
-                        if (callback != null) {
-                            Bukkit.getScheduler().runTask(Sword.getInstance(), callback);
-                        }
+                        handleCallback();
                         if (nextAttack != null) {
                             SwordScheduler.runBukkitTaskLater(
                                 new BukkitRunnable() {
@@ -129,7 +130,7 @@ public class ItemDisplayAttack extends Attack {
                     prev = cur;
                     curIteration++;
                 }
-            }, ticksSpentMovingToInitialLocation + curIteration * msPerIteration,
+            }, ticksSpentMovingToInitialLocation + (i * msPerIteration),
                 TimeUnit.MILLISECONDS);
         }
     }

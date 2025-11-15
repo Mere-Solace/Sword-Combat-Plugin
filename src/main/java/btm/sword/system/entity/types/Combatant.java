@@ -19,7 +19,7 @@ import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.umbral.UmbralBlade;
 import btm.sword.system.entity.umbral.input.BladeRequest;
 import btm.sword.system.item.KeyRegistry;
-import btm.sword.util.display.Prefab;
+import btm.sword.util.Prefab;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -199,10 +199,17 @@ public abstract class Combatant extends SwordEntity {
                 target.getEyeLocation().subtract(self.getEyeLocation()).toVector());
     }
 
-    public boolean holdingUmbralItem() {
-        ItemStack stack = getItemStackInHand(true);
-        return !stack.isEmpty() &&
-            KeyRegistry.hasKey(stack, KeyRegistry.SOUL_LINK_KEY);
+    public boolean holdingUmbralItemInMainHand() {
+        return isUmbralItem(getItemStackInHand(true));
+    }
+
+    public boolean isUmbralItem(ItemStack item) {
+//        message("> Check info - ItemStack:" + item.toString() +
+//            "\nSoul link key return: " + item.getItemMeta()
+//            .getPersistentDataContainer().get(KeyRegistry.SOUL_LINK_KEY, PersistentDataType.STRING));
+
+        return !item.isEmpty() &&
+            KeyRegistry.hasKey(item, KeyRegistry.SOUL_LINK_KEY);
     }
 
     /**

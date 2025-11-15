@@ -31,8 +31,8 @@ import btm.sword.system.combat.Affliction;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.types.Combatant;
+import btm.sword.util.Prefab;
 import btm.sword.util.display.DrawUtil;
-import btm.sword.util.display.Prefab;
 import btm.sword.util.entity.EntityUtil;
 import btm.sword.util.entity.HitboxUtil;
 import btm.sword.util.math.VectorUtil;
@@ -448,10 +448,6 @@ public abstract class SwordEntity {
         for (Affliction affliction : afflictions) {
             affliction.start(this);
         }
-
-        source.message("Hit that guy. He now has:\n" + aspects.shards().cur() + " shards,\n"
-                + aspects.toughness().cur() + " toughness,\n"
-                + aspects.soulfire().cur() + " soulfire.");
     }
 
     /**
@@ -630,6 +626,12 @@ public abstract class SwordEntity {
      */
     public void setItemTypeInHand(Material itemType, boolean main) {
         setItemStackInHand(new ItemStack(itemType), main);
+    }
+
+    public void setItemInInventory(int index, ItemStack item) {
+        if (entity() instanceof Player p) {
+            p.getInventory().setItem(index, item);
+        } else setItemStackInHand(item, index == 0);
     }
 
     /**

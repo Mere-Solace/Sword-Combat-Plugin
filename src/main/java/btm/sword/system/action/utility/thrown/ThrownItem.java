@@ -34,9 +34,9 @@ import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.types.Combatant;
 import btm.sword.system.entity.types.SwordPlayer;
+import btm.sword.util.Prefab;
 import btm.sword.util.display.DisplayUtil;
 import btm.sword.util.display.ParticleWrapper;
-import btm.sword.util.display.Prefab;
 import btm.sword.util.entity.EntityUtil;
 import btm.sword.util.math.VectorUtil;
 import lombok.Getter;
@@ -91,15 +91,15 @@ public class ThrownItem {
         this.displaySetupInstructions = displaySetupInstructions;
         setupSuccessful = false;
 
-        xDisplayOffset = -0.75f;
+        xDisplayOffset = -0.6f;
         yDisplayOffset = 0.25f;
-        zDisplayOffset = -0.25f;
+        zDisplayOffset = -0.1f;
 
         setup(true, setupPeriod);
     }
 
-    protected BukkitTask setup(boolean firstTime, int period) {
-        return new BukkitRunnable() {
+    protected void setup(boolean firstTime, int period) {
+        new BukkitRunnable() {
             @Override
             public void run() {
                 if (setupSuccessful) {
@@ -112,7 +112,7 @@ public class ThrownItem {
                     display = (ItemDisplay) e.getWorld().spawnEntity(e.getEyeLocation(), EntityType.ITEM_DISPLAY);
                     displaySetupInstructions.accept(display);
                     setupSuccessful = true;
-                } catch(Exception e){
+                } catch (Exception e) {
                     e.addSuppressed(e);
                 }
             }
@@ -220,6 +220,10 @@ public class ThrownItem {
                 }
             }.runTaskLater(Sword.getInstance(), 2);
         }
+
+        // TODO: either just override the whole method in Umbral Blade or make this modular so that -
+        // New Functions for lunging and other umbral-blade specific logic can be performed
+        // For example -> the logic below is incorrect for handling umbral blade lunging/throwing.
 
         Prefab.Sounds.THROW.play(thrower.entity());
 

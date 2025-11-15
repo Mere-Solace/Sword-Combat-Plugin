@@ -1,5 +1,7 @@
 package btm.sword.system.entity.umbral.statemachine.state;
 
+import org.bukkit.Location;
+
 import btm.sword.system.entity.umbral.UmbralBlade;
 import btm.sword.system.entity.umbral.input.BladeRequest;
 import btm.sword.system.entity.umbral.statemachine.UmbralStateFacade;
@@ -27,6 +29,8 @@ import btm.sword.system.entity.umbral.statemachine.UmbralStateFacade;
  *
  */
 public class ReturningState extends UmbralStateFacade {
+    private Location previousBladeLocation;
+
     @Override
     public String name() {
         return "RETURNING";
@@ -36,6 +40,7 @@ public class ReturningState extends UmbralStateFacade {
     public void onEnter(UmbralBlade blade) {
         blade.endIdleMovement();
         blade.returnToWielderAndRequestState(BladeRequest.STANDBY);
+        previousBladeLocation = blade.getDisplay().getLocation();
     }
 
     @Override
@@ -45,6 +50,8 @@ public class ReturningState extends UmbralStateFacade {
 
     @Override
     public void onTick(UmbralBlade blade) {
-        // Monitor return progress
+        if (blade.getDisplay().getLocation().toVector().subtract(previousBladeLocation.toVector()).isZero()) {
+            blade.request(BladeRequest.STANDBY);
+        }
     }
 }

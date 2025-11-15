@@ -10,13 +10,13 @@ public class WieldState extends UmbralStateFacade {
     @Override
     public void onEnter(UmbralBlade blade) {
         blade.getDisplay().setViewRange(0);
-        blade.getThrower().setItemStackInHand(blade.getBlade(), true);
+        blade.getThrower().setItemInInventory(0, blade.getBlade());
     }
 
     @Override
     public void onExit(UmbralBlade blade) {
         blade.getDisplay().setViewRange(300);
-        blade.getThrower().setItemStackInHand(blade.getLink(), true);
+        blade.getThrower().setItemInInventory(0, blade.getLink());
     }
 
     @Override

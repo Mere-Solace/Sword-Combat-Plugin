@@ -21,7 +21,7 @@ import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.types.SwordPlayer;
 import btm.sword.system.input.InputType;
 import btm.sword.system.item.KeyRegistry;
-import btm.sword.util.InputUtil;
+import btm.sword.util.entity.InputUtil;
 import io.papermc.paper.event.player.PrePlayerAttackEntityEvent;
 
 /**

@@ -1,4 +1,4 @@
-package btm.sword.util;
+package btm.sword.util.entity;
 
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
