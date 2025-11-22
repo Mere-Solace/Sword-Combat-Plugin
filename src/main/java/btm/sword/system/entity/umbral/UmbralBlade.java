@@ -597,9 +597,12 @@ public class UmbralBlade extends ThrownItem {
         Basis attackFrame;
         double dist;
 
+        int direction;
+
         if (target == null || target.isInvalid()) {
             Location targeted = thrower.getChestLocation().add(thrower.entity().getEyeLocation().getDirection().multiply(12));
             Vector to = targeted.toVector().subtract(display.getLocation().toVector());
+            direction = thrower.rightBasisVector(false).dot(to) > 0 ? -1: 1;
 
             DrawUtil.secant(List.of(Prefab.Particles.TEST_SPARKLE), attackOrigin, targeted, 0.25);
 
@@ -609,20 +612,20 @@ public class UmbralBlade extends ThrownItem {
             dist = targeted.toVector().subtract(attackOrigin.toVector()).length();
 
             start = attackFrame.forward().multiply(-dist/10)
-                .add(attackFrame.right().multiply(dist/5));
+                .add(attackFrame.right().multiply(direction * dist/5));
             c1 = attackOrigin.clone()
                 .add(attackFrame.forward().multiply(dist/5))
-                .add(attackFrame.right().multiply(dist/3))
+                .add(attackFrame.right().multiply(direction * dist/3))
                 .toVector()
                 .subtract(attackOrigin.toVector());
             c2 = targeted.clone()
                 .add(attackFrame.forward().multiply(-dist/5))
-                .add(attackFrame.right().multiply(dist/3))
+                .add(attackFrame.right().multiply(direction * dist/3))
                 .toVector()
                 .subtract(attackOrigin.toVector());
             end = targeted.clone()
                 .add(attackFrame.forward().multiply(dist/2))
-                .add(attackFrame.right().multiply(-dist/3))
+                .add(attackFrame.right().multiply(-direction * dist/3))
                 .toVector()
                 .subtract(attackOrigin.toVector());
         }
@@ -631,27 +634,27 @@ public class UmbralBlade extends ThrownItem {
 
             Location targeted = target.getChestLocation();
             Vector to = targeted.toVector().subtract(display.getLocation().toVector());
+            direction = thrower.rightBasisVector(false).dot(to) > 0 ? -1: 1;
 
             attackOrigin.setDirection(to);
             attackFrame = new Basis(attackOrigin, true);
 
             dist = targeted.toVector().subtract(attackOrigin.toVector()).length();
-
             start = attackFrame.forward().multiply(-dist/10)
-                .add(attackFrame.right().multiply(dist/5));
+                .add(attackFrame.right().multiply(direction * dist/5));
             c1 = attackOrigin.clone()
                 .add(attackFrame.forward().multiply(dist/5))
-                .add(attackFrame.right().multiply(dist/3))
+                .add(attackFrame.right().multiply(direction * dist/3))
                 .toVector()
                 .subtract(attackOrigin.toVector());
             c2 = targeted.clone()
                 .add(attackFrame.forward().multiply(-dist/5))
-                .add(attackFrame.right().multiply(dist/3))
+                .add(attackFrame.right().multiply(direction * dist/3))
                 .toVector()
                 .subtract(attackOrigin.toVector());
             end = targeted.clone()
                 .add(attackFrame.forward().multiply(dist/2))
-                .add(attackFrame.right().multiply(-dist/3))
+                .add(attackFrame.right().multiply(-direction * dist/3))
                 .toVector()
                 .subtract(attackOrigin.toVector());
         }
@@ -659,11 +662,11 @@ public class UmbralBlade extends ThrownItem {
         ControlVectors ctrl = new ControlVectors(start, end, c1, c2);
         GeneratedAttackProfile profile = new GeneratedAttackProfile(ctrl, Attack::getTo);
 
-        int duration = 10 * (int) dist;
+        int duration = 30 * (int) dist;
 
         Attack attack = new UmbralBladeAttack(display, profile,
             true, true, 1,
-            10, 30, (int) (duration * 1.5),
+            10, 30, (int) (duration * 1.75),
             0.2, -0.1)
             .setBlade(this)
             .setInitialMovementTicks(5)
@@ -756,7 +759,7 @@ public class UmbralBlade extends ThrownItem {
                 Component.text("Wielded Form", Config.SwordColor.TEXT_ITEM_HEADER, TextDecoration.ITALIC),
                 Component.text("Use normal combat inputs", Config.SwordColor.TEXT_ITEM_BASE),
                 Component.text(""),
-                Component.text("Q + F", Config.SwordColor.TEXT_ITEM_CONTROLS)
+                Component.text("Drop + Swap", Config.SwordColor.TEXT_ITEM_CONTROLS)
                     .append(Component.text(" - Return to Standby", Config.SwordColor.TEXT_ITEM_BASE))
             ))
             .unbreakable(true)
@@ -887,7 +890,6 @@ public class UmbralBlade extends ThrownItem {
         hit = false;
         grounded = false;
         caught = false;
-//        hitEntity = null;
         stuckBlock = null;
     }
 }
