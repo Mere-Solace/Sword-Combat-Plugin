@@ -5,10 +5,20 @@ import java.util.function.Consumer;
 
 import javax.annotation.Nullable;
 
+import btm.sword.system.entity.SwordEntityArbiter;
+import btm.sword.system.entity.base.SwordEntity;
+
+import btm.sword.util.display.DisplayUtil;
+import btm.sword.util.entity.HitboxUtil;
+
+import org.bukkit.Color;
 import org.bukkit.Material;
+import org.bukkit.entity.Display;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.ItemDisplay;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.TextDisplay;
 import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryAction;
 import org.bukkit.event.inventory.InventoryClickEvent;
@@ -39,6 +49,10 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.title.Title;
+
+import org.bukkit.util.Transformation;
+import org.joml.Quaternionf;
+import org.joml.Vector3f;
 
 /**
  * Represents a player-controlled combatant in the Sword plugin system.
@@ -85,6 +99,10 @@ public class SwordPlayer extends Combatant {
 
     private boolean swappingInInv;
     private boolean droppingInInv;
+
+    private BukkitTask targetIndicatorTask;
+    private SwordEntity targetedEntity;
+    private TextDisplay targetIndicator;
 
     /**
      * Constructs a new SwordPlayer wrapping a Bukkit {@link Player} with associated {@link PlayerData}.
@@ -147,6 +165,8 @@ public class SwordPlayer extends Combatant {
         if (ticks % 2 == 0) {
             inventoryUpkeep();
         }
+
+        targetEntityIndicatorTick(); // TODO: check if this worked!
     }
 
     /**
@@ -166,6 +186,7 @@ public class SwordPlayer extends Combatant {
     @Override
     public void onDeath() {
         super.onDeath();
+        endIndicatorDisplay();
     }
 
     /**
@@ -176,6 +197,7 @@ public class SwordPlayer extends Combatant {
             getUmbralBlade().dispose();
         }
         endStatusDisplay();
+        endIndicatorDisplay();
     }
 
     /**
@@ -483,6 +505,78 @@ public class SwordPlayer extends Combatant {
     public void addStat(AspectType stat, int amount) {
         aspects.getAspect(stat).addBaseValue(amount);
         // invalidate all cached, calculated values with that stat
+    }
+
+    /**
+     * Very important method: it not only gets the targeted entity,
+     * but also sets the currently targeted entity and adjusts the indicator display
+     * <p>
+     * Use whenever targeting enemies with specific attacks (AOE attacks like the
+     * basic attack might not fit for this situation.)
+     */
+    @Override
+    public SwordEntity getTargetedEntity(double range) {
+        SwordEntity newTarget = super.getTargetedEntity(range);
+        if (newTarget == null) return null;
+
+        if (targetedEntity != null && (newTarget.getUuid() != targetedEntity.getUuid()))
+            targetIndicator.remove();
+
+        targetedEntity = newTarget;
+
+        return newTarget;
+    }
+
+    public void setTargetedEntity(SwordEntity newTarget) {
+        if (newTarget == null) return;
+
+        if (targetedEntity != null && (newTarget.getUuid() != targetedEntity.getUuid()))
+            targetIndicator.remove();
+
+        targetedEntity = newTarget;
+    }
+
+    protected void targetEntityIndicatorTick() {
+        if (targetedEntity == null) return;
+
+        if (targetedEntity.isDead() && targetIndicator != null) {
+            if (targetIndicator.isValid()) targetIndicator.remove();
+            return;
+        }
+
+        if (targetIndicator == null || !targetIndicator.isValid()) {
+            targetIndicator = (TextDisplay) entity().getWorld().spawnEntity(targetedEntity.getLocation(), EntityType.TEXT_DISPLAY);
+
+            targetedEntity.entity().addPassenger(targetIndicator);
+
+            targetIndicator.setBillboard(Display.Billboard.VERTICAL);
+            targetIndicator.text(Component.text("⮟",
+                TextColor.color(255, 0, 0), TextDecoration.BOLD));
+            targetIndicator.setDefaultBackground(false);
+            targetIndicator.setBackgroundColor(Color.fromARGB(0, 0, 0, 0));
+            targetIndicator.setBrightness(new Display.Brightness(15, 15));
+            targetIndicator.setShadowed(true);
+            targetIndicator.setGlowColorOverride(Color.fromRGB(255, 0, 0));
+            targetIndicator.setGlowing(true);
+        }
+
+        float scale = 3.0f;
+
+        DisplayUtil.setInterpolationValues(targetIndicator, 0, 10);
+        targetIndicator.setTransformation(
+            new Transformation(
+                new Vector3f(0, 1.35f + ((float) Math.cos(ticks*Math.PI/16) * 0.5f), 0),
+                new Quaternionf(),
+                new Vector3f(scale, scale, scale),
+                new Quaternionf()
+            )
+        );
+    }
+
+    public void endIndicatorDisplay() {
+        if (targetIndicator != null && targetIndicator.isValid()) {
+            targetIndicator.remove();
+        }
     }
 
     /**

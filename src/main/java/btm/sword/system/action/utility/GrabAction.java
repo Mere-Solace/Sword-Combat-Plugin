@@ -2,6 +2,8 @@ package btm.sword.system.action.utility;
 
 import java.util.HashSet;
 
+import btm.sword.system.entity.types.SwordPlayer;
+
 import org.bukkit.FluidCollisionMode;
 import org.bukkit.Location;
 import org.bukkit.entity.Entity;
@@ -108,6 +110,9 @@ public class GrabAction extends SwordAction {
 
                 if (swordTarget instanceof Combatant c && c.isAttemptingThrow()) c.setThrowCancelled(true);
 
+                if (executor instanceof SwordPlayer swordPlayer) {
+                    swordPlayer.setTargetedEntity(swordTarget);
+                }
                 executor.onGrab(swordTarget);
 
                 final int[] ticks = {0};

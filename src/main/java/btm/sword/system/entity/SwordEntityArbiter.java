@@ -152,6 +152,7 @@ public class SwordEntityArbiter {
         for (SwordEntity player : onlineSwordPlayers.values()) {
             ((SwordPlayer) player).endUmbralBlade();
             player.endStatusDisplay();
+            ((SwordPlayer) player).endIndicatorDisplay();
         }
     }
 

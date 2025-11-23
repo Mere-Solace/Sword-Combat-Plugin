@@ -12,7 +12,6 @@ import btm.sword.system.attack.AttackType;
 import btm.sword.system.entity.types.Combatant;
 import btm.sword.system.entity.types.SwordPlayer;
 import btm.sword.system.entity.umbral.input.BladeRequest;
-import btm.sword.system.item.KeyRegistry;
 
 /**
  * Provides attack-related actions for {@link Combatant} entities.

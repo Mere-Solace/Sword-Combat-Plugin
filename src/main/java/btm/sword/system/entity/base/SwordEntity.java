@@ -423,6 +423,8 @@ public abstract class SwordEntity {
         else
             hit = true;
 
+        source.getAspects().soulfire().add(5); // TODO: make dynamic - figure out where this value should come from
+
         this.hitInvulnerableTickDuration = hitInvulnerableTickDuration;
 
         self.damage(0.01);
@@ -485,7 +487,7 @@ public abstract class SwordEntity {
         aspects.shards().reset();
         aspects.toughness().reset();
         aspects.soulfire().reset();
-        aspects.soulfire().reset();
+        aspects.soulfire().setCur(0); // start with 0 soulfire
         message("Reset resources:\n" + aspects.curResources());
     }
 
@@ -709,7 +711,7 @@ public abstract class SwordEntity {
                         !(e.getUniqueId() == getUniqueId()) &&
                         e.isValid());
 
-        return target == null ? null :SwordEntityArbiter.getOrAdd(target.getUniqueId());
+        return target == null ? null : SwordEntityArbiter.getOrAdd(target.getUniqueId());
     }
 
     public Vector rightBasisVector(boolean withPitch) {
