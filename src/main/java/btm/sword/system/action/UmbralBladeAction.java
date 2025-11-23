@@ -4,7 +4,6 @@ import btm.sword.system.entity.types.Combatant;
 import btm.sword.system.entity.umbral.UmbralBlade;
 import btm.sword.system.entity.umbral.input.BladeRequest;
 import btm.sword.system.entity.umbral.statemachine.state.LodgedState;
-import btm.sword.system.entity.umbral.statemachine.state.WieldState;
 
 public class UmbralBladeAction extends SwordAction {
     // TODO: #122 - Wielding when not holding blade should attack
@@ -12,10 +11,10 @@ public class UmbralBladeAction extends SwordAction {
         UmbralBlade blade = wielder.getUmbralBlade();
         if (blade == null) return;
 
-        if (wielder.holdingUmbralItemInMainHand()) {
-            if (blade.inState(WieldState.class)) {
-                blade.request(BladeRequest.ATTACK_QUICK);
-            }
+        if (wielder.holdingUmbralBlade()) {
+            blade.request(BladeRequest.TOGGLE);
+        }
+        else if (wielder.holdingSoulLink()) {
             blade.request(BladeRequest.WIELD);
         }
         else {

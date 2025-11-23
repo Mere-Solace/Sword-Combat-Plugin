@@ -1,5 +1,9 @@
 package btm.sword.system.entity.types;
 
+import btm.sword.system.entity.umbral.statemachine.state.LodgedState;
+import btm.sword.system.entity.umbral.statemachine.state.RecallingState;
+import btm.sword.system.entity.umbral.statemachine.state.StandbyState;
+
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.attribute.Attribute;
@@ -213,12 +217,21 @@ public abstract class Combatant extends SwordEntity {
     }
 
     public boolean isUmbralItem(ItemStack item) {
-//        message("> Check info - ItemStack:" + item.toString() +
-//            "\nSoul link key return: " + item.getItemMeta()
-//            .getPersistentDataContainer().get(KeyRegistry.SOUL_LINK_KEY, PersistentDataType.STRING));
-
         return !item.isEmpty() &&
-            KeyRegistry.hasKey(item, KeyRegistry.SOUL_LINK_KEY);
+            (KeyRegistry.hasKey(item, KeyRegistry.SOUL_LINK_KEY) ||
+                KeyRegistry.hasKey(item, KeyRegistry.UMBRAL_BLADE_KEY));
+    }
+
+    public boolean holdingUmbralBlade() {
+        ItemStack itemStack = getItemStackInHand(true);
+        return !itemStack.isEmpty() &&
+            KeyRegistry.hasKey(itemStack, KeyRegistry.UMBRAL_BLADE_KEY);
+    }
+
+    public boolean holdingSoulLink() {
+        ItemStack itemStack = getItemStackInHand(true);
+        return !itemStack.isEmpty() &&
+            KeyRegistry.hasKey(itemStack, KeyRegistry.SOUL_LINK_KEY);
     }
 
     /**
@@ -232,6 +245,23 @@ public abstract class Combatant extends SwordEntity {
      */
     public boolean canPerformAction() {
         return abilityCastTask == null && !isGrabbing && !isGrabbed();
+    }
+
+    public boolean canPerformUmbralSkillAction() {
+        return canPerformAction() &&
+            (
+                umbralBlade.inState(StandbyState.class) ||
+                umbralBlade.inState(RecallingState.class)
+            );
+    }
+
+    public boolean canPerformUmbralLungeAction() {
+        return canPerformAction() &&
+            (
+                umbralBlade.inState(StandbyState.class) ||
+                umbralBlade.inState(RecallingState.class) ||
+                umbralBlade.inState(LodgedState.class)
+            );
     }
 
     /**

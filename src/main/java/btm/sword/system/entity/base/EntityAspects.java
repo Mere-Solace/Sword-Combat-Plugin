@@ -1,9 +1,10 @@
 package btm.sword.system.entity.base;
 
+import btm.sword.Sword;
+
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 
-import btm.sword.Sword;
 import btm.sword.system.entity.aspect.Aspect;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.aspect.Resource;
@@ -270,24 +271,18 @@ public class EntityAspects {
         form().stopRegenTask();
     }
 
-    public void restartResourceProcessAfterDelay(AspectType type) {
-        if (restartTask != null && !restartTask.isCancelled()) return;
 
-        Resource r = null;
+    public void restartResourceProcessAfterDelay(AspectType type, int ticks) {
+        Resource r;
         switch (type) {
             case SHARDS -> r = shards;
             case TOUGHNESS -> r = toughness;
             case SOULFIRE -> r = soulfire;
             case FORM ->  r = form;
-            default -> { }  // Non-resource aspects don't have regen tasks
+            default -> r = null;
         }
         if (r == null) return;
-        final Resource R = r;
-        restartTask = new BukkitRunnable() {
-            @Override
-            public void run() {
-                R.restartRegenTask();
-            }
-        }.runTaskLater(Sword.getInstance(), r.getBaseRegenPeriod());
+
+        r.restartRegenTaskLater(ticks);
     }
 }

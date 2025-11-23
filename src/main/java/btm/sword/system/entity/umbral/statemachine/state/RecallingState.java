@@ -53,12 +53,7 @@ public class RecallingState extends UmbralStateFacade {
         blade.getDisplay().setGlowColorOverride(Color.fromRGB(1, 1, 1));
 
         previousBladeLocation = blade.getDisplay().getLocation();
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                returnTask = blade.returnToWielderAndRequestState(BladeRequest.STANDBY);
-            }
-        }.runTaskLater(Sword.getInstance(), 10);
+        returnTask = blade.returnToWielderAndRequestState(BladeRequest.STANDBY);
     }
 
     @Override

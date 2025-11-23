@@ -422,6 +422,7 @@ public abstract class SwordEntity {
             return;
         else
             hit = true;
+
         this.hitInvulnerableTickDuration = hitInvulnerableTickDuration;
 
         self.damage(0.01);
@@ -430,6 +431,9 @@ public abstract class SwordEntity {
         SoundUtil.playSound(source.entity(), SoundType.ENTITY_PLAYER_ATTACK_STRONG,
             Config.Audio.ENTITY_HIT_CONNECT_VOLUME, Config.Audio.ENTITY_HIT_CONNECT_PITCH);
 
+        self.setVelocity(knockbackVelocity);
+
+        // If Toughness == 0
         if (aspects.toughness().remove(baseToughnessDamage)) {
             if (!toughnessBroken) {
                 Prefab.Particles.TOUGH_BREAK_1.display(getChestLocation());
@@ -437,11 +441,12 @@ public abstract class SwordEntity {
             }
             self.playHurtAnimation(0);
             displayShardLoss();
-            aspects.restartResourceProcessAfterDelay(AspectType.SHARDS);
+            aspects.restartResourceProcessAfterDelay(AspectType.SHARDS, aspects.shards().getBaseRegenPeriod());
         }
 
         // remove returns true only if the value reaches or goes below 0
         if (toughnessBroken) {
+            // If Shards == 0 (dead)
             if (aspects.shards().remove(baseNumShards)) {
                 self.damage(74077740, source.entity());
                 if (!self.isDead())
@@ -451,14 +456,13 @@ public abstract class SwordEntity {
             }
             shardsLost += baseNumShards;
 
+
             if (shardsLost >= Config.Combat.SHARDS_LOST_PERCENT_TOUGHNESS_RESET * aspects.shards().effectiveValue()) {
                 aspects.toughness().setCurPercent(Config.Combat.TOUGHNESS_RECHARGE_PERCENT);
             }
         }
 
         aspects.soulfire().remove(baseSoulfireReduction);
-
-        self.setVelocity(knockbackVelocity);
 
         for (Affliction affliction : afflictions) {
             affliction.start(this);

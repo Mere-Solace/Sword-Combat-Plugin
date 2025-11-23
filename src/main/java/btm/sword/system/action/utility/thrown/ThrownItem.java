@@ -434,7 +434,7 @@ public class ThrownItem {
             public void run() {
                 cur = marker.getLocation();
                 DisplayUtil.smoothTeleport(display, 1);
-                display.teleport(cur.clone().setDirection(n));
+                display.teleport(cur.setDirection(velocityFunction.apply(1.0 * timeStep)));
                 marker.remove();
             }
         }.runTaskLater(Sword.getInstance(), 1L);

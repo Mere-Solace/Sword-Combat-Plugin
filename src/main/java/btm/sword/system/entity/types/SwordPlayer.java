@@ -1,6 +1,7 @@
 package btm.sword.system.entity.types;
 
 import java.time.Duration;
+import java.util.function.Consumer;
 
 import javax.annotation.Nullable;
 
@@ -110,7 +111,7 @@ public class SwordPlayer extends Combatant {
                 .tag(KeyRegistry.MAIN_MENU_BUTTON_KEY, KeyRegistry.MAIN_MENU_BUTTON)
                 .build();
 
-        inputExecutionTree = new InputExecutionTree(this, inputTimeoutMillis);
+        inputExecutionTree = new InputExecutionTree(this);
         inputExecutionTree.initializeInputTree();
 
         performedDropAction = false;
@@ -252,6 +253,12 @@ public class SwordPlayer extends Combatant {
                 resetTree();
             }
         }
+
+        Consumer<SwordPlayer> internalAction = node.getInternalAction();
+
+        if (internalAction != null) {
+            internalAction.accept(this);
+        }
     }
 
     private void inventoryUpkeep() {
@@ -268,8 +275,11 @@ public class SwordPlayer extends Combatant {
             player.getInventory().setItem(8, menuButton);
         }
 
-        if (getUmbralBlade() != null && !KeyRegistry.hasKey(player.getInventory().getItem(0), KeyRegistry.SOUL_LINK_KEY)) {
-            player.getInventory().setItem(0, getUmbralBlade().getLink());
+        if (getUmbralBlade() != null) {
+            boolean hasLink = KeyRegistry.hasKey(player.getInventory().getItem(0), KeyRegistry.SOUL_LINK_KEY);
+            boolean hasBlade = KeyRegistry.hasKey(player.getInventory().getItem(0), KeyRegistry.UMBRAL_BLADE_KEY);
+
+            if (!hasLink && !hasBlade) player.getInventory().setItem(0, getUmbralBlade().getLink());
         }
     }
 
@@ -371,9 +381,9 @@ public class SwordPlayer extends Combatant {
                 Component.text(""),
                 Component.text(inputExecutionTree.toString(), NamedTextColor.DARK_RED, TextDecoration.ITALIC),
                 Title.Times.times(
-                        Duration.ofMillis(0),
-                        Duration.ofMillis(inputTimeoutMillis),
-                        Duration.ofMillis(100))));
+                    Duration.ofMillis(20),
+                    Duration.ofMillis(inputExecutionTree.timeoutTicks() * 50),
+                    Duration.ofMillis(20))));
     }
 
     /**
@@ -384,9 +394,9 @@ public class SwordPlayer extends Combatant {
                 Component.text(""),
                 Component.text("~*#*~", NamedTextColor.DARK_GRAY, TextDecoration.ITALIC),
                 Title.Times.times(
-                        Duration.ofMillis(0),
-                        Duration.ofMillis(inputTimeoutMillis),
-                        Duration.ofMillis(100))));
+                    Duration.ofMillis(20),
+                    Duration.ofMillis(inputTimeoutMillis),
+                    Duration.ofMillis(20))));
     }
 
     /**
@@ -397,9 +407,9 @@ public class SwordPlayer extends Combatant {
                 Component.text(""),
                 Component.text("*}- Disabled -{*", NamedTextColor.DARK_GRAY, TextDecoration.ITALIC),
                 Title.Times.times(
-                        Duration.ofMillis(0),
-                        Duration.ofMillis(inputTimeoutMillis),
-                        Duration.ofMillis(100))));
+                    Duration.ofMillis(20),
+                    Duration.ofMillis(inputTimeoutMillis),
+                    Duration.ofMillis(20))));
     }
 
     /**
@@ -415,9 +425,9 @@ public class SwordPlayer extends Combatant {
                 Component.text(""),
                 Component.text("on cooldown: " + timeToDisplay + " " + unit, NamedTextColor.GRAY, TextDecoration.ITALIC),
                 Title.Times.times(
-                        Duration.ofMillis(0),
-                        Duration.ofMillis(inputTimeoutMillis),
-                        Duration.ofMillis(100))));
+                    Duration.ofMillis(20),
+                    Duration.ofMillis(inputTimeoutMillis),
+                    Duration.ofMillis(20))));
     }
 
     /**
@@ -435,9 +445,9 @@ public class SwordPlayer extends Combatant {
                 title == null ? Component.text("") : title,
                 subtitle == null ? Component.text("") : subtitle,
                 Title.Times.times(
-                        Duration.ofMillis(fade_in),
-                        Duration.ofMillis(duration),
-                        Duration.ofMillis(fade_out))));
+                    Duration.ofMillis(fade_in),
+                    Duration.ofMillis(duration),
+                    Duration.ofMillis(fade_out))));
     }
 
     /**

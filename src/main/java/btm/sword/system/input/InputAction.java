@@ -31,6 +31,8 @@ public class InputAction {
     /** Whether to display a "disabled" effect/message if the action cannot be cast. */
     private final boolean displayDisabled;
 
+    private final boolean resetIfCannotPerform;
+
     /** Timestamp in milliseconds when this action was last successfully executed. */
     @lombok.Getter
     private long timeLastExecuted = 0;
@@ -49,12 +51,14 @@ public class InputAction {
             Function<Combatant, Long> cooldownCalculation,
             Predicate<Combatant> canCastAbility,
             boolean displayCooldown,
-            boolean displayDisabled) {
+            boolean displayDisabled,
+            boolean resetIfCannotPerform) {
         this.action = action;
         this.cooldownCalculation = cooldownCalculation;
         this.canCastAbility = canCastAbility;
         this.displayCooldown = displayCooldown;
         this.displayDisabled = displayDisabled;
+        this.resetIfCannotPerform = resetIfCannotPerform;
     }
 
     /**
@@ -81,9 +85,14 @@ public class InputAction {
             return true;
         }
         else {
-            if (displayDisabled)
-                ((SwordPlayer) executor).displayDisablingEffect();
-            return false;
+            if (resetIfCannotPerform) {
+                if (displayDisabled)
+                    ((SwordPlayer) executor).displayDisablingEffect();
+                return false;
+            }
+            else {
+                return true;
+            }
         }
     }
 

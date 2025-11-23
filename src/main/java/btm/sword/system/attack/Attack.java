@@ -144,10 +144,9 @@ public class Attack extends SwordAction implements Runnable {
             livingEntity.getUniqueId() != attacker.getUniqueId() &&
             livingEntity.isValid();
 
-        cast(attacker, 5, this);
+        cast(attacker, 200, this);
     }
 
-    // TODO change cast time and duration of last attack
     private void onRun() {
         attacker.setTimeOfLastAttack(System.currentTimeMillis());
         int cooldown = (int) attacker.calcValueReductive(AspectType.FINESSE,

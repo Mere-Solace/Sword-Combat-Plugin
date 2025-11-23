@@ -43,6 +43,8 @@ public class Resource extends Aspect {
     /** The scheduled Bukkit task responsible for ticking resource regeneration. */
     private BukkitTask regenTask;
 
+    private BukkitTask restartRegenTask;
+
     /**
      * Creates a new regenerating resource aspect.
      * @param type the resource type
@@ -98,6 +100,18 @@ public class Resource extends Aspect {
     public void restartRegenTask() {
         stopRegenTask();
         startRegenTask();
+    }
+
+    public void restartRegenTaskLater(int ticks) {
+        if (restartRegenTask != null && !restartRegenTask.isCancelled() && restartRegenTask.getTaskId() != -1)
+            restartRegenTask.cancel();
+
+        restartRegenTask = new BukkitRunnable() {
+            @Override
+            public void run() {
+                restartRegenTask();
+            }
+        }.runTaskLater(Sword.getInstance(), ticks);
     }
 
     /**

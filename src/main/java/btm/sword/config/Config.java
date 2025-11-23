@@ -573,7 +573,7 @@ public class Config {
                 ConfigurationSection::getLong
         ); }
 
-        public static long ATTACKS_CAST_TIMING_MAX_DURATION = 3L;
+        public static long ATTACKS_CAST_TIMING_MAX_DURATION = 5L;
         static { register("combat.attacks_cast_timing_max_duration",
                 ATTACKS_CAST_TIMING_MAX_DURATION, Long.class,
                 v -> ATTACKS_CAST_TIMING_MAX_DURATION = v,
@@ -1445,16 +1445,16 @@ public class Config {
         ); }
 
         // Combat profile shards configuration
-        public static float COMBAT_PROFILE_SHARDS_CURRENT = 6.0f;
+        public static int COMBAT_PROFILE_SHARDS_CURRENT = 10;
         static { register(
             "entity.combat_profile_shards_current",
-            COMBAT_PROFILE_SHARDS_CURRENT, Float.class,
+            COMBAT_PROFILE_SHARDS_CURRENT, Integer.class,
             v -> COMBAT_PROFILE_SHARDS_CURRENT = v,
-            Config::loadFloat
+            ConfigurationSection::getInt
         ); }
 
         /** In ticks */
-        public static int COMBAT_PROFILE_SHARDS_REGEN_PERIOD = 200; // 10 seconds TODO: change all values to either ticks or ms
+        public static int COMBAT_PROFILE_SHARDS_REGEN_PERIOD = 5000; // 10 seconds TODO: change all values to either ticks or ms
         static { register(
             "entity.combat_profile_shards_regen_period",
             COMBAT_PROFILE_SHARDS_REGEN_PERIOD, Integer.class,
@@ -1471,7 +1471,7 @@ public class Config {
         ); }
 
         // Combat profile toughness configuration
-        public static float COMBAT_PROFILE_TOUGHNESS_CURRENT = 100.0f;
+        public static float COMBAT_PROFILE_TOUGHNESS_CURRENT = 20.0f;
         static { register(
             "entity.combat_profile_toughness_current",
             COMBAT_PROFILE_TOUGHNESS_CURRENT, Float.class,
@@ -1479,7 +1479,7 @@ public class Config {
             Config::loadFloat
         ); }
 
-        public static int COMBAT_PROFILE_TOUGHNESS_REGEN_PERIOD = 20;
+        public static int COMBAT_PROFILE_TOUGHNESS_REGEN_PERIOD = 60;
         static { register(
             "entity.combat_profile_toughness_regen_period",
             COMBAT_PROFILE_TOUGHNESS_REGEN_PERIOD, Integer.class,

@@ -45,7 +45,7 @@ public class AttackAction extends SwordAction {
 
         // TODO: #122 - Link from the umbral Blade todo in input execution tree
         // handle potential umbral blade usage
-        if (KeyRegistry.hasKey(itemStack, KeyRegistry.SOUL_LINK_KEY) &&
+        if (executor.holdingSoulLink() &&
                 executor.getUmbralBlade() != null) {
             executor.requestUmbralBladeState(BladeRequest.ATTACK_QUICK);
         }
@@ -77,6 +77,6 @@ public class AttackAction extends SwordAction {
     }
 
     public static void basicSlash(Combatant executor, AttackType type, Boolean orientWithPitch) {
-        new Attack(type, orientWithPitch, 50, 20, 0, 1).execute(executor);
+        new Attack(type, orientWithPitch, 40, 60, 0.1, 0.9).execute(executor);
     }
 }

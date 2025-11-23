@@ -209,11 +209,11 @@ entity:
   hostile_damage_multiplier: 1.0
 
   combat_profile_max_air_dodges: 1
-  combat_profile_shards_current: 6.0
-  combat_profile_shards_regen_period: 200
+  combat_profile_shards_current: 10
+  combat_profile_shards_regen_period: 5000
   combat_profile_shards_regen_amount: 1.0
-  combat_profile_toughness_current: 100.0
-  combat_profile_toughness_regen_period: 20
+  combat_profile_toughness_current: 50
+  combat_profile_toughness_regen_period: 60
   combat_profile_toughness_regen_amount: 0.5
   combat_profile_soulfire_current: 100.0
   combat_profile_soulfire_regen_period: 5
@@ -274,8 +274,8 @@ movement:
   toss_knockback_multiplier: 0.3
   toss_explosion_power: 2.0
   toss_hit_invulnerability_ticks: 3
-  toss_hit_shard_damage: 2
-  toss_hit_toughness_damage: 30.0
+  toss_hit_shard_damage: 1
+  toss_hit_toughness_damage: 10.0
   toss_hit_soulfire_reduction: 5.0
 
   grab_pull_strength: 0.8
