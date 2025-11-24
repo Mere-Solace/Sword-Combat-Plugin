@@ -45,6 +45,10 @@ public class ItemStackBuilder {
     private ItemMeta meta;
     private final Plugin plugin;
 
+    public static ItemStackBuilder of(Material material) {
+        return new ItemStackBuilder(material);
+    }
+
     /**
      * Creates an ItemStackBuilder for the given material.
      * If the item’s meta is null, it falls back to a default shield meta.

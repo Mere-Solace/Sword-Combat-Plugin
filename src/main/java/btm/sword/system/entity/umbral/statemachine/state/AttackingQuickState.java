@@ -46,7 +46,7 @@ public class AttackingQuickState extends UmbralStateFacade {
         blade.getThrower().consumeSoulfire(10f);
 
         // Attack execution is handled by performAttack method
-        blade.performAttack(5.0, false);
+        blade.performSimpleAttack(5.0); // second param doesn't matter here
 
         // TODO: #121 - Potentially add per state glow changes or just a method for this
         blade.getDisplay().setGlowing(true);

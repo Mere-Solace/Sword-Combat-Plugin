@@ -3,17 +3,6 @@ package btm.sword.system.action;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 
-import btm.sword.system.entity.SwordEntityArbiter;
-import btm.sword.system.entity.aspect.AspectType;
-import btm.sword.system.entity.base.SwordEntity;
-import btm.sword.system.entity.umbral.statemachine.state.StandbyState;
-import btm.sword.util.Prefab;
-import btm.sword.util.entity.HitboxUtil;
-
-import btm.sword.util.math.Basis;
-
-import btm.sword.util.math.VectorUtil;
-
 import org.apache.logging.log4j.util.TriConsumer;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -24,11 +13,18 @@ import org.bukkit.inventory.ItemStack;
 import btm.sword.config.Config;
 import btm.sword.system.attack.Attack;
 import btm.sword.system.attack.AttackType;
+import btm.sword.system.entity.SwordEntityArbiter;
+import btm.sword.system.entity.aspect.AspectType;
+import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.types.Combatant;
 import btm.sword.system.entity.types.SwordPlayer;
 import btm.sword.system.entity.umbral.input.BladeRequest;
+import btm.sword.system.entity.umbral.statemachine.state.StandbyState;
+import btm.sword.util.Prefab;
+import btm.sword.util.entity.HitboxUtil;
+import btm.sword.util.math.Basis;
+import btm.sword.util.math.VectorUtil;
 
-import javax.annotation.Nullable;
 
 /**
  * Provides attack-related actions for {@link Combatant} entities.

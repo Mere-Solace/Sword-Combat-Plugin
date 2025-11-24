@@ -5,8 +5,6 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-import btm.sword.util.sound.SoundType;
-
 import org.bukkit.Color;
 import org.bukkit.Material;
 import org.bukkit.Particle;
@@ -20,6 +18,8 @@ import btm.sword.system.attack.Attack;
 import btm.sword.system.attack.HitPacket;
 import btm.sword.util.display.ParticleWrapper;
 import btm.sword.util.sound.SoundWrapper;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.TextDecoration;
 
 public class Prefab {
     public static class Particles {
@@ -189,5 +189,59 @@ public class Prefab {
             () -> Config.Audio.THROW_VOLUME,
             () -> Config.Audio.THROW_PITCH
         );
+    }
+
+    public static class Text {
+         public static final List<Component> SOUL_LINK_LORE = List.of(
+            Component.text("", Config.SwordColor.TEXT_ITEM_BASE),
+
+            Component.text("Soul Link Controls", Config.SwordColor.TEXT_ITEM_HEADER, TextDecoration.ITALIC),
+
+            Component.text("Drop + Swap", Config.SwordColor.TEXT_ITEM_CONTROLS)
+                .append(Component.text(" – Toggle Standby/Sheathed", Config.SwordColor.TEXT_ITEM_BASE)),
+            Component.text("  • Standby: ", Config.SwordColor.TEXT_ITEM_HEADER)
+                .append(Component.text("Blade hovers and awaits commands", Config.SwordColor.TEXT_ITEM_BASE)),
+            Component.text("  • Sheathed: ", Config.SwordColor.TEXT_ITEM_HEADER)
+                .append(Component.text("Blade returns to your hip", Config.SwordColor.TEXT_ITEM_BASE)),
+
+            Component.text("", Config.SwordColor.TEXT_ITEM_BASE),
+
+            Component.text("Swap + Left Click", Config.SwordColor.TEXT_ITEM_CONTROLS)
+                .append(Component.text(" – Wield Blade", Config.SwordColor.TEXT_ITEM_HEADER)),
+            Component.text("  • Equips the Blade into your hand", Config.SwordColor.TEXT_ITEM_BASE),
+
+            Component.text("", Config.SwordColor.TEXT_ITEM_BASE),
+
+            Component.text("Left Click", Config.SwordColor.TEXT_ITEM_CONTROLS)
+                .append(Component.text(" – Quick Soulfire Slash (if Standby + enough Soulfire)", Config.SwordColor.TEXT_ITEM_BASE)),
+            Component.text("  • Otherwise: Punch", Config.SwordColor.TEXT_ITEM_BASE)
+        );
+
+        public static final List<Component> UMBRAL_BLADE_LORE = List.of(
+            Component.text("", Config.SwordColor.TEXT_ITEM_BASE),
+
+            Component.text("Umbral Blade Techniques", Config.SwordColor.TEXT_ITEM_HEADER, TextDecoration.ITALIC),
+
+            Component.text("Swap + Left Click", Config.SwordColor.TEXT_ITEM_CONTROLS)
+                .append(Component.text(" – Heavy Sweep", Config.SwordColor.TEXT_ITEM_BASE)),
+            Component.text("  • Additional Left clicks increase sweep power", Config.SwordColor.TEXT_ITEM_BASE),
+
+            Component.text("", Config.SwordColor.TEXT_ITEM_BASE),
+
+            Component.text("Drop + Left Click", Config.SwordColor.TEXT_ITEM_CONTROLS)
+                .append(Component.text(" – Lunge Throw", Config.SwordColor.TEXT_ITEM_BASE)),
+            Component.text("  • Repeated Left clicks increase force", Config.SwordColor.TEXT_ITEM_BASE),
+
+            Component.text("", Config.SwordColor.TEXT_ITEM_BASE),
+
+            Component.text("Left Click (Wielded Form)", Config.SwordColor.TEXT_ITEM_CONTROLS)
+                .append(Component.text(" – Normal Attack Chain", Config.SwordColor.TEXT_ITEM_BASE)),
+
+            Component.text("", Config.SwordColor.TEXT_ITEM_BASE),
+
+            Component.text("Drop + Swap", Config.SwordColor.TEXT_ITEM_CONTROLS)
+                .append(Component.text(" – Return to Standby", Config.SwordColor.TEXT_ITEM_BASE))
+        );
+
     }
 }

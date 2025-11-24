@@ -4,14 +4,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.function.Consumer;
 
-import btm.sword.system.action.DashAttackAction;
-
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 
 import btm.sword.Sword;
 import btm.sword.system.action.AttackAction;
+import btm.sword.system.action.DashAttackAction;
 import btm.sword.system.action.MovementAction;
 import btm.sword.system.action.UmbralBladeAction;
 import btm.sword.system.action.utility.GrabAction;
@@ -118,7 +117,7 @@ public class InputExecutionTree {
             public void run() {
                 reset();
             }
-        }.runTaskLater(plugin, currentNode.timeoutTicks); // use the current node's timeoutTicks (base = 20L); 1 second
+        }.runTaskLater(plugin, currentNode.getTimeoutTicks()); // use the current node's timeoutTicks (base = 20L); 1 second
     }
 
     /**
@@ -366,17 +365,18 @@ public class InputExecutionTree {
         // Item independent actions:
         // dodge c2, dodge backward
         add(List.of(InputType.SWAP, InputType.SWAP),
-                new InputAction(
-                    executor -> MovementAction.dash(executor, true),
-                    executor -> executor.calcCooldown(AspectType.CELERITY, 200L, 1000L, 10),
-                    Combatant::canAirDash,
-                    5f,
-                    false,
-                    true,
-                    true),
+            new InputAction(
+                executor -> MovementAction.dash(executor, true),
+                executor -> executor.calcCooldown(AspectType.CELERITY, 200L, 1000L, 10),
+                Combatant::canAirDash,
+                5f,
                 false,
                 true,
-                true);
+                true),
+            7L,
+            false,
+            true,
+            true);
         add(List.of(InputType.SWAP, InputType.SWAP, InputType.LEFT),
             new InputAction(
                 executor -> DashAttackAction.dashAttack(executor, true),
@@ -385,23 +385,24 @@ public class InputExecutionTree {
                 false,
                 true,
                 true),
-            7,
+            3L,
             false,
             true,
             true);
 
         add(List.of(InputType.SHIFT, InputType.SHIFT),
-                new InputAction(
-                    executor -> MovementAction.dash(executor, false),
-                    executor -> executor.calcCooldown(AspectType.CELERITY, 200L, 1000L, 10),
-                    Combatant::canAirDash,
-                    5f,
-                    false,
-                    true,
-                    true),
+            new InputAction(
+                executor -> MovementAction.dash(executor, false),
+                executor -> executor.calcCooldown(AspectType.CELERITY, 200L, 1000L, 10),
+                Combatant::canAirDash,
+                5f,
                 false,
                 true,
-                true);
+                true),
+            7L,
+            false,
+            true,
+            true);
         add(List.of(InputType.SHIFT, InputType.SHIFT, InputType.LEFT),
             new InputAction(
                 executor -> DashAttackAction.dashAttack(executor, false),
@@ -410,7 +411,7 @@ public class InputExecutionTree {
                 false,
                 true,
                 true),
-            7,
+            3L,
             false,
             true,
             true);
@@ -563,7 +564,7 @@ public class InputExecutionTree {
             new InputAction(
                 UmbralBladeAction::sweep,
                 executor -> 4000L,
-                Combatant::canPerformUmbralLungeAction,
+                Combatant::canPerformUmbralAction,
                 10f,
                 true,
                 true,
@@ -577,7 +578,7 @@ public class InputExecutionTree {
             new InputAction(
                 UmbralBladeAction::sweep,
                 executor -> 0L,
-                Combatant::canPerformUmbralLungeAction,
+                Combatant::canPerformUmbralAction,
                 15f,
                 true,
                 true,
@@ -591,7 +592,7 @@ public class InputExecutionTree {
             new InputAction(
                 UmbralBladeAction::sweep,
                 executor -> 0L,
-                Combatant::canPerformUmbralLungeAction,
+                Combatant::canPerformUmbralAction,
                 25f,
                 true,
                 true,
@@ -606,7 +607,7 @@ public class InputExecutionTree {
             new InputAction(
                 UmbralBladeAction::lunge,
                 executor -> 4000L,
-                Combatant::canPerformUmbralLungeAction,
+                Combatant::canPerformUmbralAction,
                 10f,
                 true,
                 true,
@@ -620,7 +621,7 @@ public class InputExecutionTree {
             new InputAction(
                 UmbralBladeAction::lunge,
                 executor -> 0L,
-                Combatant::canPerformUmbralLungeAction,
+                Combatant::canPerformUmbralAction,
                 15f,
                 true,
                 true,
@@ -634,7 +635,7 @@ public class InputExecutionTree {
             new InputAction(
                 UmbralBladeAction::lunge,
                 executor -> 0L,
-                Combatant::canPerformUmbralLungeAction,
+                Combatant::canPerformUmbralAction,
                 25f,
                 true,
                 true,

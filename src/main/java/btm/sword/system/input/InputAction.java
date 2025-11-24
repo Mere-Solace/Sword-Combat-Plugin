@@ -4,13 +4,9 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-import lombok.Getter;
-
-import org.bukkit.scheduler.BukkitRunnable;
-
-import btm.sword.Sword;
 import btm.sword.system.entity.types.Combatant;
 import btm.sword.system.entity.types.SwordPlayer;
+import lombok.Getter;
 
 /**
  * Represents an executable action triggered by player input within the Sword plugin system.

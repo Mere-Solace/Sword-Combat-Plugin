@@ -24,6 +24,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
+import org.bukkit.util.BoundingBox;
 import org.bukkit.util.Transformation;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
@@ -561,6 +562,12 @@ public class SwordPlayer extends Combatant {
         // invalidate all cached, calculated values with that stat
     }
 
+    protected void removeTargetIndicators() {
+        if (targetIndicator != null && targetIndicator.isValid()) {
+            targetIndicator.remove();
+        }
+    }
+
     /**
      * Very important method: it not only gets the targeted entity,
      * but also sets the currently targeted entity and adjusts the indicator display
@@ -573,8 +580,9 @@ public class SwordPlayer extends Combatant {
         SwordEntity newTarget = super.getTargetedEntity(range);
         if (newTarget == null) return null;
 
-        if (targetedEntity != null && (newTarget.getUuid() != targetedEntity.getUuid()))
-            targetIndicator.remove();
+        if (targetedEntity != null && (newTarget.getUuid() != targetedEntity.getUuid())) {
+            removeTargetIndicators();
+        }
 
         targetedEntity = newTarget;
 
@@ -584,8 +592,9 @@ public class SwordPlayer extends Combatant {
     public void setTargetedEntity(SwordEntity newTarget) {
         if (newTarget == null) return;
 
-        if (targetedEntity != null && (newTarget.getUuid() != targetedEntity.getUuid()))
-            targetIndicator.remove();
+        if (targetedEntity != null && (newTarget.getUuid() != targetedEntity.getUuid())) {
+            removeTargetIndicators();
+        }
 
         targetedEntity = newTarget;
     }
@@ -593,8 +602,8 @@ public class SwordPlayer extends Combatant {
     protected void targetEntityIndicatorTick() {
         if (targetedEntity == null) return;
 
-        if (targetedEntity.isDead() && targetIndicator != null) {
-            if (targetIndicator.isValid()) targetIndicator.remove();
+        if (targetedEntity.isDead()) {
+            removeTargetIndicators();
             return;
         }
 
@@ -619,7 +628,7 @@ public class SwordPlayer extends Combatant {
         DisplayUtil.setInterpolationValues(targetIndicator, 0, 10);
         targetIndicator.setTransformation(
             new Transformation(
-                new Vector3f(0, 1.35f + ((float) Math.cos(ticks*Math.PI/16) * 0.5f), 0),
+                new Vector3f(0, 1.35f + ((float) Math.cos(ticks * Math.PI/16) * 0.5f), 0),
                 new Quaternionf(),
                 new Vector3f(scale, scale, scale),
                 new Quaternionf()
@@ -628,9 +637,7 @@ public class SwordPlayer extends Combatant {
     }
 
     public void endIndicatorDisplay() {
-        if (targetIndicator != null && targetIndicator.isValid()) {
-            targetIndicator.remove();
-        }
+        removeTargetIndicators();
     }
 
     /**

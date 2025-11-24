@@ -1,6 +1,7 @@
 package btm.sword.system.entity.umbral;
 
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -96,6 +97,9 @@ public class UmbralBlade extends ThrownItem {
     private ControlVectors ctrlPointsForLunge;
     private boolean finishedLunging = false;
 
+    private boolean dashingForward;
+    private boolean dashingBackward;
+
     private final InputBuffer inputBuffer = new InputBuffer();
 
     public UmbralBlade(Combatant thrower, ItemStack weapon) {
@@ -185,6 +189,26 @@ public class UmbralBlade extends ThrownItem {
             blade -> {}
         ));
 
+        bladeStateMachine.addTransition(new Transition<>(
+            SheathedState.class,
+            AttackingQuickState.class,
+            blade -> isRequestedAndActive(BladeRequest.ATTACK_QUICK),
+            blade -> {}
+        ));
+
+        bladeStateMachine.addTransition(new Transition<>(
+            SheathedState.class,
+            AttackingHeavyState.class,
+            blade -> isRequestedAndActive(BladeRequest.ATTACK_HEAVY),
+            blade -> {}
+        ));
+
+        bladeStateMachine.addTransition(new Transition<>(
+            SheathedState.class,
+            LungingState.class,
+            blade -> isRequestedAndActive(BladeRequest.LUNGE),
+            blade -> {}
+        ));
 
         // =====================================================================
         // STANDBY
@@ -554,7 +578,11 @@ public class UmbralBlade extends ThrownItem {
             });
     }
 
-    public void performAttack(double range, boolean heavy) {
+    public void performSimpleAttack(double range) {
+        if (isDashing()) {
+            umbralDashAttack(dashingForward);
+            return;
+        }
         SwordEntity target = thrower.getTargetedEntity(range);
         Attack attack;
         Location attackOrigin;
@@ -573,9 +601,22 @@ public class UmbralBlade extends ThrownItem {
                 .subtract(to.normalize()).setDirection(to.normalize());
         }
 
-        attack = heavy ? heavyAttacks[0].apply(thrower) : basicAttacks[0].apply(thrower); // TODO dynamic.
+        int attackNumber = ThreadLocalRandom.current().nextInt(basicAttacks.length);
+        attack = basicAttacks[attackNumber].apply(thrower);
 
         attack.setOriginOfAll(attackOrigin).execute(thrower);
+    }
+
+    private void umbralDashAttack(boolean forward) {
+        AttackType type = forward ? AttackType.F_DASH_ATTACK : AttackType.B_DASH_ATTACK;
+        new UmbralBladeAttack(display, type,
+            forward, false, 1,
+            5, 10, 200,
+            0, 1)
+            .setBlade(this)
+            .setInitialMovementTicks(1)
+            .setCallback(attackEndCallback, 200)
+            .execute(thrower);
     }
 
     public void performTargetedAttack(double range) {
@@ -720,20 +761,7 @@ public class UmbralBlade extends ThrownItem {
                 .append(Component.text(thrower.getDisplayName() + "'s Soul Link",
                     Config.SwordColor.TEXT_ITEM_NAME, TextDecoration.BOLD))
                 .append(Component.text(" ~", Config.SwordColor.TEXT_ITEM_NAME)))
-            .lore(List.of(
-                Component.text(""),
-                Component.text("Controls:", Config.SwordColor.TEXT_ITEM_HEADER, TextDecoration.ITALIC),
-                Component.text("Drop + Swap", Config.SwordColor.TEXT_ITEM_CONTROLS)
-                    .append(Component.text(" - Toggle Standby/Sheathed", Config.SwordColor.TEXT_ITEM_BASE)),
-                Component.text("  • Standby: ", Config.SwordColor.TEXT_ITEM_HEADER)
-                    .append(Component.text("Blade hovers, ready to attack", Config.SwordColor.TEXT_ITEM_BASE)),
-                Component.text("  • Sheathed: ", Config.SwordColor.TEXT_ITEM_HEADER)
-                    .append(Component.text("Blade stored in sheath on hip", Config.SwordColor.TEXT_ITEM_BASE)),
-                Component.text(""),
-                Component.text("Swap + Left Click", Config.SwordColor.TEXT_ITEM_CONTROLS)
-                    .append(Component.text(" - Wield Blade", Config.SwordColor.TEXT_ITEM_HEADER)),
-                Component.text("  • Equip as weapon in hand", Config.SwordColor.TEXT_ITEM_HEADER)
-            ))
+            .lore(Prefab.Text.SOUL_LINK_LORE)
             .unbreakable(true)
             .tag(KeyRegistry.SOUL_LINK_KEY, thrower.getUniqueId().toString())
             .hideAll()
@@ -744,14 +772,7 @@ public class UmbralBlade extends ThrownItem {
                 .append(Component.text(thrower.getDisplayName() + "'s Blade",
                     Config.SwordColor.TEXT_COOL, TextDecoration.BOLD))
                 .append(Component.text(" ~", Config.SwordColor.TEXT_COOL_DARK)))
-            .lore(List.of(
-                Component.text(""),
-                Component.text("Wielded Form", Config.SwordColor.TEXT_ITEM_HEADER, TextDecoration.ITALIC),
-                Component.text("Use normal combat inputs", Config.SwordColor.TEXT_ITEM_BASE),
-                Component.text(""),
-                Component.text("Drop + Swap", Config.SwordColor.TEXT_ITEM_CONTROLS)
-                    .append(Component.text(" - Return to Standby", Config.SwordColor.TEXT_ITEM_BASE))
-            ))
+            .lore(Prefab.Text.UMBRAL_BLADE_LORE)
             .unbreakable(true)
             .tag(KeyRegistry.UMBRAL_BLADE_KEY, thrower.getUniqueId().toString())
             .hideAll()
@@ -890,5 +911,22 @@ public class UmbralBlade extends ThrownItem {
         grounded = false;
         caught = false;
         stuckBlock = null;
+    }
+
+    public void setDashingDirection(boolean forward) {
+        dashingForward = forward;
+        dashingBackward = !forward;
+
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                dashingForward = false;
+                dashingBackward = false;
+            }
+        }.runTaskLater(Sword.getInstance(), 10L);
+    }
+
+    public boolean isDashing() {
+        return dashingForward || dashingBackward;
     }
 }

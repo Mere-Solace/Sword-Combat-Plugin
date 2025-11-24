@@ -7,6 +7,8 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
+import javax.annotation.Nullable;
+
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.entity.Entity;
@@ -30,9 +32,6 @@ import btm.sword.util.math.BezierUtil;
 import btm.sword.util.math.ControlVectors;
 import btm.sword.util.math.VectorUtil;
 import lombok.Getter;
-import lombok.Setter;
-
-import javax.annotation.Nullable;
 
 public class Attack extends SwordAction implements Runnable {
 

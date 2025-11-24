@@ -2,9 +2,9 @@ package btm.sword.system.action;
 
 import btm.sword.system.attack.Attack;
 import btm.sword.system.attack.AttackType;
-import btm.sword.system.attack.UmbralBladeAttack;
 import btm.sword.system.entity.types.Combatant;
 import btm.sword.system.entity.types.SwordPlayer;
+import btm.sword.system.entity.umbral.input.BladeRequest;
 import btm.sword.system.entity.umbral.statemachine.state.StandbyState;
 
 public class DashAttackAction extends SwordAction {
@@ -22,11 +22,8 @@ public class DashAttackAction extends SwordAction {
                 executor.getUmbralBlade().inState(StandbyState.class)) {
 
                 // TODO: fix and put in AttackingQuick state with some flags or smth
-                new UmbralBladeAttack(executor.getUmbralBlade().getDisplay(),
-                    forward ? AttackType.F_DASH_ATTACK : AttackType.B_DASH_ATTACK, forward, false, 4)
-                    // use the direction of the dash so that players can't spin around and use the long attack omnidirectionally
-                    .setOrigin(executor.getChestLocation().setDirection(executor.getDashDirection()))
-                    .execute(executor);
+                executor.getUmbralBlade().setDashingDirection(forward);
+                executor.getUmbralBlade().request(BladeRequest.ATTACK_QUICK);
 
                 if (executor instanceof SwordPlayer swordPlayer) {
                     swordPlayer.resetTree(); // Reset the tree if they perform a quick attack with the blade.\

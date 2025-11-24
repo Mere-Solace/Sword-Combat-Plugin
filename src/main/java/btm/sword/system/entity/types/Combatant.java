@@ -20,6 +20,7 @@ import btm.sword.system.entity.umbral.UmbralBlade;
 import btm.sword.system.entity.umbral.input.BladeRequest;
 import btm.sword.system.entity.umbral.statemachine.state.LodgedState;
 import btm.sword.system.entity.umbral.statemachine.state.RecallingState;
+import btm.sword.system.entity.umbral.statemachine.state.SheathedState;
 import btm.sword.system.entity.umbral.statemachine.state.StandbyState;
 import btm.sword.system.item.KeyRegistry;
 import btm.sword.util.Prefab;
@@ -254,20 +255,13 @@ public abstract class Combatant extends SwordEntity {
         return abilityCastTask == null && !isGrabbing && !isGrabbed();
     }
 
-    public boolean canPerformUmbralSkillAction() {
-        return canPerformAction() &&
-            (
-                umbralBlade.inState(StandbyState.class) ||
-                umbralBlade.inState(RecallingState.class)
-            );
-    }
-
-    public boolean canPerformUmbralLungeAction() {
+    public boolean canPerformUmbralAction() {
         return canPerformAction() &&
             (
                 umbralBlade.inState(StandbyState.class) ||
                 umbralBlade.inState(RecallingState.class) ||
-                umbralBlade.inState(LodgedState.class)
+                umbralBlade.inState(LodgedState.class) ||
+                umbralBlade.inState(SheathedState.class)
             );
     }
 
