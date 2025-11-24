@@ -5,8 +5,6 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-import btm.sword.util.sound.SoundType;
-
 import org.bukkit.Color;
 import org.bukkit.Material;
 import org.bukkit.Particle;
@@ -19,6 +17,7 @@ import btm.sword.config.Config;
 import btm.sword.system.attack.Attack;
 import btm.sword.system.attack.HitPacket;
 import btm.sword.util.display.ParticleWrapper;
+import btm.sword.util.sound.SoundType;
 import btm.sword.util.sound.SoundWrapper;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextDecoration;

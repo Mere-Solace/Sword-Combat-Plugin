@@ -189,4 +189,3 @@ public class FinisherState extends UmbralStateFacade {
 //        // No continuous updates needed, handled by scheduled tasks
 //    }
 }
-
