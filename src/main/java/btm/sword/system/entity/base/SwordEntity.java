@@ -6,8 +6,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
-import btm.sword.util.display.ParticleWrapper;
-
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Particle;
@@ -39,6 +37,7 @@ import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.types.Combatant;
 import btm.sword.util.Prefab;
 import btm.sword.util.display.DrawUtil;
+import btm.sword.util.display.ParticleWrapper;
 import btm.sword.util.entity.EntityUtil;
 import btm.sword.util.entity.HitboxUtil;
 import btm.sword.util.math.Basis;
