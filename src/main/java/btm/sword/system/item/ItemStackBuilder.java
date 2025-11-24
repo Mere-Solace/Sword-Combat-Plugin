@@ -62,6 +62,16 @@ public class ItemStackBuilder {
     }
 
     /**
+     * Use this first: old meta is overwritten
+     *
+     * @param meta The new meta
+     */
+    public ItemStackBuilder setMeta(ItemMeta meta) {
+        this.meta = meta;
+        return this;
+    }
+
+    /**
      * Sets the display name of the item.
      *
      * @param component the component representing the name to set

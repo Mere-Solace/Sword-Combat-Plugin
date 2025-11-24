@@ -2,8 +2,6 @@ package btm.sword.system.action.utility;
 
 import java.util.HashSet;
 
-import btm.sword.system.entity.types.SwordPlayer;
-
 import org.bukkit.FluidCollisionMode;
 import org.bukkit.Location;
 import org.bukkit.entity.Entity;
@@ -24,6 +22,7 @@ import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.types.Combatant;
+import btm.sword.system.entity.types.SwordPlayer;
 import btm.sword.util.Prefab;
 import btm.sword.util.entity.HitboxUtil;
 

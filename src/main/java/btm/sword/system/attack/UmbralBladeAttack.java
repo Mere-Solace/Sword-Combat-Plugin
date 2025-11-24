@@ -1,11 +1,9 @@
 package btm.sword.system.attack;
 
-import btm.sword.system.entity.umbral.statemachine.state.AttackingHeavyState;
 
 import org.bukkit.entity.ItemDisplay;
 
 import btm.sword.system.entity.umbral.UmbralBlade;
-import btm.sword.system.entity.umbral.statemachine.state.AttackingQuickState;
 
 public class UmbralBladeAttack extends ItemDisplayAttack {
     protected UmbralBlade blade;

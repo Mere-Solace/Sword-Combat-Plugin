@@ -28,6 +28,7 @@ import com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent;
 
 import btm.sword.Sword;
 import btm.sword.config.Config;
+import btm.sword.system.attack.HitPacket;
 import btm.sword.system.combat.Affliction;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.aspect.AspectType;
@@ -412,6 +413,7 @@ public abstract class SwordEntity {
      * @param afflictions optional afflictions to apply from the hit
      */
     public void hit(Combatant source,
+                    float reapedSoulfire,
                     long hitInvulnerableTickDuration,
                     int baseNumShards,
                     float baseToughnessDamage,
@@ -423,7 +425,7 @@ public abstract class SwordEntity {
         else
             hit = true;
 
-        source.getAspects().soulfire().add(5); // TODO: make dynamic - figure out where this value should come from
+        source.getAspects().soulfire().add(reapedSoulfire); // TODO: make dynamic - figure out where this value should come from
 
         this.hitInvulnerableTickDuration = hitInvulnerableTickDuration;
 
@@ -469,6 +471,17 @@ public abstract class SwordEntity {
         for (Affliction affliction : afflictions) {
             affliction.start(this);
         }
+    }
+
+    public void hit(Combatant source, HitPacket v, Vector knockbackVelocity, Affliction... afflictions) {
+        hit(source,
+            v.reapedSoulfire(),
+            v.invulnerableTicks(),
+            v.shardDamage(),
+            v.toughnessDamage(),
+            v.soulfireLoss(),
+            knockbackVelocity,
+            afflictions);
     }
 
     /**

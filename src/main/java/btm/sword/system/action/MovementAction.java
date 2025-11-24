@@ -237,7 +237,7 @@ public class MovementAction extends SwordAction {
                                 t.setVelocity(knockbackDir.normalize().multiply(Config.Movement.TOSS_KNOCKBACK_MULTIPLIER * force));
                             }
                             world.createExplosion(l, Config.Movement.TOSS_EXPLOSION_POWER, false, false);
-                            target.hit(executor,
+                            target.hit(executor, 5,
                                     Config.Movement.TOSS_HIT_INVULNERABILITY_TICKS,
                                     Config.Movement.TOSS_HIT_SHARD_DAMAGE,
                                     Config.Movement.TOSS_HIT_TOUGHNESS_DAMAGE,

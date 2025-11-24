@@ -1,8 +1,16 @@
 package btm.sword.system.entity.base;
 
-import btm.sword.Sword;
 
-import org.bukkit.scheduler.BukkitRunnable;
+import btm.sword.config.Config;
+import net.kyori.adventure.text.Component;
+
+import net.kyori.adventure.text.TextComponent;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextColor;
+import net.kyori.adventure.text.format.TextDecoration;
+
+import net.kyori.adventure.text.minimessage.MiniMessage;
+
 import org.bukkit.scheduler.BukkitTask;
 
 import btm.sword.system.entity.aspect.Aspect;
@@ -10,6 +18,10 @@ import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.aspect.Resource;
 import btm.sword.system.entity.aspect.value.AspectValue;
 import btm.sword.system.entity.aspect.value.ResourceValue;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Function;
 
 
 /**
@@ -284,5 +296,40 @@ public class EntityAspects {
         if (r == null) return;
 
         r.restartRegenTaskLater(ticks);
+    }
+    public List<Component> toComponentList() {
+        List<Component> lines = new ArrayList<>();
+
+        TextColor r = Config.SwordColor.TEXT_RESOURCE_COLOR;
+        TextColor a = Config.SwordColor.TEXT_ASPECT_COLOR;
+
+        // Resources header
+        lines.add(Component.text("Resources", NamedTextColor.GOLD, TextDecoration.BOLD));
+
+        // Helper to format numbers
+        Function<Float, String> fmt = val -> String.format("%.1f", val);
+
+        // Resources
+        lines.add(Component.text(fmt.apply(shardsCur())    + " >>> Shards", r));
+        lines.add(Component.text(fmt.apply(toughnessCur()) + " >>> Toughness", r));
+        lines.add(Component.text(fmt.apply(soulfireCur())  + " >>> Soulfire", r));
+        lines.add(Component.text(fmt.apply(formCur())      + " >>> Form", r));
+
+        lines.add(Component.empty());
+
+        // Aspects header
+        lines.add(Component.text("Aspects", NamedTextColor.GOLD, TextDecoration.BOLD));
+
+        // Aspects
+        lines.add(Component.text(fmt.apply(mightVal())      + " >>> Might", a));
+        lines.add(Component.text(fmt.apply(resolveVal())    + " >>> Resolve", a));
+        lines.add(Component.text(fmt.apply(finesseVal())    + " >>> Finesse", a));
+        lines.add(Component.text(fmt.apply(prowessVal())    + " >>> Prowess", a));
+        lines.add(Component.text(fmt.apply(armorVal())      + " >>> Armor", a));
+        lines.add(Component.text(fmt.apply(fortitudeVal())  + " >>> Fortitude", a));
+        lines.add(Component.text(fmt.apply(celerityVal())   + " >>> Celerity", a));
+        lines.add(Component.text(fmt.apply(willpowerVal())  + " >>> Willpower", a));
+
+        return lines;
     }
 }

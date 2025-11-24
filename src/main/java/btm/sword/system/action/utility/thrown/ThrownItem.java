@@ -432,9 +432,10 @@ public class ThrownItem {
         new BukkitRunnable() {
             @Override
             public void run() {
-                cur = marker.getLocation();
+                Location land = marker.getLocation();
+                land.setDirection(cur.toVector().subtract(prev.toVector()));
                 DisplayUtil.smoothTeleport(display, 1);
-                display.teleport(cur.setDirection(velocityFunction.apply(1.0 * timeStep)));
+                display.teleport(land);
                 marker.remove();
             }
         }.runTaskLater(Sword.getInstance(), 1L);
@@ -486,11 +487,7 @@ public class ThrownItem {
     }
 
     protected void nonImpalingImpact(SwordEntity target) {
-        target.hit(thrower,
-            Config.Combat.THROWN_DAMAGE_OTHER_INVULNERABILITY_TICKS,
-            Config.Combat.THROWN_DAMAGE_OTHER_BASE_SHARDS,
-            Config.Combat.THROWN_DAMAGE_OTHER_TOUGHNESS_DAMAGE,
-            Config.Combat.THROWN_DAMAGE_OTHER_SOULFIRE_REDUCTION,
+        target.hit(thrower, Prefab.Attacks.thrownWeapon,
             velocity.clone().multiply(Config.Combat.THROWN_DAMAGE_OTHER_KNOCKBACK_MULTIPLIER));
 
         target.entity().getWorld().createExplosion(target.getChestLocation(),
@@ -507,12 +504,7 @@ public class ThrownItem {
             VectorUtil.getProjOntoPlane(velocity, Config.Direction.UP()).multiply(Config.Combat.THROWN_DAMAGE_SWORD_AXE_KNOCKBACK_AIRBORNE);
 
         impale(target.entity());
-        target.hit(thrower,
-            Config.Combat.THROWN_DAMAGE_SWORD_AXE_INVULNERABILITY_TICKS,
-            Config.Combat.THROWN_DAMAGE_SWORD_AXE_BASE_SHARDS,
-            Config.Combat.THROWN_DAMAGE_SWORD_AXE_TOUGHNESS_DAMAGE,
-            Config.Combat.THROWN_DAMAGE_SWORD_AXE_SOULFIRE_REDUCTION,
-            kb);
+        target.hit(thrower, Prefab.Attacks.thrownWeapon, kb);
 
         new BukkitRunnable() {
             @Override

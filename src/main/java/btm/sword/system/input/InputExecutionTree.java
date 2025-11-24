@@ -4,7 +4,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.function.Consumer;
 
-import org.bukkit.Input;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;

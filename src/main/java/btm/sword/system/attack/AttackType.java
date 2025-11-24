@@ -114,7 +114,7 @@ public enum AttackType implements AttackProfile {
     private final Function<Attack, Vector> knockbackFunction;
 
     AttackType(ControlVectors ctrlVectors) {
-        this(ctrlVectors, Prefab.Instruction.DEFAULT_KNOCKBACK);
+        this(ctrlVectors, Prefab.Instructions.DEFAULT_KNOCKBACK);
     }
 
     AttackType(ControlVectors ctrlVectors, Function<Attack, Vector> knockback) {

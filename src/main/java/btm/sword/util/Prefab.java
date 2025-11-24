@@ -15,6 +15,7 @@ import org.bukkit.util.Vector;
 
 import btm.sword.config.Config;
 import btm.sword.system.attack.Attack;
+import btm.sword.system.attack.HitPacket;
 import btm.sword.util.display.ParticleWrapper;
 import btm.sword.util.sound.SoundWrapper;
 
@@ -26,7 +27,6 @@ public class Prefab {
         public static final ParticleWrapper TEST_LAVA_DRIP = new ParticleWrapper(Particle.DRIPPING_LAVA, 2, 0, 0, 0, 0);
         public static final ParticleWrapper TEST_SWING = new ParticleWrapper(Particle.DUST_COLOR_TRANSITION, 2, 0, 0, 0, 1,
                 new Particle.DustTransition(Color.fromRGB(255, 0,0), Color.fromRGB(102,0,0), 0.7f));
-        //            new Particle.DustTransition(Color.fromRGB(211, 222, 240), Color.fromRGB(36, 103, 220), 0.7f));
         public static final ParticleWrapper TEST_HIT = new ParticleWrapper(Particle.CRIT, 30, 0.5, 0.5, 0.5, 0.15);
         public static final ParticleWrapper BLEED = new ParticleWrapper(Particle.BLOCK, 25, 0.1, 0.1, 0.1, Material.CRIMSON_HYPHAE.createBlockData());
 
@@ -65,7 +65,7 @@ public class Prefab {
         public static final int MILLISECONDS_PER_TICK = 50; // 1000/20 = 50
     }
 
-    public static class Instruction {
+    public static class Instructions {
         public static final Function<Attack, Vector> DEFAULT_KNOCKBACK =
             a -> a.getTo().add(a.getForwardVector());
 
@@ -81,6 +81,41 @@ public class Prefab {
                 target.getUniqueId() != checkAndSelf.getLast().getUniqueId() &&
                 target.isValid() &&
                 target.getType() != EntityType.ARMOR_STAND;
+    }
+
+    // using Suppliers so that this basic record-like class (AttackHitValue) can use the values from the config.
+    public static class Attacks {
+        public static final HitPacket defaultMobHit = new HitPacket(
+            () -> 5f,
+            () -> 15,
+            () -> 1,
+            () -> 10f,
+            () -> 10f
+        );
+
+        public static final HitPacket basicAttack = new HitPacket(
+            () -> 10f,
+            () -> Config.Combat.ATTACK_CLASS_HIT_INVULN_TICKS,
+            () -> Config.Combat.ATTACK_CLASS_HIT_SHARDS,
+            () -> Config.Combat.ATTACK_CLASS_HIT_TOUGHNESS,
+            () -> Config.Combat.ATTACK_CLASS_HIT_SOULFIRE
+        );
+
+        public static final HitPacket grabHit = new HitPacket(
+            () -> 1f,
+            () -> 0,
+            () -> 0,
+            () -> 5f,
+            () -> 5f
+        );
+
+        public static final HitPacket thrownWeapon = new HitPacket(
+            () -> 0f,
+            () -> Config.Combat.THROWN_DAMAGE_SWORD_AXE_INVULNERABILITY_TICKS,
+            () -> Config.Combat.THROWN_DAMAGE_SWORD_AXE_BASE_SHARDS,
+            () -> Config.Combat.THROWN_DAMAGE_SWORD_AXE_TOUGHNESS_DAMAGE,
+            () -> Config.Combat.THROWN_DAMAGE_SWORD_AXE_SOULFIRE_REDUCTION
+        );
     }
 
     /**

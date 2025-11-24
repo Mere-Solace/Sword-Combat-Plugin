@@ -48,8 +48,8 @@ public class UtilityAction extends SwordAction {
                     if (target instanceof LivingEntity le) {
                         try {
                             SwordEntityArbiter.getOrAdd(le.getUniqueId()).hit(
-                                executor, 0,
-                                1000, 20000,
+                                executor, 100,
+                                0, 1000, 20000,
                                 1, l.getDirection().multiply(100));
                         } catch (NullPointerException e) {
                             // some nonsense occurred

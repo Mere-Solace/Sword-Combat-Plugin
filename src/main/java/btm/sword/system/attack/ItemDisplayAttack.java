@@ -1,11 +1,8 @@
 package btm.sword.system.attack;
 
-import java.util.concurrent.TimeUnit;
 
 import org.bukkit.entity.ItemDisplay;
-import org.bukkit.scheduler.BukkitRunnable;
 
-import btm.sword.system.SwordScheduler;
 import btm.sword.util.display.DisplayUtil;
 import lombok.Setter;
 

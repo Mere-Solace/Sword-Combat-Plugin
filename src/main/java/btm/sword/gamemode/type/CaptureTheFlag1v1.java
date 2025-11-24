@@ -1,12 +1,12 @@
 package btm.sword.gamemode.type;
 
-import btm.sword.gamemode.Gamemode;
+import java.util.List;
 
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.util.List;
+import btm.sword.gamemode.Gamemode;
 
 public class CaptureTheFlag1v1 extends Gamemode {
 
@@ -61,4 +61,3 @@ public class CaptureTheFlag1v1 extends Gamemode {
         p.sendMessage(ChatColor.AQUA + "Flag Captured!");
     }
 }
-

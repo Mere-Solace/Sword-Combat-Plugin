@@ -1,15 +1,12 @@
 package btm.sword.system.entity.types;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.function.Consumer;
 
 import javax.annotation.Nullable;
 
-import btm.sword.system.entity.SwordEntityArbiter;
-import btm.sword.system.entity.base.SwordEntity;
-
-import btm.sword.util.display.DisplayUtil;
-import btm.sword.util.entity.HitboxUtil;
+import btm.sword.config.Config;
 
 import org.bukkit.Color;
 import org.bukkit.Material;
@@ -29,19 +26,24 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
+import org.bukkit.util.Transformation;
+import org.joml.Quaternionf;
+import org.joml.Vector3f;
 
 import com.destroystokyo.paper.profile.PlayerProfile;
 
 import btm.sword.Sword;
 import btm.sword.system.action.utility.thrown.ThrowAction;
 import btm.sword.system.entity.aspect.AspectType;
+import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.input.InputAction;
 import btm.sword.system.input.InputExecutionTree;
 import btm.sword.system.input.InputType;
-import btm.sword.system.inventory.InventoryManager;
+import btm.sword.system.inventory.InvInterfaceManager;
 import btm.sword.system.item.ItemStackBuilder;
 import btm.sword.system.item.KeyRegistry;
 import btm.sword.system.playerdata.PlayerData;
+import btm.sword.util.display.DisplayUtil;
 import lombok.Getter;
 import lombok.Setter;
 import net.kyori.adventure.text.Component;
@@ -49,10 +51,6 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.title.Title;
-
-import org.bukkit.util.Transformation;
-import org.joml.Quaternionf;
-import org.joml.Vector3f;
 
 /**
  * Represents a player-controlled combatant in the Sword plugin system.
@@ -117,14 +115,26 @@ public class SwordPlayer extends Combatant {
         profile = player.getPlayerProfile();
         username = profile.getName();
 
-        playerHead = new ItemStack(Material.PLAYER_HEAD);
-        SkullMeta skullMeta = (SkullMeta) playerHead.getItemMeta();
+//        playerHead = new ItemStack(Material.PLAYER_HEAD);
+//
+//        SkullMeta skullMeta = (SkullMeta) playerHead.getItemMeta();
+//
+//        skullMeta.setPlayerProfile(profile);
+//        playerHead.setItemMeta(skullMeta);
 
+        ItemStack temp = new ItemStack(Material.PLAYER_HEAD);
+        SkullMeta skullMeta = (SkullMeta) temp.getItemMeta();
+//
         skullMeta.setPlayerProfile(profile);
-        playerHead.setItemMeta(skullMeta);
+
+        playerHead = new ItemStackBuilder(Material.PLAYER_HEAD)
+            .setMeta(skullMeta)
+            .lore(aspects.toComponentList())
+            .hideAll()
+            .build();
 
         menuButton = new ItemStackBuilder(Material.ECHO_SHARD)
-                .name(Component.text("| Main Menu |").color(TextColor.color(218, 133, 3)))
+                .name(Component.text("| Main Menu |", Config.SwordColor.TEXT_COOL, TextDecoration.BOLD))
                 .hideAll()
                 .tag(KeyRegistry.MAIN_MENU_BUTTON_KEY, KeyRegistry.MAIN_MENU_BUTTON)
                 .build();
@@ -313,9 +323,9 @@ public class SwordPlayer extends Combatant {
      * @param inputType the input type being evaluated
      * @return true to cancel the action, false to allow processing
      */
-    public boolean cancelItemInteraction(ItemStack itemStack, InputType inputType) {
+    public boolean handleItemInteraction(ItemStack itemStack, InputType inputType) {
         if (KeyRegistry.hasKey(itemStack, KeyRegistry.MAIN_MENU_BUTTON_KEY)) {
-            InventoryManager.createBasic(this);
+            InvInterfaceManager.displayMainMenu(this);
             return true;
         }
 
@@ -337,21 +347,20 @@ public class SwordPlayer extends Combatant {
         ItemStack clicked = e.getCurrentItem();
         int slotNumber = e.getSlot();
 
-        // Protect menu button from being moved or modified
+        // Protect necessary items from being interacted with
         if (KeyRegistry.hasKey(clicked, KeyRegistry.MAIN_MENU_BUTTON_KEY) ||
-                KeyRegistry.hasKey(onCursor, KeyRegistry.MAIN_MENU_BUTTON_KEY)) {
+                KeyRegistry.hasKey(onCursor, KeyRegistry.MAIN_MENU_BUTTON_KEY) ||
+            slotNumber == 0 || slotNumber == 8 || slotNumber == 38 || slotNumber == 40) {
             return true; // Cancel the action
         }
 
-        message("\n\n~|------Beginning of new inventory interact event------|~"
-                + "\n       Inventory: " + inv.getType()
-                + "\n       Click type: " + clickType
-                + "\n       Action type: " + action
-                + "\n       Item on cursor: " + onCursor
-                + "\n       Current Item in slot: " + clicked
-                + "\n       slot number: " + slotNumber);
-
-        message("Normal click event.");
+//        message("\n\n~|------Beginning of new inventory interact event------|~"
+//                + "\n       Inventory: " + inv.getType()
+//                + "\n       Click type: " + clickType
+//                + "\n       Action type: " + action
+//                + "\n       Item on cursor: " + onCursor
+//                + "\n       Current Item in slot: " + clicked
+//                + "\n       slot number: " + slotNumber);
         return false;
     }
 

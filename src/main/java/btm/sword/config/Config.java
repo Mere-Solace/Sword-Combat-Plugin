@@ -6,17 +6,18 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import net.kyori.adventure.text.format.NamedTextColor;
+
 import org.bukkit.Color;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Display.Billboard;
 import org.bukkit.entity.EntityType;
 import org.bukkit.util.Vector;
+import org.jetbrains.annotations.Nullable;
 
 import btm.sword.system.attack.AttackType;
 import btm.sword.util.sound.SoundType;
 import net.kyori.adventure.text.format.TextColor;
-
-import org.jetbrains.annotations.Nullable;
 
 /**
  * Static configuration class for Sword: Combat Evolved.
@@ -243,6 +244,22 @@ public class Config {
     //region COLOR
     // ==============================================================================
     public static class SwordColor {
+        public static TextColor TEXT_RESOURCE_COLOR = TextColor.color(222, 222, 222);
+        static { register(
+            "color.text_resource_color",
+            TEXT_RESOURCE_COLOR, TextColor.class,
+            v -> TEXT_RESOURCE_COLOR = v,
+            Config::loadTextColor
+        ); }
+
+        public static TextColor TEXT_ASPECT_COLOR = TextColor.color(0, 159, 255);
+        static { register(
+            "color.text_aspect_color",
+            TEXT_ASPECT_COLOR, TextColor.class,
+            v -> TEXT_ASPECT_COLOR = v,
+            Config::loadTextColor
+        ); }
+
         public static TextColor TITLE_INPUT_STRING = TextColor.color(151, 0, 0);
         static { register(
             "color.title_input_string",
@@ -2243,7 +2260,7 @@ public class Config {
     //region UmbralBlade States
     // ==============================================================================
     public static class UmbralBlade {
-        public static double LUNGE_TIME_CUTOFF = 1.2;
+        public static double LUNGE_TIME_CUTOFF = 0.8;
         static { register(
             "umbral.time_cutoff",
             LUNGE_TIME_CUTOFF, Double.class,

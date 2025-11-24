@@ -1,9 +1,5 @@
 package btm.sword.system.entity.types;
 
-import btm.sword.system.entity.umbral.statemachine.state.LodgedState;
-import btm.sword.system.entity.umbral.statemachine.state.RecallingState;
-import btm.sword.system.entity.umbral.statemachine.state.StandbyState;
-
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.attribute.Attribute;
@@ -22,6 +18,9 @@ import btm.sword.system.entity.base.CombatProfile;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.umbral.UmbralBlade;
 import btm.sword.system.entity.umbral.input.BladeRequest;
+import btm.sword.system.entity.umbral.statemachine.state.LodgedState;
+import btm.sword.system.entity.umbral.statemachine.state.RecallingState;
+import btm.sword.system.entity.umbral.statemachine.state.StandbyState;
 import btm.sword.system.item.KeyRegistry;
 import btm.sword.util.Prefab;
 import lombok.Getter;
@@ -208,7 +207,7 @@ public abstract class Combatant extends SwordEntity {
         LivingEntity target = grabbedEntity.entity();
         Location hitLoc = target.getLocation().add(0, target.getEyeHeight()*0.5, 0);
         Prefab.Particles.GRAB_ATTEMPT.display(hitLoc);
-        grabbedEntity.hit(this, 0, 0, 5, 15,
+        grabbedEntity.hit(this, Prefab.Attacks.grabHit,
                 target.getEyeLocation().subtract(self.getEyeLocation()).toVector());
     }
 

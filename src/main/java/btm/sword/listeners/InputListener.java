@@ -49,7 +49,7 @@ public class InputListener implements Listener {
         if (swordPlayer == null) return;
         ItemStack item = swordPlayer.getItemStackInHand(true);
 
-        if (swordPlayer.cancelItemInteraction(item, InputType.LEFT)) {
+        if (swordPlayer.handleItemInteraction(item, InputType.LEFT)) {
             event.setCancelled(true);
             return;
         }
@@ -83,7 +83,7 @@ public class InputListener implements Listener {
         // TODO: #124 - If so, use the flag set in the above method to cancel this event and return.
 
         if ((action == Action.LEFT_CLICK_AIR || action == Action.LEFT_CLICK_BLOCK)) {
-            if (swordPlayer.cancelItemInteraction(item, InputType.LEFT)) {
+            if (swordPlayer.handleItemInteraction(item, InputType.LEFT)) {
                 event.setCancelled(true);
                 return;
             }
@@ -100,7 +100,7 @@ public class InputListener implements Listener {
                 return;
             }
 
-            if (swordPlayer.cancelItemInteraction(item, InputType.RIGHT)) {
+            if (swordPlayer.handleItemInteraction(item, InputType.RIGHT)) {
                 event.setCancelled(true);
                 return;
             }
@@ -126,7 +126,7 @@ public class InputListener implements Listener {
 
         swordPlayer.setInteractingWithEntity(true);
 
-        if (swordPlayer.cancelItemInteraction(item, InputType.RIGHT)) {
+        if (swordPlayer.handleItemInteraction(item, InputType.RIGHT)) {
             event.setCancelled(true);
             return;
         }
@@ -169,7 +169,7 @@ public class InputListener implements Listener {
 
         swordPlayer.setPerformedDropAction(true);
 
-        if (swordPlayer.cancelItemInteraction(item, InputType.DROP)) {
+        if (swordPlayer.handleItemInteraction(item, InputType.DROP)) {
             event.setCancelled(true);
         }
         else if (!swordPlayer.isDroppingInInv()) {
@@ -220,7 +220,7 @@ public class InputListener implements Listener {
         if (swordPlayer == null) return;
         ItemStack item = swordPlayer.getItemStackInHand(true);
 
-        if (swordPlayer.cancelItemInteraction(item, InputType.SWAP)) {
+        if (swordPlayer.handleItemInteraction(item, InputType.SWAP)) {
             event.setCancelled(true);
         }
         else if (!swordPlayer.isSwappingInInv()) {

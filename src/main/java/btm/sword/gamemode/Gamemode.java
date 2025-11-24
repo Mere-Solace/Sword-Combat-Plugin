@@ -1,12 +1,14 @@
 package btm.sword.gamemode;
 
+import java.util.List;
+
 import org.bukkit.Bukkit;
-import org.bukkit.boss.*;
+import org.bukkit.boss.BarColor;
+import org.bukkit.boss.BarStyle;
+import org.bukkit.boss.BossBar;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
-
-import java.util.List;
 
 public abstract class Gamemode {
 
@@ -71,4 +73,3 @@ public abstract class Gamemode {
     protected abstract void onTick(int secondsLeft);
     protected abstract String getTitle();
 }
-

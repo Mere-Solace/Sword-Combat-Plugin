@@ -4,11 +4,13 @@ import java.util.function.Supplier;
 
 import org.bukkit.entity.LivingEntity;
 
+import btm.sword.util.display.ParticleWrapper;
+
 
 /**
  * Wrapper class for handling sound effects with configuration system integration.
  * <p>
- * Similar to {@link btm.sword.util.display.ParticleWrapper}, this class provides
+ * Similar to {@link ParticleWrapper}, this class provides
  * a prefab object pattern for playing sounds. Sound properties (type, volume, pitch)
  * are dynamically loaded from the configuration system at play time, enabling
  * hot-reload functionality.
@@ -16,14 +18,15 @@ import org.bukkit.entity.LivingEntity;
  * <p>
  * Usage: {@code Prefab.Sounds.ATTACK.play(entity);}
  * </p>
+ *
+ * @param soundSupplier  Supplier to get the sound type from Config
+ * @param volumeSupplier Supplier to get the volume from Config
+ * @param pitchSupplier  Supplier to get the pitch from Config
  */
-public class SoundWrapper {
-    /** Supplier to get the sound type from Config */
-    private final Supplier<SoundType> soundSupplier;
-    /** Supplier to get the volume from Config */
-    private final Supplier<Float> volumeSupplier;
-    /** Supplier to get the pitch from Config */
-    private final Supplier<Float> pitchSupplier;
+public record SoundWrapper(
+    Supplier<SoundType> soundSupplier,
+    Supplier<Float> volumeSupplier,
+    Supplier<Float> pitchSupplier) {
 
     /**
      * Constructs a SoundWrapper with configuration suppliers.
@@ -32,14 +35,11 @@ public class SoundWrapper {
      * ensuring hot-reload compatibility by fetching fresh config values.
      * </p>
      *
-     * @param soundSupplier supplier that provides the sound type from Config
+     * @param soundSupplier  supplier that provides the sound type from Config
      * @param volumeSupplier supplier that provides the volume from Config
-     * @param pitchSupplier supplier that provides the pitch from Config
+     * @param pitchSupplier  supplier that provides the pitch from Config
      */
-    public SoundWrapper(Supplier<SoundType> soundSupplier, Supplier<Float> volumeSupplier, Supplier<Float> pitchSupplier) {
-        this.soundSupplier = soundSupplier;
-        this.volumeSupplier = volumeSupplier;
-        this.pitchSupplier = pitchSupplier;
+    public SoundWrapper {
     }
 
     /**
