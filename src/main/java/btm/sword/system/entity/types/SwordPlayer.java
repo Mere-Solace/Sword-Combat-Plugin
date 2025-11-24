@@ -216,6 +216,8 @@ public class SwordPlayer extends Combatant {
      * @param input the input type from the player to process
      */
     public void act(InputType input) {
+        message("Acting: " + input.name()); // TODO: remove
+
         if (isAttemptingThrow()) {
             if (input != InputType.RIGHT && input != InputType.RIGHT_HOLD) {
                 ThrowAction.throwCancel(this);
@@ -279,6 +281,12 @@ public class SwordPlayer extends Combatant {
         InputAction action = node.getAction();
 
         if (action != null) {
+            if (aspects.soulfireCur() < action.getRequiredSoulfire()) {
+                displayLackOfSoulfire(action.getRequiredSoulfire());
+                resetTree();
+                return;
+            }
+            consumeSoulfire(action.getRequiredSoulfire()); // begin the depletion of soulfire
             if (!action.execute(this)) {
                 resetTree();
             }

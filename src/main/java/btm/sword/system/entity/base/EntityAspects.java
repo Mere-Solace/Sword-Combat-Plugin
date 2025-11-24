@@ -227,7 +227,7 @@ public class EntityAspects {
      * @return the effective stat value
      */
     public float getAspectVal(AspectType type) {
-        return getAspect(type).effectiveValue();
+        return getAspect(type).effectiveMaxValue();
     }
 
     public Resource shards() { return shards; }
@@ -244,19 +244,19 @@ public class EntityAspects {
     public Aspect celerity() { return celerity; }
     public Aspect willpower() { return willpower; }
 
-    public float shardsVal() { return shards.effectiveValue(); }
-    public float toughnessVal() { return toughness.effectiveValue(); }
-    public float soulfireVal() { return soulfire.effectiveValue(); }
-    public float formVal() { return form.effectiveValue(); }
+    public float shardsVal() { return shards.effectiveMaxValue(); }
+    public float toughnessVal() { return toughness.effectiveMaxValue(); }
+    public float soulfireVal() { return soulfire.effectiveMaxValue(); }
+    public float formVal() { return form.effectiveMaxValue(); }
 
-    public float mightVal() { return might.effectiveValue(); }
-    public float resolveVal() { return resolve.effectiveValue(); }
-    public float finesseVal() { return finesse.effectiveValue(); }
-    public float prowessVal() { return prowess.effectiveValue(); }
-    public float armorVal() { return armor.effectiveValue(); }
-    public float fortitudeVal() { return fortitude.effectiveValue(); }
-    public float celerityVal() { return celerity.effectiveValue(); }
-    public float willpowerVal() { return willpower.effectiveValue(); }
+    public float mightVal() { return might.effectiveMaxValue(); }
+    public float resolveVal() { return resolve.effectiveMaxValue(); }
+    public float finesseVal() { return finesse.effectiveMaxValue(); }
+    public float prowessVal() { return prowess.effectiveMaxValue(); }
+    public float armorVal() { return armor.effectiveMaxValue(); }
+    public float fortitudeVal() { return fortitude.effectiveMaxValue(); }
+    public float celerityVal() { return celerity.effectiveMaxValue(); }
+    public float willpowerVal() { return willpower.effectiveMaxValue(); }
 
     public float shardsCur() { return shards.cur(); }
     public float toughnessCur() { return toughness.cur(); }

@@ -73,8 +73,8 @@ public class Resource extends Aspect {
         regenTask = new BukkitRunnable() {
             @Override
             public void run() {
-                if (curValue < effectiveValue()) {
-                    add(effectiveAmount());
+                if (curValue < effectiveMaxValue()) {
+                    add(effectiveRegenAmount());
                 }
             }
         }.runTaskTimer(Sword.getInstance(), 0L, effectivePeriod());
@@ -127,7 +127,7 @@ public class Resource extends Aspect {
      * @return current resource / effective cap
      */
     public float curPercent() {
-        return curValue/effectiveValue();
+        return curValue/ effectiveMaxValue();
     }
 
     /**
@@ -135,7 +135,7 @@ public class Resource extends Aspect {
      * @param value new value to set
      */
     public void setCur(float value) {
-        curValue = Math.min(effectiveValue(), value);
+        curValue = Math.min(effectiveMaxValue(), value);
     }
 
     /**
@@ -143,7 +143,7 @@ public class Resource extends Aspect {
      * @param percent fraction of maximum [0,1]
      */
     public void setCurPercent(float percent) {
-        curValue = percent * effectiveValue();
+        curValue = percent * effectiveMaxValue();
     }
 
     /**
@@ -151,7 +151,14 @@ public class Resource extends Aspect {
      * @param amount the value to add
      */
     public void add(float amount) {
-        curValue += amount;
+        float amountToAdd = amount * effAmountPercent;
+
+        if (curValue + amountToAdd > effectiveMaxValue()) {
+            curValue = effectiveMaxValue();
+        }
+        else {
+            curValue += amountToAdd;
+        }
     }
 
     /**
@@ -172,7 +179,7 @@ public class Resource extends Aspect {
      * Resets the resource to its maximum effective value.
      */
     public void reset() {
-        curValue = effectiveValue();
+        curValue = effectiveMaxValue();
     }
 
     /**
@@ -182,7 +189,7 @@ public class Resource extends Aspect {
     @Override
     public void setBaseValue(float baseValue) {
         this.baseValue = baseValue;
-        curValue = Math.min(curValue, effectiveValue());
+        curValue = Math.min(curValue, effectiveMaxValue());
     }
 
     /**
@@ -197,7 +204,7 @@ public class Resource extends Aspect {
      * Gets the effective amount of resource regenerated per period.
      * @return effective regeneration amount
      */
-    public float effectiveAmount() {
+    public float effectiveRegenAmount() {
         return baseRegenAmount * effAmountPercent;
     }
 

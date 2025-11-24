@@ -57,20 +57,36 @@ public class AttackAction extends SwordAction {
         ItemStack itemStack = executor.getItemStackInHand(true);
         Material itemType = itemStack.getType();
 
-        // punch with bare hands.
-        if (executor.getItemStackInHand(true).isEmpty() ||
-            (executor.holdingSoulLink() &&
-                executor.getUmbralBlade().inState(StandbyState.class)) &&
-                executor.getAspects().soulfireCur() < 10f) {
+        executor.message("> Basic Attack Method Call.");
+
+        if (executor.getItemStackInHand(true).isEmpty()) {
             throwPunch(executor);
             return;
         }
-        else if (executor.holdingSoulLink() &&
-            executor.getUmbralBlade() != null &&
-            executor.getAspects().soulfireCur() >= 10f &&
-            executor.getUmbralBlade().inState(StandbyState.class)) {
-                executor.requestUmbralBladeState(BladeRequest.ATTACK_QUICK);
+
+        if (executor.holdingSoulLink()) {
+            // TODO: make attack go in different directions randomly. Implement in Quick attack class.
+            // If they have enough SF and in the Standby State, do a quick slash attack
+            if (executor.getAspects().soulfireCur() >= 10f &&
+                executor.getUmbralBlade().inState(StandbyState.class)) {
+
+                if (executor instanceof SwordPlayer swordPlayer) {
+                    if (!swordPlayer.isAtRoot()) {
+                        // can't just auto weave attacks and spam left
+                        throwPunch(executor); // punch to finish the attack sequence.
+                        return;
+                    }
+
+                    swordPlayer.resetTree(); // Reset the tree if they perform a quick attack with the blade.
+                }
+
+                executor.getUmbralBlade().request(BladeRequest.ATTACK_QUICK);
+
                 return;
+            }
+
+            throwPunch(executor);
+            return;
         }
 
         double dot = executor.entity().getEyeLocation().getDirection().dot(Config.Direction.UP());

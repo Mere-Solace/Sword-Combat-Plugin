@@ -165,7 +165,10 @@ public abstract class Combatant extends SwordEntity {
     }
 
     public void consumeSoulfire(float requiredSoulfire) {
+        message("Current: " + String.format("%.1f", aspects.soulfireCur()) +
+            " to remove: " + String.format("%.1f", requiredSoulfire));
         aspects.soulfire().remove(requiredSoulfire);
+        aspects.soulfire().restartRegenTaskLater(aspects.soulfire().getBaseRegenPeriod());
     }
 
     /**
