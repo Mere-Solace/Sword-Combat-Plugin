@@ -164,6 +164,10 @@ public abstract class Combatant extends SwordEntity {
         this.abilityCastTask = abilityCastTask;
     }
 
+    public void consumeSoulfire(float requiredSoulfire) {
+        aspects.soulfire().remove(requiredSoulfire);
+    }
+
     /**
      * Initiates a grab action on the specified target {@link SwordEntity}.
      * Applies minor damage to the target, sets grab states, and displays a particle effect.
@@ -206,7 +210,7 @@ public abstract class Combatant extends SwordEntity {
     public void onGrabHit() {
         LivingEntity target = grabbedEntity.entity();
         Location hitLoc = target.getLocation().add(0, target.getEyeHeight()*0.5, 0);
-        Prefab.Particles.GRAB_ATTEMPT.display(hitLoc);
+        Prefab.Particles.PUNCH.display(hitLoc);
         grabbedEntity.hit(this, Prefab.Attacks.grabHit,
                 target.getEyeLocation().subtract(self.getEyeLocation()).toVector());
     }

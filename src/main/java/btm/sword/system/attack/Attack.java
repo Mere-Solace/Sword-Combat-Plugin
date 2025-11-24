@@ -143,6 +143,11 @@ public class Attack extends SwordAction implements Runnable {
             livingEntity.getUniqueId() != attacker.getUniqueId() &&
             livingEntity.isValid();
 
+        cast();
+    }
+
+    // TODO: make usage dynamic
+    protected void cast() {
         cast(attacker, 200, this);
     }
 

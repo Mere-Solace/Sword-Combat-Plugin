@@ -93,15 +93,15 @@ public class InteractiveItemArbiter {
             }
 
             executor.giveItem(item);
-            Location i = display.getLocation();
+            Location displayLoc = display.getLocation();
             if (item.getType().isBlock()) {
                 new ParticleWrapper(Particle.BLOCK, 50, 0.25, 0.25, 0.25, item.getType().createBlockData())
-                        .display(i);
+                        .display(displayLoc);
             }
-            Block b = i.clone().add(new Vector(0,-0.5,0)).getBlock();
+            Block b = displayLoc.clone().add(new Vector(0,-0.5,0)).getBlock();
             if (!b.getType().isAir()) {
                 new ParticleWrapper(Particle.BLOCK, 30, 0.5, 0.5, 0.5, b.getBlockData())
-                        .display(i);
+                        .display(displayLoc);
             }
             Prefab.Particles.GRAB_CLOUD.display(display.getLocation());
             thrownItem.dispose();

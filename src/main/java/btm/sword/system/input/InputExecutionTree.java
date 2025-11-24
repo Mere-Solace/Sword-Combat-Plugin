@@ -50,6 +50,13 @@ public class InputExecutionTree {
         timeoutTimer = null;
     }
 
+
+    // Running into some issues with overlapping input execution paths, where
+    // 2 different action paths have the same Input Sequence, but will behave differently
+    // when using different items (case in point: Umbral Blade basic sweep attack while holding link)
+    // TODO: find a way to have separately defined input paths.
+
+
     /**
      * Processes an input step in the execution tree, updating current node and sequence.
      * Returns the new node reached or null if the input is invalid or sequence is reset.
@@ -361,6 +368,7 @@ public class InputExecutionTree {
                     executor -> MovementAction.dash(executor, true),
                     executor -> executor.calcCooldown(AspectType.CELERITY, 200L, 1000L, 10),
                     Combatant::canAirDash,
+                    5f,
                     false,
                     true,
                     true),
@@ -373,6 +381,7 @@ public class InputExecutionTree {
                     executor -> MovementAction.dash(executor, false),
                     executor -> executor.calcCooldown(AspectType.CELERITY, 200L, 1000L, 10),
                     Combatant::canAirDash,
+                    5f,
                     false,
                     true,
                     true),
@@ -386,9 +395,11 @@ public class InputExecutionTree {
                     GrabAction::grab,
                     executor -> executor.calcCooldown(AspectType.FORTITUDE, 200L, 1000L, 10),
                     Combatant::canPerformAction,
+                    2f,
                     false,
                     true,
                     true),
+                20L,
                 false,
                 true,
                 true);
@@ -398,7 +409,6 @@ public class InputExecutionTree {
         // TODO: #122 - Define possible better way of differentiating between normal attacks and umbral attacks
         // my main concern with this was not being able to dynamically change cooldowns if umbral blade or normal blade was used
         // those were erroneous since my cooldown calc is a Function! I love Functional Interfaces!
-        // TODO: #123 - Make inputExecution tree timeout value dynamic for usage in longer cooldown input chains
 
         // basic attacks
         add(List.of(InputType.LEFT),
@@ -409,7 +419,7 @@ public class InputExecutionTree {
                     Combatant::canPerformAction,
                     true,
                     true,
-                    true),
+                    false),
                 true,
                 true,
                 true);
@@ -421,7 +431,7 @@ public class InputExecutionTree {
                     Combatant::canPerformAction,
                     true,
                     true,
-                    true),
+                    false),
                 true,
                 true,
                 true);
@@ -433,7 +443,7 @@ public class InputExecutionTree {
                     Combatant::canPerformAction,
                     true,
                     true,
-                    true),
+                    false),
                 true,
                 true,
                 true);
@@ -483,6 +493,7 @@ public class InputExecutionTree {
                 UtilityAction::bulletTime,
                 executor -> 5000L,
                 Combatant::canPerformAction,
+                70f,
                 true,
                 true,
                 true),
@@ -526,7 +537,8 @@ public class InputExecutionTree {
             new InputAction(
                 UmbralBladeAction::sweep,
                 executor -> 4000L,
-                Combatant::canPerformUmbralSkillAction,
+                Combatant::canPerformUmbralLungeAction,
+                10f,
                 true,
                 true,
                 false),
@@ -539,7 +551,8 @@ public class InputExecutionTree {
             new InputAction(
                 UmbralBladeAction::sweep,
                 executor -> 0L,
-                Combatant::canPerformUmbralSkillAction,
+                Combatant::canPerformUmbralLungeAction,
+                15f,
                 true,
                 true,
                 false),
@@ -552,7 +565,8 @@ public class InputExecutionTree {
             new InputAction(
                 UmbralBladeAction::sweep,
                 executor -> 0L,
-                Combatant::canPerformUmbralSkillAction,
+                Combatant::canPerformUmbralLungeAction,
+                25f,
                 true,
                 true,
                 false),
@@ -567,6 +581,7 @@ public class InputExecutionTree {
                 UmbralBladeAction::lunge,
                 executor -> 4000L,
                 Combatant::canPerformUmbralLungeAction,
+                10f,
                 true,
                 true,
                 false),
@@ -580,6 +595,7 @@ public class InputExecutionTree {
                 UmbralBladeAction::lunge,
                 executor -> 0L,
                 Combatant::canPerformUmbralLungeAction,
+                15f,
                 true,
                 true,
                 false),
@@ -593,6 +609,7 @@ public class InputExecutionTree {
                 UmbralBladeAction::lunge,
                 executor -> 0L,
                 Combatant::canPerformUmbralLungeAction,
+                25f,
                 true,
                 true,
                 false),

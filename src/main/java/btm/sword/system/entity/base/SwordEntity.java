@@ -191,12 +191,16 @@ public abstract class SwordEntity {
         }
 
         if (statusDisplay != null && isStatusActive()) {
-            updateStatusDisplayText();
+            updateStatus();
         }
 
         if ((statusDisplay == null || statusDisplay.isDead()) && isStatusActive()) {
             restartStatusDisplay();
         }
+    }
+
+    protected void updateStatus() {
+        updateStatusDisplayText();
     }
 
     private void updateStatusDisplayText() {
@@ -499,7 +503,7 @@ public abstract class SwordEntity {
     public void resetResources() {
         aspects.shards().reset();
         aspects.toughness().reset();
-        aspects.soulfire().reset();
+        aspects.form().setCur(0);
         aspects.soulfire().setCur(0); // start with 0 soulfire
         message("Reset resources:\n" + aspects.curResources());
     }

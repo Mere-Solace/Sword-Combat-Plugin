@@ -1,10 +1,9 @@
 package btm.sword.system.attack;
 
 
-import btm.sword.util.Prefab;
-
 import org.bukkit.entity.ItemDisplay;
 
+import btm.sword.util.Prefab;
 import btm.sword.util.display.DisplayUtil;
 import lombok.Setter;
 
@@ -99,7 +98,7 @@ public class ItemDisplayAttack extends Attack {
     // TODO: pass in an instance of HitValues
     @Override
     protected void hit() {
-        currentTarget.hit(attacker, Prefab.Attacks.thrownWeapon,
+        currentTarget.hit(attacker, Prefab.Attacks.umbralItemDisplayAttack,
             attackProfile.knockbackFunction().apply(this));
 
         Prefab.Particles.TEST_HIT.display(currentTarget.getChestLocation());

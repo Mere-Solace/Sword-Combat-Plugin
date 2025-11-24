@@ -360,6 +360,13 @@ public class UmbralBlade extends ThrownItem {
             blade -> {}
         ));
 
+        bladeStateMachine.addTransition(new Transition<>(
+            LodgedState.class,
+            AttackingHeavyState.class,
+            blade -> isRequestedAndActive(BladeRequest.ATTACK_HEAVY),
+            blade -> {}
+        ));
+
         // =====================================================================
         // LUNGING
         // =====================================================================
@@ -804,11 +811,21 @@ public class UmbralBlade extends ThrownItem {
             return;
         }
 
+        thrower.message("Grabbed it!");
+
         if (combatant.holdingUmbralItemInMainHand()) {
+            if (inState(LungingState.class) ||
+                inState(AttackingHeavyState.class) ||
+                inState(AttackingQuickState.class)) {
+                thrower.setVelocity(thrower.entity().getVelocity().add(to.clone().multiply(1.5)));
+            }
+
             request(BladeRequest.WIELD);
         }
         else {
             request(BladeRequest.STANDBY);
+
+            // Do a spinning attack like katarina?
         }
     }
 

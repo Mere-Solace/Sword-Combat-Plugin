@@ -291,6 +291,12 @@ public class SwordPlayer extends Combatant {
         }
     }
 
+    @Override
+    protected void updateStatus() {
+        super.updateStatus();
+        player.setLevel((int) aspects.formCur());
+    }
+
     private void inventoryUpkeep() {
         if (getItemStackInHand(false).getType() != Material.SHIELD) {
             setItemStackInHand(ItemStack.of(Material.SHIELD), false);
@@ -426,6 +432,16 @@ public class SwordPlayer extends Combatant {
                     Duration.ofMillis(20),
                     Duration.ofMillis(inputTimeoutMillis),
                     Duration.ofMillis(20))));
+    }
+
+    public void displayLackOfSoulfire(float required) {
+        self.showTitle(Title.title(
+            Component.text("✖", Config.SwordColor.TEXT_COOL_DARK),
+            Component.text(String.format("%.1f", aspects.soulfireCur()) + "/" + required, Config.SwordColor.TEXT_ITEM_BASE, TextDecoration.ITALIC),
+            Title.Times.times(
+                Duration.ofMillis(20),
+                Duration.ofMillis(inputTimeoutMillis),
+                Duration.ofMillis(20))));
     }
 
     /**

@@ -51,7 +51,7 @@ public record SoundWrapper(
      *
      * @param entity the entity to play the sound at
      */
-    public void play(LivingEntity entity) {
+    public void play(LivingEntity entity) { // TODO: Play to every player in a radius
         SoundUtil.playSound(entity, soundSupplier.get(), volumeSupplier.get(), pitchSupplier.get());
     }
 }

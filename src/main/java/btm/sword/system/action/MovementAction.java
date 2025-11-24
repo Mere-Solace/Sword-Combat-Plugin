@@ -110,7 +110,7 @@ public class MovementAction extends SwordAction {
                             public void run() {
                                 if (id.getLocation().subtract(ex.getEyeLocation()).lengthSquared() < Config.Movement.DASH_GRAB_DISTANCE_SQUARED) {
                                     BlockData blockData = ex.getLocation().add(new Vector(0, Config.Movement.DASH_BLOCK_CHECK_OFFSET_Y, 0)).getBlock().getBlockData();
-                                    new ParticleWrapper(Particle.DUST_PILLAR,
+                                    new ParticleWrapper(Particle.BLOCK,
                                             Config.Movement.DASH_PARTICLE_COUNT,
                                             Config.Movement.DASH_PARTICLE_SPREAD_X,
                                             Config.Movement.DASH_PARTICLE_SPREAD_Y,

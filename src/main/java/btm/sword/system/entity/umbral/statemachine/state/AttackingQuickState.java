@@ -42,8 +42,12 @@ public class AttackingQuickState extends UmbralStateFacade {
 
     @Override
     public void onEnter(UmbralBlade blade) {
+        // handling it here cuz special case, doesn't work with tree well
+        blade.getThrower().consumeSoulfire(10f);
+
         // Attack execution is handled by performAttack method
         blade.performAttack(5.0, false);
+
         // TODO: #121 - Potentially add per state glow changes or just a method for this
         blade.getDisplay().setGlowing(true);
         blade.getDisplay().setGlowColorOverride(Config.SwordColor.UMBRAL_GLOW);
@@ -57,7 +61,5 @@ public class AttackingQuickState extends UmbralStateFacade {
 
     @Override
     public void onTick(UmbralBlade blade) {
-        // Monitor attack animation progress
-        // Transition to WAITING when attack completes (handled by callback)
     }
 }

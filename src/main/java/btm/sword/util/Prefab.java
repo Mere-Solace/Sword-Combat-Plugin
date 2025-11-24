@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
+import btm.sword.util.sound.SoundType;
+
 import org.bukkit.Color;
 import org.bukkit.Material;
 import org.bukkit.Particle;
@@ -45,7 +47,9 @@ public class Prefab {
         public static final ParticleWrapper COLLIDE = new ParticleWrapper(Particle.CRIT, 1, 0.1, 0.1, 0.1, 0.5);
 
         public static final ParticleWrapper GRAB_CLOUD = new ParticleWrapper(Particle.POOF, 20, 0.5, 0.5, 0.5, 0.1);
-        public static final ParticleWrapper GRAB_ATTEMPT = new ParticleWrapper(Particle.GUST, 3, 0.01, 0.01, 0.01);
+        public static final ParticleWrapper GRAB_ATTEMPT = new ParticleWrapper(Particle.SONIC_BOOM, 2, 0.01, 0.01, 0.01);
+        public static final ParticleWrapper PUNCH = new ParticleWrapper(Particle.GUST, 1, 0, 0, 0, 0);
+
         public static final ParticleWrapper UMBRAL_POOF = new ParticleWrapper(Particle.LARGE_SMOKE, 50, 0.5, 0.5, 0.5, 0.001);
 
         public static final ParticleWrapper THROW_TRAIl = new ParticleWrapper(Particle.DUST, 1, 0.2, 0.2, 0.2,
@@ -124,6 +128,14 @@ public class Prefab {
             () -> 15f,
             () -> 10f
         );
+
+        public static final HitPacket punch = new HitPacket(
+            () -> 10f,
+            () -> 2,
+            () -> 1,
+            () -> 5f,
+            () -> 5f
+        );
     }
 
     /**
@@ -151,6 +163,18 @@ public class Prefab {
             () -> Config.Audio.ATTACK_SOUND,
             () -> Config.Audio.ATTACK_VOLUME,
             () -> Config.Audio.ATTACK_PITCH
+        );
+
+        public static final SoundWrapper PUNCH_ATTEMPT = new SoundWrapper(
+            () -> Config.Audio.PUNCH_ATTEMPT,
+            () -> Config.Audio.PUNCH_ATTEMPT_VOL,
+            () -> Config.Audio.PUNCH_ATTEMPT_PITCH
+        );
+
+        public static final SoundWrapper PUNCH_CONNECT = new SoundWrapper(
+            () -> Config.Audio.PUNCH_CONNECT,
+            () -> Config.Audio.PUNCH_CONNECT_VOL,
+            () -> Config.Audio.PUNCH_CONNECT_PITCH
         );
 
         /**

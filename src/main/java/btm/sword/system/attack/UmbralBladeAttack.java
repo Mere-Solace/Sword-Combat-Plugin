@@ -1,20 +1,14 @@
 package btm.sword.system.attack;
 
 import java.util.HashSet;
-import java.util.List;
 
-import btm.sword.config.Config;
-import btm.sword.util.Prefab;
-import btm.sword.util.display.DrawUtil;
-import btm.sword.util.entity.HitboxUtil;
-
-import org.bukkit.Location;
 import org.bukkit.entity.ItemDisplay;
 import org.bukkit.entity.LivingEntity;
 
+import btm.sword.config.Config;
 import btm.sword.system.entity.umbral.UmbralBlade;
+import btm.sword.util.entity.HitboxUtil;
 
-import org.bukkit.util.Vector;
 
 public class UmbralBladeAttack extends ItemDisplayAttack {
     protected UmbralBlade blade;
@@ -31,6 +25,11 @@ public class UmbralBladeAttack extends ItemDisplayAttack {
     public UmbralBladeAttack setBlade(UmbralBlade blade) {
         this.blade = blade;
         return this;
+    }
+
+    @Override
+    protected void cast() {
+        cast(attacker, 200, this);
     }
 
     @Override

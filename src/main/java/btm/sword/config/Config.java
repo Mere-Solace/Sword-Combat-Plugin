@@ -290,7 +290,7 @@ public class Config {
             Config::loadTextColor
         ); }
 
-        public static TextColor TEXT_ITEM_BASE = TextColor.color(120, 120, 120);
+        public static TextColor TEXT_ITEM_BASE = TextColor.color(121, 142, 168);
         static { register(
             "color.text_item_base",
             TEXT_ITEM_BASE, TextColor.class,
@@ -1380,6 +1380,54 @@ public class Config {
             "audio.entity_hit_connect",
             ENTITY_HIT_CONNECT_PITCH, Float.class,
             v -> ENTITY_HIT_CONNECT_PITCH = v,
+            Config::loadFloat
+        ); }
+
+        public static SoundType PUNCH_ATTEMPT = SoundType.ENTITY_PLAYER_ATTACK_SWEEP;
+        static { register(
+            "audio.punch_attempt",
+            PUNCH_ATTEMPT, SoundType.class,
+            v -> PUNCH_ATTEMPT = v,
+            Config::loadSoundType
+        ); }
+
+        public static float PUNCH_ATTEMPT_VOL = 1.5f;
+        static { register(
+            "audio.punch_attempt_vol",
+            PUNCH_ATTEMPT_VOL, Float.class,
+            v -> PUNCH_ATTEMPT_VOL = v,
+            Config::loadFloat
+        ); }
+
+        public static float PUNCH_ATTEMPT_PITCH = 0.5f;
+        static { register(
+            "audio.punch_attempt_pitch",
+            PUNCH_ATTEMPT_PITCH, Float.class,
+            v -> PUNCH_ATTEMPT_PITCH = v,
+            Config::loadFloat
+        ); }
+
+        public static SoundType PUNCH_CONNECT = SoundType.ENTITY_PLAYER_ATTACK_KNOCKBACK;
+        static { register(
+            "audio.punch_connect",
+            PUNCH_CONNECT, SoundType.class,
+            v -> PUNCH_CONNECT = v,
+            Config::loadSoundType
+        ); }
+
+        public static float PUNCH_CONNECT_VOL = 0.9f;
+        static { register(
+            "audio.punch_connect_vol",
+            PUNCH_CONNECT_VOL, Float.class,
+            v -> PUNCH_CONNECT_VOL = v,
+            Config::loadFloat
+        ); }
+
+        public static float PUNCH_CONNECT_PITCH = 1.0f;
+        static { register(
+            "audio.punch_connect_pitch",
+            PUNCH_CONNECT_PITCH, Float.class,
+            v -> PUNCH_CONNECT_PITCH = v,
             Config::loadFloat
         ); }
     }

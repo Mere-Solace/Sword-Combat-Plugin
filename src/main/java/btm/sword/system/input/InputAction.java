@@ -4,6 +4,9 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
+import org.bukkit.scheduler.BukkitRunnable;
+
+import btm.sword.Sword;
 import btm.sword.system.entity.types.Combatant;
 import btm.sword.system.entity.types.SwordPlayer;
 
@@ -24,6 +27,8 @@ public class InputAction {
 
     /** Predicate that tests whether the executor is allowed to cast this ability at a given time. */
     private final Predicate<Combatant> canCastAbility;
+
+    private float requiredSoulfire;
 
     /** Whether to display the remaining cooldown time to the player if action is on cooldown. */
     private final boolean displayCooldown;
@@ -50,12 +55,30 @@ public class InputAction {
             Consumer<Combatant> action,
             Function<Combatant, Long> cooldownCalculation,
             Predicate<Combatant> canCastAbility,
+            float requiredSoulfire,
             boolean displayCooldown,
             boolean displayDisabled,
             boolean resetIfCannotPerform) {
         this.action = action;
         this.cooldownCalculation = cooldownCalculation;
         this.canCastAbility = canCastAbility;
+        this.requiredSoulfire = requiredSoulfire;
+        this.displayCooldown = displayCooldown;
+        this.displayDisabled = displayDisabled;
+        this.resetIfCannotPerform = resetIfCannotPerform;
+    }
+
+    public InputAction(
+        Consumer<Combatant> action,
+        Function<Combatant, Long> cooldownCalculation,
+        Predicate<Combatant> canCastAbility,
+        boolean displayCooldown,
+        boolean displayDisabled,
+        boolean resetIfCannotPerform) {
+        this.action = action;
+        this.cooldownCalculation = cooldownCalculation;
+        this.canCastAbility = canCastAbility;
+        this.requiredSoulfire = 0f;
         this.displayCooldown = displayCooldown;
         this.displayDisabled = displayDisabled;
         this.resetIfCannotPerform = resetIfCannotPerform;
@@ -80,6 +103,7 @@ public class InputAction {
             return false;
         }
         if (canCast(executor)) {
+            executor.consumeSoulfire(requiredSoulfire); // begin the depletion of soulfire
             action.accept(executor);
             setTimeLastExecuted();
             return true;
@@ -95,6 +119,7 @@ public class InputAction {
             }
         }
     }
+
 
     /**
      * Calculates the cooldown duration in milliseconds for this action,
@@ -115,7 +140,13 @@ public class InputAction {
      * @return true if casting is allowed, false otherwise
      */
     public boolean canCast(Combatant executor) {
-        return canCastAbility == null || canCastAbility.test(executor);
+        boolean capable = executor.getAspects().soulfireCur() >= requiredSoulfire;
+
+        if (!capable && executor instanceof SwordPlayer player)
+            player.displayLackOfSoulfire(requiredSoulfire);
+
+        return capable &&
+            (canCastAbility == null || canCastAbility.test(executor));
     }
 
     /**

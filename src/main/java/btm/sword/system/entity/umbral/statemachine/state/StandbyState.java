@@ -3,6 +3,7 @@ package btm.sword.system.entity.umbral.statemachine.state;
 import org.bukkit.scheduler.BukkitTask;
 
 import btm.sword.config.Config;
+import btm.sword.system.action.utility.thrown.InteractiveItemArbiter;
 import btm.sword.system.entity.types.SwordPlayer;
 import btm.sword.system.entity.umbral.UmbralBlade;
 import btm.sword.system.entity.umbral.statemachine.UmbralStateFacade;
@@ -16,6 +17,9 @@ public class StandbyState extends UmbralStateFacade {
 
     @Override
     public void onEnter(UmbralBlade blade) {
+        // Instead of putting whenever blade enters a diff state, just deactivate when it should be
+        InteractiveItemArbiter.remove(blade.getDisplay(), false);
+
         blade.getDisplay().setGlowing(true);
         blade.getDisplay().setGlowColorOverride(Config.SwordColor.UMBRAL_GLOW);
 
@@ -29,8 +33,9 @@ public class StandbyState extends UmbralStateFacade {
 
     @Override
     public void onExit(UmbralBlade blade) {
-        blade.getDisplay().setGlowing(false);
+        InteractiveItemArbiter.put(blade);
 
+        blade.getDisplay().setGlowing(false);
         blade.endIdleMovement();
         if (followTask != null && followTask.getTaskId() != -1 && !followTask.isCancelled())
             followTask.cancel();
