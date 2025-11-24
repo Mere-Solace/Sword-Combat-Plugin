@@ -40,6 +40,7 @@ public abstract class Combatant extends SwordEntity {
     private BukkitTask abilityCastTask = null;
 
     private int airDashesPerformed;
+    protected Vector dashDirection;
 
     private boolean isGrabbing = false;
     private SwordEntity grabbedEntity;

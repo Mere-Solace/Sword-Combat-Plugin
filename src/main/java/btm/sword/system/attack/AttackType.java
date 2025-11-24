@@ -76,6 +76,22 @@ public enum AttackType implements AttackProfile {
         attack -> new Vector()
     ),
 
+    F_DASH_ATTACK(ControlVectors.of(
+        new Vector(-1.95,-0.76,0.9),
+        new Vector(1.2,1.1,7.3),
+        new Vector(-1.6,-0.57,2.7),
+        new Vector(-0.93,0,4.9)),
+    attack -> new Vector()
+    ),
+
+    B_DASH_ATTACK(ControlVectors.of(
+        new Vector(0.696,2.2388,1.74),
+        new Vector(-0.8932,-3.2016,0.116),
+        new Vector(0.3132,0.4176,2.204),
+        new Vector(-0.58,-1.74,1.3572)),
+        Attack::getForwardVector
+    ),
+
     D_AIR(ControlVectors.of(
         new Vector(-0.35, 2.53, 0.56),
         new Vector(0, -3.42, -0.581),

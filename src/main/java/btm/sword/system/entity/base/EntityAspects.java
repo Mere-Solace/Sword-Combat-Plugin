@@ -244,10 +244,10 @@ public class EntityAspects {
     public Aspect celerity() { return celerity; }
     public Aspect willpower() { return willpower; }
 
-    public float shardsVal() { return shards.effectiveMaxValue(); }
-    public float toughnessVal() { return toughness.effectiveMaxValue(); }
-    public float soulfireVal() { return soulfire.effectiveMaxValue(); }
-    public float formVal() { return form.effectiveMaxValue(); }
+    public float shardsMaxVal() { return shards.effectiveMaxValue(); }
+    public float toughnessMaxVal() { return toughness.effectiveMaxValue(); }
+    public float soulfireMaxVal() { return soulfire.effectiveMaxValue(); }
+    public float formMaxVal() { return form.effectiveMaxValue(); }
 
     public float mightVal() { return might.effectiveMaxValue(); }
     public float resolveVal() { return resolve.effectiveMaxValue(); }

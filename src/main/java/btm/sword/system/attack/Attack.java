@@ -32,6 +32,8 @@ import btm.sword.util.math.VectorUtil;
 import lombok.Getter;
 import lombok.Setter;
 
+import javax.annotation.Nullable;
+
 public class Attack extends SwordAction implements Runnable {
 
     protected Combatant attacker;
@@ -46,7 +48,6 @@ public class Attack extends SwordAction implements Runnable {
     protected Vector curUp; // Reserved for future vertical knockback calculations
     protected Vector curForward; // Reserved for future c2 knockback calculations
 
-    @Setter // origin can be set for stationary attacks
     protected Location origin;
     protected Location attackLocation; // current bezier vec + origin
 
@@ -252,18 +253,24 @@ public class Attack extends SwordAction implements Runnable {
         }
     }
 
-    void determineOrigin() {
-        if (origin == null)
-            origin = attackingEntity.getLocation().add(attacker.getChestVector());
-    }
-
-    public void setOriginOfAll(Location origin) {
+    public Attack setOriginOfAll(Location origin) {
         this.origin = origin;
         Attack cur = getNextAttack();
         while (cur != null) {
             cur.setOrigin(origin);
             cur = cur.getNextAttack();
         }
+        return this;
+    }
+
+    void determineOrigin() {
+        if (origin == null)
+            origin = attackingEntity.getLocation().add(attacker.getChestVector());
+    }
+
+    public Attack setOrigin(@Nullable Location origin) {
+        this.origin = origin;
+        return this;
     }
 
     // TODO: #128 - Make Particle Effects more dynamic. Low prio.
@@ -333,8 +340,10 @@ public class Attack extends SwordAction implements Runnable {
     // static function oriented with the players current basis to be used when the attack is executed.
     void generateBezierFunction() {
         Basis basis = orientWithPitch ?
-                VectorUtil.getBasis(attackingEntity.getEyeLocation(), attackingEntity.getEyeLocation().getDirection()) :
-                VectorUtil.getBasisWithoutPitch(attackingEntity);
+                VectorUtil.getBasis(
+                    origin == null ? attackingEntity.getEyeLocation() : origin,
+                    origin == null ? attackingEntity.getEyeLocation().getDirection() : origin.getDirection()) :
+                VectorUtil.getBasisWithoutPitch(origin == null ? attackingEntity.getEyeLocation() : origin);
         curRight = basis.right();
         curUp = basis.up();
         curForward = basis.forward();

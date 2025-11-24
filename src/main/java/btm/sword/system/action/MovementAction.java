@@ -61,6 +61,9 @@ public class MovementAction extends SwordAction {
                 boolean onGround = executor.isGrounded();
                 Location o = ex.getEyeLocation();
 
+                // for use in dash attack method.
+                executor.setDashDirection(ex.getEyeLocation().getDirection().multiply(forward ? 1 : -1));
+
                 PotionEffect speed = new PotionEffect(PotionEffectType.SPEED, Config.Movement.SPEED_DURATION, Config.Movement.SPEED_AMPLIFIER);
                 ex.addPotionEffect(speed);
 
@@ -71,7 +74,6 @@ public class MovementAction extends SwordAction {
                                 entity instanceof ItemDisplay id &&
                                 InteractiveItemArbiter.checkIfInteractive(id)) &&
                                 !InteractiveItemArbiter.isImpaling(SwordEntityArbiter.get(ex.getUniqueId()), id));
-//                executor.message("Targeted: " + targetedItem);
 
                 if (targetedItem instanceof ItemDisplay id &&
                         !id.isDead() &&
@@ -92,10 +94,6 @@ public class MovementAction extends SwordAction {
                             if (t > Config.Movement.DASH_PARTICLE_TIMER_THRESHOLD) cancel();
                         }
                     }.runTaskTimer(Sword.getInstance(), Config.Movement.DASH_PARTICLE_TASK_DELAY, Config.Movement.DASH_PARTICLE_TASK_PERIOD);
-
-
-//					if (impedanceCheck != null)
-//						executor.message("Hit block: " + impedanceCheck.getHitBlock());
 
                     if (impedanceCheck == null || impedanceCheck.getHitBlock() == null) {
                         double length = id.getLocation().subtract(ex.getEyeLocation()).length();

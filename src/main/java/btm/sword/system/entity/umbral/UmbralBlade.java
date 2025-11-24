@@ -575,8 +575,7 @@ public class UmbralBlade extends ThrownItem {
 
         attack = heavy ? heavyAttacks[0].apply(thrower) : basicAttacks[0].apply(thrower); // TODO dynamic.
 
-        attack.setOriginOfAll(attackOrigin);
-        attack.execute(thrower);
+        attack.setOriginOfAll(attackOrigin).execute(thrower);
     }
 
     public void performTargetedAttack(double range) {
@@ -675,8 +674,7 @@ public class UmbralBlade extends ThrownItem {
                     .setCallback(attackEndCallback, 200),
                 100);
 
-        attack.setOriginOfAll(attackOrigin);
-        attack.execute(thrower);
+        attack.setOriginOfAll(attackOrigin).execute(thrower);
     }
 
     private boolean isTooFarOrIdleTooLong() {

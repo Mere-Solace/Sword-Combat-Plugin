@@ -28,6 +28,8 @@ import btm.sword.system.entity.types.Combatant;
 import btm.sword.system.entity.types.SwordPlayer;
 import btm.sword.system.entity.umbral.input.BladeRequest;
 
+import javax.annotation.Nullable;
+
 /**
  * Provides attack-related actions for {@link Combatant} entities.
  * <p>
@@ -60,7 +62,7 @@ public class AttackAction extends SwordAction {
         executor.message("> Basic Attack Method Call.");
 
         if (executor.getItemStackInHand(true).isEmpty()) {
-            throwPunch(executor);
+            throwPunch(executor, -1);
             return;
         }
 
@@ -70,22 +72,15 @@ public class AttackAction extends SwordAction {
             if (executor.getAspects().soulfireCur() >= 10f &&
                 executor.getUmbralBlade().inState(StandbyState.class)) {
 
-                if (executor instanceof SwordPlayer swordPlayer) {
-                    if (!swordPlayer.isAtRoot()) {
-                        // can't just auto weave attacks and spam left
-                        throwPunch(executor); // punch to finish the attack sequence.
-                        return;
-                    }
-
-                    swordPlayer.resetTree(); // Reset the tree if they perform a quick attack with the blade.
-                }
-
                 executor.getUmbralBlade().request(BladeRequest.ATTACK_QUICK);
 
+                if (executor instanceof SwordPlayer swordPlayer) {
+                    swordPlayer.resetTree();
+                }
                 return;
             }
 
-            throwPunch(executor);
+            throwPunch(executor, -1);
             return;
         }
 
@@ -111,7 +106,8 @@ public class AttackAction extends SwordAction {
 
             for (var entry : attackMap.entrySet()) {
                 if (itemType.name().endsWith(entry.getKey())) {
-                    entry.getValue().accept(executor, attackType, true);
+                                                                    // with pitch?
+                    entry.getValue().accept(executor, attackType, attackType != AttackType.D_AIR);
                     return;
                 }
             }
@@ -122,8 +118,8 @@ public class AttackAction extends SwordAction {
         new Attack(type, orientWithPitch, 40, 60, 0.1, 0.9).execute(executor);
     }
 
-    public static void punch(Combatant executor, boolean right) {
-        double dist = 2.5;
+    public static void punch(Combatant executor, boolean right, double distance) {
+        double dist = distance < 0 ? 2.5 : distance;
         double spacing = 0.33;
 
         Prefab.Sounds.PUNCH_ATTEMPT.play(executor.entity());
@@ -149,7 +145,7 @@ public class AttackAction extends SwordAction {
         }
     }
 
-    public static void throwPunch(Combatant executor) {
+    public static void throwPunch(Combatant executor, double distance) {
         executor.setTimeOfLastAttack(System.currentTimeMillis());
         int cooldown = (int) executor.calcValueReductive(AspectType.FINESSE,
             Config.Combat.ATTACKS_CAST_TIMING_MIN_DURATION,
@@ -158,7 +154,7 @@ public class AttackAction extends SwordAction {
         executor.setDurationOfLastAttack(cooldown * Config.Combat.ATTACKS_DURATION_MULTIPLIER);
 
         cast(executor, cooldown,
-            () -> punch(executor, ThreadLocalRandom.current().nextBoolean())
+            () -> punch(executor, ThreadLocalRandom.current().nextBoolean(), distance)
         );
     }
 }

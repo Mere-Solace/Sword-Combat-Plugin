@@ -2,6 +2,7 @@ package btm.sword.system.entity.types;
 
 import java.time.Duration;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import javax.annotation.Nullable;
 
@@ -100,6 +101,11 @@ public class SwordPlayer extends Combatant {
     private SwordEntity targetedEntity;
     private TextDisplay targetIndicator;
 
+    private int prevFormVal;
+    private float formProgress;
+    private final Supplier<Float> formExpTickStepVal = () -> 1.0f / aspects.form().effectivePeriod();
+                                                // 1.0f because needs to be scaled between 0 and 1.
+
     /**
      * Constructs a new SwordPlayer wrapping a Bukkit {@link Player} with associated {@link PlayerData}.
      * Initializes the input execution tree and player head item.
@@ -174,7 +180,9 @@ public class SwordPlayer extends Combatant {
             inventoryUpkeep();
         }
 
-        targetEntityIndicatorTick(); // TODO: check if this worked!
+        targetEntityIndicatorTick();
+
+        expBarTick();
     }
 
     /**
@@ -302,7 +310,22 @@ public class SwordPlayer extends Combatant {
     @Override
     protected void updateStatus() {
         super.updateStatus();
-        player.setLevel((int) aspects.formCur());
+    }
+
+    private void expBarTick() {
+        int curFormVal = (int) aspects.formCur();
+        if (prevFormVal == curFormVal) {
+            if (curFormVal == aspects.formMaxVal()) {
+                return; // don't want to go over: it causes an error
+            }
+            formProgress += formExpTickStepVal.get(); // Suppliers are so cool!
+        }
+        else {
+            player.setLevel(curFormVal);
+            formProgress = 0;
+        }
+        player.setExp(Math.max(0.0f, Math.min(1.0f, formProgress))); // clamp between 0 and 1
+        prevFormVal = curFormVal;
     }
 
     private void inventoryUpkeep() {
@@ -379,7 +402,7 @@ public class SwordPlayer extends Combatant {
     public void updateVisualStats() {
         player.setAbsorptionAmount(aspects.toughnessCur());
         player.setHealth(Math.max(1, aspects.shardsCur()));
-        player.setFoodLevel((int) (20 * (aspects.soulfireCur()/aspects.soulfireVal())));
+        player.setFoodLevel((int) (20 * (aspects.soulfireCur()/aspects.soulfireMaxVal())));
     }
 
     /**

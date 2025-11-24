@@ -76,6 +76,9 @@ public abstract class SwordEntity {
     private boolean statusActive;
 
     private long timeOfLastAttack;
+    /**
+     * in milliseconds
+     */
     private int durationOfLastAttack;
 
     private boolean grounded;
@@ -205,9 +208,9 @@ public abstract class SwordEntity {
 
     private void updateStatusDisplayText() {
         int shards = (int) aspects.shardsCur();
-        int maxEffShards = (int) aspects.shardsVal();
+        int maxEffShards = (int) aspects.shardsMaxVal();
         float toughness = aspects.toughnessCur();
-        float maxEffToughness = aspects.toughnessVal();
+        float maxEffToughness = aspects.toughnessMaxVal();
 
         String bar = "█".repeat(shards);
         TextComponent filledHealth = Component.text(bar, TextColor.color(5, 200, 7));

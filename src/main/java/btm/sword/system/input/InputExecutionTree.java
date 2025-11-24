@@ -4,6 +4,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.function.Consumer;
 
+import btm.sword.system.action.DashAttackAction;
+
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
@@ -375,6 +377,18 @@ public class InputExecutionTree {
                 false,
                 true,
                 true);
+        add(List.of(InputType.SWAP, InputType.SWAP, InputType.LEFT),
+            new InputAction(
+                executor -> DashAttackAction.dashAttack(executor, true),
+                executor -> 0L,
+                Combatant::canPerformAction,
+                false,
+                true,
+                true),
+            7,
+            false,
+            true,
+            true);
 
         add(List.of(InputType.SHIFT, InputType.SHIFT),
                 new InputAction(
@@ -388,6 +402,18 @@ public class InputExecutionTree {
                 false,
                 true,
                 true);
+        add(List.of(InputType.SHIFT, InputType.SHIFT, InputType.LEFT),
+            new InputAction(
+                executor -> DashAttackAction.dashAttack(executor, false),
+                executor -> 0L,
+                Combatant::canPerformAction,
+                false,
+                true,
+                true),
+            7,
+            false,
+            true,
+            true);
 
         // grab
         add(List.of(InputType.SHIFT, InputType.LEFT),
