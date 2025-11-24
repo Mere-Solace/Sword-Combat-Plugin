@@ -98,7 +98,7 @@ public abstract class Combatant extends SwordEntity {
     public void onDeath() {
         super.onDeath();
         if (umbralBlade.getDisplay().isValid()) {
-            Prefab.Particles.UMBRAL_POOF.display(umbralBlade.getDisplay().getLocation());
+            Prefab.Particles.UMBRAL_BLADE_POOF.display(umbralBlade.getDisplay().getLocation());
         }
         if (umbralBlade.getDisplay() == null || !umbralBlade.getDisplay().isValid()) {
             message("Display is null.");
@@ -111,7 +111,7 @@ public abstract class Combatant extends SwordEntity {
     public void onZeroHealth() {
         super.onZeroHealth();
         if (umbralBlade != null && umbralBlade.getDisplay().isValid()) {
-            Prefab.Particles.UMBRAL_POOF.display(umbralBlade.getDisplay().getLocation());
+            Prefab.Particles.UMBRAL_BLADE_POOF.display(umbralBlade.getDisplay().getLocation());
             umbralBlade.dispose();
         }
     }
@@ -184,7 +184,6 @@ public abstract class Combatant extends SwordEntity {
         setGrabbing(true);
         target.setGrabbed(true);
         setGrabbedEntity(target);
-        t.damage(0.25, self);
         Prefab.Particles.GRAB_CLOUD.display(t.getLocation().add(new Vector(0, 1, 0)));
     }
 

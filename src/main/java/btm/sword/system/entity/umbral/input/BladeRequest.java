@@ -14,5 +14,6 @@ public enum BladeRequest {
     ACTIVATE_AS_SHEATHED,
     DEACTIVATE,
     RESUME_FROM_REPAIR,
-    REPAIR_DISPLAY
+    REPAIR_DISPLAY,
+    FINISHER,
 }

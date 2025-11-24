@@ -1,5 +1,6 @@
-package btm.sword.system.action;
+package btm.sword.system.action.skill;
 
+import btm.sword.system.action.SwordAction;
 import btm.sword.system.entity.types.Combatant;
 import btm.sword.system.entity.umbral.UmbralBlade;
 import btm.sword.system.entity.umbral.input.BladeRequest;
@@ -42,6 +43,13 @@ public class UmbralBladeAction extends SwordAction {
     }
 
     public static void sweep(Combatant wielder) {
+        UmbralBlade blade = wielder.getUmbralBlade();
+        if (blade == null) return;
+
+        blade.request(BladeRequest.ATTACK_HEAVY);
+    }
+
+    public static void spiralFinisher(Combatant wielder) {
         UmbralBlade blade = wielder.getUmbralBlade();
         if (blade == null) return;
 

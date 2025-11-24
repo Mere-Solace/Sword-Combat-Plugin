@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
+import btm.sword.util.sound.SoundType;
+
 import org.bukkit.Color;
 import org.bukkit.Material;
 import org.bukkit.Particle;
@@ -50,7 +52,14 @@ public class Prefab {
         public static final ParticleWrapper GRAB_ATTEMPT = new ParticleWrapper(Particle.SONIC_BOOM, 2, 0.01, 0.01, 0.01);
         public static final ParticleWrapper PUNCH = new ParticleWrapper(Particle.GUST, 1, 0, 0, 0, 0);
 
-        public static final ParticleWrapper UMBRAL_POOF = new ParticleWrapper(Particle.LARGE_SMOKE, 50, 0.5, 0.5, 0.5, 0.001);
+        public static final ParticleWrapper UMBRAL_BLADE_POOF = new ParticleWrapper(Particle.LARGE_SMOKE, 50, 0.5, 0.5, 0.5, 0.001);
+        public static final ParticleWrapper SOULFIRE_POOF = new ParticleWrapper(Particle.SMOKE, 3, 0.05, 0.05, 0.05, 0.0001);
+        public static final ParticleWrapper SMOKE = new ParticleWrapper(Particle.SMOKE, 1, 0.005, 0.005, 0.005, 0);
+
+        public static final ParticleWrapper UMBRAL_FLAME = new ParticleWrapper(Particle.DUST_COLOR_TRANSITION, 3, 0.05, 0.05, 0.05, 1,
+            new Particle.DustTransition(Color.fromRGB(53, 166, 240), Color.fromRGB(52, 72, 81), 0.5f));
+
+
 
         public static final ParticleWrapper THROW_TRAIl = new ParticleWrapper(Particle.DUST, 1, 0.2, 0.2, 0.2,
                 new Particle.DustOptions(Color.WHITE, 2.5f));
@@ -98,7 +107,7 @@ public class Prefab {
         );
 
         public static final HitPacket basicAttack = new HitPacket(
-            () -> 10f,
+            () -> 5f,
             () -> Config.Combat.ATTACK_CLASS_HIT_INVULN_TICKS,
             () -> Config.Combat.ATTACK_CLASS_HIT_SHARDS,
             () -> Config.Combat.ATTACK_CLASS_HIT_TOUGHNESS,
@@ -130,7 +139,7 @@ public class Prefab {
         );
 
         public static final HitPacket punch = new HitPacket(
-            () -> 10f,
+            () -> 7.5f,
             () -> 2,
             () -> 1,
             () -> 5f,
@@ -188,6 +197,18 @@ public class Prefab {
             () -> Config.Audio.THROW_SOUND,
             () -> Config.Audio.THROW_VOLUME,
             () -> Config.Audio.THROW_PITCH
+        );
+
+        public static final SoundWrapper SOULFIRE_GAIN_BACKGROUND = new SoundWrapper(
+            () -> SoundType.PARTICLE_SOUL_ESCAPE,
+            () -> 0.5f,
+            () -> 0.2f
+        );
+
+        public static final SoundWrapper SOULFIRE_GAIN = new SoundWrapper(
+            () -> SoundType.BLOCK_RESPAWN_ANCHOR_CHARGE,
+            () -> 0.5f,
+            () -> 0.05f
         );
     }
 

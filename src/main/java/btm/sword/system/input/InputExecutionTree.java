@@ -12,7 +12,7 @@ import btm.sword.Sword;
 import btm.sword.system.action.AttackAction;
 import btm.sword.system.action.DashAttackAction;
 import btm.sword.system.action.MovementAction;
-import btm.sword.system.action.UmbralBladeAction;
+import btm.sword.system.action.skill.UmbralBladeAction;
 import btm.sword.system.action.utility.GrabAction;
 import btm.sword.system.action.utility.UtilityAction;
 import btm.sword.system.action.utility.thrown.ThrowAction;

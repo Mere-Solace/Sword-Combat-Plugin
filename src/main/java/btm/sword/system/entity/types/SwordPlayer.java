@@ -317,6 +317,7 @@ public class SwordPlayer extends Combatant {
         int curFormVal = (int) aspects.formCur();
         if (prevFormVal == curFormVal) {
             if (curFormVal == aspects.formMaxVal()) {
+                formProgress = 0.99f;
                 return; // don't want to go over: it causes an error
             }
             formProgress += formExpTickStepVal.get(); // Suppliers are so cool!

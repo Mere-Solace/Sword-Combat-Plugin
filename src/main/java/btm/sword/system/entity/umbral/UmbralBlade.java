@@ -6,6 +6,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
+import btm.sword.system.entity.umbral.statemachine.state.FinisherState;
+
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -97,6 +99,8 @@ public class UmbralBlade extends ThrownItem {
     private ControlVectors ctrlPointsForLunge;
     private boolean finishedLunging = false;
 
+    private boolean skillFinished;
+
     private boolean dashingForward;
     private boolean dashingBackward;
 
@@ -175,6 +179,7 @@ public class UmbralBlade extends ThrownItem {
         // =====================================================================
         // SHEATHED
         // =====================================================================
+        // TODO: add a charged slash skill while sheathed
         bladeStateMachine.addTransition(new Transition<>(
             SheathedState.class,
             StandbyState.class,
@@ -248,6 +253,23 @@ public class UmbralBlade extends ThrownItem {
             blade -> {}
         ));
 
+        bladeStateMachine.addTransition(new Transition<>(
+            StandbyState.class,
+            FinisherState.class,
+            blade -> isRequestedAndActive(BladeRequest.FINISHER),
+            blade -> {}
+        ));
+
+
+        // =====================================================================
+        // FINISHER
+        // =====================================================================
+        bladeStateMachine.addTransition(new Transition<>(
+            FinisherState.class,
+            RecallingState.class,
+            blade -> isSkillFinished() || isRequestedAndActive(BladeRequest.STANDBY),
+            blade -> setSkillFinished(false)
+        ));
 
         // =====================================================================
         // WIELD
@@ -306,13 +328,6 @@ public class UmbralBlade extends ThrownItem {
             blade -> {}
         ));
 
-        bladeStateMachine.addTransition(new Transition<>(
-            RecallingState.class,
-            StandbyState.class,
-            blade -> isRequestedAndActive(BladeRequest.STANDBY),
-            blade -> {}
-        ));
-        // TODO: #122 - May time out sometimes upon returning to the player. Make a check for this and a time-out feature
         bladeStateMachine.addTransition(new Transition<>(
             RecallingState.class,
             StandbyState.class,
