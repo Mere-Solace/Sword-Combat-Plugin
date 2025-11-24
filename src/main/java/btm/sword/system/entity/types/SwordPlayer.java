@@ -1,12 +1,9 @@
 package btm.sword.system.entity.types;
 
 import java.time.Duration;
-import java.util.List;
 import java.util.function.Consumer;
 
 import javax.annotation.Nullable;
-
-import btm.sword.config.Config;
 
 import org.bukkit.Color;
 import org.bukkit.Material;
@@ -33,6 +30,7 @@ import org.joml.Vector3f;
 import com.destroystokyo.paper.profile.PlayerProfile;
 
 import btm.sword.Sword;
+import btm.sword.config.Config;
 import btm.sword.system.action.utility.thrown.ThrowAction;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.base.SwordEntity;
@@ -621,7 +619,7 @@ public class SwordPlayer extends Combatant {
 
         // TODO: #123 - This is where to implement catches for start clicking different items
 
-        if (!mainItemStackAtTimeOfHold.isEmpty())
+        if (!mainItemStackAtTimeOfHold.isEmpty() && !holdingUmbralItemInMainHand())
             setItemStackInHand(new ItemStack(Material.GUNPOWDER), true); // can change the logic here later
 
         rightTask = new BukkitRunnable() {
@@ -662,7 +660,7 @@ public class SwordPlayer extends Combatant {
         timeRightHeld = System.currentTimeMillis() - rightHoldTimeStart;
         setBlocking(false);
         setItemStackInHand(offItemStackAtTimeOfHold, false);
-        if (!mainItemStackAtTimeOfHold.isEmpty() && !threwItem)
+        if (!mainItemStackAtTimeOfHold.isEmpty() && !threwItem && !holdingUmbralItemInMainHand())
             setItemAtIndex(mainItemStackAtTimeOfHold, indexOfRightHold);
     }
 

@@ -585,7 +585,7 @@ public class UmbralBlade extends ThrownItem {
         int direction;
 
         if (target == null || target.isInvalid()) {
-            Location targeted = thrower.getChestLocation().add(thrower.entity().getEyeLocation().getDirection().multiply(12));
+            Location targeted = thrower.getChestLocation().add(thrower.entity().getEyeLocation().getDirection().multiply(range));
             Vector to = targeted.toVector().subtract(display.getLocation().toVector());
             direction = thrower.rightBasisVector(false).dot(to) > 0 ? -1: 1;
 
@@ -647,7 +647,7 @@ public class UmbralBlade extends ThrownItem {
         ControlVectors ctrl = new ControlVectors(start, end, c1, c2);
         GeneratedAttackProfile profile = new GeneratedAttackProfile(ctrl, Attack::getTo);
 
-        int duration = 30 * (int) Math.log(Math.max(1, dist));
+        int duration = 40 * (int) Math.log(Math.max(1, dist * dist));
 
         Attack attack = new UmbralBladeAttack(display, profile,
             true, true, 1,
@@ -689,7 +689,7 @@ public class UmbralBlade extends ThrownItem {
                 10, 30, 500,
                 0, 1)
                 .setBlade(this)
-                .setInitialMovementTicks(5)
+                .setInitialMovementTicks(25)
                 .setDrawParticles(false)
                 .setNextAttack(
                     new UmbralBladeAttack(display, AttackType.WIDE_UMBRAL_SLASH1,
@@ -830,7 +830,6 @@ public class UmbralBlade extends ThrownItem {
 
     @Override
     protected void teleport() {
-        to = cur.toVector().subtract(prev.toVector());
         display.teleport(cur.setDirection(to));
     }
 

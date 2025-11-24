@@ -41,7 +41,7 @@ public class AttackingHeavyState extends UmbralStateFacade {
 
     @Override
     public void onEnter(UmbralBlade blade) {
-        blade.performTargetedAttack(10);
+        blade.performTargetedAttack(8);
         blade.getDisplay().setGlowing(true);
         blade.getDisplay().setGlowColorOverride(Config.SwordColor.FEROCIOUS_SWEEP);
     }

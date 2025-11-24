@@ -295,6 +295,7 @@ public class ThrownItem {
             time = timeStep * timeScalingFactor;
         }
         cur = origin.clone().add(positionFunction.apply(time));
+        if (prev != null) to = cur.clone().subtract(prev).toVector();
         velocity = velocityFunction.apply(time);
     }
 
@@ -433,7 +434,7 @@ public class ThrownItem {
             @Override
             public void run() {
                 Location land = marker.getLocation();
-                land.setDirection(cur.toVector().subtract(prev.toVector()));
+                land.setDirection(to.normalize());
                 DisplayUtil.smoothTeleport(display, 1);
                 display.teleport(land);
                 marker.remove();

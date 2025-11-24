@@ -116,6 +116,14 @@ public class Prefab {
             () -> Config.Combat.THROWN_DAMAGE_SWORD_AXE_TOUGHNESS_DAMAGE,
             () -> Config.Combat.THROWN_DAMAGE_SWORD_AXE_SOULFIRE_REDUCTION
         );
+
+        public static final HitPacket umbralItemDisplayAttack = new HitPacket(
+            () -> 0f,
+            () -> 5,
+            () -> 1,
+            () -> 15f,
+            () -> 10f
+        );
     }
 
     /**

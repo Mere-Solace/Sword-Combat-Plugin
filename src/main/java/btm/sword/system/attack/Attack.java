@@ -204,7 +204,7 @@ public class Attack extends SwordAction implements Runnable {
                     attackLocation = origin.clone().add(cur);
 
                     drawAttackEffects();
-                    hit();
+                    performHitLogic();
                     swingTest();
 
                     // allows for chaining of attack logic
@@ -266,7 +266,7 @@ public class Attack extends SwordAction implements Runnable {
         Prefab.Particles.TEST_SWING.display(attackLocation);
     }
 
-    protected void hit() {
+    protected void performHitLogic() {
         applyHitEffects(collectHitEntities());
     }
 
@@ -281,16 +281,19 @@ public class Attack extends SwordAction implements Runnable {
                 currentTarget = sTarget;
 
                 if (!currentTarget.entity().isDead()) {
-                    currentTarget.hit(attacker, Prefab.Attacks.basicAttack,
-                            attackProfile.knockbackFunction().apply(this));
-
-                    Prefab.Particles.TEST_HIT.display(currentTarget.getChestLocation());
-
+                    hit();
                     if (onHitInstructions != null) onHitInstructions.accept(currentTarget);
                 }
             }
         }
         hitDuringAttack.addAll(targets);
+    }
+
+    protected void hit() {
+        currentTarget.hit(attacker, Prefab.Attacks.basicAttack,
+            attackProfile.knockbackFunction().apply(this));
+
+        Prefab.Particles.TEST_HIT.display(currentTarget.getChestLocation());
     }
 
     protected HashSet<LivingEntity> collectHitEntities() {

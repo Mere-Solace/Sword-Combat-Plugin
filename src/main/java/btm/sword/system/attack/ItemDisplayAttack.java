@@ -1,6 +1,8 @@
 package btm.sword.system.attack;
 
 
+import btm.sword.util.Prefab;
+
 import org.bukkit.entity.ItemDisplay;
 
 import btm.sword.util.display.DisplayUtil;
@@ -8,7 +10,7 @@ import lombok.Setter;
 
 public class ItemDisplayAttack extends Attack {
     @Setter
-    private ItemDisplay weaponDisplay;
+    protected ItemDisplay weaponDisplay;
     private final boolean displayOnly;
 
     private final int displaySteps;
@@ -44,9 +46,9 @@ public class ItemDisplayAttack extends Attack {
     }
 
     @Override
-    protected void hit() {
+    protected void performHitLogic() {
         if (displayOnly) return;
-        super.hit();
+        super.performHitLogic();
     }
 
     @Override
@@ -92,5 +94,14 @@ public class ItemDisplayAttack extends Attack {
     public ItemDisplayAttack setDrawParticles(boolean drawParticles) {
         this.drawParticles = drawParticles;
         return this;
+    }
+
+    // TODO: pass in an instance of HitValues
+    @Override
+    protected void hit() {
+        currentTarget.hit(attacker, Prefab.Attacks.thrownWeapon,
+            attackProfile.knockbackFunction().apply(this));
+
+        Prefab.Particles.TEST_HIT.display(currentTarget.getChestLocation());
     }
 }

@@ -6,8 +6,6 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-import net.kyori.adventure.text.format.NamedTextColor;
-
 import org.bukkit.Color;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Display.Billboard;
@@ -554,14 +552,14 @@ public class Config {
      * @see btm.sword.system.action.AttackAction Attack state machine
      */
     public static class Combat {
-        public static double SHARDS_LOST_PERCENT_TOUGHNESS_RESET = 0.75; // HP (1 heart = 2 HP)
+        public static double SHARDS_LOST_PERCENT_TOUGHNESS_RESET = 0.3; // Percent of HP
         static { register("combat.shards_lost_percent_toughness_reset",
             SHARDS_LOST_PERCENT_TOUGHNESS_RESET, Double.class,
             v -> SHARDS_LOST_PERCENT_TOUGHNESS_RESET = v,
             ConfigurationSection::getDouble
         ); }
 
-        public static float TOUGHNESS_RECHARGE_PERCENT = 0.75f; // HP (1 heart = 2 HP)
+        public static float TOUGHNESS_RECHARGE_PERCENT = 0.75f;
         static { register("combat.toughness_recharge_percent",
             TOUGHNESS_RECHARGE_PERCENT, Float.class,
             v -> TOUGHNESS_RECHARGE_PERCENT = v,
@@ -576,7 +574,7 @@ public class Config {
                 ConfigurationSection::getDouble
         ); }
 
-        public static double ATTACKS_DOWN_AIR_THRESHOLD = -0.85; // dot product (-1 to 1)
+        public static double ATTACKS_DOWN_AIR_THRESHOLD = -0.4; // dot product (-1 to 1)
         static { register("combat.attacks_down_air_threshold",
                 ATTACKS_DOWN_AIR_THRESHOLD, Double.class,
                 v -> ATTACKS_DOWN_AIR_THRESHOLD = v,
@@ -2260,7 +2258,7 @@ public class Config {
     //region UmbralBlade States
     // ==============================================================================
     public static class UmbralBlade {
-        public static double LUNGE_TIME_CUTOFF = 0.8;
+        public static double LUNGE_TIME_CUTOFF = 1.1;
         static { register(
             "umbral.time_cutoff",
             LUNGE_TIME_CUTOFF, Double.class,
