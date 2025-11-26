@@ -136,7 +136,7 @@ public class Attack extends SwordAction implements Runnable {
     public void execute(Combatant attacker) {
         this.attacker = attacker;
 
-        this.attackingEntity = attacker.entity();
+        this.attackingEntity = attacker.self();
         this.filter = entity ->
             entity instanceof LivingEntity livingEntity &&
             livingEntity != attackingEntity &&
@@ -167,7 +167,7 @@ public class Attack extends SwordAction implements Runnable {
     }
 
     void playSwingSoundEffects() {
-        Prefab.Sounds.ATTACK.play(attacker.entity());
+        Prefab.Sounds.ATTACK.play(attacker.self());
     }
 
     void applyConsistentEffects() {
@@ -291,7 +291,7 @@ public class Attack extends SwordAction implements Runnable {
 
                 currentTarget = sTarget;
 
-                if (!currentTarget.entity().isDead()) {
+                if (!currentTarget.self().isDead()) {
                     hit();
                     if (onHitInstructions != null) onHitInstructions.accept(currentTarget);
                 }

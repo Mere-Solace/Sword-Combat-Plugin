@@ -116,7 +116,7 @@ public class UmbralBlade extends ThrownItem {
             ));
             display.setPersistent(false);
 
-            thrower.entity().addPassenger(display);
+            thrower.self().addPassenger(display);
             display.setBillboard(Display.Billboard.FIXED);
         }, 5);
 
@@ -144,7 +144,7 @@ public class UmbralBlade extends ThrownItem {
         bladeStateMachine.addTransition(new Transition<>(
             UmbralStateFacade.class,
             InactiveState.class,
-            blade -> (thrower.entity() instanceof SwordPlayer sp &&
+            blade -> (thrower.self() instanceof SwordPlayer sp &&
                 sp.player().getGameMode().equals(GameMode.SPECTATOR)) ||
                 isRequested(BladeRequest.DEACTIVATE),
             blade -> {}
@@ -545,8 +545,8 @@ public class UmbralBlade extends ThrownItem {
                 @Override
                 public void run() {
                     DisplayUtil.smoothTeleport(display, 2);
-                    display.teleport(thrower.entity().getLocation().setDirection(thrower.getFlatDir()));
-                    thrower.entity().addPassenger(display);
+                    display.teleport(thrower.self().getLocation().setDirection(thrower.getFlatDir()));
+                    thrower.self().addPassenger(display);
                 }
             }, 50/x, TimeUnit.MILLISECONDS);
         }
@@ -603,7 +603,7 @@ public class UmbralBlade extends ThrownItem {
 
         if (target == null || target.isInvalid()) {
             attackOrigin = thrower.getChestLocation().clone()
-                .add(thrower.entity().getEyeLocation().getDirection().multiply(range));
+                .add(thrower.dir().multiply(range));
         }
         else {
             DrawUtil.secant(List.of(Prefab.Particles.TEST_SPARKLE), display.getLocation(), target.getChestLocation(), 0.5);
@@ -646,7 +646,7 @@ public class UmbralBlade extends ThrownItem {
         int direction;
 
         if (target == null || target.isInvalid()) {
-            Location targeted = thrower.getChestLocation().add(thrower.entity().getEyeLocation().getDirection().multiply(range));
+            Location targeted = thrower.getChestLocation().add(thrower.dir().multiply(range));
             Vector to = targeted.toVector().subtract(display.getLocation().toVector());
             direction = thrower.rightBasisVector(false).dot(to) > 0 ? -1: 1;
 
@@ -734,7 +734,7 @@ public class UmbralBlade extends ThrownItem {
 
     private boolean isTooFarOrIdleTooLong() {
         if (display == null) return false;
-        double distance = thrower.entity().getLocation().distance(display.getLocation());
+        double distance = thrower.self().getLocation().distance(display.getLocation());
         long timeSinceLastAction = System.currentTimeMillis() - lastActionTime;
         return distance > 20.0 || timeSinceLastAction > 30000;
     }
@@ -799,7 +799,7 @@ public class UmbralBlade extends ThrownItem {
             display = null;
         }
 
-        LivingEntity e = thrower.getSelf();
+        LivingEntity e = thrower.self();
         display = (ItemDisplay) e.getWorld().spawnEntity(e.getEyeLocation(), EntityType.ITEM_DISPLAY);
         displaySetupInstructions.accept(display);
     }
@@ -823,7 +823,7 @@ public class UmbralBlade extends ThrownItem {
 
         Vector dir;
         if (target == null) {
-            Location intent = thrower.entity().getEyeLocation().add(thrower.getEyeDirection().multiply(20));
+            Location intent = thrower.locFromEyeDir(20);
             dir = intent.toVector().subtract(display.getLocation().toVector());
         }
         else {
@@ -850,7 +850,7 @@ public class UmbralBlade extends ThrownItem {
             if (inState(LungingState.class) ||
                 inState(AttackingHeavyState.class) ||
                 inState(AttackingQuickState.class)) {
-                thrower.setVelocity(thrower.entity().getVelocity().add(to.clone().multiply(1.5)));
+                thrower.setVelocity(thrower.self().getVelocity().add(to.clone().multiply(1.5)));
             }
 
             request(BladeRequest.WIELD);
@@ -872,7 +872,7 @@ public class UmbralBlade extends ThrownItem {
 
         double heightOffset = Math.max(0, Math.min(cur.getY() - feet, hit.getHeight()));
 
-        boolean followHead = !Config.Combat.IMPALEMENT_HEAD_FOLLOW_EXCEPTIONS.contains(hitEntity.entity().getType())
+        boolean followHead = !Config.Combat.IMPALEMENT_HEAD_FOLLOW_EXCEPTIONS.contains(hitEntity.type())
             && heightOffset >= diff * Config.Combat.IMPALEMENT_HEAD_ZONE_RATIO;
         DisplayUtil.itemDisplayFollow(hitEntity, display,  velocity.clone().normalize(), heightOffset, followHead,
             blade -> !inState(LodgedState.class), this, null, null);
@@ -906,7 +906,7 @@ public class UmbralBlade extends ThrownItem {
 
     @Override
     protected void handleOnReleaseActions() {
-        Prefab.Sounds.THROW.play(getThrower().entity());
+        Prefab.Sounds.THROW.play(getThrower().self());
     }
 
     @Override

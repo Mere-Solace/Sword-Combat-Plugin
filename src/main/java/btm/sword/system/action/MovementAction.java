@@ -56,7 +56,7 @@ public class MovementAction extends SwordAction {
         cast (executor, Config.Movement.DASH_CAST_DURATION, new BukkitRunnable() {
             @Override
             public void run() {
-                LivingEntity ex = executor.entity();
+                LivingEntity ex = executor.self();
                 final Location dashStartLocation = ex.getLocation().add(new Vector(0, Config.Movement.DASH_INITIAL_OFFSET_Y, 0));
                 boolean onGround = executor.isGrounded();
                 Location o = ex.getEyeLocation();
@@ -177,8 +177,8 @@ public class MovementAction extends SwordAction {
      * @param target   The sword entity to toss.
      */
     public static void toss(Combatant executor, SwordEntity target) {
-        LivingEntity ex = executor.entity();
-        LivingEntity t = target.entity();
+        LivingEntity ex = executor.self();
+        LivingEntity t = target.self();
 
         double baseForce = Config.Movement.TOSS_BASE_FORCE;
         double force = executor.calcValueAdditive(AspectType.MIGHT, Config.Movement.TOSS_MIGHT_MULTIPLIER_BASE, baseForce, Config.Movement.TOSS_MIGHT_MULTIPLIER_INCREMENT);

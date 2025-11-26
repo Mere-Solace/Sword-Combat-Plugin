@@ -72,16 +72,16 @@ public abstract class Combatant extends SwordEntity {
         super(associatedEntity, combatProfile);
         this.airDashesPerformed = 0;
 
-        this.attrHealth = entity().getAttribute(Attribute.MAX_HEALTH);
+        this.attrHealth = self().getAttribute(Attribute.MAX_HEALTH);
         if (attrHealth != null) attrHealth.setBaseValue(combatProfile.getStat(AspectType.SHARDS).getValue());
 
-        this.attrAbsorption = entity().getAttribute(Attribute.MAX_ABSORPTION);
+        this.attrAbsorption = self().getAttribute(Attribute.MAX_ABSORPTION);
         if (attrAbsorption != null) attrAbsorption.setBaseValue(combatProfile.getStat(AspectType.TOUGHNESS).getValue());
 
-        this.attrArmor = entity().getAttribute(Attribute.ARMOR);
+        this.attrArmor = self().getAttribute(Attribute.ARMOR);
         if (attrArmor != null) attrArmor.setBaseValue(combatProfile.getStat(AspectType.FORM).getValue());
 
-        this.attrInteractionRange = entity().getAttribute(Attribute.ENTITY_INTERACTION_RANGE);
+        this.attrInteractionRange = self().getAttribute(Attribute.ENTITY_INTERACTION_RANGE);
     }
 
     @Override
@@ -123,7 +123,7 @@ public abstract class Combatant extends SwordEntity {
     }
 
     public void handleUmbralBladeTick() {
-        if (!entity().isValid()) return;
+        if (!self().isValid()) return;
 
         if (umbralBlade == null && !isStartingBlade()) {
             setupUmbralBlade();
@@ -180,7 +180,7 @@ public abstract class Combatant extends SwordEntity {
      * @param target the SwordEntity that is being grabbed
      */
     public void onGrab(SwordEntity target) {
-        LivingEntity t = target.entity();
+        LivingEntity t = target.self();
         setGrabbing(true);
         target.setGrabbed(true);
         setGrabbedEntity(target);
@@ -212,11 +212,11 @@ public abstract class Combatant extends SwordEntity {
      * and displaying associated particle effects.
      */
     public void onGrabHit() {
-        LivingEntity target = grabbedEntity.entity();
+        LivingEntity target = grabbedEntity.self();
         Location hitLoc = target.getLocation().add(0, target.getEyeHeight()*0.5, 0);
         Prefab.Particles.PUNCH.display(hitLoc);
         grabbedEntity.hit(this, Prefab.Attacks.grabHit,
-                target.getEyeLocation().subtract(self.getEyeLocation()).toVector());
+                target.getEyeLocation().subtract(eyeLoc()).toVector());
     }
 
     public boolean holdingUmbralItemInMainHand() {

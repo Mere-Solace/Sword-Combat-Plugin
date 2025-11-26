@@ -80,7 +80,7 @@ public class AttackAction extends SwordAction {
             return;
         }
 
-        double dot = executor.entity().getEyeLocation().getDirection().dot(Config.Direction.UP());
+        double dot = executor.dir().dot(Config.Direction.UP());
 
         if (executor.isGrounded()) {
             for (var entry : attackMap.entrySet()) {
@@ -118,16 +118,16 @@ public class AttackAction extends SwordAction {
         double dist = distance < 0 ? 2.5 : distance;
         double spacing = 0.33;
 
-        Prefab.Sounds.PUNCH_ATTEMPT.play(executor.entity());
+        Prefab.Sounds.PUNCH_ATTEMPT.play(executor.self());
 
-        Basis basis = VectorUtil.getBasis(executor.entity().getEyeLocation(), executor.getEyeDirection());
+        Basis basis = VectorUtil.getBasis(executor.eyeLoc(), executor.dir());
 
         Location originLoc = executor.getChestLocation()
             .add(right ? basis.right().multiply(spacing) : basis.right().multiply(-spacing));
 
         Prefab.Particles.PUNCH.display(originLoc.clone().add(basis.forward().multiply(dist)));
 
-        Entity hit = HitboxUtil.ray(originLoc, executor.getEyeDirection(), dist, 1.2,
+        Entity hit = HitboxUtil.ray(originLoc, executor.dir(), dist, 1.2,
             entity -> entity instanceof LivingEntity l &&
                 l.getUniqueId() != executor.getUniqueId() &&
                 SwordEntityArbiter.getOrAdd(l.getUniqueId()) != null);
@@ -135,8 +135,8 @@ public class AttackAction extends SwordAction {
         if (hit != null) {
             SwordEntity swordHit = SwordEntityArbiter.getOrAdd(hit.getUniqueId());
             if (swordHit != null) {
-                Prefab.Sounds.PUNCH_CONNECT.play(executor.entity());
-                swordHit.hit(executor, Prefab.Attacks.punch, executor.getEyeDirection());
+                Prefab.Sounds.PUNCH_CONNECT.play(executor.self());
+                swordHit.hit(executor, Prefab.Attacks.punch, executor.dir());
             }
         }
     }

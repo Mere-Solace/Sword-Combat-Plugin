@@ -9,6 +9,7 @@ import java.util.UUID;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Particle;
+import org.bukkit.World;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Display;
 import org.bukkit.entity.Entity;
@@ -66,7 +67,7 @@ import net.kyori.adventure.text.format.TextDecoration;
 public abstract class SwordEntity {
     protected final UUID uuid;
     protected final CombatProfile combatProfile;
-    protected LivingEntity self;
+    protected final LivingEntity self;
     protected String displayName;
 
     protected EntityAspects aspects;
@@ -233,22 +234,22 @@ public abstract class SwordEntity {
 
         statusDisplay.text(displayText);
 
-        if (entity() instanceof Player p) {
+        if (self() instanceof Player p) {
             p.hideEntity(Sword.getInstance(), statusDisplay);
         }
     }
 
     private void restartStatusDisplay() {
-        if (!entity().isValid() || (statusDisplay != null && !statusDisplay.isDead()))
+        if (!self().isValid() || (statusDisplay != null && !statusDisplay.isDead()))
             return;
 
         setStatusActive(false);
 
-        if (!(entity() instanceof LivingEntity living) || living instanceof ArmorStand) return;
-        if (entity().getType() == EntityType.ITEM_DISPLAY || entity().getType() == EntityType.ITEM) return;
+        if (!(self() instanceof LivingEntity living) || living instanceof ArmorStand) return;
+        if (self().getType() == EntityType.ITEM_DISPLAY || self().getType() == EntityType.ITEM) return;
 
-        statusDisplay = (TextDisplay) entity().getWorld().spawnEntity(entity().getEyeLocation().setDirection(Config.Direction.NORTH()), EntityType.TEXT_DISPLAY);
-        if (entity() instanceof Player p) {
+        statusDisplay = (TextDisplay) self().getWorld().spawnEntity(eyeLoc().setDirection(Config.Direction.NORTH()), EntityType.TEXT_DISPLAY);
+        if (self() instanceof Player p) {
             p.hideEntity(Sword.getInstance(), statusDisplay);
         }
         statusDisplay.addScoreboardTag("remove_on_shutdown");
@@ -271,7 +272,7 @@ public abstract class SwordEntity {
 
         updateStatusDisplayText();
 
-        entity().addPassenger(statusDisplay);
+        self().addPassenger(statusDisplay);
         statusDisplay.setBillboard(Display.Billboard.VERTICAL);
 
         setStatusActive(true);
@@ -356,12 +357,32 @@ public abstract class SwordEntity {
      *
      * @return the Bukkit living entity
      */
-    public LivingEntity entity() {
+    public LivingEntity self() {
         return self;
     }
 
+    public World world() {
+        return self.getWorld();
+    }
+
+    public Vector dir() {
+        return eyeLoc().getDirection();
+    }
+
+    public Location eyeLoc() {
+        return self.getEyeLocation();
+    }
+
+    public Location locFromEyeDir(double distance) {
+        return eyeLoc().add(dir().multiply(distance));
+    }
+
+    public EntityType type() {
+        return self.getType();
+    }
+
     public boolean isInvalid() {
-        return !entity().isValid();
+        return !self().isValid();
     }
 
     /**
@@ -442,7 +463,7 @@ public abstract class SwordEntity {
         self.damage(0.01);
 
         Prefab.Particles.TEST_HIT.display(getChestLocation());
-        SoundUtil.playSound(source.entity(), SoundType.ENTITY_PLAYER_ATTACK_STRONG,
+        SoundUtil.playSound(source.self(), SoundType.ENTITY_PLAYER_ATTACK_STRONG,
             Config.Audio.ENTITY_HIT_CONNECT_VOLUME, Config.Audio.ENTITY_HIT_CONNECT_PITCH);
 
         self.setVelocity(knockbackVelocity);
@@ -462,7 +483,7 @@ public abstract class SwordEntity {
         if (toughnessBroken) {
             // If Shards == 0 (dead)
             if (aspects.shards().remove(baseNumShards)) {
-                self.damage(74077740, source.entity());
+                self.damage(74077740, source.self());
                 if (!self.isDead())
                     self.setHealth(0);
                 onZeroHealth();
@@ -494,7 +515,7 @@ public abstract class SwordEntity {
             afflictions);
     }
 
-    private void reapSoulfire(Combatant source, float totalAmount) {
+    protected void reapSoulfire(Combatant source, float totalAmount) {
         float remainder = totalAmount;
         List<Float> packets = new ArrayList<>();
 
@@ -783,7 +804,7 @@ public abstract class SwordEntity {
     }
 
     public void setItemInInventory(int index, ItemStack item) {
-        if (entity() instanceof Player p) {
+        if (self() instanceof Player p) {
             p.getInventory().setItem(index, item);
         } else setItemStackInHand(item, index == 0);
     }
@@ -812,7 +833,7 @@ public abstract class SwordEntity {
      * @return a horizontal facing {@link Vector} based on the eye direction
      */
     public Vector getFlatDir() {
-        double yawRads = Math.toRadians(self.getEyeLocation().getYaw());
+        double yawRads = Math.toRadians(eyeLoc().getYaw());
         return new Vector(-Math.sin(yawRads), 0, Math.cos(yawRads));
     }
 
@@ -837,7 +858,7 @@ public abstract class SwordEntity {
 
     public SwordEntity getTargetedEntity(double range) {
         LivingEntity target = (LivingEntity) HitboxUtil.ray(
-                entity().getEyeLocation(), entity().getEyeLocation().getDirection(), range, 1,
+                eyeLoc(), dir(), range, 1,
                 entity -> entity instanceof LivingEntity e &&
                         !(e.getUniqueId() == getUniqueId()) &&
                         e.isValid());
@@ -885,23 +906,23 @@ public abstract class SwordEntity {
     }
 
     private void updateEyeDirectionBasis() {
-        currentEyeDirectionBasis = VectorUtil.getBasis(entity().getEyeLocation(), entity().getEyeLocation().getDirection());
+        currentEyeDirectionBasis = VectorUtil.getBasis(eyeLoc(), dir());
         timeOfLastEyeBasisCalculation = System.currentTimeMillis();
     }
 
     private void updateBodyDirectionBasis() {
-        currentBodyDirectionBasis = VectorUtil.getBasisWithoutPitch(entity());
+        currentBodyDirectionBasis = VectorUtil.getBasisWithoutPitch(self());
         timeOfLastBodyBasisCalculation = System.currentTimeMillis();
     }
 
     public void drawBasis() {
-        Basis testBasis = VectorUtil.getBasisWithoutPitch(entity());
+        Basis testBasis = VectorUtil.getBasisWithoutPitch(self());
         DrawUtil.line(List.of(Prefab.Particles.TEST_SWORD_BLUE),
-                entity().getEyeLocation(), testBasis.right(), 4, 0.25);
+                eyeLoc(), testBasis.right(), 4, 0.25);
         DrawUtil.line(List.of(Prefab.Particles.TEST_SWORD_BLUE),
-                entity().getEyeLocation(), testBasis.up(), 4, 0.25);
+                eyeLoc(), testBasis.up(), 4, 0.25);
         DrawUtil.line(List.of(Prefab.Particles.TEST_SWORD_BLUE),
-                entity().getEyeLocation(), testBasis.forward(), 4, 0.25);
+                eyeLoc(), testBasis.forward(), 4, 0.25);
     }
 
     public Vector getChestVector() {
@@ -909,10 +930,6 @@ public abstract class SwordEntity {
     }
 
     public Location getLocation() {
-        return entity().getLocation();
-    }
-
-    public Vector getEyeDirection() {
-        return entity().getLocation().getDirection();
+        return self().getLocation();
     }
 }

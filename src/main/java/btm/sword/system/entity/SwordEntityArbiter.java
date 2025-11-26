@@ -7,6 +7,7 @@ import java.util.UUID;
 
 import org.bukkit.Bukkit;
 import org.bukkit.World;
+import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
@@ -15,6 +16,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 import btm.sword.Sword;
 import btm.sword.system.entity.base.CombatProfile;
 import btm.sword.system.entity.base.SwordEntity;
+import btm.sword.system.entity.types.Dummy;
 import btm.sword.system.entity.types.Hostile;
 import btm.sword.system.entity.types.Passive;
 import btm.sword.system.entity.types.SwordPlayer;
@@ -54,9 +56,7 @@ public class SwordEntityArbiter {
             if (onlineSwordPlayers.get(entityUUID) == null) {
                 onlineSwordPlayers.put(entityUUID, new SwordPlayer(player, PlayerDataManager.getPlayerData(entityUUID)));
             }
-            else {
-                onlineSwordPlayers.get(entityUUID).setSelf(player);
-            }
+
             if (Sword.getInstance().isEnabled()) {
                 new BukkitRunnable() {
                     @Override
@@ -67,7 +67,9 @@ public class SwordEntityArbiter {
             }
         }
         else if (!entity.isDead()) {
-            existingSwordNPCs.putIfAbsent(entityUUID, initializeNPC((LivingEntity) entity));
+            SwordEntity swordEntity = initializeNPC((LivingEntity) entity);
+            if (swordEntity == null) return;
+            existingSwordNPCs.putIfAbsent(entityUUID, swordEntity);
             if (Sword.getInstance().isEnabled()) {
                 new BukkitRunnable() {
                     @Override
@@ -138,6 +140,18 @@ public class SwordEntityArbiter {
             case ZOMBIE, SKELETON, WITHER_SKELETON, ENDERMAN, WARDEN -> {
                 return new Hostile(entity, new CombatProfile());
             }
+            case ARMOR_STAND -> {
+                return new Dummy((ArmorStand) entity, new CombatProfile());
+            }
+            case ITEM_DISPLAY, ITEM_FRAME, GLOW_ITEM_FRAME, TEXT_DISPLAY, BLOCK_DISPLAY, FALLING_BLOCK, MINECART,
+                 CHEST_MINECART, FURNACE_MINECART, HOPPER_MINECART, PAINTING, OMINOUS_ITEM_SPAWNER, ITEM, PALE_OAK_BOAT,
+                 ACACIA_BOAT, BIRCH_BOAT, BIRCH_CHEST_BOAT, ACACIA_CHEST_BOAT, CHERRY_BOAT, CHERRY_CHEST_BOAT, JUNGLE_CHEST_BOAT,
+                 DARK_OAK_BOAT, DARK_OAK_CHEST_BOAT, JUNGLE_BOAT, MANGROVE_BOAT, MANGROVE_CHEST_BOAT, OAK_BOAT, OAK_CHEST_BOAT,
+                 PALE_OAK_CHEST_BOAT, SPRUCE_BOAT, SPRUCE_CHEST_BOAT, EXPERIENCE_ORB, EYE_OF_ENDER, UNKNOWN, AREA_EFFECT_CLOUD,
+                 EGG, END_CRYSTAL, ENDER_PEARL, EXPERIENCE_BOTTLE, TRIDENT, EVOKER_FANGS, WIND_CHARGE, ARROW, BREEZE_WIND_CHARGE,
+                 BAMBOO_CHEST_RAFT, BAMBOO_RAFT, FISHING_BOBBER, TNT, TNT_MINECART, COMMAND_BLOCK_MINECART, FIREBALL, FIREWORK_ROCKET,
+                 DRAGON_FIREBALL, SMALL_FIREBALL, LEASH_KNOT, LLAMA_SPIT, SHULKER_BULLET, WITHER_SKULL, LINGERING_POTION, LIGHTNING_BOLT ,
+                 MARKER -> { return null; }
             default -> {
                 return new Passive(entity, new CombatProfile());
             }

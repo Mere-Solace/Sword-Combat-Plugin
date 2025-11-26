@@ -2,7 +2,13 @@ package btm.sword.system.inventory;
 
 import java.util.List;
 
+import btm.sword.Sword;
+import btm.sword.system.entity.SwordEntityArbiter;
+import btm.sword.system.entity.types.Dummy;
+
 import org.bukkit.Material;
+import org.bukkit.entity.ArmorStand;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
@@ -11,6 +17,9 @@ import btm.sword.system.entity.types.SwordPlayer;
 import btm.sword.system.item.ItemStackBuilder;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextDecoration;
+
+import org.bukkit.scheduler.BukkitRunnable;
+
 import xyz.xenondevs.invui.gui.Gui;
 import xyz.xenondevs.invui.item.builder.ItemBuilder;
 import xyz.xenondevs.invui.item.impl.SimpleItem;
@@ -83,8 +92,26 @@ public class InvInterfaceManager {
         Player player = swordPlayer.player();
 
         SimpleItem queueForCTF = new SimpleItem(
-            new ItemBuilder(Material.GUSTER_BANNER_PATTERN).setDisplayName("Join the Queue for Capture the Flag"),
+            new ItemBuilder(Material.GUSTER_BANNER_PATTERN)
+                .setDisplayName("Join the Queue for Capture the Flag"),
             click ->  click.getPlayer().sendMessage("Starting!")
+        );
+
+        SimpleItem spawnDummy = new SimpleItem(
+            new ItemBuilder(Material.ARMOR_STAND)
+                .setDisplayName("Spawn a Training Dummy (max: 3 per player)"),
+            click ->  {
+                if (swordPlayer.getCurNumDummies() >= swordPlayer.getMaxNumDummies()) {
+                    swordPlayer.message("You have the max number of dummies active!");
+                    return;
+                }
+                ArmorStand dummy = (ArmorStand) swordPlayer.world().spawnEntity(swordPlayer.locFromEyeDir(2), EntityType.ARMOR_STAND);
+                Dummy swordDummy = (Dummy) SwordEntityArbiter.getOrAdd(dummy.getUniqueId());
+                if (swordDummy == null || swordDummy.isInvalid()) return;
+                swordDummy.setOwner(swordPlayer);
+                swordPlayer.getYourDummies().add(swordDummy);
+                swordPlayer.incrementNumDummies();
+            }
         );
 
         Gui gui = Gui.normal()
@@ -93,12 +120,13 @@ public class InvInterfaceManager {
                 "# . Q . . . . . #",
                 "# . . . H . . . #",
                 "# . . . P . . . #",
-                "# . . . . . . . #",
+                "# . . . . . D . #",
                 "# # # # # # # # #")
             .addIngredient('#', new SimpleItem(new ItemBuilder(Material.BLACK_STAINED_GLASS_PANE)))
             .addIngredient('Q', queueForCTF)
             .addIngredient('H', swordPlayer.getPlayerHead())
             .addIngredient('P', HOW_TO_PLAY_ITEM)
+            .addIngredient('D', spawnDummy)
             .build();
 
         Window window = Window.single()

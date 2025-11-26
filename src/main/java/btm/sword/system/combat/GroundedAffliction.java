@@ -13,13 +13,13 @@ public class GroundedAffliction extends Affliction {
 
     @Override
     public void onApply(SwordEntity afflicted) {
-        LivingEntity a = afflicted.entity();
+        LivingEntity a = afflicted.self();
         Vector v = a.getVelocity();
         a.setVelocity(new Vector(v.getX(), -strength, v.getZ()));
     }
 
     @Override
     public void end(SwordEntity afflicted) {
-        Prefab.Particles.THROW_TRAIl.display(afflicted.entity().getLocation());
+        Prefab.Particles.THROW_TRAIl.display(afflicted.self().getLocation());
     }
 }

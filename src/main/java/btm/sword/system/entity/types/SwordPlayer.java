@@ -1,6 +1,7 @@
 package btm.sword.system.entity.types;
 
 import java.time.Duration;
+import java.util.HashSet;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -70,8 +71,12 @@ public class SwordPlayer extends Combatant {
 
     private ItemStack menuButton;
 
+    private final int maxNumDummies = 3;
+    private int curNumDummies = 0;
+    private HashSet<Dummy> yourDummies = new HashSet<>();
+
     private final InputExecutionTree inputExecutionTree;
-    private final long inputTimeoutMillis = 1200L;
+    private final long baseInputTimeoutMillis = 1400L;
 
     private boolean performedDropAction;
     private boolean changingHandIndex;
@@ -118,13 +123,6 @@ public class SwordPlayer extends Combatant {
         player = (Player) self;
         profile = player.getPlayerProfile();
         username = profile.getName();
-
-//        playerHead = new ItemStack(Material.PLAYER_HEAD);
-//
-//        SkullMeta skullMeta = (SkullMeta) playerHead.getItemMeta();
-//
-//        skullMeta.setPlayerProfile(profile);
-//        playerHead.setItemMeta(skullMeta);
 
         ItemStack temp = new ItemStack(Material.PLAYER_HEAD);
         SkullMeta skullMeta = (SkullMeta) temp.getItemMeta();
@@ -462,7 +460,7 @@ public class SwordPlayer extends Combatant {
                 Component.text("~*#*~", NamedTextColor.DARK_GRAY, TextDecoration.ITALIC),
                 Title.Times.times(
                     Duration.ofMillis(20),
-                    Duration.ofMillis(inputTimeoutMillis),
+                    Duration.ofMillis(baseInputTimeoutMillis),
                     Duration.ofMillis(20))));
     }
 
@@ -472,7 +470,7 @@ public class SwordPlayer extends Combatant {
             Component.text(String.format("%.1f", aspects.soulfireCur()) + "/" + required, Config.SwordColor.TEXT_ITEM_BASE, TextDecoration.ITALIC),
             Title.Times.times(
                 Duration.ofMillis(20),
-                Duration.ofMillis(inputTimeoutMillis),
+                Duration.ofMillis(baseInputTimeoutMillis),
                 Duration.ofMillis(20))));
     }
 
@@ -485,7 +483,7 @@ public class SwordPlayer extends Combatant {
                 Component.text("*}- Disabled -{*", NamedTextColor.DARK_GRAY, TextDecoration.ITALIC),
                 Title.Times.times(
                     Duration.ofMillis(20),
-                    Duration.ofMillis(inputTimeoutMillis),
+                    Duration.ofMillis(baseInputTimeoutMillis),
                     Duration.ofMillis(20))));
     }
 
@@ -503,7 +501,7 @@ public class SwordPlayer extends Combatant {
                 Component.text("on cooldown: " + timeToDisplay + " " + unit, NamedTextColor.GRAY, TextDecoration.ITALIC),
                 Title.Times.times(
                     Duration.ofMillis(20),
-                    Duration.ofMillis(inputTimeoutMillis),
+                    Duration.ofMillis(baseInputTimeoutMillis),
                     Duration.ofMillis(20))));
     }
 
@@ -608,9 +606,9 @@ public class SwordPlayer extends Combatant {
         }
 
         if (targetIndicator == null || !targetIndicator.isValid()) {
-            targetIndicator = (TextDisplay) entity().getWorld().spawnEntity(targetedEntity.getLocation(), EntityType.TEXT_DISPLAY);
+            targetIndicator = (TextDisplay) self().getWorld().spawnEntity(targetedEntity.getLocation(), EntityType.TEXT_DISPLAY);
 
-            targetedEntity.entity().addPassenger(targetIndicator);
+            targetedEntity.self().addPassenger(targetIndicator);
 
             targetIndicator.setBillboard(Display.Billboard.VERTICAL);
             targetIndicator.text(Component.text("⮟",
@@ -815,5 +813,13 @@ public class SwordPlayer extends Combatant {
                 droppingInInv = false;
             }
         }.runTaskLater(Sword.getInstance(), 1L);
+    }
+
+    public void incrementNumDummies() {
+        curNumDummies++;
+    }
+
+    public void decrementNumDummies() {
+        curNumDummies = Math.max(0, curNumDummies - 1);
     }
 }

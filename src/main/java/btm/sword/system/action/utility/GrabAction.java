@@ -58,7 +58,7 @@ public class GrabAction extends SwordAction {
                 double grabThickness = executor.calcValueAdditive(AspectType.WILLPOWER, 0.75, baseGrabThickness,
                     Config.Grab.THICKNESS_SCALING);
 
-                LivingEntity ex = executor.entity();
+                LivingEntity ex = executor.self();
                 Location o = ex.getEyeLocation();
 
                 Entity grabbedItem = HitboxUtil.ray(o, o.getDirection(), range, grabThickness,
