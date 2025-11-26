@@ -68,12 +68,18 @@ public class MovementAction extends SwordAction {
                 ex.addPotionEffect(speed);
 
                 // check for an item that may be the target of the dash
-                Entity targetedItem = HitboxUtil.ray(o, o.getDirection(), maxDistance, Config.Movement.DASH_RAY_HITBOX_RADIUS,
+                Entity targetedItem;
+
+                if (executor.getItemStackInHand(true).isEmpty()) {
+                    targetedItem = HitboxUtil.ray(o, o.getDirection(), maxDistance, Config.Movement.DASH_RAY_HITBOX_RADIUS,
                         entity -> (entity.getType() == EntityType.ITEM_DISPLAY &&
-                                !entity.isDead() &&
-                                entity instanceof ItemDisplay id &&
-                                InteractiveItemArbiter.checkIfInteractive(id)) &&
-                                !InteractiveItemArbiter.isImpaling(SwordEntityArbiter.get(ex.getUniqueId()), id));
+                            !entity.isDead() &&
+                            entity instanceof ItemDisplay id &&
+                            InteractiveItemArbiter.checkIfInteractive(id)) &&
+                            !InteractiveItemArbiter.isImpaling(SwordEntityArbiter.get(ex.getUniqueId()), id));
+                } else {
+                    targetedItem = null; //  can't dash and grab a new item off the ground if already holding something
+                }
 
                 if (targetedItem instanceof ItemDisplay id &&
                         !id.isDead() &&
@@ -134,6 +140,7 @@ public class MovementAction extends SwordAction {
                         executor.message("You can't dash to that item...");
                     }
                 }
+
 
                 double dashPower = Config.Movement.DASH_BASE_POWER;
                 double s = forward ? dashPower : -dashPower;

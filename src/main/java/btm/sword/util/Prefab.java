@@ -58,19 +58,13 @@ public class Prefab {
         public static final ParticleWrapper UMBRAL_FLAME = new ParticleWrapper(Particle.DUST_COLOR_TRANSITION, 3, 0.05, 0.05, 0.05, 1,
             new Particle.DustTransition(Color.fromRGB(53, 166, 240), Color.fromRGB(52, 72, 81), 0.5f));
 
-
-
         public static final ParticleWrapper THROW_TRAIl = new ParticleWrapper(Particle.DUST, 1, 0.2, 0.2, 0.2,
                 new Particle.DustOptions(Color.WHITE, 2.5f));
 
-                public static final ParticleWrapper GRAB_HIT_1 = new ParticleWrapper(Particle.FLAME, 50, 0.6, 0.6, 0.6, 0.02);
-        public static final ParticleWrapper GRAB_HIT_2 = new ParticleWrapper(Particle.DUST, 3, 0.01, 0.01, 0.01,
-                new Particle.DustOptions(Color.ORANGE, 3f));
+        public static final ParticleWrapper TOUGH_BREAK_1 = new ParticleWrapper(Particle.ENCHANTED_HIT, 70, 1, 1, 1, 0);
 
-        public static final ParticleWrapper TOUGH_BREAK_1 = new ParticleWrapper(Particle.GUST, 2, 0.1, 0.1, 0.1, 1);
-
-        public static final ParticleWrapper TOUGH_RECHARGE_1 = new ParticleWrapper(Particle.LAVA, 10, 0.1, 0.1, 0.1, 0.25);
-        public static final ParticleWrapper TOUGH_RECHARGE_2 = new ParticleWrapper(Particle.FLAME, 100, 0.5, 0.5, 0.5, 0.5);
+        public static final ParticleWrapper TOUGH_RECHARGE_1 = new ParticleWrapper(Particle.ENCHANT, 100, 1, 1, 1, 0.1);
+        public static final ParticleWrapper TOUGH_RECHARGE_2 = new ParticleWrapper(Particle.SOUL_FIRE_FLAME, 40, 0.5, 0.5, 0.5, 0.75);
     }
 
     public static class Value {

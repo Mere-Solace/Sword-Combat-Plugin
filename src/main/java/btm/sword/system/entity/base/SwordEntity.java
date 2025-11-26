@@ -78,8 +78,8 @@ public abstract class SwordEntity {
     protected boolean shouldTick;
     protected long ticks;
 
-    private TextDisplay statusDisplay;
-    private boolean statusActive;
+    protected TextDisplay statusDisplay;
+    protected boolean statusActive;
 
     private long timeOfLastAttack;
     /**
@@ -216,7 +216,7 @@ public abstract class SwordEntity {
         updateStatusDisplayText();
     }
 
-    private void updateStatusDisplayText() {
+    protected void updateStatusDisplayText() {
         int shards = (int) aspects.shardsCur();
         int maxEffShards = (int) aspects.shardsMaxVal();
         float toughness = aspects.toughnessCur();
@@ -251,8 +251,7 @@ public abstract class SwordEntity {
 
         setStatusActive(false);
 
-        if (!(self() instanceof LivingEntity living) || living instanceof ArmorStand) return;
-        if (self().getType() == EntityType.ITEM_DISPLAY || self().getType() == EntityType.ITEM) return;
+//        if (self().getType() == EntityType.ITEM_DISPLAY || self().getType() == EntityType.ITEM) return;
 
         statusDisplay = (TextDisplay) self().getWorld().spawnEntity(eyeLoc().setDirection(Config.Direction.NORTH()), EntityType.TEXT_DISPLAY);
         if (self() instanceof Player p) {

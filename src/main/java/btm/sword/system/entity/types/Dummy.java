@@ -1,9 +1,17 @@
 package btm.sword.system.entity.types;
 
+import btm.sword.Sword;
 import lombok.Setter;
 
+import net.kyori.adventure.text.Component;
+
 import org.bukkit.entity.ArmorStand;
+import org.bukkit.entity.Display;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Player;
+import org.bukkit.entity.TextDisplay;
+import org.bukkit.util.Transformation;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 
@@ -16,6 +24,9 @@ import btm.sword.system.entity.base.CombatProfile;
 import btm.sword.util.Prefab;
 import btm.sword.util.sound.SoundType;
 import btm.sword.util.sound.SoundUtil;
+
+import org.joml.Quaternionf;
+import org.joml.Vector3f;
 
 public class Dummy extends Passive {
     @Setter
@@ -30,7 +41,7 @@ public class Dummy extends Passive {
      */
     public Dummy(ArmorStand dummy, @NotNull CombatProfile combatProfile) {
         super(dummy, combatProfile);
-        combatProfile.setStat(AspectType.SHARDS, new ResourceValue(10, 20, 2));
+        combatProfile.setStat(AspectType.SHARDS, new ResourceValue(10, 20, 1));
     }
 
     public ArmorStand armorStand() {
@@ -40,10 +51,6 @@ public class Dummy extends Passive {
     @Override
     protected void onTick() {
         super.onTick();
-
-        if (ticks % 20 == 0) {
-            restartStatusDisplay();
-        }
     }
 
     @Override
