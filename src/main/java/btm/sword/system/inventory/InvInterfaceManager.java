@@ -2,24 +2,21 @@ package btm.sword.system.inventory;
 
 import java.util.List;
 
-import btm.sword.Sword;
-import btm.sword.system.entity.SwordEntityArbiter;
-import btm.sword.system.entity.types.Dummy;
-
 import org.bukkit.Material;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.scheduler.BukkitRunnable;
 
+import btm.sword.Sword;
 import btm.sword.config.Config;
+import btm.sword.system.entity.SwordEntityArbiter;
+import btm.sword.system.entity.types.Dummy;
 import btm.sword.system.entity.types.SwordPlayer;
 import btm.sword.system.item.ItemStackBuilder;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextDecoration;
-
-import org.bukkit.scheduler.BukkitRunnable;
-
 import xyz.xenondevs.invui.gui.Gui;
 import xyz.xenondevs.invui.item.builder.ItemBuilder;
 import xyz.xenondevs.invui.item.impl.SimpleItem;

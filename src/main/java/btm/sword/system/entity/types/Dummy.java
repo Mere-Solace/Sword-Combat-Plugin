@@ -1,17 +1,7 @@
 package btm.sword.system.entity.types;
 
-import btm.sword.Sword;
-import lombok.Setter;
-
-import net.kyori.adventure.text.Component;
-
 import org.bukkit.entity.ArmorStand;
-import org.bukkit.entity.Display;
-import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
-import org.bukkit.entity.Player;
-import org.bukkit.entity.TextDisplay;
-import org.bukkit.util.Transformation;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 
@@ -24,9 +14,8 @@ import btm.sword.system.entity.base.CombatProfile;
 import btm.sword.util.Prefab;
 import btm.sword.util.sound.SoundType;
 import btm.sword.util.sound.SoundUtil;
+import lombok.Setter;
 
-import org.joml.Quaternionf;
-import org.joml.Vector3f;
 
 public class Dummy extends Passive {
     @Setter

@@ -185,6 +185,7 @@ public abstract class Combatant extends SwordEntity {
         target.setGrabbed(true);
         setGrabbedEntity(target);
         Prefab.Particles.GRAB_CLOUD.display(t.getLocation().add(new Vector(0, 1, 0)));
+        Prefab.Sounds.PUNCH_CONNECT.play(self);
     }
 
     /**

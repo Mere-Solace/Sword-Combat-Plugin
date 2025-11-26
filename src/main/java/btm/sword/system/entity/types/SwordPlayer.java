@@ -444,7 +444,7 @@ public class SwordPlayer extends Combatant {
     public void displayInputSequence() {
         self.showTitle(Title.title(
                 Component.text(""),
-                Component.text(inputExecutionTree.toString(), NamedTextColor.DARK_RED, TextDecoration.ITALIC),
+                inputExecutionTree.getInputSequenceAsComponent(),
                 Title.Times.times(
                     Duration.ofMillis(20),
                     Duration.ofMillis(inputExecutionTree.timeoutTicks() * 50),

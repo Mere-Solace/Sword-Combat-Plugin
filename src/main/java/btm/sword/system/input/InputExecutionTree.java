@@ -1,7 +1,9 @@
 package btm.sword.system.input;
 
-import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 
 import org.bukkit.plugin.Plugin;
@@ -9,6 +11,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 
 import btm.sword.Sword;
+import btm.sword.config.Config;
 import btm.sword.system.action.AttackAction;
 import btm.sword.system.action.DashAttackAction;
 import btm.sword.system.action.MovementAction;
@@ -23,6 +26,8 @@ import btm.sword.system.entity.types.SwordPlayer;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.SneakyThrows;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.TextDecoration;
 
 /**
  * Represents a finite state tree that tracks sequences of player {@link InputType} inputs,
@@ -40,14 +45,15 @@ public class InputExecutionTree {
     private final SwordPlayer owner;
 
     private InputNode currentNode;
-    private InputNode previousNode;
-    private StringBuilder sequenceToDisplay;
+    private Component baseSequenceToDisplay;
+    private Component potentialInputSelectionText;
     private BukkitTask timeoutTimer;
 
     public InputExecutionTree(SwordPlayer owner) {
         this.owner = owner;
         currentNode = root;
-        sequenceToDisplay = new StringBuilder();
+        baseSequenceToDisplay = Component.text("");
+        potentialInputSelectionText = Component.text("");
         timeoutTimer = null;
     }
 
@@ -68,6 +74,7 @@ public class InputExecutionTree {
      */
     public InputNode step(InputType input) {
         stopTimeoutTimer();
+        potentialInputSelectionText = Component.text(""); // reset potential input before new step
         // before taking input, if it is known that the current node is a leaf, reset and take input from the root
         if (!hasChildren()) reset();
 
@@ -98,13 +105,45 @@ public class InputExecutionTree {
             return null; // added this so that stepping forward cannot occur
         }
 
-        sequenceToDisplay.append(inputToString(input));
+        baseSequenceToDisplay = baseSequenceToDisplay.append(Component.text(inputToString(input),
+            Config.SwordColor.TITLE_INPUT_STRING, TextDecoration.BOLD));
 
-        previousNode = currentNode;
         currentNode = next;
 
         if (hasChildren()) {
-            sequenceToDisplay.append(" + ");
+            baseSequenceToDisplay = baseSequenceToDisplay.append(Component.text(" ➞ ",
+                Config.SwordColor.TITLE_INPUT_STRING, TextDecoration.ITALIC));
+
+            Iterator<Map.Entry<InputType, InputNode>> it = currentNode.getChildren().entrySet().iterator();
+            while (it.hasNext()) {
+                Map.Entry<InputType, InputNode> entry = it.next();
+                InputAction action = entry.getValue().getAction();
+
+                boolean ready;
+                if (action == null) {
+                    ready = true;
+                }
+                else if (entry.getKey().equals(InputType.DROP)) {
+                    ready = action.canCast(owner) &&
+                        owner.getAspects().soulfireCur() >= action.getRequiredSoulfire() &&
+                        !owner.getItemTypeInHand(true).isAir();
+                }
+                else {
+                    ready = action.canCast(owner) &&
+                        owner.getAspects().soulfireCur() >= action.getRequiredSoulfire();
+                }
+                potentialInputSelectionText = potentialInputSelectionText
+                    .append(Component.text(inputToString(entry.getKey()),
+                        ready ?
+                            Config.SwordColor.TEXT_ITEM_BASE :
+                            Config.SwordColor.TEXT_COOL_DARK,
+                        ready ?
+                            TextDecoration.BOLD :
+                            TextDecoration.ITALIC))
+                    .append(it.hasNext() ?
+                        Component.text(", ", Config.SwordColor.TEXT_COOL_DARK) :
+                        Component.text(""));
+            }
             startTimeoutTimer();
         }
 
@@ -143,7 +182,7 @@ public class InputExecutionTree {
      */
     public void reset() {
         currentNode = root;
-        sequenceToDisplay = new StringBuilder();
+        baseSequenceToDisplay = Component.text("");
     }
 
     /**
@@ -303,14 +342,8 @@ public class InputExecutionTree {
         return !currentNode.children.isEmpty();
     }
 
-    /**
-     * Returns the string representation of the current input sequence for display.
-     *
-     * @return string representation of input sequence
-     */
-    @Override
-    public String toString() {
-        return sequenceToDisplay.toString();
+    public Component getInputSequenceAsComponent() {
+        return Component.textOfChildren(baseSequenceToDisplay, potentialInputSelectionText);
     }
 
     /**
@@ -660,7 +693,7 @@ public class InputExecutionTree {
         private InputAction action;
         private Consumer<SwordPlayer> internalAction;
         private long timeoutTicks;
-        private final HashMap<InputType, InputNode> children = new HashMap<>();
+        private final LinkedHashMap<InputType, InputNode> children = new LinkedHashMap<>();
         private boolean sameItemRequired;
         private boolean cancellable;
         private boolean display;
