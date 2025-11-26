@@ -20,6 +20,8 @@ import org.bukkit.entity.Player;
 import org.bukkit.entity.TextDisplay;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Transformation;
 import org.bukkit.util.Vector;
@@ -197,6 +199,10 @@ public abstract class SwordEntity {
             }
         }
 
+        if (isImpaled()) {
+            self.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 1, 1));
+        }
+
         if (statusDisplay != null && isStatusActive()) {
             updateStatus();
         }
@@ -239,7 +245,7 @@ public abstract class SwordEntity {
         }
     }
 
-    private void restartStatusDisplay() {
+    protected void restartStatusDisplay() {
         if (!self().isValid() || (statusDisplay != null && !statusDisplay.isDead()))
             return;
 
@@ -691,6 +697,12 @@ public abstract class SwordEntity {
      */
     public void message(String message) {
         self.sendMessage(message);
+    }
+
+    public void debug(Class<?> clazz, int lineNum, String message) {
+        if (Config.Debug.LOGGING_VERBOSE_CONFIG) {
+            self.sendMessage("{ " + clazz + " } " + " -[" + lineNum + "]- :: " + message);
+        }
     }
 
     /**

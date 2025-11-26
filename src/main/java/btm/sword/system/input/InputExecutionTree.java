@@ -93,7 +93,10 @@ public class InputExecutionTree {
         }
 
         // TODO: check if this breaks anything, and maybe make optional with a boolean
-        if (next.action != null && !next.action.canCast(owner)) return null; // added this so that stepping forward cannot occur
+        if (next.action != null && !next.action.canCast(owner)) {
+            owner.debug(this.getClass(), 97, "Can't cast next action!");
+            return null; // added this so that stepping forward cannot occur
+        }
 
         sequenceToDisplay.append(inputToString(input));
 

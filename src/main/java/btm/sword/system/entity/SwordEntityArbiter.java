@@ -141,7 +141,11 @@ public class SwordEntityArbiter {
                 return new Hostile(entity, new CombatProfile());
             }
             case ARMOR_STAND -> {
-                return new Dummy((ArmorStand) entity, new CombatProfile());
+                if (entity instanceof ArmorStand stand) {
+                    if (stand.isMarker() || !stand.isVisible() || !stand.getScoreboardTags().contains("dummy")) return null;
+                    return new Dummy(stand, new CombatProfile());
+                }
+                return null;
             }
             case ITEM_DISPLAY, ITEM_FRAME, GLOW_ITEM_FRAME, TEXT_DISPLAY, BLOCK_DISPLAY, FALLING_BLOCK, MINECART,
                  CHEST_MINECART, FURNACE_MINECART, HOPPER_MINECART, PAINTING, OMINOUS_ITEM_SPAWNER, ITEM, PALE_OAK_BOAT,

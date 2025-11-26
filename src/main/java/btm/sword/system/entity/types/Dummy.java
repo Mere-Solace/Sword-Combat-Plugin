@@ -33,8 +33,22 @@ public class Dummy extends Passive {
         combatProfile.setStat(AspectType.SHARDS, new ResourceValue(10, 20, 2));
     }
 
+    public ArmorStand armorStand() {
+        return (ArmorStand) self;
+    }
+
+    @Override
+    protected void onTick() {
+        super.onTick();
+
+        if (ticks % 20 == 0) {
+            restartStatusDisplay();
+        }
+    }
+
     @Override
     public void onDeath() {
+        if (owner == null || owner.isInvalid()) return;
         owner.getYourDummies().remove(this);
         owner.decrementNumDummies();
         super.onDeath();

@@ -648,8 +648,7 @@ public class ThrownItem {
         Predicate<Entity> filter = entity ->
                         entity.getUniqueId() != display.getUniqueId() &&
                         (entity instanceof LivingEntity l) &&
-                        !l.isDead() &&
-                        l.getType() != EntityType.ARMOR_STAND;
+                        !l.isDead();
         // Throwing a weapon should not immediately result in catching it, therefore a grace period is in place.
         return timeStep < Config.Timing.THROWN_ITEMS_CATCH_GRACE_PERIOD ?
             entity -> filter.test(entity) && entity.getUniqueId() != thrower.getUniqueId() :

@@ -2139,7 +2139,7 @@ public class Config {
             v -> LOGGING_VERBOSE_MOVEMENT = v,
             ConfigurationSection::getBoolean); }
 
-        public static boolean LOGGING_VERBOSE_CONFIG = false;
+        public static boolean LOGGING_VERBOSE_CONFIG = true;
         static { register(
             "debug.logging_verbose_config",
             LOGGING_VERBOSE_CONFIG, Boolean.class

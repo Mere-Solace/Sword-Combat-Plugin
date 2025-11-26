@@ -106,11 +106,21 @@ public class InvInterfaceManager {
                     return;
                 }
                 ArmorStand dummy = (ArmorStand) swordPlayer.world().spawnEntity(swordPlayer.locFromEyeDir(2), EntityType.ARMOR_STAND);
-                Dummy swordDummy = (Dummy) SwordEntityArbiter.getOrAdd(dummy.getUniqueId());
-                if (swordDummy == null || swordDummy.isInvalid()) return;
-                swordDummy.setOwner(swordPlayer);
-                swordPlayer.getYourDummies().add(swordDummy);
-                swordPlayer.incrementNumDummies();
+                dummy.addScoreboardTag("dummy");
+
+                new BukkitRunnable() {
+                    @Override
+                    public void run() {
+                        Dummy swordDummy = (Dummy) SwordEntityArbiter.getOrAdd(dummy.getUniqueId());
+                        if (swordDummy == null || swordDummy.isInvalid()) {
+                            cancel();
+                            return;
+                        }
+                        swordDummy.setOwner(swordPlayer);
+                        swordPlayer.getYourDummies().add(swordDummy);
+                        swordPlayer.incrementNumDummies();
+                    }
+                }.runTaskLater(Sword.getInstance(), 2L);
             }
         );
 
