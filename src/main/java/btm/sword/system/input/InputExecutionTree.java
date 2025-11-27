@@ -394,12 +394,12 @@ public class InputExecutionTree {
 
     /**
      * Initializes the input tree with predefined combos and mapped {@link InputAction}s.
-     * Sets c1 example combos for movement, grabbing, attacks, throwing, and utility actions.
+     * Sets up example combos for movement, grabbing, attacks, throwing, and utility actions.
      */
     @SneakyThrows
     public void initializeInputTree() {
         // Item independent actions:
-        // dodge c2, dodge backward
+        // dodge forward, dodge backward
         add(List.of(InputType.SWAP, InputType.SWAP),
             new InputAction(
                 executor -> MovementAction.dash(executor, true),

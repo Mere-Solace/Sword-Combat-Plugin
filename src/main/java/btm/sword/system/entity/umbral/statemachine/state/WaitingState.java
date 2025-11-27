@@ -7,7 +7,7 @@ import btm.sword.system.entity.umbral.statemachine.UmbralStateFacade;
  * State where the UmbralBlade is waiting after an attack completes.
  * <p>
  * In this state, the blade hovers in place with idle animations, registered
- * as an interactable item that can be picked c1 or commanded. If left idle
+ * as an interactable item that can be picked up or commanded. If left idle
  * too long or the wielder moves too far, it will automatically return.
  * </p>
  * <p>
@@ -28,7 +28,7 @@ import btm.sword.system.entity.umbral.statemachine.UmbralStateFacade;
  * <p>
  * <b>Typical Transitions:</b>
  * <ul>
- *   <li>WAITING → STANDBY (wielder picks it c1)</li>
+ *   <li>WAITING → STANDBY (wielder picks it up)</li>
  *   <li>WAITING → RETURNING (auto-return triggered)</li>
  * </ul>
  * </p>

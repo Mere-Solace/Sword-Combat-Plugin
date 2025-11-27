@@ -139,7 +139,7 @@ public class CombatProfile {
      * Assigns or replaces the {@link AspectValue} for a given {@link AspectType}.
      * <p>
      * Typically invoked by systems that recalculate derived stats or
-     * apply upgrades, such as when equipping a modifier or leveling c1.
+     * apply upgrades, such as when equipping a modifier or leveling up.
      * </p>
      *
      * @param type   the {@link AspectType} to modify

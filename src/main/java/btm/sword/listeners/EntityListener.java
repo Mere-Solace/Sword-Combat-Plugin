@@ -94,8 +94,7 @@ public class EntityListener implements Listener {
             aggressor = SwordEntityArbiter.get(damageSource.getCausingEntity().getUniqueId());
             if (aggressor instanceof Combatant c) {
 
-                // TODO: shield mechanics
-
+                // TODO: #136 shield mechanics
                 if (hurt != null)
                     hurt.hit(c, Prefab.Attacks.defaultMobHit, kb);
             }
@@ -113,7 +112,7 @@ public class EntityListener implements Listener {
      *
      * </p>
      *
-     * @param event the {@link EntityPickupItemEvent} triggered when an entity picks c1 an item
+     * @param event the {@link EntityPickupItemEvent} triggered when an entity picks up an item
      */
     @EventHandler
     public void entityPickupItemEvent(EntityPickupItemEvent event) {
@@ -121,7 +120,7 @@ public class EntityListener implements Listener {
         String itemType = event.getItem().getItemStack().getItemMeta().getPersistentDataContainer()
                 .get(new NamespacedKey(Sword.getInstance(), "weapon"), PersistentDataType.STRING);
         if (Objects.equals(itemType, "long_sword")) {
-            event.getEntity().sendMessage("Picked c1 a sword");
+            event.getEntity().sendMessage("Picked up a sword");
         }
     }
 }

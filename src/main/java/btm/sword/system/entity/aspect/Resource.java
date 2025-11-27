@@ -13,7 +13,7 @@ import lombok.Setter;
  * A {@code Resource} has a current value that automatically regenerates over time
  * according to its base regeneration period and amount. The regeneration process
  * is managed by a repeating Bukkit task that periodically restores the resource,
- * c1 to its effective maximum.
+ * up to its effective maximum.
  * </p>
  *
  * <p>

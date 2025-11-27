@@ -271,7 +271,7 @@ public class ThrownItem {
 
                 evaluate();
                 prev = cur.clone();
-                timeStep++; // Step time value c2 for next iteration
+                timeStep++; // Step time value forward for next iteration
             }
         }.runTaskTimer(Sword.getInstance(), 0L, 1L);
     }

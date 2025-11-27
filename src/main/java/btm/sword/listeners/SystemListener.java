@@ -15,7 +15,7 @@ public class SystemListener implements Listener {
     @EventHandler
     public void onWorldUnload(WorldUnloadEvent event) {
         SwordEntityArbiter.removeAllDisplays();
-        // Clean c1 any status displays in this world
+        // Clean up any status displays in this world
         for (Entity entity : event.getWorld().getEntitiesByClass(TextDisplay.class)) {
             if (entity.getScoreboardTags().contains("remove_on_shutdown") && entity.isValid() && !entity.isDead()) {
                 entity.remove();

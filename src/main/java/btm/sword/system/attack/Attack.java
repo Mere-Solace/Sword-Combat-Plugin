@@ -45,7 +45,7 @@ public class Attack extends SwordAction implements Runnable {
 
     protected Vector curRight;
     protected Vector curUp; // Reserved for future vertical knockback calculations
-    protected Vector curForward; // Reserved for future c2 knockback calculations
+    protected Vector curForward; // Reserved for future forward knockback calculations
 
     protected Location origin;
     protected Location attackLocation; // current bezier vec + origin

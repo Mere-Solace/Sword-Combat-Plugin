@@ -44,12 +44,12 @@ public class MovementAction extends SwordAction {
     /**
      * Performs a dash action for the executor.
      * <p>
-     * The dash moves the executor c2 or backward, handles velocity adjustments,
+     * The dash moves the executor forward or backward, handles velocity adjustments,
      * particle effects, ground checks, and can target {@link ItemDisplay} entities
      * if within range. Airborne dashes increment the executor's air dash count.
      *
      * @param executor The combatant performing the dash.
-     * @param forward  True for c2 dash, false for backward dash.
+     * @param forward  True for forward dash, false for backward dash.
      */ // TODO: #125 - This method is illegible, needs refactoring for readability
     public static void dash(Combatant executor, boolean forward) {
         double maxDistance = Config.Movement.DASH_MAX_DISTANCE;

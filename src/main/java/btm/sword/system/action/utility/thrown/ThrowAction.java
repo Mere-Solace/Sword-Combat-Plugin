@@ -129,7 +129,7 @@ public class ThrowAction extends SwordAction {
      * <p>
      * This marks the throw as successful, then schedules the {@link ThrownItem}
      * to be released after a short delay. The delay allows synchronization with
-     * client-side animations or wind-c1 frames before the item actually leaves the hand.
+     * client-side animations or wind-up frames before the item actually leaves the hand.
      * <p>
      * Once released, the item’s {@link ThrownItem#onRelease(double)} method is invoked,
      * which handles projectile motion, collision detection, and effects.

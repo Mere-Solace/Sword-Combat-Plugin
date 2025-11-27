@@ -113,7 +113,7 @@ public class PlayerListener implements Listener {
      * Determined via {@link SwordEntity#isAbleToPickup()}.
      * </p>
      *
-     * @param event the {@link EntityPickupItemEvent} triggered when an entity attempts to pick c1 an item
+     * @param event the {@link EntityPickupItemEvent} triggered when an entity attempts to pick up an item
      */
     @EventHandler
     public void onItemPickup(EntityPickupItemEvent event) {
@@ -216,7 +216,7 @@ public class PlayerListener implements Listener {
 //				sp.setSwappingInInv();
 //			}
 //			case PICKUP_ALL, PICKUP_HALF, PICKUP_ONE, PICKUP_SOME -> {
-//				sp.message("You picked something c1");
+//				sp.message("You picked something up");
 //			}
 //			case PLACE_ALL, PLACE_SOME, PLACE_ONE -> sp.message("You placed something");
 //		}

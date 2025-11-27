@@ -22,7 +22,7 @@ public abstract class SwordAction {
     // After the cast duration, the ability task of the executor is set to null, and then only the runnable
     // itself may cancel its operations internally.
     //
-    // abilities may still be canceled internally before the cast runnable is c1, though.
+    // abilities may still be canceled internally before the cast runnable is up, though.
 
     /**
      * @param executor The combatant casting this runnable ability

@@ -152,7 +152,7 @@ public class DisplayUtil {
         }.runTaskTimer(Sword.getInstance(), 0L, Config.Display.ITEM_DISPLAY_FOLLOW_UPDATE_INTERVAL);
     }
 
-    // x = start, y = c1, z = c2
+    // x = start, y = up, z = forward
     public static <T> void itemDisplayFollowLerpTillCondition(SwordEntity entity, ItemDisplay display, Vector offset, int tpDuration, int period, boolean withPitch, Predicate<T> endCondition, T toTest) {
         new BukkitRunnable() {
             @Override

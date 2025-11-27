@@ -22,7 +22,7 @@ import org.bukkit.util.Vector;
 public class HitboxUtil {
     /**
      * Returns all {@link LivingEntity} instances within a line-shaped hitbox starting from a location,
-     * extending towards a direction vector c1 to maxRange, with a specified hitbox thickness.
+     * extending towards a direction vector up to maxRange, with a specified hitbox thickness.
      * The executor is excluded from the results.
      *
      * @param executor the {@link LivingEntity} performing the hitbox check (excluded from results)
@@ -186,7 +186,7 @@ public class HitboxUtil {
     }
 
     /**
-     * Performs a ray trace from the executor's eye location c2 c1 to a maximum range,
+     * Performs a ray trace from the executor's eye location forward up to a maximum range,
      * returning the first non-dead {@link LivingEntity} hit, or null if none.
      *
      * @param executor the living entity performing the ray trace

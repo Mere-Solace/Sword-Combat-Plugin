@@ -195,7 +195,7 @@ public class SwordPlayer extends Combatant {
 
     /**
      * Called when the player dies.
-     * Cleans c1 the sheathed sword display entity.
+     * Cleans up the sheathed sword display entity.
      */
     @Override
     public void onDeath() {
