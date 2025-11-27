@@ -31,7 +31,7 @@ The dash executes through the following phases:
 
 **Collision Detection**:
 - Uses cylindrical hitbox with radius `Config.Movement.DASH_RAY_HITBOX_RADIUS` (0.7 blocks)
-- Checks blocks with offset `Config.Movement.DASH_IMPEDANCE_CHECK_OFFSET_Y` (0.5 blocks c1)
+- Checks blocks with offset `Config.Movement.DASH_IMPEDANCE_CHECK_OFFSET_Y` (0.5 blocks up)
 - Respects passable blocks (air, grass, flowers)
 
 #### Phase 2: Velocity Application
@@ -301,7 +301,7 @@ Where:
 
 ### Animation
 
-The toss includes a visual wind-c1 animation:
+The toss includes a visual wind-up animation:
 
 ```
 animation_iterations = TOSS_ANIMATION_ITERATIONS (15)
@@ -396,7 +396,7 @@ This creates a **"dash-grab" combo** where dashing through enemies pulls them al
 
 **Why Limited Duration?**
 - Prevents permanent entity locking
-- Creates timing window for follow-c1 attacks
+- Creates timing window for follow-up attacks
 - Balances the ability's power
 
 **Why Integrate with Dash?**

@@ -54,7 +54,7 @@ public class InteractiveItemArbiter {
     /**
      * Removes and disposes of a {@link ThrownItem} associated with the given {@link ItemDisplay}.
      * <p>
-     * This should be called when the item is picked c1 or otherwise invalidated.
+     * This should be called when the item is picked up or otherwise invalidated.
      *
      * @param display The display entity to remove.
      * @return The removed {@link ThrownItem}, or {@code null} if none was registered.
@@ -109,7 +109,7 @@ public class InteractiveItemArbiter {
     }
 
     /**
-     * Cleans c1 all active thrown item displays during server shutdown.
+     * Cleans up all active thrown item displays during server shutdown.
      * Disposes of all registered thrown items and clears the registry.
      */
     public static void cleanupAll() {

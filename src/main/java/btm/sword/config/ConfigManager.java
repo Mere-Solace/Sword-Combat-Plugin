@@ -72,7 +72,7 @@ public final class ConfigManager {
     }
 
     /**
-     * Sets c1 the config file, creating it from default resource if needed.
+     * Sets up the config file, creating it from default resource if needed.
      */
     @SuppressWarnings("all")
     private void setupConfig() {
@@ -179,7 +179,7 @@ public final class ConfigManager {
     /**
      * Resets configuration to default values.
      * <p>
-     * Backs c1 existing config and replaces with default from resources.
+     * Backs up existing config and replaces with default from resources.
      * </p>
      *
      * @return true if reset was successful

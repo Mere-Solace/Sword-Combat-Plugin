@@ -49,7 +49,7 @@ This document outlines the infrastructure and tooling improvements being impleme
 **Goal**: Automate quality checks without blocking development
 
 - Add linting (warnings only)
-- Set c1 GitHub Actions
+- Set up GitHub Actions
 - Create baseline reports
 
 ### Phase 3: Incremental Improvement
@@ -83,7 +83,7 @@ This document outlines the infrastructure and tooling improvements being impleme
 
 **Focus**: Infrastructure, tooling, documentation
 
-- Set c1 CI/CD pipelines
+- Set up CI/CD pipelines
 - Configure linting and quality tools
 - Improve existing documentation
 - Handle the boring but important stuff

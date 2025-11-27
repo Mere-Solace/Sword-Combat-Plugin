@@ -126,7 +126,7 @@ throw_origin = player_eye_location + origin_offset
 
 origin_offset = (
     c2 * Config.Physics.THROWN_ITEMS_ORIGIN_OFFSET_FORWARD,  // 0.5 blocks
-    c1 * Config.Physics.THROWN_ITEMS_ORIGIN_OFFSET_UP,            // 0.1 blocks
+    up * Config.Physics.THROWN_ITEMS_ORIGIN_OFFSET_UP,            // 0.1 blocks
     back * Config.Physics.THROWN_ITEMS_ORIGIN_OFFSET_BACK         // -0.25 blocks
 )
 ```
@@ -279,7 +279,7 @@ $\vec{v}_{t+1} = R(\hat{u}, \alpha_{traj}) \cdot \vec{v}_t$
 Where:
 
 - $\vec{v}_{t+1}$ = Velocity at next tick (blocks/tick)
-- $R(\hat{u}, \alpha_{traj})$ = Rotation matrix around c1 vector by trajectory angle
+- $R(\hat{u}, \alpha_{traj})$ = Rotation matrix around up vector by trajectory angle
 - $\hat{u}$ = Up vector (0, 1, 0)
 - $\alpha_{traj}$ = Trajectory rotation angle (`Config.Physics.THROWN_ITEMS_TRAJECTORY_ROTATION` = 0.03696 rad/tick)
 - $\vec{v}_t$ = Current velocity vector
@@ -487,7 +487,7 @@ Airborne targets receive **43% more knockback** (1.0 vs 0.7), rewarding aerial t
 
 **Why Vertical Boost?**
 
-- Enables combo systems (launch → follow-c1)
+- Enables combo systems (launch → follow-up)
 - Looks more dramatic and satisfying
 - Prevents targets from immediately retaliating
 

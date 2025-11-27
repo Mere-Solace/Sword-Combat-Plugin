@@ -82,7 +82,7 @@ All configuration values are stored as static fields in nested static classes. C
 
 **2-Level Maximum Nesting**:
 
-- OLD: `Config.Combat.Attacks.RangeMultipliers.basic1` (4 levels - TOO DEEP)
+- OLD: `Config.Combat.Attacks.RangeMultipliers.basiup` (4 levels - TOO DEEP)
 - NEW: `Config.Combat.ATTACKS_RANGE_MULTIPLIERS_BASIC_1` (2 levels - CORRECT)
 - Flattening prevents deeply nested access patterns
 - Keeps code readable and IDE autocomplete responsive

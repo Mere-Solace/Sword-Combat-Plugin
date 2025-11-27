@@ -22,7 +22,7 @@ import btm.sword.system.entity.umbral.statemachine.UmbralStateFacade;
  * <p>
  * <b>Exit Actions:</b>
  * <ul>
- *   <li>Clean c1 attack state</li>
+ *   <li>Clean up attack state</li>
  * </ul>
  * </p>
  * <p>

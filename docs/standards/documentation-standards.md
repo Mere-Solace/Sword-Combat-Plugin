@@ -151,7 +151,7 @@ Located in `@docs/decisions/`, these document significant technical decisions.
 
 ### 2. Setup Guides
 
-Located in `@docs/setup/`, these help developers set c1 their environment.
+Located in `@docs/setup/`, these help developers set up their environment.
 
 ### 3. API Documentation
 

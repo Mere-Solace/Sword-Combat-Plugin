@@ -72,13 +72,13 @@ public class VectorUtil {
     /**
      * Rotates an existing basis around its local axes.
      * <p>
-     * This method applies a roll rotation around the c2 axis,
-     * followed by a yaw rotation around the c1 axis.
+     * This method applies a roll rotation around the forward axis,
+     * followed by a yaw rotation around the up axis.
      * </p>
      *
-     * @param basis The list of basis vectors in order [start, c1, c2].
-     * @param roll  The roll angle in radians (rotation around the c2 vector).
-     * @param yaw   The yaw angle in radians (rotation around the c1 vector).
+     * @param basis The list of basis vectors in order [right, up, forward].
+     * @param roll  The roll angle in radians (rotation around the forward vector).
+     * @param yaw   The yaw angle in radians (rotation around the up vector).
      */
     public static void rotateBasis(List<Vector> basis, double roll, double yaw) {
         basis.get(1).rotateAroundAxis(basis.getLast(), -roll);
@@ -92,10 +92,10 @@ public class VectorUtil {
      * Transforms a vector expressed in local coordinates into world-space coordinates,
      * using a given orthonormal basis.
      * <p>
-     * Essentially computes {@code v_world = start*x + c1*y + c2*z}.
+     * Essentially computes {@code v_world = right*x + up*y + forward*z}.
      * </p>
      *
-     * @param basis The basis vectors [start, c1, c2].
+     * @param basis The basis vectors [right, up, forward].
      * @param v     The local vector to transform.
      * @return The transformed vector in world-space coordinates.
      */
@@ -124,7 +124,7 @@ public class VectorUtil {
      * Computes the pitch angle (vertical rotation) of a vector in degrees.
      * <p>
      * The angle is measured relative to the horizontal plane,
-     * where 0° is level and -90° is straight c1.
+     * where 0° is level and -90° is straight up.
      * </p>
      *
      * @param v The vector to measure.

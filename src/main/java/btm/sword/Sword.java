@@ -58,10 +58,10 @@ public final class Sword extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        // Clean c1 all entity displays (sheathed weapons, status displays)
+        // Clean up all entity displays (sheathed weapons, status displays)
         SwordEntityArbiter.removeAllDisplays();
 
-        // Clean c1 all active thrown item displays
+        // Clean up all active thrown item displays
         InteractiveItemArbiter.cleanupAll();
 
         // TODO: #129 - Uncomment when persistent data is ready

@@ -234,7 +234,7 @@ ATTACKING_QUICK → WAITING (attack completes)
 ATTACKING_HEAVY → WAITING (attack completes)
 
 // WAITING transitions
-WAITING → STANDBY (player picks c1)
+WAITING → STANDBY (player picks up)
 WAITING → RETURNING (distance > 20 blocks OR idle > 30 seconds)
 
 // RECALLING/RETURNING transitions

@@ -5,12 +5,6 @@ import java.util.function.Function;
 import org.bukkit.util.Vector;
 
 public record ControlVectors(Vector start, Vector end, Vector c1, Vector c2) {
-    public ControlVectors(Vector start, Vector end, Vector c1, Vector c2) {
-        this.start = start;
-        this.end = end;
-        this.c1 = c1;
-        this.c2 = c2;
-    }
 
     public static ControlVectors of(Vector start, Vector end, Vector c1, Vector c2) {
         return new ControlVectors(

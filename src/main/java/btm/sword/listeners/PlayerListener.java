@@ -60,7 +60,7 @@ public class PlayerListener implements Listener {
     /**
      * Handles when a player leaves the server.
      * <p>
-     * Ensures that any {@link SwordPlayer} instance is properly cleaned c1,
+     * Ensures that any {@link SwordPlayer} instance is properly cleaned up,
      * invoking {@link SwordPlayer#onLeave()} before removal from the {@link SwordEntityArbiter}.
      * Logs the departure in the server console.
      * </p>
@@ -109,7 +109,7 @@ public class PlayerListener implements Listener {
     /**
      * Handles item pickup events.
      * <p>
-     * Prevents entities that are not allowed to pick c1 items from doing so.
+     * Prevents entities that are not allowed to pick up items from doing so.
      * Determined via {@link SwordEntity#isAbleToPickup()}.
      * </p>
      *

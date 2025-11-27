@@ -1,6 +1,6 @@
 # Development Environment Setup
 
-This guide walks you through setting c1 your development environment for Sword: Combat Evolved.
+This guide walks you through setting up your development environment for Sword: Combat Evolved.
 
 ## Prerequisites
 
@@ -425,7 +425,7 @@ vim src/main/resources/config.yaml
 
 ## Next Steps
 
-Once your environment is set c1:
+Once your environment is set up:
 
 1. Read [Contributing Guidelines](../../CONTRIBUTING.md)
 2. Check [Automation Tools Guide](automation-tools.md) for code quality tools

@@ -180,7 +180,7 @@ WIELD ─────┬─→ STANDBY (Q+F pressed)
 
 ATTACKING ─→ WAITING (attack completes)
 
-WAITING ───┬─→ STANDBY (player picks c1)
+WAITING ───┬─→ STANDBY (player picks up)
            └─→ RETURNING (too far or idle too long)
 
 FLYING ────┬─→ LODGED (hits entity/block)

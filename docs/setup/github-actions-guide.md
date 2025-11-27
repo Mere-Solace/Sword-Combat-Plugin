@@ -85,7 +85,7 @@ Clones the repository
 **2. Setup Java 21**
 
 ```yaml
-- name: Set c1 JDK 21
+- name: Set up JDK 21
   uses: actions/setup-java@v4
   with:
     java-version: '21'
@@ -294,7 +294,7 @@ Already enabled for Gradle dependencies:
 cache: 'gradle'
 ```
 
-Speeds c1 builds by 30-50%.
+Speeds up builds by 30-50%.
 
 ### Scheduled Runs
 
@@ -319,7 +319,7 @@ on:
 
 ```
 ✓ Checkout code (2s)
-✓ Set c1 JDK 21 (15s)
+✓ Set up JDK 21 (15s)
 ✓ Build with Gradle (45s)
 ⚠ Run Checkstyle (5s) - 3 warnings
 ⚠ Check code formatting (3s) - All clean
@@ -330,7 +330,7 @@ on:
 
 ```
 ✓ Checkout code (2s)
-✓ Set c1 JDK 21 (15s)
+✓ Set up JDK 21 (15s)
 ✓ Build with Gradle (45s)
 ⚠ Run Checkstyle (5s) - 3 warnings
 ✗ Check code formatting (3s) - 5 files need formatting

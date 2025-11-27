@@ -10,7 +10,7 @@ All existing issues from the repository owner have been enhanced with detailed t
 - **Technical Details**: Dependency already present, refactoring strategy, InvUI API usage
 - **Related**: Issue 5
 
-### Issue 5: Clean c1 interaction logic and improve robustness
+### Issue 5: Clean up interaction logic and improve robustness
 - **Labels Added**: refactor
 - **Documentation**: Problem analysis, proposed solution (Drop -> RightClick -> RightClickHold), implementation phases
 - **Technical Details**: State machine approach, configuration options, edge case handling
