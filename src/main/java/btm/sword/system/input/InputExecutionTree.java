@@ -61,7 +61,7 @@ public class InputExecutionTree {
     // Running into some issues with overlapping input execution paths, where
     // 2 different action paths have the same Input Sequence, but will behave differently
     // when using different items (case in point: Umbral Blade basic sweep attack while holding link)
-    // TODO: find a way to have separately defined input paths.
+    // TODO: #140 find a way to have separately defined input paths.
 
 
     /**
@@ -99,7 +99,6 @@ public class InputExecutionTree {
             }
         }
 
-        // TODO: check if this breaks anything, and maybe make optional with a boolean
         if (next.action != null && !next.action.canCast(owner)) {
             owner.debug(this.getClass(), 97, "Can't cast next action!");
             return null; // added this so that stepping forward cannot occur

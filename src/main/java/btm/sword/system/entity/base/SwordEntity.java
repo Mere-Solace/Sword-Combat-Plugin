@@ -624,7 +624,7 @@ public abstract class SwordEntity {
     protected void deliverSoulfire(float amount) {
         aspects.soulfire().add(amount);
 //        Prefab.Sounds.SOULFIRE_GAIN.play(self);
-        Prefab.Sounds.SOULFIRE_GAIN_BACKGROUND.play(self);
+        Prefab.Sounds.SOULFIRE_GAIN_BACKGROUND.playForAllInRadius(self);
     }
 
     /**

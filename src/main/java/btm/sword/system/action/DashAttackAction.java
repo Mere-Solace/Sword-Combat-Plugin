@@ -21,12 +21,12 @@ public class DashAttackAction extends SwordAction {
             if (executor.getAspects().soulfireCur() >= 10f &&
                 executor.getUmbralBlade().inState(StandbyState.class)) {
 
-                // TODO: fix and put in AttackingQuick state with some flags or smth
+                // TODO: #137 fix and put in AttackingQuick state with some flags or smth
                 executor.getUmbralBlade().setDashingDirection(forward);
                 executor.getUmbralBlade().request(BladeRequest.ATTACK_QUICK);
 
                 if (executor instanceof SwordPlayer swordPlayer) {
-                    swordPlayer.resetTree(); // Reset the tree if they perform a quick attack with the blade.\
+                    swordPlayer.resetTree(); // Reset the tree if they perform a quick attack with the blade.
                 }
                 return;
             }

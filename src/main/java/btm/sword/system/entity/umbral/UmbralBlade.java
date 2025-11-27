@@ -633,7 +633,7 @@ public class UmbralBlade extends ThrownItem {
             .execute(thrower);
     }
 
-    public void performTargetedAttack(double range) {
+    public void performWideUmbralSweepAttack(double range) {
         SwordEntity target = thrower.getTargetedEntity(range);
         Location attackOrigin = display.getLocation();
         Vector start;
@@ -906,7 +906,7 @@ public class UmbralBlade extends ThrownItem {
 
     @Override
     protected void handleOnReleaseActions() {
-        Prefab.Sounds.THROW.play(getThrower().self());
+        Prefab.Sounds.THROW.playForAllInRadius(getThrower().self());
     }
 
     @Override

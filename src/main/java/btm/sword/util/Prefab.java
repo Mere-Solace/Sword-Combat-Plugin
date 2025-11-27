@@ -146,7 +146,7 @@ public class Prefab {
      * Provides pre-configured {@link SoundWrapper} instances that fetch properties
      * from config.yaml at play time, enabling hot-reload functionality.
      * Sound properties (type, volume, pitch) are dynamically loaded from the
-     * configuration system when {@link SoundWrapper#play(org.bukkit.entity.LivingEntity)}
+     * configuration system when {@link SoundWrapper#playForAllInRadius(org.bukkit.entity.LivingEntity)}
      * is called.
      * </p>
      * <p>

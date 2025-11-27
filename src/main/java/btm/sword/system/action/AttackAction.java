@@ -63,7 +63,7 @@ public class AttackAction extends SwordAction {
         }
 
         if (executor.holdingSoulLink()) {
-            // TODO: make attack go in different directions randomly. Implement in Quick attack class.
+            // TODO: #138 make attack go in different directions randomly. Implement in Quick attack class.
             // If they have enough SF and in the Standby State, do a quick slash attack
             if (executor.getAspects().soulfireCur() >= 10f &&
                 executor.getUmbralBlade().inState(StandbyState.class)) {
@@ -118,7 +118,7 @@ public class AttackAction extends SwordAction {
         double dist = distance < 0 ? 2.5 : distance;
         double spacing = 0.33;
 
-        Prefab.Sounds.PUNCH_ATTEMPT.play(executor.self());
+        Prefab.Sounds.PUNCH_ATTEMPT.playForAllInRadius(executor.self());
 
         Basis basis = VectorUtil.getBasis(executor.eyeLoc(), executor.dir());
 
@@ -135,7 +135,7 @@ public class AttackAction extends SwordAction {
         if (hit != null) {
             SwordEntity swordHit = SwordEntityArbiter.getOrAdd(hit.getUniqueId());
             if (swordHit != null) {
-                Prefab.Sounds.PUNCH_CONNECT.play(executor.self());
+                Prefab.Sounds.PUNCH_CONNECT.playForAllInRadius(executor.self());
                 swordHit.hit(executor, Prefab.Attacks.punch, executor.dir());
             }
         }

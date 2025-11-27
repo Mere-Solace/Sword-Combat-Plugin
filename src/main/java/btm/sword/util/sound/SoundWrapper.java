@@ -2,7 +2,10 @@ package btm.sword.util.sound;
 
 import java.util.function.Supplier;
 
+import org.bukkit.Location;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Player;
 
 import btm.sword.util.display.ParticleWrapper;
 
@@ -31,7 +34,7 @@ public record SoundWrapper(
     /**
      * Constructs a SoundWrapper with configuration suppliers.
      * <p>
-     * The suppliers are called each time {@link #play(LivingEntity)} is invoked,
+     * The suppliers are called each time {@link #playForAllInRadius(LivingEntity)} is invoked,
      * ensuring hot-reload compatibility by fetching fresh config values.
      * </p>
      *
@@ -51,7 +54,27 @@ public record SoundWrapper(
      *
      * @param entity the entity to play the sound at
      */
-    public void play(LivingEntity entity) { // TODO: Play to every player in a radius
+    public void playToOneEntity(LivingEntity entity) {
         SoundUtil.playSound(entity, soundSupplier.get(), volumeSupplier.get(), pitchSupplier.get());
+    }
+
+    private static final double BASE_SOUND_RADIUS = 20;
+
+    public void playForAllInRadius(Location sourceLocation, double radius) {
+        for (Player player : sourceLocation.getWorld().getNearbyPlayers(sourceLocation, radius)) {
+            SoundUtil.playSound(player, soundSupplier.get(), volumeSupplier.get(), pitchSupplier.get());
+        }
+    }
+
+    public void playForAllInRadius(Location sourceLocation) {
+        for (Player player : sourceLocation.getWorld().getNearbyPlayers(sourceLocation, BASE_SOUND_RADIUS)) {
+            SoundUtil.playSound(player, soundSupplier.get(), volumeSupplier.get(), pitchSupplier.get());
+        }
+    }
+
+    public void playForAllInRadius(Entity origin) {
+        for (Player player : origin.getWorld().getNearbyPlayers(origin.getLocation(), BASE_SOUND_RADIUS)) {
+            SoundUtil.playSound(player, soundSupplier.get(), volumeSupplier.get(), pitchSupplier.get());
+        }
     }
 }

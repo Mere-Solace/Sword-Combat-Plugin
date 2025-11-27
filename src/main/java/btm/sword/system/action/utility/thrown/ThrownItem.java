@@ -303,7 +303,7 @@ public class ThrownItem {
      * Play sounds and remove the item in the main hand of the player. Should be overridden for different logic.
      */
     protected void handleOnReleaseActions() {
-        Prefab.Sounds.THROW.play(thrower.self());
+        Prefab.Sounds.THROW.playForAllInRadius(thrower.self());
         thrower.setItemStackInHand(ItemStack.of(Material.AIR), true);
         InteractiveItemArbiter.put(this);
     }

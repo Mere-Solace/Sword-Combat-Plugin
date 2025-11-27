@@ -1517,7 +1517,7 @@ public class Config {
         ); }
 
         /** In ticks */
-        public static int COMBAT_PROFILE_SHARDS_REGEN_PERIOD = 5000; // 10 seconds TODO: change all values to either ticks or ms
+        public static int COMBAT_PROFILE_SHARDS_REGEN_PERIOD = 5000; // 10 seconds TODO: #141 change all values to either ticks or ms
         static { register(
             "entity.combat_profile_shards_regen_period",
             COMBAT_PROFILE_SHARDS_REGEN_PERIOD, Integer.class,

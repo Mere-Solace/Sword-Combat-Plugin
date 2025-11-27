@@ -146,7 +146,7 @@ public class Attack extends SwordAction implements Runnable {
         cast();
     }
 
-    // TODO: make usage dynamic
+    // TODO: #139 make usage dynamic
     protected void cast() {
         cast(attacker, 200, this);
     }
@@ -167,7 +167,7 @@ public class Attack extends SwordAction implements Runnable {
     }
 
     void playSwingSoundEffects() {
-        Prefab.Sounds.ATTACK.play(attacker.self());
+        Prefab.Sounds.ATTACK.playForAllInRadius(attacker.self());
     }
 
     void applyConsistentEffects() {
