@@ -51,6 +51,10 @@ public final class KeyRegistry {
 
     public static final NamespacedKey SOUL_LINK_KEY = key(SOUL_LINK);
 
+    public static final String UMBRAL_BLADE = "umbral_blade";
+
+    public static final NamespacedKey UMBRAL_BLADE_KEY = key(UMBRAL_BLADE);
+
     /** Persistent data key for GUI buttons or menu items. */
     public static final String MAIN_MENU_BUTTON = "main_menu_button";
 

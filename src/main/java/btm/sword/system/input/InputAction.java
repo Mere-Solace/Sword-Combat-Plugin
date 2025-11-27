@@ -6,6 +6,7 @@ import java.util.function.Predicate;
 
 import btm.sword.system.entity.types.Combatant;
 import btm.sword.system.entity.types.SwordPlayer;
+import lombok.Getter;
 
 /**
  * Represents an executable action triggered by player input within the Sword plugin system.
@@ -25,11 +26,16 @@ public class InputAction {
     /** Predicate that tests whether the executor is allowed to cast this ability at a given time. */
     private final Predicate<Combatant> canCastAbility;
 
+    @Getter
+    private final float requiredSoulfire;
+
     /** Whether to display the remaining cooldown time to the player if action is on cooldown. */
     private final boolean displayCooldown;
 
     /** Whether to display a "disabled" effect/message if the action cannot be cast. */
     private final boolean displayDisabled;
+
+    private final boolean resetIfCannotPerform;
 
     /** Timestamp in milliseconds when this action was last successfully executed. */
     @lombok.Getter
@@ -48,13 +54,33 @@ public class InputAction {
             Consumer<Combatant> action,
             Function<Combatant, Long> cooldownCalculation,
             Predicate<Combatant> canCastAbility,
+            float requiredSoulfire,
             boolean displayCooldown,
-            boolean displayDisabled) {
+            boolean displayDisabled,
+            boolean resetIfCannotPerform) {
         this.action = action;
         this.cooldownCalculation = cooldownCalculation;
         this.canCastAbility = canCastAbility;
+        this.requiredSoulfire = requiredSoulfire;
         this.displayCooldown = displayCooldown;
         this.displayDisabled = displayDisabled;
+        this.resetIfCannotPerform = resetIfCannotPerform;
+    }
+
+    public InputAction(
+        Consumer<Combatant> action,
+        Function<Combatant, Long> cooldownCalculation,
+        Predicate<Combatant> canCastAbility,
+        boolean displayCooldown,
+        boolean displayDisabled,
+        boolean resetIfCannotPerform) {
+        this.action = action;
+        this.cooldownCalculation = cooldownCalculation;
+        this.canCastAbility = canCastAbility;
+        this.requiredSoulfire = 0f;
+        this.displayCooldown = displayCooldown;
+        this.displayDisabled = displayDisabled;
+        this.resetIfCannotPerform = resetIfCannotPerform;
     }
 
     /**
@@ -81,11 +107,17 @@ public class InputAction {
             return true;
         }
         else {
-            if (displayDisabled)
-                ((SwordPlayer) executor).displayDisablingEffect();
-            return false;
+            if (resetIfCannotPerform) {
+                if (displayDisabled)
+                    ((SwordPlayer) executor).displayDisablingEffect();
+                return false;
+            }
+            else {
+                return true;
+            }
         }
     }
+
 
     /**
      * Calculates the cooldown duration in milliseconds for this action,

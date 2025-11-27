@@ -1,14 +1,22 @@
 package btm.sword.system.entity.base;
 
-import org.bukkit.scheduler.BukkitRunnable;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Function;
+
 import org.bukkit.scheduler.BukkitTask;
 
-import btm.sword.Sword;
+import btm.sword.config.Config;
 import btm.sword.system.entity.aspect.Aspect;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.aspect.Resource;
 import btm.sword.system.entity.aspect.value.AspectValue;
 import btm.sword.system.entity.aspect.value.ResourceValue;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 
 
 /**
@@ -219,7 +227,7 @@ public class EntityAspects {
      * @return the effective stat value
      */
     public float getAspectVal(AspectType type) {
-        return getAspect(type).effectiveValue();
+        return getAspect(type).effectiveMaxValue();
     }
 
     public Resource shards() { return shards; }
@@ -236,19 +244,19 @@ public class EntityAspects {
     public Aspect celerity() { return celerity; }
     public Aspect willpower() { return willpower; }
 
-    public float shardsVal() { return shards.effectiveValue(); }
-    public float toughnessVal() { return toughness.effectiveValue(); }
-    public float soulfireVal() { return soulfire.effectiveValue(); }
-    public float formVal() { return form.effectiveValue(); }
+    public float shardsMaxVal() { return shards.effectiveMaxValue(); }
+    public float toughnessMaxVal() { return toughness.effectiveMaxValue(); }
+    public float soulfireMaxVal() { return soulfire.effectiveMaxValue(); }
+    public float formMaxVal() { return form.effectiveMaxValue(); }
 
-    public float mightVal() { return might.effectiveValue(); }
-    public float resolveVal() { return resolve.effectiveValue(); }
-    public float finesseVal() { return finesse.effectiveValue(); }
-    public float prowessVal() { return prowess.effectiveValue(); }
-    public float armorVal() { return armor.effectiveValue(); }
-    public float fortitudeVal() { return fortitude.effectiveValue(); }
-    public float celerityVal() { return celerity.effectiveValue(); }
-    public float willpowerVal() { return willpower.effectiveValue(); }
+    public float mightVal() { return might.effectiveMaxValue(); }
+    public float resolveVal() { return resolve.effectiveMaxValue(); }
+    public float finesseVal() { return finesse.effectiveMaxValue(); }
+    public float prowessVal() { return prowess.effectiveMaxValue(); }
+    public float armorVal() { return armor.effectiveMaxValue(); }
+    public float fortitudeVal() { return fortitude.effectiveMaxValue(); }
+    public float celerityVal() { return celerity.effectiveMaxValue(); }
+    public float willpowerVal() { return willpower.effectiveMaxValue(); }
 
     public float shardsCur() { return shards.cur(); }
     public float toughnessCur() { return toughness.cur(); }
@@ -270,24 +278,53 @@ public class EntityAspects {
         form().stopRegenTask();
     }
 
-    public void restartResourceProcessAfterDelay(AspectType type) {
-        if (restartTask != null && !restartTask.isCancelled()) return;
 
-        Resource r = null;
+    public void restartResourceProcessAfterDelay(AspectType type, int ticks) {
+        Resource r;
         switch (type) {
             case SHARDS -> r = shards;
             case TOUGHNESS -> r = toughness;
             case SOULFIRE -> r = soulfire;
             case FORM ->  r = form;
-            default -> { }  // Non-resource aspects don't have regen tasks
+            default -> r = null;
         }
         if (r == null) return;
-        final Resource R = r;
-        restartTask = new BukkitRunnable() {
-            @Override
-            public void run() {
-                R.restartRegenTask();
-            }
-        }.runTaskLater(Sword.getInstance(), r.getBaseRegenPeriod());
+
+        r.restartRegenTaskLater(ticks);
+    }
+    public List<Component> toComponentList() {
+        List<Component> lines = new ArrayList<>();
+
+        TextColor r = Config.SwordColor.TEXT_RESOURCE_COLOR;
+        TextColor a = Config.SwordColor.TEXT_ASPECT_COLOR;
+
+        // Resources header
+        lines.add(Component.text("Resources", NamedTextColor.GOLD, TextDecoration.BOLD));
+
+        // Helper to format numbers
+        Function<Float, String> fmt = val -> String.format("%.1f", val);
+
+        // Resources
+        lines.add(Component.text(fmt.apply(shardsCur())    + " >>> Shards", r));
+        lines.add(Component.text(fmt.apply(toughnessCur()) + " >>> Toughness", r));
+        lines.add(Component.text(fmt.apply(soulfireCur())  + " >>> Soulfire", r));
+        lines.add(Component.text(fmt.apply(formCur())      + " >>> Form", r));
+
+        lines.add(Component.empty());
+
+        // Aspects header
+        lines.add(Component.text("Aspects", NamedTextColor.GOLD, TextDecoration.BOLD));
+
+        // Aspects
+        lines.add(Component.text(fmt.apply(mightVal())      + " >>> Might", a));
+        lines.add(Component.text(fmt.apply(resolveVal())    + " >>> Resolve", a));
+        lines.add(Component.text(fmt.apply(finesseVal())    + " >>> Finesse", a));
+        lines.add(Component.text(fmt.apply(prowessVal())    + " >>> Prowess", a));
+        lines.add(Component.text(fmt.apply(armorVal())      + " >>> Armor", a));
+        lines.add(Component.text(fmt.apply(fortitudeVal())  + " >>> Fortitude", a));
+        lines.add(Component.text(fmt.apply(celerityVal())   + " >>> Celerity", a));
+        lines.add(Component.text(fmt.apply(willpowerVal())  + " >>> Willpower", a));
+
+        return lines;
     }
 }

@@ -1,66 +1,66 @@
 package btm.sword.system.attack;
 
-import java.util.List;
 import java.util.function.Function;
 
 import org.bukkit.util.Vector;
 
 import btm.sword.config.Config;
 import btm.sword.util.Prefab;
+import btm.sword.util.math.ControlVectors;
 
 // TODO: consider - add base range multiplier as well
-public enum AttackType {
-    UMBRAL_SLASH1(List.of(
+public enum AttackType implements AttackProfile {
+    UMBRAL_SLASH1(ControlVectors.of(
         new Vector(-2,0,0),
         new Vector(2,0,-1),
         new Vector(-1.5,0,2),
         new Vector(1.5,0,3)),
         Attack::getRightVector
     ),
-    UMBRAL_SLASH1_WINDUP(List.of(
+    UMBRAL_SLASH1_WINDUP(ControlVectors.of(
         new Vector(-1.5,0.17,1),
         new Vector(-2.1,-0.33,-0.5),
         new Vector(-2,0.17,0.5),
         new Vector(-2,-0.08,0))
     ),
 
-    WIDE_UMBRAL_SLASH1(List.of(
+    WIDE_UMBRAL_SLASH1(ControlVectors.of(
         new Vector(-5.7615,0,2.171),
         new Vector(5.845,0,-0.334),
         new Vector(-2.505,0,3.34),
         new Vector(2.505,0,5.01)),
         Attack::getRightVector
     ),
-    WIDE_UMBRAL_SLASH1_WINDUP(List.of(
+    WIDE_UMBRAL_SLASH1_WINDUP(ControlVectors.of(
         new Vector(-1.66,0.17,-0.5),
         new Vector(-5,0.27,0.83),
         new Vector(-2.5,1.03,1.7),
         new Vector(-3.77,0.51,2.26))
     ),
 
-    SLASH1(List.of(
-            new Vector(-2.06, -1.26, -0.5),
-            new Vector(3.26, 0.79, -0.4),
-            new Vector(-2.3, -0.16,3),
-            new Vector(1.9, 0.21, 5)),
-        attack -> attack.getRightVector().multiply(-0.5).add(attack.getForwardVector().multiply(0.1))
+    SLASH1(ControlVectors.of(
+        new Vector(-2.06, -1.26, -0.5),
+        new Vector(3.26, 0.79, -0.4),
+        new Vector(-2.3, -0.16,3),
+        new Vector(1.9, 0.21, 5)),
+    attack -> attack.getRightVector().multiply(-0.5).add(attack.getForwardVector().multiply(0.1))
     ),
-    SLASH2(List.of(
+    SLASH2(ControlVectors.of(
         new Vector(2.6, -1.21, -1.2),
-            new Vector(-1.47, 1.99, 0),
-            new Vector(1.6, -0.11, 7),
-            new Vector(-3.66, 0.26, 1.85)),
-        attack -> attack.getRightVector().multiply(0.5).add(attack.getForwardVector().multiply(0.1))
+        new Vector(-1.47, 1.99, 0),
+        new Vector(1.6, -0.11, 7),
+        new Vector(-3.66, 0.26, 1.85)),
+    attack -> attack.getRightVector().multiply(0.5).add(attack.getForwardVector().multiply(0.1))
     ),
-    SLASH3(List.of(
+    SLASH3(ControlVectors.of(
         new Vector(-0.15,2.8,-1.5),
-            new Vector(-1.1,-2.2,-0.9),
-            new Vector(1.74,1.96,4.3),
-            new Vector(-1.1,-1.77,5)),
-        attack -> attack.getTo().add(attack.getForwardVector().multiply(2))
+        new Vector(-1.1,-2.2,-0.9),
+        new Vector(1.74,1.96,4.3),
+        new Vector(-1.1,-1.77,5)),
+    attack -> attack.getTo().add(attack.getForwardVector().multiply(2))
     ),
 
-    UP_SMASH(List.of(
+    UP_SMASH(ControlVectors.of(
         new Vector(0.66,-1.53,-0.5),
         new Vector(-0.4,0.67,-0.9),
         new Vector(0.56,-0.89,2.1),
@@ -68,7 +68,7 @@ public enum AttackType {
         attack -> Config.Direction.UP().multiply(5)
     ),
 
-    LUNGE1(List.of(
+    LUNGE1(ControlVectors.of(
         new Vector(0.37,0,2),
         new Vector(0,0,20),
         new Vector(1.1,0,3.1),
@@ -76,53 +76,69 @@ public enum AttackType {
         attack -> new Vector()
     ),
 
-    D_AIR(List.of(
+    F_DASH_ATTACK(ControlVectors.of(
+        new Vector(-1.95,-0.76,0.9),
+        new Vector(1.2,1.1,7.3),
+        new Vector(-1.6,-0.57,2.7),
+        new Vector(-0.93,0,4.9)),
+    attack -> new Vector()
+    ),
+
+    B_DASH_ATTACK(ControlVectors.of(
+        new Vector(0.696,2.2388,1.74),
+        new Vector(-0.8932,-3.2016,0.116),
+        new Vector(0.3132,0.4176,2.204),
+        new Vector(-0.58,-1.74,1.3572)),
+        Attack::getForwardVector
+    ),
+
+    D_AIR(ControlVectors.of(
         new Vector(-0.35, 2.53, 0.56),
         new Vector(0, -3.42, -0.581),
         new Vector(0.329, -0.165, 4.97),
         new Vector(-0.07, -6.15, 0.98)
     )),
-    N_AIR(List.of(
+    N_AIR(ControlVectors.of(
         new Vector(1.0961, 1.742, -1.13),
         new Vector(0, -1.987, -0.791),
         new Vector(-0.2825, 0.951, 9.153),
         new Vector(-0.7458, -5.151, -1.808)
     )),
 
-    R_SIDESTEP(List.of(
+    R_SIDESTEP(ControlVectors.of(
         new Vector(-1.3,1.03,2),
         new Vector(8.2,1.03,-1.9),
         new Vector(-7,-1.73,3.3),
         new Vector(9,-0.93,5)
     )),
 
-    L_SIDESTEP(List.of(
+    L_SIDESTEP(ControlVectors.of(
         new Vector(1.3,1.03,2),
         new Vector(-8.2,1.03,-1.9),
         new Vector(7,-1.73,3.3),
         new Vector(-9,-0.93,5)
     )),
 
-    DEFAULT(List.of(
+    DEFAULT(ControlVectors.of(
         Config.Direction.UP(),
         Config.Direction.DOWN(),
         Config.Direction.OUT_UP(),
         Config.Direction.OUT_DOWN()
     ));
 
-    private final List<Vector> controlVectors;
+    private final ControlVectors controlVectors;
     private final Function<Attack, Vector> knockbackFunction;
 
-    AttackType(List<Vector> ctrlVectors) {
-        this(ctrlVectors, Prefab.Instruction.DEFAULT_KNOCKBACK);
+    AttackType(ControlVectors ctrlVectors) {
+        this(ctrlVectors, Prefab.Instructions.DEFAULT_KNOCKBACK);
     }
 
-    AttackType(List<Vector> ctrlVectors, Function<Attack, Vector> knockback) {
+    AttackType(ControlVectors ctrlVectors, Function<Attack, Vector> knockback) {
         this.controlVectors = ctrlVectors;
         this.knockbackFunction = knockback;
     }
 
-    public List<Vector> controlVectors() {
+    public ControlVectors controlVectors() {
         return controlVectors;
     }
 

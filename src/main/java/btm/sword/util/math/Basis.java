@@ -1,10 +1,9 @@
 package btm.sword.util.math;
 
-import java.util.List;
-
+import org.bukkit.Location;
 import org.bukkit.util.Vector;
 
-// TODO: Implement new, shiny basis class of my own imagining! I miss simplicity...
+@SuppressWarnings("all") // Wants to convert into record class but that is incorrect
 public class Basis {
     private final Vector right;
     private final Vector up;
@@ -16,12 +15,14 @@ public class Basis {
         this.forward = forward.normalize();
     }
 
-    public Basis(List<Vector> legacyBasis) {
-        assert legacyBasis.size() == 3;
+    public Basis(Location origin, boolean orientWithPitch) {
+        Basis created = orientWithPitch ?
+            VectorUtil.getBasis(origin, origin.getDirection()) :
+            VectorUtil.getBasisWithoutPitch(origin);
 
-        this.right = legacyBasis.getFirst().normalize();
-        this.up = legacyBasis.get(1).normalize();
-        this.forward = legacyBasis.getLast().normalize();
+        this.right = created.right();
+        this.up = created.up();
+        this.forward = created.forward();
     }
 
     public Vector right() {

@@ -1,6 +1,7 @@
 package btm.sword.system.entity.umbral;
 
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -28,6 +29,7 @@ import btm.sword.system.action.utility.thrown.InteractiveItemArbiter;
 import btm.sword.system.action.utility.thrown.ThrownItem;
 import btm.sword.system.attack.Attack;
 import btm.sword.system.attack.AttackType;
+import btm.sword.system.attack.GeneratedAttackProfile;
 import btm.sword.system.attack.UmbralBladeAttack;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.types.Combatant;
@@ -38,13 +40,12 @@ import btm.sword.system.entity.umbral.statemachine.UmbralStateFacade;
 import btm.sword.system.entity.umbral.statemachine.UmbralStateMachine;
 import btm.sword.system.entity.umbral.statemachine.state.AttackingHeavyState;
 import btm.sword.system.entity.umbral.statemachine.state.AttackingQuickState;
+import btm.sword.system.entity.umbral.statemachine.state.FinisherState;
 import btm.sword.system.entity.umbral.statemachine.state.InactiveState;
 import btm.sword.system.entity.umbral.statemachine.state.LodgedState;
 import btm.sword.system.entity.umbral.statemachine.state.LungingState;
-import btm.sword.system.entity.umbral.statemachine.state.PreviousState;
 import btm.sword.system.entity.umbral.statemachine.state.RecallingState;
 import btm.sword.system.entity.umbral.statemachine.state.RecoverState;
-import btm.sword.system.entity.umbral.statemachine.state.ReturningState;
 import btm.sword.system.entity.umbral.statemachine.state.SheathedState;
 import btm.sword.system.entity.umbral.statemachine.state.StandbyState;
 import btm.sword.system.entity.umbral.statemachine.state.WaitingState;
@@ -57,7 +58,9 @@ import btm.sword.util.Prefab;
 import btm.sword.util.display.DisplayUtil;
 import btm.sword.util.display.DrawUtil;
 import btm.sword.util.display.ParticleWrapper;
+import btm.sword.util.math.Basis;
 import btm.sword.util.math.BezierUtil;
+import btm.sword.util.math.ControlVectors;
 import btm.sword.util.math.VectorUtil;
 import lombok.Getter;
 import lombok.Setter;
@@ -92,8 +95,13 @@ public class UmbralBlade extends ThrownItem {
     private final Runnable attackEndCallback;
     private boolean attackCompleted = false;
 
-    private List<Vector> ctrlPointsForLunge;
+    private ControlVectors ctrlPointsForLunge;
     private boolean finishedLunging = false;
+
+    private boolean skillFinished;
+
+    private boolean dashingForward;
+    private boolean dashingBackward;
 
     private final InputBuffer inputBuffer = new InputBuffer();
 
@@ -108,7 +116,7 @@ public class UmbralBlade extends ThrownItem {
             ));
             display.setPersistent(false);
 
-            thrower.entity().addPassenger(display);
+            thrower.self().addPassenger(display);
             display.setBillboard(Display.Billboard.FIXED);
         }, 5);
 
@@ -136,7 +144,7 @@ public class UmbralBlade extends ThrownItem {
         bladeStateMachine.addTransition(new Transition<>(
             UmbralStateFacade.class,
             InactiveState.class,
-            blade -> (thrower.entity() instanceof SwordPlayer sp &&
+            blade -> (thrower.self() instanceof SwordPlayer sp &&
                 sp.player().getGameMode().equals(GameMode.SPECTATOR)) ||
                 isRequested(BladeRequest.DEACTIVATE),
             blade -> {}
@@ -153,7 +161,7 @@ public class UmbralBlade extends ThrownItem {
         // 3) Reactivate to last state
         bladeStateMachine.addTransition(new Transition<>(
             InactiveState.class,
-            PreviousState.class,
+            StandbyState.class,
             blade -> isRequested(BladeRequest.ACTIVATE_TO_PREVIOUS),
             blade -> {}
         ));
@@ -161,7 +169,7 @@ public class UmbralBlade extends ThrownItem {
         // 4) Recover and go back to last state
         bladeStateMachine.addTransition(new Transition<>(
             RecoverState.class,
-            PreviousState.class,
+            StandbyState.class,
             blade -> (display != null && !display.isDead() && display.isValid()) ||
                 isRequested(BladeRequest.RESUME_FROM_REPAIR),
             blade -> { }
@@ -170,6 +178,7 @@ public class UmbralBlade extends ThrownItem {
         // =====================================================================
         // SHEATHED
         // =====================================================================
+        // TODO: add a charged slash skill while sheathed
         bladeStateMachine.addTransition(new Transition<>(
             SheathedState.class,
             StandbyState.class,
@@ -184,6 +193,26 @@ public class UmbralBlade extends ThrownItem {
             blade -> {}
         ));
 
+        bladeStateMachine.addTransition(new Transition<>(
+            SheathedState.class,
+            AttackingQuickState.class,
+            blade -> isRequestedAndActive(BladeRequest.ATTACK_QUICK),
+            blade -> {}
+        ));
+
+        bladeStateMachine.addTransition(new Transition<>(
+            SheathedState.class,
+            AttackingHeavyState.class,
+            blade -> isRequestedAndActive(BladeRequest.ATTACK_HEAVY),
+            blade -> {}
+        ));
+
+        bladeStateMachine.addTransition(new Transition<>(
+            SheathedState.class,
+            LungingState.class,
+            blade -> isRequestedAndActive(BladeRequest.LUNGE),
+            blade -> {}
+        ));
 
         // =====================================================================
         // STANDBY
@@ -223,6 +252,23 @@ public class UmbralBlade extends ThrownItem {
             blade -> {}
         ));
 
+        bladeStateMachine.addTransition(new Transition<>(
+            StandbyState.class,
+            FinisherState.class,
+            blade -> isRequestedAndActive(BladeRequest.FINISHER),
+            blade -> {}
+        ));
+
+
+        // =====================================================================
+        // FINISHER
+        // =====================================================================
+        bladeStateMachine.addTransition(new Transition<>(
+            FinisherState.class,
+            RecallingState.class,
+            blade -> isSkillFinished() || isRequestedAndActive(BladeRequest.STANDBY),
+            blade -> setSkillFinished(false)
+        ));
 
         // =====================================================================
         // WIELD
@@ -240,14 +286,14 @@ public class UmbralBlade extends ThrownItem {
         // =====================================================================
         bladeStateMachine.addTransition(new Transition<>(
             AttackingQuickState.class,
-            ReturningState.class,
+            RecallingState.class,
             blade -> blade.attackCompleted,
             blade -> {}
         ));
 
         bladeStateMachine.addTransition(new Transition<>(
             AttackingHeavyState.class,
-            ReturningState.class,
+            RecallingState.class,
             blade -> blade.attackCompleted,
             blade -> {}
         ));
@@ -265,7 +311,7 @@ public class UmbralBlade extends ThrownItem {
 
         bladeStateMachine.addTransition(new Transition<>(
             WaitingState.class,
-            ReturningState.class,
+            RecallingState.class,
             UmbralBlade::isTooFarOrIdleTooLong,
             blade -> {}
         ));
@@ -282,33 +328,32 @@ public class UmbralBlade extends ThrownItem {
         ));
 
         bladeStateMachine.addTransition(new Transition<>(
-            ReturningState.class,
-            SheathedState.class,
-            blade -> isRequestedAndActive(BladeRequest.SHEATH),
-            blade -> {}
-        ));
-
-        bladeStateMachine.addTransition(new Transition<>(
             RecallingState.class,
             StandbyState.class,
             blade -> isRequestedAndActive(BladeRequest.STANDBY),
             blade -> {}
         ));
-        // TODO: #122 - May time out sometimes upon returning to the player. Make a check for this and a time-out feature
-        bladeStateMachine.addTransition(new Transition<>(
-            ReturningState.class,
-            StandbyState.class,
-            blade -> isRequestedAndActive(BladeRequest.STANDBY),
-            blade -> {}
-        ));
 
         bladeStateMachine.addTransition(new Transition<>(
-            ReturningState.class,
+            RecallingState.class,
             LungingState.class,
             blade -> isRequestedAndActive(BladeRequest.LUNGE), // TODO: #122 - Test this transition
             blade -> {}
         ));
 
+        bladeStateMachine.addTransition(new Transition<>(
+            RecallingState.class,
+            AttackingQuickState.class,
+            blade -> isRequestedAndActive(BladeRequest.ATTACK_QUICK),
+            blade -> {}
+        ));
+
+        bladeStateMachine.addTransition(new Transition<>(
+            RecallingState.class,
+            AttackingHeavyState.class,
+            blade -> isRequestedAndActive(BladeRequest.ATTACK_HEAVY),
+            blade -> {}
+        ));
 
         // =====================================================================
         // LODGED
@@ -316,7 +361,10 @@ public class UmbralBlade extends ThrownItem {
         bladeStateMachine.addTransition(new Transition<>(
             LodgedState.class,
             RecallingState.class,
-            blade -> isRequestedAndActive(BladeRequest.RECALL),
+            blade ->
+                hitEntity == null ||
+                hitEntity.isInvalid() ||
+                isRequestedAndActive(BladeRequest.RECALL),
             blade -> {
                 DisplayUtil.smoothTeleport(blade.getDisplay(), 10);
                 blade.getDisplay().teleport(
@@ -338,13 +386,6 @@ public class UmbralBlade extends ThrownItem {
 
         bladeStateMachine.addTransition(new Transition<>(
             LodgedState.class,
-            ReturningState.class,
-            blade -> hitEntity == null || hitEntity.isInvalid(),
-            blade -> {}
-        ));
-
-        bladeStateMachine.addTransition(new Transition<>(
-            LodgedState.class,
             WieldState.class,
             blade -> isRequestedAndActive(BladeRequest.WIELD),
             blade -> {}
@@ -354,6 +395,13 @@ public class UmbralBlade extends ThrownItem {
             LodgedState.class,
             StandbyState.class,
             blade -> isRequestedAndActive(BladeRequest.STANDBY),
+            blade -> {}
+        ));
+
+        bladeStateMachine.addTransition(new Transition<>(
+            LodgedState.class,
+            AttackingHeavyState.class,
+            blade -> isRequestedAndActive(BladeRequest.ATTACK_HEAVY),
             blade -> {}
         ));
 
@@ -369,7 +417,7 @@ public class UmbralBlade extends ThrownItem {
 
         bladeStateMachine.addTransition(new Transition<>(
             LungingState.class,
-            ReturningState.class,
+            RecallingState.class,
             blade -> finishedLunging,
             blade -> {}
         ));
@@ -438,7 +486,7 @@ public class UmbralBlade extends ThrownItem {
                 scale,
                 new Quaternionf());
         }
-        else if (state == ReturningState.class || state == RecallingState.class) {
+        else if (state == RecallingState.class) {
             return new Transformation(
                 new Vector3f(),
                 new Quaternionf().rotateX((float) -Math.PI/2),
@@ -497,8 +545,8 @@ public class UmbralBlade extends ThrownItem {
                 @Override
                 public void run() {
                     DisplayUtil.smoothTeleport(display, 2);
-                    display.teleport(thrower.entity().getLocation().setDirection(thrower.getFlatDir()));
-                    thrower.entity().addPassenger(display);
+                    display.teleport(thrower.self().getLocation().setDirection(thrower.getFlatDir()));
+                    thrower.self().addPassenger(display);
                 }
             }, 50/x, TimeUnit.MILLISECONDS);
         }
@@ -544,37 +592,149 @@ public class UmbralBlade extends ThrownItem {
             });
     }
 
-    public void performAttack(double range, boolean heavy) {
+    public void performSimpleAttack(double range) {
+        if (isDashing()) {
+            umbralDashAttack(dashingForward);
+            return;
+        }
         SwordEntity target = thrower.getTargetedEntity(range);
         Attack attack;
         Location attackOrigin;
 
         if (target == null || target.isInvalid()) {
             attackOrigin = thrower.getChestLocation().clone()
-                .add(thrower.entity().getEyeLocation().getDirection().multiply(range));
+                .add(thrower.dir().multiply(range));
         }
         else {
+            DrawUtil.secant(List.of(Prefab.Particles.TEST_SPARKLE), display.getLocation(), target.getChestLocation(), 0.5);
             // From the bladeDisplay TO the target
             Vector to = target.getChestLocation().toVector()
                 .subtract(display.getLocation().toVector());
 
-            DrawUtil.line(List.of(Prefab.Particles.TEST_SPARKLE), display.getLocation(), to.normalize(), 20, 0.25);
-
             attackOrigin = target.getChestLocation().clone()
-                .subtract(to).setDirection(to.normalize());
-
-//            thrower.message("Targeted this guy: " + target.getDisplayName());
+                .subtract(to.normalize()).setDirection(to.normalize());
         }
 
-        attack = heavy ? heavyAttacks[0].apply(thrower) : basicAttacks[0].apply(thrower); // TODO dynamic.
+        int attackNumber = ThreadLocalRandom.current().nextInt(basicAttacks.length);
+        attack = basicAttacks[attackNumber].apply(thrower);
 
-        attack.setOriginOfAll(attackOrigin);
-        attack.execute(thrower);
+        attack.setOriginOfAll(attackOrigin).execute(thrower);
+    }
+
+    private void umbralDashAttack(boolean forward) {
+        AttackType type = forward ? AttackType.F_DASH_ATTACK : AttackType.B_DASH_ATTACK;
+        new UmbralBladeAttack(display, type,
+            forward, false, 1,
+            5, 10, 200,
+            0, 1)
+            .setBlade(this)
+            .setInitialMovementTicks(1)
+            .setCallback(attackEndCallback, 200)
+            .execute(thrower);
+    }
+
+    public void performWideUmbralSweepAttack(double range) {
+        SwordEntity target = thrower.getTargetedEntity(range);
+        Location attackOrigin = display.getLocation();
+        Vector start;
+        Vector end;
+        Vector c1;
+        Vector c2;
+        Basis attackFrame;
+        double dist;
+
+        int direction;
+
+        if (target == null || target.isInvalid()) {
+            Location targeted = thrower.getChestLocation().add(thrower.dir().multiply(range));
+            Vector to = targeted.toVector().subtract(display.getLocation().toVector());
+            direction = thrower.rightBasisVector(false).dot(to) > 0 ? -1: 1;
+
+            DrawUtil.secant(List.of(Prefab.Particles.TEST_SPARKLE), attackOrigin, targeted, 0.25);
+
+            attackOrigin.setDirection(to);
+            attackFrame = new Basis(attackOrigin, true);
+
+            dist = targeted.toVector().subtract(attackOrigin.toVector()).length();
+
+            start = attackFrame.forward().multiply(-dist/10)
+                .add(attackFrame.right().multiply(direction * dist/5));
+            c1 = attackOrigin.clone()
+                .add(attackFrame.forward().multiply(dist/5))
+                .add(attackFrame.right().multiply(direction * dist/3))
+                .toVector()
+                .subtract(attackOrigin.toVector());
+            c2 = targeted.clone()
+                .add(attackFrame.forward().multiply(-dist/5))
+                .add(attackFrame.right().multiply(direction * dist/3))
+                .toVector()
+                .subtract(attackOrigin.toVector());
+            end = targeted.clone()
+                .add(attackFrame.forward().multiply(dist/2))
+                .add(attackFrame.right().multiply(-direction * dist/3))
+                .toVector()
+                .subtract(attackOrigin.toVector());
+        }
+        else {
+            DrawUtil.secant(List.of(Prefab.Particles.TEST_SPARKLE), display.getLocation(), target.getChestLocation(), 0.5);
+
+            Location targeted = target.getChestLocation();
+            Vector to = targeted.toVector().subtract(display.getLocation().toVector());
+            direction = thrower.rightBasisVector(false).dot(to) > 0 ? -1: 1;
+
+            attackOrigin.setDirection(to);
+            attackFrame = new Basis(attackOrigin, true);
+
+            dist = targeted.toVector().subtract(attackOrigin.toVector()).length();
+            start = attackFrame.forward().multiply(-dist/10)
+                .add(attackFrame.right().multiply(direction * dist/5));
+            c1 = attackOrigin.clone()
+                .add(attackFrame.forward().multiply(dist/5))
+                .add(attackFrame.right().multiply(direction * dist/3))
+                .toVector()
+                .subtract(attackOrigin.toVector());
+            c2 = targeted.clone()
+                .add(attackFrame.forward().multiply(-dist/5))
+                .add(attackFrame.right().multiply(direction * dist/3))
+                .toVector()
+                .subtract(attackOrigin.toVector());
+            end = targeted.clone()
+                .add(attackFrame.forward().multiply(dist/2))
+                .add(attackFrame.right().multiply(-direction * dist/3))
+                .toVector()
+                .subtract(attackOrigin.toVector());
+        }
+
+        ControlVectors ctrl = new ControlVectors(start, end, c1, c2);
+        GeneratedAttackProfile profile = new GeneratedAttackProfile(ctrl, Attack::getTo);
+
+        int duration = 40 * (int) Math.log(Math.max(1, dist * dist));
+
+        Attack attack = new UmbralBladeAttack(display, profile,
+            true, true, 1,
+            10, 30, (int) (duration * 1.75),
+            0.2, -0.1)
+            .setBlade(this)
+            .setInitialMovementTicks(5)
+            .setDrawParticles(false)
+            .setNextAttack(
+                new UmbralBladeAttack(display, profile,
+                    true, false, 0,
+                    30, 10, duration,
+                    0, 1)
+                    .setBlade(this)
+                    .setHitInstructions(
+                        swordEntity ->
+                            Prefab.Particles.BLEED.display(swordEntity.getChestLocation()))
+                    .setCallback(attackEndCallback, 200),
+                100);
+
+        attack.setOriginOfAll(attackOrigin).execute(thrower);
     }
 
     private boolean isTooFarOrIdleTooLong() {
         if (display == null) return false;
-        double distance = thrower.entity().getLocation().distance(display.getLocation());
+        double distance = thrower.self().getLocation().distance(display.getLocation());
         long timeSinceLastAction = System.currentTimeMillis() - lastActionTime;
         return distance > 20.0 || timeSinceLastAction > 30000;
     }
@@ -589,7 +749,7 @@ public class UmbralBlade extends ThrownItem {
                 10, 30, 500,
                 0, 1)
                 .setBlade(this)
-                .setInitialMovementTicks(5)
+                .setInitialMovementTicks(25)
                 .setDrawParticles(false)
                 .setNextAttack(
                     new UmbralBladeAttack(display, AttackType.WIDE_UMBRAL_SLASH1,
@@ -615,20 +775,7 @@ public class UmbralBlade extends ThrownItem {
                 .append(Component.text(thrower.getDisplayName() + "'s Soul Link",
                     Config.SwordColor.TEXT_ITEM_NAME, TextDecoration.BOLD))
                 .append(Component.text(" ~", Config.SwordColor.TEXT_ITEM_NAME)))
-            .lore(List.of(
-                Component.text(""),
-                Component.text("Controls:", Config.SwordColor.TEXT_ITEM_HEADER, TextDecoration.ITALIC),
-                Component.text("Drop + Swap", Config.SwordColor.TEXT_ITEM_CONTROLS)
-                    .append(Component.text(" - Toggle Standby/Sheathed", Config.SwordColor.TEXT_ITEM_BASE)),
-                Component.text("  • Standby: ", Config.SwordColor.TEXT_ITEM_HEADER)
-                    .append(Component.text("Blade hovers, ready to attack", Config.SwordColor.TEXT_ITEM_BASE)),
-                Component.text("  • Sheathed: ", Config.SwordColor.TEXT_ITEM_HEADER)
-                    .append(Component.text("Blade stored in sheath on hip", Config.SwordColor.TEXT_ITEM_BASE)),
-                Component.text(""),
-                Component.text("Swap + Left Click", Config.SwordColor.TEXT_ITEM_CONTROLS)
-                    .append(Component.text(" - Wield Blade", Config.SwordColor.TEXT_ITEM_HEADER)),
-                Component.text("  • Equip as weapon in hand", Config.SwordColor.TEXT_ITEM_HEADER)
-            ))
+            .lore(Prefab.Text.SOUL_LINK_LORE)
             .unbreakable(true)
             .tag(KeyRegistry.SOUL_LINK_KEY, thrower.getUniqueId().toString())
             .hideAll()
@@ -639,16 +786,9 @@ public class UmbralBlade extends ThrownItem {
                 .append(Component.text(thrower.getDisplayName() + "'s Blade",
                     Config.SwordColor.TEXT_COOL, TextDecoration.BOLD))
                 .append(Component.text(" ~", Config.SwordColor.TEXT_COOL_DARK)))
-            .lore(List.of(
-                Component.text(""),
-                Component.text("Wielded Form", Config.SwordColor.TEXT_ITEM_HEADER, TextDecoration.ITALIC),
-                Component.text("Use normal combat inputs", Config.SwordColor.TEXT_ITEM_BASE),
-                Component.text(""),
-                Component.text("Q + F", Config.SwordColor.TEXT_ITEM_CONTROLS)
-                    .append(Component.text(" - Return to Standby", Config.SwordColor.TEXT_ITEM_BASE))
-            ))
+            .lore(Prefab.Text.UMBRAL_BLADE_LORE)
             .unbreakable(true)
-            .tag(KeyRegistry.SOUL_LINK_KEY, thrower.getUniqueId().toString())
+            .tag(KeyRegistry.UMBRAL_BLADE_KEY, thrower.getUniqueId().toString())
             .hideAll()
             .build();
     }
@@ -659,14 +799,14 @@ public class UmbralBlade extends ThrownItem {
             display = null;
         }
 
-        LivingEntity e = thrower.getSelf();
+        LivingEntity e = thrower.self();
         display = (ItemDisplay) e.getWorld().spawnEntity(e.getEyeLocation(), EntityType.ITEM_DISPLAY);
         displaySetupInstructions.accept(display);
     }
 
     @Override
     protected void generateFunctions(double initialVelocity) {
-        if (ctrlPointsForLunge == null || ctrlPointsForLunge.isEmpty()) {
+        if (ctrlPointsForLunge == null) {
             super.generateFunctions(initialVelocity);
         }
         else {
@@ -683,7 +823,7 @@ public class UmbralBlade extends ThrownItem {
 
         Vector dir;
         if (target == null) {
-            Location intent = thrower.entity().getEyeLocation().add(thrower.getEyeDirection().multiply(20));
+            Location intent = thrower.locFromEyeDir(20);
             dir = intent.toVector().subtract(display.getLocation().toVector());
         }
         else {
@@ -693,8 +833,8 @@ public class UmbralBlade extends ThrownItem {
         }
         this.currentBasis = VectorUtil.getBasis(display.getLocation().setDirection(dir), dir);
 
-        List<Vector> adjusted = BezierUtil.adjustCtrlToBasis(currentBasis, ctrlPointsForLunge, 1);
-        this.positionFunction = BezierUtil.cubicBezier3D(adjusted.get(0), adjusted.get(1), adjusted.get(2), adjusted.get(3));
+        ControlVectors adjusted = ctrlPointsForLunge.adjustToBasis(currentBasis, 1);
+        this.positionFunction = BezierUtil.cubicBezier3D(adjusted);
         this.velocityFunction = t -> dir.multiply(0.5);
     }
 
@@ -704,11 +844,21 @@ public class UmbralBlade extends ThrownItem {
             return;
         }
 
+        thrower.message("Grabbed it!");
+
         if (combatant.holdingUmbralItemInMainHand()) {
+            if (inState(LungingState.class) ||
+                inState(AttackingHeavyState.class) ||
+                inState(AttackingQuickState.class)) {
+                thrower.setVelocity(thrower.self().getVelocity().add(to.clone().multiply(1.5)));
+            }
+
             request(BladeRequest.WIELD);
         }
         else {
             request(BladeRequest.STANDBY);
+
+            // Do a spinning attack like katarina?
         }
     }
 
@@ -722,7 +872,7 @@ public class UmbralBlade extends ThrownItem {
 
         double heightOffset = Math.max(0, Math.min(cur.getY() - feet, hit.getHeight()));
 
-        boolean followHead = !Config.Combat.IMPALEMENT_HEAD_FOLLOW_EXCEPTIONS.contains(hitEntity.entity().getType())
+        boolean followHead = !Config.Combat.IMPALEMENT_HEAD_FOLLOW_EXCEPTIONS.contains(hitEntity.type())
             && heightOffset >= diff * Config.Combat.IMPALEMENT_HEAD_ZONE_RATIO;
         DisplayUtil.itemDisplayFollow(hitEntity, display,  velocity.clone().normalize(), heightOffset, followHead,
             blade -> !inState(LodgedState.class), this, null, null);
@@ -730,7 +880,6 @@ public class UmbralBlade extends ThrownItem {
 
     @Override
     protected void teleport() {
-        to = cur.toVector().subtract(prev.toVector());
         display.teleport(cur.setDirection(to));
     }
 
@@ -757,7 +906,7 @@ public class UmbralBlade extends ThrownItem {
 
     @Override
     protected void handleOnReleaseActions() {
-        Prefab.Sounds.THROW.play(getThrower().entity());
+        Prefab.Sounds.THROW.playForAllInRadius(getThrower().self());
     }
 
     @Override
@@ -775,7 +924,23 @@ public class UmbralBlade extends ThrownItem {
         hit = false;
         grounded = false;
         caught = false;
-//        hitEntity = null;
         stuckBlock = null;
+    }
+
+    public void setDashingDirection(boolean forward) {
+        dashingForward = forward;
+        dashingBackward = !forward;
+
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                dashingForward = false;
+                dashingBackward = false;
+            }
+        }.runTaskLater(Sword.getInstance(), 10L);
+    }
+
+    public boolean isDashing() {
+        return dashingForward || dashingBackward;
     }
 }

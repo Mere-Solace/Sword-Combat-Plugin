@@ -1,19 +1,24 @@
 package btm.sword.system.attack;
 
-import org.bukkit.entity.ItemDisplay;
+import java.util.HashSet;
 
+import org.bukkit.entity.ItemDisplay;
+import org.bukkit.entity.LivingEntity;
+
+import btm.sword.config.Config;
 import btm.sword.system.entity.umbral.UmbralBlade;
-import btm.sword.system.entity.umbral.statemachine.state.AttackingQuickState;
+import btm.sword.util.entity.HitboxUtil;
+
 
 public class UmbralBladeAttack extends ItemDisplayAttack {
     protected UmbralBlade blade;
 
-    public UmbralBladeAttack(ItemDisplay weaponDisplay, AttackType type, boolean orientWithPitch, boolean displayOnly, int tpDuration, int displaySteps, int attackStepsPerDisplayStep, int attackMilliseconds, double attackStartValue, double attackEndValue) {
-        super(weaponDisplay, type, orientWithPitch, displayOnly, tpDuration, displaySteps, attackStepsPerDisplayStep, attackMilliseconds, attackStartValue, attackEndValue);
+    public UmbralBladeAttack(ItemDisplay weaponDisplay, AttackProfile profile, boolean orientWithPitch, boolean displayOnly, int tpDuration, int displaySteps, int attackStepsPerDisplayStep, int attackMilliseconds, double attackStartValue, double attackEndValue) {
+        super(weaponDisplay, profile, orientWithPitch, displayOnly, tpDuration, displaySteps, attackStepsPerDisplayStep, attackMilliseconds, attackStartValue, attackEndValue);
     }
 
-    public UmbralBladeAttack(ItemDisplay weaponDisplay, AttackType type, boolean orientWithPitch, boolean displayOnly, int tpDuration) {
-        super(weaponDisplay, type, orientWithPitch, displayOnly, tpDuration);
+    public UmbralBladeAttack(ItemDisplay weaponDisplay, AttackProfile profile, boolean orientWithPitch, boolean displayOnly, int tpDuration) {
+        super(weaponDisplay, profile, orientWithPitch, displayOnly, tpDuration);
     }
 
 
@@ -23,9 +28,24 @@ public class UmbralBladeAttack extends ItemDisplayAttack {
     }
 
     @Override
+    protected void cast() {
+        cast(attacker, 200, this);
+    }
+
+    @Override
     protected void drawAttackEffects() {
         super.drawAttackEffects();
+    }
 
-        blade.getDisplay().setTransformation(blade.getStateDisplayTransformation(AttackingQuickState.class));
+    @Override
+    protected HashSet<LivingEntity> collectHitEntities() {
+        if (origin == null || origin.toVector().isZero() || !origin.isFinite() ||
+            weaponDisplay == null || !weaponDisplay.isValid()) {
+            return new HashSet<>();
+        }
+
+        double secantRadius = Config.Combat.HITBOXES_SECANT_RADIUS;
+        return HitboxUtil.secant(origin, attackLocation, secantRadius,
+            entity -> filter.test(entity) && entity.getLocation().distanceSquared(attackLocation) < 20);
     }
 }

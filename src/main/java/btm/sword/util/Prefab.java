@@ -15,8 +15,12 @@ import org.bukkit.util.Vector;
 
 import btm.sword.config.Config;
 import btm.sword.system.attack.Attack;
+import btm.sword.system.attack.HitPacket;
 import btm.sword.util.display.ParticleWrapper;
+import btm.sword.util.sound.SoundType;
 import btm.sword.util.sound.SoundWrapper;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.TextDecoration;
 
 public class Prefab {
     public static class Particles {
@@ -26,7 +30,6 @@ public class Prefab {
         public static final ParticleWrapper TEST_LAVA_DRIP = new ParticleWrapper(Particle.DRIPPING_LAVA, 2, 0, 0, 0, 0);
         public static final ParticleWrapper TEST_SWING = new ParticleWrapper(Particle.DUST_COLOR_TRANSITION, 2, 0, 0, 0, 1,
                 new Particle.DustTransition(Color.fromRGB(255, 0,0), Color.fromRGB(102,0,0), 0.7f));
-        //            new Particle.DustTransition(Color.fromRGB(211, 222, 240), Color.fromRGB(36, 103, 220), 0.7f));
         public static final ParticleWrapper TEST_HIT = new ParticleWrapper(Particle.CRIT, 30, 0.5, 0.5, 0.5, 0.15);
         public static final ParticleWrapper BLEED = new ParticleWrapper(Particle.BLOCK, 25, 0.1, 0.1, 0.1, Material.CRIMSON_HYPHAE.createBlockData());
 
@@ -45,27 +48,30 @@ public class Prefab {
         public static final ParticleWrapper COLLIDE = new ParticleWrapper(Particle.CRIT, 1, 0.1, 0.1, 0.1, 0.5);
 
         public static final ParticleWrapper GRAB_CLOUD = new ParticleWrapper(Particle.POOF, 20, 0.5, 0.5, 0.5, 0.1);
-        public static final ParticleWrapper GRAB_ATTEMPT = new ParticleWrapper(Particle.GUST, 3, 0.01, 0.01, 0.01);
-        public static final ParticleWrapper UMBRAL_POOF = new ParticleWrapper(Particle.LARGE_SMOKE, 50, 0.5, 0.5, 0.5, 0.001);
+        public static final ParticleWrapper GRAB_ATTEMPT = new ParticleWrapper(Particle.SONIC_BOOM, 2, 0.01, 0.01, 0.01);
+        public static final ParticleWrapper PUNCH = new ParticleWrapper(Particle.GUST, 1, 0, 0, 0, 0);
+
+        public static final ParticleWrapper UMBRAL_BLADE_POOF = new ParticleWrapper(Particle.LARGE_SMOKE, 50, 0.5, 0.5, 0.5, 0.001);
+        public static final ParticleWrapper SOULFIRE_POOF = new ParticleWrapper(Particle.SMOKE, 3, 0.05, 0.05, 0.05, 0.0001);
+        public static final ParticleWrapper SMOKE = new ParticleWrapper(Particle.SMOKE, 1, 0.005, 0.005, 0.005, 0);
+
+        public static final ParticleWrapper UMBRAL_FLAME = new ParticleWrapper(Particle.DUST_COLOR_TRANSITION, 3, 0.05, 0.05, 0.05, 1,
+            new Particle.DustTransition(Color.fromRGB(53, 166, 240), Color.fromRGB(52, 72, 81), 0.5f));
 
         public static final ParticleWrapper THROW_TRAIl = new ParticleWrapper(Particle.DUST, 1, 0.2, 0.2, 0.2,
                 new Particle.DustOptions(Color.WHITE, 2.5f));
 
-                public static final ParticleWrapper GRAB_HIT_1 = new ParticleWrapper(Particle.FLAME, 50, 0.6, 0.6, 0.6, 0.02);
-        public static final ParticleWrapper GRAB_HIT_2 = new ParticleWrapper(Particle.DUST, 3, 0.01, 0.01, 0.01,
-                new Particle.DustOptions(Color.ORANGE, 3f));
+        public static final ParticleWrapper TOUGH_BREAK_1 = new ParticleWrapper(Particle.ENCHANTED_HIT, 70, 1, 1, 1, 0);
 
-        public static final ParticleWrapper TOUGH_BREAK_1 = new ParticleWrapper(Particle.GUST, 2, 0.1, 0.1, 0.1, 1);
-
-        public static final ParticleWrapper TOUGH_RECHARGE_1 = new ParticleWrapper(Particle.LAVA, 10, 0.1, 0.1, 0.1, 0.25);
-        public static final ParticleWrapper TOUGH_RECHARGE_2 = new ParticleWrapper(Particle.FLAME, 100, 0.5, 0.5, 0.5, 0.5);
+        public static final ParticleWrapper TOUGH_RECHARGE_1 = new ParticleWrapper(Particle.ENCHANT, 100, 1, 1, 1, 0.1);
+        public static final ParticleWrapper TOUGH_RECHARGE_2 = new ParticleWrapper(Particle.SOUL_FIRE_FLAME, 40, 0.5, 0.5, 0.5, 0.75);
     }
 
     public static class Value {
         public static final int MILLISECONDS_PER_TICK = 50; // 1000/20 = 50
     }
 
-    public static class Instruction {
+    public static class Instructions {
         public static final Function<Attack, Vector> DEFAULT_KNOCKBACK =
             a -> a.getTo().add(a.getForwardVector());
 
@@ -83,13 +89,64 @@ public class Prefab {
                 target.getType() != EntityType.ARMOR_STAND;
     }
 
+    // using Suppliers so that this basic record-like class (AttackHitValue) can use the values from the config.
+    public static class Attacks {
+        public static final HitPacket defaultMobHit = new HitPacket(
+            () -> 5f,
+            () -> 15,
+            () -> 1,
+            () -> 10f,
+            () -> 10f
+        );
+
+        public static final HitPacket basicAttack = new HitPacket(
+            () -> 5f,
+            () -> Config.Combat.ATTACK_CLASS_HIT_INVULN_TICKS,
+            () -> Config.Combat.ATTACK_CLASS_HIT_SHARDS,
+            () -> Config.Combat.ATTACK_CLASS_HIT_TOUGHNESS,
+            () -> Config.Combat.ATTACK_CLASS_HIT_SOULFIRE
+        );
+
+        public static final HitPacket grabHit = new HitPacket(
+            () -> 1f,
+            () -> 0,
+            () -> 0,
+            () -> 5f,
+            () -> 5f
+        );
+
+        public static final HitPacket thrownWeapon = new HitPacket(
+            () -> 0f,
+            () -> Config.Combat.THROWN_DAMAGE_SWORD_AXE_INVULNERABILITY_TICKS,
+            () -> Config.Combat.THROWN_DAMAGE_SWORD_AXE_BASE_SHARDS,
+            () -> Config.Combat.THROWN_DAMAGE_SWORD_AXE_TOUGHNESS_DAMAGE,
+            () -> Config.Combat.THROWN_DAMAGE_SWORD_AXE_SOULFIRE_REDUCTION
+        );
+
+        public static final HitPacket umbralItemDisplayAttack = new HitPacket(
+            () -> 0f,
+            () -> 5,
+            () -> 1,
+            () -> 15f,
+            () -> 10f
+        );
+
+        public static final HitPacket punch = new HitPacket(
+            () -> 7.5f,
+            () -> 2,
+            () -> 1,
+            () -> 5f,
+            () -> 5f
+        );
+    }
+
     /**
      * Prefab sound effects that internally use the configuration system.
      * <p>
      * Provides pre-configured {@link SoundWrapper} instances that fetch properties
      * from config.yaml at play time, enabling hot-reload functionality.
      * Sound properties (type, volume, pitch) are dynamically loaded from the
-     * configuration system when {@link SoundWrapper#play(org.bukkit.entity.LivingEntity)}
+     * configuration system when {@link SoundWrapper#playForAllInRadius(org.bukkit.entity.LivingEntity)}
      * is called.
      * </p>
      * <p>
@@ -110,6 +167,18 @@ public class Prefab {
             () -> Config.Audio.ATTACK_PITCH
         );
 
+        public static final SoundWrapper PUNCH_ATTEMPT = new SoundWrapper(
+            () -> Config.Audio.PUNCH_ATTEMPT,
+            () -> Config.Audio.PUNCH_ATTEMPT_VOL,
+            () -> Config.Audio.PUNCH_ATTEMPT_PITCH
+        );
+
+        public static final SoundWrapper PUNCH_CONNECT = new SoundWrapper(
+            () -> Config.Audio.PUNCH_CONNECT,
+            () -> Config.Audio.PUNCH_CONNECT_VOL,
+            () -> Config.Audio.PUNCH_CONNECT_PITCH
+        );
+
         /**
          * Throw sound effect for thrown items.
          * <p>
@@ -122,5 +191,71 @@ public class Prefab {
             () -> Config.Audio.THROW_VOLUME,
             () -> Config.Audio.THROW_PITCH
         );
+
+        public static final SoundWrapper SOULFIRE_GAIN_BACKGROUND = new SoundWrapper(
+            () -> SoundType.PARTICLE_SOUL_ESCAPE,
+            () -> 0.5f,
+            () -> 0.2f
+        );
+
+        public static final SoundWrapper SOULFIRE_GAIN = new SoundWrapper(
+            () -> SoundType.BLOCK_RESPAWN_ANCHOR_CHARGE,
+            () -> 0.5f,
+            () -> 0.05f
+        );
+    }
+
+    public static class Text {
+         public static final List<Component> SOUL_LINK_LORE = List.of(
+            Component.text("", Config.SwordColor.TEXT_ITEM_BASE),
+
+            Component.text("Soul Link Controls", Config.SwordColor.TEXT_ITEM_HEADER, TextDecoration.ITALIC),
+
+            Component.text("Drop + Swap", Config.SwordColor.TEXT_ITEM_CONTROLS)
+                .append(Component.text(" – Toggle Standby/Sheathed", Config.SwordColor.TEXT_ITEM_BASE)),
+            Component.text("  • Standby: ", Config.SwordColor.TEXT_ITEM_HEADER)
+                .append(Component.text("Blade hovers and awaits commands", Config.SwordColor.TEXT_ITEM_BASE)),
+            Component.text("  • Sheathed: ", Config.SwordColor.TEXT_ITEM_HEADER)
+                .append(Component.text("Blade returns to your hip", Config.SwordColor.TEXT_ITEM_BASE)),
+
+            Component.text("", Config.SwordColor.TEXT_ITEM_BASE),
+
+            Component.text("Swap + Left Click", Config.SwordColor.TEXT_ITEM_CONTROLS)
+                .append(Component.text(" – Wield Blade", Config.SwordColor.TEXT_ITEM_HEADER)),
+            Component.text("  • Equips the Blade into your hand", Config.SwordColor.TEXT_ITEM_BASE),
+
+            Component.text("", Config.SwordColor.TEXT_ITEM_BASE),
+
+            Component.text("Left Click", Config.SwordColor.TEXT_ITEM_CONTROLS)
+                .append(Component.text(" – Quick Soulfire Slash (if Standby + enough Soulfire)", Config.SwordColor.TEXT_ITEM_BASE)),
+            Component.text("  • Otherwise: Punch", Config.SwordColor.TEXT_ITEM_BASE)
+        );
+
+        public static final List<Component> UMBRAL_BLADE_LORE = List.of(
+            Component.text("", Config.SwordColor.TEXT_ITEM_BASE),
+
+            Component.text("Umbral Blade Techniques", Config.SwordColor.TEXT_ITEM_HEADER, TextDecoration.ITALIC),
+
+            Component.text("Swap + Left Click", Config.SwordColor.TEXT_ITEM_CONTROLS)
+                .append(Component.text(" – Heavy Sweep", Config.SwordColor.TEXT_ITEM_BASE)),
+            Component.text("  • Additional Left clicks increase sweep power", Config.SwordColor.TEXT_ITEM_BASE),
+
+            Component.text("", Config.SwordColor.TEXT_ITEM_BASE),
+
+            Component.text("Drop + Left Click", Config.SwordColor.TEXT_ITEM_CONTROLS)
+                .append(Component.text(" – Lunge Throw", Config.SwordColor.TEXT_ITEM_BASE)),
+            Component.text("  • Repeated Left clicks increase force", Config.SwordColor.TEXT_ITEM_BASE),
+
+            Component.text("", Config.SwordColor.TEXT_ITEM_BASE),
+
+            Component.text("Left Click (Wielded Form)", Config.SwordColor.TEXT_ITEM_CONTROLS)
+                .append(Component.text(" – Normal Attack Chain", Config.SwordColor.TEXT_ITEM_BASE)),
+
+            Component.text("", Config.SwordColor.TEXT_ITEM_BASE),
+
+            Component.text("Drop + Swap", Config.SwordColor.TEXT_ITEM_CONTROLS)
+                .append(Component.text(" – Return to Standby", Config.SwordColor.TEXT_ITEM_BASE))
+        );
+
     }
 }

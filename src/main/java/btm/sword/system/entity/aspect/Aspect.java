@@ -70,7 +70,7 @@ public class Aspect {
      *
      * @return the effective aspect value
      */
-    public float effectiveValue() {
+    public float effectiveMaxValue() {
         return baseValue * effPercent;
     }
 

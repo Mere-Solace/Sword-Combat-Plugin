@@ -97,7 +97,7 @@ public class CombatProfile {
     public CombatProfile() {
         swordClass = SwordClassType.SWORD_THROWER;
 
-        // I think I'll keep this for a potential customization of the umbral blade, but it's not used anywhere right now
+        // I think I'll keep this for a potential customization of the umbral blade, but it's not used anywhere start now
         basicAttacks = new Attack[]{
         };
 

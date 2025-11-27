@@ -116,7 +116,7 @@ public class ThrownItem {
                     return;
                 }
                 try {
-                    LivingEntity e = thrower.getSelf();
+                    LivingEntity e = thrower.self();
                     display = (ItemDisplay) e.getWorld().spawnEntity(e.getEyeLocation(), EntityType.ITEM_DISPLAY);
                     displaySetupInstructions.accept(display);
                     setupSuccessful = true;
@@ -176,7 +176,7 @@ public class ThrownItem {
 
         determineOrientation();
 
-        final LivingEntity throwerEntity = thrower.entity();
+        final LivingEntity throwerEntity = thrower.self();
 
         new BukkitRunnable() {
             int i = 0;
@@ -295,6 +295,7 @@ public class ThrownItem {
             time = timeStep * timeScalingFactor;
         }
         cur = origin.clone().add(positionFunction.apply(time));
+        if (prev != null) to = cur.clone().subtract(prev).toVector();
         velocity = velocityFunction.apply(time);
     }
 
@@ -302,7 +303,7 @@ public class ThrownItem {
      * Play sounds and remove the item in the main hand of the player. Should be overridden for different logic.
      */
     protected void handleOnReleaseActions() {
-        Prefab.Sounds.THROW.play(thrower.entity());
+        Prefab.Sounds.THROW.playForAllInRadius(thrower.self());
         thrower.setItemStackInHand(ItemStack.of(Material.AIR), true);
         InteractiveItemArbiter.put(this);
     }
@@ -314,7 +315,7 @@ public class ThrownItem {
     private void calculatePhysicsFunctions(double initialVelocity) {
         this.initialVelocity = initialVelocity;
 
-        LivingEntity ex = thrower.entity();
+        LivingEntity ex = thrower.self();
         Location o = ex.getEyeLocation();
         this.currentBasis = VectorUtil.getBasisWithoutPitch(ex);
 
@@ -432,9 +433,10 @@ public class ThrownItem {
         new BukkitRunnable() {
             @Override
             public void run() {
-                cur = marker.getLocation();
+                Location land = marker.getLocation();
+                land.setDirection(to.normalize());
                 DisplayUtil.smoothTeleport(display, 1);
-                display.teleport(cur.clone().setDirection(n));
+                display.teleport(land);
                 marker.remove();
             }
         }.runTaskLater(Sword.getInstance(), 1L);
@@ -486,14 +488,10 @@ public class ThrownItem {
     }
 
     protected void nonImpalingImpact(SwordEntity target) {
-        target.hit(thrower,
-            Config.Combat.THROWN_DAMAGE_OTHER_INVULNERABILITY_TICKS,
-            Config.Combat.THROWN_DAMAGE_OTHER_BASE_SHARDS,
-            Config.Combat.THROWN_DAMAGE_OTHER_TOUGHNESS_DAMAGE,
-            Config.Combat.THROWN_DAMAGE_OTHER_SOULFIRE_REDUCTION,
+        target.hit(thrower, Prefab.Attacks.thrownWeapon,
             velocity.clone().multiply(Config.Combat.THROWN_DAMAGE_OTHER_KNOCKBACK_MULTIPLIER));
 
-        target.entity().getWorld().createExplosion(target.getChestLocation(),
+        target.world().createExplosion(target.getChestLocation(),
             Config.Combat.THROWN_DAMAGE_OTHER_EXPLOSION_POWER,
             Config.World.EXPLOSIONS_SET_FIRE,
             Config.World.EXPLOSIONS_BREAK_BLOCKS);
@@ -502,22 +500,17 @@ public class ThrownItem {
     }
 
     private void startImpalementTask(SwordEntity target) {
-        Vector kb = EntityUtil.isOnGround(target.entity()) ?
+        Vector kb = EntityUtil.isOnGround(target.self()) ?
             velocity.clone().multiply(Config.Combat.THROWN_DAMAGE_SWORD_AXE_KNOCKBACK_GROUNDED) :
             VectorUtil.getProjOntoPlane(velocity, Config.Direction.UP()).multiply(Config.Combat.THROWN_DAMAGE_SWORD_AXE_KNOCKBACK_AIRBORNE);
 
-        impale(target.entity());
-        target.hit(thrower,
-            Config.Combat.THROWN_DAMAGE_SWORD_AXE_INVULNERABILITY_TICKS,
-            Config.Combat.THROWN_DAMAGE_SWORD_AXE_BASE_SHARDS,
-            Config.Combat.THROWN_DAMAGE_SWORD_AXE_TOUGHNESS_DAMAGE,
-            Config.Combat.THROWN_DAMAGE_SWORD_AXE_SOULFIRE_REDUCTION,
-            kb);
+        impale(target.self());
+        target.hit(thrower, Prefab.Attacks.thrownWeapon, kb);
 
         new BukkitRunnable() {
             @Override
             public void run() {
-                RayTraceResult pinnedBlock = target.entity().getWorld().rayTraceBlocks(
+                RayTraceResult pinnedBlock = target.self().getWorld().rayTraceBlocks(
                     target.getChestLocation(), velocity.clone().normalize(),
                     Config.Detection.THROW_PIN_RAY_DISTANCE, FluidCollisionMode.NEVER,
                     true);
@@ -532,7 +525,7 @@ public class ThrownItem {
 
     protected void startPinCheckTask(SwordEntity target) {
         float yaw = cur.setDirection(velocity.clone().multiply(-1)).getYaw();
-        target.entity().setBodyYaw(yaw);
+        target.self().setBodyYaw(yaw);
         target.setPinned(true);
 
         new BukkitRunnable() {
@@ -544,8 +537,8 @@ public class ThrownItem {
                     if (!display.isDead()) disposeNaturally();
                     cancel();
                 }
-                target.entity().setBodyYaw(yaw);
-                target.entity().setVelocity(new Vector());
+                target.self().setBodyYaw(yaw);
+                target.self().setVelocity(new Vector());
 
                 i += Config.Combat.IMPALEMENT_PIN_CHECK_INTERVAL;
             }
@@ -655,8 +648,7 @@ public class ThrownItem {
         Predicate<Entity> filter = entity ->
                         entity.getUniqueId() != display.getUniqueId() &&
                         (entity instanceof LivingEntity l) &&
-                        !l.isDead() &&
-                        l.getType() != EntityType.ARMOR_STAND;
+                        !l.isDead();
         // Throwing a weapon should not immediately result in catching it, therefore a grace period is in place.
         return timeStep < Config.Timing.THROWN_ITEMS_CATCH_GRACE_PERIOD ?
             entity -> filter.test(entity) && entity.getUniqueId() != thrower.getUniqueId() :
@@ -725,7 +717,7 @@ public class ThrownItem {
 
         double heightOffset = Math.max(0, Math.min(cur.getY() - feet, hit.getHeight()));
 
-        boolean followHead = !Config.Combat.IMPALEMENT_HEAD_FOLLOW_EXCEPTIONS.contains(hitEntity.entity().getType())
+        boolean followHead = !Config.Combat.IMPALEMENT_HEAD_FOLLOW_EXCEPTIONS.contains(hitEntity.type())
                 && heightOffset >= diff * Config.Combat.IMPALEMENT_HEAD_ZONE_RATIO;
         DisplayUtil.itemDisplayFollow(hitEntity, display,  velocity.clone().normalize(), heightOffset, followHead,
             null, null, null, null);
@@ -739,7 +731,7 @@ public class ThrownItem {
     public void disposeNaturally() {
         if (display == null) return;
 
-        final Location dropLocation = hitEntity != null ? hitEntity.entity().getLocation() : display.getLocation();
+        final Location dropLocation = hitEntity != null ? hitEntity.self().getLocation() : display.getLocation();
         Item dropped = dropLocation.getWorld().dropItemNaturally(dropLocation, display.getItemStack());
         new BukkitRunnable() {
             @Override

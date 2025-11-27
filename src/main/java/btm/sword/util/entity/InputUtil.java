@@ -5,8 +5,8 @@ import org.bukkit.block.BlockState;
 import org.bukkit.block.data.BlockData;
 
 public class InputUtil {
-    // When a player right clicks:
-    //      check if main hand is not air. if it isn't, it's a main hand right click. otherwise, it's an offhand right click.
+    // When a player start clicks:
+    //      check if main hand is not air. if it isn't, it's a main hand start click. otherwise, it's an offhand start click.
     //      Either way, replace both with
 
     public static boolean isInteractible(Block block) {

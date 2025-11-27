@@ -56,22 +56,30 @@ public class MovementAction extends SwordAction {
         cast (executor, Config.Movement.DASH_CAST_DURATION, new BukkitRunnable() {
             @Override
             public void run() {
-                LivingEntity ex = executor.entity();
+                LivingEntity ex = executor.self();
                 final Location dashStartLocation = ex.getLocation().add(new Vector(0, Config.Movement.DASH_INITIAL_OFFSET_Y, 0));
                 boolean onGround = executor.isGrounded();
                 Location o = ex.getEyeLocation();
+
+                // for use in dash attack method.
+                executor.setDashDirection(ex.getEyeLocation().getDirection().multiply(forward ? 1 : -1));
 
                 PotionEffect speed = new PotionEffect(PotionEffectType.SPEED, Config.Movement.SPEED_DURATION, Config.Movement.SPEED_AMPLIFIER);
                 ex.addPotionEffect(speed);
 
                 // check for an item that may be the target of the dash
-                Entity targetedItem = HitboxUtil.ray(o, o.getDirection(), maxDistance, Config.Movement.DASH_RAY_HITBOX_RADIUS,
+                Entity targetedItem;
+
+                if (executor.getItemStackInHand(true).isEmpty()) {
+                    targetedItem = HitboxUtil.ray(o, o.getDirection(), maxDistance, Config.Movement.DASH_RAY_HITBOX_RADIUS,
                         entity -> (entity.getType() == EntityType.ITEM_DISPLAY &&
-                                !entity.isDead() &&
-                                entity instanceof ItemDisplay id &&
-                                InteractiveItemArbiter.checkIfInteractive(id)) &&
-                                !InteractiveItemArbiter.isImpaling(SwordEntityArbiter.get(ex.getUniqueId()), id));
-//                executor.message("Targeted: " + targetedItem);
+                            !entity.isDead() &&
+                            entity instanceof ItemDisplay id &&
+                            InteractiveItemArbiter.checkIfInteractive(id)) &&
+                            !InteractiveItemArbiter.isImpaling(SwordEntityArbiter.get(ex.getUniqueId()), id));
+                } else {
+                    targetedItem = null; //  can't dash and grab a new item off the ground if already holding something
+                }
 
                 if (targetedItem instanceof ItemDisplay id &&
                         !id.isDead() &&
@@ -93,10 +101,6 @@ public class MovementAction extends SwordAction {
                         }
                     }.runTaskTimer(Sword.getInstance(), Config.Movement.DASH_PARTICLE_TASK_DELAY, Config.Movement.DASH_PARTICLE_TASK_PERIOD);
 
-
-//					if (impedanceCheck != null)
-//						executor.message("Hit block: " + impedanceCheck.getHitBlock());
-
                     if (impedanceCheck == null || impedanceCheck.getHitBlock() == null) {
                         double length = id.getLocation().subtract(ex.getEyeLocation()).length();
 
@@ -110,7 +114,7 @@ public class MovementAction extends SwordAction {
                             public void run() {
                                 if (id.getLocation().subtract(ex.getEyeLocation()).lengthSquared() < Config.Movement.DASH_GRAB_DISTANCE_SQUARED) {
                                     BlockData blockData = ex.getLocation().add(new Vector(0, Config.Movement.DASH_BLOCK_CHECK_OFFSET_Y, 0)).getBlock().getBlockData();
-                                    new ParticleWrapper(Particle.DUST_PILLAR,
+                                    new ParticleWrapper(Particle.BLOCK,
                                             Config.Movement.DASH_PARTICLE_COUNT,
                                             Config.Movement.DASH_PARTICLE_SPREAD_X,
                                             Config.Movement.DASH_PARTICLE_SPREAD_Y,
@@ -136,6 +140,7 @@ public class MovementAction extends SwordAction {
                         executor.message("You can't dash to that item...");
                     }
                 }
+
 
                 double dashPower = Config.Movement.DASH_BASE_POWER;
                 double s = forward ? dashPower : -dashPower;
@@ -179,8 +184,8 @@ public class MovementAction extends SwordAction {
      * @param target   The sword entity to toss.
      */
     public static void toss(Combatant executor, SwordEntity target) {
-        LivingEntity ex = executor.entity();
-        LivingEntity t = target.entity();
+        LivingEntity ex = executor.self();
+        LivingEntity t = target.self();
 
         double baseForce = Config.Movement.TOSS_BASE_FORCE;
         double force = executor.calcValueAdditive(AspectType.MIGHT, Config.Movement.TOSS_MIGHT_MULTIPLIER_BASE, baseForce, Config.Movement.TOSS_MIGHT_MULTIPLIER_INCREMENT);
@@ -237,7 +242,7 @@ public class MovementAction extends SwordAction {
                                 t.setVelocity(knockbackDir.normalize().multiply(Config.Movement.TOSS_KNOCKBACK_MULTIPLIER * force));
                             }
                             world.createExplosion(l, Config.Movement.TOSS_EXPLOSION_POWER, false, false);
-                            target.hit(executor,
+                            target.hit(executor, 5,
                                     Config.Movement.TOSS_HIT_INVULNERABILITY_TICKS,
                                     Config.Movement.TOSS_HIT_SHARD_DAMAGE,
                                     Config.Movement.TOSS_HIT_TOUGHNESS_DAMAGE,

@@ -21,6 +21,7 @@ import btm.sword.Sword;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.types.Combatant;
+import btm.sword.util.Prefab;
 
 public class EntityListener implements Listener {
     /**
@@ -92,11 +93,10 @@ public class EntityListener implements Listener {
             Vector kb = loc != null ? loc.getDirection() : new Vector();
             aggressor = SwordEntityArbiter.get(damageSource.getCausingEntity().getUniqueId());
             if (aggressor instanceof Combatant c) {
-//                if (c instanceof SwordPlayer s && s.isBlocking()) {
-//                    s.message("Blocked that tomfoolery with ease!");
-//                    return;
-//                }
-                hurt.hit(c, 15, 1, 10, 10, kb);
+
+                // TODO: #136 shield mechanics
+                if (hurt != null)
+                    hurt.hit(c, Prefab.Attacks.defaultMobHit, kb);
             }
         }
 

@@ -52,11 +52,11 @@ velocity_forward = throw_direction * throw_force
 
 **Mathematical Formula**:
 
-$\vec{v}_{forward} = \hat{d}_{throw} \cdot F_{toss}$
+$\vec{v}_{c2} = \hat{d}_{throw} \cdot F_{toss}$
 
 Where:
 
-- $\vec{v}_{forward}$ = Forward velocity component (blocks/tick)
+- $\vec{v}_{c2}$ = Forward velocity component (blocks/tick)
 - $\hat{d}_{throw}$ = Throw direction (normalized unit vector)
 - $F_{toss}$ = Throw force (`Config.Movement.TOSS_BASE_FORCE` = 1.5 blocks/tick)
 
@@ -125,7 +125,7 @@ The throw origin is offset from the player position for realistic throw mechanic
 throw_origin = player_eye_location + origin_offset
 
 origin_offset = (
-    forward * Config.Physics.THROWN_ITEMS_ORIGIN_OFFSET_FORWARD,  // 0.5 blocks
+    c2 * Config.Physics.THROWN_ITEMS_ORIGIN_OFFSET_FORWARD,  // 0.5 blocks
     up * Config.Physics.THROWN_ITEMS_ORIGIN_OFFSET_UP,            // 0.1 blocks
     back * Config.Physics.THROWN_ITEMS_ORIGIN_OFFSET_BACK         // -0.25 blocks
 )
@@ -247,7 +247,7 @@ Configured via [`Config.Physics.THROWN_ITEMS_ROTATION_SPEED_*`](../../src/main/j
 
 | Item Type | Rotation Speed (rad/tick) | Degrees/Second | Visual Effect |
 |-----------|---------------------------|----------------|---------------|
-| Sword     | 0.0                       | 0°/s           | No rotation (blade forward) |
+| Sword     | 0.0                       | 0°/s           | No rotation (blade c2) |
 | Axe       | -π/8 (-0.393)             | -141°/s        | Counter-clockwise tumble |
 | Hoe       | -π/8 (-0.393)             | -141°/s        | Counter-clockwise tumble |
 | Pickaxe   | -π/8 (-0.393)             | -141°/s        | Counter-clockwise tumble |
@@ -257,7 +257,7 @@ Configured via [`Config.Physics.THROWN_ITEMS_ROTATION_SPEED_*`](../../src/main/j
 
 **Design Rationale**:
 
-- **Swords** don't rotate to maintain "blade-forward" aesthetic
+- **Swords** don't rotate to maintain "blade-c2" aesthetic
 - **Tools** tumble to emphasize weight and momentum
 - **Negative speeds** create satisfying counter-clockwise motion matching throw arc
 

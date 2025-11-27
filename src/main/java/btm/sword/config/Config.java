@@ -11,6 +11,7 @@ import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Display.Billboard;
 import org.bukkit.entity.EntityType;
 import org.bukkit.util.Vector;
+import org.jetbrains.annotations.Nullable;
 
 import btm.sword.system.attack.AttackType;
 import btm.sword.util.sound.SoundType;
@@ -241,6 +242,22 @@ public class Config {
     //region COLOR
     // ==============================================================================
     public static class SwordColor {
+        public static TextColor TEXT_RESOURCE_COLOR = TextColor.color(222, 222, 222);
+        static { register(
+            "color.text_resource_color",
+            TEXT_RESOURCE_COLOR, TextColor.class,
+            v -> TEXT_RESOURCE_COLOR = v,
+            Config::loadTextColor
+        ); }
+
+        public static TextColor TEXT_ASPECT_COLOR = TextColor.color(0, 159, 255);
+        static { register(
+            "color.text_aspect_color",
+            TEXT_ASPECT_COLOR, TextColor.class,
+            v -> TEXT_ASPECT_COLOR = v,
+            Config::loadTextColor
+        ); }
+
         public static TextColor TITLE_INPUT_STRING = TextColor.color(151, 0, 0);
         static { register(
             "color.title_input_string",
@@ -273,7 +290,7 @@ public class Config {
             Config::loadTextColor
         ); }
 
-        public static TextColor TEXT_ITEM_BASE = TextColor.color(120, 120, 120);
+        public static TextColor TEXT_ITEM_BASE = TextColor.color(121, 142, 168);
         static { register(
             "color.text_item_base",
             TEXT_ITEM_BASE, TextColor.class,
@@ -297,10 +314,17 @@ public class Config {
             Config::loadTextColor
         ); }
 
-        public static Color UMBRAL_GLOW = Color.fromRGB(50, 50, 50);
+        public static Color UMBRAL_GLOW = Color.fromRGB(255, 255, 255);
         static { register("color.umbral_glow",
             UMBRAL_GLOW, Color.class,
             v -> UMBRAL_GLOW = v,
+            Config::loadColor
+        ); }
+
+        public static @Nullable Color FEROCIOUS_SWEEP = Color.fromRGB(255, 0, 0);
+        static { register("color.ferocious_sweep",
+            FEROCIOUS_SWEEP, Color.class,
+            v -> FEROCIOUS_SWEEP = v,
             Config::loadColor
         ); }
     }
@@ -528,14 +552,14 @@ public class Config {
      * @see btm.sword.system.action.AttackAction Attack state machine
      */
     public static class Combat {
-        public static double SHARDS_LOST_PERCENT_TOUGHNESS_RESET = 0.75; // HP (1 heart = 2 HP)
+        public static double SHARDS_LOST_PERCENT_TOUGHNESS_RESET = 0.3; // Percent of HP
         static { register("combat.shards_lost_percent_toughness_reset",
             SHARDS_LOST_PERCENT_TOUGHNESS_RESET, Double.class,
             v -> SHARDS_LOST_PERCENT_TOUGHNESS_RESET = v,
             ConfigurationSection::getDouble
         ); }
 
-        public static float TOUGHNESS_RECHARGE_PERCENT = 0.75f; // HP (1 heart = 2 HP)
+        public static float TOUGHNESS_RECHARGE_PERCENT = 0.75f;
         static { register("combat.toughness_recharge_percent",
             TOUGHNESS_RECHARGE_PERCENT, Float.class,
             v -> TOUGHNESS_RECHARGE_PERCENT = v,
@@ -550,7 +574,7 @@ public class Config {
                 ConfigurationSection::getDouble
         ); }
 
-        public static double ATTACKS_DOWN_AIR_THRESHOLD = -0.85; // dot product (-1 to 1)
+        public static double ATTACKS_DOWN_AIR_THRESHOLD = -0.4; // dot product (-1 to 1)
         static { register("combat.attacks_down_air_threshold",
                 ATTACKS_DOWN_AIR_THRESHOLD, Double.class,
                 v -> ATTACKS_DOWN_AIR_THRESHOLD = v,
@@ -564,7 +588,7 @@ public class Config {
                 ConfigurationSection::getLong
         ); }
 
-        public static long ATTACKS_CAST_TIMING_MAX_DURATION = 3L;
+        public static long ATTACKS_CAST_TIMING_MAX_DURATION = 5L;
         static { register("combat.attacks_cast_timing_max_duration",
                 ATTACKS_CAST_TIMING_MAX_DURATION, Long.class,
                 v -> ATTACKS_CAST_TIMING_MAX_DURATION = v,
@@ -665,7 +689,7 @@ public class Config {
                 ConfigurationSection::getDouble
         ); }
 
-        public static double HITBOXES_SECANT_RADIUS = 0.4;
+        public static double HITBOXES_SECANT_RADIUS = 1; // Must be above 1
         static { register("combat.hitboxes_secant_radius",
                 HITBOXES_SECANT_RADIUS, Double.class,
                 v -> HITBOXES_SECANT_RADIUS = v,
@@ -1358,6 +1382,54 @@ public class Config {
             v -> ENTITY_HIT_CONNECT_PITCH = v,
             Config::loadFloat
         ); }
+
+        public static SoundType PUNCH_ATTEMPT = SoundType.ENTITY_PLAYER_ATTACK_SWEEP;
+        static { register(
+            "audio.punch_attempt",
+            PUNCH_ATTEMPT, SoundType.class,
+            v -> PUNCH_ATTEMPT = v,
+            Config::loadSoundType
+        ); }
+
+        public static float PUNCH_ATTEMPT_VOL = 1.5f;
+        static { register(
+            "audio.punch_attempt_vol",
+            PUNCH_ATTEMPT_VOL, Float.class,
+            v -> PUNCH_ATTEMPT_VOL = v,
+            Config::loadFloat
+        ); }
+
+        public static float PUNCH_ATTEMPT_PITCH = 0.5f;
+        static { register(
+            "audio.punch_attempt_pitch",
+            PUNCH_ATTEMPT_PITCH, Float.class,
+            v -> PUNCH_ATTEMPT_PITCH = v,
+            Config::loadFloat
+        ); }
+
+        public static SoundType PUNCH_CONNECT = SoundType.ENTITY_PLAYER_ATTACK_KNOCKBACK;
+        static { register(
+            "audio.punch_connect",
+            PUNCH_CONNECT, SoundType.class,
+            v -> PUNCH_CONNECT = v,
+            Config::loadSoundType
+        ); }
+
+        public static float PUNCH_CONNECT_VOL = 0.9f;
+        static { register(
+            "audio.punch_connect_vol",
+            PUNCH_CONNECT_VOL, Float.class,
+            v -> PUNCH_CONNECT_VOL = v,
+            Config::loadFloat
+        ); }
+
+        public static float PUNCH_CONNECT_PITCH = 1.0f;
+        static { register(
+            "audio.punch_connect_pitch",
+            PUNCH_CONNECT_PITCH, Float.class,
+            v -> PUNCH_CONNECT_PITCH = v,
+            Config::loadFloat
+        ); }
     }
     //endregion
 
@@ -1436,16 +1508,16 @@ public class Config {
         ); }
 
         // Combat profile shards configuration
-        public static float COMBAT_PROFILE_SHARDS_CURRENT = 6.0f;
+        public static int COMBAT_PROFILE_SHARDS_CURRENT = 10;
         static { register(
             "entity.combat_profile_shards_current",
-            COMBAT_PROFILE_SHARDS_CURRENT, Float.class,
+            COMBAT_PROFILE_SHARDS_CURRENT, Integer.class,
             v -> COMBAT_PROFILE_SHARDS_CURRENT = v,
-            Config::loadFloat
+            ConfigurationSection::getInt
         ); }
 
         /** In ticks */
-        public static int COMBAT_PROFILE_SHARDS_REGEN_PERIOD = 200; // 10 seconds TODO: change all values to either ticks or ms
+        public static int COMBAT_PROFILE_SHARDS_REGEN_PERIOD = 5000; // 10 seconds TODO: #141 change all values to either ticks or ms
         static { register(
             "entity.combat_profile_shards_regen_period",
             COMBAT_PROFILE_SHARDS_REGEN_PERIOD, Integer.class,
@@ -1462,7 +1534,7 @@ public class Config {
         ); }
 
         // Combat profile toughness configuration
-        public static float COMBAT_PROFILE_TOUGHNESS_CURRENT = 100.0f;
+        public static float COMBAT_PROFILE_TOUGHNESS_CURRENT = 20.0f;
         static { register(
             "entity.combat_profile_toughness_current",
             COMBAT_PROFILE_TOUGHNESS_CURRENT, Float.class,
@@ -1470,7 +1542,7 @@ public class Config {
             Config::loadFloat
         ); }
 
-        public static int COMBAT_PROFILE_TOUGHNESS_REGEN_PERIOD = 20;
+        public static int COMBAT_PROFILE_TOUGHNESS_REGEN_PERIOD = 60;
         static { register(
             "entity.combat_profile_toughness_regen_period",
             COMBAT_PROFILE_TOUGHNESS_REGEN_PERIOD, Integer.class,
@@ -2067,7 +2139,7 @@ public class Config {
             v -> LOGGING_VERBOSE_MOVEMENT = v,
             ConfigurationSection::getBoolean); }
 
-        public static boolean LOGGING_VERBOSE_CONFIG = false;
+        public static boolean LOGGING_VERBOSE_CONFIG = true;
         static { register(
             "debug.logging_verbose_config",
             LOGGING_VERBOSE_CONFIG, Boolean.class
@@ -2234,7 +2306,7 @@ public class Config {
     //region UmbralBlade States
     // ==============================================================================
     public static class UmbralBlade {
-        public static double LUNGE_TIME_CUTOFF = 1.2;
+        public static double LUNGE_TIME_CUTOFF = 1.1;
         static { register(
             "umbral.time_cutoff",
             LUNGE_TIME_CUTOFF, Double.class,

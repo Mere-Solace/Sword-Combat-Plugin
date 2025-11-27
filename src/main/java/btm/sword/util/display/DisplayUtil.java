@@ -74,7 +74,7 @@ public class DisplayUtil {
                     return;
                 }
 
-                Location curTarget = entity.entity().getLocation().add(
+                Location curTarget = entity.self().getLocation().add(
                         entity.rightBasisVector(false).multiply(offset.getX()).add(
                                 entity.upBasisVector(false).multiply(offset.getY()).add(
                                         entity.forwardBasisVector(false).multiply(offset.getZ())
@@ -116,11 +116,11 @@ public class DisplayUtil {
      */
     public static <T> void itemDisplayFollow(SwordEntity entity, ItemDisplay itemDisplay, Vector direction, double heightOffset, boolean followHead,
                                              Predicate<T> condition, T toTest, Consumer<T> callback, T toConsume) {
-        double originalYaw = Math.toRadians(entity.entity().getBodyYaw());
+        double originalYaw = Math.toRadians(entity.self().getBodyYaw());
         Vector offset = Config.Direction.UP().multiply(heightOffset);
 
         itemDisplay.setBillboard(Config.Display.ITEM_DISPLAY_FOLLOW_BILLBOARD_MODE);
-        entity.entity().addPassenger(itemDisplay);
+        entity.self().addPassenger(itemDisplay);
 
         new BukkitRunnable() {
             int step = 0;
@@ -135,9 +135,9 @@ public class DisplayUtil {
                     cancel();
                 }
 
-                Location l = entity.entity().getLocation().add(offset);
+                Location l = entity.self().getLocation().add(offset);
 
-                double yawRads = Math.toRadians(followHead ? entity.entity().getYaw() : entity.entity().getBodyYaw());
+                double yawRads = Math.toRadians(followHead ? entity.self().getYaw() : entity.self().getBodyYaw());
                 Vector curDir = direction.clone().rotateAroundY(originalYaw-yawRads);
                 l.setDirection(curDir);
 
@@ -152,7 +152,7 @@ public class DisplayUtil {
         }.runTaskTimer(Sword.getInstance(), 0L, Config.Display.ITEM_DISPLAY_FOLLOW_UPDATE_INTERVAL);
     }
 
-    // x = right, y = up, z = forward
+    // x = start, y = up, z = forward
     public static <T> void itemDisplayFollowLerpTillCondition(SwordEntity entity, ItemDisplay display, Vector offset, int tpDuration, int period, boolean withPitch, Predicate<T> endCondition, T toTest) {
         new BukkitRunnable() {
             @Override
@@ -164,7 +164,7 @@ public class DisplayUtil {
 
                 DisplayUtil.smoothTeleport(display, tpDuration);
 
-                display.teleport(entity.entity().getLocation().add(
+                display.teleport(entity.self().getLocation().add(
                         entity.rightBasisVector(withPitch).multiply(offset.getX()).add(
                                 entity.upBasisVector(withPitch).multiply(offset.getY()).add(
                                         entity.forwardBasisVector(withPitch).multiply(offset.getZ())
@@ -187,7 +187,7 @@ public class DisplayUtil {
                             entity.forwardBasisVector(withPitch).multiply(offset.getZ())
                         )
                     );
-                Location updated = entity.entity()
+                Location updated = entity.self()
                     .getLocation()
                     .add(current);
                 display.teleport(updated.setDirection(entity.forwardBasisVector(withPitch)));

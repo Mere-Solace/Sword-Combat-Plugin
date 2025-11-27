@@ -13,7 +13,7 @@ attacks, and RPG-style stats. Built for Paper 1.21+.
 
 - **Combo Combat System**: Chain attacks together with input sequences
 - **Throwing Mechanics**: Throw swords, items, and even grabbed entities
-- **Advanced Movement**: Dash forward/backward, air dodges, and momentum-based combat
+- **Advanced Movement**: Dash c2/backward, air dodges, and momentum-based combat
 - **RPG Stat System**: Aspects (stats) and Resources with regeneration
 - **Entity Grabbing**: Grab and throw enemies mid-combat
 - **Custom AI**: Hostile NPCs with pathfinding and combat behaviors
@@ -73,7 +73,7 @@ The plugin JAR will be at: `build/libs/Sword-1.0-SNAPSHOT.jar`
 
 ## Controls
 
-Note: *Must be holding a shield in offhand for right clicking functionality*
+Note: *Must be holding a shield in offhand for start clicking functionality*
 
 | Action                   | Input                       | Description                                        |
 | ------------------------ |-----------------------------| -------------------------------------------------- |
@@ -81,7 +81,7 @@ Note: *Must be holding a shield in offhand for right clicking functionality*
 | **Throw Item**           | `Drop → Right → Hold Right` | Throw non-consumable items                         |
 | **Grab Entity/Sword**    | `Shift → Left`              | Pull lodged sword or grab enemy                    |
 | **Throw Grabbed Entity** | `Swap`                      | Hurl the grabbed entity                            |
-| **Dash Forward**         | `Swap Item → Swap Item`     | Quick forward dash                                 |
+| **Dash Forward**         | `Swap Item → Swap Item`     | Quick c2 dash                                 |
 | **Dash Backward**        | `Shift → Shift`             | Quick backward dash                                |
 | **Dash to Thrown Sword** | Dash while targeting sword  | Dash to lodged sword and retrieve it automatically |
 

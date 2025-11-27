@@ -22,6 +22,7 @@ import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.types.Combatant;
+import btm.sword.system.entity.types.SwordPlayer;
 import btm.sword.util.Prefab;
 import btm.sword.util.entity.HitboxUtil;
 
@@ -57,22 +58,24 @@ public class GrabAction extends SwordAction {
                 double grabThickness = executor.calcValueAdditive(AspectType.WILLPOWER, 0.75, baseGrabThickness,
                     Config.Grab.THICKNESS_SCALING);
 
-                LivingEntity ex = executor.entity();
+                LivingEntity ex = executor.self();
                 Location o = ex.getEyeLocation();
 
-                Entity grabbedItem = HitboxUtil.ray(o, o.getDirection(), range, grabThickness,
+                if (executor.getItemStackInHand(true).isEmpty()) {
+                    Entity grabbedItem = HitboxUtil.ray(o, o.getDirection(), range, grabThickness,
                         entity -> entity.getType() == EntityType.ITEM_DISPLAY &&
-                                !entity.isDead() &&
-                                entity instanceof ItemDisplay id &&
-                                InteractiveItemArbiter.checkIfInteractive(id));
+                            !entity.isDead() &&
+                            entity instanceof ItemDisplay id &&
+                            InteractiveItemArbiter.checkIfInteractive(id));
 
-                if (grabbedItem instanceof ItemDisplay id &&
+                    if (grabbedItem instanceof ItemDisplay id &&
                         !id.isDead() &&
                         !id.getItemStack().isEmpty()) {
-                    InteractiveItemArbiter.onGrab(id, executor);
+                        InteractiveItemArbiter.onGrab(id, executor);
 
-                    Prefab.Particles.GRAB_ATTEMPT.display(id.getLocation());
-                    return;
+                        Prefab.Particles.GRAB_ATTEMPT.display(id.getLocation());
+                        return;
+                    }
                 }
 
                 HashSet<LivingEntity> hit = HitboxUtil.line(ex, o, o.getDirection(), range, grabThickness);
@@ -108,6 +111,9 @@ public class GrabAction extends SwordAction {
 
                 if (swordTarget instanceof Combatant c && c.isAttemptingThrow()) c.setThrowCancelled(true);
 
+                if (executor instanceof SwordPlayer swordPlayer) {
+                    swordPlayer.setTargetedEntity(swordTarget);
+                }
                 executor.onGrab(swordTarget);
 
                 final int[] ticks = {0};

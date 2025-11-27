@@ -1,13 +1,20 @@
 package btm.sword.system.entity.types;
 
 import java.time.Duration;
+import java.util.HashSet;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import javax.annotation.Nullable;
 
+import org.bukkit.Color;
 import org.bukkit.Material;
+import org.bukkit.entity.Display;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.ItemDisplay;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.TextDisplay;
 import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryAction;
 import org.bukkit.event.inventory.InventoryClickEvent;
@@ -18,19 +25,25 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
+import org.bukkit.util.Transformation;
+import org.joml.Quaternionf;
+import org.joml.Vector3f;
 
 import com.destroystokyo.paper.profile.PlayerProfile;
 
 import btm.sword.Sword;
+import btm.sword.config.Config;
 import btm.sword.system.action.utility.thrown.ThrowAction;
 import btm.sword.system.entity.aspect.AspectType;
+import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.input.InputAction;
 import btm.sword.system.input.InputExecutionTree;
 import btm.sword.system.input.InputType;
-import btm.sword.system.inventory.InventoryManager;
+import btm.sword.system.inventory.InvInterfaceManager;
 import btm.sword.system.item.ItemStackBuilder;
 import btm.sword.system.item.KeyRegistry;
 import btm.sword.system.playerdata.PlayerData;
+import btm.sword.util.display.DisplayUtil;
 import lombok.Getter;
 import lombok.Setter;
 import net.kyori.adventure.text.Component;
@@ -58,8 +71,12 @@ public class SwordPlayer extends Combatant {
 
     private ItemStack menuButton;
 
+    private final int maxNumDummies = 3;
+    private int curNumDummies = 0;
+    private HashSet<Dummy> yourDummies = new HashSet<>();
+
     private final InputExecutionTree inputExecutionTree;
-    private final long inputTimeoutMillis = 1200L;
+    private final long baseInputTimeoutMillis = 1400L;
 
     private boolean performedDropAction;
     private boolean changingHandIndex;
@@ -85,6 +102,15 @@ public class SwordPlayer extends Combatant {
     private boolean swappingInInv;
     private boolean droppingInInv;
 
+    private BukkitTask targetIndicatorTask;
+    private SwordEntity targetedEntity;
+    private TextDisplay targetIndicator;
+
+    private int prevFormVal;
+    private float formProgress;
+    private final Supplier<Float> formExpTickStepVal = () -> 1.0f / aspects.form().effectivePeriod();
+                                                // 1.0f because needs to be scaled between 0 and 1.
+
     /**
      * Constructs a new SwordPlayer wrapping a Bukkit {@link Player} with associated {@link PlayerData}.
      * Initializes the input execution tree and player head item.
@@ -98,19 +124,24 @@ public class SwordPlayer extends Combatant {
         profile = player.getPlayerProfile();
         username = profile.getName();
 
-        playerHead = new ItemStack(Material.PLAYER_HEAD);
-        SkullMeta skullMeta = (SkullMeta) playerHead.getItemMeta();
-
+        ItemStack temp = new ItemStack(Material.PLAYER_HEAD);
+        SkullMeta skullMeta = (SkullMeta) temp.getItemMeta();
+//
         skullMeta.setPlayerProfile(profile);
-        playerHead.setItemMeta(skullMeta);
+
+        playerHead = new ItemStackBuilder(Material.PLAYER_HEAD)
+            .setMeta(skullMeta)
+            .lore(aspects.toComponentList())
+            .hideAll()
+            .build();
 
         menuButton = new ItemStackBuilder(Material.ECHO_SHARD)
-                .name(Component.text("| Main Menu |").color(TextColor.color(218, 133, 3)))
+                .name(Component.text("| Main Menu |", Config.SwordColor.TEXT_COOL, TextDecoration.BOLD))
                 .hideAll()
                 .tag(KeyRegistry.MAIN_MENU_BUTTON_KEY, KeyRegistry.MAIN_MENU_BUTTON)
                 .build();
 
-        inputExecutionTree = new InputExecutionTree(this, inputTimeoutMillis);
+        inputExecutionTree = new InputExecutionTree(this);
         inputExecutionTree.initializeInputTree();
 
         performedDropAction = false;
@@ -146,6 +177,10 @@ public class SwordPlayer extends Combatant {
         if (ticks % 2 == 0) {
             inventoryUpkeep();
         }
+
+        targetEntityIndicatorTick();
+
+        expBarTick();
     }
 
     /**
@@ -165,6 +200,7 @@ public class SwordPlayer extends Combatant {
     @Override
     public void onDeath() {
         super.onDeath();
+        endIndicatorDisplay();
     }
 
     /**
@@ -175,6 +211,7 @@ public class SwordPlayer extends Combatant {
             getUmbralBlade().dispose();
         }
         endStatusDisplay();
+        endIndicatorDisplay();
     }
 
     /**
@@ -185,6 +222,8 @@ public class SwordPlayer extends Combatant {
      * @param input the input type from the player to process
      */
     public void act(InputType input) {
+        message("Acting: " + input.name()); // TODO: remove
+
         if (isAttemptingThrow()) {
             if (input != InputType.RIGHT && input != InputType.RIGHT_HOLD) {
                 ThrowAction.throwCancel(this);
@@ -248,10 +287,44 @@ public class SwordPlayer extends Combatant {
         InputAction action = node.getAction();
 
         if (action != null) {
+            if (aspects.soulfireCur() < action.getRequiredSoulfire()) {
+                displayLackOfSoulfire(action.getRequiredSoulfire());
+                resetTree();
+                return;
+            }
+            consumeSoulfire(action.getRequiredSoulfire()); // begin the depletion of soulfire
             if (!action.execute(this)) {
                 resetTree();
             }
         }
+
+        Consumer<SwordPlayer> internalAction = node.getInternalAction();
+
+        if (internalAction != null) {
+            internalAction.accept(this);
+        }
+    }
+
+    @Override
+    protected void updateStatus() {
+        super.updateStatus();
+    }
+
+    private void expBarTick() {
+        int curFormVal = (int) aspects.formCur();
+        if (prevFormVal == curFormVal) {
+            if (curFormVal == aspects.formMaxVal()) {
+                formProgress = 0.99f;
+                return; // don't want to go over: it causes an error
+            }
+            formProgress += formExpTickStepVal.get(); // Suppliers are so cool!
+        }
+        else {
+            player.setLevel(curFormVal);
+            formProgress = 0;
+        }
+        player.setExp(Math.max(0.0f, Math.min(1.0f, formProgress))); // clamp between 0 and 1
+        prevFormVal = curFormVal;
     }
 
     private void inventoryUpkeep() {
@@ -268,8 +341,11 @@ public class SwordPlayer extends Combatant {
             player.getInventory().setItem(8, menuButton);
         }
 
-        if (getUmbralBlade() != null && !KeyRegistry.hasKey(player.getInventory().getItem(0), KeyRegistry.SOUL_LINK_KEY)) {
-            player.getInventory().setItem(0, getUmbralBlade().getLink());
+        if (getUmbralBlade() != null) {
+            boolean hasLink = KeyRegistry.hasKey(player.getInventory().getItem(0), KeyRegistry.SOUL_LINK_KEY);
+            boolean hasBlade = KeyRegistry.hasKey(player.getInventory().getItem(0), KeyRegistry.UMBRAL_BLADE_KEY);
+
+            if (!hasLink && !hasBlade) player.getInventory().setItem(0, getUmbralBlade().getLink());
         }
     }
 
@@ -281,9 +357,9 @@ public class SwordPlayer extends Combatant {
      * @param inputType the input type being evaluated
      * @return true to cancel the action, false to allow processing
      */
-    public boolean cancelItemInteraction(ItemStack itemStack, InputType inputType) {
+    public boolean handleItemInteraction(ItemStack itemStack, InputType inputType) {
         if (KeyRegistry.hasKey(itemStack, KeyRegistry.MAIN_MENU_BUTTON_KEY)) {
-            InventoryManager.createBasic(this);
+            InvInterfaceManager.displayMainMenu(this);
             return true;
         }
 
@@ -305,28 +381,27 @@ public class SwordPlayer extends Combatant {
         ItemStack clicked = e.getCurrentItem();
         int slotNumber = e.getSlot();
 
-        // Protect menu button from being moved or modified
+        // Protect necessary items from being interacted with
         if (KeyRegistry.hasKey(clicked, KeyRegistry.MAIN_MENU_BUTTON_KEY) ||
-                KeyRegistry.hasKey(onCursor, KeyRegistry.MAIN_MENU_BUTTON_KEY)) {
+                KeyRegistry.hasKey(onCursor, KeyRegistry.MAIN_MENU_BUTTON_KEY) ||
+            slotNumber == 0 || slotNumber == 8 || slotNumber == 38 || slotNumber == 40) {
             return true; // Cancel the action
         }
 
-        message("\n\n~|------Beginning of new inventory interact event------|~"
-                + "\n       Inventory: " + inv.getType()
-                + "\n       Click type: " + clickType
-                + "\n       Action type: " + action
-                + "\n       Item on cursor: " + onCursor
-                + "\n       Current Item in slot: " + clicked
-                + "\n       slot number: " + slotNumber);
-
-        message("Normal click event.");
+//        message("\n\n~|------Beginning of new inventory interact event------|~"
+//                + "\n       Inventory: " + inv.getType()
+//                + "\n       Click type: " + clickType
+//                + "\n       Action type: " + action
+//                + "\n       Item on cursor: " + onCursor
+//                + "\n       Current Item in slot: " + clicked
+//                + "\n       slot number: " + slotNumber);
         return false;
     }
 
     public void updateVisualStats() {
         player.setAbsorptionAmount(aspects.toughnessCur());
         player.setHealth(Math.max(1, aspects.shardsCur()));
-        player.setFoodLevel((int) (20 * (aspects.soulfireCur()/aspects.soulfireVal())));
+        player.setFoodLevel((int) (20 * (aspects.soulfireCur()/aspects.soulfireMaxVal())));
     }
 
     /**
@@ -369,11 +444,11 @@ public class SwordPlayer extends Combatant {
     public void displayInputSequence() {
         self.showTitle(Title.title(
                 Component.text(""),
-                Component.text(inputExecutionTree.toString(), NamedTextColor.DARK_RED, TextDecoration.ITALIC),
+                inputExecutionTree.getInputSequenceAsComponent(),
                 Title.Times.times(
-                        Duration.ofMillis(0),
-                        Duration.ofMillis(inputTimeoutMillis),
-                        Duration.ofMillis(100))));
+                    Duration.ofMillis(20),
+                    Duration.ofMillis(inputExecutionTree.timeoutTicks() * 50),
+                    Duration.ofMillis(20))));
     }
 
     /**
@@ -384,9 +459,19 @@ public class SwordPlayer extends Combatant {
                 Component.text(""),
                 Component.text("~*#*~", NamedTextColor.DARK_GRAY, TextDecoration.ITALIC),
                 Title.Times.times(
-                        Duration.ofMillis(0),
-                        Duration.ofMillis(inputTimeoutMillis),
-                        Duration.ofMillis(100))));
+                    Duration.ofMillis(20),
+                    Duration.ofMillis(baseInputTimeoutMillis),
+                    Duration.ofMillis(20))));
+    }
+
+    public void displayLackOfSoulfire(float required) {
+        self.showTitle(Title.title(
+            Component.text("✖", Config.SwordColor.TEXT_COOL_DARK),
+            Component.text(String.format("%.1f", aspects.soulfireCur()) + "/" + required, Config.SwordColor.TEXT_ITEM_BASE, TextDecoration.ITALIC),
+            Title.Times.times(
+                Duration.ofMillis(20),
+                Duration.ofMillis(baseInputTimeoutMillis),
+                Duration.ofMillis(20))));
     }
 
     /**
@@ -397,9 +482,9 @@ public class SwordPlayer extends Combatant {
                 Component.text(""),
                 Component.text("*}- Disabled -{*", NamedTextColor.DARK_GRAY, TextDecoration.ITALIC),
                 Title.Times.times(
-                        Duration.ofMillis(0),
-                        Duration.ofMillis(inputTimeoutMillis),
-                        Duration.ofMillis(100))));
+                    Duration.ofMillis(20),
+                    Duration.ofMillis(baseInputTimeoutMillis),
+                    Duration.ofMillis(20))));
     }
 
     /**
@@ -415,9 +500,9 @@ public class SwordPlayer extends Combatant {
                 Component.text(""),
                 Component.text("on cooldown: " + timeToDisplay + " " + unit, NamedTextColor.GRAY, TextDecoration.ITALIC),
                 Title.Times.times(
-                        Duration.ofMillis(0),
-                        Duration.ofMillis(inputTimeoutMillis),
-                        Duration.ofMillis(100))));
+                    Duration.ofMillis(20),
+                    Duration.ofMillis(baseInputTimeoutMillis),
+                    Duration.ofMillis(20))));
     }
 
     /**
@@ -435,9 +520,9 @@ public class SwordPlayer extends Combatant {
                 title == null ? Component.text("") : title,
                 subtitle == null ? Component.text("") : subtitle,
                 Title.Times.times(
-                        Duration.ofMillis(fade_in),
-                        Duration.ofMillis(duration),
-                        Duration.ofMillis(fade_out))));
+                    Duration.ofMillis(fade_in),
+                    Duration.ofMillis(duration),
+                    Duration.ofMillis(fade_out))));
     }
 
     /**
@@ -475,6 +560,84 @@ public class SwordPlayer extends Combatant {
         // invalidate all cached, calculated values with that stat
     }
 
+    protected void removeTargetIndicators() {
+        if (targetIndicator != null && targetIndicator.isValid()) {
+            targetIndicator.remove();
+        }
+    }
+
+    /**
+     * Very important method: it not only gets the targeted entity,
+     * but also sets the currently targeted entity and adjusts the indicator display
+     * <p>
+     * Use whenever targeting enemies with specific attacks (AOE attacks like the
+     * basic attack might not fit for this situation.)
+     */
+    @Override
+    public SwordEntity getTargetedEntity(double range) {
+        SwordEntity newTarget = super.getTargetedEntity(range);
+        if (newTarget == null) return null;
+
+        if (targetedEntity != null && (newTarget.getUuid() != targetedEntity.getUuid())) {
+            removeTargetIndicators();
+        }
+
+        targetedEntity = newTarget;
+
+        return newTarget;
+    }
+
+    public void setTargetedEntity(SwordEntity newTarget) {
+        if (newTarget == null) return;
+
+        if (targetedEntity != null && (newTarget.getUuid() != targetedEntity.getUuid())) {
+            removeTargetIndicators();
+        }
+
+        targetedEntity = newTarget;
+    }
+
+    protected void targetEntityIndicatorTick() {
+        if (targetedEntity == null) return;
+
+        if (targetedEntity.isDead()) {
+            removeTargetIndicators();
+            return;
+        }
+
+        if (targetIndicator == null || !targetIndicator.isValid()) {
+            targetIndicator = (TextDisplay) self().getWorld().spawnEntity(targetedEntity.getLocation(), EntityType.TEXT_DISPLAY);
+
+            targetedEntity.self().addPassenger(targetIndicator);
+
+            targetIndicator.setBillboard(Display.Billboard.VERTICAL);
+            targetIndicator.text(Component.text("⮟",
+                TextColor.color(255, 0, 0), TextDecoration.BOLD));
+            targetIndicator.setDefaultBackground(false);
+            targetIndicator.setBackgroundColor(Color.fromARGB(0, 0, 0, 0));
+            targetIndicator.setBrightness(new Display.Brightness(15, 15));
+            targetIndicator.setShadowed(true);
+            targetIndicator.setGlowColorOverride(Color.fromRGB(255, 0, 0));
+            targetIndicator.setGlowing(true);
+        }
+
+        float scale = 3.0f;
+
+        DisplayUtil.setInterpolationValues(targetIndicator, 0, 10);
+        targetIndicator.setTransformation(
+            new Transformation(
+                new Vector3f(0, 1.35f + ((float) Math.cos(ticks * Math.PI/16) * 0.5f), 0),
+                new Quaternionf(),
+                new Vector3f(scale, scale, scale),
+                new Quaternionf()
+            )
+        );
+    }
+
+    public void endIndicatorDisplay() {
+        removeTargetIndicators();
+    }
+
     /**
      * Checks if the input execution tree requires the same item to be used for inputs.
      *
@@ -485,7 +648,7 @@ public class SwordPlayer extends Combatant {
     }
 
     /**
-     * Starts holding the right mouse button, tracking the hold time and managing state.
+     * Starts holding the start mouse button, tracking the hold time and managing state.
      * Changes the player's main hand item to a placeholder while holding (gunpowder).
      */
     public void startHoldingRight() {
@@ -506,9 +669,9 @@ public class SwordPlayer extends Combatant {
 
         indexOfRightHold = getCurrentInvIndex();
 
-        // TODO: #123 - This is where to implement catches for right clicking different items
+        // TODO: #123 - This is where to implement catches for start clicking different items
 
-        if (!mainItemStackAtTimeOfHold.isEmpty())
+        if (!mainItemStackAtTimeOfHold.isEmpty() && !holdingUmbralItemInMainHand())
             setItemStackInHand(new ItemStack(Material.GUNPOWDER), true); // can change the logic here later
 
         rightTask = new BukkitRunnable() {
@@ -531,7 +694,7 @@ public class SwordPlayer extends Combatant {
     }
 
     /**
-     * Resets the holding right state and cancels the associated task.
+     * Resets the holding start state and cancels the associated task.
      */
     public void resetHoldingRight() {
         rightTask = null;
@@ -542,14 +705,14 @@ public class SwordPlayer extends Combatant {
     }
 
     /**
-     * Ends holding right-click input, restoring item stacks appropriately.
+     * Ends holding start-click input, restoring item stacks appropriately.
      */
     public void endHoldingRight() {
         holdingRight = false;
         timeRightHeld = System.currentTimeMillis() - rightHoldTimeStart;
         setBlocking(false);
         setItemStackInHand(offItemStackAtTimeOfHold, false);
-        if (!mainItemStackAtTimeOfHold.isEmpty() && !threwItem)
+        if (!mainItemStackAtTimeOfHold.isEmpty() && !threwItem && !holdingUmbralItemInMainHand())
             setItemAtIndex(mainItemStackAtTimeOfHold, indexOfRightHold);
     }
 
@@ -650,5 +813,13 @@ public class SwordPlayer extends Combatant {
                 droppingInInv = false;
             }
         }.runTaskLater(Sword.getInstance(), 1L);
+    }
+
+    public void incrementNumDummies() {
+        curNumDummies++;
+    }
+
+    public void decrementNumDummies() {
+        curNumDummies = Math.max(0, curNumDummies - 1);
     }
 }

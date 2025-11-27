@@ -1,16 +1,21 @@
 package btm.sword.system.input;
 
-import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Consumer;
 
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 
 import btm.sword.Sword;
+import btm.sword.config.Config;
 import btm.sword.system.action.AttackAction;
+import btm.sword.system.action.DashAttackAction;
 import btm.sword.system.action.MovementAction;
-import btm.sword.system.action.UmbralBladeAction;
+import btm.sword.system.action.skill.UmbralBladeAction;
 import btm.sword.system.action.utility.GrabAction;
 import btm.sword.system.action.utility.UtilityAction;
 import btm.sword.system.action.utility.thrown.ThrowAction;
@@ -21,6 +26,8 @@ import btm.sword.system.entity.types.SwordPlayer;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.SneakyThrows;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.TextDecoration;
 
 /**
  * Represents a finite state tree that tracks sequences of player {@link InputType} inputs,
@@ -38,22 +45,24 @@ public class InputExecutionTree {
     private final SwordPlayer owner;
 
     private InputNode currentNode;
-    private StringBuilder sequenceToDisplay;
+    private Component baseSequenceToDisplay;
+    private Component potentialInputSelectionText;
     private BukkitTask timeoutTimer;
-    private final long timeoutTicks;
 
-    /**
-     * Creates an InputExecutionTree with a specified timeout for input sequences.
-     *
-     * @param timeoutMillis timeout duration in milliseconds before sequence resets
-     */
-    public InputExecutionTree(SwordPlayer owner, long timeoutMillis) {
+    public InputExecutionTree(SwordPlayer owner) {
         this.owner = owner;
         currentNode = root;
-        sequenceToDisplay = new StringBuilder();
+        baseSequenceToDisplay = Component.text("");
+        potentialInputSelectionText = Component.text("");
         timeoutTimer = null;
-        this.timeoutTicks = (long) (timeoutMillis * (0.02)); // 1/50 (or 0.02) is the conversion from milliseconds to ticks
     }
+
+
+    // Running into some issues with overlapping input execution paths, where
+    // 2 different action paths have the same Input Sequence, but will behave differently
+    // when using different items (case in point: Umbral Blade basic sweep attack while holding link)
+    // TODO: #140 find a way to have separately defined input paths.
+
 
     /**
      * Processes an input step in the execution tree, updating current node and sequence.
@@ -65,6 +74,7 @@ public class InputExecutionTree {
      */
     public InputNode step(InputType input) {
         stopTimeoutTimer();
+        potentialInputSelectionText = Component.text(""); // reset potential input before new step
         // before taking input, if it is known that the current node is a leaf, reset and take input from the root
         if (!hasChildren()) reset();
 
@@ -89,13 +99,50 @@ public class InputExecutionTree {
             }
         }
 
-        sequenceToDisplay.append(inputToString(input));
+        if (next.action != null && !next.action.canCast(owner)) {
+            owner.debug(this.getClass(), 97, "Can't cast next action!");
+            return null; // added this so that stepping forward cannot occur
+        }
 
-        // set the
+        baseSequenceToDisplay = baseSequenceToDisplay.append(Component.text(inputToString(input),
+            Config.SwordColor.TITLE_INPUT_STRING, TextDecoration.BOLD));
+
         currentNode = next;
 
         if (hasChildren()) {
-            sequenceToDisplay.append(" + ");
+            baseSequenceToDisplay = baseSequenceToDisplay.append(Component.text(" ➞ ",
+                Config.SwordColor.TITLE_INPUT_STRING, TextDecoration.ITALIC));
+
+            Iterator<Map.Entry<InputType, InputNode>> it = currentNode.getChildren().entrySet().iterator();
+            while (it.hasNext()) {
+                Map.Entry<InputType, InputNode> entry = it.next();
+                InputAction action = entry.getValue().getAction();
+
+                boolean ready;
+                if (action == null) {
+                    ready = true;
+                }
+                else if (entry.getKey().equals(InputType.DROP)) {
+                    ready = action.canCast(owner) &&
+                        owner.getAspects().soulfireCur() >= action.getRequiredSoulfire() &&
+                        !owner.getItemTypeInHand(true).isAir();
+                }
+                else {
+                    ready = action.canCast(owner) &&
+                        owner.getAspects().soulfireCur() >= action.getRequiredSoulfire();
+                }
+                potentialInputSelectionText = potentialInputSelectionText
+                    .append(Component.text(inputToString(entry.getKey()),
+                        ready ?
+                            Config.SwordColor.TEXT_ITEM_BASE :
+                            Config.SwordColor.TEXT_COOL_DARK,
+                        ready ?
+                            TextDecoration.BOLD :
+                            TextDecoration.ITALIC))
+                    .append(it.hasNext() ?
+                        Component.text(", ", Config.SwordColor.TEXT_COOL_DARK) :
+                        Component.text(""));
+            }
             startTimeoutTimer();
         }
 
@@ -111,7 +158,7 @@ public class InputExecutionTree {
             public void run() {
                 reset();
             }
-        }.runTaskLater(plugin, timeoutTicks);
+        }.runTaskLater(plugin, currentNode.getTimeoutTicks()); // use the current node's timeoutTicks (base = 20L); 1 second
     }
 
     /**
@@ -134,7 +181,7 @@ public class InputExecutionTree {
      */
     public void reset() {
         currentNode = root;
-        sequenceToDisplay = new StringBuilder();
+        baseSequenceToDisplay = Component.text("");
     }
 
     /**
@@ -218,6 +265,73 @@ public class InputExecutionTree {
         dummy.setDisplay(display);
     }
 
+    public void add(List<InputType> inputSequence, InputAction action,
+                    Consumer<SwordPlayer> internalAction,
+                    boolean sameItemRequired,
+                    boolean cancellable,
+                    boolean display,
+                    long minHoldTime) {
+        InputNode dummy = root;
+        for (InputType input : inputSequence) {
+            if (dummy.noChild(input)) {
+                if (input == InputType.RIGHT_HOLD || input == InputType.SHIFT_HOLD) {
+                    dummy.addChild(input, null, minHoldTime);
+                }
+                else {
+                    dummy.addChild(input, null);
+                }
+                dummy.setSameItemRequired(sameItemRequired);
+                dummy.setCancellable(cancellable);
+                dummy.setDisplay(display);
+            }
+            dummy = dummy.getChild(input);
+        }
+        dummy.setAction(action);
+        dummy.setInternalAction(internalAction);
+        dummy.setDisplay(display);
+    }
+
+    public void add(List<InputType> inputSequence, InputAction action,
+                    Consumer<SwordPlayer> internalAction,
+                    boolean sameItemRequired,
+                    boolean cancellable,
+                    boolean display) {
+        InputNode dummy = root;
+        for (InputType input : inputSequence) {
+            if (dummy.noChild(input)) {
+                dummy.addChild(input, null);
+                dummy.setSameItemRequired(sameItemRequired);
+                dummy.setCancellable(cancellable);
+                dummy.setDisplay(display);
+            }
+            dummy = dummy.getChild(input);
+        }
+        dummy.setAction(action);
+        dummy.setInternalAction(internalAction);
+        dummy.setDisplay(display);
+    }
+
+    public void add(List<InputType> inputSequence, InputAction action,
+                    long timeoutTicks,
+                    boolean sameItemRequired,
+                    boolean cancellable,
+                    boolean display) {
+        InputNode dummy = root;
+        for (InputType input : inputSequence) {
+            if (dummy.noChild(input)) {
+                dummy.addChild(input, null);
+                dummy.setSameItemRequired(sameItemRequired);
+                dummy.setCancellable(cancellable);
+                dummy.setDisplay(display);
+            }
+            dummy = dummy.getChild(input);
+        }
+        dummy.setAction(action);
+        dummy.setTimeoutTicks(timeoutTicks);
+        dummy.setDisplay(display);
+    }
+
+
     /**
      * Checks whether the current node has children nodes.
      *
@@ -227,14 +341,8 @@ public class InputExecutionTree {
         return !currentNode.children.isEmpty();
     }
 
-    /**
-     * Returns the string representation of the current input sequence for display.
-     *
-     * @return string representation of input sequence
-     */
-    @Override
-    public String toString() {
-        return sequenceToDisplay.toString();
+    public Component getInputSequenceAsComponent() {
+        return Component.textOfChildren(baseSequenceToDisplay, potentialInputSelectionText);
     }
 
     /**
@@ -279,6 +387,10 @@ public class InputExecutionTree {
         return next.getMinHoldTime();
     }
 
+    public long timeoutTicks() {
+        return currentNode.timeoutTicks;
+    }
+
     /**
      * Initializes the input tree with predefined combos and mapped {@link InputAction}s.
      * Sets up example combos for movement, grabbing, attacks, throwing, and utility actions.
@@ -288,35 +400,68 @@ public class InputExecutionTree {
         // Item independent actions:
         // dodge forward, dodge backward
         add(List.of(InputType.SWAP, InputType.SWAP),
-                new InputAction(
-                        executor -> MovementAction.dash(executor, true),
-                        executor -> executor.calcCooldown(AspectType.CELERITY, 200L, 1000L, 10),
-                        Combatant::canAirDash,
-                        false,
-                        true),
+            new InputAction(
+                executor -> MovementAction.dash(executor, true),
+                executor -> executor.calcCooldown(AspectType.CELERITY, 200L, 1000L, 10),
+                Combatant::canAirDash,
+                5f,
                 false,
                 true,
-                true);
+                true),
+            7L,
+            false,
+            true,
+            true);
+        add(List.of(InputType.SWAP, InputType.SWAP, InputType.LEFT),
+            new InputAction(
+                executor -> DashAttackAction.dashAttack(executor, true),
+                executor -> 0L,
+                Combatant::canPerformAction,
+                false,
+                true,
+                true),
+            3L,
+            false,
+            true,
+            true);
 
         add(List.of(InputType.SHIFT, InputType.SHIFT),
-                new InputAction(
-                        executor -> MovementAction.dash(executor, false),
-                        executor -> executor.calcCooldown(AspectType.CELERITY, 200L, 1000L, 10),
-                        Combatant::canAirDash,
-                        false,
-                        true),
+            new InputAction(
+                executor -> MovementAction.dash(executor, false),
+                executor -> executor.calcCooldown(AspectType.CELERITY, 200L, 1000L, 10),
+                Combatant::canAirDash,
+                5f,
                 false,
                 true,
-                true);
+                true),
+            7L,
+            false,
+            true,
+            true);
+        add(List.of(InputType.SHIFT, InputType.SHIFT, InputType.LEFT),
+            new InputAction(
+                executor -> DashAttackAction.dashAttack(executor, false),
+                executor -> 0L,
+                Combatant::canPerformAction,
+                false,
+                true,
+                true),
+            3L,
+            false,
+            true,
+            true);
 
         // grab
         add(List.of(InputType.SHIFT, InputType.LEFT),
                 new InputAction(
-                        GrabAction::grab,
-                        executor -> executor.calcCooldown(AspectType.FORTITUDE, 200L, 1000L, 10),
-                        Combatant::canPerformAction,
-                        false,
-                        true),
+                    GrabAction::grab,
+                    executor -> executor.calcCooldown(AspectType.FORTITUDE, 200L, 1000L, 10),
+                    Combatant::canPerformAction,
+                    2f,
+                    false,
+                    true,
+                    true),
+                20L,
                 false,
                 true,
                 true);
@@ -326,39 +471,41 @@ public class InputExecutionTree {
         // TODO: #122 - Define possible better way of differentiating between normal attacks and umbral attacks
         // my main concern with this was not being able to dynamically change cooldowns if umbral blade or normal blade was used
         // those were erroneous since my cooldown calc is a Function! I love Functional Interfaces!
-        // TODO: #123 - Make inputExecution tree timeout value dynamic for usage in longer cooldown input chains
 
         // basic attacks
         add(List.of(InputType.LEFT),
                 new InputAction(
-                        executor -> AttackAction.basicAttack(executor, AttackType.SLASH1, true),
-                        executor ->
-                            Math.max(0, (executor.getTimeOfLastAttack() + executor.getDurationOfLastAttack()) - System.currentTimeMillis()),
-                        Combatant::canPerformAction,
-                        true,
-                        true),
+                    executor -> AttackAction.basicAttack(executor, AttackType.SLASH1, true),
+                    executor ->
+                        Math.max(0, (executor.getTimeOfLastAttack() + executor.getDurationOfLastAttack()) - System.currentTimeMillis()),
+                    Combatant::canPerformAction,
+                    true,
+                    true,
+                    false),
                 true,
                 true,
                 true);
 
         add(List.of(InputType.LEFT, InputType.LEFT),
                 new InputAction(
-                        executor -> AttackAction.basicAttack(executor, AttackType.SLASH2, true),
-                        executor -> 0L,
-                        Combatant::canPerformAction,
-                        true,
-                        true),
+                    executor -> AttackAction.basicAttack(executor, AttackType.SLASH2, true),
+                    executor -> 0L,
+                    Combatant::canPerformAction,
+                    true,
+                    true,
+                    false),
                 true,
                 true,
                 true);
 
         add(List.of(InputType.LEFT, InputType.LEFT, InputType.LEFT),
                 new InputAction(
-                        executor -> AttackAction.basicAttack(executor, AttackType.SLASH3, true),
-                        executor -> 0L,
-                        Combatant::canPerformAction,
-                        true,
-                        true),
+                    executor -> AttackAction.basicAttack(executor, AttackType.SLASH3, true),
+                    executor -> 0L,
+                    Combatant::canPerformAction,
+                    true,
+                    true,
+                    false),
                 true,
                 true,
                 true);
@@ -366,11 +513,12 @@ public class InputExecutionTree {
         // throw hold action
         add(List.of(InputType.DROP, InputType.RIGHT),
                 new InputAction(
-                        ThrowAction::throwReady,
-                        executor -> 0L,
-                        Combatant::canPerformAction,
-                        false,
-                        false),
+                    ThrowAction::throwReady,
+                    executor -> 0L,
+                    Combatant::canPerformAction,
+                    false,
+                    false,
+                    true),
                 true,
                 true,
                 true);
@@ -378,11 +526,12 @@ public class InputExecutionTree {
         // throw
         add(List.of(InputType.DROP, InputType.RIGHT, InputType.RIGHT_HOLD),
                 new InputAction(
-                        ThrowAction::throwItem,
-                        executor -> 0L,
-                        Combatant::canPerformAction,
-                        false,
-                        false),
+                    ThrowAction::throwItem,
+                    executor -> 0L,
+                    Combatant::canPerformAction,
+                    false,
+                    false,
+                    true),
                 true,
                 true,
                 true,
@@ -391,11 +540,12 @@ public class InputExecutionTree {
         // just in case
         add(List.of(InputType.DROP, InputType.DROP),
                 new InputAction(
-                        UtilityAction::death,
-                        executor -> 0L,
-                        Combatant::canPerformAction,
-                        true,
-                        true),
+                    UtilityAction::death,
+                    executor -> 0L,
+                    Combatant::canPerformAction,
+                    true,
+                    true,
+                    true),
                 true,
                 true,
                 true);
@@ -405,6 +555,8 @@ public class InputExecutionTree {
                 UtilityAction::bulletTime,
                 executor -> 5000L,
                 Combatant::canPerformAction,
+                70f,
+                true,
                 true,
                 true),
             true,
@@ -413,41 +565,117 @@ public class InputExecutionTree {
             500L);
 
         // umbral blade
-        // toggling of umbral blade can only occur if holding an item (since it begins with drop)
+        // toggling of umbral blade can only occur if holding an item (since it uses right)
         // but can be done regardless of which item is being held.
         //
         // Most umbral blade actions will require the player to be holding the soul link item, though.
-        add(List.of(InputType.DROP, InputType.SWAP),
+        add(List.of(InputType.SHIFT, InputType.DROP),
                 new InputAction(
-                        UmbralBladeAction::toggle,
-                        executor -> 400L,
-                        Combatant::canPerformAction,
-                        true,
-                        true),
+                    UmbralBladeAction::toggle,
+                    executor -> 400L,
+                    Combatant::canPerformAction,
+                    true,
+                    true,
+                    true),
                 true,
                 true,
                 true);
 
         // wield it
+        add(List.of(InputType.SHIFT, InputType.SWAP),
+            new InputAction(
+                UmbralBladeAction::wield,
+                executor -> 400L,
+                Combatant::canPerformAction,
+                true,
+                true,
+                true),
+            true,
+            true,
+            true);
+
+        // heavy sweep
         add(List.of(InputType.SWAP, InputType.LEFT),
             new InputAction(
-                    UmbralBladeAction::wield,
-                    executor -> 400L,
-                    Combatant::canPerformAction,
-                    true,
-                    true),
+                UmbralBladeAction::sweep,
+                executor -> 4000L,
+                Combatant::canPerformUmbralAction,
+                10f,
+                true,
+                true,
+                false),
+            500L,
+            true,
+            true,
+            true);
+
+        add(List.of(InputType.SWAP, InputType.LEFT, InputType.LEFT),
+            new InputAction(
+                UmbralBladeAction::sweep,
+                executor -> 0L,
+                Combatant::canPerformUmbralAction,
+                15f,
+                true,
+                true,
+                false),
+            500L,
+            true,
+            true,
+            true);
+
+        add(List.of(InputType.SWAP, InputType.LEFT, InputType.LEFT, InputType.LEFT),
+            new InputAction(
+                UmbralBladeAction::sweep,
+                executor -> 0L,
+                Combatant::canPerformUmbralAction,
+                25f,
+                true,
+                true,
+                false),
+            500L,
             true,
             true,
             true);
 
         // lunge (umbral throw action)
-        add(List.of(InputType.SHIFT, InputType.SWAP),
+        add(List.of(InputType.DROP, InputType.LEFT),
             new InputAction(
                 UmbralBladeAction::lunge,
-                executor -> 1000L,
-                Combatant::canPerformAction,
+                executor -> 4000L,
+                Combatant::canPerformUmbralAction,
+                10f,
                 true,
-                true),
+                true,
+                false),
+            500L,
+            true,
+            true,
+            true);
+
+        add(List.of(InputType.DROP, InputType.LEFT, InputType.LEFT),
+            new InputAction(
+                UmbralBladeAction::lunge,
+                executor -> 0L,
+                Combatant::canPerformUmbralAction,
+                15f,
+                true,
+                true,
+                false),
+            500L,
+            true,
+            true,
+            true);
+
+        add(List.of(InputType.DROP, InputType.LEFT, InputType.LEFT, InputType.LEFT),
+            new InputAction(
+                UmbralBladeAction::lunge,
+                executor -> 0L,
+                Combatant::canPerformUmbralAction,
+                25f,
+                true,
+                true,
+                false),
+            500L,
             true,
             true,
             true);
@@ -462,7 +690,9 @@ public class InputExecutionTree {
     @Setter
     public static class InputNode {
         private InputAction action;
-        private final HashMap<InputType, InputNode> children = new HashMap<>();
+        private Consumer<SwordPlayer> internalAction;
+        private long timeoutTicks;
+        private final LinkedHashMap<InputType, InputNode> children = new LinkedHashMap<>();
         private boolean sameItemRequired;
         private boolean cancellable;
         private boolean display;
@@ -477,6 +707,7 @@ public class InputExecutionTree {
         public InputNode(InputAction action, long minHoldTime) {
             this.action = action;
             this.minHoldTime = minHoldTime;
+            this.timeoutTicks = 20L;
         }
 
         /**

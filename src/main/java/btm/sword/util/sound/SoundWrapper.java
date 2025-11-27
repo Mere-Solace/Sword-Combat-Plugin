@@ -2,13 +2,18 @@ package btm.sword.util.sound;
 
 import java.util.function.Supplier;
 
+import org.bukkit.Location;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Player;
+
+import btm.sword.util.display.ParticleWrapper;
 
 
 /**
  * Wrapper class for handling sound effects with configuration system integration.
  * <p>
- * Similar to {@link btm.sword.util.display.ParticleWrapper}, this class provides
+ * Similar to {@link ParticleWrapper}, this class provides
  * a prefab object pattern for playing sounds. Sound properties (type, volume, pitch)
  * are dynamically loaded from the configuration system at play time, enabling
  * hot-reload functionality.
@@ -16,30 +21,28 @@ import org.bukkit.entity.LivingEntity;
  * <p>
  * Usage: {@code Prefab.Sounds.ATTACK.play(entity);}
  * </p>
+ *
+ * @param soundSupplier  Supplier to get the sound type from Config
+ * @param volumeSupplier Supplier to get the volume from Config
+ * @param pitchSupplier  Supplier to get the pitch from Config
  */
-public class SoundWrapper {
-    /** Supplier to get the sound type from Config */
-    private final Supplier<SoundType> soundSupplier;
-    /** Supplier to get the volume from Config */
-    private final Supplier<Float> volumeSupplier;
-    /** Supplier to get the pitch from Config */
-    private final Supplier<Float> pitchSupplier;
+public record SoundWrapper(
+    Supplier<SoundType> soundSupplier,
+    Supplier<Float> volumeSupplier,
+    Supplier<Float> pitchSupplier) {
 
     /**
      * Constructs a SoundWrapper with configuration suppliers.
      * <p>
-     * The suppliers are called each time {@link #play(LivingEntity)} is invoked,
+     * The suppliers are called each time {@link #playForAllInRadius(LivingEntity)} is invoked,
      * ensuring hot-reload compatibility by fetching fresh config values.
      * </p>
      *
-     * @param soundSupplier supplier that provides the sound type from Config
+     * @param soundSupplier  supplier that provides the sound type from Config
      * @param volumeSupplier supplier that provides the volume from Config
-     * @param pitchSupplier supplier that provides the pitch from Config
+     * @param pitchSupplier  supplier that provides the pitch from Config
      */
-    public SoundWrapper(Supplier<SoundType> soundSupplier, Supplier<Float> volumeSupplier, Supplier<Float> pitchSupplier) {
-        this.soundSupplier = soundSupplier;
-        this.volumeSupplier = volumeSupplier;
-        this.pitchSupplier = pitchSupplier;
+    public SoundWrapper {
     }
 
     /**
@@ -51,7 +54,27 @@ public class SoundWrapper {
      *
      * @param entity the entity to play the sound at
      */
-    public void play(LivingEntity entity) {
+    public void playToOneEntity(LivingEntity entity) {
         SoundUtil.playSound(entity, soundSupplier.get(), volumeSupplier.get(), pitchSupplier.get());
+    }
+
+    private static final double BASE_SOUND_RADIUS = 20;
+
+    public void playForAllInRadius(Location sourceLocation, double radius) {
+        for (Player player : sourceLocation.getWorld().getNearbyPlayers(sourceLocation, radius)) {
+            SoundUtil.playSound(player, soundSupplier.get(), volumeSupplier.get(), pitchSupplier.get());
+        }
+    }
+
+    public void playForAllInRadius(Location sourceLocation) {
+        for (Player player : sourceLocation.getWorld().getNearbyPlayers(sourceLocation, BASE_SOUND_RADIUS)) {
+            SoundUtil.playSound(player, soundSupplier.get(), volumeSupplier.get(), pitchSupplier.get());
+        }
+    }
+
+    public void playForAllInRadius(Entity origin) {
+        for (Player player : origin.getWorld().getNearbyPlayers(origin.getLocation(), BASE_SOUND_RADIUS)) {
+            SoundUtil.playSound(player, soundSupplier.get(), volumeSupplier.get(), pitchSupplier.get());
+        }
     }
 }

@@ -2,11 +2,9 @@ package btm.sword.system.entity.umbral.statemachine.state;
 
 import org.bukkit.Color;
 import org.bukkit.Location;
-import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
 
-import btm.sword.Sword;
 import btm.sword.system.entity.umbral.UmbralBlade;
 import btm.sword.system.entity.umbral.input.BladeRequest;
 import btm.sword.system.entity.umbral.statemachine.UmbralStateFacade;
@@ -53,12 +51,7 @@ public class RecallingState extends UmbralStateFacade {
         blade.getDisplay().setGlowColorOverride(Color.fromRGB(1, 1, 1));
 
         previousBladeLocation = blade.getDisplay().getLocation();
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                returnTask = blade.returnToWielderAndRequestState(BladeRequest.STANDBY);
-            }
-        }.runTaskLater(Sword.getInstance(), 10);
+        returnTask = blade.returnToWielderAndRequestState(BladeRequest.STANDBY);
     }
 
     @Override

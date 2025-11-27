@@ -146,7 +146,7 @@ public abstract class Affliction {
      * @return True if the entity is null or dead.
      */
     protected boolean entityExists(SwordEntity afflicted) {
-        if (afflicted == null || afflicted.entity().isDead()) {
+        if (afflicted == null || afflicted.self().isDead()) {
             cancel();
             return true;
         }

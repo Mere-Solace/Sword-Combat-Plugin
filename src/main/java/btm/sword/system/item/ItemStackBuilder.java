@@ -45,6 +45,10 @@ public class ItemStackBuilder {
     private ItemMeta meta;
     private final Plugin plugin;
 
+    public static ItemStackBuilder of(Material material) {
+        return new ItemStackBuilder(material);
+    }
+
     /**
      * Creates an ItemStackBuilder for the given material.
      * If the item’s meta is null, it falls back to a default shield meta.
@@ -59,6 +63,16 @@ public class ItemStackBuilder {
             preMeta = new ItemStack(Material.SHIELD).getItemMeta();
         this.meta = preMeta;
         this.plugin = Sword.getInstance();
+    }
+
+    /**
+     * Use this first: old meta is overwritten
+     *
+     * @param meta The new meta
+     */
+    public ItemStackBuilder setMeta(ItemMeta meta) {
+        this.meta = meta;
+        return this;
     }
 
     /**

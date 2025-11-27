@@ -1,5 +1,6 @@
 package btm.sword.system.entity.umbral.statemachine.state;
 
+import btm.sword.config.Config;
 import btm.sword.system.entity.umbral.UmbralBlade;
 import btm.sword.system.entity.umbral.statemachine.UmbralStateFacade;
 
@@ -40,19 +41,19 @@ public class AttackingHeavyState extends UmbralStateFacade {
 
     @Override
     public void onEnter(UmbralBlade blade) {
-        blade.endIdleMovement();
-        // Heavy attack execution
-        blade.performAttack(5.0, true); // range=5, heavy=true
+        blade.performWideUmbralSweepAttack(8);
+        blade.getDisplay().setGlowing(true);
+        blade.getDisplay().setGlowColorOverride(Config.SwordColor.FEROCIOUS_SWEEP);
     }
 
     @Override
     public void onExit(UmbralBlade blade) {
-        // Attack cleanup if needed
+        blade.setAttackCompleted(false);
+        blade.getDisplay().setGlowing(false);
     }
 
     @Override
     public void onTick(UmbralBlade blade) {
-        // Monitor heavy attack animation progress
-        // Transition to WAITING when attack completes (handled by callback)
+
     }
 }

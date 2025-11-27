@@ -18,6 +18,10 @@ import btm.sword.system.entity.base.CombatProfile;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.umbral.UmbralBlade;
 import btm.sword.system.entity.umbral.input.BladeRequest;
+import btm.sword.system.entity.umbral.statemachine.state.LodgedState;
+import btm.sword.system.entity.umbral.statemachine.state.RecallingState;
+import btm.sword.system.entity.umbral.statemachine.state.SheathedState;
+import btm.sword.system.entity.umbral.statemachine.state.StandbyState;
 import btm.sword.system.item.KeyRegistry;
 import btm.sword.util.Prefab;
 import lombok.Getter;
@@ -37,6 +41,7 @@ public abstract class Combatant extends SwordEntity {
     private BukkitTask abilityCastTask = null;
 
     private int airDashesPerformed;
+    protected Vector dashDirection;
 
     private boolean isGrabbing = false;
     private SwordEntity grabbedEntity;
@@ -67,16 +72,16 @@ public abstract class Combatant extends SwordEntity {
         super(associatedEntity, combatProfile);
         this.airDashesPerformed = 0;
 
-        this.attrHealth = entity().getAttribute(Attribute.MAX_HEALTH);
+        this.attrHealth = self().getAttribute(Attribute.MAX_HEALTH);
         if (attrHealth != null) attrHealth.setBaseValue(combatProfile.getStat(AspectType.SHARDS).getValue());
 
-        this.attrAbsorption = entity().getAttribute(Attribute.MAX_ABSORPTION);
+        this.attrAbsorption = self().getAttribute(Attribute.MAX_ABSORPTION);
         if (attrAbsorption != null) attrAbsorption.setBaseValue(combatProfile.getStat(AspectType.TOUGHNESS).getValue());
 
-        this.attrArmor = entity().getAttribute(Attribute.ARMOR);
+        this.attrArmor = self().getAttribute(Attribute.ARMOR);
         if (attrArmor != null) attrArmor.setBaseValue(combatProfile.getStat(AspectType.FORM).getValue());
 
-        this.attrInteractionRange = entity().getAttribute(Attribute.ENTITY_INTERACTION_RANGE);
+        this.attrInteractionRange = self().getAttribute(Attribute.ENTITY_INTERACTION_RANGE);
     }
 
     @Override
@@ -93,7 +98,7 @@ public abstract class Combatant extends SwordEntity {
     public void onDeath() {
         super.onDeath();
         if (umbralBlade.getDisplay().isValid()) {
-            Prefab.Particles.UMBRAL_POOF.display(umbralBlade.getDisplay().getLocation());
+            Prefab.Particles.UMBRAL_BLADE_POOF.display(umbralBlade.getDisplay().getLocation());
         }
         if (umbralBlade.getDisplay() == null || !umbralBlade.getDisplay().isValid()) {
             message("Display is null.");
@@ -106,7 +111,7 @@ public abstract class Combatant extends SwordEntity {
     public void onZeroHealth() {
         super.onZeroHealth();
         if (umbralBlade != null && umbralBlade.getDisplay().isValid()) {
-            Prefab.Particles.UMBRAL_POOF.display(umbralBlade.getDisplay().getLocation());
+            Prefab.Particles.UMBRAL_BLADE_POOF.display(umbralBlade.getDisplay().getLocation());
             umbralBlade.dispose();
         }
     }
@@ -118,7 +123,7 @@ public abstract class Combatant extends SwordEntity {
     }
 
     public void handleUmbralBladeTick() {
-        if (!entity().isValid()) return;
+        if (!self().isValid()) return;
 
         if (umbralBlade == null && !isStartingBlade()) {
             setupUmbralBlade();
@@ -161,6 +166,13 @@ public abstract class Combatant extends SwordEntity {
         this.abilityCastTask = abilityCastTask;
     }
 
+    public void consumeSoulfire(float requiredSoulfire) {
+        message("Current: " + String.format("%.1f", aspects.soulfireCur()) +
+            " to remove: " + String.format("%.1f", requiredSoulfire));
+        aspects.soulfire().remove(requiredSoulfire);
+        aspects.soulfire().restartRegenTaskLater(aspects.soulfire().getBaseRegenPeriod());
+    }
+
     /**
      * Initiates a grab action on the specified target {@link SwordEntity}.
      * Applies minor damage to the target, sets grab states, and displays a particle effect.
@@ -168,12 +180,12 @@ public abstract class Combatant extends SwordEntity {
      * @param target the SwordEntity that is being grabbed
      */
     public void onGrab(SwordEntity target) {
-        LivingEntity t = target.entity();
+        LivingEntity t = target.self();
         setGrabbing(true);
         target.setGrabbed(true);
         setGrabbedEntity(target);
-        t.damage(0.25, self);
         Prefab.Particles.GRAB_CLOUD.display(t.getLocation().add(new Vector(0, 1, 0)));
+        Prefab.Sounds.PUNCH_CONNECT.playForAllInRadius(self);
     }
 
     /**
@@ -201,11 +213,11 @@ public abstract class Combatant extends SwordEntity {
      * and displaying associated particle effects.
      */
     public void onGrabHit() {
-        LivingEntity target = grabbedEntity.entity();
+        LivingEntity target = grabbedEntity.self();
         Location hitLoc = target.getLocation().add(0, target.getEyeHeight()*0.5, 0);
-        Prefab.Particles.GRAB_ATTEMPT.display(hitLoc);
-        grabbedEntity.hit(this, 0, 0, 5, 15,
-                target.getEyeLocation().subtract(self.getEyeLocation()).toVector());
+        Prefab.Particles.PUNCH.display(hitLoc);
+        grabbedEntity.hit(this, Prefab.Attacks.grabHit,
+                target.getEyeLocation().subtract(eyeLoc()).toVector());
     }
 
     public boolean holdingUmbralItemInMainHand() {
@@ -213,12 +225,21 @@ public abstract class Combatant extends SwordEntity {
     }
 
     public boolean isUmbralItem(ItemStack item) {
-//        message("> Check info - ItemStack:" + item.toString() +
-//            "\nSoul link key return: " + item.getItemMeta()
-//            .getPersistentDataContainer().get(KeyRegistry.SOUL_LINK_KEY, PersistentDataType.STRING));
-
         return !item.isEmpty() &&
-            KeyRegistry.hasKey(item, KeyRegistry.SOUL_LINK_KEY);
+            (KeyRegistry.hasKey(item, KeyRegistry.SOUL_LINK_KEY) ||
+                KeyRegistry.hasKey(item, KeyRegistry.UMBRAL_BLADE_KEY));
+    }
+
+    public boolean holdingUmbralBlade() {
+        ItemStack itemStack = getItemStackInHand(true);
+        return !itemStack.isEmpty() &&
+            KeyRegistry.hasKey(itemStack, KeyRegistry.UMBRAL_BLADE_KEY);
+    }
+
+    public boolean holdingSoulLink() {
+        ItemStack itemStack = getItemStackInHand(true);
+        return !itemStack.isEmpty() &&
+            KeyRegistry.hasKey(itemStack, KeyRegistry.SOUL_LINK_KEY);
     }
 
     /**
@@ -232,6 +253,16 @@ public abstract class Combatant extends SwordEntity {
      */
     public boolean canPerformAction() {
         return abilityCastTask == null && !isGrabbing && !isGrabbed();
+    }
+
+    public boolean canPerformUmbralAction() {
+        return canPerformAction() &&
+            (
+                umbralBlade.inState(StandbyState.class) ||
+                umbralBlade.inState(RecallingState.class) ||
+                umbralBlade.inState(LodgedState.class) ||
+                umbralBlade.inState(SheathedState.class)
+            );
     }
 
     /**

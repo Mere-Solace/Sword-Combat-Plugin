@@ -1,10 +1,10 @@
-package btm.sword.system.action;
+package btm.sword.system.action.skill;
 
+import btm.sword.system.action.SwordAction;
 import btm.sword.system.entity.types.Combatant;
 import btm.sword.system.entity.umbral.UmbralBlade;
 import btm.sword.system.entity.umbral.input.BladeRequest;
 import btm.sword.system.entity.umbral.statemachine.state.LodgedState;
-import btm.sword.system.entity.umbral.statemachine.state.WieldState;
 
 public class UmbralBladeAction extends SwordAction {
     // TODO: #122 - Wielding when not holding blade should attack
@@ -12,10 +12,10 @@ public class UmbralBladeAction extends SwordAction {
         UmbralBlade blade = wielder.getUmbralBlade();
         if (blade == null) return;
 
-        if (wielder.holdingUmbralItemInMainHand()) {
-            if (blade.inState(WieldState.class)) {
-                blade.request(BladeRequest.ATTACK_QUICK);
-            }
+        if (wielder.holdingUmbralBlade()) {
+            blade.request(BladeRequest.TOGGLE);
+        }
+        else if (wielder.holdingSoulLink()) {
             blade.request(BladeRequest.WIELD);
         }
         else {
@@ -42,10 +42,17 @@ public class UmbralBladeAction extends SwordAction {
         }
     }
 
-    public static void recall(Combatant wielder) {
+    public static void sweep(Combatant wielder) {
         UmbralBlade blade = wielder.getUmbralBlade();
         if (blade == null) return;
 
-        blade.request(BladeRequest.RECALL);
+        blade.request(BladeRequest.ATTACK_HEAVY);
+    }
+
+    public static void spiralFinisher(Combatant wielder) {
+        UmbralBlade blade = wielder.getUmbralBlade();
+        if (blade == null) return;
+
+        blade.request(BladeRequest.ATTACK_HEAVY);
     }
 }

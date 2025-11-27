@@ -1,18 +1,30 @@
 package btm.sword.system.action;
 
 import java.util.Map;
+import java.util.concurrent.ThreadLocalRandom;
 
 import org.apache.logging.log4j.util.TriConsumer;
+import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.inventory.ItemStack;
 
 import btm.sword.config.Config;
 import btm.sword.system.attack.Attack;
 import btm.sword.system.attack.AttackType;
+import btm.sword.system.entity.SwordEntityArbiter;
+import btm.sword.system.entity.aspect.AspectType;
+import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.types.Combatant;
 import btm.sword.system.entity.types.SwordPlayer;
 import btm.sword.system.entity.umbral.input.BladeRequest;
-import btm.sword.system.item.KeyRegistry;
+import btm.sword.system.entity.umbral.statemachine.state.StandbyState;
+import btm.sword.util.Prefab;
+import btm.sword.util.entity.HitboxUtil;
+import btm.sword.util.math.Basis;
+import btm.sword.util.math.VectorUtil;
+
 
 /**
  * Provides attack-related actions for {@link Combatant} entities.
@@ -43,14 +55,32 @@ public class AttackAction extends SwordAction {
         ItemStack itemStack = executor.getItemStackInHand(true);
         Material itemType = itemStack.getType();
 
-        // TODO: #122 - Link from the umbral Blade todo in input execution tree
-        // handle potential umbral blade usage
-        if (KeyRegistry.hasKey(itemStack, KeyRegistry.SOUL_LINK_KEY) &&
-                executor.getUmbralBlade() != null) {
-            executor.requestUmbralBladeState(BladeRequest.ATTACK_QUICK);
+        executor.message("> Basic Attack Method Call.");
+
+        if (executor.getItemStackInHand(true).isEmpty()) {
+            throwPunch(executor, -1);
+            return;
         }
 
-        double dot = executor.entity().getEyeLocation().getDirection().dot(Config.Direction.UP());
+        if (executor.holdingSoulLink()) {
+            // TODO: #138 make attack go in different directions randomly. Implement in Quick attack class.
+            // If they have enough SF and in the Standby State, do a quick slash attack
+            if (executor.getAspects().soulfireCur() >= 10f &&
+                executor.getUmbralBlade().inState(StandbyState.class)) {
+
+                executor.getUmbralBlade().request(BladeRequest.ATTACK_QUICK);
+
+                if (executor instanceof SwordPlayer swordPlayer) {
+                    swordPlayer.resetTree();
+                }
+                return;
+            }
+
+            throwPunch(executor, -1);
+            return;
+        }
+
+        double dot = executor.dir().dot(Config.Direction.UP());
 
         if (executor.isGrounded()) {
             for (var entry : attackMap.entrySet()) {
@@ -64,12 +94,16 @@ public class AttackAction extends SwordAction {
             ((SwordPlayer) executor).resetTree(); // can't combo aerials
 
             AttackType attackType = AttackType.N_AIR;
-            double downAirThreshold = btm.sword.config.Config.Combat.ATTACKS_DOWN_AIR_THRESHOLD;
-            if (dot < downAirThreshold) attackType = AttackType.D_AIR;
+            double downAirThreshold = Config.Combat.ATTACKS_DOWN_AIR_THRESHOLD;
+            if (dot < downAirThreshold) {
+                executor.message("Down Air!"); // TODO: remove after testing.
+                attackType = AttackType.D_AIR;
+            }
 
             for (var entry : attackMap.entrySet()) {
                 if (itemType.name().endsWith(entry.getKey())) {
-                    entry.getValue().accept(executor, attackType, true);
+                                                                    // with pitch?
+                    entry.getValue().accept(executor, attackType, attackType != AttackType.D_AIR);
                     return;
                 }
             }
@@ -77,6 +111,46 @@ public class AttackAction extends SwordAction {
     }
 
     public static void basicSlash(Combatant executor, AttackType type, Boolean orientWithPitch) {
-        new Attack(type, orientWithPitch).execute(executor);
+        new Attack(type, orientWithPitch, 40, 60, 0.1, 0.9).execute(executor);
+    }
+
+    public static void punch(Combatant executor, boolean right, double distance) {
+        double dist = distance < 0 ? 2.5 : distance;
+        double spacing = 0.33;
+
+        Prefab.Sounds.PUNCH_ATTEMPT.playForAllInRadius(executor.self());
+
+        Basis basis = VectorUtil.getBasis(executor.eyeLoc(), executor.dir());
+
+        Location originLoc = executor.getChestLocation()
+            .add(right ? basis.right().multiply(spacing) : basis.right().multiply(-spacing));
+
+        Prefab.Particles.PUNCH.display(originLoc.clone().add(basis.forward().multiply(dist)));
+
+        Entity hit = HitboxUtil.ray(originLoc, executor.dir(), dist, 1.2,
+            entity -> entity instanceof LivingEntity l &&
+                l.getUniqueId() != executor.getUniqueId() &&
+                SwordEntityArbiter.getOrAdd(l.getUniqueId()) != null);
+
+        if (hit != null) {
+            SwordEntity swordHit = SwordEntityArbiter.getOrAdd(hit.getUniqueId());
+            if (swordHit != null) {
+                Prefab.Sounds.PUNCH_CONNECT.playForAllInRadius(executor.self());
+                swordHit.hit(executor, Prefab.Attacks.punch, executor.dir());
+            }
+        }
+    }
+
+    public static void throwPunch(Combatant executor, double distance) {
+        executor.setTimeOfLastAttack(System.currentTimeMillis());
+        int cooldown = (int) executor.calcValueReductive(AspectType.FINESSE,
+            Config.Combat.ATTACKS_CAST_TIMING_MIN_DURATION,
+            Config.Combat.ATTACKS_CAST_TIMING_MAX_DURATION,
+            Config.Combat.ATTACKS_CAST_TIMING_REDUCTION_RATE);
+        executor.setDurationOfLastAttack(cooldown * Config.Combat.ATTACKS_DURATION_MULTIPLIER);
+
+        cast(executor, cooldown,
+            () -> punch(executor, ThreadLocalRandom.current().nextBoolean(), distance)
+        );
     }
 }

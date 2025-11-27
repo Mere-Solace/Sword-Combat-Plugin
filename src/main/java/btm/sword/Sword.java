@@ -33,6 +33,8 @@ public final class Sword extends JavaPlugin {
 
         // Initialize configuration system (must be first for other systems to use it)
         ConfigManager.initialize(this);
+        // load in values from the config file to override the defaults from the Config class
+        ConfigManager.getInstance().loadConfig();
 
         InvUI.getInstance().setPlugin(this);
 

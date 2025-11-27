@@ -6,7 +6,7 @@ import btm.sword.system.entity.umbral.statemachine.UmbralStateFacade;
 public class InactiveState extends UmbralStateFacade {
     @Override
     public String name() {
-        return "FLYING";
+        return "INACTIVE";
     }
 
     @Override

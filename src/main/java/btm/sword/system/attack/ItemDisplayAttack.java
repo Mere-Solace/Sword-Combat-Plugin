@@ -1,22 +1,15 @@
 package btm.sword.system.attack;
 
-import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 import org.bukkit.entity.ItemDisplay;
-import org.bukkit.scheduler.BukkitRunnable;
-import org.bukkit.util.Vector;
 
-import btm.sword.system.SwordScheduler;
+import btm.sword.util.Prefab;
 import btm.sword.util.display.DisplayUtil;
-import btm.sword.util.math.Basis;
-import btm.sword.util.math.BezierUtil;
-import btm.sword.util.math.VectorUtil;
 import lombok.Setter;
 
 public class ItemDisplayAttack extends Attack {
     @Setter
-    private ItemDisplay weaponDisplay;
+    protected ItemDisplay weaponDisplay;
     private final boolean displayOnly;
 
     private final int displaySteps;
@@ -30,9 +23,9 @@ public class ItemDisplayAttack extends Attack {
     // Takes in an already created weapon display and changes it's position around.
     // once the attack is done, the display should either be removed or control of
     // its movement should be handed back to previous controller.
-    public ItemDisplayAttack(ItemDisplay weaponDisplay, AttackType type, boolean orientWithPitch,
+    public ItemDisplayAttack(ItemDisplay weaponDisplay, AttackProfile profile, boolean orientWithPitch,
                              boolean displayOnly, int tpDuration) {
-        super(type, orientWithPitch);
+        super(profile, orientWithPitch);
         this.weaponDisplay = weaponDisplay;
         this.displayOnly = displayOnly;
         this.displaySteps = 10; //TODO config pls
@@ -40,10 +33,10 @@ public class ItemDisplayAttack extends Attack {
         this.tpDuration = tpDuration;
     }
 
-    public ItemDisplayAttack(ItemDisplay weaponDisplay, AttackType type, boolean orientWithPitch,
+    public ItemDisplayAttack(ItemDisplay weaponDisplay, AttackProfile profile, boolean orientWithPitch,
                              boolean displayOnly, int tpDuration, int displaySteps, int attackStepsPerDisplayStep,
                              int attackMilliseconds, double attackStartValue, double attackEndValue) {
-        super(type, orientWithPitch, attackMilliseconds, displaySteps * attackStepsPerDisplayStep, attackStartValue, attackEndValue);
+        super(profile, orientWithPitch, attackMilliseconds, displaySteps * attackStepsPerDisplayStep, attackStartValue, attackEndValue);
         this.weaponDisplay = weaponDisplay;
         this.displayOnly = displayOnly;
         this.displaySteps = displaySteps;
@@ -52,9 +45,9 @@ public class ItemDisplayAttack extends Attack {
     }
 
     @Override
-    protected void hit() {
+    protected void performHitLogic() {
         if (displayOnly) return;
-        super.hit();
+        super.performHitLogic();
     }
 
     @Override
@@ -69,84 +62,27 @@ public class ItemDisplayAttack extends Attack {
         if (curIteration % displaySteps == 0) {
             DisplayUtil.smoothTeleport(weaponDisplay, tpDuration);
             weaponDisplay.teleport(attackLocation.setDirection(cur));
-
-//            DrawUtil.secant(List.of(Prefab.Particles.TEST_SWORD_BLUE), origin, attackLocation, 0.2);
         }
     }
 
     @Override
-    protected void startAttack() {
-        applySelfAttackEffects();
-        playSwingSoundEffects();
+    protected void startupLogic() {
 
-        double attackRange = attackEndValue - attackStartValue;
-        double step = attackRange / attackIterations;
-        int calculation = attackMilliseconds / attackIterations;
-        int msPerIteration = calculation <= 0 ? 1 : attackMilliseconds / attackIterations;
-
-        generateBezierFunction();
-
-        determineOrigin();
-
-        prev = weaponPathFunction.apply(attackStartValue - step);
 
         if (ticksSpentMovingToInitialLocation != 0) {
-            DisplayUtil.smoothTeleport(weaponDisplay, ticksSpentMovingToInitialLocation*2);
+            DisplayUtil.smoothTeleport(weaponDisplay, ticksSpentMovingToInitialLocation * 2);
             weaponDisplay.teleport(origin.clone().add(prev));
-        }
-
-        curIteration = 0;
-        for (int i = 0; i <= attackIterations; i++) {
-            int pass = i;
-            SwordScheduler.runBukkitTaskLater(
-                new BukkitRunnable() {
-                final int idx = pass;
-                @Override
-                public void run() {
-                    applyConsistentEffects();
-
-                    cur = weaponPathFunction.apply(attackStartValue + (step * idx));
-                    attackLocation = origin.clone().add(cur).setDirection(cur);
-
-                    drawAttackEffects();
-                    hit();
-                    swingTest();
-
-                    // allows for chaining of attack logic
-                    if (idx == attackIterations) {
-                        handleCallback();
-                        if (nextAttack != null) {
-                            SwordScheduler.runBukkitTaskLater(
-                                new BukkitRunnable() {
-                                    @Override
-                                    public void run() {
-                                        origin = null;  // important so that consecutive uses of the same origin don't
-                                        // all start with the same origin.
-                                        nextAttack.execute(attacker);
-                                    }
-                                }, millisecondDelayBeforeNextAttack, TimeUnit.MILLISECONDS
-                            );
-                        }
-                    }
-                    prev = cur;
-                    curIteration++;
-                }
-            }, ticksSpentMovingToInitialLocation + (i * msPerIteration),
-                TimeUnit.MILLISECONDS);
         }
     }
 
     @Override
-    void generateBezierFunction() {
-        Basis basis = orientWithPitch ?
-            VectorUtil.getBasis(origin, origin.getDirection()) :
-            VectorUtil.getBasisWithoutPitch(origin);
-        curRight = basis.right();
-        curUp = basis.up();
-        curForward = basis.forward();
+    protected void endingLogic() {
+        origin = null;
+    }
 
-        List<Vector> adjusted = BezierUtil.adjustCtrlToBasis(basis, controlVectors, rangeMultiplier);
-        weaponPathFunction = BezierUtil.cubicBezier3D(adjusted.get(0), adjusted.get(1), adjusted.get(2), adjusted.get(3));
+    @Override
+    protected int calcIterationStartDelay(int i, int msPerIteration) {
+        return ticksSpentMovingToInitialLocation + (i * msPerIteration);
     }
 
     public ItemDisplayAttack setInitialMovementTicks(int ticksSpentMovingToInitialLocation) {
@@ -157,5 +93,14 @@ public class ItemDisplayAttack extends Attack {
     public ItemDisplayAttack setDrawParticles(boolean drawParticles) {
         this.drawParticles = drawParticles;
         return this;
+    }
+
+    // TODO: pass in an instance of HitValues
+    @Override
+    protected void hit() {
+        currentTarget.hit(attacker, Prefab.Attacks.umbralItemDisplayAttack,
+            attackProfile.knockbackFunction().apply(this));
+
+        Prefab.Particles.TEST_HIT.display(currentTarget.getChestLocation());
     }
 }

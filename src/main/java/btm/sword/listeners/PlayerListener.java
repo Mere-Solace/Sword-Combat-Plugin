@@ -169,7 +169,7 @@ public class PlayerListener implements Listener {
 //			case SWAP_OFFHAND -> sp.setSwappingInInv();
 //			case DROP, CONTROL_DROP -> sp.setDroppingInInv();
 //			case SHIFT_RIGHT -> {
-//				sp.message("Shift right clicking!");
+//				sp.message("Shift start clicking!");
 //				event.setCancelled(true);
 //				new BukkitRunnable() {
 //					final int slot = event.getSlot();
