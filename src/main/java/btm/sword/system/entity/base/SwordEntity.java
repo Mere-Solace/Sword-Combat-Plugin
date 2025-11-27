@@ -365,6 +365,10 @@ public abstract class SwordEntity {
         return self;
     }
 
+    public boolean isSelf(LivingEntity entity) {
+        return self().getUniqueId().equals(entity.getUniqueId());
+    }
+
     public World world() {
         return self.getWorld();
     }
@@ -870,10 +874,10 @@ public abstract class SwordEntity {
         LivingEntity target = (LivingEntity) HitboxUtil.ray(
                 eyeLoc(), dir(), range, 1,
                 entity -> entity instanceof LivingEntity e &&
-                        !(e.getUniqueId() == getUniqueId()) &&
+                        !isSelf(e) &&
                         e.isValid());
 
-        return target == null ? null : SwordEntityArbiter.getOrAdd(target.getUniqueId());
+        return target == null ? null : SwordEntityArbiter.getOrAdd(target);
     }
 
     public Vector rightBasisVector(boolean withPitch) {

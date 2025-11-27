@@ -440,7 +440,7 @@ public class UmbralBlade extends ThrownItem {
     }
 
     public boolean isOwnedBy(Combatant combatant) {
-        return combatant.getUniqueId() == thrower.getUniqueId();
+        return combatant.getUniqueId().equals(thrower.getUniqueId());
     }
 
     public boolean inState(Class<? extends State<UmbralBlade>> clazz) {
@@ -839,7 +839,7 @@ public class UmbralBlade extends ThrownItem {
     }
 
     public void onGrab(Combatant combatant) {
-        if (combatant.getUniqueId() != thrower.getUniqueId()) {
+        if (!isOwnedBy(combatant)) {
             // TODO: #122 - Add rejection logic for non-thrower grabs
             return;
         }

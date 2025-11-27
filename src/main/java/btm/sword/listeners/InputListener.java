@@ -45,8 +45,7 @@ public class InputListener implements Listener {
      */
     @EventHandler
     public void onNormalAttack(PrePlayerAttackEntityEvent event) {
-        SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId());
-        if (swordPlayer == null) return;
+        SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer());
         ItemStack item = swordPlayer.getItemStackInHand(true);
 
         if (swordPlayer.handleItemInteraction(item, InputType.LEFT)) {
@@ -71,8 +70,7 @@ public class InputListener implements Listener {
      */
     @EventHandler
     public void onPlayerInteract(PlayerInteractEvent event) {
-        SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId());
-        if (swordPlayer == null) return;
+        SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer());
         ItemStack item = swordPlayer.getItemStackInHand(true);
 
         Action action = event.getAction();
@@ -120,8 +118,7 @@ public class InputListener implements Listener {
      */
     @EventHandler
     public void onPlayerEntityInteract(PlayerInteractEntityEvent event) {
-        SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId());
-        if (swordPlayer == null) return;
+        SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer());
         ItemStack item = swordPlayer.getItemStackInHand(true);
 
         swordPlayer.setInteractingWithEntity(true);
@@ -157,8 +154,7 @@ public class InputListener implements Listener {
      */
     @EventHandler
     public void onPlayerDropEvent(PlayerDropItemEvent event) {
-        SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId());
-        if (swordPlayer == null) return;
+SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer());
         ItemStack item = swordPlayer.getItemStackInHand(true);
 
         // Prevent dropping the menu button
@@ -194,8 +190,7 @@ public class InputListener implements Listener {
      */
     @EventHandler
     public void onSneakEvent(PlayerToggleSneakEvent event) {
-        SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId());
-        if (swordPlayer == null) return;
+SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer());
 
         if (event.isSneaking()) {
             swordPlayer.act(InputType.SHIFT);
@@ -216,8 +211,7 @@ public class InputListener implements Listener {
      */
     @EventHandler
     public void onSwapEvent(PlayerSwapHandItemsEvent event) {
-        SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId());
-        if (swordPlayer == null) return;
+SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer());
         ItemStack item = swordPlayer.getItemStackInHand(true);
 
         if (swordPlayer.handleItemInteraction(item, InputType.SWAP)) {
@@ -240,8 +234,7 @@ public class InputListener implements Listener {
      */
     @EventHandler
     public void onChangeItemEvent(PlayerItemHeldEvent event) {
-        SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId());
-        if (swordPlayer == null) return;
+SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer());
         swordPlayer.setChangingHandIndex(true);
 
         if (swordPlayer.inputReliantOnItem()) {

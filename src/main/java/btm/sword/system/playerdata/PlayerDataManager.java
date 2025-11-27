@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.bukkit.Bukkit;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 
 import com.google.common.reflect.TypeToken;
@@ -38,7 +39,7 @@ public class PlayerDataManager {
         loadPlayerData();
 
         for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
-            register(onlinePlayer.getUniqueId());
+            register(onlinePlayer);
         }
     }
 
@@ -46,8 +47,8 @@ public class PlayerDataManager {
         savePlayerData();
     }
 
-    public static void register(UUID uuid) {
-        allPlayerData.putIfAbsent(uuid, new PlayerData(uuid));
+    public static void register(LivingEntity entity) {
+        allPlayerData.putIfAbsent(entity.getUniqueId(), new PlayerData(entity.getUniqueId()));
     }
 
     public static PlayerData getPlayerData(UUID uuid) {

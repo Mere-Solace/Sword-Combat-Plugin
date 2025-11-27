@@ -631,16 +631,16 @@ public class ThrownItem {
                     .lengthSquared() * Config.Detection.THROW_HIT_CHECK_DIST_MULTIPLIER,
                 Config.Detection.THROW_HIT_CHECK_DIST_MULTIPLIER, effFilter);
 
-        if (hitEntity == null) return;
+        if (hitEntity == null) return; // Again, might change this later for non-living damageables.
 
-        if (hitEntity.getHitEntity() == null) return;
+        if (!(hitEntity.getHitEntity() instanceof LivingEntity)) return;
 
-        if (hitEntity.getHitEntity().getUniqueId() == thrower.getUniqueId()) {
+        if (thrower.isSelf((LivingEntity) hitEntity.getHitEntity())) {
             caught = true;
         }
         else {
             hit = true;
-            this.hitEntity = SwordEntityArbiter.getOrAdd(hitEntity.getHitEntity().getUniqueId());
+            this.hitEntity = SwordEntityArbiter.getOrAdd((LivingEntity) hitEntity.getHitEntity());
         }
     }
 

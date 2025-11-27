@@ -100,7 +100,7 @@ public class InputExecutionTree {
         }
 
         if (next.action != null && !next.action.canCast(owner)) {
-            owner.debug(this.getClass(), 97, "Can't cast next action!");
+            owner.debug(this.getClass(), 103, "Can't cast next action!");
             return null; // added this so that stepping forward cannot occur
         }
 

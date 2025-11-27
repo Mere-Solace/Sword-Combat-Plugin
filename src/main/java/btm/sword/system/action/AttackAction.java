@@ -125,16 +125,19 @@ public class AttackAction extends SwordAction {
         Location originLoc = executor.getChestLocation()
             .add(right ? basis.right().multiply(spacing) : basis.right().multiply(-spacing));
 
-        Prefab.Particles.PUNCH.display(originLoc.clone().add(basis.forward().multiply(dist)));
+        Location hitLoc = originLoc.clone().add(basis.forward().multiply(dist));
+
+        Prefab.Particles.PUNCH.display(hitLoc);
 
         Entity hit = HitboxUtil.ray(originLoc, executor.dir(), dist, 1.2,
             entity -> entity instanceof LivingEntity l &&
-                l.getUniqueId() != executor.getUniqueId() &&
-                SwordEntityArbiter.getOrAdd(l.getUniqueId()) != null);
+                !executor.isSelf(l) &&
+                SwordEntityArbiter.getOrAdd(l) != null);
 
         if (hit != null) {
-            SwordEntity swordHit = SwordEntityArbiter.getOrAdd(hit.getUniqueId());
+            SwordEntity swordHit = SwordEntityArbiter.getOrAdd((LivingEntity) hit);
             if (swordHit != null) {
+                Prefab.Particles.PUNCH_CONNECT.display(hitLoc);
                 Prefab.Sounds.PUNCH_CONNECT.playForAllInRadius(executor.self());
                 swordHit.hit(executor, Prefab.Attacks.punch, executor.dir());
             }

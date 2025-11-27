@@ -48,7 +48,7 @@ public class ImpalingUmbralBladeAttack extends UmbralBladeAttack {
         }
 
         LivingEntity hit = targets.stream().iterator().next();
-        SwordEntity impaled = SwordEntityArbiter.getOrAdd(hit.getUniqueId());
+        SwordEntity impaled = SwordEntityArbiter.getOrAdd(hit);
 
         blade.setHitEntity(impaled);
         blade.request(BladeRequest.IMPALE);

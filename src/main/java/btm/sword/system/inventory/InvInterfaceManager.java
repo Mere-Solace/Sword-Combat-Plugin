@@ -108,7 +108,7 @@ public class InvInterfaceManager {
                 new BukkitRunnable() {
                     @Override
                     public void run() {
-                        Dummy swordDummy = (Dummy) SwordEntityArbiter.getOrAdd(dummy.getUniqueId());
+                        Dummy swordDummy = (Dummy) SwordEntityArbiter.getOrAdd(dummy);
                         if (swordDummy == null || swordDummy.isInvalid()) {
                             cancel();
                             return;

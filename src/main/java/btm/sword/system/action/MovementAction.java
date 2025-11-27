@@ -76,7 +76,7 @@ public class MovementAction extends SwordAction {
                             !entity.isDead() &&
                             entity instanceof ItemDisplay id &&
                             InteractiveItemArbiter.checkIfInteractive(id)) &&
-                            !InteractiveItemArbiter.isImpaling(SwordEntityArbiter.get(ex.getUniqueId()), id));
+                            !InteractiveItemArbiter.isImpaling(SwordEntityArbiter.get(ex), id));
                 } else {
                     targetedItem = null; //  can't dash and grab a new item off the ground if already holding something
                 }

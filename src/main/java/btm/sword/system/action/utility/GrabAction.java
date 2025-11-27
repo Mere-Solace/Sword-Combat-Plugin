@@ -106,7 +106,7 @@ public class GrabAction extends SwordAction {
                     return;
                 }
 
-                SwordEntity swordTarget = SwordEntityArbiter.getOrAdd(target.getUniqueId());
+                SwordEntity swordTarget = SwordEntityArbiter.getOrAdd(target);
                 if (swordTarget == null || swordTarget.isHit()) return;
 
                 if (swordTarget instanceof Combatant c && c.isAttemptingThrow()) c.setThrowCancelled(true);
