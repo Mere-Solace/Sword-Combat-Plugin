@@ -1,15 +1,15 @@
 package btm.sword.system.item;
 
-import java.util.Set;
 
 import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.Plugin;
+import org.jetbrains.annotations.NotNull;
 
 import btm.sword.Sword;
+
 
 /**
  * Centralized registry and utility class for {@link NamespacedKey} management
@@ -61,17 +61,26 @@ public final class KeyRegistry {
     /** Cached {@link NamespacedKey} for {@link #MAIN_MENU_BUTTON}. */
     public static final NamespacedKey MAIN_MENU_BUTTON_KEY = key(MAIN_MENU_BUTTON);
 
-    /** Persistent data key for unique item identifiers (UUIDs). */
-    public static final String ITEM_UUID = "uuid";
 
-    /** Cached {@link NamespacedKey} for {@link #ITEM_UUID}. */
-    public static final NamespacedKey ITEM_UUID_KEY = key(ITEM_UUID);
+    public static final String ITEM_TYPE = "item_type";
 
-    /** Persistent data key for base weapon damage values. */
-    public static final String BASE_DAMAGE = "damage";
+    public static final NamespacedKey ITEM_TYPE_KEY = key(ITEM_TYPE);
 
-    /** Cached {@link NamespacedKey} for {@link #BASE_DAMAGE}. */
-    public static final NamespacedKey BASE_DAMAGE_KEY = key(BASE_DAMAGE);
+
+    public static final String ATTACK_STYLE = "attack_style";
+
+    public static final NamespacedKey ATTACK_STYLE_KEY = key(ATTACK_STYLE);
+
+
+    public static final String TOUGHNESS_DAMAGE_ADDER = "toughness_damage_adder";
+
+    public static final NamespacedKey TOUGHNESS_DAMAGE_ADDER_KEY = key(TOUGHNESS_DAMAGE_ADDER);
+
+
+    public static final String SHARD_DAMAGE_ADDER = "shard_damage_adder";
+
+    public static final NamespacedKey SHARD_DAMAGE_ADDER_KEY = key(SHARD_DAMAGE_ADDER);
+
 
     /** Persistent data key for skin/model data references. */
     public static final String MODEL_ID = "model_id";
@@ -105,26 +114,8 @@ public final class KeyRegistry {
      * @param key the key to search for
      * @return {@code true} if the key exists, otherwise {@code false}
      */
-    public static boolean hasKey(ItemStack itemStack, NamespacedKey key) {
-        if (itemStack == null) return false;
-        ItemMeta meta = itemStack.getItemMeta();
-        if (meta == null) return false;
-        return meta.getPersistentDataContainer().has(key);
-    }
-
-    /**
-     * Retrieves a string value from an {@link ItemStack}'s persistent data container.
-     *
-     * @param itemStack the item to read from
-     * @param key the key to retrieve
-     * @return the stored string, or {@code null} if not found
-     */
-    public static String getString(ItemStack itemStack, NamespacedKey key) {
-        if (itemStack == null) return null;
-        ItemMeta meta = itemStack.getItemMeta();
-        if (meta == null) return null;
-        PersistentDataContainer container = meta.getPersistentDataContainer();
-        return container.get(key, PersistentDataType.STRING);
+    public static boolean hasKey(ItemStack itemStack, @NotNull NamespacedKey key) {
+        return itemStack.getPersistentDataContainer().has(key);
     }
 
     /**
@@ -135,12 +126,12 @@ public final class KeyRegistry {
      * @param key the key to use
      * @param value the string value to store
      */
-    public static void setString(ItemStack itemStack, NamespacedKey key, String value) {
-        if (itemStack == null) return;
-        ItemMeta meta = itemStack.getItemMeta();
-        if (meta == null) return;
-        meta.getPersistentDataContainer().set(key, PersistentDataType.STRING, value);
-        itemStack.setItemMeta(meta);
+    public static <T, Z> void setKeyField(ItemStack itemStack, @NotNull NamespacedKey key, PersistentDataType<T, Z> dataType, Z value) {
+        itemStack.editPersistentDataContainer(pdc -> pdc.set(key, dataType, value));
+    }
+
+    public static <T, Z> Z getKeyField(ItemStack itemStack, @NotNull NamespacedKey key, PersistentDataType<T, Z> dataType) {
+        return itemStack.getPersistentDataContainer().get(key, dataType);
     }
 
     /**
@@ -148,47 +139,8 @@ public final class KeyRegistry {
      *
      * @param itemStack the item to modify
      * @param key the key to remove
-     * @return {@code true} if a value was removed, otherwise {@code false}
      */
-    public static boolean removeKey(ItemStack itemStack, NamespacedKey key) {
-        if (itemStack == null) return false;
-        ItemMeta meta = itemStack.getItemMeta();
-        if (meta == null) return false;
-
-        PersistentDataContainer container = meta.getPersistentDataContainer();
-        if (!container.has(key)) return false;
-
-        container.remove(key);
-        itemStack.setItemMeta(meta);
-        return true;
-    }
-
-    /**
-     * Returns all persistent keys currently stored in an item's data container.
-     *
-     * @param itemStack the item to inspect
-     * @return a {@link Set} of {@link NamespacedKey}s found on the item
-     */
-    public static Set<NamespacedKey> listKeys(ItemStack itemStack) {
-        if (itemStack == null) return Set.of();
-        ItemMeta meta = itemStack.getItemMeta();
-        if (meta == null) return Set.of();
-        return meta.getPersistentDataContainer().getKeys();
-    }
-
-    /**
-     * Clears all persistent data stored on the given {@link ItemStack}.
-     *
-     * @param itemStack the item to clear
-     */
-    public static void clear(ItemStack itemStack) {
-        if (itemStack == null) return;
-        ItemMeta meta = itemStack.getItemMeta();
-        if (meta == null) return;
-        PersistentDataContainer container = meta.getPersistentDataContainer();
-        for (NamespacedKey key : container.getKeys()) {
-            container.remove(key);
-        }
-        itemStack.setItemMeta(meta);
+    public static void removeKey(ItemStack itemStack, @NotNull NamespacedKey key) {
+        itemStack.editPersistentDataContainer(pdc -> pdc.remove(key));
     }
 }

@@ -13,14 +13,17 @@ import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
+import org.bukkit.util.Vector;
 
 import com.destroystokyo.paper.entity.Pathfinder;
 
 import btm.sword.Sword;
 import btm.sword.config.Config;
 import btm.sword.system.action.utility.GrabAction;
+import btm.sword.system.action.utility.thrown.StuckItem;
 import btm.sword.system.entity.base.CombatProfile;
 import btm.sword.system.entity.base.SwordEntity;
+import btm.sword.system.item.prefab.ItemLibrary;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -34,7 +37,7 @@ public class Hostile extends Combatant {
     private final List<Consumer<Combatant>> possibleAttacks;
 
     ItemStack itemInLeftHand = new ItemStack(Material.SHIELD);
-    ItemStack itemInRightHand = new ItemStack(Material.IRON_AXE);
+    ItemStack itemInRightHand = new ItemStack(ItemLibrary.sword);
 
     public Hostile(LivingEntity associatedEntity, CombatProfile combatProfile) {
         super(associatedEntity, combatProfile);
@@ -74,7 +77,24 @@ public class Hostile extends Combatant {
     @Override
     public void onDeath() {
         super.onDeath();
+    }
 
+    @Override
+    public void onZeroHealth() {
+        if (!dead) {
+            ItemStack offHand = getItemStackInHand(false);
+            if (!offHand.isEmpty()) {
+                Vector dropVel = new Vector(
+                    Math.random() - 0.5,
+                    Math.random() + 0.5,
+                    Math.random() - 0.5
+                ).multiply(0.5);
+
+                StuckItem stuck = new StuckItem(getChestLocation(), dropVel, offHand);
+                stuck.register();
+            }
+        }
+        super.onZeroHealth();
     }
 
     public void patrol(Location origin) {

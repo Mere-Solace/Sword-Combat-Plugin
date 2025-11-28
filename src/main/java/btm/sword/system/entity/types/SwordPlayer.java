@@ -23,6 +23,7 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
+import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Transformation;
@@ -38,10 +39,12 @@ import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.input.InputAction;
 import btm.sword.system.input.InputExecutionTree;
+import btm.sword.system.input.InputKey;
 import btm.sword.system.input.InputType;
 import btm.sword.system.inventory.InvInterfaceManager;
 import btm.sword.system.item.ItemStackBuilder;
 import btm.sword.system.item.KeyRegistry;
+import btm.sword.system.item.SwordItemType;
 import btm.sword.system.playerdata.PlayerData;
 import btm.sword.util.display.DisplayUtil;
 import lombok.Getter;
@@ -131,15 +134,15 @@ public class SwordPlayer extends Combatant {
 
         playerHead = new ItemStackBuilder(Material.PLAYER_HEAD)
             .setMeta(skullMeta)
-            .lore(aspects.toComponentList())
             .hideAll()
+            .lore(aspects.toComponentList())
             .build();
 
         menuButton = new ItemStackBuilder(Material.ECHO_SHARD)
-                .name(Component.text("| Main Menu |", Config.SwordColor.TEXT_COOL, TextDecoration.BOLD))
-                .hideAll()
-                .tag(KeyRegistry.MAIN_MENU_BUTTON_KEY, KeyRegistry.MAIN_MENU_BUTTON)
-                .build();
+            .hideAll()
+            .name(Component.text("~ | Main Menu | ~", Config.SwordColor.TEXT_COOL, TextDecoration.BOLD))
+            .tag(KeyRegistry.MAIN_MENU_BUTTON_KEY, PersistentDataType.STRING, "yes")
+            .build();
 
         inputExecutionTree = new InputExecutionTree(this);
         inputExecutionTree.initializeInputTree();
@@ -174,7 +177,7 @@ public class SwordPlayer extends Combatant {
 
         if (player.getHealth() > 0) updateVisualStats();
 
-        if (ticks % 2 == 0) {
+        if (ticks % 5 == 0) {
             inventoryUpkeep();
         }
 
@@ -190,7 +193,6 @@ public class SwordPlayer extends Combatant {
     @Override
     public void onSpawn() {
         super.onSpawn();
-        player().getInventory().setItem(8, menuButton);
     }
 
     /**
@@ -222,7 +224,8 @@ public class SwordPlayer extends Combatant {
      * @param input the input type from the player to process
      */
     public void act(InputType input) {
-        message("Acting: " + input.name()); // TODO: remove
+        ItemStack item = getItemStackInHand(true);
+        InputKey inputKey = InputKey.of(input, SwordItemType.fromString(item));
 
         if (isAttemptingThrow()) {
             if (input != InputType.RIGHT && input != InputType.RIGHT_HOLD) {
@@ -260,24 +263,24 @@ public class SwordPlayer extends Combatant {
         }
 
         if (input == InputType.RIGHT_TAP || input == InputType.SHIFT_TAP) {
-            if (!inputExecutionTree.nextExists(input)) return;
+            if (!inputExecutionTree.nextExists(inputKey)) return;
         }
 
         if (input == InputType.RIGHT_HOLD) {
-            long minTime = inputExecutionTree.getMinHoldLengthOfNext(input);
+            long minTime = inputExecutionTree.getMinHoldLengthOfNext(inputKey);
             if (minTime == -1 || timeRightHeld < minTime) {
                 if (isAttemptingThrow()) ThrowAction.throwCancel(this);
                 return;
             }
         }
         else if (input == InputType.SHIFT_HOLD) {
-            long minTime = inputExecutionTree.getMinHoldLengthOfNext(input);
+            long minTime = inputExecutionTree.getMinHoldLengthOfNext(inputKey);
             if (minTime == -1 || timeSneakHeld < minTime) {
                 return;
             }
         }
 
-        InputExecutionTree.InputNode node = inputExecutionTree.step(input);
+        InputExecutionTree.InputNode node = inputExecutionTree.step(inputKey);
 
         if (node == null)
             return;
@@ -292,8 +295,12 @@ public class SwordPlayer extends Combatant {
                 resetTree();
                 return;
             }
-            consumeSoulfire(action.getRequiredSoulfire()); // begin the depletion of soulfire
-            if (!action.execute(this)) {
+
+            if (action.execute(this)) {
+                consumeSoulfire(action.getRequiredSoulfire()); // begin the depletion of soulfire
+                return;
+            }
+            else {
                 resetTree();
             }
         }
@@ -337,15 +344,22 @@ public class SwordPlayer extends Combatant {
             player.getEquipment().setChestplate(ItemStack.of(Material.NETHERITE_CHESTPLATE));
         }
 
-        if (!KeyRegistry.hasKey(player.getInventory().getItem(8), KeyRegistry.MAIN_MENU_BUTTON_KEY)) {
+        ItemStack item8 = player.getInventory().getItem(8);
+        if (item8 == null || !KeyRegistry.hasKey(item8, KeyRegistry.MAIN_MENU_BUTTON_KEY)) {
             player.getInventory().setItem(8, menuButton);
         }
 
+        ItemStack item0 = player.getInventory().getItem(0);
         if (getUmbralBlade() != null) {
-            boolean hasLink = KeyRegistry.hasKey(player.getInventory().getItem(0), KeyRegistry.SOUL_LINK_KEY);
-            boolean hasBlade = KeyRegistry.hasKey(player.getInventory().getItem(0), KeyRegistry.UMBRAL_BLADE_KEY);
+            if (item0 == null) {
+                player.getInventory().setItem(0, getUmbralBlade().getLink());
+            }
+            else {
+                boolean hasLink = KeyRegistry.hasKey(item0, KeyRegistry.SOUL_LINK_KEY);
+                boolean hasBlade = KeyRegistry.hasKey(item0, KeyRegistry.UMBRAL_BLADE_KEY);
 
-            if (!hasLink && !hasBlade) player.getInventory().setItem(0, getUmbralBlade().getLink());
+                if (!hasLink && !hasBlade) player.getInventory().setItem(0, getUmbralBlade().getLink());
+            }
         }
     }
 
@@ -358,12 +372,16 @@ public class SwordPlayer extends Combatant {
      * @return true to cancel the action, false to allow processing
      */
     public boolean handleItemInteraction(ItemStack itemStack, InputType inputType) {
+        boolean cancelAction = false;
+
         if (KeyRegistry.hasKey(itemStack, KeyRegistry.MAIN_MENU_BUTTON_KEY)) {
             InvInterfaceManager.displayMainMenu(this);
-            return true;
+            cancelAction = true;
         }
 
-        return false;
+        message(" cancelAction: " + cancelAction);
+
+        return cancelAction;
     }
 
     /**
@@ -537,7 +555,6 @@ public class SwordPlayer extends Combatant {
         if (stack.isEmpty() || stack.getType().isAir()) stack = new ItemStack(Material.GUNPOWDER);
         ItemMeta metaData = stack.getItemMeta();
         if (metaData == null) {
-            message("MetaData for item to display is null!");
             return;
         }
         if (style == null)
@@ -671,8 +688,10 @@ public class SwordPlayer extends Combatant {
 
         // TODO: #123 - This is where to implement catches for start clicking different items
 
-        if (!mainItemStackAtTimeOfHold.isEmpty() && !holdingUmbralItemInMainHand())
+        if (!mainItemStackAtTimeOfHold.isEmpty() &&
+            !holdingUmbralItemInMainHand()) {
             setItemStackInHand(new ItemStack(Material.GUNPOWDER), true); // can change the logic here later
+        }
 
         rightTask = new BukkitRunnable() {
             @Override

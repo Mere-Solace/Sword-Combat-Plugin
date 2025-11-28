@@ -1,5 +1,7 @@
 package btm.sword.system.entity.umbral.statemachine.state;
 
+import org.bukkit.util.Transformation;
+
 import btm.sword.config.Config;
 import btm.sword.system.entity.umbral.UmbralBlade;
 import btm.sword.system.entity.umbral.statemachine.UmbralStateFacade;
@@ -43,7 +45,20 @@ public class AttackingQuickState extends UmbralStateFacade {
     @Override
     public void onEnter(UmbralBlade blade) {
         // handling it here cuz special case, doesn't work with tree well
-        blade.getThrower().consumeSoulfire(10f);
+        blade.getThrower().consumeSoulfire(blade.getCurrentComboStep() * 2.5f);
+
+        if (blade.getCurrentComboStep() == 3) {
+            Transformation curTr = blade.getDisplay().getTransformation();
+
+            blade.getDisplay().setTransformation(
+                new Transformation(
+                    curTr.getTranslation(),
+                    curTr.getLeftRotation().rotateY((float) Math.PI / 2),
+                    curTr.getScale(),
+                    curTr.getRightRotation()
+                )
+            );
+        }
 
         // Attack execution is handled by performAttack method
         blade.performSimpleAttack(5.0); // second param doesn't matter here

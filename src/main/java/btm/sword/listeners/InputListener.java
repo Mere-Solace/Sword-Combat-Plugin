@@ -14,6 +14,8 @@ import org.bukkit.event.player.PlayerSwapHandItemsEvent;
 import org.bukkit.event.player.PlayerToggleSneakEvent;
 import org.bukkit.inventory.ItemStack;
 
+import com.destroystokyo.paper.event.player.PlayerAttackEntityCooldownResetEvent;
+
 import btm.sword.system.SwordScheduler;
 import btm.sword.system.action.utility.thrown.ThrowAction;
 import btm.sword.system.entity.SwordEntityArbiter;
@@ -58,6 +60,23 @@ public class InputListener implements Listener {
         event.setCancelled(true);
     }
 
+    @EventHandler // imagine that...
+    public void onAttackCooldownResetEvent(PlayerAttackEntityCooldownResetEvent event) {
+        SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer());
+        ItemStack item = swordPlayer.getItemStackInHand(true);
+
+        swordPlayer.message("PlayerAttackEntityCooldownResetEvent");
+
+        if (swordPlayer.handleItemInteraction(item, InputType.LEFT)) {
+            event.setCancelled(true);
+            return;
+        }
+
+        swordPlayer.act(InputType.LEFT);
+
+        event.setCancelled(true);
+    }
+
     /**
      * Handles general player interaction events (left and start clicks).
      * <p>
@@ -88,6 +107,11 @@ public class InputListener implements Listener {
             swordPlayer.act(InputType.LEFT);
         }
         else if (action == Action.RIGHT_CLICK_AIR || action == Action.RIGHT_CLICK_BLOCK) {
+            if (swordPlayer.handleItemInteraction(item, InputType.RIGHT)) {
+                event.setCancelled(true);
+                return;
+            }
+
             if (swordPlayer.isInteractingWithEntity()) {
                 return;
             }
@@ -98,10 +122,6 @@ public class InputListener implements Listener {
                 return;
             }
 
-            if (swordPlayer.handleItemInteraction(item, InputType.RIGHT)) {
-                event.setCancelled(true);
-                return;
-            }
             swordPlayer.act(InputType.RIGHT);
         }
     }

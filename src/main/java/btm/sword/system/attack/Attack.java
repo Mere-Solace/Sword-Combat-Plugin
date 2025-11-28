@@ -20,6 +20,7 @@ import org.bukkit.util.Vector;
 import btm.sword.config.Config;
 import btm.sword.system.SwordScheduler;
 import btm.sword.system.action.SwordAction;
+import btm.sword.system.attack.style.AttackProfile;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.base.SwordEntity;

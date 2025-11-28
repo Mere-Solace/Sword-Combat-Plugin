@@ -97,6 +97,8 @@ public abstract class Combatant extends SwordEntity {
     @Override
     public void onDeath() {
         super.onDeath();
+
+        if (umbralBlade == null) return;
         if (umbralBlade.getDisplay().isValid()) {
             Prefab.Particles.UMBRAL_BLADE_POOF.display(umbralBlade.getDisplay().getLocation());
         }
@@ -214,14 +216,21 @@ public abstract class Combatant extends SwordEntity {
      */
     public void onGrabHit() {
         LivingEntity target = grabbedEntity.self();
-        Location hitLoc = target.getLocation().add(0, target.getEyeHeight()*0.5, 0);
-        Prefab.Particles.PUNCH.display(hitLoc);
+
+        target.setVelocity(target.getVelocity().add(dir()));
+
+        Location hitLoc = target.getLocation().add(0, target.getEyeHeight() * 0.5, 0);
+        Prefab.Particles.PUNCH_CONNECT.display(hitLoc);
         grabbedEntity.hit(this, Prefab.Attacks.grabHit,
                 target.getEyeLocation().subtract(eyeLoc()).toVector());
     }
 
     public boolean holdingUmbralItemInMainHand() {
         return isUmbralItem(getItemStackInHand(true));
+    }
+
+    public boolean holdingMenuItemInMainHand() {
+        return KeyRegistry.hasKey(getItemStackInHand(true), KeyRegistry.MAIN_MENU_BUTTON_KEY);
     }
 
     public boolean isUmbralItem(ItemStack item) {
@@ -273,6 +282,10 @@ public abstract class Combatant extends SwordEntity {
      */
     public boolean canAirDash() {
         return canPerformAction() && getAirDashesPerformed() < getCombatProfile().getMaxAirDodges();
+    }
+
+    public boolean canStrafe() {
+        return canPerformAction() && self().isOnGround();
     }
 
     /**
@@ -346,5 +359,13 @@ public abstract class Combatant extends SwordEntity {
      */
     public long calcCooldown(AspectType type, double min, double base, double multiplier) {
         return (long) Math.max(min, base - (multiplier * aspects.getAspectVal(type)) );
+    }
+
+    public boolean canPerformUmbralLinkAttack() {
+        return canPerformAction() &&
+            (getUmbralBlade().inState(RecallingState.class) ||
+                getUmbralBlade().inState(StandbyState.class) ||
+                getUmbralBlade().inState(SheathedState.class) ||
+                getUmbralBlade().inState(LodgedState.class));
     }
 }

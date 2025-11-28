@@ -25,15 +25,15 @@ public class InteractiveItemArbiter {
     /**
      * Registry of all active thrown items mapped by their associated {@link ItemDisplay}.
      */
-    private static final HashMap<ItemDisplay, ThrownItem> thrownItems = new HashMap<>();
+    private static final HashMap<ItemDisplay, InteractiveItem> INTERACTIVE_ITEMS = new HashMap<>();
 
     /**
      * Registers a new {@link ThrownItem} with its {@link ItemDisplay} as the key.
      *
-     * @param thrownItem The thrown item to register.
+     * @param interactiveItem The thrown item to register.
      */
-    public static void put(ThrownItem thrownItem) {
-        thrownItems.put(thrownItem.getDisplay(), thrownItem);
+    public static void put(InteractiveItem interactiveItem) {
+        INTERACTIVE_ITEMS.put(interactiveItem.getDisplay(), interactiveItem);
     }
 
     /**
@@ -43,12 +43,16 @@ public class InteractiveItemArbiter {
      * @return {@code true} if the display is tracked as an interactive item, otherwise {@code false}.
      */
     public static boolean checkIfInteractive(ItemDisplay id) {
-        return thrownItems.containsKey(id);
+        return INTERACTIVE_ITEMS.containsKey(id);
+    }
+
+    public static boolean isUmbralBlade(ItemDisplay id) {
+        return INTERACTIVE_ITEMS.get(id) instanceof UmbralBlade;
     }
 
     public static boolean isImpaling(SwordEntity self, ItemDisplay targeted) {
-        ThrownItem thrown = thrownItems.getOrDefault(targeted, null);
-        return thrown != null && thrown.getHitEntity() != null && thrown.getHitEntity().equals(self);
+        InteractiveItem thrown = INTERACTIVE_ITEMS.getOrDefault(targeted, null);
+        return thrown instanceof ThrownItem ti && ti.getHitEntity() != null && ti.getHitEntity().equals(self);
     }
 
     /**
@@ -59,8 +63,8 @@ public class InteractiveItemArbiter {
      * @param display The display entity to remove.
      * @return The removed {@link ThrownItem}, or {@code null} if none was registered.
      */
-    public static ThrownItem remove(ItemDisplay display, boolean dispose) {
-        ThrownItem thrownItem = thrownItems.remove(display);
+    public static InteractiveItem remove(ItemDisplay display, boolean dispose) {
+        InteractiveItem thrownItem = INTERACTIVE_ITEMS.remove(display);
         if (thrownItem != null) {
             if (dispose) thrownItem.dispose();
             return thrownItem;
@@ -78,7 +82,7 @@ public class InteractiveItemArbiter {
      * @param executor The combatant performing the grab.
      */
     public static void onGrab(ItemDisplay display, Combatant executor) {
-        ThrownItem thrownItem = remove(display, false); // Stop displaying the ItemDisplay
+        InteractiveItem thrownItem = remove(display, false); // Stop displaying the ItemDisplay
         if (thrownItem == null) return;
 
         ItemStack item = display.getItemStack();
@@ -114,9 +118,22 @@ public class InteractiveItemArbiter {
      */
     public static void cleanupAll() {
         // TODO: #81 - Cleanup considerations for thrown items
-        for (ThrownItem thrownItem : thrownItems.values()) {
-            thrownItem.dispose();
+        for (InteractiveItem interactiveItem : INTERACTIVE_ITEMS.values()) {
+            interactiveItem.dispose();
         }
-        thrownItems.clear();
+        INTERACTIVE_ITEMS.clear();
+    }
+
+    public static void dropNaturally(Location origin, ItemStack stack) {
+        if (!stack.isEmpty()) {
+            Vector dropVel = new Vector(
+                Math.random() - 0.5,
+                Math.random() + 0.5,
+                Math.random() - 0.5
+            ).multiply(0.5);
+
+            StuckItem stuck = new StuckItem(origin, dropVel, stack);
+            stuck.register();
+        }
     }
 }

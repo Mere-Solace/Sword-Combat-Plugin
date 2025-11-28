@@ -2,7 +2,6 @@ package btm.sword.system.action.utility.thrown;
 
 import java.util.function.Consumer;
 
-import org.bukkit.Color;
 import org.bukkit.entity.ItemDisplay;
 import org.bukkit.scheduler.BukkitRunnable;
 
@@ -63,15 +62,11 @@ public class ThrowAction extends SwordAction {
         if (executor instanceof SwordPlayer sp && !sp.getItemStackInHand(true).isEmpty()) {
             setupInstructions = display -> {
                 display.setItemStack(sp.getMainItemStackAtTimeOfHold());
-                display.setGlowing(true);
-                display.setGlowColorOverride(Color.fromRGB(255, 0, 15));
             };
         }
         else {
             setupInstructions = display -> {
                 display.setItemStack(executor.getItemStackInHand(true));
-                display.setGlowing(true);
-                display.setGlowColorOverride(Color.fromRGB(255, 0, 15));
             };
         }
 

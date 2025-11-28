@@ -2,7 +2,6 @@ package btm.sword.system.entity;
 
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.Objects;
 import java.util.UUID;
 
 import org.bukkit.Bukkit;
@@ -49,8 +48,6 @@ public class SwordEntityArbiter {
 
         UUID entityUUID = entity.getUniqueId();
         if (entity instanceof Player player) {
-            Objects.requireNonNull(Bukkit.getPlayer(entityUUID)).sendMessage("You're being registered as online.");
-
             PlayerDataManager.register(player);
             if (onlineSwordPlayers.get(entityUUID) == null) {
                 onlineSwordPlayers.put(entityUUID, new SwordPlayer(player, PlayerDataManager.getPlayerData(entityUUID)));

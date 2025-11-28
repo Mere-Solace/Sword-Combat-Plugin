@@ -1,7 +1,7 @@
 package btm.sword.system.entity.umbral.statemachine.state;
 
 import btm.sword.config.Config;
-import btm.sword.system.attack.AttackType;
+import btm.sword.system.attack.style.AttackType;
 import btm.sword.system.entity.umbral.UmbralBlade;
 import btm.sword.system.entity.umbral.statemachine.UmbralStateFacade;
 

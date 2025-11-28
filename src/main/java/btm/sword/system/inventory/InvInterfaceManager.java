@@ -80,9 +80,9 @@ public class InvInterfaceManager {
 
     public static final ItemStack HOW_TO_PLAY_ITEM = ItemStackBuilder
         .of(Material.KNOWLEDGE_BOOK)
+        .hideAll()
         .name(Component.text("Input Instructions", Config.SwordColor.TEXT_COOL, TextDecoration.BOLD))
         .lore(HOW_TO_PLAY)
-        .hideAll()
         .build();
 
     public static void displayMainMenu(SwordPlayer swordPlayer) {

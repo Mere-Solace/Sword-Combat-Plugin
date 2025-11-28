@@ -1,7 +1,6 @@
 package btm.sword.system.entity.umbral;
 
 import java.util.List;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -15,6 +14,7 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.entity.ItemDisplay;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Transformation;
@@ -25,12 +25,14 @@ import org.joml.Vector3f;
 import btm.sword.Sword;
 import btm.sword.config.Config;
 import btm.sword.system.SwordScheduler;
+import btm.sword.system.action.DashDirection;
 import btm.sword.system.action.utility.thrown.InteractiveItemArbiter;
 import btm.sword.system.action.utility.thrown.ThrownItem;
 import btm.sword.system.attack.Attack;
-import btm.sword.system.attack.AttackType;
 import btm.sword.system.attack.GeneratedAttackProfile;
 import btm.sword.system.attack.UmbralBladeAttack;
+import btm.sword.system.attack.style.AttackType;
+import btm.sword.system.attack.style.WeaponAttackStyle;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.types.Combatant;
 import btm.sword.system.entity.types.SwordPlayer;
@@ -52,6 +54,7 @@ import btm.sword.system.entity.umbral.statemachine.state.WaitingState;
 import btm.sword.system.entity.umbral.statemachine.state.WieldState;
 import btm.sword.system.item.ItemStackBuilder;
 import btm.sword.system.item.KeyRegistry;
+import btm.sword.system.item.SwordItemType;
 import btm.sword.system.statemachine.State;
 import btm.sword.system.statemachine.Transition;
 import btm.sword.util.Prefab;
@@ -75,7 +78,7 @@ public class UmbralBlade extends ThrownItem {
     private UmbralStateMachine bladeStateMachine;
 
     private Function<Combatant, Attack>[] basicAttacks;
-    private Function<Combatant, Attack>[] heavyAttacks;
+    private int currentComboStep = -1;
 
     private ItemStack link;
     private ItemStack blade;
@@ -100,8 +103,7 @@ public class UmbralBlade extends ThrownItem {
 
     private boolean skillFinished;
 
-    private boolean dashingForward;
-    private boolean dashingBackward;
+    private DashDirection dashDirection = DashDirection.NONE;
 
     private final InputBuffer inputBuffer = new InputBuffer();
 
@@ -109,7 +111,7 @@ public class UmbralBlade extends ThrownItem {
         super(thrower, display -> {
             display.setItemStack(weapon);
             display.setTransformation(new Transformation(
-                    new Vector3f(0.28f, -1.35f, -0.42f),
+                    new Vector3f(0.28f, -1.35f, -0.5f),
                     new Quaternionf().rotationY((float) Math.PI / 2).rotateZ(-(float) Math.PI / (1.65f)),
                     new Vector3f(0.85f, 1.3f, 1f),
                     new Quaternionf()
@@ -127,7 +129,6 @@ public class UmbralBlade extends ThrownItem {
         this.attackEndCallback = () -> attackCompleted = true;
 
         loadBasicAttacks();
-        loadHeavyAttacks();
 
         this.bladeStateMachine = new UmbralStateMachine(this, new SheathedState());
         initStateMachine();
@@ -594,7 +595,7 @@ public class UmbralBlade extends ThrownItem {
 
     public void performSimpleAttack(double range) {
         if (isDashing()) {
-            umbralDashAttack(dashingForward);
+            umbralDashAttack(dashDirection);
             return;
         }
         SwordEntity target = thrower.getTargetedEntity(range);
@@ -615,16 +616,23 @@ public class UmbralBlade extends ThrownItem {
                 .subtract(to.normalize()).setDirection(to.normalize());
         }
 
-        int attackNumber = ThreadLocalRandom.current().nextInt(basicAttacks.length);
-        attack = basicAttacks[attackNumber].apply(thrower);
+        attack = basicAttacks[
+            // use currentComboStep to get attack
+            Math.max(0, Math.min(currentComboStep - 1, basicAttacks.length - 1))
+            ].apply(thrower);
 
         attack.setOriginOfAll(attackOrigin).execute(thrower);
     }
 
-    private void umbralDashAttack(boolean forward) {
-        AttackType type = forward ? AttackType.F_DASH_ATTACK : AttackType.B_DASH_ATTACK;
+    private void umbralDashAttack(DashDirection direction) {
+        AttackType type;
+        switch (direction) {
+            case FORWARD -> type = AttackType.F_DASH_ATTACK;
+            case BACKWARD -> type = AttackType.B_DASH_ATTACK;
+            default -> type = AttackType.WIDE_UMBRAL_SLASH3;
+        }
         new UmbralBladeAttack(display, type,
-            forward, false, 1,
+            direction.equals(DashDirection.FORWARD), false, 1,
             5, 10, 200,
             0, 1)
             .setBlade(this)
@@ -741,7 +749,6 @@ public class UmbralBlade extends ThrownItem {
 
     @SuppressWarnings("unchecked")
     private void loadBasicAttacks() {
-        // load from config or registry later
         basicAttacks = new Function[]{
             // TODO: #120 - Fix how display step and attack steps work, confusing and incorrect rn
             combatant -> new UmbralBladeAttack(display, AttackType.WIDE_UMBRAL_SLASH1_WINDUP,
@@ -759,37 +766,69 @@ public class UmbralBlade extends ThrownItem {
                         .setBlade(this)
                         .setHitInstructions(swordEntity -> Prefab.Particles.BLEED.display(swordEntity.getChestLocation()))
                         .setCallback(attackEndCallback, 200),
-                    100)
+                    100),
 
+            combatant -> new UmbralBladeAttack(display, AttackType.WIDE_UMBRAL_SLASH2_WINDUP,
+                true, true, 2,
+                10, 30, 500,
+                0, 1)
+                .setBlade(this)
+                .setInitialMovementTicks(25)
+                .setDrawParticles(false)
+                .setNextAttack(
+                    new UmbralBladeAttack(display, AttackType.WIDE_UMBRAL_SLASH2,
+                        true, false, 0,
+                        20, 10, 100,
+                        0, 1)
+                        .setBlade(this)
+                        .setHitInstructions(swordEntity -> Prefab.Particles.BLEED.display(swordEntity.getChestLocation()))
+                        .setCallback(attackEndCallback, 200),
+                    100),
+
+            combatant -> new UmbralBladeAttack(display, AttackType.WIDE_UMBRAL_SLASH3_WINDUP,
+                false, true, 3,
+                10, 30, 500,
+                0, 1.2)
+                .setBlade(this)
+                .setInitialMovementTicks(25)
+                .setDrawParticles(false)
+                .setNextAttack(
+                    new UmbralBladeAttack(display, AttackType.WIDE_UMBRAL_SLASH3,
+                        false, false, 0,
+                        20, 10, 50,
+                        1, 0)
+                        .setBlade(this)
+                        .setHitInstructions(swordEntity -> Prefab.Particles.BLEED.display(swordEntity.getChestLocation()))
+                        .setCallback(attackEndCallback, 200),
+                    250)
         };
-    }
-
-    private void loadHeavyAttacks() {
-
     }
 
     private void generateUmbralItems() {
         // item Stack used for determining umbral blade inputs
         this.link = new ItemStackBuilder(Material.HEAVY_CORE)
+            .hideAll()
             .name(Component.text("~ ", Config.SwordColor.TEXT_ITEM_NAME)
                 .append(Component.text(thrower.getDisplayName() + "'s Soul Link",
                     Config.SwordColor.TEXT_ITEM_NAME, TextDecoration.BOLD))
                 .append(Component.text(" ~", Config.SwordColor.TEXT_ITEM_NAME)))
             .lore(Prefab.Text.SOUL_LINK_LORE)
             .unbreakable(true)
-            .tag(KeyRegistry.SOUL_LINK_KEY, thrower.getUniqueId().toString())
-            .hideAll()
+            .tag(KeyRegistry.SOUL_LINK_KEY, PersistentDataType.STRING, thrower.getUniqueId().toString())
+            .tagSwordItem(SwordItemType.UMBRAL_LINK)
             .build();
 
         this.blade = new ItemStackBuilder(weapon.getType())
+            .hideAll()
             .name(Component.text("~ ", Config.SwordColor.TEXT_COOL_DARK)
                 .append(Component.text(thrower.getDisplayName() + "'s Blade",
                     Config.SwordColor.TEXT_COOL, TextDecoration.BOLD))
                 .append(Component.text(" ~", Config.SwordColor.TEXT_COOL_DARK)))
             .lore(Prefab.Text.UMBRAL_BLADE_LORE)
             .unbreakable(true)
-            .tag(KeyRegistry.UMBRAL_BLADE_KEY, thrower.getUniqueId().toString())
-            .hideAll()
+            .tag(KeyRegistry.UMBRAL_BLADE_KEY, PersistentDataType.STRING, thrower.getUniqueId().toString())
+            .tagSwordItem(SwordItemType.UMBRAL_BLADE)
+            .tagAttackStyle(WeaponAttackStyle.SLASH)
             .build();
     }
 
@@ -843,8 +882,6 @@ public class UmbralBlade extends ThrownItem {
             // TODO: #122 - Add rejection logic for non-thrower grabs
             return;
         }
-
-        thrower.message("Grabbed it!");
 
         if (combatant.holdingUmbralItemInMainHand()) {
             if (inState(LungingState.class) ||
@@ -927,20 +964,23 @@ public class UmbralBlade extends ThrownItem {
         stuckBlock = null;
     }
 
-    public void setDashingDirection(boolean forward) {
-        dashingForward = forward;
-        dashingBackward = !forward;
+    public void setDashingDirection(DashDirection direction) {
+        this.dashDirection = direction;
 
         new BukkitRunnable() {
             @Override
             public void run() {
-                dashingForward = false;
-                dashingBackward = false;
+                dashDirection = DashDirection.NONE;
             }
-        }.runTaskLater(Sword.getInstance(), 10L);
+        }.runTaskLater(Sword.getInstance(), 5L);
     }
 
     public boolean isDashing() {
-        return dashingForward || dashingBackward;
+        return !dashDirection.equals(DashDirection.NONE);
+    }
+
+    public void requestQuickAttack(int comboStep) {
+        currentComboStep = comboStep;
+        request(BladeRequest.ATTACK_QUICK);
     }
 }

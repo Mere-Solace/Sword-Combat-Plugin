@@ -13,7 +13,8 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.Nullable;
 
-import btm.sword.system.attack.AttackType;
+import btm.sword.system.action.attack.AttackAction;
+import btm.sword.system.attack.style.AttackType;
 import btm.sword.util.sound.SoundType;
 import net.kyori.adventure.text.format.TextColor;
 
@@ -549,7 +550,7 @@ public class Config {
      * </ul>
      *
      * @see btm.sword.system.attack.Attack Attack execution and damage application
-     * @see btm.sword.system.action.AttackAction Attack state machine
+     * @see AttackAction Attack state machine
      */
     public static class Combat {
         public static double SHARDS_LOST_PERCENT_TOUGHNESS_RESET = 0.3; // Percent of HP
@@ -863,7 +864,7 @@ public class Config {
                 Config::loadEntityTypeList
         ); }
 
-        public static int IMPALEMENT_PIN_MAX_ITERATIONS = 50;
+        public static int IMPALEMENT_PIN_MAX_ITERATIONS = 200; // in ticks
         static { register(
                 "combat.impalement_pin_max_iterations",
                 IMPALEMENT_PIN_MAX_ITERATIONS, Integer.class,
@@ -1001,7 +1002,7 @@ public class Config {
             ConfigurationSection::getInt
         ); }
 
-        public static int THROWN_ITEMS_DISPOSAL_TIMEOUT = 200;
+        public static int THROWN_ITEMS_DISPOSAL_TIMEOUT = 2000;
         static { register(
             "timing.thrown_items_disposal_timeout",
             THROWN_ITEMS_DISPOSAL_TIMEOUT, Integer.class,

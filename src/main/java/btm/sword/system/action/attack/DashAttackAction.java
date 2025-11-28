@@ -1,19 +1,23 @@
-package btm.sword.system.action;
+package btm.sword.system.action.attack;
 
+import btm.sword.system.action.DashDirection;
+import btm.sword.system.action.SwordAction;
 import btm.sword.system.attack.Attack;
-import btm.sword.system.attack.AttackType;
+import btm.sword.system.attack.style.AttackType;
 import btm.sword.system.entity.types.Combatant;
 import btm.sword.system.entity.types.SwordPlayer;
 import btm.sword.system.entity.umbral.input.BladeRequest;
 import btm.sword.system.entity.umbral.statemachine.state.StandbyState;
 
 public class DashAttackAction extends SwordAction {
-    public static void dashAttack(Combatant executor, boolean forward) {
+    public static void dashAttack(Combatant executor, DashDirection direction) {
+        boolean forward = direction.equals(DashDirection.FORWARD);
+
         executor.setTimeOfLastAttack(System.currentTimeMillis());
         executor.setDurationOfLastAttack(700);
 
         if (executor.getItemStackInHand(true).isEmpty()) {
-            AttackAction.throwPunch(executor, forward ? 3.5 : 1);
+            PunchAction.throwPunch(executor, true, forward ? 3.5 : 1);
             return;
         }
 
@@ -22,7 +26,7 @@ public class DashAttackAction extends SwordAction {
                 executor.getUmbralBlade().inState(StandbyState.class)) {
 
                 // TODO: #137 fix and put in AttackingQuick state with some flags or smth
-                executor.getUmbralBlade().setDashingDirection(forward);
+                executor.getUmbralBlade().setDashingDirection(direction);
                 executor.getUmbralBlade().request(BladeRequest.ATTACK_QUICK);
 
                 if (executor instanceof SwordPlayer swordPlayer) {
@@ -31,7 +35,7 @@ public class DashAttackAction extends SwordAction {
                 return;
             }
 
-            AttackAction.throwPunch(executor, forward ? 3.5 : 1);
+            PunchAction.throwPunch(executor, true, forward ? 3.5 : 1);
             return;
         }
 

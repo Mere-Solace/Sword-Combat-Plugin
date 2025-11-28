@@ -12,20 +12,20 @@ import org.bukkit.scheduler.BukkitTask;
 
 import btm.sword.Sword;
 import btm.sword.config.Config;
-import btm.sword.system.action.AttackAction;
-import btm.sword.system.action.DashAttackAction;
+import btm.sword.system.action.DashDirection;
 import btm.sword.system.action.MovementAction;
+import btm.sword.system.action.attack.AttackAction;
+import btm.sword.system.action.attack.DashAttackAction;
 import btm.sword.system.action.skill.UmbralBladeAction;
 import btm.sword.system.action.utility.GrabAction;
 import btm.sword.system.action.utility.UtilityAction;
 import btm.sword.system.action.utility.thrown.ThrowAction;
-import btm.sword.system.attack.AttackType;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.types.Combatant;
 import btm.sword.system.entity.types.SwordPlayer;
+import btm.sword.system.item.SwordItemType;
 import lombok.Getter;
 import lombok.Setter;
-import lombok.SneakyThrows;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextDecoration;
 
@@ -69,30 +69,28 @@ public class InputExecutionTree {
      * Returns the new node reached or null if the input is invalid or sequence is reset.
      * Automatically resets sequence if current node is a leaf.
      *
-     * @param input the {@link InputType} input to process
      * @return the resulting {@link InputNode} or null if invalid/reset
      */
-    public InputNode step(InputType input) {
+    public InputNode step(InputKey inputKey) {
         stopTimeoutTimer();
         potentialInputSelectionText = Component.text(""); // reset potential input before new step
         // before taking input, if it is known that the current node is a leaf, reset and take input from the root
         if (!hasChildren()) reset();
 
-        // shouldn't happen often
         if (currentNode == null) {
             reset();
             return null;
         }
 
         // initialize a new node that points to the traversal of the input
-        InputNode next = currentNode.getChild(input);
+        InputNode next = currentNode.findMatchingChild(inputKey);
 
         if (next == null) {
             if (isAtRoot()) return null;
             else {
                 reset();
                 if (currentNode.isCancellable())
-                    return step(input);
+                    return step(inputKey);
 
                 else
                     return null;
@@ -104,7 +102,7 @@ public class InputExecutionTree {
             return null; // added this so that stepping forward cannot occur
         }
 
-        baseSequenceToDisplay = baseSequenceToDisplay.append(Component.text(inputToString(input),
+        baseSequenceToDisplay = baseSequenceToDisplay.append(Component.text(inputToString(inputKey.input()),
             Config.SwordColor.TITLE_INPUT_STRING, TextDecoration.BOLD));
 
         currentNode = next;
@@ -113,16 +111,16 @@ public class InputExecutionTree {
             baseSequenceToDisplay = baseSequenceToDisplay.append(Component.text(" ➞ ",
                 Config.SwordColor.TITLE_INPUT_STRING, TextDecoration.ITALIC));
 
-            Iterator<Map.Entry<InputType, InputNode>> it = currentNode.getChildren().entrySet().iterator();
+            Iterator<Map.Entry<InputKey, InputNode>> it = currentNode.getChildren().entrySet().iterator();
             while (it.hasNext()) {
-                Map.Entry<InputType, InputNode> entry = it.next();
+                Map.Entry<InputKey, InputNode> entry = it.next();
                 InputAction action = entry.getValue().getAction();
 
                 boolean ready;
                 if (action == null) {
                     ready = true;
                 }
-                else if (entry.getKey().equals(InputType.DROP)) {
+                else if (entry.getKey().input().equals(InputType.DROP)) {
                     ready = action.canCast(owner) &&
                         owner.getAspects().soulfireCur() >= action.getRequiredSoulfire() &&
                         !owner.getItemTypeInHand(true).isAir();
@@ -132,7 +130,7 @@ public class InputExecutionTree {
                         owner.getAspects().soulfireCur() >= action.getRequiredSoulfire();
                 }
                 potentialInputSelectionText = potentialInputSelectionText
-                    .append(Component.text(inputToString(entry.getKey()),
+                    .append(Component.text(inputToString(entry.getKey().input()),
                         ready ?
                             Config.SwordColor.TEXT_ITEM_BASE :
                             Config.SwordColor.TEXT_COOL_DARK,
@@ -196,11 +194,11 @@ public class InputExecutionTree {
     /**
      * Checks if the current node has a child corresponding to the specified input.
      *
-     * @param input the {@link InputType} to check
+     * @param inputKey the {@link InputType} to check
      * @return true if a child node exists, false otherwise
      */
-    public boolean nextExists(InputType input) {
-        return currentNode.getChild(input) != null;
+    public boolean nextExists(InputKey inputKey) {
+        return currentNode.findMatchingChild(inputKey) != null;
     }
 
     /**
@@ -213,19 +211,19 @@ public class InputExecutionTree {
      * @param cancellable whether this input sequence can be cancelled mid-way
      * @param display whether to display this input sequence progress to the player
      */
-    public void add(List<InputType> inputSequence, InputAction action,
+    public void add(List<InputKey> inputSequence, InputAction action,
                     boolean sameItemRequired,
                     boolean cancellable,
                     boolean display) {
         InputNode dummy = root;
-        for (InputType input : inputSequence) {
-            if (dummy.noChild(input)) {
-                dummy.addChild(input, null);
+        for (InputKey inputKey : inputSequence) {
+            if (dummy.noMatchingChild(inputKey)) {
+                dummy.addChild(inputKey, null);
                 dummy.setSameItemRequired(sameItemRequired);
                 dummy.setCancellable(cancellable);
                 dummy.setDisplay(display);
             }
-            dummy = dummy.getChild(input);
+            dummy = dummy.findMatchingChild(inputKey);
         }
         dummy.setAction(action);
         dummy.setDisplay(display);
@@ -241,90 +239,90 @@ public class InputExecutionTree {
      * @param display whether to display input combo progress
      * @param minHoldTime minimum hold time in milliseconds required for hold inputs to register
      */
-    public void add(List<InputType> inputSequence, InputAction action,
+    public void add(List<InputKey> inputSequence, InputAction action,
                     boolean sameItemRequired,
                     boolean cancellable,
                     boolean display,
                     long minHoldTime) {
         InputNode dummy = root;
-        for (InputType input : inputSequence) {
-            if (dummy.noChild(input)) {
-                if (input == InputType.RIGHT_HOLD || input == InputType.SHIFT_HOLD) {
-                    dummy.addChild(input, null, minHoldTime);
+        for (InputKey inputKey : inputSequence) {
+            if (dummy.noMatchingChild(inputKey)) {
+                if (inputKey.input() == InputType.RIGHT_HOLD || inputKey.input() == InputType.SHIFT_HOLD) {
+                    dummy.addChild(inputKey, null, minHoldTime);
                 }
                 else {
-                    dummy.addChild(input, null);
+                    dummy.addChild(inputKey, null);
                 }
                 dummy.setSameItemRequired(sameItemRequired);
                 dummy.setCancellable(cancellable);
                 dummy.setDisplay(display);
             }
-            dummy = dummy.getChild(input);
+            dummy = dummy.findMatchingChild(inputKey);
         }
         dummy.setAction(action);
         dummy.setDisplay(display);
     }
 
-    public void add(List<InputType> inputSequence, InputAction action,
+    public void add(List<InputKey> inputSequence, InputAction action,
                     Consumer<SwordPlayer> internalAction,
                     boolean sameItemRequired,
                     boolean cancellable,
                     boolean display,
                     long minHoldTime) {
         InputNode dummy = root;
-        for (InputType input : inputSequence) {
-            if (dummy.noChild(input)) {
-                if (input == InputType.RIGHT_HOLD || input == InputType.SHIFT_HOLD) {
-                    dummy.addChild(input, null, minHoldTime);
+        for (InputKey inputKey : inputSequence) {
+            if (dummy.noMatchingChild(inputKey)) {
+                if (inputKey.input() == InputType.RIGHT_HOLD || inputKey.input() == InputType.SHIFT_HOLD) {
+                    dummy.addChild(inputKey, null, minHoldTime);
                 }
                 else {
-                    dummy.addChild(input, null);
+                    dummy.addChild(inputKey, null);
                 }
                 dummy.setSameItemRequired(sameItemRequired);
                 dummy.setCancellable(cancellable);
                 dummy.setDisplay(display);
             }
-            dummy = dummy.getChild(input);
+            dummy = dummy.findMatchingChild(inputKey);
         }
         dummy.setAction(action);
         dummy.setInternalAction(internalAction);
         dummy.setDisplay(display);
     }
 
-    public void add(List<InputType> inputSequence, InputAction action,
+    public void add(List<InputKey> inputSequence, InputAction action,
                     Consumer<SwordPlayer> internalAction,
                     boolean sameItemRequired,
                     boolean cancellable,
                     boolean display) {
         InputNode dummy = root;
-        for (InputType input : inputSequence) {
-            if (dummy.noChild(input)) {
-                dummy.addChild(input, null);
+        for (InputKey inputKey : inputSequence) {
+            if (dummy.noMatchingChild(inputKey)) {
+                dummy.addChild(inputKey, null);
                 dummy.setSameItemRequired(sameItemRequired);
                 dummy.setCancellable(cancellable);
                 dummy.setDisplay(display);
             }
-            dummy = dummy.getChild(input);
+            dummy = dummy.findMatchingChild(inputKey);
         }
         dummy.setAction(action);
         dummy.setInternalAction(internalAction);
         dummy.setDisplay(display);
     }
 
-    public void add(List<InputType> inputSequence, InputAction action,
+    public void add(List<InputKey> inputSequence, InputAction action,
                     long timeoutTicks,
                     boolean sameItemRequired,
                     boolean cancellable,
                     boolean display) {
         InputNode dummy = root;
-        for (InputType input : inputSequence) {
-            if (dummy.noChild(input)) {
-                dummy.addChild(input, null);
+        for (InputKey inputKey : inputSequence) {
+            if (dummy.noMatchingChild(inputKey)) {
+                dummy.addChild(inputKey, null);
                 dummy.setSameItemRequired(sameItemRequired);
                 dummy.setCancellable(cancellable);
                 dummy.setDisplay(display);
             }
-            dummy = dummy.getChild(input);
+            dummy = dummy.findMatchingChild(inputKey);
         }
         dummy.setAction(action);
         dummy.setTimeoutTicks(timeoutTicks);
@@ -356,8 +354,8 @@ public class InputExecutionTree {
         switch (type) {
             case LEFT -> out = "L";
             case RIGHT -> out = "R";
-            case RIGHT_TAP, SHIFT_TAP -> out = "_";
-            case RIGHT_HOLD, SHIFT_HOLD -> out = "___";
+            case RIGHT_TAP, SHIFT_TAP -> out = "•";
+            case RIGHT_HOLD, SHIFT_HOLD -> out = "▁▁";
             case DROP -> out = "D";
             case SWAP -> out = "F";
             case SHIFT -> out = "S";
@@ -381,8 +379,8 @@ public class InputExecutionTree {
      * @param holdType the hold input type
      * @return minimum hold time in milliseconds, or -1 if no such node exists
      */
-    public long getMinHoldLengthOfNext(InputType holdType) {
-        InputNode next = currentNode.getChild(holdType);
+    public long getMinHoldLengthOfNext(InputKey holdType) {
+        InputNode next = currentNode.findMatchingChild(holdType);
         if (next == null) return -1;
         return next.getMinHoldTime();
     }
@@ -393,15 +391,65 @@ public class InputExecutionTree {
 
     /**
      * Initializes the input tree with predefined combos and mapped {@link InputAction}s.
-     * Sets up example combos for movement, grabbing, attacks, throwing, and utility actions.
+     * Sets up combos for movement, grabbing, attacks, throwing, and utility actions.
+     * <p>
+     * <b>System Overview:</b>
+     * This method builds a finite state tree where each {@link InputKey} represents an input type + allowed item types.
+     * The tree uses {@link LinkedHashMap} to preserve insertion order, so <b>specific item types are checked before generic ones</b>.
+     * </p>
+     *
+     * <b>Entry Addition Rules:</b>
+     * <ul>
+     *   <li><b>Specific → Generic Order:</b> Add item-specific entries FIRST, generic/ANY entries LAST
+     *     <pre>{@code
+     *     // CORRECT - Specific first
+     *     add(List.of(InputKey.of(InputType.LEFT, SwordItemType.SHORT_SWORD)), ...);
+     *     add(List.of(InputKey.of(InputType.LEFT)), ...); // ANY implied
+     *
+     *     // WRONG - Generic blocks specific
+     *     add(List.of(InputKey.of(InputType.LEFT)), ...);
+     *     add(List.of(InputKey.of(InputType.LEFT, SwordItemType.SHORT_SWORD)), ...);
+     *     }</pre>
+     *   </li>
+     *
+     *   <li><b>No Overlapping Allowables:</b> Don't create entries where multiple nodes accept the same (input, itemType) combination
+     *     <pre>{@code
+     *     // BAD - Both accept SHORT_SWORD.LEFT
+     *     add(List.of(InputKey.of(InputType.LEFT, SwordItemType.SHORT_SWORD, SwordItemType.BROAD_SWORD)), ...);
+     *     add(List.of(InputKey.of(InputType.LEFT, SwordItemType.SHORT_SWORD)), ...);
+     *     }</pre>
+     *   </li>
+     *
+     *   <li><b>findMatchingChild Priority:</b> Iterates children in insertion order, returns first match where:
+     *     {@code nodeKey.input() == inputKey.input() && nodeKey.allowed(playerItemType)}
+     *   </li>
+     * </ul>
+     *
+     * <b>Example Priority Chain:</b>
+     * <pre>
+     * children order: [SHORT_SWORD.LEFT, BROAD_SWORD.LEFT, ANY.LEFT]
+     * player holds SHORT_SWORD → matches SHORT_SWORD.LEFT (first hit)
+     * player holds BROAD_SWORD → matches BROAD_SWORD.LEFT (second hit)
+     * player holds ZWEIHANDER → matches ANY.LEFT (last fallback)
+     * </pre>
+     *
+     * <b>Current Structure:</b>
+     * <ul>
+     *   <li>Item-independent: Movement, grabs (ANY implied)</li>
+     *   <li>UMBRAL_LINK specific attacks (FIRST)</li>
+     *   <li>Generic sword attacks (SECOND - catch-all)</li>
+     *   <li>Umbral blade actions (specific item requirements handled by canPerformUmbralAction)</li>
+     * </ul>
      */
-    @SneakyThrows
     public void initializeInputTree() {
         // Item independent actions:
         // dodge forward, dodge backward
-        add(List.of(InputType.SWAP, InputType.SWAP),
+        add(List.of(
+                InputKey.of(InputType.SWAP),
+                InputKey.of(InputType.SWAP)
+            ),
             new InputAction(
-                executor -> MovementAction.dash(executor, true),
+                executor -> MovementAction.dash(executor, DashDirection.FORWARD),
                 executor -> executor.calcCooldown(AspectType.CELERITY, 200L, 1000L, 10),
                 Combatant::canAirDash,
                 5f,
@@ -412,9 +460,14 @@ public class InputExecutionTree {
             false,
             true,
             true);
-        add(List.of(InputType.SWAP, InputType.SWAP, InputType.LEFT),
+
+        add(List.of(
+                InputKey.of(InputType.SWAP),
+                InputKey.of(InputType.SWAP),
+                InputKey.of(InputType.LEFT)
+            ),
             new InputAction(
-                executor -> DashAttackAction.dashAttack(executor, true),
+                executor -> DashAttackAction.dashAttack(executor, DashDirection.FORWARD),
                 executor -> 0L,
                 Combatant::canPerformAction,
                 false,
@@ -425,9 +478,12 @@ public class InputExecutionTree {
             true,
             true);
 
-        add(List.of(InputType.SHIFT, InputType.SHIFT),
+        add(List.of(
+                InputKey.of(InputType.SHIFT),
+                InputKey.of(InputType.SHIFT)
+            ),
             new InputAction(
-                executor -> MovementAction.dash(executor, false),
+                executor -> MovementAction.dash(executor, DashDirection.BACKWARD),
                 executor -> executor.calcCooldown(AspectType.CELERITY, 200L, 1000L, 10),
                 Combatant::canAirDash,
                 5f,
@@ -438,9 +494,13 @@ public class InputExecutionTree {
             false,
             true,
             true);
-        add(List.of(InputType.SHIFT, InputType.SHIFT, InputType.LEFT),
+        add(List.of(
+                InputKey.of(InputType.SHIFT),
+                InputKey.of(InputType.SHIFT),
+                InputKey.of(InputType.LEFT)
+            ),
             new InputAction(
-                executor -> DashAttackAction.dashAttack(executor, false),
+                executor -> DashAttackAction.dashAttack(executor, DashDirection.BACKWARD),
                 executor -> 0L,
                 Combatant::canPerformAction,
                 false,
@@ -450,107 +510,215 @@ public class InputExecutionTree {
             false,
             true,
             true);
+
+        // strafe
+        add(List.of(
+                InputKey.of(InputType.SWAP),
+                InputKey.of(InputType.RIGHT)
+            ),
+            new InputAction(
+                executor -> MovementAction.dash(executor, DashDirection.RIGHT),
+                executor -> executor.calcCooldown(AspectType.CELERITY, 200L, 1000L, 10),
+                Combatant::canStrafe,
+                5f,
+                false,
+                true,
+                true),
+            false,
+            true,
+            true);
+
+        add(List.of(
+                InputKey.of(InputType.SWAP),
+                InputKey.of(InputType.LEFT)
+            ),
+            new InputAction(
+                executor -> MovementAction.dash(executor, DashDirection.LEFT),
+                executor -> executor.calcCooldown(AspectType.CELERITY, 200L, 1000L, 10),
+                Combatant::canStrafe,
+                5f,
+                false,
+                true,
+                true),
+            false,
+            true,
+            true);
+
 
         // grab
-        add(List.of(InputType.SHIFT, InputType.LEFT),
-                new InputAction(
-                    GrabAction::grab,
-                    executor -> executor.calcCooldown(AspectType.FORTITUDE, 200L, 1000L, 10),
-                    Combatant::canPerformAction,
-                    2f,
-                    false,
-                    true,
-                    true),
-                20L,
+        add(List.of(
+                InputKey.of(InputType.SHIFT),
+                InputKey.of(InputType.LEFT)
+            ),
+            new InputAction(
+                GrabAction::grab,
+                executor -> executor.calcCooldown(AspectType.FORTITUDE, 200L, 1000L, 10),
+                Combatant::canPerformAction,
+                2f,
                 false,
                 true,
-                true);
+                true),
+            20L,
+            false,
+            true,
+            true);
 
         // Item dependent actions:
 
         // TODO: #122 - Define possible better way of differentiating between normal attacks and umbral attacks
-        // my main concern with this was not being able to dynamically change cooldowns if umbral blade or normal blade was used
-        // those were erroneous since my cooldown calc is a Function! I love Functional Interfaces!
+
+        // basic umbral attacks
+        add(List.of(
+                InputKey.of(InputType.LEFT, SwordItemType.UMBRAL_LINK)
+            ),
+            new InputAction(
+                executor -> UmbralBladeAction.basicAttackWithLink(executor, 1),
+                executor ->
+                    Math.max(0, (executor.getTimeOfLastAttack() + executor.getDurationOfLastAttack()) - System.currentTimeMillis()),
+                Combatant::canPerformUmbralLinkAttack,
+                true,
+                true,
+                true),
+            60L,
+            true,
+            true,
+            true);
+
+        add(List.of(
+                InputKey.of(InputType.LEFT, SwordItemType.UMBRAL_LINK),
+                InputKey.of(InputType.LEFT, SwordItemType.UMBRAL_LINK)
+            ),
+            new InputAction(
+                executor -> UmbralBladeAction.basicAttackWithLink(executor, 2),
+                executor -> 0L,
+                Combatant::canPerformUmbralLinkAttack,
+                true,
+                true,
+                true),
+            60L,
+            true,
+            true,
+            true);
+
+        add(List.of(
+                InputKey.of(InputType.LEFT, SwordItemType.UMBRAL_LINK),
+                InputKey.of(InputType.LEFT, SwordItemType.UMBRAL_LINK),
+                InputKey.of(InputType.LEFT, SwordItemType.UMBRAL_LINK)
+            ),
+            new InputAction(
+                executor -> UmbralBladeAction.basicAttackWithLink(executor, 3),
+                executor -> 0L,
+                Combatant::canPerformUmbralLinkAttack,
+                true,
+                true,
+                false),
+            60L,
+            true,
+            true,
+            true);
 
         // basic attacks
-        add(List.of(InputType.LEFT),
-                new InputAction(
-                    executor -> AttackAction.basicAttack(executor, AttackType.SLASH1, true),
-                    executor ->
-                        Math.max(0, (executor.getTimeOfLastAttack() + executor.getDurationOfLastAttack()) - System.currentTimeMillis()),
-                    Combatant::canPerformAction,
-                    true,
-                    true,
-                    false),
+        add(List.of(
+                InputKey.of(InputType.LEFT)
+            ),
+            new InputAction(
+                executor -> AttackAction.basicAttack(executor, 1),
+                executor ->
+                    Math.max(0, (executor.getTimeOfLastAttack() + executor.getDurationOfLastAttack()) - System.currentTimeMillis()),
+                Combatant::canPerformAction,
                 true,
                 true,
-                true);
+                false),
+            true,
+            true,
+            true);
 
-        add(List.of(InputType.LEFT, InputType.LEFT),
-                new InputAction(
-                    executor -> AttackAction.basicAttack(executor, AttackType.SLASH2, true),
-                    executor -> 0L,
-                    Combatant::canPerformAction,
-                    true,
-                    true,
-                    false),
+        add(List.of(
+                InputKey.of(InputType.LEFT),
+                InputKey.of(InputType.LEFT)
+            ),
+            new InputAction(
+                executor -> AttackAction.basicAttack(executor, 2),
+                executor -> 0L,
+                Combatant::canPerformAction,
                 true,
                 true,
-                true);
+                false),
+            true,
+            true,
+            true);
 
-        add(List.of(InputType.LEFT, InputType.LEFT, InputType.LEFT),
-                new InputAction(
-                    executor -> AttackAction.basicAttack(executor, AttackType.SLASH3, true),
-                    executor -> 0L,
-                    Combatant::canPerformAction,
-                    true,
-                    true,
-                    false),
+        add(List.of(
+                InputKey.of(InputType.LEFT),
+                InputKey.of(InputType.LEFT),
+                InputKey.of(InputType.LEFT)
+            ),
+            new InputAction(
+                executor -> AttackAction.basicAttack(executor, 3),
+                executor -> 0L,
+                Combatant::canPerformAction,
                 true,
                 true,
-                true);
+                false),
+            true,
+            true,
+            true);
 
         // throw hold action
-        add(List.of(InputType.DROP, InputType.RIGHT),
-                new InputAction(
-                    ThrowAction::throwReady,
-                    executor -> 0L,
-                    Combatant::canPerformAction,
-                    false,
-                    false,
-                    true),
-                true,
-                true,
-                true);
+        add(List.of(
+                InputKey.of(InputType.DROP),
+                InputKey.of(InputType.RIGHT)
+            ),
+            new InputAction(
+                ThrowAction::throwReady,
+                executor -> 0L,
+                Combatant::canPerformAction,
+                false,
+                false,
+                true),
+            true,
+            true,
+            true);
 
         // throw
-        add(List.of(InputType.DROP, InputType.RIGHT, InputType.RIGHT_HOLD),
-                new InputAction(
-                    ThrowAction::throwItem,
-                    executor -> 0L,
-                    Combatant::canPerformAction,
-                    false,
-                    false,
-                    true),
-                true,
-                true,
-                true,
-                600L);
+        add(List.of(
+                InputKey.of(InputType.DROP),
+                InputKey.of(InputType.RIGHT),
+                InputKey.of(InputType.RIGHT_HOLD)
+            ),
+            new InputAction(
+                ThrowAction::throwItem,
+                executor -> 0L,
+                Combatant::canPerformAction,
+                false,
+                false,
+                true),
+            true,
+            true,
+            true,
+            600L);
 
         // just in case
-        add(List.of(InputType.DROP, InputType.DROP),
-                new InputAction(
-                    UtilityAction::death,
-                    executor -> 0L,
-                    Combatant::canPerformAction,
-                    true,
-                    true,
-                    true),
+        add(List.of(
+                InputKey.of(InputType.DROP),
+                InputKey.of(InputType.DROP)
+            ),
+            new InputAction(
+                UtilityAction::death,
+                executor -> 0L,
+                Combatant::canPerformAction,
                 true,
                 true,
-                true);
+                true),
+            true,
+            true,
+            true);
 
-        add(List.of(InputType.RIGHT, InputType.RIGHT_HOLD, InputType.DROP),
+        add(List.of(
+                InputKey.of(InputType.RIGHT),
+                InputKey.of(InputType.RIGHT_HOLD),
+                InputKey.of(InputType.DROP)
+            ),
             new InputAction(
                 UtilityAction::bulletTime,
                 executor -> 5000L,
@@ -569,20 +737,26 @@ public class InputExecutionTree {
         // but can be done regardless of which item is being held.
         //
         // Most umbral blade actions will require the player to be holding the soul link item, though.
-        add(List.of(InputType.SHIFT, InputType.DROP),
-                new InputAction(
-                    UmbralBladeAction::toggle,
-                    executor -> 400L,
-                    Combatant::canPerformAction,
-                    true,
-                    true,
-                    true),
+        add(List.of(
+                InputKey.of(InputType.SHIFT),
+                InputKey.of(InputType.DROP)
+            ),
+            new InputAction(
+                UmbralBladeAction::toggle,
+                executor -> 400L,
+                Combatant::canPerformAction,
                 true,
                 true,
-                true);
+                true),
+            true,
+            true,
+            true);
 
         // wield it
-        add(List.of(InputType.SHIFT, InputType.SWAP),
+        add(List.of(
+                InputKey.of(InputType.SHIFT),
+                InputKey.of(InputType.SWAP)
+            ),
             new InputAction(
                 UmbralBladeAction::wield,
                 executor -> 400L,
@@ -595,7 +769,11 @@ public class InputExecutionTree {
             true);
 
         // heavy sweep
-        add(List.of(InputType.SWAP, InputType.LEFT),
+        add(List.of(
+                InputKey.of(InputType.RIGHT),
+                InputKey.of(InputType.RIGHT_TAP),
+                InputKey.of(InputType.LEFT)
+            ),
             new InputAction(
                 UmbralBladeAction::sweep,
                 executor -> 4000L,
@@ -604,12 +782,17 @@ public class InputExecutionTree {
                 true,
                 true,
                 false),
-            500L,
+            100L,
             true,
             true,
             true);
 
-        add(List.of(InputType.SWAP, InputType.LEFT, InputType.LEFT),
+        add(List.of(
+                InputKey.of(InputType.RIGHT),
+                InputKey.of(InputType.RIGHT_TAP),
+                InputKey.of(InputType.LEFT),
+                InputKey.of(InputType.LEFT)
+            ),
             new InputAction(
                 UmbralBladeAction::sweep,
                 executor -> 0L,
@@ -618,12 +801,18 @@ public class InputExecutionTree {
                 true,
                 true,
                 false),
-            500L,
+            100L,
             true,
             true,
             true);
 
-        add(List.of(InputType.SWAP, InputType.LEFT, InputType.LEFT, InputType.LEFT),
+        add(List.of(
+                InputKey.of(InputType.RIGHT),
+                InputKey.of(InputType.RIGHT_TAP),
+                InputKey.of(InputType.LEFT),
+                InputKey.of(InputType.LEFT),
+                InputKey.of(InputType.LEFT)
+            ),
             new InputAction(
                 UmbralBladeAction::sweep,
                 executor -> 0L,
@@ -632,13 +821,17 @@ public class InputExecutionTree {
                 true,
                 true,
                 false),
-            500L,
+            100L,
             true,
             true,
             true);
 
         // lunge (umbral throw action)
-        add(List.of(InputType.DROP, InputType.LEFT),
+        add(List.of(
+                InputKey.of(InputType.RIGHT),
+                InputKey.of(InputType.RIGHT_HOLD),
+                InputKey.of(InputType.LEFT)
+            ),
             new InputAction(
                 UmbralBladeAction::lunge,
                 executor -> 4000L,
@@ -647,12 +840,17 @@ public class InputExecutionTree {
                 true,
                 true,
                 false),
-            500L,
+            100L,
             true,
             true,
             true);
 
-        add(List.of(InputType.DROP, InputType.LEFT, InputType.LEFT),
+        add(List.of(
+                InputKey.of(InputType.RIGHT),
+                InputKey.of(InputType.RIGHT_HOLD),
+                InputKey.of(InputType.LEFT),
+                InputKey.of(InputType.LEFT)
+            ),
             new InputAction(
                 UmbralBladeAction::lunge,
                 executor -> 0L,
@@ -661,12 +859,18 @@ public class InputExecutionTree {
                 true,
                 true,
                 false),
-            500L,
+            100L,
             true,
             true,
             true);
 
-        add(List.of(InputType.DROP, InputType.LEFT, InputType.LEFT, InputType.LEFT),
+        add(List.of(
+                InputKey.of(InputType.RIGHT),
+                InputKey.of(InputType.RIGHT_HOLD),
+                InputKey.of(InputType.LEFT),
+                InputKey.of(InputType.LEFT),
+                InputKey.of(InputType.LEFT)
+            ),
             new InputAction(
                 UmbralBladeAction::lunge,
                 executor -> 0L,
@@ -675,7 +879,7 @@ public class InputExecutionTree {
                 true,
                 true,
                 false),
-            500L,
+            100L,
             true,
             true,
             true);
@@ -692,7 +896,7 @@ public class InputExecutionTree {
         private InputAction action;
         private Consumer<SwordPlayer> internalAction;
         private long timeoutTicks;
-        private final LinkedHashMap<InputType, InputNode> children = new LinkedHashMap<>();
+        private final LinkedHashMap<InputKey, InputNode> children = new LinkedHashMap<>();
         private boolean sameItemRequired;
         private boolean cancellable;
         private boolean display;
@@ -722,42 +926,45 @@ public class InputExecutionTree {
         /**
          * Adds a child node for the specified input with an associated action and no hold time.
          *
-         * @param input the {@link InputType} input triggering the child node
+         * @param inputKey the {@link InputType} input triggering the child node
          * @param action the {@link InputAction} associated with the child node, or null
          */
-        public void addChild(InputType input, InputAction action) {
-            children.putIfAbsent(input, new InputNode(action));
+        public void addChild(InputKey inputKey, InputAction action) {
+            children.putIfAbsent(inputKey, new InputNode(action));
         }
 
         /**
          * Adds a child node for the specified input with an associated action and minimum hold time.
          *
-         * @param input the input triggering the child node
+         * @param inputKey the input triggering the child node
          * @param action the action associated with the child node
          * @param minHoldLength minimum hold time in ms required for this input
          */
-        public void addChild(InputType input, InputAction action, long minHoldLength) {
-            children.putIfAbsent(input, new InputNode(action, minHoldLength));
+        public void addChild(InputKey inputKey, InputAction action, long minHoldLength) {
+            children.putIfAbsent(inputKey, new InputNode(action, minHoldLength));
         }
 
         /**
-         * Checks if there is no child node matching the specified input.
-         *
-         * @param input the input to check for child
-         * @return true if no child exists for input, false otherwise
+         * Finds child node where input matches AND player's item type is allowed by node's InputKey.
          */
-        public boolean noChild(InputType input) {
-            return !children.containsKey(input);
+        public InputNode findMatchingChild(InputKey inputKey) {
+            // The input key being passed in will always only have 1 element
+            SwordItemType playerItemType = inputKey.allowedItemTypes().getFirst();
+
+            for (Map.Entry<InputKey, InputNode> entry : children.entrySet()) {
+                if (entry.getKey().input().equals(inputKey.input()) &&
+                    entry.getKey().allowed(playerItemType)) {
+                    return entry.getValue();
+                }
+            }
+            return null;
         }
 
         /**
-         * Retrieves the child node corresponding to the specified input.
-         *
-         * @param input the input to get the child node for
-         * @return the child {@link InputNode}, or null if none exists
+         * Checks if any child accepts the player's item type.
          */
-        public InputNode getChild(InputType input) {
-            return children.get(input);
+        public boolean noMatchingChild(InputKey inputKey) {
+            return findMatchingChild(inputKey) == null;
         }
     }
 }

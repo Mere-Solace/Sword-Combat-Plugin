@@ -9,10 +9,8 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.block.Block;
-import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
-import org.bukkit.entity.Item;
 import org.bukkit.entity.ItemDisplay;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.inventory.ItemStack;
@@ -52,7 +50,7 @@ import net.kyori.adventure.text.format.TextColor;
  */
 @Getter
 @Setter
-public class ThrownItem {
+public class ThrownItem implements InteractiveItem {
     protected final Combatant thrower;
     private ParticleWrapper blockTrail;
     protected ItemDisplay display;
@@ -411,21 +409,19 @@ public class ThrownItem {
      */
     protected void onGrounded() {
         if (stuckBlock != null) {
-            this.blockDustPillarParticle = new ParticleWrapper(Particle.DUST_PILLAR,
-                50, 1, 1, 1, stuckBlock.getBlockData());
-            blockDustPillarParticle.display(cur);
+            new ParticleWrapper(Particle.BLOCK, 50, 1, 1, 1, stuckBlock.getBlockData()).display(cur);
         }
+
         double offset = 0.1;
         Vector n = velocity.normalize();
         Vector step = n.clone().multiply(offset);
 
-        ArmorStand marker = (ArmorStand) display.getWorld().spawnEntity(cur, EntityType.ARMOR_STAND);
-        marker.setGravity(false);
-        marker.setVisible(false);
+        Location probe = cur.clone();
+        Vector backwards = velocity.normalize().multiply(-0.1);
 
         int x = 1;
-        while (!marker.getLocation().getBlock().isPassable()) {
-            marker.teleport(cur.clone().add(velocity.normalize().multiply(-0.1 * x)));
+        while (!probe.getBlock().isPassable()) {
+            probe.add(backwards);
             x++;
             if (x > 30) break;
         }
@@ -433,11 +429,10 @@ public class ThrownItem {
         new BukkitRunnable() {
             @Override
             public void run() {
-                Location land = marker.getLocation();
+                Location land = probe.clone();
                 land.setDirection(to.normalize());
                 DisplayUtil.smoothTeleport(display, 1);
                 display.teleport(land);
-                marker.remove();
             }
         }.runTaskLater(Sword.getInstance(), 1L);
 
@@ -732,16 +727,9 @@ public class ThrownItem {
         if (display == null) return;
 
         final Location dropLocation = hitEntity != null ? hitEntity.self().getLocation() : display.getLocation();
-        Item dropped = dropLocation.getWorld().dropItemNaturally(dropLocation, display.getItemStack());
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                if (dropped.isDead()) {
-                    cancel();
-                }
-                Prefab.Particles.DOPPED_ITEM_MARKER.display(dropped.getLocation());
-            }
-        }.runTaskTimer(Sword.getInstance(), 0L, 5L);
+
+        InteractiveItemArbiter.dropNaturally(dropLocation, display.getItemStack());
+
         dispose();
     }
 

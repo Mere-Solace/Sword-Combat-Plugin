@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -32,6 +33,7 @@ import com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent;
 
 import btm.sword.Sword;
 import btm.sword.config.Config;
+import btm.sword.system.SwordScheduler;
 import btm.sword.system.attack.HitPacket;
 import btm.sword.system.combat.Affliction;
 import btm.sword.system.entity.SwordEntityArbiter;
@@ -70,6 +72,8 @@ public abstract class SwordEntity {
     protected final CombatProfile combatProfile;
     protected final LivingEntity self;
     protected String displayName;
+
+    protected boolean dead;
 
     protected EntityAspects aspects;
 
@@ -353,7 +357,7 @@ public abstract class SwordEntity {
     }
 
     public void onZeroHealth() {
-
+        dead = true;
     }
 
     /**
@@ -491,10 +495,13 @@ public abstract class SwordEntity {
         if (toughnessBroken) {
             // If Shards == 0 (dead)
             if (aspects.shards().remove(baseNumShards)) {
-                self.damage(74077740, source.self());
-                if (!self.isDead())
-                    self.setHealth(0);
                 onZeroHealth();
+
+                SwordScheduler.runBukkitTaskLater(() -> {
+                    self.damage(74077740, source.self());
+                    if (!self.isDead())
+                        self.setHealth(0); },
+                    Prefab.Value.MILLISECONDS_PER_TICK * 2, TimeUnit.MILLISECONDS);
                 return;
             }
             shardsLost += baseNumShards;

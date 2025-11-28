@@ -1,5 +1,7 @@
 package btm.sword.system.action.skill;
 
+import static btm.sword.system.action.attack.PunchAction.throwPunch;
+
 import btm.sword.system.action.SwordAction;
 import btm.sword.system.entity.types.Combatant;
 import btm.sword.system.entity.umbral.UmbralBlade;
@@ -47,6 +49,19 @@ public class UmbralBladeAction extends SwordAction {
         if (blade == null) return;
 
         blade.request(BladeRequest.ATTACK_HEAVY);
+    }
+
+    public static void basicAttackWithLink(Combatant wielder, int comboStep) {
+        UmbralBlade blade = wielder.getUmbralBlade();
+        if (blade == null) return;
+
+        if (wielder.getAspects().soulfireCur() >= 10f) {
+            blade.requestQuickAttack(comboStep);
+            blade.request(BladeRequest.ATTACK_QUICK);
+            return;
+        }
+
+        throwPunch(wielder, comboStep == 1 || comboStep == 3,-1);
     }
 
     public static void spiralFinisher(Combatant wielder) {

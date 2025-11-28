@@ -1,10 +1,11 @@
-package btm.sword.system.attack;
+package btm.sword.system.attack.style;
 
 import java.util.function.Function;
 
 import org.bukkit.util.Vector;
 
 import btm.sword.config.Config;
+import btm.sword.system.attack.Attack;
 import btm.sword.util.Prefab;
 import btm.sword.util.math.ControlVectors;
 
@@ -36,6 +37,34 @@ public enum AttackType implements AttackProfile {
         new Vector(-5,0.27,0.83),
         new Vector(-2.5,1.03,1.7),
         new Vector(-3.77,0.51,2.26))
+    ),
+
+    WIDE_UMBRAL_SLASH2(ControlVectors.of(
+        new Vector(4.008,-1.002,-1.169),
+        new Vector(-3.841,1.67,4.008),
+        new Vector(1.67,0,2.839),
+        new Vector(-1.336,0,5.01)),
+        attack -> attack.getRightVector().multiply(-1).add(attack.getForwardVector().multiply(0.3))
+    ),
+    WIDE_UMBRAL_SLASH2_WINDUP(ControlVectors.of(
+        new Vector(5.344,-0.2171,-1.002),
+        new Vector(4.509,-1.503,-2.338),
+        new Vector(4.7261,0,-0.501),
+        new Vector(3.674,-0.4008,-1.5698))
+    ),
+
+    WIDE_UMBRAL_SLASH3(ControlVectors.of(
+        new Vector(-0.334,-2.171,5.2939),
+        new Vector(0.334,5.845,-4.5591),
+        new Vector(0.167,1.837,4.676),
+        new Vector(-0.4008,3.841,0)),
+        attack -> attack.getForwardVector().add(Config.Direction.UP().multiply(-2))
+    ),
+    WIDE_UMBRAL_SLASH3_WINDUP(ControlVectors.of(
+        new Vector(-3.34,2.0708,0.501),
+        new Vector(0.334,4.0915,-2.505),
+        new Vector(1.67,0,1.67),
+        new Vector(-1.336,0,3.841))
     ),
 
     SLASH1(ControlVectors.of(
