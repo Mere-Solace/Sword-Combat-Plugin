@@ -1,17 +1,16 @@
 package btm.sword.system.action.attack;
 
+import org.bukkit.inventory.ItemStack;
+
 import btm.sword.system.action.DashDirection;
 import btm.sword.system.action.SwordAction;
 import btm.sword.system.attack.Attack;
 import btm.sword.system.attack.style.AttackProfile;
-import btm.sword.system.attack.style.AttackType;
 import btm.sword.system.attack.style.WeaponAttackStyle;
 import btm.sword.system.entity.types.Combatant;
 import btm.sword.system.entity.types.SwordPlayer;
 import btm.sword.system.entity.umbral.input.BladeRequest;
 import btm.sword.system.entity.umbral.statemachine.state.StandbyState;
-
-import org.bukkit.inventory.ItemStack;
 
 public class DashAttackAction extends SwordAction {
     public static void dashAttack(Combatant executor, DashDirection direction) {

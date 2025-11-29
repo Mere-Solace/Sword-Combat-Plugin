@@ -7,8 +7,6 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-import io.papermc.paper.entity.TeleportFlag;
-
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Particle;
@@ -50,6 +48,7 @@ import btm.sword.util.math.Basis;
 import btm.sword.util.math.VectorUtil;
 import btm.sword.util.sound.SoundType;
 import btm.sword.util.sound.SoundUtil;
+import io.papermc.paper.entity.TeleportFlag;
 import lombok.Getter;
 import lombok.Setter;
 import net.kyori.adventure.text.Component;

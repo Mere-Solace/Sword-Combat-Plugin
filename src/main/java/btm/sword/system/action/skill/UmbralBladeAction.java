@@ -2,8 +2,13 @@ package btm.sword.system.action.skill;
 
 import static btm.sword.system.action.attack.PunchAction.throwPunch;
 
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+
+import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.util.Vector;
+
 import btm.sword.Sword;
-import btm.sword.config.Config;
 import btm.sword.system.SwordScheduler;
 import btm.sword.system.action.SwordAction;
 import btm.sword.system.entity.base.SwordEntity;
@@ -11,20 +16,8 @@ import btm.sword.system.entity.types.Combatant;
 import btm.sword.system.entity.umbral.UmbralBlade;
 import btm.sword.system.entity.umbral.input.BladeRequest;
 import btm.sword.system.entity.umbral.statemachine.state.LodgedState;
-
 import btm.sword.util.Prefab;
-
 import btm.sword.util.display.DrawUtil;
-
-import io.papermc.paper.entity.TeleportFlag;
-
-import org.bukkit.Location;
-import org.bukkit.entity.Player;
-import org.bukkit.scheduler.BukkitRunnable;
-import org.bukkit.util.Vector;
-
-import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 public class UmbralBladeAction extends SwordAction {
     // TODO: #122 - Wielding when not holding blade should attack

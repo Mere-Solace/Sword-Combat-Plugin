@@ -5,9 +5,6 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-import btm.sword.system.SwordScheduler;
-
-import org.bukkit.Bukkit;
 import org.bukkit.FluidCollisionMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -31,6 +28,7 @@ import org.joml.Vector3f;
 
 import btm.sword.Sword;
 import btm.sword.config.Config;
+import btm.sword.system.SwordScheduler;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.types.Combatant;
