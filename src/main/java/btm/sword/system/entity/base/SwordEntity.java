@@ -7,6 +7,8 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+import io.papermc.paper.entity.TeleportFlag;
+
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Particle;
@@ -98,7 +100,7 @@ public abstract class SwordEntity {
 
     private boolean grabbed;
     private int numberOfImpalements;
-    private boolean pinned;
+    private int numberOfPinningImpalements;
     private boolean aiEnabled;
 
     protected boolean shielding;
@@ -191,7 +193,7 @@ public abstract class SwordEntity {
             }
         }
         if (!(self instanceof Player)) {
-            self.setAI(!pinned);
+            self.setAI(!isPinned());
         }
         else {
             if (ticks % 3 == 0) {
@@ -427,6 +429,18 @@ public abstract class SwordEntity {
      */
     public boolean isImpaled() {
         return numberOfImpalements > 0;
+    }
+
+    public void addPinningImpalement() {
+        numberOfPinningImpalements++;
+    }
+
+    public void removePinningImpalement() {
+        numberOfPinningImpalements--;
+    }
+
+    public boolean isPinned() {
+        return numberOfPinningImpalements > 0;
     }
 
     /**
@@ -934,6 +948,10 @@ public abstract class SwordEntity {
     private void updateBodyDirectionBasis() {
         currentBodyDirectionBasis = VectorUtil.getBasisWithoutPitch(self());
         timeOfLastBodyBasisCalculation = System.currentTimeMillis();
+    }
+
+    public void teleport(Location location) {
+        self().teleport(location, TeleportFlag.EntityState.RETAIN_PASSENGERS);
     }
 
     public void drawBasis() {

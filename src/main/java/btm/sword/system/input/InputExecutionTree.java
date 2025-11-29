@@ -462,6 +462,36 @@ public class InputExecutionTree {
             true);
 
         add(List.of(
+                InputKey.of(InputType.DROP, SwordItemType.UMBRAL_LINK)
+            ),
+            new InputAction(
+                UmbralBladeAction::shadowBlink,
+                executor -> 1000L,
+                Combatant::canPerformShadowBlink,
+                false,
+                true,
+                true),
+            false,
+            true,
+            true);
+
+        add(List.of(
+                InputKey.of(InputType.SWAP),
+                InputKey.of(InputType.SWAP),
+                InputKey.of(InputType.LEFT, SwordItemType.UMBRAL_LINK)
+            ),
+            new InputAction(
+                UmbralBladeAction::shadowBlink,
+                executor -> 1000L,
+                Combatant::canPerformShadowBlink,
+                false,
+                true,
+                true),
+            false,
+            true,
+            true);
+
+        add(List.of(
                 InputKey.of(InputType.SWAP),
                 InputKey.of(InputType.SWAP),
                 InputKey.of(InputType.LEFT)
@@ -524,6 +554,23 @@ public class InputExecutionTree {
                 false,
                 true,
                 true),
+            7L,
+            false,
+            true,
+            true);
+        // strafe attack right
+        add(List.of(
+                InputKey.of(InputType.SWAP),
+                InputKey.of(InputType.RIGHT),
+                InputKey.of(InputType.LEFT)
+            ),
+            new InputAction(
+                executor -> DashAttackAction.dashAttack(executor, DashDirection.RIGHT),
+                executor -> 0L,
+                Combatant::canPerformAction,
+                false,
+                true,
+                true),
             false,
             true,
             true);
@@ -540,10 +587,26 @@ public class InputExecutionTree {
                 false,
                 true,
                 true),
+            7L,
             false,
             true,
             true);
-
+        // strafe attack left
+        add(List.of(
+                InputKey.of(InputType.SWAP),
+                InputKey.of(InputType.LEFT),
+                InputKey.of(InputType.LEFT)
+            ),
+            new InputAction(
+                executor -> DashAttackAction.dashAttack(executor, DashDirection.RIGHT),
+                executor -> 0L,
+                Combatant::canPerformAction,
+                false,
+                true,
+                true),
+            false,
+            true,
+            true);
 
         // grab
         add(List.of(
@@ -714,6 +777,7 @@ public class InputExecutionTree {
             true,
             true);
 
+        // Slow em down
         add(List.of(
                 InputKey.of(InputType.RIGHT),
                 InputKey.of(InputType.RIGHT_HOLD),

@@ -15,7 +15,11 @@ public enum WeaponAttackStyle {
         AttackType.SLASH2,
         AttackType.SLASH3),
         AttackType.N_AIR,
-        AttackType.D_AIR
+        AttackType.D_AIR,
+        AttackType.F_DASH_ATTACK,
+        AttackType.B_DASH_ATTACK,
+        AttackType.R_STRAFE_ATTACK,
+        AttackType.L_STRAFE_ATTACK
     ),
     THRUST("thrust"),
     BASH("bash");
@@ -25,6 +29,10 @@ public enum WeaponAttackStyle {
     private final List<AttackProfile> attackChain;
     private final AttackProfile neutralAirAttack;
     private final AttackProfile downAirAttack;
+    private final AttackProfile forwardDashAttack;
+    private final AttackProfile backwardDashAttack;
+    private final AttackProfile rightStrafeAttack;
+    private final AttackProfile leftStrafeAttack;
 
     private static final HashMap<String, WeaponAttackStyle> MAP_TO_ENUM = new HashMap<>();
 
@@ -37,15 +45,25 @@ public enum WeaponAttackStyle {
     WeaponAttackStyle(String string,
                       List<AttackProfile> attackChain,
                       AttackProfile neutralAirAttack,
-                      AttackProfile downAirAttack) {
+                      AttackProfile downAirAttack,
+                      AttackProfile forwardDashAttack,
+                      AttackProfile backwardDashAttack,
+                      AttackProfile rightStrafeAttack,
+                      AttackProfile leftStrafeAttack) {
         this.string = string;
         this.attackChain = attackChain;
         this.neutralAirAttack = neutralAirAttack;
         this.downAirAttack = downAirAttack;
+        this.forwardDashAttack = forwardDashAttack;
+        this.backwardDashAttack = backwardDashAttack;
+        this.rightStrafeAttack = rightStrafeAttack;
+        this.leftStrafeAttack = leftStrafeAttack;
     }
 
-    WeaponAttackStyle(String string) {
-        this(string, null, null, null);
+    WeaponAttackStyle(String string) { // only for punch
+        this(string,
+            null, null, null,
+            null, null, null, null);
     }
 
     public String string() {
@@ -62,6 +80,22 @@ public enum WeaponAttackStyle {
 
     public AttackProfile downAir() {
         return downAirAttack;
+    }
+
+    public AttackProfile f_dash() {
+        return forwardDashAttack;
+    }
+
+    public AttackProfile b_dash() {
+        return backwardDashAttack;
+    }
+
+    public AttackProfile r_strafe() {
+        return rightStrafeAttack;
+    }
+
+    public AttackProfile l_strafe() {
+        return leftStrafeAttack;
     }
 
     public static WeaponAttackStyle fromString(ItemStack item) {

@@ -5,6 +5,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
+import org.bukkit.FluidCollisionMode;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -17,6 +18,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
+import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Transformation;
 import org.bukkit.util.Vector;
 import org.joml.Quaternionf;
@@ -43,6 +45,7 @@ import btm.sword.system.entity.umbral.statemachine.UmbralStateMachine;
 import btm.sword.system.entity.umbral.statemachine.state.AttackingHeavyState;
 import btm.sword.system.entity.umbral.statemachine.state.AttackingQuickState;
 import btm.sword.system.entity.umbral.statemachine.state.FinisherState;
+import btm.sword.system.entity.umbral.statemachine.state.GrabImpaleState;
 import btm.sword.system.entity.umbral.statemachine.state.InactiveState;
 import btm.sword.system.entity.umbral.statemachine.state.LodgedState;
 import btm.sword.system.entity.umbral.statemachine.state.LungingState;
@@ -100,6 +103,8 @@ public class UmbralBlade extends ThrownItem {
 
     private ControlVectors ctrlPointsForLunge;
     private boolean finishedLunging = false;
+
+    boolean usingCustomFuncs;
 
     private boolean skillFinished;
 
@@ -255,6 +260,13 @@ public class UmbralBlade extends ThrownItem {
 
         bladeStateMachine.addTransition(new Transition<>(
             StandbyState.class,
+            GrabImpaleState.class,
+            blade -> isRequestedAndActive(BladeRequest.GRAB_IMPALE),
+            blade -> {}
+        ));
+
+        bladeStateMachine.addTransition(new Transition<>(
+            StandbyState.class,
             FinisherState.class,
             blade -> isRequestedAndActive(BladeRequest.FINISHER),
             blade -> {}
@@ -296,6 +308,23 @@ public class UmbralBlade extends ThrownItem {
             AttackingHeavyState.class,
             RecallingState.class,
             blade -> blade.attackCompleted,
+            blade -> {}
+        ));
+
+        // =====================================================================
+        // GRAB IMPALE
+        // =====================================================================
+        bladeStateMachine.addTransition(new Transition<>(
+            GrabImpaleState.class,
+            LodgedState.class,
+            UmbralBlade::hitTargetWithLunge,
+            blade -> {}
+        ));
+
+        bladeStateMachine.addTransition(new Transition<>(
+            GrabImpaleState.class,
+            RecallingState.class,
+            blade -> finishedLunging,
             blade -> {}
         ));
 
@@ -502,6 +531,14 @@ public class UmbralBlade extends ThrownItem {
                 new Quaternionf()
             );
         }
+        else if (state == GrabImpaleState.class) {
+            return new Transformation(
+                new Vector3f(),
+                new Quaternionf().rotateX((float) -Math.PI/2),
+                scale,
+                new Quaternionf()
+            );
+        }
         else if (state == LodgedState.class) {
             return display.getTransformation();
         }
@@ -584,13 +621,37 @@ public class UmbralBlade extends ThrownItem {
 
     public BukkitTask returnToWielderAndRequestState(BladeRequest request) {
         return DisplayUtil.displaySlerpToOffset(thrower, display,
-            thrower.getChestVector(), 1.75, 5, 2, 1.5, false,
+            thrower.getChestVector(),
+            1.75, 5, 2, 1.5,
+            false,
+            500, // give it 10 seconds to get back
             new BukkitRunnable() {
                 @Override
                 public void run() {
                     request(request);
                 }
             });
+    }
+
+    @Override
+    public void groundedCheck() {
+        RayTraceResult hitBlock = display.getWorld()
+            .rayTraceBlocks(prev, velocity, // detect from prev, checks go through later, which is what I need to happen.
+                cur.toVector()
+                    .subtract(prev.toVector())
+                    .lengthSquared() * Config.Detection.THROW_GROUND_CHECK_MULTIPLIER / 10,
+                FluidCollisionMode.NEVER, true);
+
+        if (hitBlock == null) {
+            return;
+        }
+
+        if (hitBlock.getHitBlock() == null || hitBlock.getHitBlock().getType().isAir())
+            return;
+
+        grounded = true;
+        stuckBlock = hitBlock.getHitBlock();
+        cur = hitBlock.getHitPosition().toLocation(display.getWorld());
     }
 
     public void performSimpleAttack(double range) {
@@ -796,7 +857,7 @@ public class UmbralBlade extends ThrownItem {
                     new UmbralBladeAttack(display, AttackType.WIDE_UMBRAL_SLASH3,
                         false, false, 0,
                         20, 10, 50,
-                        1, 0)
+                        0, 1)
                         .setBlade(this)
                         .setHitInstructions(swordEntity -> Prefab.Particles.BLEED.display(swordEntity.getChestLocation()))
                         .setCallback(attackEndCallback, 200),
@@ -844,7 +905,7 @@ public class UmbralBlade extends ThrownItem {
     }
 
     @Override
-    protected void generateFunctions(double initialVelocity) {
+    public void generateFunctions(double initialVelocity) {
         if (ctrlPointsForLunge == null) {
             super.generateFunctions(initialVelocity);
         }
@@ -854,7 +915,9 @@ public class UmbralBlade extends ThrownItem {
     }
 
     protected void calcBezierTrajectory() {
-        SwordEntity target = thrower.getTargetedEntity(20);
+        SwordEntity target = inState(GrabImpaleState.class) ?
+            getThrower().getGrabbedEntity() :
+            thrower.getTargetedEntity(20);
 
         origin = display.getLocation();
         cur = origin.clone();
@@ -962,6 +1025,7 @@ public class UmbralBlade extends ThrownItem {
         grounded = false;
         caught = false;
         stuckBlock = null;
+        timeScalingFactor = -1;
     }
 
     public void setDashingDirection(DashDirection direction) {

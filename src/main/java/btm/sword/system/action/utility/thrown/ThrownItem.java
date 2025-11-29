@@ -1,9 +1,13 @@
 package btm.sword.system.action.utility.thrown;
 
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
+import btm.sword.system.SwordScheduler;
+
+import org.bukkit.Bukkit;
 import org.bukkit.FluidCollisionMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -80,6 +84,8 @@ public class ThrownItem implements InteractiveItem {
     protected boolean grounded;
     protected Block stuckBlock;
     protected ParticleWrapper blockDustPillarParticle;
+
+    protected boolean retrieved;
 
     protected boolean hit;
     protected SwordEntity hitEntity;
@@ -232,6 +238,7 @@ public class ThrownItem implements InteractiveItem {
         }
 
         generateFunctions(initialVelocity);
+
         handleOnReleaseActions();
 
         xDisplayOffset = yDisplayOffset = zDisplayOffset = 0;
@@ -240,14 +247,16 @@ public class ThrownItem implements InteractiveItem {
         new BukkitRunnable() {
             @Override
             public void run() {
+                thrower.message("Time Step: " + timeStep);
+                thrower.message("Time Cutoff: " + timeCutoff);
                 if (grounded || hit || caught || display.isDead() || (timeCutoff > 0 && timeStep * timeScalingFactor > timeCutoff)) {
-//                    String reason = grounded ? "grounded" :
-//                        hit ? "hit" :
-//                            caught ? "caught" :
-//                                display.isDead() ? "display dead" :
-//                                    (timeCutoff > 0 && timeStep > timeCutoff) ? "time cutoff" :
-//                                        "unknown";
-//                    thrower.message("Ending due to: " + reason);
+                    String reason = grounded ? "grounded" :
+                        hit ? "hit" :
+                            caught ? "caught" :
+                                display.isDead() ? "display dead" :
+                                    (timeCutoff > 0 && timeStep * timeScalingFactor > timeCutoff) ? "time cutoff" :
+                                        "unknown";
+                    thrower.message("Ending due to: " + reason);
 
                     onEnd();
                     cancel();
@@ -521,14 +530,15 @@ public class ThrownItem implements InteractiveItem {
     protected void startPinCheckTask(SwordEntity target) {
         float yaw = cur.setDirection(velocity.clone().multiply(-1)).getYaw();
         target.self().setBodyYaw(yaw);
-        target.setPinned(true);
+        target.addPinningImpalement();
 
         new BukkitRunnable() {
             int i = 0;
             @Override
             public void run() {
-                if (display.isDead() || i > Config.Combat.IMPALEMENT_PIN_MAX_ITERATIONS) {
-                    target.setPinned(false);
+                if (display.isDead() || i > Config.Combat.IMPALEMENT_PIN_MAX_ITERATIONS ||
+                    target.isGrabbed() || isRetrieved()) {
+                    target.removePinningImpalement();
                     if (!display.isDead()) disposeNaturally();
                     cancel();
                 }
@@ -538,6 +548,11 @@ public class ThrownItem implements InteractiveItem {
                 i += Config.Combat.IMPALEMENT_PIN_CHECK_INTERVAL;
             }
         }.runTaskTimer(Sword.getInstance(), 0L, Config.Combat.IMPALEMENT_PIN_CHECK_INTERVAL);
+    }
+
+    public void setRetrieved(boolean retrieved) {
+        this.retrieved = retrieved;
+        SwordScheduler.runBukkitTaskLater(() -> setRetrieved(false), 60, TimeUnit.MILLISECONDS);
     }
 
     protected void startLifecycleCheckTask(SwordEntity target) {
@@ -740,7 +755,7 @@ public class ThrownItem implements InteractiveItem {
      */
     public void dispose() {
         if (display != null) {
-            display.remove();
+            display.remove(); // TODO: load chunks whenever something is being despawned.
         }
         if (disposeTask != null && !disposeTask.isCancelled()) disposeTask.cancel();
     }

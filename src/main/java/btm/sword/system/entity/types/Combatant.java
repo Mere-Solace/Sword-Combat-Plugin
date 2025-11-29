@@ -12,6 +12,7 @@ import org.bukkit.util.Vector;
 
 import btm.sword.Sword;
 import btm.sword.system.action.MovementAction;
+import btm.sword.system.action.SwordAction;
 import btm.sword.system.action.utility.thrown.ThrownItem;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.base.CombatProfile;
@@ -45,6 +46,7 @@ public abstract class Combatant extends SwordEntity {
 
     private boolean isGrabbing = false;
     private SwordEntity grabbedEntity;
+    private boolean attemptedGrabImpale;
 
     private UmbralBlade umbralBlade;
     private boolean startingBlade;
@@ -182,6 +184,8 @@ public abstract class Combatant extends SwordEntity {
      * @param target the SwordEntity that is being grabbed
      */
     public void onGrab(SwordEntity target) {
+        attemptedGrabImpale = false;
+
         LivingEntity t = target.self();
         setGrabbing(true);
         target.setGrabbed(true);
@@ -203,7 +207,7 @@ public abstract class Combatant extends SwordEntity {
      * Resets grab state and calls {@link MovementAction#toss(Combatant, SwordEntity)}.
      */
     public void onGrabThrow() {
-        onGrabHit();
+//        onGrabHit();
 
         isGrabbing = false;
         grabbedEntity.setGrabbed(false);
@@ -215,14 +219,21 @@ public abstract class Combatant extends SwordEntity {
      * and displaying associated particle effects.
      */
     public void onGrabHit() {
+        if (holdingSoulLink() && !umbralBlade.inState(SheathedState.class) && !attemptedGrabImpale) {
+            attemptedGrabImpale = true;
+            getUmbralBlade().request(BladeRequest.GRAB_IMPALE);
+        }
+
         LivingEntity target = grabbedEntity.self();
 
-        target.setVelocity(target.getVelocity().add(dir()));
+        target.setVelocity(dir().multiply(2));
 
-        Location hitLoc = target.getLocation().add(0, target.getEyeHeight() * 0.5, 0);
-        Prefab.Particles.PUNCH_CONNECT.display(hitLoc);
-        grabbedEntity.hit(this, Prefab.Attacks.grabHit,
+        SwordAction.cast(this, 75, () -> {
+            Location hitLoc = target.getLocation().add(0, target.getEyeHeight() * 0.5, 0);
+            Prefab.Particles.PUNCH_CONNECT.display(hitLoc);
+            grabbedEntity.hit(this, Prefab.Attacks.grabHit,
                 target.getEyeLocation().subtract(eyeLoc()).toVector());
+        });
     }
 
     public boolean holdingUmbralItemInMainHand() {
@@ -367,5 +378,10 @@ public abstract class Combatant extends SwordEntity {
                 getUmbralBlade().inState(StandbyState.class) ||
                 getUmbralBlade().inState(SheathedState.class) ||
                 getUmbralBlade().inState(LodgedState.class));
+    }
+
+    public boolean canPerformShadowBlink() {
+        return canPerformAction() &&
+            (getUmbralBlade().inState(LodgedState.class));
     }
 }

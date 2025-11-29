@@ -13,6 +13,7 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.ItemDisplay;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.TextDisplay;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -80,6 +81,7 @@ public class MovementAction extends SwordAction {
 
         // check for an item that may be the target of the dash
         Entity targetedItem;
+        boolean shouldDash = !executor.holdingSoulLink();
 
         if (executor.getItemStackInHand(true).isEmpty() || executor.holdingSoulLink()) {
             targetedItem = HitboxUtil.ray(o, o.getDirection(), MAX_STRAIGHT_DASH_DISTANCE.get(), Config.Movement.DASH_RAY_HITBOX_RADIUS,
@@ -88,15 +90,18 @@ public class MovementAction extends SwordAction {
                     entity instanceof ItemDisplay id &&
                     InteractiveItemArbiter.checkIfInteractive(id)) &&
                     !InteractiveItemArbiter.isImpaling(SwordEntityArbiter.get(ex), id));
-
-            if (InteractiveItemArbiter.isUmbralBlade((ItemDisplay) targetedItem) && !executor.holdingSoulLink()) {
-                return;
-            }
         } else {
             targetedItem = null; //  can't dash and grab a new item off the ground if already holding something
         }
+        // TODO: #147 clean this nest up
+        if (targetedItem instanceof ItemDisplay display &&
+            InteractiveItemArbiter.isUmbralBlade(display) &&
+            executor.holdingSoulLink()) {
+            if (dashToItem(executor, display, direction)) return;
+        }
 
-        if (targetedItem instanceof ItemDisplay id &&
+        if (shouldDash &&
+            targetedItem instanceof ItemDisplay id &&
             !id.isDead() &&
             !id.getItemStack().isEmpty()) {
             if (dashToItem(executor, id, direction)) return;

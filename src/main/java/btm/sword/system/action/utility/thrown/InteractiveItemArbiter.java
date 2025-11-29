@@ -6,6 +6,7 @@ import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.block.Block;
 import org.bukkit.entity.ItemDisplay;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
 
@@ -82,18 +83,23 @@ public class InteractiveItemArbiter {
      * @param executor The combatant performing the grab.
      */
     public static void onGrab(ItemDisplay display, Combatant executor) {
-        InteractiveItem thrownItem = remove(display, false); // Stop displaying the ItemDisplay
-        if (thrownItem == null) return;
+        InteractiveItem interactiveItem = remove(display, false); // Stop displaying the ItemDisplay
+        if (interactiveItem == null) return;
+        if (interactiveItem instanceof ThrownItem thrownItem) {
+            thrownItem.setRetrieved(true);
+            if (thrownItem.getHitEntity() instanceof SwordEntity swordEntity && swordEntity.self().isValid())
+                swordEntity.removePinningImpalement();
+        }
 
         ItemStack item = display.getItemStack();
 
         if (!item.isEmpty()) {
-            if (thrownItem instanceof UmbralBlade umbralBlade) {
+            if (interactiveItem instanceof UmbralBlade umbralBlade) {
                 umbralBlade.onGrab(executor);
                 return;
             }
             else {
-                thrownItem.dispose();
+                interactiveItem.dispose();
             }
 
             executor.giveItem(item);
@@ -108,7 +114,7 @@ public class InteractiveItemArbiter {
                         .display(displayLoc);
             }
             Prefab.Particles.GRAB_CLOUD.display(display.getLocation());
-            thrownItem.dispose();
+            interactiveItem.dispose();
         }
     }
 

@@ -4,16 +4,23 @@ public enum BladeRequest {
     SHEATH,
     STANDBY,
     TOGGLE,
+
     WIELD,
+
     ATTACK_QUICK,
     ATTACK_HEAVY,
+
     LUNGE,
     IMPALE,
+    GRAB_IMPALE,
+
+    FINISHER,
+
     RECALL,
+
     ACTIVATE_TO_PREVIOUS,
     ACTIVATE_AS_SHEATHED,
     DEACTIVATE,
     RESUME_FROM_REPAIR,
-    REPAIR_DISPLAY,
-    FINISHER,
+    REPAIR_DISPLAY
 }

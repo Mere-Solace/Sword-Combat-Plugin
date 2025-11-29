@@ -31,11 +31,6 @@ public class AttackAction extends SwordAction {
      * @param executor The combatant performing the attack.
      */
     public static void basicAttack(Combatant executor, int comboStep) {
-
-
-        executor.message("> Basic Attack Method Call.");
-
-
         ItemStack itemStack = executor.getItemStackInHand(true);
         WeaponAttackStyle weaponAttackStyle = WeaponAttackStyle.fromString(itemStack);
 

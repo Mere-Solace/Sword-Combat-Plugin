@@ -29,7 +29,7 @@ public abstract class SwordAction {
      * @param castDuration Duration in milliseconds for which the ability will block other abilities from being performed
      * @param action The runnable action to be executed and subsequently set as the cast task of the executor
      */
-    protected static void cast(Combatant executor, int castDuration, Runnable action) {
+    public static void cast(Combatant executor, int castDuration, Runnable action) {
         BukkitTask castTask = s.runTask(plugin, action);
 
         // TODO: This is probably the best place for soulfire usage.

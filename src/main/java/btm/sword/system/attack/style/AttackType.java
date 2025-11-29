@@ -54,15 +54,15 @@ public enum AttackType implements AttackProfile {
     ),
 
     WIDE_UMBRAL_SLASH3(ControlVectors.of(
-        new Vector(-0.334,-2.171,5.2939),
-        new Vector(0.334,5.845,-4.5591),
-        new Vector(0.167,1.837,4.676),
-        new Vector(-0.4008,3.841,0)),
+        new Vector(0,5.177,-0.334),
+        new Vector(0,-3.674,1.336),
+        new Vector(0,1.7368,1.67),
+        new Vector(0,-0.167,2.9058)),
         attack -> attack.getForwardVector().add(Config.Direction.UP().multiply(-2))
     ),
     WIDE_UMBRAL_SLASH3_WINDUP(ControlVectors.of(
-        new Vector(-3.34,2.0708,0.501),
-        new Vector(0.334,4.0915,-2.505),
+        new Vector(-3.34,2.0708,3.34),
+        new Vector(0.334,4.0915,0),
         new Vector(1.67,0,1.67),
         new Vector(-1.336,0,3.841))
     ),
@@ -112,13 +112,26 @@ public enum AttackType implements AttackProfile {
         new Vector(-0.93,0,4.9)),
     attack -> new Vector()
     ),
-
     B_DASH_ATTACK(ControlVectors.of(
         new Vector(0.696,2.2388,1.74),
         new Vector(-0.8932,-3.2016,0.116),
         new Vector(0.3132,0.4176,2.204),
         new Vector(-0.58,-1.74,1.3572)),
         Attack::getForwardVector
+    ),
+    R_STRAFE_ATTACK(ControlVectors.of(
+        new Vector(-1.503,-0.4008,0.668),
+        new Vector(4.676,0.334,1.169),
+        new Vector(0.167,0,1.4362),
+        new Vector(2.2211,0,1.7702)),
+        Attack::getRightVector
+    ),
+    L_STRAFE_ATTACK(ControlVectors.of(
+        new Vector(1.503,-0.4008,0.668),
+        new Vector(-4.676,0.334,1.169),
+        new Vector(-0.167,0,1.4362),
+        new Vector(-2.2211,0,1.7702)),
+        attack -> attack.getRightVector().multiply(-1)
     ),
 
     D_AIR(ControlVectors.of(

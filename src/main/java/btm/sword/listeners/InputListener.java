@@ -67,14 +67,14 @@ public class InputListener implements Listener {
 
         swordPlayer.message("PlayerAttackEntityCooldownResetEvent");
 
-        if (swordPlayer.handleItemInteraction(item, InputType.LEFT)) {
-            event.setCancelled(true);
-            return;
-        }
-
-        swordPlayer.act(InputType.LEFT);
-
-        event.setCancelled(true);
+//        if (swordPlayer.handleItemInteraction(item, InputType.LEFT)) {
+//            event.setCancelled(true);
+//            return;
+//        }
+//
+//        swordPlayer.act(InputType.LEFT);
+//
+//        event.setCancelled(true);
     }
 
     /**
