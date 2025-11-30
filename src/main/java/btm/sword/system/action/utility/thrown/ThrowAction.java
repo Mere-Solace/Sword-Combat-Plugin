@@ -48,8 +48,9 @@ public class ThrowAction extends SwordAction {
         // Guard against throwing the Umbral Items
         // TODO: #122 - Add logic here for lunging/directing/hurling the umbral blade
         if (executor instanceof SwordPlayer swordPlayer && swordPlayer.isUmbralItem(swordPlayer.getMainItemStackAtTimeOfHold())) {
+            UmbralItemThrowAction.umbralLungePreparation(executor);
             swordPlayer.resetTree();
-            swordPlayer.displayMistake();
+            swordPlayer.displayMistake(); // display something cool
             return;
         }
 

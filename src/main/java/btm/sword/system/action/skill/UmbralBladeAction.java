@@ -18,6 +18,7 @@ import btm.sword.system.entity.umbral.input.BladeRequest;
 import btm.sword.system.entity.umbral.statemachine.state.LodgedState;
 import btm.sword.util.Prefab;
 import btm.sword.util.display.DrawUtil;
+import btm.sword.util.math.Basis;
 
 public class UmbralBladeAction extends SwordAction {
     // TODO: #122 - Wielding when not holding blade should attack
@@ -95,7 +96,7 @@ public class UmbralBladeAction extends SwordAction {
         }
 
         wielder.consumeSoulfire(40.0f);
-        cast(wielder, 750, () -> performBlink(wielder, target));
+        cast(wielder, 250, () -> performBlink(wielder, target));
     }
 
     private static void performBlink(Combatant wielder, SwordEntity target) {
@@ -112,9 +113,14 @@ public class UmbralBladeAction extends SwordAction {
             0.5f);
 
         Vector n = to.normalize();
+        Vector facing = n.clone().multiply(-1);
 
-        wielder.teleport(target.getLocation().subtract(target.getFlatBodyDir().multiply(2.5))
-            .add(n.clone().multiply(0.5)).setDirection(n.clone().multiply(-1)));
+        Basis basis = new Basis(wielder.eyeLoc(), false);
+
+        wielder.teleport(target.getChestLocation()
+                .add(basis.forward().multiply(target.getAverageSize() * 0.5))
+            .add(n.clone().multiply(target.getBodyLength() * 0.25))
+            .setDirection(facing));
         SwordScheduler.runBukkitTaskLater(() -> {
             Prefab.Particles.SOULFIRE_POOF.display(wielder.getLocation());
             Prefab.Particles.UMBRAL_FLAME.display(wielder.getLocation());
@@ -125,7 +131,7 @@ public class UmbralBladeAction extends SwordAction {
                 int iterations = 0;
                 @Override
                 public void run() {
-                    if (iterations > 40) { // 2 seconds
+                    if (iterations > 10) { // 0.5 seconds
                         cancel();
                         return;
                     }

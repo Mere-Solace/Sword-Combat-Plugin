@@ -23,6 +23,7 @@ import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.util.BoundingBox;
 import org.bukkit.util.Transformation;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
@@ -119,6 +120,10 @@ public abstract class SwordEntity {
     protected long timeOfLastEyeBasisCalculation;
     protected long timeOfLastBodyBasisCalculation;
 
+    protected double bodyLength;
+    protected double bodyWidth;
+    protected double averageSize;
+
     /**
      * Constructs a new SwordEntity wrapping the specified {@link LivingEntity} and combat profile.
      * Initializes resources, afflictions, and starts ticking updates.
@@ -155,6 +160,11 @@ public abstract class SwordEntity {
         ableToPickup = true;
 
         timeOfLastEyeBasisCalculation = 0L;
+
+        BoundingBox bb = self.getBoundingBox();
+        bodyWidth = bb.getWidthX();
+        bodyLength = bb.getWidthZ();
+        averageSize = (bodyWidth + bodyLength) / 2;
 
         startTicking();
     }

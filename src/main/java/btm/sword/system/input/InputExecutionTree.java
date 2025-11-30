@@ -41,6 +41,9 @@ import net.kyori.adventure.text.format.TextDecoration;
 public class InputExecutionTree {
     private static final Plugin plugin = Sword.getInstance();
 
+    private static final int MAX_ATTEMPT_ITERATIONS_BEFORE_FORCE_RESET = 3;
+    private int currentAttempts = 0;
+
     private final InputNode root = new InputNode(null);
     private final SwordPlayer owner;
 
@@ -99,8 +102,15 @@ public class InputExecutionTree {
 
         if (next.action != null && !next.action.canCast(owner)) {
             owner.debug(this.getClass(), 103, "Can't cast next action!");
-            return null; // added this so that stepping forward cannot occur
+            currentAttempts++;
+            if (currentAttempts >= MAX_ATTEMPT_ITERATIONS_BEFORE_FORCE_RESET) {
+                reset(); // reset if there is a dead-lock state and the user is spamming
+            }
+            else {
+                return null; // added this so that stepping forward cannot occur
+            }
         }
+        currentAttempts = 0;
 
         baseSequenceToDisplay = baseSequenceToDisplay.append(Component.text(inputToString(inputKey.input()),
             Config.SwordColor.TITLE_INPUT_STRING, TextDecoration.BOLD));
