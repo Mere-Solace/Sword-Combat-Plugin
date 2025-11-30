@@ -42,12 +42,13 @@ public class UtilityAction extends SwordAction {
             public void run() {
                 LivingEntity ex = executor.self();
                 Location l = executor.eyeLoc();
-                RayTraceResult ray = ex.getWorld().rayTraceEntities(l, l.getDirection(), 6, entity -> entity.getUniqueId() != ex.getUniqueId());
+                RayTraceResult ray = ex.getWorld().rayTraceEntities(l, l.getDirection(), 6,
+                    entity -> entity instanceof LivingEntity livingEntity && !executor.isSelf(livingEntity));
                 if (ray != null && ray.getHitEntity() != null) {
                     Entity target = ray.getHitEntity();
-                    if (target instanceof LivingEntity le) {
+                    if (target instanceof LivingEntity livingEntity) {
                         try {
-                            SwordEntityArbiter.getOrAdd(le.getUniqueId()).hit(
+                            SwordEntityArbiter.getOrAdd(livingEntity).hit(
                                 executor, 100,
                                 0, 7777777, 7777777,
                                 1, l.getDirection().multiply(100));

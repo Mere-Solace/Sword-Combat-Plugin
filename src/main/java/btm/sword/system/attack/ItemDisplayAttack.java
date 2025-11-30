@@ -3,6 +3,7 @@ package btm.sword.system.attack;
 
 import org.bukkit.entity.ItemDisplay;
 
+import btm.sword.system.attack.style.AttackProfile;
 import btm.sword.util.Prefab;
 import btm.sword.util.display.DisplayUtil;
 import lombok.Setter;

@@ -1,5 +1,6 @@
 package btm.sword.system.action.utility.thrown;
 
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -9,10 +10,8 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.block.Block;
-import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
-import org.bukkit.entity.Item;
 import org.bukkit.entity.ItemDisplay;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.inventory.ItemStack;
@@ -29,6 +28,7 @@ import org.joml.Vector3f;
 
 import btm.sword.Sword;
 import btm.sword.config.Config;
+import btm.sword.system.SwordScheduler;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.types.Combatant;
@@ -52,7 +52,7 @@ import net.kyori.adventure.text.format.TextColor;
  */
 @Getter
 @Setter
-public class ThrownItem {
+public class ThrownItem implements InteractiveItem {
     protected final Combatant thrower;
     private ParticleWrapper blockTrail;
     protected ItemDisplay display;
@@ -82,6 +82,8 @@ public class ThrownItem {
     protected boolean grounded;
     protected Block stuckBlock;
     protected ParticleWrapper blockDustPillarParticle;
+
+    protected boolean retrieved;
 
     protected boolean hit;
     protected SwordEntity hitEntity;
@@ -234,6 +236,7 @@ public class ThrownItem {
         }
 
         generateFunctions(initialVelocity);
+
         handleOnReleaseActions();
 
         xDisplayOffset = yDisplayOffset = zDisplayOffset = 0;
@@ -242,14 +245,16 @@ public class ThrownItem {
         new BukkitRunnable() {
             @Override
             public void run() {
+                thrower.message("Time Step: " + timeStep);
+                thrower.message("Time Cutoff: " + timeCutoff);
                 if (grounded || hit || caught || display.isDead() || (timeCutoff > 0 && timeStep * timeScalingFactor > timeCutoff)) {
-//                    String reason = grounded ? "grounded" :
-//                        hit ? "hit" :
-//                            caught ? "caught" :
-//                                display.isDead() ? "display dead" :
-//                                    (timeCutoff > 0 && timeStep > timeCutoff) ? "time cutoff" :
-//                                        "unknown";
-//                    thrower.message("Ending due to: " + reason);
+                    String reason = grounded ? "grounded" :
+                        hit ? "hit" :
+                            caught ? "caught" :
+                                display.isDead() ? "display dead" :
+                                    (timeCutoff > 0 && timeStep * timeScalingFactor > timeCutoff) ? "time cutoff" :
+                                        "unknown";
+                    thrower.message("Ending due to: " + reason);
 
                     onEnd();
                     cancel();
@@ -411,21 +416,19 @@ public class ThrownItem {
      */
     protected void onGrounded() {
         if (stuckBlock != null) {
-            this.blockDustPillarParticle = new ParticleWrapper(Particle.DUST_PILLAR,
-                50, 1, 1, 1, stuckBlock.getBlockData());
-            blockDustPillarParticle.display(cur);
+            new ParticleWrapper(Particle.BLOCK, 50, 1, 1, 1, stuckBlock.getBlockData()).display(cur);
         }
+
         double offset = 0.1;
         Vector n = velocity.normalize();
         Vector step = n.clone().multiply(offset);
 
-        ArmorStand marker = (ArmorStand) display.getWorld().spawnEntity(cur, EntityType.ARMOR_STAND);
-        marker.setGravity(false);
-        marker.setVisible(false);
+        Location probe = cur.clone();
+        Vector backwards = velocity.normalize().multiply(-0.1);
 
         int x = 1;
-        while (!marker.getLocation().getBlock().isPassable()) {
-            marker.teleport(cur.clone().add(velocity.normalize().multiply(-0.1 * x)));
+        while (!probe.getBlock().isPassable()) {
+            probe.add(backwards);
             x++;
             if (x > 30) break;
         }
@@ -433,11 +436,10 @@ public class ThrownItem {
         new BukkitRunnable() {
             @Override
             public void run() {
-                Location land = marker.getLocation();
+                Location land = probe.clone();
                 land.setDirection(to.normalize());
                 DisplayUtil.smoothTeleport(display, 1);
                 display.teleport(land);
-                marker.remove();
             }
         }.runTaskLater(Sword.getInstance(), 1L);
 
@@ -526,14 +528,15 @@ public class ThrownItem {
     protected void startPinCheckTask(SwordEntity target) {
         float yaw = cur.setDirection(velocity.clone().multiply(-1)).getYaw();
         target.self().setBodyYaw(yaw);
-        target.setPinned(true);
+        target.addPinningImpalement();
 
         new BukkitRunnable() {
             int i = 0;
             @Override
             public void run() {
-                if (display.isDead() || i > Config.Combat.IMPALEMENT_PIN_MAX_ITERATIONS) {
-                    target.setPinned(false);
+                if (display.isDead() || i > Config.Combat.IMPALEMENT_PIN_MAX_ITERATIONS ||
+                    target.isGrabbed() || isRetrieved()) {
+                    target.removePinningImpalement();
                     if (!display.isDead()) disposeNaturally();
                     cancel();
                 }
@@ -543,6 +546,11 @@ public class ThrownItem {
                 i += Config.Combat.IMPALEMENT_PIN_CHECK_INTERVAL;
             }
         }.runTaskTimer(Sword.getInstance(), 0L, Config.Combat.IMPALEMENT_PIN_CHECK_INTERVAL);
+    }
+
+    public void setRetrieved(boolean retrieved) {
+        this.retrieved = retrieved;
+        SwordScheduler.runBukkitTaskLater(() -> setRetrieved(false), 60, TimeUnit.MILLISECONDS);
     }
 
     protected void startLifecycleCheckTask(SwordEntity target) {
@@ -631,16 +639,16 @@ public class ThrownItem {
                     .lengthSquared() * Config.Detection.THROW_HIT_CHECK_DIST_MULTIPLIER,
                 Config.Detection.THROW_HIT_CHECK_DIST_MULTIPLIER, effFilter);
 
-        if (hitEntity == null) return;
+        if (hitEntity == null) return; // Again, might change this later for non-living damageables.
 
-        if (hitEntity.getHitEntity() == null) return;
+        if (!(hitEntity.getHitEntity() instanceof LivingEntity)) return;
 
-        if (hitEntity.getHitEntity().getUniqueId() == thrower.getUniqueId()) {
+        if (thrower.isSelf((LivingEntity) hitEntity.getHitEntity())) {
             caught = true;
         }
         else {
             hit = true;
-            this.hitEntity = SwordEntityArbiter.getOrAdd(hitEntity.getHitEntity().getUniqueId());
+            this.hitEntity = SwordEntityArbiter.getOrAdd((LivingEntity) hitEntity.getHitEntity());
         }
     }
 
@@ -732,16 +740,9 @@ public class ThrownItem {
         if (display == null) return;
 
         final Location dropLocation = hitEntity != null ? hitEntity.self().getLocation() : display.getLocation();
-        Item dropped = dropLocation.getWorld().dropItemNaturally(dropLocation, display.getItemStack());
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                if (dropped.isDead()) {
-                    cancel();
-                }
-                Prefab.Particles.DOPPED_ITEM_MARKER.display(dropped.getLocation());
-            }
-        }.runTaskTimer(Sword.getInstance(), 0L, 5L);
+
+        InteractiveItemArbiter.dropNaturally(dropLocation, display.getItemStack());
+
         dispose();
     }
 
@@ -752,7 +753,7 @@ public class ThrownItem {
      */
     public void dispose() {
         if (display != null) {
-            display.remove();
+            display.remove(); // TODO: load chunks whenever something is being despawned.
         }
         if (disposeTask != null && !disposeTask.isCancelled()) disposeTask.cancel();
     }

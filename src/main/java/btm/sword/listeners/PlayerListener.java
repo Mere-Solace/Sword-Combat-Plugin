@@ -23,7 +23,6 @@ import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.types.SwordPlayer;
 import btm.sword.system.entity.umbral.input.BladeRequest;
-import btm.sword.system.item.prefab.ItemLibrary;
 import io.papermc.paper.event.player.AsyncChatEvent;
 import io.papermc.paper.event.player.PlayerShieldDisableEvent;
 import net.kyori.adventure.key.Key;
@@ -69,9 +68,9 @@ public class PlayerListener implements Listener {
      */
     @EventHandler
     public void onPlayerLeave(PlayerQuitEvent event) {
-        if (SwordEntityArbiter.get(event.getPlayer().getUniqueId()) instanceof SwordPlayer sp) {
+        if (SwordEntityArbiter.get(event.getPlayer()) instanceof SwordPlayer sp) {
             sp.onLeave();
-            SwordEntityArbiter.remove(sp.getUniqueId());
+            SwordEntityArbiter.remove(sp.self());
             Sword.getInstance().getLogger().info(event.getPlayer().getName() + " has left the server ;(");
         }
     }
@@ -87,7 +86,7 @@ public class PlayerListener implements Listener {
      */
     @EventHandler
     public void onPlayerDeath(PlayerDeathEvent event) {
-        SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId()).onDeath();
+        SwordEntityArbiter.getOrAdd(event.getPlayer()).onDeath();
     }
 
     /**
@@ -102,7 +101,7 @@ public class PlayerListener implements Listener {
     @EventHandler
     public void onPlayerRespawn(PlayerRespawnEvent event) {
         SwordEntityArbiter.register(event.getPlayer());
-        SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId());
+        SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer());
         swordPlayer.onSpawn();
     }
 
@@ -117,7 +116,7 @@ public class PlayerListener implements Listener {
      */
     @EventHandler
     public void onItemPickup(EntityPickupItemEvent event) {
-        SwordEntity e = SwordEntityArbiter.getOrAdd(event.getEntity().getUniqueId());
+        SwordEntity e = SwordEntityArbiter.getOrAdd(event.getEntity());
 
         if (!e.isAbleToPickup()) event.setCancelled(true);
 
@@ -140,9 +139,10 @@ public class PlayerListener implements Listener {
     @EventHandler
     public void inventoryEvent(InventoryEvent event) {
         // Testing
-        for (HumanEntity h : event.getViewers()) {
-            if (h instanceof Player) {
-                SwordEntityArbiter.get(h.getUniqueId()).message("getInventory(): " + event.getInventory() + "\n  getView(): " + event.getView());
+        for (HumanEntity human : event.getViewers()) {
+            if (human instanceof Player) {
+                SwordEntityArbiter.get(human)
+                    .message("getInventory(): " + event.getInventory() + "\n  getView(): " + event.getView());
             }
         }
     }
@@ -159,7 +159,7 @@ public class PlayerListener implements Listener {
      */
     @EventHandler
     public void inventoryInteractEvent(InventoryClickEvent event) {
-        SwordPlayer sp = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getViewers().getFirst().getUniqueId());
+        SwordPlayer sp = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getViewers().getFirst());
 
         if (sp.handleInventoryInput(event)) {
             event.setCancelled(true);
@@ -287,9 +287,6 @@ public class PlayerListener implements Listener {
                 event.setCancelled(true);
             }
         }
-        else if (cleaned.startsWith("give")) {
-            SwordEntityArbiter.getOrAdd(player.getUniqueId()).giveItem(ItemLibrary.sword);
-        }
     }
 
     /**
@@ -308,7 +305,7 @@ public class PlayerListener implements Listener {
 
     @EventHandler
     public void gameChangeEvent(PlayerGameModeChangeEvent event) {
-        SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId());
+        SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer());
 
         if (event.getNewGameMode().equals(GameMode.SPECTATOR)) {
             swordPlayer.requestUmbralBladeState(BladeRequest.DEACTIVATE);

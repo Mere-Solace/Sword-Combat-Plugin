@@ -68,7 +68,7 @@ public class Dummy extends Passive {
 
         if (baseNumShards > 70000) {
             self.remove();
-            SwordEntityArbiter.remove(getUuid());
+            SwordEntityArbiter.remove(self);
             return;
         }
 

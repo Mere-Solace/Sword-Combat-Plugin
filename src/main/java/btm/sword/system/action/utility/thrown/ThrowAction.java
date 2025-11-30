@@ -2,7 +2,6 @@ package btm.sword.system.action.utility.thrown;
 
 import java.util.function.Consumer;
 
-import org.bukkit.Color;
 import org.bukkit.entity.ItemDisplay;
 import org.bukkit.scheduler.BukkitRunnable;
 
@@ -49,8 +48,9 @@ public class ThrowAction extends SwordAction {
         // Guard against throwing the Umbral Items
         // TODO: #122 - Add logic here for lunging/directing/hurling the umbral blade
         if (executor instanceof SwordPlayer swordPlayer && swordPlayer.isUmbralItem(swordPlayer.getMainItemStackAtTimeOfHold())) {
+            UmbralItemThrowAction.umbralLungePreparation(executor);
             swordPlayer.resetTree();
-            swordPlayer.displayMistake();
+            swordPlayer.displayMistake(); // display something cool
             return;
         }
 
@@ -63,15 +63,11 @@ public class ThrowAction extends SwordAction {
         if (executor instanceof SwordPlayer sp && !sp.getItemStackInHand(true).isEmpty()) {
             setupInstructions = display -> {
                 display.setItemStack(sp.getMainItemStackAtTimeOfHold());
-                display.setGlowing(true);
-                display.setGlowColorOverride(Color.fromRGB(255, 0, 15));
             };
         }
         else {
             setupInstructions = display -> {
                 display.setItemStack(executor.getItemStackInHand(true));
-                display.setGlowing(true);
-                display.setGlowColorOverride(Color.fromRGB(255, 0, 15));
             };
         }
 

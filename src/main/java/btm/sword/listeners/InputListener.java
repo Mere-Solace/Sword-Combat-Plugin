@@ -14,6 +14,8 @@ import org.bukkit.event.player.PlayerSwapHandItemsEvent;
 import org.bukkit.event.player.PlayerToggleSneakEvent;
 import org.bukkit.inventory.ItemStack;
 
+import com.destroystokyo.paper.event.player.PlayerAttackEntityCooldownResetEvent;
+
 import btm.sword.system.SwordScheduler;
 import btm.sword.system.action.utility.thrown.ThrowAction;
 import btm.sword.system.entity.SwordEntityArbiter;
@@ -45,8 +47,7 @@ public class InputListener implements Listener {
      */
     @EventHandler
     public void onNormalAttack(PrePlayerAttackEntityEvent event) {
-        SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId());
-        if (swordPlayer == null) return;
+        SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer());
         ItemStack item = swordPlayer.getItemStackInHand(true);
 
         if (swordPlayer.handleItemInteraction(item, InputType.LEFT)) {
@@ -57,6 +58,23 @@ public class InputListener implements Listener {
         swordPlayer.act(InputType.LEFT);
 
         event.setCancelled(true);
+    }
+
+    @EventHandler // imagine that...
+    public void onAttackCooldownResetEvent(PlayerAttackEntityCooldownResetEvent event) {
+        SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer());
+        ItemStack item = swordPlayer.getItemStackInHand(true);
+
+        swordPlayer.message("PlayerAttackEntityCooldownResetEvent");
+
+//        if (swordPlayer.handleItemInteraction(item, InputType.LEFT)) {
+//            event.setCancelled(true);
+//            return;
+//        }
+//
+//        swordPlayer.act(InputType.LEFT);
+//
+//        event.setCancelled(true);
     }
 
     /**
@@ -71,8 +89,7 @@ public class InputListener implements Listener {
      */
     @EventHandler
     public void onPlayerInteract(PlayerInteractEvent event) {
-        SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId());
-        if (swordPlayer == null) return;
+        SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer());
         ItemStack item = swordPlayer.getItemStackInHand(true);
 
         Action action = event.getAction();
@@ -90,6 +107,11 @@ public class InputListener implements Listener {
             swordPlayer.act(InputType.LEFT);
         }
         else if (action == Action.RIGHT_CLICK_AIR || action == Action.RIGHT_CLICK_BLOCK) {
+            if (swordPlayer.handleItemInteraction(item, InputType.RIGHT)) {
+                event.setCancelled(true);
+                return;
+            }
+
             if (swordPlayer.isInteractingWithEntity()) {
                 return;
             }
@@ -100,10 +122,6 @@ public class InputListener implements Listener {
                 return;
             }
 
-            if (swordPlayer.handleItemInteraction(item, InputType.RIGHT)) {
-                event.setCancelled(true);
-                return;
-            }
             swordPlayer.act(InputType.RIGHT);
         }
     }
@@ -120,8 +138,7 @@ public class InputListener implements Listener {
      */
     @EventHandler
     public void onPlayerEntityInteract(PlayerInteractEntityEvent event) {
-        SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId());
-        if (swordPlayer == null) return;
+        SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer());
         ItemStack item = swordPlayer.getItemStackInHand(true);
 
         swordPlayer.setInteractingWithEntity(true);
@@ -157,8 +174,7 @@ public class InputListener implements Listener {
      */
     @EventHandler
     public void onPlayerDropEvent(PlayerDropItemEvent event) {
-        SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId());
-        if (swordPlayer == null) return;
+SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer());
         ItemStack item = swordPlayer.getItemStackInHand(true);
 
         // Prevent dropping the menu button
@@ -194,8 +210,7 @@ public class InputListener implements Listener {
      */
     @EventHandler
     public void onSneakEvent(PlayerToggleSneakEvent event) {
-        SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId());
-        if (swordPlayer == null) return;
+SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer());
 
         if (event.isSneaking()) {
             swordPlayer.act(InputType.SHIFT);
@@ -216,8 +231,7 @@ public class InputListener implements Listener {
      */
     @EventHandler
     public void onSwapEvent(PlayerSwapHandItemsEvent event) {
-        SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId());
-        if (swordPlayer == null) return;
+SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer());
         ItemStack item = swordPlayer.getItemStackInHand(true);
 
         if (swordPlayer.handleItemInteraction(item, InputType.SWAP)) {
@@ -240,8 +254,7 @@ public class InputListener implements Listener {
      */
     @EventHandler
     public void onChangeItemEvent(PlayerItemHeldEvent event) {
-        SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer().getUniqueId());
-        if (swordPlayer == null) return;
+SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer());
         swordPlayer.setChangingHandIndex(true);
 
         if (swordPlayer.inputReliantOnItem()) {

@@ -42,6 +42,7 @@ public class GrabAction extends SwordAction {
      *
      * @param executor The {@link Combatant} performing the grab.
      */
+    // TODO: #147 clean this nest up
     public static void grab(Combatant executor) {
         cast(executor, Config.Grab.CAST_DURATION,
         new BukkitRunnable() {
@@ -61,19 +62,27 @@ public class GrabAction extends SwordAction {
                 LivingEntity ex = executor.self();
                 Location o = ex.getEyeLocation();
 
-                if (executor.getItemStackInHand(true).isEmpty()) {
+                if (executor.getItemStackInHand(true).isEmpty() || executor.holdingSoulLink()) {
                     Entity grabbedItem = HitboxUtil.ray(o, o.getDirection(), range, grabThickness,
                         entity -> entity.getType() == EntityType.ITEM_DISPLAY &&
                             !entity.isDead() &&
                             entity instanceof ItemDisplay id &&
                             InteractiveItemArbiter.checkIfInteractive(id));
 
-                    if (grabbedItem instanceof ItemDisplay id &&
-                        !id.isDead() &&
-                        !id.getItemStack().isEmpty()) {
-                        InteractiveItemArbiter.onGrab(id, executor);
+                    if (executor.holdingSoulLink() &&
+                        grabbedItem instanceof ItemDisplay display &&
+                        InteractiveItemArbiter.isUmbralBlade(display)) {
+                        InteractiveItemArbiter.onGrab(display, executor);
 
-                        Prefab.Particles.GRAB_ATTEMPT.display(id.getLocation());
+                        Prefab.Particles.GRAB_ATTEMPT.display(display.getLocation());
+                    }
+                    else if (!executor.holdingSoulLink() &&
+                        grabbedItem instanceof ItemDisplay display &&
+                        !display.isDead() &&
+                        !display.getItemStack().isEmpty()) {
+                        InteractiveItemArbiter.onGrab(display, executor);
+
+                        Prefab.Particles.GRAB_ATTEMPT.display(display.getLocation());
                         return;
                     }
                 }
@@ -106,7 +115,7 @@ public class GrabAction extends SwordAction {
                     return;
                 }
 
-                SwordEntity swordTarget = SwordEntityArbiter.getOrAdd(target.getUniqueId());
+                SwordEntity swordTarget = SwordEntityArbiter.getOrAdd(target);
                 if (swordTarget == null || swordTarget.isHit()) return;
 
                 if (swordTarget instanceof Combatant c && c.isAttemptingThrow()) c.setThrowCancelled(true);

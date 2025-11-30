@@ -61,11 +61,13 @@ public class DisplayUtil {
     public static BukkitTask displaySlerpToOffset(SwordEntity entity, ItemDisplay display, Vector offset,
                                                   double speed, int tpDuration, int period,
                                                   double endDistance, boolean removeOnArrival,
+                                                  int timeoutTicks,
                                                   Runnable callback) {
         return new BukkitRunnable() {
+            int ticks = 0;
             @Override
             public void run() {
-                if (entity.isInvalid() || !display.isValid()) {
+                if (entity.isInvalid() || !display.isValid() || ticks > timeoutTicks) {
                     if (display.isValid() && removeOnArrival) display.remove();
                     if (callback != null) {
                         Bukkit.getScheduler().runTask(Sword.getInstance(), callback);
@@ -73,6 +75,7 @@ public class DisplayUtil {
                     cancel();
                     return;
                 }
+                ticks++;
 
                 Location curTarget = entity.self().getLocation().add(
                         entity.rightBasisVector(false).multiply(offset.getX()).add(
@@ -84,6 +87,59 @@ public class DisplayUtil {
                 Vector diff = curTarget.toVector().subtract(display.getLocation().toVector());
 
                 if (diff.isZero() || diff.lengthSquared() < endDistance*endDistance) {
+                    if (display.isValid() && removeOnArrival) display.remove();
+                    if (callback != null) {
+                        Bukkit.getScheduler().runTask(Sword.getInstance(), callback);
+                    }
+                    cancel();
+                    return;
+                }
+
+                Vector scaledDiff = diff.normalize().multiply(speed);
+
+                Location update = display.getLocation().add(scaledDiff);
+
+                smoothTeleport(display, tpDuration);
+
+                display.teleport(update.setDirection(update.toVector().subtract(display.getLocation().toVector())));
+            }
+        }.runTaskTimer(Sword.getInstance(), 0L, period);
+    }
+
+
+    // returns a task for use in detecting when finished
+    public static <T> BukkitTask displaySlerpToOffset(SwordEntity entity, ItemDisplay display, Vector offset,
+                                                  double speed, int tpDuration, int period,
+                                                  double endDistance, boolean removeOnArrival,
+                                                  int timeoutTicks,
+                                                  Predicate<T> condition, T toTest,
+                                                  Runnable callback) {
+        return new BukkitRunnable() {
+            int ticks = 0;
+            @Override
+            public void run() {
+                if (entity.isInvalid() || !display.isValid() ||
+                    ticks > timeoutTicks || condition.test(toTest)) {
+                    if (display.isValid() && removeOnArrival) display.remove();
+                    if (callback != null) {
+                        Bukkit.getScheduler().runTask(Sword.getInstance(), callback);
+                    }
+                    cancel();
+                    return;
+                }
+                ticks++;
+
+                Location curTarget = entity.self().getLocation().add(
+                    entity.rightBasisVector(false).multiply(offset.getX()).add(
+                        entity.upBasisVector(false).multiply(offset.getY()).add(
+                            entity.forwardBasisVector(false).multiply(offset.getZ())
+                        )
+                    ));
+
+                Vector diff = curTarget.toVector().subtract(display.getLocation().toVector());
+
+                if (diff.isZero() || diff.lengthSquared() < endDistance*endDistance ||
+                    ticks > timeoutTicks || condition.test(toTest)) {
                     if (display.isValid() && removeOnArrival) display.remove();
                     if (callback != null) {
                         Bukkit.getScheduler().runTask(Sword.getInstance(), callback);
@@ -153,7 +209,11 @@ public class DisplayUtil {
     }
 
     // x = start, y = up, z = forward
-    public static <T> void itemDisplayFollowLerpTillCondition(SwordEntity entity, ItemDisplay display, Vector offset, int tpDuration, int period, boolean withPitch, Predicate<T> endCondition, T toTest) {
+    public static <T> void itemDisplayFollowLerpTillCondition(
+            SwordEntity entity,
+            ItemDisplay display,
+            Vector offset, int tpDuration, int period, boolean withPitch,
+            Predicate<T> endCondition, T toTest) {
         new BukkitRunnable() {
             @Override
             public void run() {

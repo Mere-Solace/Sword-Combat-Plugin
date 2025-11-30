@@ -7,6 +7,7 @@ import org.bukkit.entity.ItemDisplay;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.util.Vector;
 
+import btm.sword.system.attack.style.AttackProfile;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.umbral.input.BladeRequest;
@@ -48,7 +49,7 @@ public class ImpalingUmbralBladeAttack extends UmbralBladeAttack {
         }
 
         LivingEntity hit = targets.stream().iterator().next();
-        SwordEntity impaled = SwordEntityArbiter.getOrAdd(hit.getUniqueId());
+        SwordEntity impaled = SwordEntityArbiter.getOrAdd(hit);
 
         blade.setHitEntity(impaled);
         blade.request(BladeRequest.IMPALE);

@@ -20,6 +20,7 @@ import org.bukkit.util.Vector;
 import btm.sword.config.Config;
 import btm.sword.system.SwordScheduler;
 import btm.sword.system.action.SwordAction;
+import btm.sword.system.attack.style.AttackProfile;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.base.SwordEntity;
@@ -140,7 +141,7 @@ public class Attack extends SwordAction implements Runnable {
         this.filter = entity ->
             entity instanceof LivingEntity livingEntity &&
             livingEntity != attackingEntity &&
-            livingEntity.getUniqueId() != attacker.getUniqueId() &&
+            !attacker.isSelf(livingEntity) &&
             livingEntity.isValid();
 
         cast();
@@ -284,7 +285,7 @@ public class Attack extends SwordAction implements Runnable {
     protected void applyHitEffects(HashSet<LivingEntity> targets) {
         for (LivingEntity target : targets) {
             if (!hitDuringAttack.contains(target)) {
-                SwordEntity sTarget = SwordEntityArbiter.getOrAdd(target.getUniqueId());
+                SwordEntity sTarget = SwordEntityArbiter.getOrAdd(target);
 
                 if (sTarget == null || sTarget.isDead())
                     continue;

@@ -11,11 +11,8 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.inventory.meta.components.CustomModelDataComponent;
 import org.bukkit.persistence.PersistentDataType;
-import org.bukkit.plugin.Plugin;
 
-import com.destroystokyo.paper.profile.PlayerProfile;
-
-import btm.sword.Sword;
+import btm.sword.system.attack.style.WeaponAttackStyle;
 import net.kyori.adventure.text.Component;
 
 /**
@@ -43,7 +40,6 @@ import net.kyori.adventure.text.Component;
 public class ItemStackBuilder {
     private final ItemStack item;
     private ItemMeta meta;
-    private final Plugin plugin;
 
     public static ItemStackBuilder of(Material material) {
         return new ItemStackBuilder(material);
@@ -62,7 +58,6 @@ public class ItemStackBuilder {
         if (preMeta == null)
             preMeta = new ItemStack(Material.SHIELD).getItemMeta();
         this.meta = preMeta;
-        this.plugin = Sword.getInstance();
     }
 
     /**
@@ -123,52 +118,25 @@ public class ItemStackBuilder {
     /**
      * Adds a persistent data tag (string) to the item.
      *
-     * @param key the new key string (namespaced under your plugin) to store
-     * @param value the string value to store
-     * @return this builder, for chaining
-     */
-    public ItemStackBuilder tag(String key, String value) {
-        meta.getPersistentDataContainer().set(
-                new NamespacedKey(plugin, key),
-                PersistentDataType.STRING,
-                value
-        );
-        return this;
-    }
-
-    /**
-     * Adds a persistent data tag (string) to the item.
-     *
      * @param key the key (namespaced under your plugin) to store
      * @param value the string value to store
      * @return this builder, for chaining
      */
-    public ItemStackBuilder tag(NamespacedKey key, String value) {
+    public <T, Z> ItemStackBuilder tag(NamespacedKey key, PersistentDataType<T, Z> dataType, Z value) {
         meta.getPersistentDataContainer().set(
-                key,
-                PersistentDataType.STRING,
-                value
+            key,
+            dataType,
+            value
         );
         return this;
     }
 
-    /**
-     * Adds a “weapon” tag (string) to the item in the persistent data container.
-     * <p>
-     * This is functionally identical to {@link #tag(String, String)} but indicates intent.
-     * </p>
-     *
-     * @param key   the key (namespaced under your plugin) to store
-     * @param value the string value to store
-     * @return this builder, for chaining
-     */
-    public ItemStackBuilder weaponTag(String key, String value) {
-        meta.getPersistentDataContainer().set(
-                new NamespacedKey(plugin, key),
-                PersistentDataType.STRING,
-                value
-        );
-        return this;
+    public ItemStackBuilder tagSwordItem(SwordItemType type) {
+        return tag(KeyRegistry.ITEM_TYPE_KEY, PersistentDataType.STRING, type.string());
+    }
+
+    public ItemStackBuilder tagAttackStyle(WeaponAttackStyle type) {
+        return tag(KeyRegistry.ATTACK_STYLE_KEY, PersistentDataType.STRING, type.string());
     }
 
     /**
@@ -177,13 +145,8 @@ public class ItemStackBuilder {
      * @param value the base damage value to store
      * @return this builder, for chaining
      */
-    public ItemStackBuilder baseDamage(double value) {
-        meta.getPersistentDataContainer().set(
-                new NamespacedKey(plugin, "damage"),
-                PersistentDataType.DOUBLE,
-                value
-        );
-        return this;
+    public ItemStackBuilder toughnessDamageAdder(double value) {
+        return tag(KeyRegistry.TOUGHNESS_DAMAGE_ADDER_KEY, PersistentDataType.DOUBLE, value);
     }
 
     /**
@@ -222,39 +185,6 @@ public class ItemStackBuilder {
                 ItemFlag.HIDE_STORED_ENCHANTS,
                 ItemFlag.HIDE_UNBREAKABLE
         );
-        item.setItemMeta(meta);
-        return this;
-    }
-
-    /**
-     * Applies a player-head specific profile to this item if it is a skull/head.
-     * <p>
-     * Example usage:
-     * <pre>
-     * ItemStack head = new ItemStackBuilder(Material.PLAYER_HEAD)
-     *      .playerHead(profile)
-     *      .build();
-     * </pre>
-     * </p>
-     *
-     * @param profile the {@link PlayerProfile} to set on the skull meta
-     * @return this builder, for chaining
-     * @throws IllegalStateException if the underlying meta is not a {@link SkullMeta}
-     */
-    public ItemStackBuilder playerHead(PlayerProfile profile) {
-        if (!(meta instanceof SkullMeta skullMeta)) {
-            throw new IllegalStateException("ItemMeta for material is not SkullMeta");
-        }
-        skullMeta.setPlayerProfile(profile);
-
-        this.item.setItemMeta(skullMeta);
-
-        ItemMeta newMeta = item.getItemMeta();
-        if (newMeta == null) {
-            throw new IllegalStateException("Could not retrieve SkullMeta after setting player profile");
-        }
-
-        this.meta = newMeta;
         return this;
     }
 

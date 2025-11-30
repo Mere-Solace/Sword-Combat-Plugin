@@ -40,9 +40,9 @@ public class EntityListener implements Listener {
     @EventHandler
     public void entityAddEvent(EntityAddToWorldEvent event) {
         Entity entity = event.getEntity();
-        if (entity instanceof LivingEntity) {
-            SwordEntityArbiter.register(entity);
-            SwordEntity swordEntity = SwordEntityArbiter.get(entity.getUniqueId());
+        if (entity instanceof LivingEntity livingEntity) {
+            SwordEntityArbiter.register(livingEntity);
+            SwordEntity swordEntity = SwordEntityArbiter.get(livingEntity);
             if (swordEntity != null) {
                 swordEntity.resetResources();
                 swordEntity.onSpawn();
@@ -62,10 +62,12 @@ public class EntityListener implements Listener {
      */
     @EventHandler
     public void entityRemoveEvent(EntityRemoveFromWorldEvent event) {
-        SwordEntity swordEntity = SwordEntityArbiter.get(event.getEntity().getUniqueId());
-        if (swordEntity != null) {
-            swordEntity.onDeath();
-            SwordEntityArbiter.remove(event.getEntity().getUniqueId());
+        if (event.getEntity() instanceof LivingEntity livingEntity) {
+            SwordEntity swordEntity = SwordEntityArbiter.get(livingEntity);
+            if (swordEntity != null) {
+                swordEntity.onDeath();
+                SwordEntityArbiter.remove(livingEntity);
+            }
         }
     }
 
@@ -82,8 +84,8 @@ public class EntityListener implements Listener {
      */
     @EventHandler
     public void entityDamageEvent(EntityDamageEvent event) {
-
-        SwordEntity hurt = SwordEntityArbiter.getOrAdd(event.getEntity().getUniqueId());
+        if (!(event.getEntity() instanceof LivingEntity)) return; // Might be used later for other types of damageable entities.
+        SwordEntity hurt = SwordEntityArbiter.getOrAdd((LivingEntity) event.getEntity());
 
         DamageSource damageSource = event.getDamageSource();
 
@@ -91,7 +93,7 @@ public class EntityListener implements Listener {
         if (damageSource.getCausingEntity() != null) {
             Location loc = damageSource.getDamageLocation();
             Vector kb = loc != null ? loc.getDirection() : new Vector();
-            aggressor = SwordEntityArbiter.get(damageSource.getCausingEntity().getUniqueId());
+            aggressor = SwordEntityArbiter.get((LivingEntity) damageSource.getCausingEntity());
             if (aggressor instanceof Combatant c) {
 
                 // TODO: #136 shield mechanics

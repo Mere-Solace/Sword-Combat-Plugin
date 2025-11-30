@@ -1,10 +1,11 @@
-package btm.sword.system.attack;
+package btm.sword.system.attack.style;
 
 import java.util.function.Function;
 
 import org.bukkit.util.Vector;
 
 import btm.sword.config.Config;
+import btm.sword.system.attack.Attack;
 import btm.sword.util.Prefab;
 import btm.sword.util.math.ControlVectors;
 
@@ -36,6 +37,34 @@ public enum AttackType implements AttackProfile {
         new Vector(-5,0.27,0.83),
         new Vector(-2.5,1.03,1.7),
         new Vector(-3.77,0.51,2.26))
+    ),
+
+    WIDE_UMBRAL_SLASH2(ControlVectors.of(
+        new Vector(4.008,-1.002,-1.169),
+        new Vector(-3.841,1.67,4.008),
+        new Vector(1.67,0,2.839),
+        new Vector(-1.336,0,5.01)),
+        attack -> attack.getRightVector().multiply(-1).add(attack.getForwardVector().multiply(0.3))
+    ),
+    WIDE_UMBRAL_SLASH2_WINDUP(ControlVectors.of(
+        new Vector(5.344,-0.2171,-1.002),
+        new Vector(4.509,-1.503,-2.338),
+        new Vector(4.7261,0,-0.501),
+        new Vector(3.674,-0.4008,-1.5698))
+    ),
+
+    WIDE_UMBRAL_SLASH3(ControlVectors.of(
+        new Vector(0,5.177,-0.334),
+        new Vector(0,-3.674,1.336),
+        new Vector(0,1.7368,1.67),
+        new Vector(0,-0.167,2.9058)),
+        attack -> attack.getForwardVector().add(Config.Direction.UP().multiply(-2))
+    ),
+    WIDE_UMBRAL_SLASH3_WINDUP(ControlVectors.of(
+        new Vector(-3.34,2.0708,3.34),
+        new Vector(0.334,4.0915,0),
+        new Vector(1.67,0,1.67),
+        new Vector(-1.336,0,3.841))
     ),
 
     SLASH1(ControlVectors.of(
@@ -83,13 +112,26 @@ public enum AttackType implements AttackProfile {
         new Vector(-0.93,0,4.9)),
     attack -> new Vector()
     ),
-
     B_DASH_ATTACK(ControlVectors.of(
         new Vector(0.696,2.2388,1.74),
         new Vector(-0.8932,-3.2016,0.116),
         new Vector(0.3132,0.4176,2.204),
         new Vector(-0.58,-1.74,1.3572)),
         Attack::getForwardVector
+    ),
+    R_STRAFE_ATTACK(ControlVectors.of(
+        new Vector(-1.503,-0.4008,0.668),
+        new Vector(4.676,0.334,1.169),
+        new Vector(0.167,0,1.4362),
+        new Vector(2.2211,0,1.7702)),
+        Attack::getRightVector
+    ),
+    L_STRAFE_ATTACK(ControlVectors.of(
+        new Vector(1.503,-0.4008,0.668),
+        new Vector(-4.676,0.334,1.169),
+        new Vector(-0.167,0,1.4362),
+        new Vector(-2.2211,0,1.7702)),
+        attack -> attack.getRightVector().multiply(-1)
     ),
 
     D_AIR(ControlVectors.of(

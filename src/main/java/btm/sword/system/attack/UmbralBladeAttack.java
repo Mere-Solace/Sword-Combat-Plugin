@@ -6,6 +6,7 @@ import org.bukkit.entity.ItemDisplay;
 import org.bukkit.entity.LivingEntity;
 
 import btm.sword.config.Config;
+import btm.sword.system.attack.style.AttackProfile;
 import btm.sword.system.entity.umbral.UmbralBlade;
 import btm.sword.util.entity.HitboxUtil;
 

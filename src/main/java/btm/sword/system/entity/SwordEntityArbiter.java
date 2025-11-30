@@ -2,7 +2,6 @@ package btm.sword.system.entity;
 
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.Objects;
 import java.util.UUID;
 
 import org.bukkit.Bukkit;
@@ -45,14 +44,11 @@ public class SwordEntityArbiter {
      *
      * @param entity the Bukkit entity to register
      */
-    public static void register(Entity entity) {
-        if (!(entity instanceof LivingEntity)) return;
+    public static void register(LivingEntity entity) {
 
         UUID entityUUID = entity.getUniqueId();
         if (entity instanceof Player player) {
-            Objects.requireNonNull(Bukkit.getPlayer(entityUUID)).sendMessage("You're being registered as online.");
-
-            PlayerDataManager.register(entityUUID);
+            PlayerDataManager.register(player);
             if (onlineSwordPlayers.get(entityUUID) == null) {
                 onlineSwordPlayers.put(entityUUID, new SwordPlayer(player, PlayerDataManager.getPlayerData(entityUUID)));
             }
@@ -89,10 +85,10 @@ public class SwordEntityArbiter {
      * This removes player SwordEntities from online storage or NPC SwordEntities from the NPC map.
      * </p>
      *
-     * @param uuid UUID of the entity to remove
+     * @param entity entity to remove
      */
-    public static void remove(UUID uuid) {
-        if (onlineSwordPlayers.remove(uuid) == null) existingSwordNPCs.remove(uuid);
+    public static void remove(LivingEntity entity) {
+        if (onlineSwordPlayers.remove(entity.getUniqueId()) == null) existingSwordNPCs.remove(entity.getUniqueId());
     }
 
     /**
@@ -101,29 +97,26 @@ public class SwordEntityArbiter {
      * Prefers returning online player SwordEntities over NPCs.
      * </p>
      *
-     * @param uuid UUID of the entity to retrieve
+     * @param entity Living Entity from which the UUID will be used to check
      * @return the SwordEntity corresponding to the UUID, or null if none found
      */
-    public static SwordEntity get(UUID uuid) {
-        return onlineSwordPlayers.getOrDefault(uuid, existingSwordNPCs.get(uuid));
+    public static SwordEntity get(LivingEntity entity) {
+        return onlineSwordPlayers.getOrDefault(entity.getUniqueId(), existingSwordNPCs.get(entity.getUniqueId()));
     }
 
     /**
      * Gets the {@link SwordEntity} for the specified UUID,
      * registering and initializing it if it does not already exist.
      *
-     * @param uuid UUID of the entity
+     * @param entity Living Entity from which the UUID will be used to check
      * @return the registered SwordEntity corresponding to the UUID
      */
-    public static SwordEntity getOrAdd(UUID uuid) {
-        SwordEntity swordEntity = get(uuid);
+    public static SwordEntity getOrAdd(LivingEntity entity) {
+        SwordEntity swordEntity = get(entity);
         if (swordEntity != null) return swordEntity;
 
-        if (Bukkit.getEntity(uuid) instanceof LivingEntity livingEntity) {
-            register(livingEntity);
-            return get(uuid);
-        }
-        return null;
+        register(entity);
+        return get(entity);
     }
 
     /**
@@ -137,7 +130,9 @@ public class SwordEntityArbiter {
      */
     public static SwordEntity initializeNPC(LivingEntity entity) {
         switch (entity.getType()) {
-            case ZOMBIE, SKELETON, WITHER_SKELETON, ENDERMAN, WARDEN -> {
+            case ZOMBIE, SKELETON, WITHER_SKELETON, ENDERMAN, WARDEN, RAVAGER, CAVE_SPIDER, PILLAGER, ZOMBIFIED_PIGLIN,
+                 HOGLIN, HUSK, SHULKER, SILVERFISH, SLIME, SPIDER, ENDER_DRAGON, EVOKER, ELDER_GUARDIAN, ENDERMITE,
+                 BLAZE, MAGMA_CUBE, PHANTOM -> {
                 return new Hostile(entity, new CombatProfile());
             }
             case ARMOR_STAND -> {
@@ -163,7 +158,7 @@ public class SwordEntityArbiter {
     }
 
     public static Collection<SwordEntity> convertAllToSwordEntities(Collection<LivingEntity> entities) {
-        return entities.stream().map(entity -> getOrAdd(entity.getUniqueId())).toList();
+        return entities.stream().map(SwordEntityArbiter::getOrAdd).toList();
     }
 
     public static void removeAllDisplays() {
@@ -179,7 +174,8 @@ public class SwordEntityArbiter {
             bukkitTask -> {
                 for (World world : Bukkit.getWorlds()) {
                     for (Entity entity : world.getEntities()) {
-                        register(entity);
+                        if (entity instanceof LivingEntity livingEntity)
+                            register(livingEntity);
                     }
                 }
             }, 2L

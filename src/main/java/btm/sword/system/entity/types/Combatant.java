@@ -12,6 +12,7 @@ import org.bukkit.util.Vector;
 
 import btm.sword.Sword;
 import btm.sword.system.action.MovementAction;
+import btm.sword.system.action.SwordAction;
 import btm.sword.system.action.utility.thrown.ThrownItem;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.base.CombatProfile;
@@ -45,6 +46,7 @@ public abstract class Combatant extends SwordEntity {
 
     private boolean isGrabbing = false;
     private SwordEntity grabbedEntity;
+    private boolean attemptedGrabImpale;
 
     private UmbralBlade umbralBlade;
     private boolean startingBlade;
@@ -97,6 +99,8 @@ public abstract class Combatant extends SwordEntity {
     @Override
     public void onDeath() {
         super.onDeath();
+
+        if (umbralBlade == null) return;
         if (umbralBlade.getDisplay().isValid()) {
             Prefab.Particles.UMBRAL_BLADE_POOF.display(umbralBlade.getDisplay().getLocation());
         }
@@ -180,6 +184,8 @@ public abstract class Combatant extends SwordEntity {
      * @param target the SwordEntity that is being grabbed
      */
     public void onGrab(SwordEntity target) {
+        attemptedGrabImpale = false;
+
         LivingEntity t = target.self();
         setGrabbing(true);
         target.setGrabbed(true);
@@ -201,7 +207,7 @@ public abstract class Combatant extends SwordEntity {
      * Resets grab state and calls {@link MovementAction#toss(Combatant, SwordEntity)}.
      */
     public void onGrabThrow() {
-        onGrabHit();
+//        onGrabHit();
 
         isGrabbing = false;
         grabbedEntity.setGrabbed(false);
@@ -213,15 +219,29 @@ public abstract class Combatant extends SwordEntity {
      * and displaying associated particle effects.
      */
     public void onGrabHit() {
+        if (holdingSoulLink() && !umbralBlade.inState(SheathedState.class) && !attemptedGrabImpale) {
+            attemptedGrabImpale = true;
+            getUmbralBlade().request(BladeRequest.GRAB_IMPALE);
+        }
+
         LivingEntity target = grabbedEntity.self();
-        Location hitLoc = target.getLocation().add(0, target.getEyeHeight()*0.5, 0);
-        Prefab.Particles.PUNCH.display(hitLoc);
-        grabbedEntity.hit(this, Prefab.Attacks.grabHit,
+
+        target.setVelocity(dir().multiply(2));
+
+        SwordAction.cast(this, 75, () -> {
+            Location hitLoc = target.getLocation().add(0, target.getEyeHeight() * 0.5, 0);
+            Prefab.Particles.PUNCH_CONNECT.display(hitLoc);
+            grabbedEntity.hit(this, Prefab.Attacks.grabHit,
                 target.getEyeLocation().subtract(eyeLoc()).toVector());
+        });
     }
 
     public boolean holdingUmbralItemInMainHand() {
         return isUmbralItem(getItemStackInHand(true));
+    }
+
+    public boolean holdingMenuItemInMainHand() {
+        return KeyRegistry.hasKey(getItemStackInHand(true), KeyRegistry.MAIN_MENU_BUTTON_KEY);
     }
 
     public boolean isUmbralItem(ItemStack item) {
@@ -273,6 +293,10 @@ public abstract class Combatant extends SwordEntity {
      */
     public boolean canAirDash() {
         return canPerformAction() && getAirDashesPerformed() < getCombatProfile().getMaxAirDodges();
+    }
+
+    public boolean canStrafe() {
+        return canPerformAction() && self().isOnGround();
     }
 
     /**
@@ -346,5 +370,18 @@ public abstract class Combatant extends SwordEntity {
      */
     public long calcCooldown(AspectType type, double min, double base, double multiplier) {
         return (long) Math.max(min, base - (multiplier * aspects.getAspectVal(type)) );
+    }
+
+    public boolean canPerformUmbralLinkAttack() {
+        return canPerformAction() &&
+            (getUmbralBlade().inState(RecallingState.class) ||
+                getUmbralBlade().inState(StandbyState.class) ||
+                getUmbralBlade().inState(SheathedState.class) ||
+                getUmbralBlade().inState(LodgedState.class));
+    }
+
+    public boolean canPerformShadowBlink() {
+        return canPerformAction() &&
+            (getUmbralBlade().inState(LodgedState.class));
     }
 }

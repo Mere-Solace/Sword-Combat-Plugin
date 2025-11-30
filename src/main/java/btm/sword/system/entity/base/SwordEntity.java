@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -22,6 +23,7 @@ import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.util.BoundingBox;
 import org.bukkit.util.Transformation;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
@@ -32,6 +34,7 @@ import com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent;
 
 import btm.sword.Sword;
 import btm.sword.config.Config;
+import btm.sword.system.SwordScheduler;
 import btm.sword.system.attack.HitPacket;
 import btm.sword.system.combat.Affliction;
 import btm.sword.system.entity.SwordEntityArbiter;
@@ -46,6 +49,7 @@ import btm.sword.util.math.Basis;
 import btm.sword.util.math.VectorUtil;
 import btm.sword.util.sound.SoundType;
 import btm.sword.util.sound.SoundUtil;
+import io.papermc.paper.entity.TeleportFlag;
 import lombok.Getter;
 import lombok.Setter;
 import net.kyori.adventure.text.Component;
@@ -71,6 +75,8 @@ public abstract class SwordEntity {
     protected final LivingEntity self;
     protected String displayName;
 
+    protected boolean dead;
+
     protected EntityAspects aspects;
 
     /** Boolean value for whether onTick() should be run or not */
@@ -94,7 +100,7 @@ public abstract class SwordEntity {
 
     private boolean grabbed;
     private int numberOfImpalements;
-    private boolean pinned;
+    private int numberOfPinningImpalements;
     private boolean aiEnabled;
 
     protected boolean shielding;
@@ -113,6 +119,10 @@ public abstract class SwordEntity {
     protected Basis currentBodyDirectionBasis;
     protected long timeOfLastEyeBasisCalculation;
     protected long timeOfLastBodyBasisCalculation;
+
+    protected double bodyLength;
+    protected double bodyWidth;
+    protected double averageSize;
 
     /**
      * Constructs a new SwordEntity wrapping the specified {@link LivingEntity} and combat profile.
@@ -151,6 +161,11 @@ public abstract class SwordEntity {
 
         timeOfLastEyeBasisCalculation = 0L;
 
+        BoundingBox bb = self.getBoundingBox();
+        bodyWidth = bb.getWidthX();
+        bodyLength = bb.getWidthZ();
+        averageSize = (bodyWidth + bodyLength) / 2;
+
         startTicking();
     }
 
@@ -187,7 +202,7 @@ public abstract class SwordEntity {
             }
         }
         if (!(self instanceof Player)) {
-            self.setAI(!pinned);
+            self.setAI(!isPinned());
         }
         else {
             if (ticks % 3 == 0) {
@@ -353,7 +368,7 @@ public abstract class SwordEntity {
     }
 
     public void onZeroHealth() {
-
+        dead = true;
     }
 
     /**
@@ -363,6 +378,10 @@ public abstract class SwordEntity {
      */
     public LivingEntity self() {
         return self;
+    }
+
+    public boolean isSelf(LivingEntity entity) {
+        return self().getUniqueId().equals(entity.getUniqueId());
     }
 
     public World world() {
@@ -419,6 +438,18 @@ public abstract class SwordEntity {
      */
     public boolean isImpaled() {
         return numberOfImpalements > 0;
+    }
+
+    public void addPinningImpalement() {
+        numberOfPinningImpalements++;
+    }
+
+    public void removePinningImpalement() {
+        numberOfPinningImpalements--;
+    }
+
+    public boolean isPinned() {
+        return numberOfPinningImpalements > 0;
     }
 
     /**
@@ -487,10 +518,13 @@ public abstract class SwordEntity {
         if (toughnessBroken) {
             // If Shards == 0 (dead)
             if (aspects.shards().remove(baseNumShards)) {
-                self.damage(74077740, source.self());
-                if (!self.isDead())
-                    self.setHealth(0);
                 onZeroHealth();
+
+                SwordScheduler.runBukkitTaskLater(() -> {
+                    self.damage(74077740, source.self());
+                    if (!self.isDead())
+                        self.setHealth(0); },
+                    Prefab.Value.MILLISECONDS_PER_TICK * 2, TimeUnit.MILLISECONDS);
                 return;
             }
             shardsLost += baseNumShards;
@@ -870,10 +904,10 @@ public abstract class SwordEntity {
         LivingEntity target = (LivingEntity) HitboxUtil.ray(
                 eyeLoc(), dir(), range, 1,
                 entity -> entity instanceof LivingEntity e &&
-                        !(e.getUniqueId() == getUniqueId()) &&
+                        !isSelf(e) &&
                         e.isValid());
 
-        return target == null ? null : SwordEntityArbiter.getOrAdd(target.getUniqueId());
+        return target == null ? null : SwordEntityArbiter.getOrAdd(target);
     }
 
     public Vector rightBasisVector(boolean withPitch) {
@@ -923,6 +957,10 @@ public abstract class SwordEntity {
     private void updateBodyDirectionBasis() {
         currentBodyDirectionBasis = VectorUtil.getBasisWithoutPitch(self());
         timeOfLastBodyBasisCalculation = System.currentTimeMillis();
+    }
+
+    public void teleport(Location location) {
+        self().teleport(location, TeleportFlag.EntityState.RETAIN_PASSENGERS);
     }
 
     public void drawBasis() {

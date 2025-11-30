@@ -49,7 +49,9 @@ public class Prefab {
 
         public static final ParticleWrapper GRAB_CLOUD = new ParticleWrapper(Particle.POOF, 20, 0.5, 0.5, 0.5, 0.1);
         public static final ParticleWrapper GRAB_ATTEMPT = new ParticleWrapper(Particle.SONIC_BOOM, 2, 0.01, 0.01, 0.01);
-        public static final ParticleWrapper PUNCH = new ParticleWrapper(Particle.GUST, 1, 0, 0, 0, 0);
+
+        public static final ParticleWrapper PUNCH = new ParticleWrapper(Particle.SMALL_GUST, 1, 0, 0, 0, 0);
+        public static final ParticleWrapper PUNCH_CONNECT = new ParticleWrapper(Particle.GUST, 1, 0, 0, 0, 0);
 
         public static final ParticleWrapper UMBRAL_BLADE_POOF = new ParticleWrapper(Particle.LARGE_SMOKE, 50, 0.5, 0.5, 0.5, 0.001);
         public static final ParticleWrapper SOULFIRE_POOF = new ParticleWrapper(Particle.SMOKE, 3, 0.05, 0.05, 0.05, 0.0001);
@@ -84,7 +86,7 @@ public class Prefab {
             checkAndSelf ->
                 checkAndSelf.size() == 2 &&
                 (checkAndSelf.getFirst() instanceof LivingEntity target) &&
-                target.getUniqueId() != checkAndSelf.getLast().getUniqueId() &&
+                !target.getUniqueId().equals(checkAndSelf.getLast().getUniqueId()) &&
                 target.isValid() &&
                 target.getType() != EntityType.ARMOR_STAND;
     }
