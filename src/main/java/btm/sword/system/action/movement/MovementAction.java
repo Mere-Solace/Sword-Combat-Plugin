@@ -4,8 +4,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.function.Supplier;
 
-import btm.sword.system.action.SwordAction;
-
 import org.bukkit.FluidCollisionMode;
 import org.bukkit.Location;
 import org.bukkit.Particle;
@@ -23,6 +21,7 @@ import org.bukkit.util.Vector;
 
 import btm.sword.Sword;
 import btm.sword.config.Config;
+import btm.sword.system.action.SwordAction;
 import btm.sword.system.action.throwing.InteractiveItemArbiter;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.aspect.AspectType;

@@ -6,8 +6,6 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-import btm.sword.system.action.movement.MovementAction;
-
 import org.bukkit.Color;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Display.Billboard;
@@ -16,6 +14,7 @@ import org.bukkit.util.Vector;
 import org.jetbrains.annotations.Nullable;
 
 import btm.sword.system.action.attack.AttackAction;
+import btm.sword.system.action.movement.MovementAction;
 import btm.sword.system.attack.style.AttackType;
 import btm.sword.utility.sound.SoundType;
 import net.kyori.adventure.text.format.TextColor;

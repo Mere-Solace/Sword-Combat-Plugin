@@ -1,9 +1,9 @@
 package btm.sword.system.control;
 
-import io.papermc.paper.entity.TeleportFlag;
-
 import org.bukkit.Location;
 import org.bukkit.entity.Entity;
+
+import io.papermc.paper.entity.TeleportFlag;
 
 public class EntityController {
 

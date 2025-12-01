@@ -1,5 +1,7 @@
 package btm.sword.system.entity.types;
 
+import btm.sword.system.entity.base.SoulfireManager;
+
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.util.Vector;
@@ -64,7 +66,7 @@ public class Dummy extends Passive {
         else
             setHit(true);
 
-        reapSoulfire(source, reapedSoulfire);
+        SoulfireManager.transferSoulfire(source, this, reapedSoulfire);
 
         if (baseNumShards > 70000) {
             self.remove();

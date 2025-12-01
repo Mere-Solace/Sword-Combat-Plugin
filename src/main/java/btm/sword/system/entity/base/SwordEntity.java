@@ -1,19 +1,13 @@
 package btm.sword.system.entity.base;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-import btm.sword.system.control.EntityController;
-import btm.sword.system.control.TimeArbiter;
-import btm.sword.utility.SwordTimeUnit;
-
 import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.Particle;
 import org.bukkit.World;
 import org.bukkit.entity.Display;
 import org.bukkit.entity.Entity;
@@ -38,15 +32,17 @@ import com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent;
 
 import btm.sword.Sword;
 import btm.sword.config.Config;
-import btm.sword.system.control.SwordScheduler;
 import btm.sword.system.attack.HitPacket;
 import btm.sword.system.combat.Affliction;
+import btm.sword.system.control.EntityController;
+import btm.sword.system.control.SwordScheduler;
+import btm.sword.system.control.TimeArbiter;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.types.Combatant;
 import btm.sword.utility.Prefab;
+import btm.sword.utility.SwordTimeUnit;
 import btm.sword.utility.display.DrawUtil;
-import btm.sword.utility.display.ParticleWrapper;
 import btm.sword.utility.entity.EntityUtil;
 import btm.sword.utility.entity.HitboxUtil;
 import btm.sword.utility.math.Basis;
@@ -494,7 +490,7 @@ public abstract class SwordEntity {
         else
             hit = true;
 
-        reapSoulfire(source, reapedSoulfire);
+        SoulfireManager.transferSoulfire(source, this, reapedSoulfire);
 
         this.hitInvulnerableTickDuration = hitInvulnerableTickDuration;
 
@@ -554,114 +550,6 @@ public abstract class SwordEntity {
             v.soulfireLoss(),
             knockbackVelocity,
             afflictions);
-    }
-
-    protected void reapSoulfire(Combatant source, float totalAmount) {
-        float remainder = totalAmount;
-        List<Float> packets = new ArrayList<>();
-
-        // Split into increments up to 5, preferring larger chunks first
-        while (remainder > 0) {
-            if (remainder >= 5.0f) {
-                packets.add(5.0f);
-                remainder -= 5.0f;
-            } else if (remainder >= 1.0f) {
-                packets.add(1.0f);
-                remainder -= 1.0f;
-            } else if (remainder >= 0.5f) {
-                packets.add(0.5f);
-                remainder -= 0.5f;
-            } else {
-                // residual less than 0.5
-                packets.add(remainder);
-                remainder = 0;
-            }
-        }
-
-        for (float packetAmount : packets) {
-            spawnSoulfirePacket(source, packetAmount);
-        }
-    }
-
-    private void spawnSoulfirePacket(Combatant source, float packetAmount) {
-        Location startLoc = this.getChestLocation();
-
-        Location[] currentLoc = new Location[] { startLoc.clone() };
-
-        double speed = 0.75;
-        int period = 1;
-        double endDistance = 1.25;
-
-        // Random normalized vector for initial random direction (arc start)
-        Vector initialDirection = new Vector(
-            (Math.random() * 2) - 1,
-            (Math.random() * 0.5) + 0.5, // slight upward bias
-            (Math.random() * 2) - 1
-        ).normalize();
-
-        int maxTicks = 300;
-        int lerpIterationsBeforeFullFollow = 5;
-        new BukkitRunnable() {
-            int ticksElapsed = 0;
-
-            @Override
-            public void run() {
-                if (source.isDead()) {
-                    Prefab.Particles.SMOKE.display(currentLoc[0]);
-                    cancel();
-                    return;
-                }
-
-                Vector toPlayer = source.getChestLocation().toVector().subtract(currentLoc[0].toVector());
-
-                if (ticksElapsed <= lerpIterationsBeforeFullFollow) {
-                    // Calculate blend factor 0 -> 1 over lifetime for path lerp
-                    double t = (double) ticksElapsed / lerpIterationsBeforeFullFollow;
-
-                    // Interpolate direction from initial random arc direction to direct player direction
-                    Vector blendedDirection = initialDirection.clone().multiply(1 - t).add(toPlayer.clone().normalize().multiply(t)).normalize();
-
-                    // Move current location step along blended direction
-                    currentLoc[0].add(blendedDirection.multiply(speed));
-                }
-                else {
-                    currentLoc[0].add(toPlayer.clone().normalize().multiply(speed));
-                }
-
-                // Check if close enough to player
-                if (toPlayer.lengthSquared() <= endDistance * endDistance) {
-                    Prefab.Particles.SOULFIRE_POOF.display(source.getChestLocation());
-                    if (!source.isDead()) {
-                        source.deliverSoulfire(packetAmount);
-                    }
-                    cancel();
-                    return;
-                }
-                else if (ticksElapsed > maxTicks) {
-                    cancel();
-                    return;
-                }
-
-                // Scale particle size dynamically: twice the packetAmount
-                float scaleFactor = packetAmount * 2f;
-
-
-                // Display scaled particles with SOUL_FIRE_FLAME & SMOKE combination
-                new ParticleWrapper(Particle.SMOKE,
-                    (int) scaleFactor,
-                    0.025, 0.025, 0.025, 0.0001)
-                    .display(currentLoc[0]);
-                Prefab.Particles.UMBRAL_FLAME.display(currentLoc[0]);
-
-                ticksElapsed++;
-            }
-        }.runTaskTimer(Sword.getInstance(), 0L, period);
-    }
-
-    protected void deliverSoulfire(float amount) {
-        aspects.soulfire().add(amount);
-//        Prefab.Sounds.SOULFIRE_GAIN.play(self);
-        Prefab.Sounds.SOULFIRE_GAIN_BACKGROUND.playForAllInRadius(self);
     }
 
     /**
@@ -771,6 +659,7 @@ public abstract class SwordEntity {
                 }
             }
 
+            // TODO: Convert this into a StuckItem
             Item dropped = p.getWorld().dropItemNaturally(p.getLocation(), itemStack);
             new BukkitRunnable() {
                 @Override
@@ -900,9 +789,7 @@ public abstract class SwordEntity {
     public SwordEntity getTargetedEntity(double range) {
         LivingEntity target = (LivingEntity) HitboxUtil.ray(
                 eyeLoc(), dir(), range, 1,
-                entity -> entity instanceof LivingEntity e &&
-                        !isSelf(e) &&
-                        e.isValid());
+                entity -> entity instanceof LivingEntity e && !isSelf(e) && e.isValid());
 
         return target == null ? null : SwordEntityArbiter.getOrAdd(target);
     }

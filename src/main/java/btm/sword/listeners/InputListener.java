@@ -16,8 +16,8 @@ import org.bukkit.inventory.ItemStack;
 
 import com.destroystokyo.paper.event.player.PlayerAttackEntityCooldownResetEvent;
 
-import btm.sword.system.control.SwordScheduler;
 import btm.sword.system.action.throwing.ThrowAction;
+import btm.sword.system.control.SwordScheduler;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.types.SwordPlayer;
 import btm.sword.system.input.InputType;

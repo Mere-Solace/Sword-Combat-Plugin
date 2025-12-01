@@ -9,8 +9,6 @@ import java.util.function.Predicate;
 
 import javax.annotation.Nullable;
 
-import btm.sword.utility.SwordTimeUnit;
-
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.entity.Entity;
@@ -20,14 +18,15 @@ import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
 
 import btm.sword.config.Config;
-import btm.sword.system.control.SwordScheduler;
 import btm.sword.system.action.SwordAction;
 import btm.sword.system.attack.style.AttackProfile;
+import btm.sword.system.control.SwordScheduler;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.types.Combatant;
 import btm.sword.utility.Prefab;
+import btm.sword.utility.SwordTimeUnit;
 import btm.sword.utility.display.ParticleWrapper;
 import btm.sword.utility.entity.HitboxUtil;
 import btm.sword.utility.math.Basis;

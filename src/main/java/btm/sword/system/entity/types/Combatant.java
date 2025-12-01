@@ -11,8 +11,8 @@ import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
 
 import btm.sword.Sword;
-import btm.sword.system.action.movement.MovementAction;
 import btm.sword.system.action.SwordAction;
+import btm.sword.system.action.movement.MovementAction;
 import btm.sword.system.action.throwing.ThrownItem;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.base.CombatProfile;

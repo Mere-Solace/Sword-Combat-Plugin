@@ -1,10 +1,10 @@
 package btm.sword.utility;
 
-import btm.sword.Sword;
-import btm.sword.config.Config;
-
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
+
+import btm.sword.Sword;
+import btm.sword.config.Config;
 
 public class Debug {
 

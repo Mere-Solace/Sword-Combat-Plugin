@@ -2,8 +2,8 @@ package btm.sword.system.action.attack;
 
 import org.bukkit.inventory.ItemStack;
 
-import btm.sword.system.action.movement.DashDirection;
 import btm.sword.system.action.SwordAction;
+import btm.sword.system.action.movement.DashDirection;
 import btm.sword.system.attack.Attack;
 import btm.sword.system.attack.style.AttackProfile;
 import btm.sword.system.attack.style.WeaponAttackStyle;
