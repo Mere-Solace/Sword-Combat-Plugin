@@ -17,14 +17,14 @@ import org.bukkit.util.Vector;
 import btm.sword.Sword;
 import btm.sword.config.Config;
 import btm.sword.system.action.SwordAction;
-import btm.sword.system.action.utility.thrown.InteractiveItemArbiter;
+import btm.sword.system.action.throwing.InteractiveItemArbiter;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.types.Combatant;
 import btm.sword.system.entity.types.SwordPlayer;
-import btm.sword.util.Prefab;
-import btm.sword.util.entity.HitboxUtil;
+import btm.sword.utility.Prefab;
+import btm.sword.utility.entity.HitboxUtil;
 
 /**
  * Utility class for performing grab actions.

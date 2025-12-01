@@ -4,8 +4,8 @@ package btm.sword.system.attack;
 import org.bukkit.entity.ItemDisplay;
 
 import btm.sword.system.attack.style.AttackProfile;
-import btm.sword.util.Prefab;
-import btm.sword.util.display.DisplayUtil;
+import btm.sword.utility.Prefab;
+import btm.sword.utility.display.DisplayUtil;
 import lombok.Setter;
 
 public class ItemDisplayAttack extends Attack {

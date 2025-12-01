@@ -20,7 +20,7 @@ import com.destroystokyo.paper.entity.Pathfinder;
 import btm.sword.Sword;
 import btm.sword.config.Config;
 import btm.sword.system.action.utility.GrabAction;
-import btm.sword.system.action.utility.thrown.StuckItem;
+import btm.sword.system.action.throwing.StuckItem;
 import btm.sword.system.entity.base.CombatProfile;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.item.prefab.ItemLibrary;

@@ -2,8 +2,8 @@ package btm.sword.system.entity.umbral.statemachine;
 
 import btm.sword.system.entity.umbral.UmbralBlade;
 import btm.sword.system.entity.umbral.statemachine.state.PreviousState;
-import btm.sword.system.statemachine.State;
-import btm.sword.system.statemachine.StateMachine;
+import btm.sword.utility.statemachine.State;
+import btm.sword.utility.statemachine.StateMachine;
 import lombok.Getter;
 import lombok.Setter;
 

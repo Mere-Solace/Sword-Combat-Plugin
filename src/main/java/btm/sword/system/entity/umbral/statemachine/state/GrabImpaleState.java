@@ -10,7 +10,7 @@ import btm.sword.system.attack.style.AttackType;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.umbral.UmbralBlade;
 import btm.sword.system.entity.umbral.statemachine.UmbralStateFacade;
-import btm.sword.util.display.DisplayUtil;
+import btm.sword.utility.display.DisplayUtil;
 
 
 public class GrabImpaleState extends UmbralStateFacade {

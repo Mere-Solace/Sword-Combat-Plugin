@@ -435,4 +435,4 @@ All movement mechanics are configured via [`Config.Movement`](../../../src/main/
 
 For implementation details, see:
 - [`MovementAction.java`](../../src/main/java/btm/sword/system/action/MovementAction.java) - Movement ability execution
-- [`ThrownItem.java`](../../src/main/java/btm/sword/system/action/utility/thrown/ThrownItem.java) - Toss projectile physics
+- [`ThrownItem.java`](../../src/main/java/btm/sword/system/action/utility/throwing/ThrownItem.java) - Toss projectile physics

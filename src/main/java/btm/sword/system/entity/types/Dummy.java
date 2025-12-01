@@ -11,9 +11,9 @@ import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.aspect.value.ResourceValue;
 import btm.sword.system.entity.base.CombatProfile;
-import btm.sword.util.Prefab;
-import btm.sword.util.sound.SoundType;
-import btm.sword.util.sound.SoundUtil;
+import btm.sword.utility.Prefab;
+import btm.sword.utility.sound.SoundType;
+import btm.sword.utility.sound.SoundUtil;
 import lombok.Setter;
 
 

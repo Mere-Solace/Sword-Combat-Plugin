@@ -34,7 +34,7 @@ import com.destroystokyo.paper.profile.PlayerProfile;
 
 import btm.sword.Sword;
 import btm.sword.config.Config;
-import btm.sword.system.action.utility.thrown.ThrowAction;
+import btm.sword.system.action.throwing.ThrowAction;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.input.InputAction;
@@ -46,7 +46,7 @@ import btm.sword.system.item.ItemStackBuilder;
 import btm.sword.system.item.KeyRegistry;
 import btm.sword.system.item.SwordItemType;
 import btm.sword.system.playerdata.PlayerData;
-import btm.sword.util.display.DisplayUtil;
+import btm.sword.utility.display.DisplayUtil;
 import lombok.Getter;
 import lombok.Setter;
 import net.kyori.adventure.text.Component;

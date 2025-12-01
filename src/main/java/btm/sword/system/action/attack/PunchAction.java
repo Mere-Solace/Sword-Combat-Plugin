@@ -10,10 +10,10 @@ import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.types.Combatant;
-import btm.sword.util.Prefab;
-import btm.sword.util.entity.HitboxUtil;
-import btm.sword.util.math.Basis;
-import btm.sword.util.math.VectorUtil;
+import btm.sword.utility.Prefab;
+import btm.sword.utility.entity.HitboxUtil;
+import btm.sword.utility.math.Basis;
+import btm.sword.utility.math.VectorUtil;
 
 public class PunchAction extends SwordAction {
 

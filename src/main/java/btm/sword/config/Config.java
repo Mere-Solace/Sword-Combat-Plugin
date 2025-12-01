@@ -6,6 +6,8 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import btm.sword.system.action.movement.MovementAction;
+
 import org.bukkit.Color;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Display.Billboard;
@@ -15,7 +17,7 @@ import org.jetbrains.annotations.Nullable;
 
 import btm.sword.system.action.attack.AttackAction;
 import btm.sword.system.attack.style.AttackType;
-import btm.sword.util.sound.SoundType;
+import btm.sword.utility.sound.SoundType;
 import net.kyori.adventure.text.format.TextColor;
 
 /**
@@ -370,7 +372,7 @@ public class Config {
      *   <li><b>Attack Velocity</b> - Knockback vectors, grounded damping, vertical boost</li>
      * </ul>
      *
-     * @see btm.sword.system.action.utility.thrown.ThrownItem Thrown item physics implementation
+     * @see btm.sword.system.action.throwing.ThrownItem Thrown item physics implementation
      * @see btm.sword.system.attack.Attack Attack knockback application
      */
     public static class Physics {
@@ -990,7 +992,7 @@ public class Config {
      *   <li><b>Update Intervals</b> - Frequency of background tasks</li>
      * </ul>
      *
-     * @see btm.sword.system.action.utility.thrown.ThrownItem Thrown item lifecycle
+     * @see btm.sword.system.action.throwing.ThrownItem Thrown item lifecycle
      */
     public static class Timing {
         // Thrown items configuration
@@ -1653,8 +1655,8 @@ public class Config {
      *   <li><b>Grab</b> - Pull nearby entities toward player</li>
      * </ul>
      *
-     * @see btm.sword.system.action.MovementAction Movement ability implementation
-     * @see btm.sword.system.action.utility.thrown.ThrownItem Toss projectile physics
+     * @see MovementAction Movement ability implementation
+     * @see btm.sword.system.action.throwing.ThrownItem Toss projectile physics
      */
     public static class Movement {
         // Dash configuration

@@ -6,8 +6,8 @@ import org.bukkit.util.Vector;
 
 import btm.sword.config.Config;
 import btm.sword.system.attack.Attack;
-import btm.sword.util.Prefab;
-import btm.sword.util.math.ControlVectors;
+import btm.sword.utility.Prefab;
+import btm.sword.utility.math.ControlVectors;
 
 // TODO: consider - add base range multiplier as well
 public enum AttackType implements AttackProfile {

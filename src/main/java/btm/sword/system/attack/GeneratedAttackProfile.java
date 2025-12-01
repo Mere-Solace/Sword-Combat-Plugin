@@ -5,7 +5,7 @@ import java.util.function.Function;
 import org.bukkit.util.Vector;
 
 import btm.sword.system.attack.style.AttackProfile;
-import btm.sword.util.math.ControlVectors;
+import btm.sword.utility.math.ControlVectors;
 
 public class GeneratedAttackProfile implements AttackProfile {
     private final ControlVectors controlVectors;

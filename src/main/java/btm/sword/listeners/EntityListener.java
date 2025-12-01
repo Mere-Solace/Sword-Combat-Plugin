@@ -21,7 +21,7 @@ import btm.sword.Sword;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.types.Combatant;
-import btm.sword.util.Prefab;
+import btm.sword.utility.Prefab;
 
 public class EntityListener implements Listener {
     /**

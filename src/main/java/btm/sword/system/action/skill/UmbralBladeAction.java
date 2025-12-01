@@ -9,16 +9,16 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
 import btm.sword.Sword;
-import btm.sword.system.SwordScheduler;
+import btm.sword.system.control.SwordScheduler;
 import btm.sword.system.action.SwordAction;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.types.Combatant;
 import btm.sword.system.entity.umbral.UmbralBlade;
 import btm.sword.system.entity.umbral.input.BladeRequest;
 import btm.sword.system.entity.umbral.statemachine.state.LodgedState;
-import btm.sword.util.Prefab;
-import btm.sword.util.display.DrawUtil;
-import btm.sword.util.math.Basis;
+import btm.sword.utility.Prefab;
+import btm.sword.utility.display.DrawUtil;
+import btm.sword.utility.math.Basis;
 
 public class UmbralBladeAction extends SwordAction {
     // TODO: #122 - Wielding when not holding blade should attack

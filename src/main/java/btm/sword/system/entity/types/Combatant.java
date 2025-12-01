@@ -11,9 +11,9 @@ import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
 
 import btm.sword.Sword;
-import btm.sword.system.action.MovementAction;
+import btm.sword.system.action.movement.MovementAction;
 import btm.sword.system.action.SwordAction;
-import btm.sword.system.action.utility.thrown.ThrownItem;
+import btm.sword.system.action.throwing.ThrownItem;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.base.CombatProfile;
 import btm.sword.system.entity.base.SwordEntity;
@@ -24,7 +24,7 @@ import btm.sword.system.entity.umbral.statemachine.state.RecallingState;
 import btm.sword.system.entity.umbral.statemachine.state.SheathedState;
 import btm.sword.system.entity.umbral.statemachine.state.StandbyState;
 import btm.sword.system.item.KeyRegistry;
-import btm.sword.util.Prefab;
+import btm.sword.utility.Prefab;
 import lombok.Getter;
 import lombok.Setter;
 

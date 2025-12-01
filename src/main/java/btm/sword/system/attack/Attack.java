@@ -9,6 +9,8 @@ import java.util.function.Predicate;
 
 import javax.annotation.Nullable;
 
+import btm.sword.utility.SwordTimeUnit;
+
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.entity.Entity;
@@ -18,20 +20,20 @@ import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
 
 import btm.sword.config.Config;
-import btm.sword.system.SwordScheduler;
+import btm.sword.system.control.SwordScheduler;
 import btm.sword.system.action.SwordAction;
 import btm.sword.system.attack.style.AttackProfile;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.types.Combatant;
-import btm.sword.util.Prefab;
-import btm.sword.util.display.ParticleWrapper;
-import btm.sword.util.entity.HitboxUtil;
-import btm.sword.util.math.Basis;
-import btm.sword.util.math.BezierUtil;
-import btm.sword.util.math.ControlVectors;
-import btm.sword.util.math.VectorUtil;
+import btm.sword.utility.Prefab;
+import btm.sword.utility.display.ParticleWrapper;
+import btm.sword.utility.entity.HitboxUtil;
+import btm.sword.utility.math.Basis;
+import btm.sword.utility.math.BezierUtil;
+import btm.sword.utility.math.ControlVectors;
+import btm.sword.utility.math.VectorUtil;
 import lombok.Getter;
 
 public class Attack extends SwordAction implements Runnable {
@@ -106,10 +108,10 @@ public class Attack extends SwordAction implements Runnable {
     }
 
     public void calcTickValues() {
-        int numOfTicks = attackMilliseconds/Prefab.Value.MILLISECONDS_PER_TICK;
+        int numOfTicks = attackMilliseconds / (int) SwordTimeUnit.MILLISECONDS_PER_TICK;
         this.ticks = numOfTicks <= 0 ? 1 : numOfTicks + 1;
-        int msPerIteration = attackMilliseconds/attackIterations;
-        int ticksPerIteration = msPerIteration/Prefab.Value.MILLISECONDS_PER_TICK;
+        int msPerIteration = attackMilliseconds / attackIterations;
+        int ticksPerIteration = msPerIteration / (int) SwordTimeUnit.MILLISECONDS_PER_TICK;
         this.tickPeriod = ticksPerIteration <= 0 ? 1 : ticksPerIteration;
     }
 

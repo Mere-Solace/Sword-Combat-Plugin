@@ -12,14 +12,14 @@ import org.bukkit.scheduler.BukkitTask;
 
 import btm.sword.Sword;
 import btm.sword.config.Config;
-import btm.sword.system.action.DashDirection;
-import btm.sword.system.action.MovementAction;
+import btm.sword.system.action.movement.DashDirection;
+import btm.sword.system.action.movement.MovementAction;
 import btm.sword.system.action.attack.AttackAction;
 import btm.sword.system.action.attack.DashAttackAction;
 import btm.sword.system.action.skill.UmbralBladeAction;
 import btm.sword.system.action.utility.GrabAction;
 import btm.sword.system.action.utility.UtilityAction;
-import btm.sword.system.action.utility.thrown.ThrowAction;
+import btm.sword.system.action.throwing.ThrowAction;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.types.Combatant;
 import btm.sword.system.entity.types.SwordPlayer;
@@ -101,7 +101,6 @@ public class InputExecutionTree {
         }
 
         if (next.action != null && !next.action.canCast(owner)) {
-            owner.debug(this.getClass(), 103, "Can't cast next action!");
             currentAttempts++;
             if (currentAttempts >= MAX_ATTEMPT_ITERATIONS_BEFORE_FORCE_RESET) {
                 reset(); // reset if there is a dead-lock state and the user is spamming

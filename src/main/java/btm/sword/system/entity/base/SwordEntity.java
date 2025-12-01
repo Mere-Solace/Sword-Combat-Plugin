@@ -7,6 +7,10 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+import btm.sword.system.control.EntityController;
+import btm.sword.system.control.TimeArbiter;
+import btm.sword.utility.SwordTimeUnit;
+
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Particle;
@@ -34,22 +38,21 @@ import com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent;
 
 import btm.sword.Sword;
 import btm.sword.config.Config;
-import btm.sword.system.SwordScheduler;
+import btm.sword.system.control.SwordScheduler;
 import btm.sword.system.attack.HitPacket;
 import btm.sword.system.combat.Affliction;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.types.Combatant;
-import btm.sword.util.Prefab;
-import btm.sword.util.display.DrawUtil;
-import btm.sword.util.display.ParticleWrapper;
-import btm.sword.util.entity.EntityUtil;
-import btm.sword.util.entity.HitboxUtil;
-import btm.sword.util.math.Basis;
-import btm.sword.util.math.VectorUtil;
-import btm.sword.util.sound.SoundType;
-import btm.sword.util.sound.SoundUtil;
-import io.papermc.paper.entity.TeleportFlag;
+import btm.sword.utility.Prefab;
+import btm.sword.utility.display.DrawUtil;
+import btm.sword.utility.display.ParticleWrapper;
+import btm.sword.utility.entity.EntityUtil;
+import btm.sword.utility.entity.HitboxUtil;
+import btm.sword.utility.math.Basis;
+import btm.sword.utility.math.VectorUtil;
+import btm.sword.utility.sound.SoundType;
+import btm.sword.utility.sound.SoundUtil;
 import lombok.Getter;
 import lombok.Setter;
 import net.kyori.adventure.text.Component;
@@ -524,7 +527,7 @@ public abstract class SwordEntity {
                     self.damage(74077740, source.self());
                     if (!self.isDead())
                         self.setHealth(0); },
-                    Prefab.Value.MILLISECONDS_PER_TICK * 2, TimeUnit.MILLISECONDS);
+                    (int) SwordTimeUnit.MILLISECONDS_PER_TICK * 2, TimeUnit.MILLISECONDS);
                 return;
             }
             shardsLost += baseNumShards;
@@ -731,12 +734,6 @@ public abstract class SwordEntity {
         self.sendMessage(message);
     }
 
-    public void debug(Class<?> clazz, int lineNum, String message) {
-        if (Config.Debug.LOGGING_VERBOSE_CONFIG) {
-            self.sendMessage("{ " + clazz + " } " + " -[" + lineNum + "]- :: " + message);
-        }
-    }
-
     /**
      * Gives an {@link ItemStack} to this entity.
      * <p>
@@ -894,10 +891,10 @@ public abstract class SwordEntity {
     /**
      * Sets the velocity of this entity.
      *
-     * @param v the velocity {@link Vector} to set
+     * @param velocity the velocity {@link Vector} to set
      */
-    public void setVelocity(Vector v) {
-        self.setVelocity(v);
+    public void setVelocity(Vector velocity) {
+        TimeArbiter.setVelocity(self, velocity);
     }
 
     public SwordEntity getTargetedEntity(double range) {
@@ -959,25 +956,27 @@ public abstract class SwordEntity {
         timeOfLastBodyBasisCalculation = System.currentTimeMillis();
     }
 
-    public void teleport(Location location) {
-        self().teleport(location, TeleportFlag.EntityState.RETAIN_PASSENGERS);
-    }
-
-    public void drawBasis() {
-        Basis testBasis = VectorUtil.getBasisWithoutPitch(self());
-        DrawUtil.line(List.of(Prefab.Particles.TEST_SWORD_BLUE),
-                eyeLoc(), testBasis.right(), 4, 0.25);
-        DrawUtil.line(List.of(Prefab.Particles.TEST_SWORD_BLUE),
-                eyeLoc(), testBasis.up(), 4, 0.25);
-        DrawUtil.line(List.of(Prefab.Particles.TEST_SWORD_BLUE),
-                eyeLoc(), testBasis.forward(), 4, 0.25);
-    }
-
     public Vector getChestVector() {
         return chestVector.clone();
     }
 
     public Location getLocation() {
         return self().getLocation();
+    }
+
+    public void teleport(Location location) {
+        EntityController.teleport(self, location);
+    }
+
+
+    // Debug:
+    public void drawBasis() {
+        Basis testBasis = VectorUtil.getBasisWithoutPitch(self());
+        DrawUtil.line(List.of(Prefab.Particles.TEST_SWORD_BLUE),
+            eyeLoc(), testBasis.right(), 4, 0.25);
+        DrawUtil.line(List.of(Prefab.Particles.TEST_SWORD_BLUE),
+            eyeLoc(), testBasis.up(), 4, 0.25);
+        DrawUtil.line(List.of(Prefab.Particles.TEST_SWORD_BLUE),
+            eyeLoc(), testBasis.forward(), 4, 0.25);
     }
 }

@@ -14,7 +14,7 @@ import btm.sword.system.action.SwordAction;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.types.Combatant;
-import btm.sword.util.entity.HitboxUtil;
+import btm.sword.utility.entity.HitboxUtil;
 
 public class UtilityAction extends SwordAction {
     public static void bulletTime(Combatant executor) {

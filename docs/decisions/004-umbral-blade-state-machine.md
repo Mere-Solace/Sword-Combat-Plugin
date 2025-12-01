@@ -36,7 +36,7 @@ public void setState(UmbralState newState) {
 
 ### Architecture Components
 
-1. **Generic State Machine Framework** (`btm.sword.system.statemachine`):
+1. **Generic State Machine Framework** (`btm.sword.utility.statemachine`):
    - `State<T>` - Abstract base class with `onEnter()`, `onExit()`, `onTick()` lifecycle methods
    - `Transition<T>` - Record defining transitions with guard predicates and transition actions
    - `StateMachine<T>` - Manages current state, transitions, and tick logic

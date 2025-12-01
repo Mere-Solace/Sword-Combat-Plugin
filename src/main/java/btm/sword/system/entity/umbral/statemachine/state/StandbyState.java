@@ -3,7 +3,7 @@ package btm.sword.system.entity.umbral.statemachine.state;
 import org.bukkit.scheduler.BukkitTask;
 
 import btm.sword.config.Config;
-import btm.sword.system.action.utility.thrown.InteractiveItemArbiter;
+import btm.sword.system.action.throwing.InteractiveItemArbiter;
 import btm.sword.system.entity.types.SwordPlayer;
 import btm.sword.system.entity.umbral.UmbralBlade;
 import btm.sword.system.entity.umbral.statemachine.UmbralStateFacade;
