@@ -5,8 +5,10 @@ import java.util.List;
 import org.bukkit.command.CommandSender;
 
 import com.mojang.brigadier.Command;
+import com.mojang.brigadier.arguments.DoubleArgumentType;
 
 import btm.sword.config.ConfigManager;
+import btm.sword.system.control.TimeArbiter;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import net.kyori.adventure.text.Component;
@@ -34,7 +36,6 @@ public final class SwordCommands {
         registrar.register(
             Commands.literal("sword")
                 .executes(ctx -> {
-                    // /sword with no args - show help
                     CommandSender sender = ctx.getSource().getSender();
                     sender.sendMessage(Component.text("Sword: Combat Evolved", NamedTextColor.GOLD));
                     sender.sendMessage(Component.text("Usage: /sword reload", NamedTextColor.GRAY));
@@ -43,9 +44,11 @@ public final class SwordCommands {
                 .then(
                     Commands.literal("reload")
                         .requires(source -> source.getSender().hasPermission("sword.reload"))
-                        .executes(ctx -> {
-                            return handleReload(ctx.getSource());
-                        })
+                        .executes(ctx -> handleReload(ctx.getSource()))
+                )
+                .then(
+                    Commands.argument("global_time_scale", DoubleArgumentType.doubleArg(0, 2))
+                        .executes(ctx -> handleSetGlobalTimeScale(ctx.getSource(), DoubleArgumentType.getDouble(ctx, "global_time_scale")))
                 )
                 .build(),
             "Main command for Sword Combat Evolved",
@@ -99,8 +102,19 @@ public final class SwordCommands {
                 Component.text("✗ Fatal error during reload: " + e.getMessage(), NamedTextColor.DARK_RED)
             );
             sender.sendMessage(Component.text("  Check console for full stack trace.", NamedTextColor.GRAY));
+            return 2;
         }
 
         return Command.SINGLE_SUCCESS;
+    }
+
+    public static int handleSetGlobalTimeScale(CommandSourceStack source, double value) {
+        CommandSender sender = source.getSender();
+
+        if (TimeArbiter.setGlobalTimeScale(value)) {
+            sender.sendMessage("");
+            return Command.SINGLE_SUCCESS;
+        }
+        return 2;
     }
 }

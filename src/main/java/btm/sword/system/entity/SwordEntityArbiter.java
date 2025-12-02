@@ -3,6 +3,7 @@ package btm.sword.system.entity;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 import org.bukkit.Bukkit;
 import org.bukkit.World;
@@ -180,5 +181,24 @@ public class SwordEntityArbiter {
                 }
             }, 2L
         );
+    }
+
+    @SafeVarargs
+    public static void applyToAllRegisteredEntities(Consumer<SwordEntity>... actions) {
+        int entitiesAffected = 0;
+        int playersAffected = 0;
+        for (SwordEntity entity : existingSwordNPCs.values()) {
+            entitiesAffected++;
+            for (Consumer<SwordEntity> action : actions) {
+                action.accept(entity);
+            }
+        }
+        for (SwordEntity entity : onlineSwordPlayers.values()) {
+            playersAffected++;
+            for (Consumer<SwordEntity> action : actions) {
+                action.accept(entity);
+            }
+        }
+        Sword.print(entitiesAffected + " Entities Affected, " + playersAffected + " Players Affected" );
     }
 }

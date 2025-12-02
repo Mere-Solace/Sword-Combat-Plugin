@@ -1,7 +1,5 @@
 package btm.sword.system.entity.types;
 
-import btm.sword.system.entity.base.SoulfireManager;
-
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.util.Vector;
@@ -13,6 +11,7 @@ import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.aspect.value.ResourceValue;
 import btm.sword.system.entity.base.CombatProfile;
+import btm.sword.system.entity.base.SoulfireManager;
 import btm.sword.utility.Prefab;
 import btm.sword.utility.sound.SoundType;
 import btm.sword.utility.sound.SoundUtil;

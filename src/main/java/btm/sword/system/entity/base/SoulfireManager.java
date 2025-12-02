@@ -51,7 +51,7 @@ public class SoulfireManager {
         double endDistance = 0.75;
 
         // Scale particle size dynamically: twice the packetAmount
-        final float scaleFactor = packetAmount * 2f;
+        final float scaleFactor = packetAmount * packetAmount / 2.0f;
 
         // Random normalized vector for initial random direction (arc start)
         Vector initialDirection = new Vector(
@@ -91,13 +91,15 @@ public class SoulfireManager {
 
                 iterationsElapsed[0]++;
             },
-            0, period,
             () -> {
                 new ParticleWrapper(Particle.SMOKE, (int) scaleFactor,
                     0.025, 0.025, 0.025, 0.0001)
                     .display(currentLoc[0]);
                 Prefab.Particles.UMBRAL_FLAME.display(currentLoc[0]);
             },
+
+            period,
+
             new PredicateRunnablePair(
                 receiver::isDead,
                 () -> Prefab.Particles.SMOKE.display(currentLoc[0])),
