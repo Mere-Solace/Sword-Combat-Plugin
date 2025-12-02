@@ -65,7 +65,7 @@ public class SoulfireManager {
 
         final int[] iterationsElapsed = {0};
         AtomicReference<Vector> toPlayer = new AtomicReference<>();
-        TimeArbiter.runTaskTimer(
+        TimeArbiter.runTimeAffectedTaskOnTimer(
             () -> {}, // no pre-check actions required.
             () -> {
                 toPlayer.set(receiver.getChestLocation().toVector().subtract(currentLoc[0].toVector()));

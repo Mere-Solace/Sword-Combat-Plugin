@@ -196,11 +196,11 @@ public class TimeArbiter {
     /**
      * Public factory method
      */
-    public static TaskHandle runTaskTimer(Runnable precheckRunnable,
-                                          Runnable postcheckRunnable,
-                                          Runnable pausedRunnable,
-                                          int periodMs,
-                                          PredicateRunnablePair... conditionalCallbacks) {
+    public static TaskHandle runTimeAffectedTaskOnTimer(Runnable precheckRunnable,
+                                                        Runnable postcheckRunnable,
+                                                        Runnable pausedRunnable,
+                                                        int periodMs,
+                                                        PredicateRunnablePair... conditionalCallbacks) {
         return createTask(precheckRunnable, postcheckRunnable, pausedRunnable,
             conditionalCallbacks, 0, periodMs);
     }

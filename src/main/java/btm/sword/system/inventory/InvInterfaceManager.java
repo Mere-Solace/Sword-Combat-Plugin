@@ -11,6 +11,8 @@ import org.bukkit.scheduler.BukkitRunnable;
 
 import btm.sword.Sword;
 import btm.sword.config.Config;
+import btm.sword.gamemode.QueueManager;
+import btm.sword.gamemode.type.CaptureTheFlag1v1;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.types.Dummy;
 import btm.sword.system.entity.types.SwordPlayer;
@@ -32,51 +34,52 @@ public class InvInterfaceManager {
         Component.text("Combat Basics", Config.SwordColor.TEXT_ITEM_HEADER, TextDecoration.ITALIC),
 
         Component.text("Left Click", Config.SwordColor.TEXT_ITEM_CONTROLS)
-        .append(Component.text(" – Basic Attack Chain", Config.SwordColor.TEXT_ITEM_BASE)),
+            .append(Component.text(" – Basic Slash Chain", Config.SwordColor.TEXT_ITEM_BASE)),
         Component.text("  • SLASH1 → SLASH2 → SLASH3", Config.SwordColor.TEXT_ITEM_BASE),
 
         Component.text("", Config.SwordColor.TEXT_ITEM_BASE),
 
         Component.text("Swap + Swap", Config.SwordColor.TEXT_ITEM_CONTROLS)
-        .append(Component.text(" – Forward Dash", Config.SwordColor.TEXT_ITEM_BASE)),
-        Component.text("  • Can be used in air", Config.SwordColor.TEXT_ITEM_BASE),
+            .append(Component.text(" – Forward Dash", Config.SwordColor.TEXT_ITEM_BASE)),
+        Component.text("  • Can be used in mid-air", Config.SwordColor.TEXT_ITEM_BASE),
 
         Component.text("Swap + Swap + Left Click", Config.SwordColor.TEXT_ITEM_CONTROLS)
-        .append(Component.text(" – Dash Attack", Config.SwordColor.TEXT_ITEM_BASE)),
+            .append(Component.text(" – Forward Dash Attack", Config.SwordColor.TEXT_ITEM_BASE)),
 
         Component.text("", Config.SwordColor.TEXT_ITEM_BASE),
 
         Component.text("Shift + Shift", Config.SwordColor.TEXT_ITEM_CONTROLS)
-        .append(Component.text(" – Backward Dash", Config.SwordColor.TEXT_ITEM_BASE)),
+            .append(Component.text(" – Backward Dash", Config.SwordColor.TEXT_ITEM_BASE)),
         Component.text("Shift + Shift + Left Click", Config.SwordColor.TEXT_ITEM_CONTROLS)
-        .append(Component.text(" – Back Dash Attack", Config.SwordColor.TEXT_ITEM_BASE)),
+            .append(Component.text(" – Back Dash Attack", Config.SwordColor.TEXT_ITEM_BASE)),
 
         Component.text("", Config.SwordColor.TEXT_ITEM_BASE),
 
         Component.text("Shift + Left Click", Config.SwordColor.TEXT_ITEM_CONTROLS)
-        .append(Component.text(" – Grab", Config.SwordColor.TEXT_ITEM_BASE)),
-        Component.text("Shift + Left Click", Config.SwordColor.TEXT_ITEM_CONTROLS)
             .append(Component.text(" – Grab", Config.SwordColor.TEXT_ITEM_BASE)),
-
+        Component.text("  • Short-range control tool; does not deal full damage", Config.SwordColor.TEXT_ITEM_BASE),
 
         Component.text("", Config.SwordColor.TEXT_ITEM_BASE),
 
         Component.text("Drop + Right Click", Config.SwordColor.TEXT_ITEM_CONTROLS)
-        .append(Component.text(" – Ready Throw", Config.SwordColor.TEXT_ITEM_BASE)),
+            .append(Component.text(" – Ready Throw", Config.SwordColor.TEXT_ITEM_BASE)),
         Component.text("Drop + Right Hold", Config.SwordColor.TEXT_ITEM_CONTROLS)
-        .append(Component.text(" – Throw Item", Config.SwordColor.TEXT_ITEM_BASE)),
+            .append(Component.text(" – Throw Weapon", Config.SwordColor.TEXT_ITEM_BASE)),
+        Component.text("  • Thrown weapons deal Toughness / Shards damage on hit", Config.SwordColor.TEXT_ITEM_BASE),
 
         Component.text("", Config.SwordColor.TEXT_ITEM_BASE),
 
         Component.text("Right Click + Hold + Drop", Config.SwordColor.TEXT_ITEM_CONTROLS)
-        .append(Component.text(" – Bullet Time", Config.SwordColor.TEXT_ITEM_BASE))
-        .append(Component.text(" (slow-mo)", Config.SwordColor.TEXT_ITEM_HEADER)),
+            .append(Component.text(" – Bullet Time", Config.SwordColor.TEXT_ITEM_BASE))
+            .append(Component.text(" (time slow)", Config.SwordColor.TEXT_ITEM_HEADER)),
 
         Component.text("", Config.SwordColor.TEXT_ITEM_BASE),
 
         Component.text("Drop + Drop", Config.SwordColor.TEXT_ITEM_CONTROLS)
-        .append(Component.text(" – Emergency Reset", Config.SwordColor.TEXT_ITEM_BASE))
-        );
+            .append(Component.text(" – Emergency Reset", Config.SwordColor.TEXT_ITEM_BASE)),
+        Component.text("  • Resyncs inputs if your state desyncs", Config.SwordColor.TEXT_ITEM_BASE)
+    );
+
 
     public static final ItemStack HOW_TO_PLAY_ITEM = ItemStackBuilder
         .of(Material.KNOWLEDGE_BOOK)
@@ -90,8 +93,10 @@ public class InvInterfaceManager {
 
         SimpleItem queueForCTF = new SimpleItem(
             new ItemBuilder(Material.GUSTER_BANNER_PATTERN)
-                .setDisplayName("Join the Queue for Capture the Flag"),
-            click ->  click.getPlayer().sendMessage("Starting!")
+                .setDisplayName("Join the Queue for Capture the Flag (1v1)!"),
+            click -> QueueManager.enqueue(
+                CaptureTheFlag1v1.class, (SwordPlayer) SwordEntityArbiter.getOrAdd(click.getPlayer())
+            )
         );
 
         SimpleItem spawnDummy = new SimpleItem(
@@ -123,12 +128,12 @@ public class InvInterfaceManager {
 
         Gui gui = Gui.normal()
             .setStructure(
-                "# # # # # # # # #",
-                "# . Q . . . . . #",
-                "# . . . H . . . #",
+                "# # # . . . # # #",
                 "# . . . P . . . #",
-                "# . . . . . D . #",
-                "# # # # # # # # #")
+                ". . . . D Q . . .",
+                ". . . . . . . . .",
+                "# . . . . . . . #",
+                "# # # . H . # # #")
             .addIngredient('#', new SimpleItem(new ItemBuilder(Material.BLACK_STAINED_GLASS_PANE)))
             .addIngredient('Q', queueForCTF)
             .addIngredient('H', swordPlayer.getPlayerHead())

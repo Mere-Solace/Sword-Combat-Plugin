@@ -61,11 +61,6 @@ public class InputExecutionTree {
     }
 
 
-    // Running into some issues with overlapping input execution paths, where
-    // 2 different action paths have the same Input Sequence, but will behave differently
-    // when using different items (case in point: Umbral Blade basic sweep attack while holding link)
-    // TODO: #140 find a way to have separately defined input paths.
-
 
     /**
      * Processes an input step in the execution tree, updating current node and sequence.
@@ -211,135 +206,6 @@ public class InputExecutionTree {
     }
 
     /**
-     * Adds an input sequence mapping to an {@link InputAction} to the tree.
-     * Overwrites existing paths or creates new nodes as needed.
-     *
-     * @param inputSequence list of {@link InputType}s representing the input combo
-     * @param action the {@link InputAction} to associate with the final input
-     * @param sameItemRequired whether all inputs require the same held item
-     * @param cancellable whether this input sequence can be cancelled mid-way
-     * @param display whether to display this input sequence progress to the player
-     */
-    public void add(List<InputKey> inputSequence, InputAction action,
-                    boolean sameItemRequired,
-                    boolean cancellable,
-                    boolean display) {
-        InputNode dummy = root;
-        for (InputKey inputKey : inputSequence) {
-            if (dummy.noMatchingChild(inputKey)) {
-                dummy.addChild(inputKey, null);
-                dummy.setSameItemRequired(sameItemRequired);
-                dummy.setCancellable(cancellable);
-                dummy.setDisplay(display);
-            }
-            dummy = dummy.findMatchingChild(inputKey);
-        }
-        dummy.setAction(action);
-        dummy.setDisplay(display);
-    }
-
-    /**
-     * Adds an input sequence mapping with a minimum hold time requirement for hold inputs.
-     *
-     * @param inputSequence list of {@link InputType}s representing the input combo
-     * @param action associated {@link InputAction}
-     * @param sameItemRequired whether the same item must be held for all inputs
-     * @param cancellable whether this sequence is cancellable
-     * @param display whether to display input combo progress
-     * @param minHoldTime minimum hold time in milliseconds required for hold inputs to register
-     */
-    public void add(List<InputKey> inputSequence, InputAction action,
-                    boolean sameItemRequired,
-                    boolean cancellable,
-                    boolean display,
-                    long minHoldTime) {
-        InputNode dummy = root;
-        for (InputKey inputKey : inputSequence) {
-            if (dummy.noMatchingChild(inputKey)) {
-                if (inputKey.input() == InputType.RIGHT_HOLD || inputKey.input() == InputType.SHIFT_HOLD) {
-                    dummy.addChild(inputKey, null, minHoldTime);
-                }
-                else {
-                    dummy.addChild(inputKey, null);
-                }
-                dummy.setSameItemRequired(sameItemRequired);
-                dummy.setCancellable(cancellable);
-                dummy.setDisplay(display);
-            }
-            dummy = dummy.findMatchingChild(inputKey);
-        }
-        dummy.setAction(action);
-        dummy.setDisplay(display);
-    }
-
-    public void add(List<InputKey> inputSequence, InputAction action,
-                    Consumer<SwordPlayer> internalAction,
-                    boolean sameItemRequired,
-                    boolean cancellable,
-                    boolean display,
-                    long minHoldTime) {
-        InputNode dummy = root;
-        for (InputKey inputKey : inputSequence) {
-            if (dummy.noMatchingChild(inputKey)) {
-                if (inputKey.input() == InputType.RIGHT_HOLD || inputKey.input() == InputType.SHIFT_HOLD) {
-                    dummy.addChild(inputKey, null, minHoldTime);
-                }
-                else {
-                    dummy.addChild(inputKey, null);
-                }
-                dummy.setSameItemRequired(sameItemRequired);
-                dummy.setCancellable(cancellable);
-                dummy.setDisplay(display);
-            }
-            dummy = dummy.findMatchingChild(inputKey);
-        }
-        dummy.setAction(action);
-        dummy.setInternalAction(internalAction);
-        dummy.setDisplay(display);
-    }
-
-    public void add(List<InputKey> inputSequence, InputAction action,
-                    Consumer<SwordPlayer> internalAction,
-                    boolean sameItemRequired,
-                    boolean cancellable,
-                    boolean display) {
-        InputNode dummy = root;
-        for (InputKey inputKey : inputSequence) {
-            if (dummy.noMatchingChild(inputKey)) {
-                dummy.addChild(inputKey, null);
-                dummy.setSameItemRequired(sameItemRequired);
-                dummy.setCancellable(cancellable);
-                dummy.setDisplay(display);
-            }
-            dummy = dummy.findMatchingChild(inputKey);
-        }
-        dummy.setAction(action);
-        dummy.setInternalAction(internalAction);
-        dummy.setDisplay(display);
-    }
-
-    public void add(List<InputKey> inputSequence, InputAction action,
-                    long timeoutTicks,
-                    boolean sameItemRequired,
-                    boolean cancellable,
-                    boolean display) {
-        InputNode dummy = root;
-        for (InputKey inputKey : inputSequence) {
-            if (dummy.noMatchingChild(inputKey)) {
-                dummy.addChild(inputKey, null);
-                dummy.setSameItemRequired(sameItemRequired);
-                dummy.setCancellable(cancellable);
-                dummy.setDisplay(display);
-            }
-            dummy = dummy.findMatchingChild(inputKey);
-        }
-        dummy.setAction(action);
-        dummy.setTimeoutTicks(timeoutTicks);
-        dummy.setDisplay(display);
-    }
-
-
-    /**
      * Checks whether the current node has children nodes.
      *
      * @return true if children exist, false otherwise
@@ -453,509 +319,489 @@ public class InputExecutionTree {
     public void initializeInputTree() {
         // Item independent actions:
         // dodge forward, dodge backward
-        add(List.of(
-                InputKey.of(InputType.SWAP),
-                InputKey.of(InputType.SWAP)
-            ),
-            new InputAction(
+        new InputNodeBuilder(root, List.of(
+            InputKey.of(InputType.SWAP),
+            InputKey.of(InputType.SWAP)
+        )).action(new InputAction(
                 executor -> MovementAction.dash(executor, DashDirection.FORWARD),
                 executor -> executor.calcCooldown(AspectType.CELERITY, 200L, 1000L, 10),
                 Combatant::canAirDash,
                 5f,
                 false,
                 true,
-                true),
-            7L,
-            false,
-            true,
-            true);
+                true))
+            .timeoutTicks(7L)
+            .sameItemRequired(false)
+            .cancellable(true)
+            .display(true)
+            .build();
 
-        add(List.of(
-                InputKey.of(InputType.DROP, SwordItemType.UMBRAL_LINK)
-            ),
-            new InputAction(
+        new InputNodeBuilder(root, List.of(
+            InputKey.of(InputType.SWAP),
+            InputKey.of(InputType.SWAP),
+            InputKey.of(InputType.LEFT, SwordItemType.UMBRAL_LINK)
+        )).action(new InputAction(
                 UmbralBladeAction::shadowBlink,
                 executor -> 1000L,
                 Combatant::canPerformShadowBlink,
                 false,
                 true,
-                true),
-            false,
-            true,
-            true);
+                true))
+            .sameItemRequired(false)
+            .cancellable(true)
+            .display(true)
+            .build();
 
-        add(List.of(
-                InputKey.of(InputType.SWAP),
-                InputKey.of(InputType.SWAP),
-                InputKey.of(InputType.LEFT, SwordItemType.UMBRAL_LINK)
-            ),
-            new InputAction(
-                UmbralBladeAction::shadowBlink,
-                executor -> 1000L,
-                Combatant::canPerformShadowBlink,
-                false,
-                true,
-                true),
-            false,
-            true,
-            true);
-
-        add(List.of(
-                InputKey.of(InputType.SWAP),
-                InputKey.of(InputType.SWAP),
-                InputKey.of(InputType.LEFT)
-            ),
-            new InputAction(
+        new InputNodeBuilder(root, List.of(
+            InputKey.of(InputType.SWAP),
+            InputKey.of(InputType.SWAP),
+            InputKey.of(InputType.LEFT)
+        )).action(new InputAction(
                 executor -> DashAttackAction.dashAttack(executor, DashDirection.FORWARD),
                 executor -> 0L,
                 Combatant::canPerformAction,
                 false,
                 true,
-                true),
-            3L,
-            false,
-            true,
-            true);
+                true))
+            .timeoutTicks(3L)
+            .sameItemRequired(false)
+            .cancellable(true)
+            .display(true)
+            .build();
 
-        add(List.of(
-                InputKey.of(InputType.SHIFT),
-                InputKey.of(InputType.SHIFT)
-            ),
-            new InputAction(
+        new InputNodeBuilder(root, List.of(
+            InputKey.of(InputType.SHIFT),
+            InputKey.of(InputType.SHIFT)
+        )).action(new InputAction(
                 executor -> MovementAction.dash(executor, DashDirection.BACKWARD),
                 executor -> executor.calcCooldown(AspectType.CELERITY, 200L, 1000L, 10),
                 Combatant::canAirDash,
                 5f,
                 false,
                 true,
-                true),
-            7L,
-            false,
-            true,
-            true);
-        add(List.of(
-                InputKey.of(InputType.SHIFT),
-                InputKey.of(InputType.SHIFT),
-                InputKey.of(InputType.LEFT)
-            ),
-            new InputAction(
+                true))
+            .timeoutTicks(7L)
+            .sameItemRequired(false)
+            .cancellable(true)
+            .display(true)
+            .build();
+
+        new InputNodeBuilder(root, List.of(
+            InputKey.of(InputType.SHIFT),
+            InputKey.of(InputType.SHIFT),
+            InputKey.of(InputType.LEFT)
+        )).action(new InputAction(
                 executor -> DashAttackAction.dashAttack(executor, DashDirection.BACKWARD),
                 executor -> 0L,
                 Combatant::canPerformAction,
                 false,
                 true,
-                true),
-            3L,
-            false,
-            true,
-            true);
+                true))
+            .timeoutTicks(3L)
+            .sameItemRequired(false)
+            .cancellable(true)
+            .display(true)
+            .build();
 
         // strafe
-        add(List.of(
-                InputKey.of(InputType.SWAP),
-                InputKey.of(InputType.RIGHT)
-            ),
-            new InputAction(
+        new InputNodeBuilder(root, List.of(
+            InputKey.of(InputType.SWAP),
+            InputKey.of(InputType.RIGHT)
+        )).action(new InputAction(
                 executor -> MovementAction.dash(executor, DashDirection.RIGHT),
                 executor -> executor.calcCooldown(AspectType.CELERITY, 200L, 1000L, 10),
                 Combatant::canStrafe,
                 5f,
                 false,
                 true,
-                true),
-            7L,
-            false,
-            true,
-            true);
+                true))
+            .timeoutTicks(7L)
+            .sameItemRequired(false)
+            .cancellable(true)
+            .display(true)
+            .build();
+
         // strafe attack right
-        add(List.of(
-                InputKey.of(InputType.SWAP),
-                InputKey.of(InputType.RIGHT),
-                InputKey.of(InputType.LEFT)
-            ),
-            new InputAction(
+        new InputNodeBuilder(root, List.of(
+            InputKey.of(InputType.SWAP),
+            InputKey.of(InputType.RIGHT),
+            InputKey.of(InputType.LEFT)
+        )).action(new InputAction(
                 executor -> DashAttackAction.dashAttack(executor, DashDirection.RIGHT),
                 executor -> 0L,
                 Combatant::canPerformAction,
                 false,
                 true,
-                true),
-            false,
-            true,
-            true);
+                true))
+            .sameItemRequired(false)
+            .cancellable(true)
+            .display(true)
+            .build();
 
-        add(List.of(
-                InputKey.of(InputType.SWAP),
-                InputKey.of(InputType.LEFT)
-            ),
-            new InputAction(
+        new InputNodeBuilder(root, List.of(
+            InputKey.of(InputType.SWAP),
+            InputKey.of(InputType.LEFT)
+        )).action(new InputAction(
                 executor -> MovementAction.dash(executor, DashDirection.LEFT),
                 executor -> executor.calcCooldown(AspectType.CELERITY, 200L, 1000L, 10),
                 Combatant::canStrafe,
                 5f,
                 false,
                 true,
-                true),
-            7L,
-            false,
-            true,
-            true);
+                true))
+            .timeoutTicks(7L)
+            .sameItemRequired(false)
+            .cancellable(true)
+            .display(true)
+            .build();
+
         // strafe attack left
-        add(List.of(
-                InputKey.of(InputType.SWAP),
-                InputKey.of(InputType.LEFT),
-                InputKey.of(InputType.LEFT)
-            ),
-            new InputAction(
+        new InputNodeBuilder(root, List.of(
+            InputKey.of(InputType.SWAP),
+            InputKey.of(InputType.LEFT),
+            InputKey.of(InputType.LEFT)
+        )).action(new InputAction(
                 executor -> DashAttackAction.dashAttack(executor, DashDirection.RIGHT),
                 executor -> 0L,
                 Combatant::canPerformAction,
                 false,
                 true,
-                true),
-            false,
-            true,
-            true);
+                true))
+            .sameItemRequired(false)
+            .cancellable(true)
+            .display(true)
+            .build();
 
         // grab
-        add(List.of(
-                InputKey.of(InputType.SHIFT),
-                InputKey.of(InputType.LEFT)
-            ),
-            new InputAction(
+        new InputNodeBuilder(root, List.of(
+            InputKey.of(InputType.SHIFT),
+            InputKey.of(InputType.LEFT)
+        )).action(new InputAction(
                 GrabAction::grab,
                 executor -> executor.calcCooldown(AspectType.FORTITUDE, 200L, 1000L, 10),
                 Combatant::canPerformAction,
                 2f,
                 false,
                 true,
-                true),
-            20L,
-            false,
-            true,
-            true);
+                true))
+            .timeoutTicks(20L)
+            .sameItemRequired(false)
+            .cancellable(true)
+            .display(true)
+            .build();
 
         // Item dependent actions:
 
-        // TODO: #122 - Define possible better way of differentiating between normal attacks and umbral attacks
-
         // basic umbral attacks
-        add(List.of(
-                InputKey.of(InputType.LEFT, SwordItemType.UMBRAL_LINK)
-            ),
-            new InputAction(
+        new InputNodeBuilder(root, List.of(
+            InputKey.of(InputType.LEFT, SwordItemType.UMBRAL_LINK)
+        )).action(new InputAction(
                 executor -> UmbralBladeAction.basicAttackWithLink(executor, 1),
-                executor ->
-                    Math.max(0, (executor.getTimeOfLastAttack() + executor.getDurationOfLastAttack()) - System.currentTimeMillis()),
+                executor -> Math.max(0, (executor.getTimeOfLastAttack() + executor.getDurationOfLastAttack()) - System.currentTimeMillis()),
                 Combatant::canPerformUmbralLinkAttack,
                 true,
                 true,
-                true),
-            60L,
-            true,
-            true,
-            true);
+                true))
+            .timeoutTicks(60L)
+            .sameItemRequired(true)
+            .cancellable(true)
+            .display(true)
+            .build();
 
-        add(List.of(
-                InputKey.of(InputType.LEFT, SwordItemType.UMBRAL_LINK),
-                InputKey.of(InputType.LEFT, SwordItemType.UMBRAL_LINK)
-            ),
-            new InputAction(
+        new InputNodeBuilder(root, List.of(
+            InputKey.of(InputType.LEFT, SwordItemType.UMBRAL_LINK),
+            InputKey.of(InputType.LEFT, SwordItemType.UMBRAL_LINK)
+        )).action(new InputAction(
                 executor -> UmbralBladeAction.basicAttackWithLink(executor, 2),
                 executor -> 0L,
                 Combatant::canPerformUmbralLinkAttack,
                 true,
                 true,
-                true),
-            60L,
-            true,
-            true,
-            true);
+                true))
+            .timeoutTicks(60L)
+            .sameItemRequired(true)
+            .cancellable(true)
+            .display(true)
+            .build();
 
-        add(List.of(
-                InputKey.of(InputType.LEFT, SwordItemType.UMBRAL_LINK),
-                InputKey.of(InputType.LEFT, SwordItemType.UMBRAL_LINK),
-                InputKey.of(InputType.LEFT, SwordItemType.UMBRAL_LINK)
-            ),
-            new InputAction(
+        new InputNodeBuilder(root, List.of(
+            InputKey.of(InputType.LEFT, SwordItemType.UMBRAL_LINK),
+            InputKey.of(InputType.LEFT, SwordItemType.UMBRAL_LINK),
+            InputKey.of(InputType.LEFT, SwordItemType.UMBRAL_LINK)
+        )).action(new InputAction(
                 executor -> UmbralBladeAction.basicAttackWithLink(executor, 3),
                 executor -> 0L,
                 Combatant::canPerformUmbralLinkAttack,
                 true,
                 true,
-                false),
-            60L,
-            true,
-            true,
-            true);
+                false))
+            .timeoutTicks(60L)
+            .sameItemRequired(true)
+            .cancellable(true)
+            .display(true)
+            .build();
 
         // basic attacks
-        add(List.of(
-                InputKey.of(InputType.LEFT)
-            ),
-            new InputAction(
+        new InputNodeBuilder(root, List.of(
+            InputKey.of(InputType.LEFT)
+        )).action(new InputAction(
                 executor -> AttackAction.basicAttack(executor, 1),
-                executor ->
-                    Math.max(0, (executor.getTimeOfLastAttack() + executor.getDurationOfLastAttack()) - System.currentTimeMillis()),
+                executor -> Math.max(0, (executor.getTimeOfLastAttack() + executor.getDurationOfLastAttack()) - System.currentTimeMillis()),
                 Combatant::canPerformAction,
                 true,
                 true,
-                false),
-            true,
-            true,
-            true);
+                false))
+            .sameItemRequired(true)
+            .cancellable(true)
+            .display(true)
+            .build();
 
-        add(List.of(
-                InputKey.of(InputType.LEFT),
-                InputKey.of(InputType.LEFT)
-            ),
-            new InputAction(
+        new InputNodeBuilder(root, List.of(
+            InputKey.of(InputType.LEFT),
+            InputKey.of(InputType.LEFT)
+        )).action(new InputAction(
                 executor -> AttackAction.basicAttack(executor, 2),
                 executor -> 0L,
                 Combatant::canPerformAction,
                 true,
                 true,
-                false),
-            true,
-            true,
-            true);
+                false))
+            .sameItemRequired(true)
+            .cancellable(true)
+            .display(true)
+            .build();
 
-        add(List.of(
-                InputKey.of(InputType.LEFT),
-                InputKey.of(InputType.LEFT),
-                InputKey.of(InputType.LEFT)
-            ),
-            new InputAction(
+        new InputNodeBuilder(root, List.of(
+            InputKey.of(InputType.LEFT),
+            InputKey.of(InputType.LEFT),
+            InputKey.of(InputType.LEFT)
+        )).action(new InputAction(
                 executor -> AttackAction.basicAttack(executor, 3),
                 executor -> 0L,
                 Combatant::canPerformAction,
                 true,
                 true,
-                false),
-            true,
-            true,
-            true);
+                false))
+            .sameItemRequired(true)
+            .cancellable(true)
+            .display(true)
+            .build();
 
         // throw hold action
-        add(List.of(
-                InputKey.of(InputType.DROP),
-                InputKey.of(InputType.RIGHT)
-            ),
-            new InputAction(
+        new InputNodeBuilder(root, List.of(
+            InputKey.of(InputType.DROP),
+            InputKey.of(InputType.RIGHT)
+        )).action(new InputAction(
                 ThrowAction::throwReady,
                 executor -> 0L,
                 Combatant::canPerformAction,
                 false,
                 false,
-                true),
-            true,
-            true,
-            true);
+                true))
+            .sameItemRequired(true)
+            .cancellable(true)
+            .display(true)
+            .build();
 
         // throw
-        add(List.of(
-                InputKey.of(InputType.DROP),
-                InputKey.of(InputType.RIGHT),
-                InputKey.of(InputType.RIGHT_HOLD)
-            ),
-            new InputAction(
+        new InputNodeBuilder(root, List.of(
+            InputKey.of(InputType.DROP),
+            InputKey.of(InputType.RIGHT),
+            InputKey.of(InputType.RIGHT_HOLD)
+        )).action(new InputAction(
                 ThrowAction::throwItem,
                 executor -> 0L,
                 Combatant::canPerformAction,
                 false,
                 false,
-                true),
-            true,
-            true,
-            true,
-            600L);
+                true))
+            .minHoldTime(600L)
+            .sameItemRequired(true)
+            .cancellable(true)
+            .display(true)
+            .build();
 
         // just in case
-        add(List.of(
-                InputKey.of(InputType.DROP),
-                InputKey.of(InputType.DROP)
-            ),
-            new InputAction(
+        new InputNodeBuilder(root, List.of(
+            InputKey.of(InputType.DROP),
+            InputKey.of(InputType.DROP)
+        )).action(new InputAction(
                 UtilityAction::death,
                 executor -> 0L,
                 Combatant::canPerformAction,
                 true,
                 true,
-                true),
-            true,
-            true,
-            true);
+                true))
+            .sameItemRequired(true)
+            .cancellable(true)
+            .display(true)
+            .build();
 
         // Slow em down
-        add(List.of(
-                InputKey.of(InputType.RIGHT),
-                InputKey.of(InputType.RIGHT_HOLD),
-                InputKey.of(InputType.DROP)
-            ),
-            new InputAction(
+        new InputNodeBuilder(root, List.of(
+            InputKey.of(InputType.RIGHT),
+            InputKey.of(InputType.RIGHT_HOLD),
+            InputKey.of(InputType.DROP)
+        )).action(new InputAction(
                 UtilityAction::bulletTime,
                 executor -> 5000L,
                 Combatant::canPerformAction,
                 70f,
                 true,
                 true,
-                true),
-            true,
-            true,
-            true,
-            500L);
+                true))
+            .minHoldTime(500L)
+            .sameItemRequired(true)
+            .cancellable(true)
+            .display(true)
+            .build();
 
-        // umbral blade
-        // toggling of umbral blade can only occur if holding an item (since it uses right)
-        // but can be done regardless of which item is being held.
-        //
-        // Most umbral blade actions will require the player to be holding the soul link item, though.
-        add(List.of(
-                InputKey.of(InputType.SHIFT),
-                InputKey.of(InputType.DROP)
-            ),
-            new InputAction(
+        // umbral blade toggling and wielding
+        new InputNodeBuilder(root, List.of(
+            InputKey.of(InputType.SHIFT),
+            InputKey.of(InputType.DROP)
+        )).action(new InputAction(
                 UmbralBladeAction::toggle,
                 executor -> 400L,
                 Combatant::canPerformAction,
                 true,
                 true,
-                true),
-            true,
-            true,
-            true);
+                true))
+            .sameItemRequired(true)
+            .cancellable(true)
+            .display(true)
+            .build();
 
-        // wield it
-        add(List.of(
-                InputKey.of(InputType.SHIFT),
-                InputKey.of(InputType.SWAP)
-            ),
-            new InputAction(
+        new InputNodeBuilder(root, List.of(
+            InputKey.of(InputType.SHIFT),
+            InputKey.of(InputType.SWAP)
+        )).action(new InputAction(
                 UmbralBladeAction::wield,
                 executor -> 400L,
                 Combatant::canPerformAction,
                 true,
                 true,
-                true),
-            true,
-            true,
-            true);
+                true))
+            .sameItemRequired(true)
+            .cancellable(true)
+            .display(true)
+            .build();
 
-        // heavy sweep
-        add(List.of(
-                InputKey.of(InputType.RIGHT),
-                InputKey.of(InputType.RIGHT_TAP),
-                InputKey.of(InputType.LEFT)
-            ),
-            new InputAction(
+        // heavy sweeps (umbral attacks)
+        new InputNodeBuilder(root, List.of(
+            InputKey.of(InputType.RIGHT),
+            InputKey.of(InputType.RIGHT_TAP),
+            InputKey.of(InputType.LEFT)
+        )).action(new InputAction(
                 UmbralBladeAction::sweep,
                 executor -> 4000L,
                 Combatant::canPerformUmbralAction,
                 10f,
                 true,
                 true,
-                false),
-            100L,
-            true,
-            true,
-            true);
+                false))
+            .timeoutTicks(100L)
+            .sameItemRequired(true)
+            .cancellable(true)
+            .display(true)
+            .build();
 
-        add(List.of(
-                InputKey.of(InputType.RIGHT),
-                InputKey.of(InputType.RIGHT_TAP),
-                InputKey.of(InputType.LEFT),
-                InputKey.of(InputType.LEFT)
-            ),
-            new InputAction(
+        new InputNodeBuilder(root, List.of(
+            InputKey.of(InputType.RIGHT),
+            InputKey.of(InputType.RIGHT_TAP),
+            InputKey.of(InputType.LEFT),
+            InputKey.of(InputType.LEFT)
+        )).action(new InputAction(
                 UmbralBladeAction::sweep,
                 executor -> 0L,
                 Combatant::canPerformUmbralAction,
                 15f,
                 true,
                 true,
-                false),
-            100L,
-            true,
-            true,
-            true);
+                false))
+            .timeoutTicks(100L)
+            .sameItemRequired(true)
+            .cancellable(true)
+            .display(true)
+            .build();
 
-        add(List.of(
-                InputKey.of(InputType.RIGHT),
-                InputKey.of(InputType.RIGHT_TAP),
-                InputKey.of(InputType.LEFT),
-                InputKey.of(InputType.LEFT),
-                InputKey.of(InputType.LEFT)
-            ),
-            new InputAction(
+        new InputNodeBuilder(root, List.of(
+            InputKey.of(InputType.RIGHT),
+            InputKey.of(InputType.RIGHT_TAP),
+            InputKey.of(InputType.LEFT),
+            InputKey.of(InputType.LEFT),
+            InputKey.of(InputType.LEFT)
+        )).action(new InputAction(
                 UmbralBladeAction::sweep,
                 executor -> 0L,
                 Combatant::canPerformUmbralAction,
                 25f,
                 true,
                 true,
-                false),
-            100L,
-            true,
-            true,
-            true);
+                false))
+            .timeoutTicks(100L)
+            .sameItemRequired(true)
+            .cancellable(true)
+            .display(true)
+            .build();
 
-        // lunge (umbral throw action)
-        add(List.of(
-                InputKey.of(InputType.RIGHT),
-                InputKey.of(InputType.RIGHT_HOLD),
-                InputKey.of(InputType.LEFT)
-            ),
-            new InputAction(
+        // lunges (umbral throw)
+        new InputNodeBuilder(root, List.of(
+            InputKey.of(InputType.RIGHT),
+            InputKey.of(InputType.RIGHT_HOLD),
+            InputKey.of(InputType.LEFT)
+        )).action(new InputAction(
                 UmbralBladeAction::lunge,
                 executor -> 4000L,
                 Combatant::canPerformUmbralAction,
                 10f,
                 true,
                 true,
-                false),
-            100L,
-            true,
-            true,
-            true);
+                false))
+            .timeoutTicks(100L)
+            .sameItemRequired(true)
+            .cancellable(true)
+            .display(true)
+            .build();
 
-        add(List.of(
-                InputKey.of(InputType.RIGHT),
-                InputKey.of(InputType.RIGHT_HOLD),
-                InputKey.of(InputType.LEFT),
-                InputKey.of(InputType.LEFT)
-            ),
-            new InputAction(
+        new InputNodeBuilder(root, List.of(
+            InputKey.of(InputType.RIGHT),
+            InputKey.of(InputType.RIGHT_HOLD),
+            InputKey.of(InputType.LEFT),
+            InputKey.of(InputType.LEFT)
+        )).action(new InputAction(
                 UmbralBladeAction::lunge,
                 executor -> 0L,
                 Combatant::canPerformUmbralAction,
                 15f,
                 true,
                 true,
-                false),
-            100L,
-            true,
-            true,
-            true);
+                false))
+            .timeoutTicks(100L)
+            .sameItemRequired(true)
+            .cancellable(true)
+            .display(true)
+            .build();
 
-        add(List.of(
-                InputKey.of(InputType.RIGHT),
-                InputKey.of(InputType.RIGHT_HOLD),
-                InputKey.of(InputType.LEFT),
-                InputKey.of(InputType.LEFT),
-                InputKey.of(InputType.LEFT)
-            ),
-            new InputAction(
+        new InputNodeBuilder(root, List.of(
+            InputKey.of(InputType.RIGHT),
+            InputKey.of(InputType.RIGHT_HOLD),
+            InputKey.of(InputType.LEFT),
+            InputKey.of(InputType.LEFT),
+            InputKey.of(InputType.LEFT)
+        )).action(new InputAction(
                 UmbralBladeAction::lunge,
                 executor -> 0L,
                 Combatant::canPerformUmbralAction,
                 25f,
                 true,
                 true,
-                false),
-            100L,
-            true,
-            true,
-            true);
+                false))
+            .timeoutTicks(100L)
+            .sameItemRequired(true)
+            .cancellable(true)
+            .display(true)
+            .build();
     }
 
     /**
@@ -1040,4 +886,97 @@ public class InputExecutionTree {
             return findMatchingChild(inputKey) == null;
         }
     }
+
+    public static class InputNodeBuilder {
+        private final List<InputKey> inputSequence;
+        private final InputNode root;
+
+        private InputAction action;
+        private Consumer<SwordPlayer> internalAction;
+        private Long timeoutTicks = null;
+        private Long minHoldTime = null;
+        private Boolean sameItemRequired = null;
+        private Boolean cancellable = null;
+        private Boolean display = null;
+
+        public InputNodeBuilder(InputNode root, List<InputKey> inputSequence) {
+            this.root = root;
+            this.inputSequence = inputSequence;
+        }
+
+        public InputNodeBuilder action(InputAction action) {
+            this.action = action;
+            return this;
+        }
+
+        public InputNodeBuilder internalAction(Consumer<SwordPlayer> internalAction) {
+            this.internalAction = internalAction;
+            return this;
+        }
+
+        public InputNodeBuilder timeoutTicks(long timeoutTicks) {
+            this.timeoutTicks = timeoutTicks;
+            return this;
+        }
+
+        public InputNodeBuilder minHoldTime(long minHoldTime) {
+            this.minHoldTime = minHoldTime;
+            return this;
+        }
+
+        public InputNodeBuilder sameItemRequired(boolean sameItemRequired) {
+            this.sameItemRequired = sameItemRequired;
+            return this;
+        }
+
+        public InputNodeBuilder cancellable(boolean cancellable) {
+            this.cancellable = cancellable;
+            return this;
+        }
+
+        public InputNodeBuilder display(boolean display) {
+            this.display = display;
+            return this;
+        }
+
+        public void build() {
+            InputNode dummy = root;
+            for (InputKey inputKey : inputSequence) {
+                if (dummy.noMatchingChild(inputKey)) {
+                    if (minHoldTime != null &&
+                        (inputKey.input() == InputType.RIGHT_HOLD || inputKey.input() == InputType.SHIFT_HOLD)) {
+                        dummy.addChild(inputKey, null, minHoldTime);
+                    } else {
+                        dummy.addChild(inputKey, null);
+                    }
+                    if (sameItemRequired != null) {
+                        dummy.setSameItemRequired(sameItemRequired);
+                    }
+                    if (cancellable != null) {
+                        dummy.setCancellable(cancellable);
+                    }
+                    if (display != null) {
+                        dummy.setDisplay(display);
+                    }
+                }
+                dummy = dummy.findMatchingChild(inputKey);
+                if (dummy == null) break; // Defensive null check to avoid NPE
+            }
+            if (dummy != null) {
+                if (action != null) {
+                    dummy.setAction(action);
+                }
+                if (internalAction != null) {
+                    dummy.setInternalAction(internalAction);
+                }
+                if (timeoutTicks != null) {
+                    dummy.setTimeoutTicks(timeoutTicks);
+                }
+                if (display != null) {
+                    dummy.setDisplay(display);
+                }
+            }
+        }
+    }
+
 }
