@@ -1,20 +1,19 @@
 package btm.sword.system.entity.umbral.statemachine.state;
 
 import org.bukkit.scheduler.BukkitRunnable;
-import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
 
 import btm.sword.Sword;
 import btm.sword.config.Config;
 import btm.sword.system.attack.style.AttackType;
+import btm.sword.system.control.TimeArbiter;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.umbral.UmbralBlade;
 import btm.sword.system.entity.umbral.statemachine.UmbralStateFacade;
 import btm.sword.utility.display.DisplayUtil;
 
-
 public class GrabImpaleState extends UmbralStateFacade {
-    private BukkitTask slerpTask;
+    private TimeArbiter.TaskHandle slerpTask;
 
     @Override
     public String name() {
@@ -49,7 +48,7 @@ public class GrabImpaleState extends UmbralStateFacade {
         // TODO: potentially -> make random and in cooler more dynamic positions depending on cur blade pos
         Vector offset = new Vector(-1, grabbed.getEyeHeight() * 6, -1);
         slerpTask = DisplayUtil.displaySlerpToOffset(grabbed, blade.getDisplay(), offset,
-            1, 2, 1, 2, false,
+            1, 2, 50, 2, false,
             50,
             thrower -> // predicate for when the movement should end other than when it reaches destination.
                 thrower.getGrabbedEntity() == null ||
@@ -68,7 +67,6 @@ public class GrabImpaleState extends UmbralStateFacade {
 
     private void attackEnemy(UmbralBlade blade) {
         if (slerpTask != null && !slerpTask.isCancelled()) slerpTask.cancel();
-
         blade.setHitEntity(null);
         blade.setFinishedLunging(false);
         blade.setTimeCutoff(Config.UmbralBlade.LUNGE_TIME_CUTOFF);

@@ -27,6 +27,7 @@ public class Prefab {
         public static final ParticleWrapper TEST_FLAME = new ParticleWrapper(Particle.FLAME, 2, 0.025, 0.025, 0.025, 0);
         public static final ParticleWrapper TEST_SOUL_FLAME = new ParticleWrapper(Particle.SOUL_FIRE_FLAME, 1, 0.025, 0.025, 0.025, 0);
         public static final ParticleWrapper TEST_OBSIDIAN_TEAR = new ParticleWrapper(Particle.DRIPPING_OBSIDIAN_TEAR, 1, 0, 0, 0, 0);
+        public static final ParticleWrapper DEBUG_BLOB = new ParticleWrapper(Particle.DRIPPING_OBSIDIAN_TEAR, 100, 0.2, 0.2, 0.2, 0);
         public static final ParticleWrapper TEST_LAVA_DRIP = new ParticleWrapper(Particle.DRIPPING_LAVA, 2, 0, 0, 0, 0);
         public static final ParticleWrapper TEST_SWING = new ParticleWrapper(Particle.DUST_COLOR_TRANSITION, 2, 0, 0, 0, 1,
                 new Particle.DustTransition(Color.fromRGB(255, 0,0), Color.fromRGB(102,0,0), 0.7f));
@@ -142,19 +143,6 @@ public class Prefab {
         );
     }
 
-    /**
-     * Prefab sound effects that internally use the configuration system.
-     * <p>
-     * Provides pre-configured {@link SoundWrapper} instances that fetch properties
-     * from config.yaml at play time, enabling hot-reload functionality.
-     * Sound properties (type, volume, pitch) are dynamically loaded from the
-     * configuration system when {@link SoundWrapper#playForAllInRadius(org.bukkit.entity.LivingEntity)}
-     * is called.
-     * </p>
-     * <p>
-     * Usage: {@code Prefab.Sounds.ATTACK.play(entity);}
-     * </p>
-     */
     public static class Sounds {
         /**
          * Attack sound effect for melee combat.
@@ -196,13 +184,13 @@ public class Prefab {
 
         public static final SoundWrapper SOULFIRE_GAIN_BACKGROUND = new SoundWrapper(
             () -> SoundType.PARTICLE_SOUL_ESCAPE,
-            () -> 0.5f,
+            () -> 0.7f,
             () -> 0.2f
         );
 
-        public static final SoundWrapper SOULFIRE_GAIN = new SoundWrapper(
-            () -> SoundType.BLOCK_RESPAWN_ANCHOR_CHARGE,
-            () -> 0.5f,
+        public static final SoundWrapper SHADOW_BLINK = new SoundWrapper(
+            () -> SoundType.ENTITY_ENDERMAN_TELEPORT,
+            () -> 0.6f,
             () -> 0.05f
         );
     }

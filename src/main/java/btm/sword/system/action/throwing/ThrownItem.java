@@ -28,7 +28,9 @@ import org.joml.Vector3f;
 
 import btm.sword.Sword;
 import btm.sword.config.Config;
+import btm.sword.system.control.PredicateRunnablePair;
 import btm.sword.system.control.SwordScheduler;
+import btm.sword.system.control.TimeArbiter;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.types.Combatant;
@@ -109,14 +111,9 @@ public class ThrownItem implements InteractiveItem {
     }
 
     protected void setup(int period) {
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                if (setupSuccessful) {
-                    afterSpawn();
-                    cancel();
-                    return;
-                }
+        TimeArbiter.runTimeIndependentBukkitTaskOnTimer(
+            null,
+            () -> {
                 try {
                     LivingEntity e = thrower.self();
                     display = (ItemDisplay) e.getWorld().spawnEntity(e.getEyeLocation(), EntityType.ITEM_DISPLAY);
@@ -125,8 +122,14 @@ public class ThrownItem implements InteractiveItem {
                 } catch (Exception e) {
                     e.addSuppressed(e);
                 }
-            }
-        }.runTaskTimer(Sword.getInstance(), 0L, period);
+            },
+            0,
+            period,
+            new PredicateRunnablePair(
+                () -> setupSuccessful,
+                this::afterSpawn
+            )
+        );
     }
 
     protected void afterSpawn() {
@@ -211,8 +214,7 @@ public class ThrownItem implements InteractiveItem {
 
                 throwerEntity.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 1, 2));
 
-                DisplayUtil.smoothTeleport(display, 2);
-                display.teleport(throwerEntity.getEyeLocation());
+                TimeArbiter.teleportDisplay(display, throwerEntity.getEyeLocation(), null, 2);
             }
         }.runTaskTimer(Sword.getInstance(), 0L, 1L);
     }
@@ -245,8 +247,6 @@ public class ThrownItem implements InteractiveItem {
         new BukkitRunnable() {
             @Override
             public void run() {
-                thrower.message("Time Step: " + timeStep);
-                thrower.message("Time Cutoff: " + timeCutoff);
                 if (grounded || hit || caught || display.isDead() || (timeCutoff > 0 && timeStep * timeScalingFactor > timeCutoff)) {
                     String reason = grounded ? "grounded" :
                         hit ? "hit" :
@@ -264,7 +264,7 @@ public class ThrownItem implements InteractiveItem {
                 applyFunctions();
 
                 if (!prev.equals(cur) && cur.clone().subtract(prev).toVector().dot(velocity) > 0) {
-                    DisplayUtil.smoothTeleport(display, 1);
+                    DisplayUtil.setSmoothTeleportDuration(display, 1);
                 }
 
                 teleport();
@@ -284,10 +284,10 @@ public class ThrownItem implements InteractiveItem {
     protected void teleport() {
         String name = display.getItemStack().getType().toString();
         if (name.endsWith("_SWORD")) {
-            display.teleport(cur.setDirection(velocity));
+            TimeArbiter.teleportDisplay(display, cur, velocity, 2);
         }
         else {
-            display.teleport(cur.setDirection(currentBasis.forward()));
+            TimeArbiter.teleportDisplay(display, cur, currentBasis.forward(), 2);
         }
     }
 
@@ -438,8 +438,7 @@ public class ThrownItem implements InteractiveItem {
             public void run() {
                 Location land = probe.clone();
                 land.setDirection(to.normalize());
-                DisplayUtil.smoothTeleport(display, 1);
-                display.teleport(land);
+                TimeArbiter.teleportDisplay(display, land, null, 1);
             }
         }.runTaskLater(Sword.getInstance(), 1L);
 

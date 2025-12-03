@@ -4,8 +4,8 @@ package btm.sword.system.attack;
 import org.bukkit.entity.ItemDisplay;
 
 import btm.sword.system.attack.style.AttackProfile;
+import btm.sword.system.control.TimeArbiter;
 import btm.sword.utility.Prefab;
-import btm.sword.utility.display.DisplayUtil;
 import lombok.Setter;
 
 public class ItemDisplayAttack extends Attack {
@@ -61,8 +61,7 @@ public class ItemDisplayAttack extends Attack {
     protected void drawAttackEffects() {
         if (drawParticles) super.drawAttackEffects();
         if (curIteration % displaySteps == 0) {
-            DisplayUtil.smoothTeleport(weaponDisplay, tpDuration);
-            weaponDisplay.teleport(attackLocation.setDirection(cur));
+            TimeArbiter.teleportDisplay(weaponDisplay, attackLocation, cur, tpDuration);
         }
     }
 
@@ -71,8 +70,10 @@ public class ItemDisplayAttack extends Attack {
 
 
         if (ticksSpentMovingToInitialLocation != 0) {
-            DisplayUtil.smoothTeleport(weaponDisplay, ticksSpentMovingToInitialLocation * 2);
-            weaponDisplay.teleport(origin.clone().add(prev));
+            TimeArbiter.teleportDisplay(
+                weaponDisplay,
+                origin.clone().add(prev), cur,
+                ticksSpentMovingToInitialLocation * 2);
         }
     }
 

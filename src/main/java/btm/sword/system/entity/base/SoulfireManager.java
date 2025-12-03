@@ -65,7 +65,7 @@ public class SoulfireManager {
 
         final int[] iterationsElapsed = {0};
         AtomicReference<Vector> toPlayer = new AtomicReference<>();
-        TimeArbiter.runTimeAffectedTaskOnTimer(
+        TimeArbiter.runTimeBoundBukkitTaskOnTimer(
             () -> {}, // no pre-check actions required.
             () -> {
                 toPlayer.set(receiver.getChestLocation().toVector().subtract(currentLoc[0].toVector()));
@@ -97,13 +97,11 @@ public class SoulfireManager {
                     .display(currentLoc[0]);
                 Prefab.Particles.UMBRAL_FLAME.display(currentLoc[0]);
             },
-
+            0,
             period,
-
             new PredicateRunnablePair(
                 receiver::isDead,
                 () -> Prefab.Particles.SMOKE.display(currentLoc[0])),
-
             new PredicateRunnablePair(
                 () -> iterationsElapsed[0] > 0 && toPlayer.get().lengthSquared() <= endDistance * endDistance,
                 () -> {
@@ -112,7 +110,6 @@ public class SoulfireManager {
                         deliverSoulfire(receiver, packetAmount);
                     }
                 }),
-
             new PredicateRunnablePair(
                 () -> iterationsElapsed[0] > maxIterations,
                 () -> {}

@@ -1142,7 +1142,7 @@ public class Config {
         ); }
 
         // Item display follow configuration
-        public static int ITEM_DISPLAY_FOLLOW_UPDATE_INTERVAL = 2;
+        public static int ITEM_DISPLAY_FOLLOW_UPDATE_INTERVAL = 100;
         static { register(
             "display.item_display_follow_update_interval",
             ITEM_DISPLAY_FOLLOW_UPDATE_INTERVAL, Integer.class,
@@ -1353,7 +1353,7 @@ public class Config {
             Config::loadSoundType
         ); }
 
-        public static float ATTACK_VOLUME = 0.055f; // 0.0-1.0
+        public static float ATTACK_VOLUME = 0.6f; // 0.0-1.0
         static { register(
             "audio.attack_volume",
             ATTACK_VOLUME, Float.class,
@@ -1361,7 +1361,7 @@ public class Config {
             Config::loadFloat
         ); }
 
-        public static float ATTACK_PITCH = 1.5f; // 0.5-2.0
+        public static float ATTACK_PITCH = 0.7f; // 0.5-2.0
         static { register(
             "audio.attack_pitch",
             ATTACK_PITCH, Float.class,

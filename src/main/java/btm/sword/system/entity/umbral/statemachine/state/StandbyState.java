@@ -1,16 +1,15 @@
 package btm.sword.system.entity.umbral.statemachine.state;
 
-import org.bukkit.scheduler.BukkitTask;
-
 import btm.sword.config.Config;
 import btm.sword.system.action.throwing.InteractiveItemArbiter;
+import btm.sword.system.control.TimeArbiter;
 import btm.sword.system.entity.types.SwordPlayer;
 import btm.sword.system.entity.umbral.UmbralBlade;
 import btm.sword.system.entity.umbral.statemachine.UmbralStateFacade;
 import net.kyori.adventure.text.Component;
 
 public class StandbyState extends UmbralStateFacade {
-    private BukkitTask followTask;
+    private TimeArbiter.TaskHandle followTask;
 
     @Override
     public String name() { return "STANDBY"; }
@@ -37,7 +36,7 @@ public class StandbyState extends UmbralStateFacade {
 
         blade.getDisplay().setGlowing(false);
         blade.endIdleMovement();
-        if (followTask != null && followTask.getTaskId() != -1 && !followTask.isCancelled())
+        if (followTask != null && !followTask.isCancelled())
             followTask.cancel();
     }
 

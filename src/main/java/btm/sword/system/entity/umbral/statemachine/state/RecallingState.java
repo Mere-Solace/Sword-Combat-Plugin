@@ -2,9 +2,9 @@ package btm.sword.system.entity.umbral.statemachine.state;
 
 import org.bukkit.Color;
 import org.bukkit.Location;
-import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
 
+import btm.sword.system.control.TimeArbiter;
 import btm.sword.system.entity.umbral.UmbralBlade;
 import btm.sword.system.entity.umbral.input.BladeRequest;
 import btm.sword.system.entity.umbral.statemachine.UmbralStateFacade;
@@ -38,7 +38,7 @@ public class RecallingState extends UmbralStateFacade {
     private static final double EPS_SQ = 0.0004; // tune: 0.02^2  (very small)
     private static final int REQUIRED_STATIONARY_TICKS = 3;
 
-    private BukkitTask returnTask;
+    private TimeArbiter.TaskHandle returnTask;
 
     @Override
     public String name() {
@@ -57,8 +57,7 @@ public class RecallingState extends UmbralStateFacade {
     @Override
     public void onExit(UmbralBlade blade) {
         blade.getDisplay().setGlowing(false);
-
-        if (returnTask != null && !returnTask.isCancelled() && returnTask.getTaskId() != -1) {
+        if (returnTask != null && !returnTask.isCancelled()) {
             returnTask.cancel();
         }
     }

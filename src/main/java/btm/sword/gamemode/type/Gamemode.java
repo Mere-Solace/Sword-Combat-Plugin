@@ -50,7 +50,7 @@ public abstract class Gamemode {
     }
 
     private void startTimer() {
-        timerTask = TimeArbiter.runTimeAffectedTaskOnTimer(
+        timerTask = TimeArbiter.runTimeBoundBukkitTaskOnTimer(
             () -> {},
             () -> {
                 durationSeconds.decrementAndGet();
@@ -61,6 +61,7 @@ public abstract class Gamemode {
                 onTick(durationSeconds.get());
             },
             () -> {},
+            0,
             20,
             new PredicateRunnablePair(
                 () -> durationSeconds.get() <= 0,

@@ -155,7 +155,9 @@ public class InputExecutionTree {
      * Starts the timeout countdown to reset the input sequence after inactivity.
      */
     private void startTimeoutTimer() {
-        timeoutTimer = new BukkitRunnable() {
+        timeoutTimer =
+
+            new BukkitRunnable() {
             @Override
             public void run() {
                 reset();

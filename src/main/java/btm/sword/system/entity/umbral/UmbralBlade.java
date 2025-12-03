@@ -35,6 +35,7 @@ import btm.sword.system.attack.UmbralBladeAttack;
 import btm.sword.system.attack.style.AttackType;
 import btm.sword.system.attack.style.WeaponAttackStyle;
 import btm.sword.system.control.SwordScheduler;
+import btm.sword.system.control.TimeArbiter;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.types.Combatant;
 import btm.sword.system.entity.types.SwordPlayer;
@@ -396,10 +397,11 @@ public class UmbralBlade extends ThrownItem {
                 hitEntity.isInvalid() ||
                 isRequestedAndActive(BladeRequest.RECALL),
             blade -> {
-                DisplayUtil.smoothTeleport(blade.getDisplay(), 10);
-                blade.getDisplay().teleport(
-                    blade.getDisplay().getLocation().subtract(
-                        blade.getDisplay().getLocation().getDirection().multiply(6)));
+                Location bladeLoc = blade.getDisplay().getLocation();
+                TimeArbiter.teleportDisplay(blade.getDisplay(),
+                    bladeLoc.clone().subtract(
+                    bladeLoc.getDirection().multiply(6)),
+                    null, 10);
 
                 if (hitEntity != null) {
                     hitEntity.setVelocity(blade.getDisplay().getLocation().getDirection().multiply(-0.75));
@@ -558,13 +560,13 @@ public class UmbralBlade extends ThrownItem {
         }
     }
 
-    public BukkitTask hoverBehindWielder() {
+    public TimeArbiter.TaskHandle hoverBehindWielder() {
         // Play unsheathing animation
 
         // follows player shoulder position smoothly
         return DisplayUtil.itemDisplayFollowLerp(thrower, display,
             new Vector(0.7, 0.7, -0.5),
-            5, 3, false);
+            5, 150, false);
     }
 
     public void registerAsInteractableItem() {
@@ -582,8 +584,11 @@ public class UmbralBlade extends ThrownItem {
             SwordScheduler.runBukkitTaskLater(new BukkitRunnable() {
                 @Override
                 public void run() {
-                    DisplayUtil.smoothTeleport(display, 2);
-                    display.teleport(thrower.self().getLocation().setDirection(thrower.getFlatDir()));
+                    TimeArbiter.teleportDisplay(
+                        display,
+                        thrower.self().getLocation(), thrower.getFlatDir(),
+                        2
+                    );
                     thrower.self().addPassenger(display);
                 }
             }, 50/x, TimeUnit.MILLISECONDS);
@@ -619,10 +624,10 @@ public class UmbralBlade extends ThrownItem {
 
     // TODO: #121 - Make item Display changes look less jerky
 
-    public BukkitTask returnToWielderAndRequestState(BladeRequest request) {
+    public TimeArbiter.TaskHandle returnToWielderAndRequestState(BladeRequest request) {
         return DisplayUtil.displaySlerpToOffset(thrower, display,
             thrower.getChestVector(),
-            1.75, 5, 2, 1.5,
+            1.5, 5, 100, 1.5,
             false,
             500, // give it 10 seconds to get back
             new BukkitRunnable() {
@@ -980,7 +985,7 @@ public class UmbralBlade extends ThrownItem {
 
     @Override
     protected void teleport() {
-        display.teleport(cur.setDirection(to));
+        TimeArbiter.teleportDisplay(display, cur, to, 2);
     }
 
     @Override

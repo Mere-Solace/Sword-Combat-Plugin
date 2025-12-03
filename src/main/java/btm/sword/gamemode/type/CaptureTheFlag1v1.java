@@ -27,8 +27,7 @@ public class CaptureTheFlag1v1 extends Gamemode {
         p1.teleport(p1.getWorld().getSpawnLocation().add(10, 0, 0));
         p2.teleport(p2.getWorld().getSpawnLocation().add(-10, 0, 0));
 
-//        p1.sendMessage(ChatColor.GREEN + "CTF Match Started!");
-//        p2.sendMessage(ChatColor.GREEN + "CTF Match Started!");
+//        sp1.displayTitle();
     }
 
     @Override
@@ -44,8 +43,7 @@ public class CaptureTheFlag1v1 extends Gamemode {
         else if (p2Score > p1Score) result = p2.getName() + " wins!";
         else result = "Tie!";
 
-//        p1.sendMessage(ChatColor.GOLD + "Match Over: " + result);
-//        p2.sendMessage(ChatColor.GOLD + "Match Over: " + result);
+//        sp1.displayTitle();
     }
 
     @Override
@@ -62,6 +60,6 @@ public class CaptureTheFlag1v1 extends Gamemode {
         if (p.equals(players.getFirst())) p1Score++;
         else p2Score++;
 
-//        p.sendMessage(ChatColor.AQUA + "Flag Captured!");
+//        sp1.displayTitle();
     }
 }

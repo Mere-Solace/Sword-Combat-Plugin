@@ -1,28 +1,21 @@
 package btm.sword.system.entity.umbral.statemachine.state;
 
-import org.bukkit.Bukkit;
-import org.bukkit.scheduler.BukkitRunnable;
-import org.bukkit.scheduler.BukkitTask;
-
-import btm.sword.Sword;
+import btm.sword.system.control.TimeArbiter;
 import btm.sword.system.entity.umbral.UmbralBlade;
 import btm.sword.system.entity.umbral.statemachine.UmbralStateFacade;
 
 public class RecoverState extends UmbralStateFacade {
     private UmbralBlade blade;
-    private final Runnable recoverBlade = new BukkitRunnable() {
-        @Override
-        public void run() {
-            try {
-                if (blade.getDisplay() != null) blade.getDisplay().remove();
-                blade.setDisplay(null);
-                blade.resetWeaponDisplay();
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
+    private final Runnable recoverBlade = () -> {
+        try {
+            if (blade.getDisplay() != null) blade.getDisplay().remove();
+            blade.setDisplay(null);
+            blade.resetWeaponDisplay();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     };
-    private BukkitTask recoverTask;
+    private TimeArbiter.TaskHandle recoverTask;
 
     @Override
     public String name() {
@@ -32,13 +25,13 @@ public class RecoverState extends UmbralStateFacade {
     @Override
     public void onEnter(UmbralBlade blade) {
         this.blade = blade;
-        recoverTask = Bukkit.getScheduler().runTaskTimer(
-            Sword.getInstance(), recoverBlade, 0, 4L);
+        recoverTask = TimeArbiter.runTimeIndependentBukkitTaskOnTimer(
+            recoverBlade, null, 0, 4);
     }
 
     @Override
     public void onExit(UmbralBlade blade) {
-        if (recoverTask.getTaskId() != -1 && recoverTask != null && !recoverTask.isCancelled()) recoverTask.cancel();
+        if (recoverTask != null && !recoverTask.isCancelled()) recoverTask.cancel();
     }
 
     @Override

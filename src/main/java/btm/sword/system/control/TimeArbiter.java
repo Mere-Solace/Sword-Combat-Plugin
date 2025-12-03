@@ -11,7 +11,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import javax.annotation.Nullable;
+
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
+import org.bukkit.entity.Display;
 import org.bukkit.entity.Entity;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
@@ -20,32 +24,51 @@ import org.bukkit.util.Vector;
 import btm.sword.Sword;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.base.SwordEntity;
+import btm.sword.utility.display.DisplayUtil;
 import lombok.Getter;
 
 // these methods provide a central location that every movement/speed call must go through
 public class TimeArbiter {
     @Getter
     private static volatile double GLOBAL_TIME_SCALE = 1.0;
+    private static volatile double GLOBAL_TELEPORT_DURATION_SCALING = 1.0;
     public static boolean updatingTimeScale = false;
 
+
+    private static final Map<Integer, TaskHandle> timeBoundTasks = new ConcurrentHashMap<>();
+    private static final Supplier<Boolean> pauseAll = () -> false; // TODO: determine from where this should come
+
+    private static final Map<Integer, TaskHandle> timeIndependentTasks = new ConcurrentHashMap<>();
+
+    private static final AtomicInteger taskCounter = new AtomicInteger();
+
+
     public static boolean setGlobalTimeScale(double timeScale) {
+
+        // When timescale is set, need to update all displays and places where displays are located
+        // So that this method can set their smooth teleport duration.
+
+        // TODO: change speed for newly spawned and registered entities (not this class but needed to get it down)
+
         if (updatingTimeScale) return false;
 
         updatingTimeScale = true;
         try {
             GLOBAL_TIME_SCALE = Math.max(0.0, Math.min(2.0, timeScale));
+            GLOBAL_TELEPORT_DURATION_SCALING = Math.max(1.0, 1 / GLOBAL_TIME_SCALE);
 
             // Collect all tasks to restart
-            List<TaskHandle> tasksToRestart = new ArrayList<>(tasks.values());
+            List<TaskHandle> tasksToRestart = new ArrayList<>(timeBoundTasks.values());
 
             // Cancel all existing tasks
             tasksToRestart.forEach(TaskHandle::cancel);
+            // Can't do both at the same time because cancel alters the hashmap.
 
             // Recreate all tasks with new period
             for (TaskHandle oldTask : tasksToRestart) {
                 int newPeriodMs = (int) (oldTask.getOriginalPeriodMs() / GLOBAL_TIME_SCALE);
                 TaskHandle newTask = oldTask.recreateWithPeriod(newPeriodMs);
-                tasks.put(newTask.getTaskID(), newTask);  // Assuming TaskHandle has getId()
+                timeBoundTasks.put(newTask.getTaskID(), newTask);  // Assuming TaskHandle has getId()
             }
 
             SwordEntityArbiter.applyToAllRegisteredEntities(applicationOfTimeEffects(timeScale));
@@ -93,15 +116,11 @@ public class TimeArbiter {
         return application;
     }
 
-
-    private static final Map<Integer, TaskHandle> tasks = new ConcurrentHashMap<>();
-    private static final AtomicInteger taskCounter = new AtomicInteger();
-
-    private static final Supplier<Boolean> pauseAll = () -> false; // TODO: determine from where this should come
-
     public static class TaskHandle {
         @Getter
         private final int taskID;
+        private final boolean timeBound;
+
         private ScheduledFuture<?> future;
         @Getter
         private volatile boolean paused = false;
@@ -115,10 +134,11 @@ public class TimeArbiter {
         @Getter
         private final int originalPeriodMs;
 
-        private TaskHandle(int taskID, ScheduledFuture<?> future,
+        private TaskHandle(int taskID, boolean timeBound, ScheduledFuture<?> future,
                            Runnable precheck, Runnable postcheck, Runnable paused,
                            PredicateRunnablePair[] callbacks, int delay, int period) {
             this.taskID = taskID;
+            this.timeBound = timeBound;
             this.future = future;
             this.precheckRunnable = precheck;
             this.postcheckRunnable = postcheck;
@@ -150,7 +170,7 @@ public class TimeArbiter {
             if (!cancelled.get()) {
                 cancel();  // Stop old task
             }
-            return TimeArbiter.createTask(precheckRunnable, postcheckRunnable, pausedRunnable,
+            return TimeArbiter.createTask(timeBound, precheckRunnable, postcheckRunnable, pausedRunnable,
                 conditionalCallbacks, originalDelayMs, newPeriodMs);
         }
     }
@@ -158,17 +178,18 @@ public class TimeArbiter {
     /**
      * Internal method to create tasks (used by constructor and recreation)
      */
-    private static TaskHandle createTask(Runnable precheck, Runnable postcheck,
+    private static TaskHandle createTask(boolean timeBound,
+                                         Runnable precheck, Runnable postcheck,
                                          Runnable paused, PredicateRunnablePair[] callbacks,
                                          int delayMs, int periodMs) {
         int taskID = taskCounter.incrementAndGet();
-        TaskHandle handle = new TaskHandle(taskID,
+        TaskHandle handle = new TaskHandle(taskID, timeBound,
             null, precheck, postcheck, paused, callbacks, delayMs, periodMs);
 
         handle.future = Sword.getScheduler().scheduleAtFixedRate(() ->
             Bukkit.getScheduler().runTask(Sword.getInstance(), () -> {
                 if (handle.cancelled.get()) return;
-                if (pauseAll.get() || handle.paused) {
+                if (timeBound && (pauseAll.get() || handle.paused)) {
                     if (handle.pausedRunnable != null) handle.pausedRunnable.run();
                     return;
                 }
@@ -189,36 +210,62 @@ public class TimeArbiter {
             (int) (Math.max(1, periodMs / GLOBAL_TIME_SCALE)),
             TimeUnit.MILLISECONDS);
 
-        tasks.put(taskID, handle);
+        if (timeBound) {
+            timeBoundTasks.put(taskID, handle);
+        } else {
+            timeIndependentTasks.put(taskID, handle);
+        }
         return handle;
     }
 
     /**
      * Public factory method
      */
-    public static TaskHandle runTimeAffectedTaskOnTimer(Runnable precheckRunnable,
-                                                        Runnable postcheckRunnable,
-                                                        Runnable pausedRunnable,
-                                                        int periodMs,
-                                                        PredicateRunnablePair... conditionalCallbacks) {
-        return createTask(precheckRunnable, postcheckRunnable, pausedRunnable,
-            conditionalCallbacks, 0, periodMs);
+    public static TaskHandle runTimeBoundBukkitTaskOnTimer(Runnable precheckRunnable,
+                                                           Runnable postcheckRunnable,
+                                                           Runnable pausedRunnable,
+                                                           int delayMs,
+                                                           int periodMs,
+                                                           PredicateRunnablePair... conditionalCallbacks) {
+        return createTask(true, precheckRunnable, postcheckRunnable, pausedRunnable,
+            conditionalCallbacks, delayMs, periodMs);
+    }
+
+    public static TaskHandle runTimeIndependentBukkitTaskOnTimer(@Nullable Runnable precheckRunnable,
+                                                                 Runnable postcheckRunnable,
+                                                                 int delayMs,
+                                                                 int periodMs,
+                                                                 PredicateRunnablePair... conditionalCallbacks) {
+        return createTask(false, precheckRunnable, postcheckRunnable, null,
+            conditionalCallbacks, delayMs, periodMs);
     }
 
     private static void cleanupTask(int taskId) {
-        tasks.remove(taskId);
+        timeBoundTasks.remove(taskId);
     }
 
     /**
      * Cancel all tasks (shutdown hook)
      */
     public static void shutdown() {
-        tasks.values().forEach(TaskHandle::cancel);
-        tasks.clear();
+        timeBoundTasks.values().forEach(TaskHandle::cancel);
+        timeBoundTasks.clear();
     }
 
     public static void setVelocity(Entity entity, Vector velocity) {
         entity.setVelocity(velocity.clone());
         // TODO: find a way to lessen velocity while still getting the entity to the same spot if time is slowed down/sped up
+    }
+
+    public static void teleportDisplay(Display display, Location destination, @Nullable Vector direction, int teleportDuration) {
+        DisplayUtil.setSmoothTeleportDuration(display,
+            teleportDuration == 0 ? 0 : Math.max(1, (int) (teleportDuration * GLOBAL_TELEPORT_DURATION_SCALING))
+        );
+        if (direction == null) {
+            EntityController.teleport(display, destination);
+        } else {
+            destination.setDirection(direction); // doing in two lines just in case, I don't believe it affects it though.
+            EntityController.teleport(display, destination);
+        }
     }
 }

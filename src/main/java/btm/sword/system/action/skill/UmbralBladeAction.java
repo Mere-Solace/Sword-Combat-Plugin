@@ -100,6 +100,8 @@ public class UmbralBladeAction extends SwordAction {
     }
 
     private static void performBlink(Combatant wielder, SwordEntity target) {
+        Prefab.Sounds.SHADOW_BLINK.playForAllInRadius(wielder.self());
+
         Vector to = target.getChestLocation().toVector().subtract(wielder.getChestLocation().toVector());
 
         // Second call is correct, want more dense particles
@@ -122,6 +124,7 @@ public class UmbralBladeAction extends SwordAction {
             .add(n.clone().multiply(target.getBodyLength() * 0.25))
             .setDirection(facing));
         SwordScheduler.runBukkitTaskLater(() -> {
+            Prefab.Sounds.SHADOW_BLINK.playForAllInRadius(target.self());
             Prefab.Particles.SOULFIRE_POOF.display(wielder.getLocation());
             Prefab.Particles.UMBRAL_FLAME.display(wielder.getLocation());
 

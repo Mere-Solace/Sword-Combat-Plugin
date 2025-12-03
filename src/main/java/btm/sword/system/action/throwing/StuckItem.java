@@ -20,6 +20,7 @@ import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 import btm.sword.Sword;
+import btm.sword.system.control.TimeArbiter;
 import btm.sword.utility.Prefab;
 import btm.sword.utility.display.ParticleWrapper;
 
@@ -57,18 +58,17 @@ public class StuckItem implements InteractiveItem {
         startPhysics();
     }
 
-    private ItemDisplay spawnDisplay(Location loc, ItemStack item) {
-        ItemDisplay d = (ItemDisplay) world.spawnEntity(loc, EntityType.ITEM_DISPLAY);
-        d.setItemStack(item);
-        d.setBillboard(Display.Billboard.FIXED);
-        d.setPersistent(true);
-        d.setInterpolationDuration(1);
-        d.setTeleportDuration(1);
-        d.setGravity(false);
-        d.setBrightness(new Display.Brightness(15, 15));
-        d.setRotation(0f, 0f);
+    private ItemDisplay spawnDisplay(Location origin, ItemStack item) {
+        ItemDisplay display = (ItemDisplay) world.spawnEntity(origin, EntityType.ITEM_DISPLAY);
+        display.setItemStack(item);
+        display.setBillboard(Display.Billboard.FIXED);
+        display.setPersistent(true);
+        display.setInterpolationDuration(1);
+//        display.setTeleportDuration(2);
+        display.setGravity(false);
+        display.setRotation(0f, 0f);
 
-        return d;
+        return display;
     }
 
     public void register() {
@@ -135,7 +135,7 @@ public class StuckItem implements InteractiveItem {
         applyGravityAndDrag();
         moveAndCheckCollision();
 
-        display.teleport(pos.setDirection(to));
+        TimeArbiter.teleportDisplay(display, pos, to, 2);
     }
 
     private void stopPhysics() {
