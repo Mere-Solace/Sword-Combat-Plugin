@@ -97,8 +97,8 @@ public class SoulfireManager {
                     .display(currentLoc[0]);
                 Prefab.Particles.UMBRAL_FLAME.display(currentLoc[0]);
             },
-            0,
-            period,
+            0, period,
+            SoulfireManager.class, "spawnSoulfirePacket",
             new PredicateRunnablePair(
                 receiver::isDead,
                 () -> Prefab.Particles.SMOKE.display(currentLoc[0])),

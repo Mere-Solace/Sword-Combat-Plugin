@@ -26,7 +26,10 @@ public class RecoverState extends UmbralStateFacade {
     public void onEnter(UmbralBlade blade) {
         this.blade = blade;
         recoverTask = TimeArbiter.runTimeIndependentBukkitTaskOnTimer(
-            recoverBlade, null, 0, 4);
+            recoverBlade, null,
+            0, 4,
+            RecoverState.class, "onEnter"
+        );
     }
 
     @Override

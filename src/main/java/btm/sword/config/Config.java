@@ -873,7 +873,7 @@ public class Config {
                 ConfigurationSection::getInt
         ); }
 
-        public static int IMPALEMENT_PIN_CHECK_INTERVAL = 2;
+        public static int IMPALEMENT_PIN_CHECK_INTERVAL = 100;
         static { register(
                 "combat.impalement_pin_check_interval",
                 IMPALEMENT_PIN_CHECK_INTERVAL, Integer.class,
@@ -1003,7 +1003,7 @@ public class Config {
             ConfigurationSection::getInt
         ); }
 
-        public static int THROWN_ITEMS_DISPOSAL_TIMEOUT = 2000;
+        public static int THROWN_ITEMS_DISPOSAL_TIMEOUT = 30000; // 30 seconds
         static { register(
             "timing.thrown_items_disposal_timeout",
             THROWN_ITEMS_DISPOSAL_TIMEOUT, Integer.class,
@@ -1011,7 +1011,7 @@ public class Config {
             ConfigurationSection::getInt
         ); }
 
-        public static int THROWN_ITEMS_DISPOSAL_CHECK_INTERVAL = 10;
+        public static int THROWN_ITEMS_DISPOSAL_CHECK_INTERVAL = 500;
         static { register(
             "timing.thrown_items_disposal_check_interval",
             THROWN_ITEMS_DISPOSAL_CHECK_INTERVAL, Integer.class,

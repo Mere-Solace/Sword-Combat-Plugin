@@ -4,6 +4,7 @@ import btm.sword.system.action.throwing.InteractiveItemArbiter;
 import btm.sword.system.entity.umbral.UmbralBlade;
 import btm.sword.system.entity.umbral.statemachine.UmbralStateFacade;
 
+
 public class SheathedState extends UmbralStateFacade {
     @Override
     public String name() { return "SHEATHED"; }
@@ -20,7 +21,6 @@ public class SheathedState extends UmbralStateFacade {
     @Override
     public void onExit(UmbralBlade blade) {
         InteractiveItemArbiter.put(blade);
-
     }
 
     @Override

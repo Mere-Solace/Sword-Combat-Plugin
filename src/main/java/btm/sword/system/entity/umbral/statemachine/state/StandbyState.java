@@ -36,7 +36,7 @@ public class StandbyState extends UmbralStateFacade {
 
         blade.getDisplay().setGlowing(false);
         blade.endIdleMovement();
-        if (followTask != null && !followTask.isCancelled())
+        if (followTask != null)
             followTask.cancel();
     }
 

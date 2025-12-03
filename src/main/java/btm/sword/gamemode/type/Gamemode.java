@@ -63,6 +63,7 @@ public abstract class Gamemode {
             () -> {},
             0,
             20,
+            Gamemode.class, "startTimer",
             new PredicateRunnablePair(
                 () -> durationSeconds.get() <= 0,
                 this::stop

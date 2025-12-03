@@ -86,8 +86,10 @@ public class InteractiveItemArbiter {
         if (interactiveItem == null) return;
         if (interactiveItem instanceof ThrownItem thrownItem) {
             thrownItem.setRetrieved(true);
-            if (thrownItem.getHitEntity() instanceof SwordEntity swordEntity && swordEntity.self().isValid())
-                swordEntity.removePinningImpalement();
+//            if (thrownItem.getHitEntity() instanceof SwordEntity swordEntity && swordEntity.self().isValid()) {
+//                Impalement impalement = thrownItem.getThisImpalement();
+//                swordEntity.removeImpalement(impalement);
+//            }
         }
 
         ItemStack item = display.getItemStack();

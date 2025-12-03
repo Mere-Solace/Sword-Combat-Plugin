@@ -101,10 +101,10 @@ public class Dummy extends Passive {
                 aspects.shards().setCur(aspects.shards().effectiveMaxValue());
                 return;
             }
-            shardsLost += baseNumShards;
+            shardsLostDuringToughnessBreak += baseNumShards;
 
 
-            if (shardsLost >= Config.Combat.SHARDS_LOST_PERCENT_TOUGHNESS_RESET * aspects.shards().effectiveMaxValue()) {
+            if (shardsLostDuringToughnessBreak >= Config.Combat.SHARDS_LOST_PERCENT_TOUGHNESS_RESET * aspects.shards().effectiveMaxValue()) {
                 aspects.toughness().setCurPercent(Config.Combat.TOUGHNESS_RECHARGE_PERCENT);
             }
         }

@@ -1,8 +1,9 @@
 package btm.sword.system.entity.base;
 
 import java.util.HashMap;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -32,6 +33,7 @@ import com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent;
 
 import btm.sword.Sword;
 import btm.sword.config.Config;
+import btm.sword.system.action.throwing.impale.Impalement;
 import btm.sword.system.attack.HitPacket;
 import btm.sword.system.combat.Affliction;
 import btm.sword.system.control.EntityController;
@@ -40,9 +42,9 @@ import btm.sword.system.control.TimeArbiter;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.types.Combatant;
+import btm.sword.utility.Debug;
 import btm.sword.utility.Prefab;
 import btm.sword.utility.SwordTimeUnit;
-import btm.sword.utility.display.DrawUtil;
 import btm.sword.utility.entity.EntityUtil;
 import btm.sword.utility.entity.HitboxUtil;
 import btm.sword.utility.math.Basis;
@@ -98,16 +100,15 @@ public abstract class SwordEntity {
     private long hitInvulnerableTickDuration;
 
     private boolean grabbed;
-    private int numberOfImpalements;
-    private int numberOfPinningImpalements;
     private boolean aiEnabled;
 
     protected boolean shielding;
 
-    protected final HashMap<Class<? extends Affliction>, Affliction> afflictions;
+    protected final HashMap<Class<? extends Affliction>, Affliction> afflictions = new HashMap<>();
+    protected final Set<Impalement> impalements = new HashSet<>();
 
     protected boolean toughnessBroken;
-    protected int shardsLost;
+    protected int shardsLostDuringToughnessBreak;
 
     protected final double eyeHeight;
     protected final Vector chestVector;
@@ -150,8 +151,6 @@ public abstract class SwordEntity {
         hit = false;
 
         shielding = false;
-
-        afflictions = new HashMap<>();
 
         eyeHeight = self.getEyeHeight(true);
         chestVector = new Vector(0, eyeHeight * 0.45, 0);
@@ -200,17 +199,17 @@ public abstract class SwordEntity {
                 curTicksInvulnerable = 0;
             }
         }
-        if (!(self instanceof Player)) {
-            self.setAI(!isPinned());
-        }
-        else {
-            if (ticks % 3 == 0) {
-                grounded = EntityUtil.isOnGround(self);
-                if (grounded && this instanceof Combatant c) {
-                    c.resetAirDashesPerformed();
-                }
+//        if (!(self instanceof Player)) {
+////            self.setAI(!isPinned()); // TODO: #160 remake later
+//        }
+
+        if (ticks % 3 == 0) {
+            grounded = EntityUtil.isOnGround(self);
+            if (grounded && this instanceof Combatant c) {
+                c.resetAirDashesPerformed();
             }
         }
+
 
         if (isImpaled()) {
             self.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 1, 1));
@@ -419,15 +418,16 @@ public abstract class SwordEntity {
     /**
      * Increments the count of impalements on this entity.
      */
-    public void addImpalement() {
-        numberOfImpalements++;
+    public void addImpalement(Impalement impalement) {
+        Debug.debug(SwordEntity.class, 425, "addingImpalement");
+        impalements.add(impalement);
     }
 
     /**
      * Decrements the count of impalements on this entity.
      */
-    public void removeImpalement() {
-        numberOfImpalements--;
+    public void removeImpalement(Impalement impalement) {
+        impalements.remove(impalement);
     }
 
     /**
@@ -436,19 +436,7 @@ public abstract class SwordEntity {
      * @return true if impaled, false otherwise
      */
     public boolean isImpaled() {
-        return numberOfImpalements > 0;
-    }
-
-    public void addPinningImpalement() {
-        numberOfPinningImpalements++;
-    }
-
-    public void removePinningImpalement() {
-        numberOfPinningImpalements--;
-    }
-
-    public boolean isPinned() {
-        return numberOfPinningImpalements > 0;
+        return !impalements.isEmpty();
     }
 
     /**
@@ -526,10 +514,10 @@ public abstract class SwordEntity {
                     (int) SwordTimeUnit.MILLISECONDS_PER_TICK * 2, TimeUnit.MILLISECONDS);
                 return;
             }
-            shardsLost += baseNumShards;
+            shardsLostDuringToughnessBreak += baseNumShards;
 
 
-            if (shardsLost >= Config.Combat.SHARDS_LOST_PERCENT_TOUGHNESS_RESET * aspects.shards().effectiveMaxValue()) {
+            if (shardsLostDuringToughnessBreak >= Config.Combat.SHARDS_LOST_PERCENT_TOUGHNESS_RESET * aspects.shards().effectiveMaxValue()) {
                 aspects.toughness().setCurPercent(Config.Combat.TOUGHNESS_RECHARGE_PERCENT);
             }
         }
@@ -853,17 +841,5 @@ public abstract class SwordEntity {
 
     public void teleport(Location location) {
         EntityController.teleport(self, location);
-    }
-
-
-    // Debug:
-    public void drawBasis() {
-        Basis testBasis = VectorUtil.getBasisWithoutPitch(self());
-        DrawUtil.line(List.of(Prefab.Particles.TEST_SWORD_BLUE),
-            eyeLoc(), testBasis.right(), 4, 0.25);
-        DrawUtil.line(List.of(Prefab.Particles.TEST_SWORD_BLUE),
-            eyeLoc(), testBasis.up(), 4, 0.25);
-        DrawUtil.line(List.of(Prefab.Particles.TEST_SWORD_BLUE),
-            eyeLoc(), testBasis.forward(), 4, 0.25);
     }
 }

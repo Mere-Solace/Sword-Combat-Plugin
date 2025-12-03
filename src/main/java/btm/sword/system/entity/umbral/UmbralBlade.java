@@ -17,7 +17,6 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.scheduler.BukkitRunnable;
-import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Transformation;
 import org.bukkit.util.Vector;
@@ -94,9 +93,9 @@ public class UmbralBlade extends ThrownItem {
 
     private Vector3f scale = new Vector3f(0.85f, 1.3f, 1f);
 
-    private static final int idleMovementPeriod = 3;
+    private static final int idleMovementPeriod = 150;
     private static final float idleMovementAmplitude = 0.25f;
-    private BukkitTask idleMovement;
+    private TimeArbiter.TaskHandle idleMovementTask;
 
     private final Predicate<UmbralBlade> endHoverPredicate;
     private final Runnable attackEndCallback;
@@ -138,6 +137,8 @@ public class UmbralBlade extends ThrownItem {
 
         this.bladeStateMachine = new UmbralStateMachine(this, new SheathedState());
         initStateMachine();
+
+        exitImpalementStatePredicate = blade -> !inState(LodgedState.class);
 
         endHoverPredicate = blade -> !bladeStateMachine.inState(new StandbyState());
     }
@@ -561,6 +562,7 @@ public class UmbralBlade extends ThrownItem {
     }
 
     public TimeArbiter.TaskHandle hoverBehindWielder() {
+        if (!inState(StandbyState.class)) return null;
         // Play unsheathing animation
 
         // follows player shoulder position smoothly
@@ -596,29 +598,34 @@ public class UmbralBlade extends ThrownItem {
     }
 
     public void startIdleMovement() {
-        idleMovement = new BukkitRunnable() {
-            double step = 0;
-            @Override
-            public void run() {
-                DisplayUtil.setInterpolationValues(display, 0, idleMovementPeriod);
-                display.setTransformation(
+        if (idleMovementTask != null) {
+            idleMovementTask.cancel();
+        }
+        final double[] step = {0};
+        idleMovementTask = TimeArbiter.runTimeBoundBukkitTaskOnTimer(
+            () -> {
+                TimeArbiter.setDisplayTransformation(display,
                     new Transformation(
-                        new Vector3f(0, (float) Math.cos(step) * idleMovementAmplitude, 0),
+                        new Vector3f(0, (float) Math.cos(step[0]) * idleMovementAmplitude, 0),
                         display.getTransformation().getLeftRotation(),
                         scale,
                         new Quaternionf()
-                    )
+                    ),
+                    idleMovementPeriod
                 );
 
-                step += Math.PI/8;
-            }
-        }.runTaskTimer(Sword.getInstance(), 0L, idleMovementPeriod);
+                step[0] += Math.PI/8;
+            },
+            null,
+            null,
+            0, idleMovementPeriod,
+            UmbralBlade.class, "startIdleMovement"
+        );
     }
 
     public void endIdleMovement() {
-        if (idleMovement != null && !idleMovement.isCancelled()) {
-            idleMovement.cancel();
-            idleMovement = null;
+        if (idleMovementTask != null) {
+            idleMovementTask.cancel();
         }
     }
 
@@ -630,12 +637,8 @@ public class UmbralBlade extends ThrownItem {
             1.5, 5, 100, 1.5,
             false,
             500, // give it 10 seconds to get back
-            new BukkitRunnable() {
-                @Override
-                public void run() {
-                    request(request);
-                }
-            });
+            () -> request(request)
+        );
     }
 
     @Override
@@ -968,22 +971,6 @@ public class UmbralBlade extends ThrownItem {
     }
 
     @Override
-    public void impale(LivingEntity hit) {
-        hitEntity.addImpalement();
-
-        double max = hit.getEyeLocation().getY();
-        double feet = hit.getLocation().getY();
-        double diff = max - feet;
-
-        double heightOffset = Math.max(0, Math.min(cur.getY() - feet, hit.getHeight()));
-
-        boolean followHead = !Config.Combat.IMPALEMENT_HEAD_FOLLOW_EXCEPTIONS.contains(hitEntity.type())
-            && heightOffset >= diff * Config.Combat.IMPALEMENT_HEAD_ZONE_RATIO;
-        DisplayUtil.itemDisplayFollow(hitEntity, display,  velocity.clone().normalize(), heightOffset, followHead,
-            blade -> !inState(LodgedState.class), this, null, null);
-    }
-
-    @Override
     protected void teleport() {
         TimeArbiter.teleportDisplay(display, cur, to, 2);
     }
@@ -1015,7 +1002,7 @@ public class UmbralBlade extends ThrownItem {
     }
 
     @Override
-    public void disposeNaturally() {
+    public void disposeWithNewInteractiveItem() {
         request(BladeRequest.RECALL);
     }
 

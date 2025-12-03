@@ -71,7 +71,7 @@ public class ThrowAction extends SwordAction {
             };
         }
 
-        thrownItem = new ThrownItem(executor, setupInstructions, 0);
+        thrownItem = new ThrownItem(executor, setupInstructions, 1);
         executor.setThrownItem(thrownItem);
 
         new BukkitRunnable() {

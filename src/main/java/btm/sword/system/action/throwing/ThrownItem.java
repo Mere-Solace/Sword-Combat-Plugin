@@ -1,6 +1,7 @@
 package btm.sword.system.action.throwing;
 
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -18,7 +19,6 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
-import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Transformation;
 import org.bukkit.util.Vector;
@@ -28,6 +28,7 @@ import org.joml.Vector3f;
 
 import btm.sword.Sword;
 import btm.sword.config.Config;
+import btm.sword.system.action.throwing.impale.Impalement;
 import btm.sword.system.control.PredicateRunnablePair;
 import btm.sword.system.control.SwordScheduler;
 import btm.sword.system.control.TimeArbiter;
@@ -60,6 +61,8 @@ public class ThrownItem implements InteractiveItem {
     protected ItemDisplay display;
     protected Consumer<ItemDisplay> displaySetupInstructions;
 
+    protected Impalement thisImpalement;
+
     protected float xDisplayOffset;
     protected float yDisplayOffset;
     protected float zDisplayOffset;
@@ -72,7 +75,7 @@ public class ThrownItem implements InteractiveItem {
 
     protected double timeScalingFactor = -1;
     protected double timeCutoff = -1;
-    protected int timeStep = 0;
+    protected AtomicInteger timeStep = new AtomicInteger(0);
 
     protected Basis currentBasis;
 
@@ -94,7 +97,9 @@ public class ThrownItem implements InteractiveItem {
 
     protected boolean inFlight;
 
-    protected BukkitTask disposeTask;
+    protected Predicate<ThrownItem> exitImpalementStatePredicate;
+
+    protected TimeArbiter.TaskHandle disposeTask;
 
     protected boolean setupSuccessful;
 
@@ -123,8 +128,8 @@ public class ThrownItem implements InteractiveItem {
                     e.addSuppressed(e);
                 }
             },
-            0,
-            period,
+            0, period,
+            ThrowAction.class, "setup",
             new PredicateRunnablePair(
                 () -> setupSuccessful,
                 this::afterSpawn
@@ -229,12 +234,10 @@ public class ThrownItem implements InteractiveItem {
     public void onRelease(double initialVelocity) {
         if (thrower instanceof SwordPlayer sp) {
             sp.setThrewItem(true);
-            new BukkitRunnable() {
-                @Override
-                public void run() {
-                    sp.setThrewItem(false);
-                }
-            }.runTaskLater(Sword.getInstance(), 2);
+            SwordScheduler.runBukkitTaskLater(() -> {
+                sp.setThrewItem(false);
+                }, 100, TimeUnit.MILLISECONDS
+            );
         }
 
         generateFunctions(initialVelocity);
@@ -244,23 +247,9 @@ public class ThrownItem implements InteractiveItem {
         xDisplayOffset = yDisplayOffset = zDisplayOffset = 0;
         determineOrientation();
 
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                if (grounded || hit || caught || display.isDead() || (timeCutoff > 0 && timeStep * timeScalingFactor > timeCutoff)) {
-                    String reason = grounded ? "grounded" :
-                        hit ? "hit" :
-                            caught ? "caught" :
-                                display.isDead() ? "display dead" :
-                                    (timeCutoff > 0 && timeStep * timeScalingFactor > timeCutoff) ? "time cutoff" :
-                                        "unknown";
-                    thrower.message("Ending due to: " + reason);
-
-                    onEnd();
-                    cancel();
-                    return;
-                }
-
+        TimeArbiter.runTimeBoundBukkitTaskOnTimer(
+            null,
+            () -> {
                 applyFunctions();
 
                 if (!prev.equals(cur) && cur.clone().subtract(prev).toVector().dot(velocity) > 0) {
@@ -271,14 +260,33 @@ public class ThrownItem implements InteractiveItem {
                 rotate();
 
                 Prefab.Particles.THROW_TRAIl.display(cur); // TODO: #119 - Make type of particles dynamic
-                if (blockTrail != null && timeStep % 3 == 0) // TODO: #119 - Make period dynamic
+                if (blockTrail != null && timeStep.get() % 3 == 0) // TODO: #119 - Make period dynamic
                     blockTrail.display(cur);
 
                 evaluate();
                 prev = cur.clone();
-                timeStep++; // Step time value forward for next iteration
-            }
-        }.runTaskTimer(Sword.getInstance(), 0L, 1L);
+
+                timeStep.incrementAndGet();
+            },
+            null,
+            0, 50,
+            ThrownItem.class, "onRelease",
+            new PredicateRunnablePair(
+                () -> grounded || hit || caught || display.isDead() ||
+                    (timeCutoff > 0 && timeStep.get() * timeScalingFactor > timeCutoff),
+                () -> {
+                    String reason = grounded ? "grounded" :
+                        hit ? "hit" :
+                            caught ? "caught" :
+                                display.isDead() ? "display dead" :
+                                    (timeCutoff > 0 && timeStep.get() * timeScalingFactor > timeCutoff) ? "time cutoff" :
+                                        "unknown";
+                    thrower.message("Ending due to: " + reason);
+
+                    onEnd();
+                }
+            )
+        );
     }
 
     protected void teleport() {
@@ -294,10 +302,10 @@ public class ThrownItem implements InteractiveItem {
     protected void applyFunctions() {
         double time;
         if (timeScalingFactor < 0) {
-            time = timeStep;
+            time = timeStep.get();
         }
         else {
-            time = timeStep * timeScalingFactor;
+            time = timeStep.get() * timeScalingFactor;
         }
         cur = origin.clone().add(positionFunction.apply(time));
         if (prev != null) to = cur.clone().subtract(prev).toVector();
@@ -406,7 +414,7 @@ public class ThrownItem implements InteractiveItem {
         if (caught) onCatch();
         else if (hit) onHit();
         else if (grounded) onGrounded();
-        timeStep = 0;
+        timeStep.set(0);
     }
 
     /**
@@ -433,39 +441,41 @@ public class ThrownItem implements InteractiveItem {
             if (x > 30) break;
         }
 
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                Location land = probe.clone();
-                land.setDirection(to.normalize());
-                TimeArbiter.teleportDisplay(display, land, null, 1);
-            }
-        }.runTaskLater(Sword.getInstance(), 1L);
+        SwordScheduler.runBukkitTaskLater(() -> {
+            Location land = probe.clone();
+            land.setDirection(to.normalize());
+            TimeArbiter.teleportDisplay(display, land, null, 1);
+            },
+            51, TimeUnit.MILLISECONDS
+        );
 
-        startDisposeTask(step);
+        startGroundedDisposeTask(step);
     }
 
-    protected void startDisposeTask(Vector step) {
-        disposeTask = new BukkitRunnable() {
-            int tick = 0;
-            @Override
-            public void run() {
-                if (display.isDead()) {
-                    cancel();
-                }
-
-                if (tick >= Config.Timing.THROWN_ITEMS_DISPOSAL_TIMEOUT) {
-                    if (!display.isDead()) display.remove();
-                    cancel();
-                }
-
+    protected void startGroundedDisposeTask(Vector step) {
+        AtomicInteger iteration = new AtomicInteger(0);
+        disposeTask = TimeArbiter.runTimeBoundBukkitTaskOnTimer(
+            null,
+            () -> {
                 Prefab.Particles.THROWN_ITEM_MARKER.display(cur.clone().add(step));
                 Prefab.Particles.THROWN_ITEM_MARKER.display(cur);
                 Prefab.Particles.THROWN_ITEM_MARKER.display(cur.clone().subtract(step));
 
-                tick += Config.Timing.THROWN_ITEMS_DISPOSAL_CHECK_INTERVAL;
-            }
-        }.runTaskTimer(Sword.getInstance(), 1L, Config.Timing.THROWN_ITEMS_DISPOSAL_CHECK_INTERVAL);
+                iteration.set(iteration.get() + Config.Timing.THROWN_ITEMS_DISPOSAL_CHECK_INTERVAL);
+            },
+            null,
+            1, Config.Timing.THROWN_ITEMS_DISPOSAL_CHECK_INTERVAL,
+            ThrowAction.class, "startGroundedDisposeTask",
+            new PredicateRunnablePair(
+                () -> display.isDead(), null
+            ),
+            new PredicateRunnablePair(
+                () -> iteration.get() > Config.Timing.THROWN_ITEMS_DISPOSAL_TIMEOUT,
+                () -> {
+                    if (!display.isDead()) display.remove();
+                }
+            )
+        );
     }
 
     /**
@@ -481,7 +491,6 @@ public class ThrownItem implements InteractiveItem {
 
         if (name.endsWith("_SWORD") || name.endsWith("AXE")) {
             startImpalementTask(hitEntity);
-            startLifecycleCheckTask(hitEntity);
         }
         else {
             nonImpalingImpact(hitEntity);
@@ -497,7 +506,7 @@ public class ThrownItem implements InteractiveItem {
             Config.World.EXPLOSIONS_SET_FIRE,
             Config.World.EXPLOSIONS_BREAK_BLOCKS);
 
-        disposeNaturally();
+        disposeWithNewInteractiveItem();
     }
 
     private void startImpalementTask(SwordEntity target) {
@@ -507,71 +516,33 @@ public class ThrownItem implements InteractiveItem {
 
         impale(target.self());
         target.hit(thrower, Prefab.Attacks.thrownWeapon, kb);
-
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                RayTraceResult pinnedBlock = target.self().getWorld().rayTraceBlocks(
-                    target.getChestLocation(), velocity.clone().normalize(),
-                    Config.Detection.THROW_PIN_RAY_DISTANCE, FluidCollisionMode.NEVER,
-                    true);
-
-                if (pinnedBlock == null || pinnedBlock.getHitBlock() == null || pinnedBlock.getHitBlock().getType().isAir())
-                    return;
-
-                startPinCheckTask(target);
-            }
-        }.runTaskLater(Sword.getInstance(), Config.Timing.THROWN_ITEMS_PIN_DELAY);
     }
 
-    protected void startPinCheckTask(SwordEntity target) {
-        float yaw = cur.setDirection(velocity.clone().multiply(-1)).getYaw();
-        target.self().setBodyYaw(yaw);
-        target.addPinningImpalement();
+    /**
+     * Impales a {@link LivingEntity} when struck, embedding the item visually and applying follow behavior.
+     *
+     * @param hit The living entity being impaled.
+     */
+    public void impale(LivingEntity hit) {
+        thisImpalement = new Impalement(hitEntity);
+        thisImpalement.startShouldDisposeCheckTask(hitEntity, this);
+        hitEntity.addImpalement(thisImpalement);
 
-        new BukkitRunnable() {
-            int i = 0;
-            @Override
-            public void run() {
-                if (display.isDead() || i > Config.Combat.IMPALEMENT_PIN_MAX_ITERATIONS ||
-                    target.isGrabbed() || isRetrieved()) {
-                    target.removePinningImpalement();
-                    if (!display.isDead()) disposeNaturally();
-                    cancel();
-                }
-                target.self().setBodyYaw(yaw);
-                target.self().setVelocity(new Vector());
+        double max = hit.getEyeLocation().getY();
+        double feet = hit.getLocation().getY();
+        double diff = max - feet;
 
-                i += Config.Combat.IMPALEMENT_PIN_CHECK_INTERVAL;
-            }
-        }.runTaskTimer(Sword.getInstance(), 0L, Config.Combat.IMPALEMENT_PIN_CHECK_INTERVAL);
+        double heightOffset = Math.max(0, Math.min(cur.getY() - feet, hit.getHeight()));
+
+        boolean followHead = !Config.Combat.IMPALEMENT_HEAD_FOLLOW_EXCEPTIONS.contains(hitEntity.type())
+            && heightOffset >= diff * Config.Combat.IMPALEMENT_HEAD_ZONE_RATIO;
+        DisplayUtil.itemDisplayFollow(hitEntity, display,  velocity.clone().normalize(), heightOffset, followHead,
+            exitImpalementStatePredicate, this, null, null);
     }
 
     public void setRetrieved(boolean retrieved) {
         this.retrieved = retrieved;
         SwordScheduler.runBukkitTaskLater(() -> setRetrieved(false), 60, TimeUnit.MILLISECONDS);
-    }
-
-    protected void startLifecycleCheckTask(SwordEntity target) {
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                if (display == null || target == null) {
-                    disposeNaturally();
-                    cancel();
-                    return;
-                }
-
-                if (display.isDead()) {
-                    target.removeImpalement();
-                    cancel();
-                }
-                else if (target.isDead()) {
-                    disposeNaturally();
-                    cancel();
-                }
-            }
-        }.runTaskTimer(Sword.getInstance(), 0L, 1L);
     }
 
     /**
@@ -580,7 +551,6 @@ public class ThrownItem implements InteractiveItem {
      * Returns the item to inventory and disposes of the display.
      */
     protected void onCatch() {
-//        thrower.message("Caught it!");
         thrower.giveItem(display.getItemStack());
         dispose();
     }
@@ -628,7 +598,7 @@ public class ThrownItem implements InteractiveItem {
         Predicate<Entity> effFilter = getFilter();
 
         if (prev == null) {
-            disposeNaturally();
+            disposeWithNewInteractiveItem();
         }
 
         RayTraceResult hitEntity = display.getWorld()
@@ -647,6 +617,7 @@ public class ThrownItem implements InteractiveItem {
         }
         else {
             hit = true;
+            // Assign the hit entity (can only be one), maybe more actually effect though AOE damage from blocks or larger weapons
             this.hitEntity = SwordEntityArbiter.getOrAdd((LivingEntity) hitEntity.getHitEntity());
         }
     }
@@ -657,7 +628,7 @@ public class ThrownItem implements InteractiveItem {
                         (entity instanceof LivingEntity l) &&
                         !l.isDead();
         // Throwing a weapon should not immediately result in catching it, therefore a grace period is in place.
-        return timeStep < Config.Timing.THROWN_ITEMS_CATCH_GRACE_PERIOD ?
+        return timeStep.get() < Config.Timing.THROWN_ITEMS_CATCH_GRACE_PERIOD ?
             entity -> filter.test(entity) && entity.getUniqueId() != thrower.getUniqueId() :
             filter;
     }
@@ -710,32 +681,37 @@ public class ThrownItem implements InteractiveItem {
         }
     }
 
-    /**
-     * Impales a {@link LivingEntity} when struck, embedding the item visually and applying follow behavior.
-     *
-     * @param hit The living entity being impaled.
-     */
-    public void impale(LivingEntity hit) {
-        hitEntity.addImpalement();
-
-        double max = hit.getEyeLocation().getY();
-        double feet = hit.getLocation().getY();
-        double diff = max - feet;
-
-        double heightOffset = Math.max(0, Math.min(cur.getY() - feet, hit.getHeight()));
-
-        boolean followHead = !Config.Combat.IMPALEMENT_HEAD_FOLLOW_EXCEPTIONS.contains(hitEntity.type())
-                && heightOffset >= diff * Config.Combat.IMPALEMENT_HEAD_ZONE_RATIO;
-        DisplayUtil.itemDisplayFollow(hitEntity, display,  velocity.clone().normalize(), heightOffset, followHead,
-            null, null, null, null);
+    public void setTimeStep(int timeStep) {
+        this.timeStep.set(timeStep);
     }
+
+    public Location getOrigin() {
+        return origin.clone();
+    }
+
+    public Location getCur() {
+        return cur.clone();
+    }
+
+    public Location getPrev() {
+        return prev.clone();
+    }
+
+    public Vector getTo() {
+        return to.clone();
+    }
+
+    public Vector getVelocity() {
+        return velocity.clone();
+    }
+
 
     /**
      * Disposes of the item by naturally dropping its item form into the world.
      * <p>
      * Used after hitting entities or ending its trajectory naturally.
      */
-    public void disposeNaturally() {
+    public void disposeWithNewInteractiveItem() {
         if (display == null) return;
 
         final Location dropLocation = hitEntity != null ? hitEntity.self().getLocation() : display.getLocation();

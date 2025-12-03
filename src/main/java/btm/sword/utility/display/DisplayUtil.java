@@ -15,6 +15,7 @@ import btm.sword.system.control.PredicateRunnablePair;
 import btm.sword.system.control.SwordScheduler;
 import btm.sword.system.control.TimeArbiter;
 import btm.sword.system.entity.base.SwordEntity;
+import btm.sword.utility.Debug;
 import btm.sword.utility.Prefab;
 
 /**
@@ -53,10 +54,10 @@ public class DisplayUtil {
         SwordEntity entity, ItemDisplay display, Vector offset,
         double speed, int tpDuration, int period,
         double endDistance, boolean removeOnArrival,
-        int timeoutTicks,
+        int maxIterations,
         Runnable callback) {
 
-        AtomicInteger ticks = new AtomicInteger(0);
+        AtomicInteger iterations = new AtomicInteger(0);
         AtomicReference<Vector> currentDirectionToTarget = new AtomicReference<>();
         return TimeArbiter.runTimeBoundBukkitTaskOnTimer(
             () -> {
@@ -81,10 +82,14 @@ public class DisplayUtil {
             },
             null,
             0, period,
+            DisplayUtil.class, "displaySlerpToOffset",
             new PredicateRunnablePair(
                 // ticks is incremented here, not explicitly during a runnable.
-                () -> entity.isInvalid() || !display.isValid() || ticks.getAndIncrement() > timeoutTicks,
+                () -> iterations.getAndIncrement() > maxIterations || entity.isInvalid() || !display.isValid(),
                 () -> {
+
+                    Debug.debug(DisplayUtil.class, 90, "Display not valid. Current tick: " + iterations.get());
+
                     if (display.isValid() && removeOnArrival) display.remove();
                     if (callback != null) {
                         SwordScheduler.runBukkitTask(callback);
@@ -95,6 +100,9 @@ public class DisplayUtil {
                 () -> currentDirectionToTarget.get().isZero() ||
                     currentDirectionToTarget.get().lengthSquared() < endDistance * endDistance,
                 () -> {
+
+                    Debug.debug(DisplayUtil.class, 101, "Got close enough Current tick: " + iterations.get());
+
                     if (display.isValid() && removeOnArrival) display.remove();
                     if (callback != null) {
                         SwordScheduler.runBukkitTask(callback);
@@ -139,6 +147,7 @@ public class DisplayUtil {
             },
             null,
             0, period,
+            DisplayUtil.class, "displaySlerpToOffset (2)",
             new PredicateRunnablePair(
                 () -> entity.isInvalid() || !display.isValid() ||
                     ticks.getAndIncrement() > timeoutTicks || condition.test(toTest),
@@ -198,7 +207,7 @@ public class DisplayUtil {
                 TimeArbiter.teleportDisplay(
                     itemDisplay,
                     l, curDir,
-                    1
+                    2
                 );
 
                 if (iteration.incrementAndGet() % Config.Display.ITEM_DISPLAY_FOLLOW_PARTICLE_INTERVAL == 0)
@@ -206,6 +215,7 @@ public class DisplayUtil {
             },
             null,
             0,  Config.Display.ITEM_DISPLAY_FOLLOW_UPDATE_INTERVAL,
+            DisplayUtil.class, "itemDisplayFollow",
             new PredicateRunnablePair(
                 () -> entity.isDead() || itemDisplay.isDead() || itemDisplay.getItemStack().getType().isAir(),
                 null
@@ -244,7 +254,8 @@ public class DisplayUtil {
             },
             null,
             null,
-            0, period
+            0, period,
+            DisplayUtil.class, "itemDisplayFollow (2)"
         );
     }
 }
