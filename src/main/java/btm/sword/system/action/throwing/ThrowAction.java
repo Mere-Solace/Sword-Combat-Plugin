@@ -72,6 +72,11 @@ public class ThrowAction extends SwordAction {
         }
 
         thrownItem = new ThrownItem(executor, setupInstructions, 1);
+
+        thrownItem.setItemStack(executor instanceof SwordPlayer sp && !sp.getItemStackInHand(true).isEmpty() ?
+            sp.getMainItemStackAtTimeOfHold() :
+            executor.getItemStackInHand(true));
+
         executor.setThrownItem(thrownItem);
 
         new BukkitRunnable() {

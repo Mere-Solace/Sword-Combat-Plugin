@@ -2,6 +2,9 @@ package btm.sword.system.action.attack;
 
 import static btm.sword.system.action.attack.PunchAction.throwPunch;
 
+import btm.sword.system.item.ItemUsageManager;
+import btm.sword.utility.misc.ConsumerToConsumePair;
+
 import org.bukkit.inventory.ItemStack;
 
 import btm.sword.config.Config;
@@ -31,8 +34,8 @@ public class AttackAction extends SwordAction {
      * @param executor The combatant performing the attack.
      */
     public static void basicAttack(Combatant executor, int comboStep) {
-        ItemStack itemStack = executor.getItemStackInHand(true);
-        WeaponAttackStyle weaponAttackStyle = WeaponAttackStyle.fromString(itemStack);
+        ItemStack itemUsedInAttack = executor.getItemStackInHand(true);
+        WeaponAttackStyle weaponAttackStyle = WeaponAttackStyle.fromString(itemUsedInAttack);
 
         if (weaponAttackStyle.equals(WeaponAttackStyle.PUNCH)) { // catch any untagged items and perform a punch with it
             throwPunch(executor, comboStep == 1 || comboStep == 3 ,-1);
@@ -43,7 +46,7 @@ public class AttackAction extends SwordAction {
 
         if (executor.isGrounded()) {
             switch (weaponAttackStyle) {
-                case SLASH -> basicSlash(executor, weaponAttackStyle.attacks().get(comboStep - 1), true);
+                case SLASH -> basicSlash(executor, itemUsedInAttack, weaponAttackStyle.attacks().get(comboStep - 1), true);
             }
         }
         else {
@@ -64,13 +67,22 @@ public class AttackAction extends SwordAction {
             }
 
             switch (weaponAttackStyle) {
-                case SLASH -> basicSlash(executor, attacktype, false);
+                case SLASH -> basicSlash(executor, itemUsedInAttack, attacktype, false);
             }
         }
     }
 
-    public static void basicSlash(Combatant executor, AttackProfile profile, Boolean orientWithPitch) {
-        new Attack(profile, orientWithPitch, 40, 60, 0.1, 0.9).execute(executor);
+    public static void basicSlash(Combatant executor, ItemStack itemUsedInAttack, AttackProfile profile, Boolean orientWithPitch) {
+        new Attack(itemUsedInAttack, profile,
+            orientWithPitch, 40,
+            60, 0.1, 0.9)
+            .setAttackConnectInstructions(
+                new ConsumerToConsumePair<>(
+                    itemStack -> ItemUsageManager.damageItemStack(itemStack, 20, executor.self()),
+                    itemUsedInAttack
+                )
+            )
+            .execute(executor);
     }
 
     // basic Thrust, and Bash coming later

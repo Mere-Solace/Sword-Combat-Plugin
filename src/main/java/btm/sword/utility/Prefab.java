@@ -64,6 +64,8 @@ public class Prefab {
         public static final ParticleWrapper THROW_TRAIl = new ParticleWrapper(Particle.DUST, 1, 0.2, 0.2, 0.2,
                 new Particle.DustOptions(Color.WHITE, 2.5f));
 
+        public static final ParticleWrapper ITEM_THROW_BREAK = new ParticleWrapper(Particle.ENCHANTED_HIT, 150, 0.4, 0.4, 0.4);
+
         public static final ParticleWrapper TOUGH_BREAK_1 = new ParticleWrapper(Particle.ENCHANTED_HIT, 70, 1, 1, 1, 0);
 
         public static final ParticleWrapper TOUGH_RECHARGE_1 = new ParticleWrapper(Particle.ENCHANT, 100, 1, 1, 1, 0.1);

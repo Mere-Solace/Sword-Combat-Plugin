@@ -1,5 +1,7 @@
 package btm.sword.system.action.throwing;
 
+import lombok.Getter;
+
 import org.bukkit.Bukkit;
 import org.bukkit.FluidCollisionMode;
 import org.bukkit.Location;
@@ -25,7 +27,8 @@ import btm.sword.utility.Prefab;
 import btm.sword.utility.display.ParticleWrapper;
 
 public class StuckItem implements InteractiveItem {
-
+    @Getter
+    private final ItemStack itemStack;
     private final World world;
     private final ItemDisplay display;
 
@@ -50,7 +53,7 @@ public class StuckItem implements InteractiveItem {
         this.pos = start.clone();
         this.velocity = initialVelocity.clone();
         this.to = velocity.clone();
-        ItemStack item = stack.clone();
+        this.itemStack = stack;
 
         this.display = spawnDisplay(start, stack);
         determineOrientation();

@@ -6,6 +6,10 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
+import btm.sword.system.item.ItemUsageManager;
+
+import btm.sword.utility.Debug;
+
 import org.bukkit.FluidCollisionMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -59,6 +63,7 @@ public class ThrownItem implements InteractiveItem {
     protected final Combatant thrower;
     private ParticleWrapper blockTrail;
     protected ItemDisplay display;
+    protected ItemStack itemStack;
     protected Consumer<ItemDisplay> displaySetupInstructions;
 
     protected Impalement thisImpalement;
@@ -489,11 +494,43 @@ public class ThrownItem implements InteractiveItem {
         // TODO: #127 - Better checks for weapon, can tag with impactType = 'impale'
         String name = display.getItemStack().getType().toString();
 
+        handleItemDamageAndCheckIfBroken();
+
         if (name.endsWith("_SWORD") || name.endsWith("AXE")) {
             startImpalementTask(hitEntity);
         }
         else {
             nonImpalingImpact(hitEntity);
+        }
+    }
+
+    public void handleItemDamageAndCheckIfBroken() {
+        if (display == null || itemStack == null) return;
+
+        if (itemStack.isEmpty() ||
+            ItemUsageManager.isUnbreakable(itemStack)) return;
+
+        int currentDamage = ItemUsageManager.currentItemDamage(itemStack);
+
+        Debug.debug(ThrownItem.class, 514, "Current Damage: " + currentDamage);
+
+        int maxThrownItemUses = 3;
+        int onThrowHitDamageToItem = ItemUsageManager.maxItemDamage(itemStack) / maxThrownItemUses;
+
+        Debug.debug(ThrownItem.class, 514, "OnThrowHitDamage: " + onThrowHitDamageToItem);
+        Debug.debug(ThrownItem.class, 514, "Check Value: " + onThrowHitDamageToItem * (1 - maxThrownItemUses));
+
+
+        if (currentDamage >= onThrowHitDamageToItem * (maxThrownItemUses - 1)) {
+            Prefab.Particles.ITEM_THROW_BREAK.display(display.getLocation());
+
+            Debug.debug(ThrownItem.class, 519, "Item is getting destroyed");
+
+            itemStack.damage(77777777, thrower.self());
+            display.remove();
+        }
+        else {
+            ItemUsageManager.damageItemStack(itemStack, onThrowHitDamageToItem, thrower.self());
         }
     }
 
@@ -506,7 +543,9 @@ public class ThrownItem implements InteractiveItem {
             Config.World.EXPLOSIONS_SET_FIRE,
             Config.World.EXPLOSIONS_BREAK_BLOCKS);
 
-        disposeWithNewInteractiveItem();
+        if (display.isValid()) {
+            disposeWithNewInteractiveItem();
+        }
     }
 
     private void startImpalementTask(SwordEntity target) {
@@ -514,7 +553,9 @@ public class ThrownItem implements InteractiveItem {
             velocity.clone().multiply(Config.Combat.THROWN_DAMAGE_SWORD_AXE_KNOCKBACK_GROUNDED) :
             VectorUtil.getProjOntoPlane(velocity, Config.Direction.UP()).multiply(Config.Combat.THROWN_DAMAGE_SWORD_AXE_KNOCKBACK_AIRBORNE);
 
-        impale(target.self());
+        if (display.isValid()) {
+            impale(target.self());
+        }
         target.hit(thrower, Prefab.Attacks.thrownWeapon, kb);
     }
 

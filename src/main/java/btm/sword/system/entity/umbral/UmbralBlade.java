@@ -5,6 +5,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
+import btm.sword.utility.misc.ConsumerToConsumePair;
+
 import org.bukkit.FluidCollisionMode;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
@@ -800,7 +802,7 @@ public class UmbralBlade extends ThrownItem {
                     30, 10, duration,
                     0, 1)
                     .setBlade(this)
-                    .setHitInstructions(
+                    .setOnEntityHitInstructions(
                         swordEntity ->
                             Prefab.Particles.BLEED.display(swordEntity.getChestLocation()))
                     .setCallback(attackEndCallback, 200),
@@ -833,7 +835,7 @@ public class UmbralBlade extends ThrownItem {
                         20, 10, 100,
                         0, 1)
                         .setBlade(this)
-                        .setHitInstructions(swordEntity -> Prefab.Particles.BLEED.display(swordEntity.getChestLocation()))
+                        .setOnEntityHitInstructions(swordEntity -> Prefab.Particles.BLEED.display(swordEntity.getChestLocation()))
                         .setCallback(attackEndCallback, 200),
                     100),
 
@@ -850,7 +852,7 @@ public class UmbralBlade extends ThrownItem {
                         20, 10, 100,
                         0, 1)
                         .setBlade(this)
-                        .setHitInstructions(swordEntity -> Prefab.Particles.BLEED.display(swordEntity.getChestLocation()))
+                        .setOnEntityHitInstructions(swordEntity -> Prefab.Particles.BLEED.display(swordEntity.getChestLocation()))
                         .setCallback(attackEndCallback, 200),
                     100),
 
@@ -867,7 +869,7 @@ public class UmbralBlade extends ThrownItem {
                         20, 10, 50,
                         0, 1)
                         .setBlade(this)
-                        .setHitInstructions(swordEntity -> Prefab.Particles.BLEED.display(swordEntity.getChestLocation()))
+                        .setOnEntityHitInstructions(swordEntity -> Prefab.Particles.BLEED.display(swordEntity.getChestLocation()))
                         .setCallback(attackEndCallback, 200),
                     250)
         };
@@ -1002,6 +1004,9 @@ public class UmbralBlade extends ThrownItem {
     }
 
     @Override
+    public void handleItemDamageAndCheckIfBroken() {}
+
+    @Override
     public void disposeWithNewInteractiveItem() {
         request(BladeRequest.RECALL);
     }
@@ -1023,12 +1028,10 @@ public class UmbralBlade extends ThrownItem {
     public void setDashingDirection(DashDirection direction) {
         this.dashDirection = direction;
 
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                dashDirection = DashDirection.NONE;
-            }
-        }.runTaskLater(Sword.getInstance(), 5L);
+        SwordScheduler.runBukkitTaskLater(
+            () -> dashDirection = DashDirection.NONE,
+            250, TimeUnit.MILLISECONDS
+        );
     }
 
     public boolean isDashing() {

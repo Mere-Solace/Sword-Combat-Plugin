@@ -14,8 +14,8 @@ import btm.sword.system.entity.umbral.statemachine.state.StandbyState;
 
 public class DashAttackAction extends SwordAction {
     public static void dashAttack(Combatant executor, DashDirection direction) {
-        ItemStack itemStack = executor.getItemStackInHand(true);
-        WeaponAttackStyle weaponAttackStyle = WeaponAttackStyle.fromString(itemStack);
+        ItemStack itemUsedInAttack = executor.getItemStackInHand(true);
+        WeaponAttackStyle weaponAttackStyle = WeaponAttackStyle.fromString(itemUsedInAttack);
 
         boolean forward = direction.equals(DashDirection.FORWARD);
 
@@ -38,6 +38,7 @@ public class DashAttackAction extends SwordAction {
                 if (executor instanceof SwordPlayer swordPlayer) {
                     swordPlayer.resetTree(); // Reset the tree if they perform a quick attack with the blade.
                 }
+
                 return;
             }
 
@@ -54,7 +55,7 @@ public class DashAttackAction extends SwordAction {
         };
 
         cast(executor, 500, () ->
-            new Attack(attackDir, !direction.equals(DashDirection.BACKWARD),
+            new Attack(itemUsedInAttack, attackDir, !direction.equals(DashDirection.BACKWARD),
                 50,30,0,1)
                 // use the direction of the dash so that players can't spin around and use the long attack omnidirectionally
                 .setOrigin(forward ? executor.getChestLocation().setDirection(executor.getDashDirection()) : null)

@@ -17,7 +17,7 @@ public class Debug {
 
     @SuppressWarnings("all")
     public static void debug(Class<?> clazz, int lineNum, String message) {
-        if (true && Config.Debug.LOGGING_VERBOSE_CONFIG) { // for me to change
+        if (false && Config.Debug.LOGGING_VERBOSE_CONFIG) { // for me to change
             String toSend = "> " + clazz + " line" + " [" + lineNum + "] :: " + message;
             Sword.print(toSend);
 

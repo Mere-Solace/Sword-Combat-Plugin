@@ -9,10 +9,13 @@ import java.util.function.Predicate;
 
 import javax.annotation.Nullable;
 
+import btm.sword.utility.misc.ConsumerToConsumePair;
+
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
@@ -38,6 +41,7 @@ import lombok.Getter;
 public class Attack extends SwordAction implements Runnable {
 
     protected Combatant attacker;
+    protected ItemStack itemUsedInAttack;
     protected LivingEntity attackingEntity;
     protected final AttackProfile attackProfile;
     protected final boolean orientWithPitch;
@@ -76,14 +80,16 @@ public class Attack extends SwordAction implements Runnable {
     protected int msBeforeCallbackSchedule;
     protected boolean finishedOrCanceled = false;
 
-    protected Consumer<SwordEntity> onHitInstructions;
+    protected ConsumerToConsumePair<?>[] onAttackConnectInstructions = {};
+    protected Consumer<SwordEntity> onEntityHitInstructions;
 
     @Getter
     protected Attack nextAttack;
     protected int millisecondDelayBeforeNextAttack;
 
-    public Attack(AttackProfile profile, boolean orientWithPitch) {
-        controlVectors = profile.controlVectors();
+    public Attack(ItemStack itemUsedInAttack, AttackProfile profile, boolean orientWithPitch) {
+        this.itemUsedInAttack = itemUsedInAttack;
+        this.controlVectors = profile.controlVectors();
         this.attackProfile = profile;
         this.orientWithPitch = orientWithPitch;
 
@@ -97,9 +103,9 @@ public class Attack extends SwordAction implements Runnable {
         this.rangeMultiplier = Config.Combat.ATTACK_CLASS_MODIFIERS_RANGE_MULTIPLIER;
     }
 
-    public Attack(AttackProfile profile, boolean orientWithPitch,
+    public Attack(ItemStack itemUsedInAttack, AttackProfile profile, boolean orientWithPitch,
                   int attackMilliseconds, int attackIterations, double attackStartValue, double attackEndValue) {
-        this(profile, orientWithPitch);
+        this(itemUsedInAttack, profile, orientWithPitch);
         this.attackMilliseconds = attackMilliseconds;
         this.attackIterations = attackIterations;
         this.attackStartValue = attackStartValue;
@@ -126,10 +132,16 @@ public class Attack extends SwordAction implements Runnable {
         return this;
     }
 
-    public Attack setHitInstructions(Consumer<SwordEntity> onHitInstructions) {
-        this.onHitInstructions = onHitInstructions;
+    public Attack setAttackConnectInstructions(ConsumerToConsumePair<?>... onAttackConnectInstructions) {
+        this.onAttackConnectInstructions = onAttackConnectInstructions;
         return this;
     }
+
+    public Attack setOnEntityHitInstructions(Consumer<SwordEntity> onEntityHitInstructions) {
+        this.onEntityHitInstructions = onEntityHitInstructions;
+        return this;
+    }
+
 
     public boolean hasNextAttack() {
         return nextAttack != null;
@@ -295,7 +307,10 @@ public class Attack extends SwordAction implements Runnable {
 
                 if (!currentTarget.self().isDead()) {
                     hit();
-                    if (onHitInstructions != null) onHitInstructions.accept(currentTarget);
+                    if (onEntityHitInstructions != null) onEntityHitInstructions.accept(currentTarget);
+                    for (ConsumerToConsumePair<?> connectInstruction : onAttackConnectInstructions) {
+                        connectInstruction.accept();
+                    }
                 }
             }
         }

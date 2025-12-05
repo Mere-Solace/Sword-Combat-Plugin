@@ -20,10 +20,11 @@ public class ItemLibrary {
             Component.text().content("Veracity").color(TextColor.color(160,160,160)).build(),
             Component.text().content("&").color(TextColor.color(89,89,89)).build(),
             Component.text().content("Assiduity").color(TextColor.color(160,160,160)).build()))
-        .durability(3)
         .tagSwordItem(SwordItemType.BROAD_SWORD)
         .tagAttackStyle(WeaponAttackStyle.SLASH)
         .toughnessDamageAdder(5)
+        .unbreakable(false)
+        .setDamageValues(200, 1)
         .build();
 
     public static ItemStack gun = new ItemStackBuilder(Material.IRON_SHOVEL)
@@ -33,8 +34,8 @@ public class ItemLibrary {
             Component.text().content("Veracity").color(TextColor.color(160,160,160)).build(),
             Component.text().content("&").color(TextColor.color(89,89,89)).build(),
             Component.text().content("Assiduity").color(TextColor.color(160,160,160)).build()))
-        .durability(3)
         .tagSwordItem(SwordItemType.PISTOL)
         .toughnessDamageAdder(7)
+        .unbreakable(false)
         .build();
 }
