@@ -15,7 +15,7 @@ import org.bukkit.util.Vector;
 
 import btm.sword.config.Config;
 import btm.sword.system.attack.Attack;
-import btm.sword.system.attack.HitPacket;
+import btm.sword.system.attack.HitValuePacket;
 import btm.sword.utility.display.ParticleWrapper;
 import btm.sword.utility.sound.SoundType;
 import btm.sword.utility.sound.SoundWrapper;
@@ -96,7 +96,7 @@ public class Prefab {
 
     // using Suppliers so that this basic record-like class (AttackHitValue) can use the values from the config.
     public static class Attacks {
-        public static final HitPacket defaultMobHit = new HitPacket(
+        public static final HitValuePacket defaultMobHit = new HitValuePacket(
             () -> 5f,
             () -> 15,
             () -> 1,
@@ -104,7 +104,7 @@ public class Prefab {
             () -> 10f
         );
 
-        public static final HitPacket basicAttack = new HitPacket(
+        public static final HitValuePacket basicAttack = new HitValuePacket(
             () -> 5f,
             () -> Config.Combat.ATTACK_CLASS_HIT_INVULN_TICKS,
             () -> Config.Combat.ATTACK_CLASS_HIT_SHARDS,
@@ -112,7 +112,7 @@ public class Prefab {
             () -> Config.Combat.ATTACK_CLASS_HIT_SOULFIRE
         );
 
-        public static final HitPacket grabHit = new HitPacket(
+        public static final HitValuePacket grabHit = new HitValuePacket(
             () -> 1f,
             () -> 0,
             () -> 0,
@@ -120,7 +120,7 @@ public class Prefab {
             () -> 5f
         );
 
-        public static final HitPacket thrownWeapon = new HitPacket(
+        public static final HitValuePacket thrownWeapon = new HitValuePacket(
             () -> 0f,
             () -> Config.Combat.THROWN_DAMAGE_SWORD_AXE_INVULNERABILITY_TICKS,
             () -> Config.Combat.THROWN_DAMAGE_SWORD_AXE_BASE_SHARDS,
@@ -128,7 +128,7 @@ public class Prefab {
             () -> Config.Combat.THROWN_DAMAGE_SWORD_AXE_SOULFIRE_REDUCTION
         );
 
-        public static final HitPacket umbralItemDisplayAttack = new HitPacket(
+        public static final HitValuePacket umbralItemDisplayAttack = new HitValuePacket(
             () -> 0f,
             () -> 5,
             () -> 1,
@@ -136,7 +136,7 @@ public class Prefab {
             () -> 10f
         );
 
-        public static final HitPacket punch = new HitPacket(
+        public static final HitValuePacket punch = new HitValuePacket(
             () -> 7.5f,
             () -> 2,
             () -> 1,

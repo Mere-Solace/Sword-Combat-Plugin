@@ -1,5 +1,6 @@
 package btm.sword.system.control;
 
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
@@ -7,6 +8,8 @@ import org.bukkit.Bukkit;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import btm.sword.Sword;
+
+import org.bukkit.scheduler.BukkitTask;
 
 public class SwordScheduler {
 
@@ -22,8 +25,8 @@ public class SwordScheduler {
      * @param delay    how long to wait before execution
      * @param unit     the time unit of the delay
      */
-    public static void runBukkitTaskLater(Runnable runnable, int delay, TimeUnit unit) {
-        Sword.getScheduler().schedule(() -> {
+    public static ScheduledFuture<?> runBukkitTaskLater(Runnable runnable, int delay, TimeUnit unit) {
+        return Sword.getScheduler().schedule(() -> {
             Bukkit.getScheduler().runTask(Sword.getInstance(), runnable);
             }, delay, unit);
     }

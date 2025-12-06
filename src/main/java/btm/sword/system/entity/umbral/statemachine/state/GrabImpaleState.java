@@ -1,5 +1,8 @@
 package btm.sword.system.entity.umbral.statemachine.state;
 
+import btm.sword.system.control.SwordScheduler;
+import btm.sword.system.entity.types.Combatant;
+
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
@@ -11,6 +14,8 @@ import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.umbral.UmbralBlade;
 import btm.sword.system.entity.umbral.statemachine.UmbralStateFacade;
 import btm.sword.utility.display.DisplayUtil;
+
+import java.util.concurrent.TimeUnit;
 
 public class GrabImpaleState extends UmbralStateFacade {
     private TimeArbiter.TaskHandle slerpTask;
@@ -50,18 +55,15 @@ public class GrabImpaleState extends UmbralStateFacade {
         slerpTask = DisplayUtil.displaySlerpToOffset(grabbed, blade.getDisplay(), offset,
             1, 2, 50, 2, false,
             50,
-            thrower -> // predicate for when the movement should end other than when it reaches destination.
-                thrower.getGrabbedEntity() == null ||
+            () -> { // predicate for when the movement should end other than when it reaches destination.
+                Combatant thrower = blade.getThrower();
+                return thrower.getGrabbedEntity() == null ||
                     thrower.getGrabbedEntity().isDead() ||
                     thrower.isDead() ||
-                    !thrower.getUmbralBlade().inState(GrabImpaleState.class),
-            blade.getThrower(),
-            () -> new BukkitRunnable() {
-                @Override
-                public void run() {
-                    attackEnemy(blade);
-                }
-            }.runTaskLater(Sword.getInstance(), 4L)
+                    !thrower.getUmbralBlade().inState(GrabImpaleState.class);
+            },
+            () -> SwordScheduler.runBukkitTaskLater(() -> attackEnemy(blade),
+                200, TimeUnit.MILLISECONDS)
         );
     }
 

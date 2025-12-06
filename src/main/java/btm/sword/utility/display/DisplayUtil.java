@@ -4,6 +4,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 import org.bukkit.Location;
 import org.bukkit.entity.Display;
@@ -113,12 +114,12 @@ public class DisplayUtil {
     }
 
     // returns a task for use in detecting when finished
-    public static <T> TimeArbiter.TaskHandle displaySlerpToOffset(
+    public static TimeArbiter.TaskHandle displaySlerpToOffset(
         SwordEntity entity, ItemDisplay display, Vector offset,
         double speed, int tpDuration, int period,
         double endDistance, boolean removeOnArrival,
         int timeoutTicks,
-        Predicate<T> condition, T toTest,
+        Supplier<Boolean> condition,
         Runnable callback) {
 
         AtomicInteger ticks = new AtomicInteger(0);
@@ -150,7 +151,7 @@ public class DisplayUtil {
             DisplayUtil.class, "displaySlerpToOffset (2)",
             new PredicateRunnablePair(
                 () -> entity.isInvalid() || !display.isValid() ||
-                    ticks.getAndIncrement() > timeoutTicks || condition.test(toTest),
+                    ticks.getAndIncrement() > timeoutTicks || condition.get(),
                 () -> {
                     if (display.isValid() && removeOnArrival) display.remove();
                     if (callback != null) {
@@ -161,7 +162,7 @@ public class DisplayUtil {
             new PredicateRunnablePair(
                 () -> currentDirectionToTarget.get().isZero() ||
                     currentDirectionToTarget.get().lengthSquared() < endDistance*endDistance ||
-                    ticks.get() > timeoutTicks || condition.test(toTest),
+                    ticks.get() > timeoutTicks || condition.get(),
                 () -> {
                     if (display.isValid() && removeOnArrival) display.remove();
                     if (callback != null) {

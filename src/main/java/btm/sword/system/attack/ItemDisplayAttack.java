@@ -69,7 +69,7 @@ public class ItemDisplayAttack extends Attack {
     @Override
     protected void drawAttackEffects() {
         if (drawParticles) super.drawAttackEffects();
-        if (curIteration % displaySteps == 0) {
+        if (curIteration.get() % displaySteps == 0) {
             TimeArbiter.teleportDisplay(weaponDisplay, attackLocation, cur, tpDuration);
         }
     }
@@ -77,7 +77,7 @@ public class ItemDisplayAttack extends Attack {
     @Override
     protected void startupLogic() {
 
-        
+
         if (ticksSpentMovingToInitialLocation != 0) {
             TimeArbiter.teleportDisplay(
                 weaponDisplay,

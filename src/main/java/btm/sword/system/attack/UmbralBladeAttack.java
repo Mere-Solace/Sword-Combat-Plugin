@@ -38,11 +38,6 @@ public class UmbralBladeAttack extends ItemDisplayAttack {
     }
 
     @Override
-    protected void cast() {
-        cast(attacker, 200, this);
-    }
-
-    @Override
     protected void drawAttackEffects() {
         super.drawAttackEffects();
     }

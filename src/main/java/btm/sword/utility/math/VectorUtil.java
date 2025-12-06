@@ -20,25 +20,28 @@ import btm.sword.config.Config;
 public class VectorUtil {
     public static Basis getBasis(Location origin, Vector dir) {
         dir.normalize();
-        if (dir.isZero()) // just in case, return a default basis
+        if (dir.isZero()) { // just in case, return a default basis
             return new Basis(
                 Config.Direction.UP().crossProduct(Config.Direction.SOUTH()),
                 Config.Direction.UP(),
                 Config.Direction.SOUTH());
-
-        Vector ref = new Vector(0,1,0);
-        Vector right = null;
-
-        double dot = dir.dot(ref);
-
-        if (Math.abs(dot) > 0.999) {
-            double yaw = Math.toRadians(origin.getYaw());
-            ref = new Vector(-Math.sin(yaw), 0, Math.cos(yaw));
-            right = dot >= 0 ? ref.getCrossProduct(dir).normalize() : dir.getCrossProduct(ref).normalize();
         }
 
-        if (right == null)
-            right = dir.getCrossProduct(ref).normalize();
+        Vector upReference = new Vector(0,1,0);
+        Vector right;
+
+        double isDirectionStraightUpOrDown = dir.dot(upReference);
+
+        if (Math.abs(isDirectionStraightUpOrDown) > 0.999) {
+            double yaw = Math.toRadians(origin.setDirection(dir).getYaw());
+            Vector hzntlReference = new Vector(-Math.sin(yaw), 0, Math.cos(yaw));
+            right = isDirectionStraightUpOrDown >= 0 ?
+                hzntlReference.getCrossProduct(dir).normalize() :
+                dir.getCrossProduct(hzntlReference).normalize();
+        }
+        else {
+            right = dir.getCrossProduct(upReference).normalize();
+        }
 
         Vector up = right.getCrossProduct(dir).normalize();
 

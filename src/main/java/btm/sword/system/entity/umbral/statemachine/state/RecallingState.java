@@ -64,29 +64,6 @@ public class RecallingState extends UmbralStateFacade {
 
     @Override
     public void onTick(UmbralBlade blade) {
-        t++;
 
-        // wait initial grace period for return animation to run
-        if (t <= 15) return;
-
-        Location cur = blade.getDisplay().getLocation();
-
-        if (previousBladeLocation == null) {
-            previousBladeLocation = cur.clone();
-            stationaryCount = 0;
-            return;
-        }
-
-        Vector delta = cur.toVector().clone().subtract(previousBladeLocation.toVector());
-        if (delta.lengthSquared() < EPS_SQ) {
-            stationaryCount++;
-            if (stationaryCount >= REQUIRED_STATIONARY_TICKS) {
-                blade.request(BladeRequest.STANDBY);
-            }
-        } else {
-            stationaryCount = 0;
-        }
-
-        previousBladeLocation = cur.clone();
     }
 }

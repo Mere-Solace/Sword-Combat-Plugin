@@ -44,7 +44,7 @@ public class ImpalingUmbralBladeAttack extends UmbralBladeAttack {
     @Override
     protected void applyHitEffects(HashSet<LivingEntity> targets) {
         if (!hitDuringAttack.isEmpty()) {
-            finishedOrCanceled = true;
+            attackIterationTask.cancel();
             return;
         }
 

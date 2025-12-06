@@ -2,14 +2,14 @@ package btm.sword.system.attack;
 
 import java.util.function.Supplier;
 
-public class HitPacket {
+public class HitValuePacket {
     private final Supplier<Float> reapedSoulfire;
     private final Supplier<Integer> invulnerableTicks;
     private final Supplier<Integer> shardDamage;
     private final Supplier<Float> toughnessDamage;
     private final Supplier<Float> soulfireLoss;
 
-    public HitPacket(
+    public HitValuePacket(
         Supplier<Float> reapedSoulfire,
         Supplier<Integer> invulnerableTicks,
         Supplier<Integer> shardDamage,

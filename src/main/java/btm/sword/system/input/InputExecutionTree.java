@@ -4,7 +4,15 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
+
+import btm.sword.system.control.SwordScheduler;
+
+import btm.sword.system.control.TimeArbiter;
+
+import btm.sword.utility.SwordTimeUnit;
 
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -50,7 +58,7 @@ public class InputExecutionTree {
     private InputNode currentNode;
     private Component baseSequenceToDisplay;
     private Component potentialInputSelectionText;
-    private BukkitTask timeoutTimer;
+    private ScheduledFuture<?> timeoutTimer;
 
     public InputExecutionTree(SwordPlayer owner) {
         this.owner = owner;
@@ -155,21 +163,18 @@ public class InputExecutionTree {
      * Starts the timeout countdown to reset the input sequence after inactivity.
      */
     private void startTimeoutTimer() {
-        timeoutTimer =
-
-            new BukkitRunnable() {
-            @Override
-            public void run() {
-                reset();
-            }
-        }.runTaskLater(plugin, currentNode.getTimeoutTicks()); // use the current node's timeoutTicks (base = 20L); 1 second
+        timeoutTimer = SwordScheduler.runBukkitTaskLater(this::reset,
+            (int) SwordTimeUnit.ticksToMillis(
+                (int) (currentNode.getTimeoutTicks())
+            ),
+            TimeUnit.MILLISECONDS);
     }
 
     /**
      * Stops the currently running timeout timer task.
      */
     public void stopTimeoutTimer() {
-        if (timeoutTimer != null && !timeoutTimer.isCancelled()) timeoutTimer.cancel();
+        if (timeoutTimer != null && !timeoutTimer.isCancelled()) timeoutTimer.cancel(true);
     }
 
     /**

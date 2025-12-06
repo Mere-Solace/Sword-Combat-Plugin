@@ -2,10 +2,9 @@ package btm.sword.system.entity.umbral;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.Predicate;
-
-import btm.sword.utility.misc.ConsumerToConsumePair;
 
 import org.bukkit.FluidCollisionMode;
 import org.bukkit.GameMode;
@@ -94,6 +93,9 @@ public class UmbralBlade extends ThrownItem {
     private Location lastTargetLocation;
 
     private Vector3f scale = new Vector3f(0.85f, 1.3f, 1f);
+
+    protected static final int MAX_STATIONARY_ITERATIONS_WHILE_RETURNING = 4;
+    protected static final double EPSILON_SQUARED = 0.0004;
 
     private static final int idleMovementPeriod = 150;
     private static final float idleMovementAmplitude = 0.25f;
@@ -634,11 +636,29 @@ public class UmbralBlade extends ThrownItem {
     // TODO: #121 - Make item Display changes look less jerky
 
     public TimeArbiter.TaskHandle returnToWielderAndRequestState(BladeRequest request) {
+
+        AtomicReference<Location> currentBladeLoc = new AtomicReference<>(display.getLocation());
+        AtomicReference<Location> previousBladeLoc = new AtomicReference<>(display.getLocation());
+
+        final int[] stationaryCount = {0};
         return DisplayUtil.displaySlerpToOffset(thrower, display,
             thrower.getChestVector(),
             1.5, 5, 100, 1.5,
             false,
             500, // give it 10 seconds to get back
+            () -> {
+                currentBladeLoc.set(display.getLocation());
+
+                Vector difference = currentBladeLoc.get().toVector().subtract(previousBladeLoc.get().toVector());
+                if (difference.lengthSquared() < EPSILON_SQUARED) {
+                    stationaryCount[0]++;
+                } else {
+                    stationaryCount[0] = 0;
+                }
+
+                previousBladeLoc.set(currentBladeLoc.get());
+                return stationaryCount[0] > MAX_STATIONARY_ITERATIONS_WHILE_RETURNING;
+            },
             () -> request(request)
         );
     }
@@ -787,7 +807,7 @@ public class UmbralBlade extends ThrownItem {
         ControlVectors ctrl = new ControlVectors(start, end, c1, c2);
         GeneratedAttackProfile profile = new GeneratedAttackProfile(ctrl, Attack::getTo);
 
-        int duration = 40 * (int) Math.log(Math.max(1, dist * dist));
+        int duration = 20 * (int) Math.log(Math.max(1, dist * dist));
 
         Attack attack = new UmbralBladeAttack(display, profile,
             true, true, 1,

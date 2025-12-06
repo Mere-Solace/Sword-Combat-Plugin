@@ -227,7 +227,11 @@ public class TimeArbiter {
     }
 
     private static void scheduleTaskFuture(TaskHandle handle) {
-        int effectivePeriod = (int) (Math.max(1, handle.originalPeriodMs / GLOBAL_TIME_SCALE));
+
+        int effectivePeriod = handle.timeBound ?
+            (int) (Math.max(1, handle.originalPeriodMs / GLOBAL_TIME_SCALE)) :
+            handle.originalPeriodMs;
+
         handle.future = Sword.getScheduler().scheduleAtFixedRate(() ->
                 Bukkit.getScheduler().runTask(Sword.getInstance(), () -> {
                     if (handle.isMarkedToRestart()) {

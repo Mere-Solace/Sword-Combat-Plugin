@@ -3,12 +3,16 @@ package btm.sword.system.attack;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
 import javax.annotation.Nullable;
 
+import btm.sword.system.control.PredicateRunnablePair;
+import btm.sword.system.control.TimeArbiter;
+import btm.sword.utility.Debug;
 import btm.sword.utility.misc.ConsumerToConsumePair;
 
 import org.bukkit.Location;
@@ -16,7 +20,6 @@ import org.bukkit.Particle;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
 
@@ -65,20 +68,19 @@ public class Attack extends SwordAction implements Runnable {
     @Getter
     protected SwordEntity currentTarget;
 
-    protected int curIteration;
+    protected AtomicInteger curIteration;
 
     protected int attackMilliseconds;
     protected int attackIterations;
     protected double attackStartValue;
     protected double attackEndValue;
-    protected int ticks;
-    protected int tickPeriod;
 
     protected final double rangeMultiplier;
 
     protected Runnable callback;
     protected int msBeforeCallbackSchedule;
-    protected boolean finishedOrCanceled = false;
+
+    protected TimeArbiter.TaskHandle attackIterationTask;
 
     protected ConsumerToConsumePair<?>[] onAttackConnectInstructions = {};
     protected Consumer<SwordEntity> onEntityHitInstructions;
@@ -95,6 +97,8 @@ public class Attack extends SwordAction implements Runnable {
 
         hitDuringAttack = new HashSet<>();
 
+        curIteration = new AtomicInteger(0);
+
         this.attackMilliseconds = Config.Combat.ATTACK_CLASS_TIMING_ATTACK_DURATION;
         this.attackIterations = Config.Combat.ATTACK_CLASS_TIMING_ATTACK_ITERATIONS;
         this.attackStartValue = Config.Combat.ATTACK_CLASS_TIMING_ATTACK_START_VALUE;
@@ -110,14 +114,6 @@ public class Attack extends SwordAction implements Runnable {
         this.attackIterations = attackIterations;
         this.attackStartValue = attackStartValue;
         this.attackEndValue = attackEndValue;
-    }
-
-    public void calcTickValues() {
-        int numOfTicks = attackMilliseconds / (int) SwordTimeUnit.MILLISECONDS_PER_TICK;
-        this.ticks = numOfTicks <= 0 ? 1 : numOfTicks + 1;
-        int msPerIteration = attackMilliseconds / attackIterations;
-        int ticksPerIteration = msPerIteration / (int) SwordTimeUnit.MILLISECONDS_PER_TICK;
-        this.tickPeriod = ticksPerIteration <= 0 ? 1 : ticksPerIteration;
     }
 
     public Attack setNextAttack(Attack nextAttack, int millisecondDelayBeforeNextAttack) {
@@ -142,8 +138,7 @@ public class Attack extends SwordAction implements Runnable {
         return this;
     }
 
-
-    public boolean hasNextAttack() {
+    public boolean nextAttackExists() {
         return nextAttack != null;
     }
 
@@ -162,7 +157,7 @@ public class Attack extends SwordAction implements Runnable {
 
     // TODO: #139 make usage dynamic
     protected void cast() {
-        cast(attacker, 200, this);
+        cast(attacker, attackMilliseconds, this);
     }
 
     private void onRun() {
@@ -196,56 +191,46 @@ public class Attack extends SwordAction implements Runnable {
 
         double attackRange = attackEndValue - attackStartValue;
         double step = attackRange / attackIterations;
-        int msPerIteration = attackMilliseconds / attackIterations;
+        int msPerIteration = Math.max(1, attackMilliseconds / attackIterations);
 
         generateBezierFunction();
         determineOrigin();
         prev = weaponPathFunction.apply(attackStartValue - step);
         startupLogic();
-        calcTickValues();
 
-        curIteration = 0;
-        for (int i = 0; i <= attackIterations; i++) { // TODO: #120 - Research a better way than scheduling all at once with delays
-            final int idx = i;
-            SwordScheduler.runBukkitTaskLater(
-                new BukkitRunnable() {
-                @Override
-                public void run() {
-                    if (finishedOrCanceled) {
-                        cancel();
-                        return;
+        curIteration.set(0);
+
+        attackIterationTask = TimeArbiter.runTimeBoundBukkitTaskOnTimer(
+            () -> {
+                applyConsistentEffects();
+
+                // curIteration is incremented HERE----------------------------------------\/
+                cur = weaponPathFunction.apply(attackStartValue + (step * curIteration.getAndIncrement()));
+                to = cur.clone().subtract(prev);
+                attackLocation = origin.clone().add(cur);
+
+                drawAttackEffects();
+                performHitLogic();
+                swingTest();
+            },
+            () -> prev = cur,
+            null,
+            0, msPerIteration,
+            Attack.class, "startAttack",
+            new PredicateRunnablePair(
+                () -> curIteration.get() >= attackIterations,
+                () -> {
+                    handleCallback();
+                    if (nextAttackExists()) {
+                        SwordScheduler.runBukkitTaskLater(() -> {
+                            endingLogic();
+                            nextAttack.execute(attacker);
+                            }, millisecondDelayBeforeNextAttack, TimeUnit.MILLISECONDS
+                        );
                     }
-
-                    applyConsistentEffects();
-
-                    cur = weaponPathFunction.apply(attackStartValue + (step * idx));
-                    to = cur.clone().subtract(prev);
-                    attackLocation = origin.clone().add(cur);
-
-                    drawAttackEffects();
-                    performHitLogic();
-                    swingTest();
-
-                    // allows for chaining of attack logic
-                    if (idx == attackIterations) {
-                        handleCallback();
-                        if (nextAttack != null) {
-                            SwordScheduler.runBukkitTaskLater(
-                                new BukkitRunnable() {
-                                    @Override
-                                    public void run() {
-                                        endingLogic();
-                                        nextAttack.execute(attacker);
-                                    }
-                                }, millisecondDelayBeforeNextAttack, TimeUnit.MILLISECONDS
-                            );
-                        }
-                    }
-                    prev = cur;
-                    curIteration++;
                 }
-            }, calcIterationStartDelay(i, msPerIteration), TimeUnit.MILLISECONDS);
-        }
+            )
+        );
     }
 
     protected void startupLogic() {

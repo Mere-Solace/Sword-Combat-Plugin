@@ -95,7 +95,7 @@ public class InteractiveItemArbiter {
 //        ItemStack item = display.getItemStack();
 
         ItemStack item = interactiveItem.getItemStack();
-
+        if (item == null) return;
         if (!item.isEmpty()) {
             if (interactiveItem instanceof UmbralBlade umbralBlade) {
                 umbralBlade.onGrab(executor);

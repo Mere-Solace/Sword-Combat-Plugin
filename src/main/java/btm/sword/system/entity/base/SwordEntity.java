@@ -34,7 +34,7 @@ import com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent;
 import btm.sword.Sword;
 import btm.sword.config.Config;
 import btm.sword.system.action.throwing.impale.Impalement;
-import btm.sword.system.attack.HitPacket;
+import btm.sword.system.attack.HitValuePacket;
 import btm.sword.system.combat.Affliction;
 import btm.sword.system.control.EntityController;
 import btm.sword.system.control.SwordScheduler;
@@ -529,7 +529,7 @@ public abstract class SwordEntity {
         }
     }
 
-    public void hit(Combatant source, HitPacket v, Vector knockbackVelocity, Affliction... afflictions) {
+    public void hit(Combatant source, HitValuePacket v, Vector knockbackVelocity, Affliction... afflictions) {
         hit(source,
             v.reapedSoulfire(),
             v.invulnerableTicks(),

@@ -2,6 +2,8 @@ package btm.sword.system.action;
 
 import java.util.concurrent.TimeUnit;
 
+import btm.sword.system.control.TimeArbiter;
+
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitScheduler;
@@ -40,6 +42,7 @@ public abstract class SwordAction {
             if (executor.getAbilityCastTask() != null) {
                 executor.setCastTask(null);
             }
-        }, castDuration, TimeUnit.MILLISECONDS);
+            // Use Global Time Scale here to effect cast times.
+        }, (int) (castDuration / TimeArbiter.getGLOBAL_TIME_SCALE()), TimeUnit.MILLISECONDS);
     }
 }
