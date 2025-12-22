@@ -1544,8 +1544,7 @@ public class Config {
             ConfigurationSection::getInt
         ); }
 
-        /** In ticks */
-        public static int COMBAT_PROFILE_SHARDS_REGEN_PERIOD = 5000; // 10 seconds TODO: #141 change all values to either ticks or ms
+        public static int COMBAT_PROFILE_SHARDS_REGEN_PERIOD = 5000;
         static { register(
             "entity.combat_profile_shards_regen_period",
             COMBAT_PROFILE_SHARDS_REGEN_PERIOD, Integer.class,
@@ -1570,7 +1569,7 @@ public class Config {
             Config::loadFloat
         ); }
 
-        public static int COMBAT_PROFILE_TOUGHNESS_REGEN_PERIOD = 60;
+        public static int COMBAT_PROFILE_TOUGHNESS_REGEN_PERIOD = 1000;
         static { register(
             "entity.combat_profile_toughness_regen_period",
             COMBAT_PROFILE_TOUGHNESS_REGEN_PERIOD, Integer.class,
@@ -1595,7 +1594,7 @@ public class Config {
             Config::loadFloat
         ); }
 
-        public static int COMBAT_PROFILE_SOULFIRE_REGEN_PERIOD = 5;
+        public static int COMBAT_PROFILE_SOULFIRE_REGEN_PERIOD = 250;
         static { register(
             "entity.combat_profile_soulfire_regen_period",
             COMBAT_PROFILE_SOULFIRE_REGEN_PERIOD, Integer.class,
@@ -1620,7 +1619,7 @@ public class Config {
             Config::loadFloat
         ); }
 
-        public static int COMBAT_PROFILE_FORM_REGEN_PERIOD = 60;
+        public static int COMBAT_PROFILE_FORM_REGEN_PERIOD = 3000;
         static { register(
             "entity.combat_profile_form_regen_period",
             COMBAT_PROFILE_FORM_REGEN_PERIOD, Integer.class,

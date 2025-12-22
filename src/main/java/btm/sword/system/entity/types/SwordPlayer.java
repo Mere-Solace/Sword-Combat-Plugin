@@ -48,6 +48,7 @@ import btm.sword.system.item.ItemStackBuilder;
 import btm.sword.system.item.KeyRegistry;
 import btm.sword.system.item.SwordItemType;
 import btm.sword.system.playerdata.PlayerData;
+import btm.sword.utility.SwordTimeUnit;
 import btm.sword.utility.display.DisplayUtil;
 import lombok.Getter;
 import lombok.Setter;
@@ -113,8 +114,9 @@ public class SwordPlayer extends Combatant {
 
     private int prevFormVal;
     private float formProgress;
-    private final Supplier<Float> formExpTickStepVal = () -> 1.0f / aspects.form().effectivePeriod();
-                                                // 1.0f because needs to be scaled between 0 and 1.
+    private final Supplier<Float> formExpTickStepVal =
+        () -> 1.0f / SwordTimeUnit.millisToTicks(aspects.form().effectivePeriod());
+           // 1.0f because needs to be scaled between 0 and 1.
 
     /**
      * Constructs a new SwordPlayer wrapping a Bukkit {@link Player} with associated {@link PlayerData}.
@@ -327,7 +329,7 @@ public class SwordPlayer extends Combatant {
                 formProgress = 0.99f;
                 return; // don't want to go over: it causes an error
             }
-            formProgress += formExpTickStepVal.get(); // Suppliers are so cool!
+            formProgress += formExpTickStepVal.get();
         }
         else {
             player.setLevel(curFormVal);

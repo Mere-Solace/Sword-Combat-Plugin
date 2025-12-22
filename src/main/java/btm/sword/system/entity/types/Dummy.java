@@ -31,7 +31,7 @@ public class Dummy extends Passive {
      */
     public Dummy(ArmorStand dummy, @NotNull CombatProfile combatProfile) {
         super(dummy, combatProfile);
-        combatProfile.setStat(AspectType.SHARDS, new ResourceValue(10, 20, 1));
+        combatProfile.setStat(AspectType.SHARDS, new ResourceValue(10, 2000, 1));
     }
 
     public ArmorStand armorStand() {
