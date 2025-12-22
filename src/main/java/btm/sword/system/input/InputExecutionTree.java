@@ -8,15 +8,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
-import btm.sword.system.control.SwordScheduler;
-
-import btm.sword.system.control.TimeArbiter;
-
-import btm.sword.utility.SwordTimeUnit;
-
 import org.bukkit.plugin.Plugin;
-import org.bukkit.scheduler.BukkitRunnable;
-import org.bukkit.scheduler.BukkitTask;
 
 import btm.sword.Sword;
 import btm.sword.config.Config;
@@ -28,10 +20,12 @@ import btm.sword.system.action.skill.UmbralBladeAction;
 import btm.sword.system.action.throwing.ThrowAction;
 import btm.sword.system.action.utility.GrabAction;
 import btm.sword.system.action.utility.UtilityAction;
+import btm.sword.system.control.SwordScheduler;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.types.Combatant;
 import btm.sword.system.entity.types.SwordPlayer;
 import btm.sword.system.item.SwordItemType;
+import btm.sword.utility.SwordTimeUnit;
 import lombok.Getter;
 import lombok.Setter;
 import net.kyori.adventure.text.Component;
@@ -164,7 +158,7 @@ public class InputExecutionTree {
      */
     private void startTimeoutTimer() {
         timeoutTimer = SwordScheduler.runBukkitTaskLater(this::reset,
-            (int) SwordTimeUnit.ticksToMillis(
+            SwordTimeUnit.ticksToMillis(
                 (int) (currentNode.getTimeoutTicks())
             ),
             TimeUnit.MILLISECONDS);
@@ -696,8 +690,7 @@ public class InputExecutionTree {
 
         // heavy sweeps (umbral attacks)
         new InputNodeBuilder(root, List.of(
-            InputKey.of(InputType.RIGHT),
-            InputKey.of(InputType.RIGHT_TAP),
+            InputKey.of(InputType.DROP),
             InputKey.of(InputType.LEFT)
         )).action(new InputAction(
                 UmbralBladeAction::sweep,
@@ -714,10 +707,9 @@ public class InputExecutionTree {
             .build();
 
         new InputNodeBuilder(root, List.of(
-            InputKey.of(InputType.RIGHT),
-            InputKey.of(InputType.RIGHT_TAP),
+            InputKey.of(InputType.DROP),
             InputKey.of(InputType.LEFT),
-            InputKey.of(InputType.LEFT)
+            InputKey.of(InputType.RIGHT)
         )).action(new InputAction(
                 UmbralBladeAction::sweep,
                 executor -> 0L,
@@ -733,10 +725,9 @@ public class InputExecutionTree {
             .build();
 
         new InputNodeBuilder(root, List.of(
+            InputKey.of(InputType.DROP),
+            InputKey.of(InputType.LEFT),
             InputKey.of(InputType.RIGHT),
-            InputKey.of(InputType.RIGHT_TAP),
-            InputKey.of(InputType.LEFT),
-            InputKey.of(InputType.LEFT),
             InputKey.of(InputType.LEFT)
         )).action(new InputAction(
                 UmbralBladeAction::sweep,
@@ -754,53 +745,14 @@ public class InputExecutionTree {
 
         // lunges (umbral throw)
         new InputNodeBuilder(root, List.of(
-            InputKey.of(InputType.RIGHT),
-            InputKey.of(InputType.RIGHT_HOLD),
-            InputKey.of(InputType.LEFT)
+            InputKey.of(InputType.DROP),
+            InputKey.of(InputType.SWAP),
+            InputKey.of(InputType.RIGHT)
         )).action(new InputAction(
                 UmbralBladeAction::lunge,
-                executor -> 4000L,
+                executor -> 200L,
                 Combatant::canPerformUmbralAction,
                 10f,
-                true,
-                true,
-                false))
-            .timeoutTicks(100L)
-            .sameItemRequired(true)
-            .cancellable(true)
-            .display(true)
-            .build();
-
-        new InputNodeBuilder(root, List.of(
-            InputKey.of(InputType.RIGHT),
-            InputKey.of(InputType.RIGHT_HOLD),
-            InputKey.of(InputType.LEFT),
-            InputKey.of(InputType.LEFT)
-        )).action(new InputAction(
-                UmbralBladeAction::lunge,
-                executor -> 0L,
-                Combatant::canPerformUmbralAction,
-                15f,
-                true,
-                true,
-                false))
-            .timeoutTicks(100L)
-            .sameItemRequired(true)
-            .cancellable(true)
-            .display(true)
-            .build();
-
-        new InputNodeBuilder(root, List.of(
-            InputKey.of(InputType.RIGHT),
-            InputKey.of(InputType.RIGHT_HOLD),
-            InputKey.of(InputType.LEFT),
-            InputKey.of(InputType.LEFT),
-            InputKey.of(InputType.LEFT)
-        )).action(new InputAction(
-                UmbralBladeAction::lunge,
-                executor -> 0L,
-                Combatant::canPerformUmbralAction,
-                25f,
                 true,
                 true,
                 false))

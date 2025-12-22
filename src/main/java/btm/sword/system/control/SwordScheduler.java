@@ -9,7 +9,6 @@ import org.bukkit.scheduler.BukkitRunnable;
 
 import btm.sword.Sword;
 
-import org.bukkit.scheduler.BukkitTask;
 
 public class SwordScheduler {
 

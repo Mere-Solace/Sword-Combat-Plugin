@@ -151,14 +151,5 @@ public class Hostile extends Combatant {
     }
 
     public void jump() {
-        new BukkitRunnable() {
-            int i = 0;
-            @Override
-            public void run() {
-                if (i >= 1) cancel();
-                mob.setVelocity(Config.Direction.UP().multiply(1));
-                i++;
-            }
-        }.runTaskTimer(Sword.getInstance(), 0L, 1L);
     }
 }

@@ -2,10 +2,13 @@ package btm.sword.system.entity.types;
 
 import java.time.Duration;
 import java.util.HashSet;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import javax.annotation.Nullable;
+
+import btm.sword.system.control.SwordScheduler;
 
 import org.bukkit.Color;
 import org.bukkit.Material;
@@ -35,6 +38,8 @@ import com.destroystokyo.paper.profile.PlayerProfile;
 import btm.sword.Sword;
 import btm.sword.config.Config;
 import btm.sword.system.action.throwing.ThrowAction;
+import btm.sword.system.control.PredicateRunnablePair;
+import btm.sword.system.control.TimeArbiter;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.input.InputAction;
@@ -87,7 +92,7 @@ public class SwordPlayer extends Combatant {
     private boolean threwItem;
     private boolean blocking;
 
-    private BukkitTask rightTask;
+    private TimeArbiter.TaskHandle rightClickHoldTask;
     private boolean holdingRight;
     private long rightHoldTimeStart;
     private long timeRightHeld;
@@ -95,7 +100,7 @@ public class SwordPlayer extends Combatant {
     private ItemStack offItemStackAtTimeOfHold;
     private int indexOfRightHold;
 
-    private BukkitTask sneakTask;
+    private TimeArbiter.TaskHandle sneakTask;
     private boolean sneaking;
     private long sneakHoldTimeStart;
     private long timeSneakHeld;
@@ -214,6 +219,7 @@ public class SwordPlayer extends Combatant {
         }
         endStatusDisplay();
         endIndicatorDisplay();
+        destroyed = true;
     }
 
     /**
@@ -250,7 +256,7 @@ public class SwordPlayer extends Combatant {
         }
 
         if (input == InputType.RIGHT) {
-            if (rightTask == null)
+            if (rightClickHoldTask == null)
                 startHoldingRight();
             else
                 return;
@@ -671,7 +677,7 @@ public class SwordPlayer extends Combatant {
     public void startHoldingRight() {
         if (holdingRight) return;
 
-        if (rightTask != null && !rightTask.isCancelled()) rightTask.cancel();
+        if (rightClickHoldTask != null && !rightClickHoldTask.isCancelled()) rightClickHoldTask.cancel();
 
         holdingRight = true;
         rightHoldTimeStart = System.currentTimeMillis();
@@ -693,30 +699,35 @@ public class SwordPlayer extends Combatant {
             setItemStackInHand(new ItemStack(Material.GUNPOWDER), true); // can change the logic here later
         }
 
-        rightTask = new BukkitRunnable() {
-            @Override
-            public void run() {
+        rightClickHoldTask = TimeArbiter.runTimeIndependentBukkitTaskOnTimer(
+            () -> {
                 inputExecutionTree.restartTimeoutTimer();
-                if (!player.isHandRaised() && !player.isBlocking()) { // player must ALWAYS be holding a shield in offhand, then... I can work with this though
+                // player must ALWAYS be holding a shield in offhand, then... I can work with this though
+                if (!player.isHandRaised() && !player.isBlocking()) {
                     endHoldingRight();
                 }
-                if (!holdingRight) {
+            },
+            null,
+            100, 50,
+            SwordPlayer.class, "startHoldingRight",
+            new PredicateRunnablePair(
+                () -> !holdingRight,
+                () -> {
                     if (timeRightHeld < 162)
                         act(InputType.RIGHT_TAP);
                     else
                         act(InputType.RIGHT_HOLD);
                     resetHoldingRight();
-                    cancel();
                 }
-            }
-        }.runTaskTimer(Sword.getInstance(), 2L, 1L);
+            )
+        );
     }
 
     /**
      * Resets the holding start state and cancels the associated task.
      */
     public void resetHoldingRight() {
-        rightTask = null;
+        rightClickHoldTask = null;
         holdingRight = false;
         rightHoldTimeStart = 0L;
         timeRightHeld = 0L;
@@ -746,20 +757,22 @@ public class SwordPlayer extends Combatant {
         sneaking = true;
         sneakHoldTimeStart = System.currentTimeMillis();
 
-        sneakTask = new BukkitRunnable() {
-            @Override
-            public void run() {
-                inputExecutionTree.restartTimeoutTimer();
-                if (!sneaking) {
+        sneakTask = TimeArbiter.runTimeIndependentBukkitTaskOnTimer(
+            inputExecutionTree::restartTimeoutTimer,
+            null,
+            0, 50,
+            SwordPlayer.class, "startSneaking",
+            new PredicateRunnablePair(
+                () -> !sneaking,
+                () -> {
                     if (timeSneakHeld < 162)
                         act(InputType.SHIFT_TAP);
                     else
                         act(InputType.SHIFT_HOLD);
                     resetSneaking();
-                    cancel();
                 }
-            }
-        }.runTaskTimer(Sword.getInstance(), 0L, 1L);
+            )
+        );
     }
 
     /**
@@ -812,12 +825,11 @@ public class SwordPlayer extends Combatant {
      */
     public void setSwappingInInv() {
         swappingInInv = true;
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                swappingInInv = false;
-            }
-        }.runTaskLater(Sword.getInstance(), 1L);
+
+        SwordScheduler.runBukkitTaskLater(
+            () -> swappingInInv = false,
+            50, TimeUnit.MILLISECONDS
+        );
     }
 
     /**
@@ -826,12 +838,10 @@ public class SwordPlayer extends Combatant {
      */
     public void setDroppingInInv() {
         droppingInInv = true;
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                droppingInInv = false;
-            }
-        }.runTaskLater(Sword.getInstance(), 1L);
+        SwordScheduler.runBukkitTaskLater(
+            () -> droppingInInv = false,
+            50, TimeUnit.MILLISECONDS
+        );
     }
 
     public void incrementNumDummies() {

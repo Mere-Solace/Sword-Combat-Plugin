@@ -3,7 +3,10 @@ package btm.sword.system.entity;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
+
+import btm.sword.system.control.SwordScheduler;
 
 import org.bukkit.Bukkit;
 import org.bukkit.World;
@@ -55,27 +58,25 @@ public class SwordEntityArbiter {
             }
 
             if (Sword.getInstance().isEnabled()) {
-                new BukkitRunnable() {
-                    @Override
-                    public void run() {
-                        onlineSwordPlayers.get(entityUUID).onRegister();
-                    }
-                }.runTaskLater(Sword.getInstance(), 2L);
+                SwordScheduler.runBukkitTaskLater(
+                    () -> onlineSwordPlayers.get(entityUUID).onRegister(),
+                    200, TimeUnit.MILLISECONDS
+                );
             }
         }
         else if (!entity.isDead()) {
-            SwordEntity swordEntity = initializeNPC((LivingEntity) entity);
+            SwordEntity swordEntity = initializeNPC(entity);
             if (swordEntity == null) return;
             existingSwordNPCs.putIfAbsent(entityUUID, swordEntity);
+
             if (Sword.getInstance().isEnabled()) {
-                new BukkitRunnable() {
-                    @Override
-                    public void run() {
-                        SwordEntity swordEntity = existingSwordNPCs.get(entityUUID);
-                        if (swordEntity == null) return;
-                        swordEntity.onRegister();
-                    }
-                }.runTaskLater(Sword.getInstance(), 2L);
+                SwordScheduler.runBukkitTaskLater(
+                    () -> {
+                        SwordEntity entityToRegister = existingSwordNPCs.get(entityUUID);
+                        if (entityToRegister == null) return;
+                        entityToRegister.onRegister();
+                    }, 200, TimeUnit.MILLISECONDS
+                );
             }
         }
     }

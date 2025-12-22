@@ -1,8 +1,6 @@
 package btm.sword.system.entity.umbral.statemachine.state;
 
 import org.bukkit.Color;
-import org.bukkit.Location;
-import org.bukkit.util.Vector;
 
 import btm.sword.system.control.TimeArbiter;
 import btm.sword.system.entity.umbral.UmbralBlade;
@@ -32,12 +30,6 @@ import btm.sword.system.entity.umbral.statemachine.UmbralStateFacade;
  *
  */
 public class RecallingState extends UmbralStateFacade {
-    private Location previousBladeLocation;
-    private int t = 0;
-    private int stationaryCount = 0;
-    private static final double EPS_SQ = 0.0004; // tune: 0.02^2  (very small)
-    private static final int REQUIRED_STATIONARY_TICKS = 3;
-
     private TimeArbiter.TaskHandle returnTask;
 
     @Override
@@ -50,7 +42,6 @@ public class RecallingState extends UmbralStateFacade {
         blade.getDisplay().setGlowing(true);
         blade.getDisplay().setGlowColorOverride(Color.fromRGB(1, 1, 1));
 
-        previousBladeLocation = blade.getDisplay().getLocation();
         returnTask = blade.returnToWielderAndRequestState(BladeRequest.STANDBY);
     }
 

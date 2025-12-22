@@ -2,8 +2,7 @@ package btm.sword.system.action.attack;
 
 import static btm.sword.system.action.attack.PunchAction.throwPunch;
 
-import btm.sword.system.item.ItemUsageManager;
-import btm.sword.utility.misc.ConsumerToConsumePair;
+import btm.sword.system.attack.SweepAttack;
 
 import org.bukkit.inventory.ItemStack;
 
@@ -15,6 +14,8 @@ import btm.sword.system.attack.style.AttackType;
 import btm.sword.system.attack.style.WeaponAttackStyle;
 import btm.sword.system.entity.types.Combatant;
 import btm.sword.system.entity.types.SwordPlayer;
+import btm.sword.system.item.ItemUsageManager;
+import btm.sword.utility.misc.ConsumerToConsumePair;
 
 
 /**
@@ -73,7 +74,7 @@ public class AttackAction extends SwordAction {
     }
 
     public static void basicSlash(Combatant executor, ItemStack itemUsedInAttack, AttackProfile profile, Boolean orientWithPitch) {
-        new Attack(itemUsedInAttack, profile,
+        new SweepAttack(itemUsedInAttack, profile,
             orientWithPitch, 40,
             60, 0.1, 0.9)
             .setAttackConnectInstructions(

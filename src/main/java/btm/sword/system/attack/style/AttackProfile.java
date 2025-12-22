@@ -10,4 +10,5 @@ import btm.sword.utility.math.ControlVectors;
 public interface AttackProfile {
     ControlVectors controlVectors();
     Function<Attack, Vector> knockbackFunction();
+    Vector normalVector();
 }

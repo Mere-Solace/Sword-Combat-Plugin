@@ -2,8 +2,6 @@ package btm.sword.system.action;
 
 import java.util.concurrent.TimeUnit;
 
-import btm.sword.system.control.TimeArbiter;
-
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitScheduler;
@@ -11,6 +9,7 @@ import org.bukkit.scheduler.BukkitTask;
 
 import btm.sword.Sword;
 import btm.sword.system.control.SwordScheduler;
+import btm.sword.system.control.TimeArbiter;
 import btm.sword.system.entity.types.Combatant;
 
 public abstract class SwordAction {

@@ -25,4 +25,9 @@ public class GeneratedAttackProfile implements AttackProfile {
     public Function<Attack, Vector> knockbackFunction() {
         return knockBackFunction;
     }
+
+    @Override
+    public Vector normalVector() {
+        return null;
+    }
 }

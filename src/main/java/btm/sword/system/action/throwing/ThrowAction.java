@@ -79,6 +79,7 @@ public class ThrowAction extends SwordAction {
 
         executor.setThrownItem(thrownItem);
 
+        // This Bukkit Runnable is fine for now
         new BukkitRunnable() {
             int misses = 0;
             @Override
@@ -143,11 +144,8 @@ public class ThrowAction extends SwordAction {
         executor.setAttemptingThrow(false);
         executor.setThrowSuccessful(true);
 
-        cast(executor, 10, new BukkitRunnable() {
-            @Override
-            public void run() {
-                executor.getThrownItem().onRelease(2);
-            }
-        });
+        cast(executor, 10, () ->
+                executor.getThrownItem().onRelease(2)
+        );
     }
 }

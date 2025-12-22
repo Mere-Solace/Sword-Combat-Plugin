@@ -647,6 +647,32 @@ public class Config {
                 ConfigurationSection::getDouble
         ); }
 
+
+        public static float SWEEP_ATTACK_X_SCALE = 0.5f;
+        static { register(
+            "combat.sweep_attack_x_scale",
+            SWEEP_ATTACK_X_SCALE, Float.class,
+            v -> SWEEP_ATTACK_X_SCALE = v,
+            Config::loadFloat
+        ); }
+
+        public static float SWEEP_ATTACK_Y_SCALE = 0.25f;
+        static { register(
+            "combat.sweep_attack_y_scale",
+            SWEEP_ATTACK_Y_SCALE, Float.class,
+            v -> SWEEP_ATTACK_Y_SCALE = v,
+            Config::loadFloat
+        ); }
+
+        public static float SWEEP_ATTACK_Z_SCALE = 2.5f;
+        static { register(
+            "combat.sweep_attack_z_scale",
+            SWEEP_ATTACK_Z_SCALE, Float.class,
+            v -> SWEEP_ATTACK_Z_SCALE = v,
+            Config::loadFloat
+        ); }
+
+
         // Hitboxes configuration
         public static double HITBOXES_BASIC_REACH = 1.5;
         static { register("combat.hitboxes_basic_reach",
@@ -1787,12 +1813,12 @@ public class Config {
             ConfigurationSection::getLong
         ); }
 
-        public static long DASH_PARTICLE_TASK_PERIOD = 2L;
+        public static int DASH_PARTICLE_TASK_PERIOD = 2;
         static { register(
             "movement.dash_particle_task_period",
-            DASH_PARTICLE_TASK_PERIOD, Long.class,
+            DASH_PARTICLE_TASK_PERIOD, Integer.class,
             v -> DASH_PARTICLE_TASK_PERIOD = v,
-            ConfigurationSection::getLong
+            ConfigurationSection::getInt
         ); }
 
         public static int DASH_PARTICLE_TIMER_INCREMENT = 2;
@@ -1811,28 +1837,28 @@ public class Config {
             ConfigurationSection::getInt
         ); }
 
-        public static long DASH_GRAB_CHECK_DELAY = 4L;
+        public static int DASH_GRAB_CHECK_DELAY = 200;
         static { register(
             "movement.dash_grab_check_delay",
-            DASH_GRAB_CHECK_DELAY, Long.class,
+            DASH_GRAB_CHECK_DELAY, Integer.class,
             v -> DASH_GRAB_CHECK_DELAY = v,
-            ConfigurationSection::getLong
+            ConfigurationSection::getInt
         ); }
 
-        public static long DASH_VELOCITY_TASK_DELAY = 0L;
+        public static int DASH_VELOCITY_TASK_DELAY = 0;
         static { register(
             "movement.dash_velocity_task_delay",
-            DASH_VELOCITY_TASK_DELAY, Long.class,
+            DASH_VELOCITY_TASK_DELAY, Integer.class,
             v -> DASH_VELOCITY_TASK_DELAY = v,
-            ConfigurationSection::getLong
+            ConfigurationSection::getInt
         ); }
 
-        public static long DASH_VELOCITY_TASK_PERIOD = 1L;
+        public static int DASH_VELOCITY_TASK_PERIOD = 1;
         static { register(
             "movement.dash_velocity_task_period",
-            DASH_VELOCITY_TASK_PERIOD, Long.class,
+            DASH_VELOCITY_TASK_PERIOD, Integer.class,
             v -> DASH_VELOCITY_TASK_PERIOD = v,
-            ConfigurationSection::getLong
+            ConfigurationSection::getInt
         ); }
 
         public static int DASH_PARTICLE_COUNT = 100;

@@ -192,7 +192,7 @@ public class Prefab {
 
         public static final SoundWrapper SHADOW_BLINK = new SoundWrapper(
             () -> SoundType.ENTITY_ENDERMAN_TELEPORT,
-            () -> 0.6f,
+            () -> 1f,
             () -> 0.05f
         );
     }

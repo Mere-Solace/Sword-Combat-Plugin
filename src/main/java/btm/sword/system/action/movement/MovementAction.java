@@ -2,7 +2,12 @@ package btm.sword.system.action.movement;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
+
+import btm.sword.system.control.SwordScheduler;
 
 import org.bukkit.FluidCollisionMode;
 import org.bukkit.Location;
@@ -23,11 +28,16 @@ import btm.sword.Sword;
 import btm.sword.config.Config;
 import btm.sword.system.action.SwordAction;
 import btm.sword.system.action.throwing.InteractiveItemArbiter;
+import btm.sword.system.control.PredicateRunnablePair;
+import btm.sword.system.control.TimeArbiter;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.types.Combatant;
+import btm.sword.utility.Debug;
 import btm.sword.utility.Prefab;
+import btm.sword.utility.SwordTimeUnit;
+import btm.sword.utility.display.DrawUtil;
 import btm.sword.utility.display.ParticleWrapper;
 import btm.sword.utility.entity.HitboxUtil;
 import btm.sword.utility.math.Basis;
@@ -110,97 +120,108 @@ public class MovementAction extends SwordAction {
         double dashPower = Config.Movement.DASH_BASE_POWER;
         double s = dashPower * direction;
         Vector up = Config.Direction.UP().multiply(Config.Movement.DASH_UPWARD_BOOST);
-        new BukkitRunnable() {
-            int i = 0;
-            final int particles = 3;
-            @Override
-            public void run() {
-                new ParticleWrapper(Particle.CLOUD, particles + 1 - i, 0.3, 0.3, 0.3, 0)
-                    .display(executor.getLocation());
-                new ParticleWrapper(Particle.SMOKE, 3*(particles + 1 - i), 0.3, 0.3, 0.3, 0)
-                    .display(executor.getLocation());
 
-                Vector dir = ex.getEyeLocation().getDirection();
-                if (onGround && (
-                    (direction > 0 && dir.dot(new Vector(0, 1, 0)) < 0)
-                        ||
-                        (direction <= 0 && dir.dot(new Vector(0, 1, 0)) > 0))) {
-                    dir = executor.getFlatDir();
-                }
-                if (i == 0)
-                    ex.setVelocity(dir.multiply(s).add(up));
-                else if (i == 1) {
-                    ex.setVelocity(dir.multiply(s));
-                }
-                else {
-                    cancel();
-                }
-                i++;
-            }
-        }.runTaskTimer(Sword.getInstance(), Config.Movement.DASH_VELOCITY_TASK_DELAY, Config.Movement.DASH_VELOCITY_TASK_PERIOD);
+        int[] iteration = {0};
+        final int particles = 3;
+
+        Vector eyeDirection = executor.dir();
+        boolean flatDash = onGround && (
+            (direction > 0 && eyeDirection.dot(new Vector(0, 1, 0)) < 0) ||
+                (direction <= 0 && eyeDirection.dot(new Vector(0, 1, 0)) > 0));
+
+        AtomicReference<Vector> dir = new AtomicReference<>(flatDash ? executor.getFlatDir() : executor.dir());
+
+        TimeArbiter.runTimeIndependentBukkitTaskOnTimer(
+            () -> iteration[0]++,
+            () -> {
+                new ParticleWrapper(Particle.CLOUD, particles + 1 - iteration[0], 0.3, 0.3, 0.3, 0)
+                    .display(executor.getLocation());
+                new ParticleWrapper(Particle.SMOKE, 3 * (particles + 1 - iteration[0]), 0.3, 0.3, 0.3, 0)
+                    .display(executor.getLocation());
+            },
+            Config.Movement.DASH_VELOCITY_TASK_DELAY, Config.Movement.DASH_VELOCITY_TASK_PERIOD,
+            MovementAction.class, "dashStraight",
+            new PredicateRunnablePair(
+                () -> {
+                    if (iteration[0] == 0)
+                        ex.setVelocity(dir.get().multiply(s).add(up));
+                    else if (iteration[0] == 1) {
+                        ex.setVelocity(dir.get().multiply(s));
+                    }
+                    else {
+                        return true;
+                    }
+                    return false;
+                },
+                null
+            )
+        );
         if (!onGround) executor.increaseAirDashesPerformed();
     }
 
     @SuppressWarnings("all")
-    private static boolean dashToItem(Combatant executor, ItemDisplay id, int direction) {
+    private static boolean dashToItem(Combatant executor, ItemDisplay itemDisplay, int direction) {
         LivingEntity ex = executor.self();
         RayTraceResult impedanceCheck = ex.getWorld().rayTraceBlocks(
             ex.getLocation().add(new Vector(0, Config.Movement.DASH_IMPEDANCE_CHECK_OFFSET_Y, 0)),
-            id.getLocation().subtract(ex.getLocation()).toVector().normalize(),
+            itemDisplay.getLocation().subtract(ex.getLocation()).toVector().normalize(),
             MAX_STRAIGHT_DASH_DISTANCE.get() / 2, FluidCollisionMode.NEVER,
             true,
             block -> !block.isCollidable());
 
-        new BukkitRunnable() {
-            int t = 0;
-            int particles = Config.Movement.DASH_PARTICLE_TIMER_THRESHOLD;
-            @Override
-            public void run() {
-                new ParticleWrapper(Particle.CLOUD, particles + 1 - t, 0.3, 0.3, 0.3, 0)
+        int[] iteration = {0};
+        int particles = Config.Movement.DASH_PARTICLE_TIMER_THRESHOLD;
+
+        TimeArbiter.runTimeIndependentBukkitTaskOnTimer(
+            () -> {
+                new ParticleWrapper(Particle.CLOUD, particles + 1 - iteration[0], 0.3, 0.3, 0.3, 0)
                     .display(executor.getLocation());
-                new ParticleWrapper(Particle.SMOKE, 3*(particles + 1 - t), 0.3, 0.3, 0.3, 0)
+                new ParticleWrapper(Particle.SMOKE, 3 * (particles + 1 - iteration[0]), 0.3, 0.3, 0.3, 0)
                     .display(executor.getLocation());
-                t += Config.Movement.DASH_PARTICLE_TIMER_INCREMENT;
-                if (t > Config.Movement.DASH_PARTICLE_TIMER_THRESHOLD) cancel();
+                iteration[0] += Config.Movement.DASH_PARTICLE_TIMER_INCREMENT;
+            },
+            null,
+            0, Config.Movement.DASH_PARTICLE_TASK_PERIOD,
+            MovementAction.class, "dashToItem",
+            new PredicateRunnablePair(
+                () -> iteration[0] > Config.Movement.DASH_PARTICLE_TIMER_THRESHOLD, null
+            )
+        );
+
+        if (impedanceCheck != null && impedanceCheck.getHitBlock() != null && impedanceCheck.getHitBlock().isCollidable())
+            return false;
+
+
+        double length = itemDisplay.getLocation().subtract(ex.getEyeLocation()).length();
+
+        executor.setVelocity(ex.getEyeLocation().getDirection().multiply(Math.log(length)));
+
+        Vector u = executor.getFlatDir().multiply(direction * Config.Movement.DASH_FORWARD_MULTIPLIER)
+            .add(Config.Direction.UP().multiply(Config.Movement.DASH_UPWARD_MULTIPLIER));
+
+        SwordScheduler.runBukkitTaskLater(() -> {
+            if (itemDisplay.getLocation().subtract(ex.getEyeLocation()).lengthSquared() < Config.Movement.DASH_GRAB_DISTANCE_SQUARED) {
+                BlockData blockData = ex.getLocation().add(new Vector(0, Config.Movement.DASH_BLOCK_CHECK_OFFSET_Y, 0)).getBlock().getBlockData();
+                new ParticleWrapper(Particle.BLOCK,
+                    Config.Movement.DASH_PARTICLE_COUNT,
+                    Config.Movement.DASH_PARTICLE_SPREAD_X,
+                    Config.Movement.DASH_PARTICLE_SPREAD_Y,
+                    Config.Movement.DASH_PARTICLE_SPREAD_Z,
+                    blockData).display(ex.getLocation());
+                Prefab.Particles.GRAB_ATTEMPT.display(itemDisplay.getLocation());
+                SoundUtil.playSound(ex, SoundType.ENTITY_ENDER_DRAGON_FLAP, Config.Movement.DASH_FLAP_SOUND_VOLUME, Config.Movement.DASH_FLAP_SOUND_PITCH);
+                SoundUtil.playSound(ex, SoundType.ENTITY_PLAYER_ATTACK_SWEEP, Config.Movement.DASH_SWEEP_SOUND_VOLUME, Config.Movement.DASH_SWEEP_SOUND_PITCH);
+                executor.setVelocity(u);
+                InteractiveItemArbiter.onGrab(itemDisplay, executor); // here is where the display is taken care of
             }
-        }.runTaskTimer(Sword.getInstance(), 0L, Config.Movement.DASH_PARTICLE_TASK_PERIOD);
+            else {
+                Vector v = ex.getVelocity();
+                double damping = Config.Movement.DASH_VELOCITY_DAMPING;
+                ex.setVelocity(new Vector(v.getX() * damping, v.getY() * damping, v.getZ() * damping));
+            }
+        }, Config.Movement.DASH_GRAB_CHECK_DELAY, TimeUnit.MILLISECONDS);
 
-        if (impedanceCheck == null || impedanceCheck.getHitBlock() == null) {
-            double length = id.getLocation().subtract(ex.getEyeLocation()).length();
-
-            executor.setVelocity(ex.getEyeLocation().getDirection().multiply(Math.log(length)));
-
-            Vector u = executor.getFlatDir().multiply(direction * Config.Movement.DASH_FORWARD_MULTIPLIER)
-                .add(Config.Direction.UP().multiply(Config.Movement.DASH_UPWARD_MULTIPLIER));
-
-            new BukkitRunnable() {
-                @Override
-                public void run() {
-                    if (id.getLocation().subtract(ex.getEyeLocation()).lengthSquared() < Config.Movement.DASH_GRAB_DISTANCE_SQUARED) {
-                        BlockData blockData = ex.getLocation().add(new Vector(0, Config.Movement.DASH_BLOCK_CHECK_OFFSET_Y, 0)).getBlock().getBlockData();
-                        new ParticleWrapper(Particle.BLOCK,
-                            Config.Movement.DASH_PARTICLE_COUNT,
-                            Config.Movement.DASH_PARTICLE_SPREAD_X,
-                            Config.Movement.DASH_PARTICLE_SPREAD_Y,
-                            Config.Movement.DASH_PARTICLE_SPREAD_Z,
-                            blockData).display(ex.getLocation());
-                        SoundUtil.playSound(ex, SoundType.ENTITY_ENDER_DRAGON_FLAP, Config.Movement.DASH_FLAP_SOUND_VOLUME, Config.Movement.DASH_FLAP_SOUND_PITCH);
-                        SoundUtil.playSound(ex, SoundType.ENTITY_PLAYER_ATTACK_SWEEP, Config.Movement.DASH_SWEEP_SOUND_VOLUME, Config.Movement.DASH_SWEEP_SOUND_PITCH);
-                        executor.setVelocity(u);
-
-                        InteractiveItemArbiter.onGrab(id, executor); // here is where the display is taken care of
-                    }
-                    else {
-                        Vector v = ex.getVelocity();
-                        double damping = Config.Movement.DASH_VELOCITY_DAMPING;
-                        ex.setVelocity(new Vector(v.getX() * damping, v.getY() * damping, v.getZ() * damping));
-                    }
-                }
-            }.runTaskLater(Sword.getInstance(), Config.Movement.DASH_GRAB_CHECK_DELAY);
-            return true;
-        }
-
-        return false;
+        return true;
     }
 
 
@@ -232,75 +253,78 @@ public class MovementAction extends SwordAction {
      * @param target   The sword entity to toss.
      */
     public static void toss(Combatant executor, SwordEntity target) {
-        LivingEntity ex = executor.self();
-        LivingEntity t = target.self();
+        Vector throwDirection = executor.dir();
+
+        LivingEntity targetEntity = target.self();
 
         double baseForce = Config.Movement.TOSS_BASE_FORCE;
         double force = executor.calcValueAdditive(AspectType.MIGHT, Config.Movement.TOSS_MIGHT_MULTIPLIER_BASE, baseForce, Config.Movement.TOSS_MIGHT_MULTIPLIER_INCREMENT);
 
-        for (int i = 0; i < Config.Movement.TOSS_UPWARD_PHASE_ITERATIONS; i++) {
-            new BukkitRunnable() {
-                @Override
-                public void run() {
-                    t.setVelocity(new Vector(0, Config.Movement.TOSS_UPWARD_VELOCITY_Y, 0));
-                }
-            }.runTaskLater(Sword.getInstance(), i);
-        }
+        TimeArbiter.runFixedIterationTaskTimer(
+            null,
+            () -> target.setVelocity(new Vector(0, Config.Movement.TOSS_UPWARD_VELOCITY_Y, 0)),
+            0, 50,
+            Config.Movement.TOSS_UPWARD_PHASE_ITERATIONS,
+            MovementAction.class, "toss"
+        );
 
-        for (int i = 0; i < Config.Movement.TOSS_FORWARD_PHASE_ITERATIONS; i++) {
-            new BukkitRunnable() {
-                @Override
-                public void run() {
-                    t.setVelocity(ex.getEyeLocation().getDirection().multiply(force));
-                }
-            }.runTaskLater(Sword.getInstance(), i + Config.Movement.TOSS_UPWARD_PHASE_ITERATIONS);
-        }
+        TimeArbiter.runFixedIterationTaskTimer(
+            null,
+            () -> targetEntity.setVelocity(executor.dir().multiply(force)),
+            SwordTimeUnit.ticksToMillis(Config.Movement.TOSS_UPWARD_PHASE_ITERATIONS), 50,
+            Config.Movement.TOSS_FORWARD_PHASE_ITERATIONS,
+            MovementAction.class, "toss"
+        );
 
         boolean[] check = {true};
-        for (int i = 0; i < Config.Movement.TOSS_ANIMATION_ITERATIONS; i++) {
-            new BukkitRunnable() {
-                @Override
-                public void run() {
-                    if (!check[0]) {
-                        cancel();
-                        return;
+
+        TimeArbiter.runFixedIterationTaskTimer(
+            null,
+            () -> {
+                DrawUtil.line(List.of(Prefab.Particles.TEST_SWORD_WHITE), target.getChestLocation(), throwDirection, target.getAverageSize()*2, 0.25);
+                Prefab.Particles.THROW_TRAIl.display(target.getChestLocation());
+
+                World world = targetEntity.getWorld();
+                Location currentLocation = target.getChestLocation();
+                Location newLocation = currentLocation.add(throwDirection.clone().multiply(target.getAverageSize()));
+
+                if (!newLocation.isFinite()) return;
+
+                RayTraceResult blockResult = world.rayTraceBlocks(target.getChestLocation(), throwDirection,
+                    target.getAverageSize()*2, FluidCollisionMode.NEVER,
+                    true,
+                    block -> block.getType().isCollidable());
+
+                Debug.debug(MovementAction.class, 285, "blockResult :: " + blockResult);
+
+                double entityRadius = Config.Movement.TOSS_ENTITY_DETECTION_RADIUS;
+                Collection<LivingEntity> entities = world.getNearbyLivingEntities(
+                    newLocation, entityRadius, entityRadius, entityRadius,
+                    entity ->
+                        !entity.getUniqueId().equals(targetEntity.getUniqueId()) &&
+                            !entity.getUniqueId().equals(executor.getUniqueId()));
+
+                if ((blockResult != null && blockResult.getHitBlock() != null) || !entities.isEmpty()) {
+                    if (!entities.isEmpty()) {
+                        Vector knockbackDir = currentLocation.toVector().subtract(((LivingEntity) Arrays.stream(entities.toArray()).toList().getFirst()).getLocation().toVector());
+                        targetEntity.setVelocity(knockbackDir.normalize().multiply(Config.Movement.TOSS_KNOCKBACK_MULTIPLIER * force));
                     }
-                    World world = t.getWorld();
-                    Location base = t.getLocation();
-                    double h = t.getEyeHeight();
-                    Vector v = t.getVelocity().normalize();
-                    Location l = base.add(new Vector(0, h * Config.Movement.TOSS_LOCATION_OFFSET_MULTIPLIER, 0).add(v));
-
-                    Prefab.Particles.THROW_TRAIl.display(target.getChestLocation());
-
-                    if (l.isFinite()) {
-                        RayTraceResult blockResult = world.rayTraceBlocks(l, v,
-                                h * Config.Movement.TOSS_RAY_TRACE_DISTANCE_MULTIPLIER, FluidCollisionMode.NEVER,
-                                true,
-                                block -> !block.getType().isCollidable());
-
-                        double entityRadius = Config.Movement.TOSS_ENTITY_DETECTION_RADIUS;
-                        Collection<LivingEntity> entities = world.getNearbyLivingEntities(
-                                l, entityRadius, entityRadius, entityRadius,
-                                entity -> !entity.getUniqueId().equals(t.getUniqueId()) && !entity.getUniqueId().equals(ex.getUniqueId()));
-
-                        if ((blockResult != null && blockResult.getHitBlock() != null) || !entities.isEmpty()) {
-                            if (!entities.isEmpty()) {
-                                Vector knockbackDir = base.toVector().subtract(((LivingEntity) Arrays.stream(entities.toArray()).toList().getFirst()).getLocation().toVector());
-                                t.setVelocity(knockbackDir.normalize().multiply(Config.Movement.TOSS_KNOCKBACK_MULTIPLIER * force));
-                            }
-                            world.createExplosion(l, Config.Movement.TOSS_EXPLOSION_POWER, false, false);
-                            target.hit(executor, 5,
-                                    Config.Movement.TOSS_HIT_INVULNERABILITY_TICKS,
-                                    Config.Movement.TOSS_HIT_SHARD_DAMAGE,
-                                    Config.Movement.TOSS_HIT_TOUGHNESS_DAMAGE,
-                                    Config.Movement.TOSS_HIT_SOULFIRE_REDUCTION,
-                                    new Vector());
-                            check[0] = false;
-                        }
-                    }
+                    world.createExplosion(newLocation, Config.Movement.TOSS_EXPLOSION_POWER, false, false);
+                    target.hit(executor, 5,
+                        Config.Movement.TOSS_HIT_INVULNERABILITY_TICKS,
+                        Config.Movement.TOSS_HIT_SHARD_DAMAGE,
+                        Config.Movement.TOSS_HIT_TOUGHNESS_DAMAGE,
+                        Config.Movement.TOSS_HIT_SOULFIRE_REDUCTION,
+                        new Vector());
+                    check[0] = false;
                 }
-            }.runTaskLater(Sword.getInstance(), i);
-        }
+            },
+            SwordTimeUnit.ticksToMillis(Config.Movement.TOSS_UPWARD_PHASE_ITERATIONS), 50,
+            Config.Movement.TOSS_ANIMATION_ITERATIONS,
+            MovementAction.class, "toss",
+            new PredicateRunnablePair(
+                () -> !check[0], null
+            )
+        );
     }
 }

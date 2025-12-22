@@ -7,6 +7,8 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+import btm.sword.system.action.throwing.StuckItem;
+
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -37,6 +39,7 @@ import btm.sword.system.action.throwing.impale.Impalement;
 import btm.sword.system.attack.HitValuePacket;
 import btm.sword.system.combat.Affliction;
 import btm.sword.system.control.EntityController;
+import btm.sword.system.control.PredicateRunnablePair;
 import btm.sword.system.control.SwordScheduler;
 import btm.sword.system.control.TimeArbiter;
 import btm.sword.system.entity.SwordEntityArbiter;
@@ -75,6 +78,7 @@ public abstract class SwordEntity {
     protected final CombatProfile combatProfile;
     protected final LivingEntity self;
     protected String displayName;
+    protected boolean destroyed;
 
     protected boolean dead;
 
@@ -172,15 +176,19 @@ public abstract class SwordEntity {
      * Controls the continuous update logic for this entity.
      */
     private void startTicking() {
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                if (shouldTick) {
-                    onTick();
-                }
-                ticks++;
-            }
-        }.runTaskTimer(Sword.getInstance(), 0L, 1L);
+        TimeArbiter.runTimeIndependentBukkitTaskOnTimer(
+          null,
+            () -> {
+              if (shouldTick) onTick();
+              ticks++;
+            },
+            0, 50,
+            SwordEntity.class, "startTicking",
+            new PredicateRunnablePair(
+                this::isDestroyed,
+                () -> Debug.debug(SwordEntity.class, 188, "ending the ticking task")
+            )
+        );
     }
 
     /**
@@ -307,6 +315,7 @@ public abstract class SwordEntity {
 
         if (!Sword.getInstance().isEnabled()) return;
 
+        // This Bukkit Runnable is fine. Intricate canceling is required here.
         new BukkitRunnable() {
             int attempts = 0;
 
@@ -338,12 +347,7 @@ public abstract class SwordEntity {
     }
 
     public void onRegister() {
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                restartStatusDisplay();
-            }
-        }.runTaskLater(Sword.getInstance(), 2L);
+        SwordScheduler.runBukkitTaskLater(this::restartStatusDisplay, 100, TimeUnit.MILLISECONDS);
     }
 
     /**
@@ -354,6 +358,7 @@ public abstract class SwordEntity {
         ticks = 0;
         setShouldTick(true);
         resetResources();
+        TimeArbiter.movementSpeedApplication.accept(this);
     }
 
     /**
@@ -363,6 +368,7 @@ public abstract class SwordEntity {
         endStatusDisplay();
         setShouldTick(false);
         aspects.stopAllResourceTasks();
+        if (!(self instanceof Player)) destroyed = true;
     }
 
     public void onZeroHealth() {
@@ -511,7 +517,7 @@ public abstract class SwordEntity {
                     self.damage(74077740, source.self());
                     if (!self.isDead())
                         self.setHealth(0); },
-                    (int) SwordTimeUnit.MILLISECONDS_PER_TICK * 2, TimeUnit.MILLISECONDS);
+                    SwordTimeUnit.MILLISECONDS_PER_TICK * 2, TimeUnit.MILLISECONDS);
                 return;
             }
             shardsLostDuringToughnessBreak += baseNumShards;
@@ -568,27 +574,31 @@ public abstract class SwordEntity {
         toughnessBroken = true;
         aspects.toughness().setEffAmountPercent(Config.Entity.HIT_TOUGH_BREAK_RECHARGE_AMOUNT_PERCENT);
         aspects.toughness().setEffPeriodPercent(Config.Entity.HIT_TOUGH_BREAK_RECHARGE_PERIOD_PERCENT);
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                if (self == null || self.isDead()) {
+        TimeArbiter.runTimeIndependentBukkitTaskOnTimer(
+            null,
+            null,
+            0, 100,
+            SwordEntity.class, "onToughnessBroken",
+            new PredicateRunnablePair(
+                () -> self == null || self.isDead(),
+                () -> {
                     aspects.toughness().setEffAmountPercent(1f);
                     aspects.toughness().setEffPeriodPercent(1f);
                     toughnessBroken = false;
-                    cancel();
                 }
-
-                if (aspects.toughness().curPercent() > Config.Entity.HIT_TOUGH_BREAK_RECHARGE_CUTOFF_PERCENT) {
+            ),
+            new PredicateRunnablePair(
+                () -> aspects.toughness().curPercent() > Config.Entity.HIT_TOUGH_BREAK_RECHARGE_CUTOFF_PERCENT,
+                () -> {
                     aspects.toughness().setEffAmountPercent(1f);
                     aspects.toughness().setEffPeriodPercent(1f);
                     toughnessBroken = false;
                     Location c = getChestLocation();
                     Prefab.Particles.TOUGH_RECHARGE_1.display(c);
                     Prefab.Particles.TOUGH_RECHARGE_2.display(c);
-                    cancel();
                 }
-            }
-        }.runTaskTimer(Sword.getInstance(), 0L, 2L);
+            )
+        );
     }
 
     /**
@@ -648,19 +658,16 @@ public abstract class SwordEntity {
             }
 
             // TODO: Convert this into a StuckItem
-            Item dropped = p.getWorld().dropItemNaturally(p.getLocation(), itemStack);
-            new BukkitRunnable() {
-                @Override
-                public void run() {
-                    if (dropped.isDead()) {
-                        cancel();
-                    }
-                    Prefab.Particles.DOPPED_ITEM_MARKER.display(dropped.getLocation());
-                }
-            }.runTaskTimer(Sword.getInstance(), 0L, 5L);
+
+            if (!itemStack.isEmpty()) {
+                Vector dropVel = Config.Direction.DOWN().multiply(0.5);
+
+                StuckItem stuck = new StuckItem(getChestLocation(), dropVel, itemStack);
+                stuck.register();
+            }
         }
         else {
-            Objects.requireNonNull(self.getEquipment()).setItemInMainHand(itemStack);
+            Objects.requireNonNull(self.getEquipment()).setItemInOffHand(itemStack);
         }
     }
 

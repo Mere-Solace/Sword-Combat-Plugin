@@ -5,6 +5,8 @@ import static btm.sword.system.action.attack.PunchAction.throwPunch;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import btm.sword.system.control.TimeArbiter;
+
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
@@ -130,23 +132,17 @@ public class UmbralBladeAction extends SwordAction {
 
             wielder.resetAirDashesPerformed(); // give em tools to be cool coming down
 
-            new BukkitRunnable() {
-                int iterations = 0;
-                @Override
-                public void run() {
-                    if (iterations > 10) { // 0.5 seconds
-                        cancel();
-                        return;
-                    }
-
+            TimeArbiter.runFixedIterationTaskTimer(
+                null,
+                () -> {
                     target.setVelocity(new Vector());
                     wielder.setVelocity(new Vector());
 
                     wielder.getUmbralBlade().onGrab(wielder);
-
-                    iterations++;
-                }
-            }.runTaskTimer(Sword.getInstance(), 0L, 1L);
+                },
+                0,50,10,
+                UmbralBladeAction.class, "performBlink"
+            );
         }, 60, TimeUnit.MILLISECONDS);
     }
 }

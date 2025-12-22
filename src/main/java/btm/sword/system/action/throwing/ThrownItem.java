@@ -6,10 +6,6 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-import btm.sword.system.item.ItemUsageManager;
-
-import btm.sword.utility.Debug;
-
 import org.bukkit.FluidCollisionMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -22,7 +18,6 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
-import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Transformation;
 import org.bukkit.util.Vector;
@@ -30,7 +25,6 @@ import org.jetbrains.annotations.NotNull;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
-import btm.sword.Sword;
 import btm.sword.config.Config;
 import btm.sword.system.action.throwing.impale.Impalement;
 import btm.sword.system.control.PredicateRunnablePair;
@@ -40,6 +34,8 @@ import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.types.Combatant;
 import btm.sword.system.entity.types.SwordPlayer;
+import btm.sword.system.item.ItemUsageManager;
+import btm.sword.utility.Debug;
 import btm.sword.utility.Prefab;
 import btm.sword.utility.display.DisplayUtil;
 import btm.sword.utility.display.ParticleWrapper;
@@ -188,45 +184,44 @@ public class ThrownItem implements InteractiveItem {
                 return;
             }
         }
-
         determineOrientation();
-
         final LivingEntity throwerEntity = thrower.self();
+        final int[] iteration = {0};
 
-        new BukkitRunnable() {
-            int i = 0;
-            @Override
-            public void run() {
-                if (thrower.isThrowCancelled()) {
-                    display.remove();
-                    ThrowAction.throwCancel(thrower);
-                    thrower.setThrownItem(null);
-                    cancel();
-                    return;
-                }
-                else if (thrower.isThrowSuccessful()) {
-                    thrower.setItemTypeInHand(Material.AIR, true);
-                    cancel();
-                    return;
-                }
-
+        TimeArbiter.runTimeIndependentBukkitTaskOnTimer(
+          null,
+            () -> {
                 if (thrower instanceof SwordPlayer sp) {
                     if (!sp.isChangingHandIndex() && sp.getCurrentInvIndex() == sp.getThrownItemIndex()) {
-                        if (i < 10)
+                        if (iteration[0] < 10)
                             sp.itemNameDisplay("- HURL IT AT 'EM SOLDIER! -", TextColor.color(100, 100, 100), null);
                         else
                             sp.itemNameDisplay("| HURL IT AT 'EM SOLDIER! |", TextColor.color(150, 150, 150), null);
 
-                        if (i > 20) i = 0;
-                        i++;
+                        if (iteration[0] > 20) iteration[0] = 0;
+                        iteration[0]++;
                     }
                 }
 
                 throwerEntity.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 1, 2));
 
                 TimeArbiter.teleportDisplay(display, throwerEntity.getEyeLocation(), null, 2);
-            }
-        }.runTaskTimer(Sword.getInstance(), 0L, 1L);
+            },
+            0, 50,
+            ThrownItem.class, "onReady",
+            new PredicateRunnablePair(
+                thrower::isThrowCancelled,
+                () -> {
+                    display.remove();
+                    ThrowAction.throwCancel(thrower);
+                    thrower.setThrownItem(null);
+                }
+            ),
+            new PredicateRunnablePair(
+                thrower::isThrowSuccessful,
+                () -> thrower.setItemTypeInHand(Material.AIR, true)
+            )
+        );
     }
 
     /**

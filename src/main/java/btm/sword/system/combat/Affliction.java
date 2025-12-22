@@ -1,5 +1,8 @@
 package btm.sword.system.combat;
 
+import btm.sword.system.control.PredicateRunnablePair;
+import btm.sword.system.control.TimeArbiter;
+
 import org.bukkit.scheduler.BukkitRunnable;
 
 import btm.sword.Sword;
@@ -109,20 +112,22 @@ public abstract class Affliction {
         if (preApplicationCheck(afflicted)) return;
 
         apply(afflicted);
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                curTicks[0] += 2;
-                if (shouldCancel || curTicks[0] > tickDuration) {
-                    end(afflicted);
-                    cancel();
-                }
-                else if (reapply || shouldReapply) {
+
+        TimeArbiter.runTimeIndependentBukkitTaskOnTimer(
+            () ->  curTicks[0] += 2,
+            () -> {
+                if (reapply || shouldReapply) {
                     if (shouldReapply) shouldReapply = false;
                     apply(afflicted);
                 }
-            }
-        }.runTaskTimer(Sword.getInstance(), 2L, 2L);
+            },
+            100, 100,
+            Affliction.class, "start",
+            new PredicateRunnablePair(
+                () -> shouldCancel || curTicks[0] > tickDuration,
+                () -> end(afflicted)
+            )
+        );
     }
 
     public void cancel() {

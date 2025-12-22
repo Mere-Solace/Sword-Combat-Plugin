@@ -1,6 +1,7 @@
 package btm.sword.system.action.throwing;
 
-import lombok.Getter;
+import btm.sword.system.control.PredicateRunnablePair;
+import btm.sword.system.control.SwordScheduler;
 
 import org.bukkit.Bukkit;
 import org.bukkit.FluidCollisionMode;
@@ -25,6 +26,7 @@ import btm.sword.Sword;
 import btm.sword.system.control.TimeArbiter;
 import btm.sword.utility.Prefab;
 import btm.sword.utility.display.ParticleWrapper;
+import lombok.Getter;
 
 public class StuckItem implements InteractiveItem {
     @Getter
@@ -216,17 +218,16 @@ public class StuckItem implements InteractiveItem {
 
         new ParticleWrapper(Particle.BLOCK, 50, 1, 1, 1, hitBlockData).display(pos);
 
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                if (display == null || display.isDead()) {
-                    cancel();
-                    return;
-                }
-
-                Prefab.Particles.THROWN_ITEM_MARKER.display(display.getLocation());
-            }
-        }.runTaskTimer(Sword.getInstance(), 0L, 2L);
+        TimeArbiter.runTimeIndependentBukkitTaskOnTimer(
+          null,
+            () -> Prefab.Particles.THROWN_ITEM_MARKER.display(display.getLocation()),
+            0, 100,
+            StuckItem.class, "settledStick",
+            new PredicateRunnablePair(
+                () -> display == null || display.isDead(),
+                null
+            )
+        );
 
         display.setRotation(pos.getYaw(), pos.getPitch());
         stopPhysics();

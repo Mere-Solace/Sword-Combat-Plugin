@@ -1,5 +1,9 @@
 color:
 
+  text_resource_color: "#DEDEDE"
+
+  text_aspect_color: "#009FFF"
+
   title_input_string: "#970000"
 
   text_item_name: "#006E97"
@@ -50,11 +54,12 @@ physics:
 
 combat:
 
-  shards_lost_percent_toughness_reset: 0.75
+  shards_lost_percent_toughness_reset: 0.3
   toughness_recharge_percent: 0.75
 
   attacks_base_damage: 20.0
-  attacks_down_air_threshold: -0.85
+
+  attacks_down_air_threshold: -0.4
 
   attacks_cast_timing_min_duration: 1
   attacks_cast_timing_max_duration: 3
@@ -68,6 +73,10 @@ combat:
   attacks_range_multipliers_neutral_air: 1.3
   attacks_range_multipliers_down_air: 1.2
 
+  sweep_attack_x_scale: 0.5
+  sweep_attack_y_scale: 0.25
+  sweep_attack_z_scale: 2.5
+
   hitboxes_basic_reach: 1.5
   hitboxes_basic_width: 1.5
   hitboxes_basic_height: 1.5
@@ -76,7 +85,7 @@ combat:
   hitboxes_down_air_width: 1.4
   hitboxes_down_air_height: 2.5
 
-  hitboxes_secant_radius: 0.4
+  hitboxes_secant_radius: 1.0
 
   thrown_damage_sword_damage_multiplier: 1.0
   thrown_damage_item_velocity_multiplier: 1.5
@@ -104,8 +113,8 @@ combat:
   impalement_head_follow_exceptions:
     - SPIDER
 
-  impalement_pin_max_iterations: 50
-  impalement_pin_check_interval: 2
+  impalement_pin_max_iterations: 200
+  impalement_pin_check_interval: 100
 
   attack_class_exempt_from_combat:
     - ARMOR_STAND
@@ -133,8 +142,10 @@ combat:
 timing:
 
   thrown_items_catch_grace_period: 3
-  thrown_items_disposal_timeout: 200
-  thrown_items_disposal_check_interval: 10
+
+  thrown_items_disposal_timeout: 30000
+  thrown_items_disposal_check_interval: 500
+
   thrown_items_pin_delay: 2
   thrown_items_throw_completion_delay: 6
 
@@ -155,7 +166,7 @@ display:
   status_display_block_brightness: 15
   status_display_sky_brightness: 15
 
-  item_display_follow_update_interval: 2
+  item_display_follow_update_interval: 100
   item_display_follow_particle_interval: 4
   item_display_follow_billboard_mode: FIXED
 
@@ -192,11 +203,19 @@ audio:
   throw_pitch: 0.4
 
   attack_sound: ITEM_TRIDENT_THROW
-  attack_volume: 0.055
-  attack_pitch: 1.5
+  attack_volume: 0.6
+  attack_pitch: 0.7
 
   entity_hit_connect_volume: 0.9
   entity_hit_connect_pitch: 1.0
+
+  punch_attempt: ENTITY_PLAYER_ATTACK_SWEEP
+  punch_attempt_vol: 1.5
+  punch_attempt_pitch: 0.5
+
+  punch_connect: ENTITY_PLAYER_ATTACK_KNOCKBACK
+  punch_connect_vol: 0.9
+  punch_connect_pitch: 1.0
 
 
 entity:
@@ -212,12 +231,15 @@ entity:
   combat_profile_shards_current: 10
   combat_profile_shards_regen_period: 5000
   combat_profile_shards_regen_amount: 1.0
-  combat_profile_toughness_current: 50
+
+  combat_profile_toughness_current: 50.0
   combat_profile_toughness_regen_period: 60
   combat_profile_toughness_regen_amount: 0.5
+
   combat_profile_soulfire_current: 100.0
   combat_profile_soulfire_regen_period: 5
   combat_profile_soulfire_regen_amount: 0.2
+
   combat_profile_form_current: 10.0
   combat_profile_form_regen_period: 60
   combat_profile_form_regen_amount: 1.0
@@ -248,7 +270,9 @@ movement:
   dash_particle_task_period: 2
   dash_particle_timer_increment: 2
   dash_particle_timer_threshold: 4
-  dash_grab_check_delay: 4
+
+  dash_grab_check_delay: 200
+
   dash_velocity_task_delay: 0
   dash_velocity_task_period: 1
   dash_particle_count: 100
@@ -274,8 +298,10 @@ movement:
   toss_knockback_multiplier: 0.3
   toss_explosion_power: 2.0
   toss_hit_invulnerability_ticks: 3
+
   toss_hit_shard_damage: 1
   toss_hit_toughness_damage: 10.0
+
   toss_hit_soulfire_reduction: 5.0
 
   grab_pull_strength: 0.8
@@ -296,6 +322,7 @@ debug:
 
   logging_verbose_combat: false
   logging_verbose_movement: false
+
   logging_verbose_config: false
 
   visualization_show_hitboxes: false
@@ -331,4 +358,3 @@ umbral:
   time_cutoff: 1.2
   time_scaling_factor: 9
   on_release: 3
-

@@ -10,11 +10,6 @@ import java.util.function.Predicate;
 
 import javax.annotation.Nullable;
 
-import btm.sword.system.control.PredicateRunnablePair;
-import btm.sword.system.control.TimeArbiter;
-import btm.sword.utility.Debug;
-import btm.sword.utility.misc.ConsumerToConsumePair;
-
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.entity.Entity;
@@ -26,19 +21,21 @@ import org.bukkit.util.Vector;
 import btm.sword.config.Config;
 import btm.sword.system.action.SwordAction;
 import btm.sword.system.attack.style.AttackProfile;
+import btm.sword.system.control.PredicateRunnablePair;
 import btm.sword.system.control.SwordScheduler;
+import btm.sword.system.control.TimeArbiter;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.types.Combatant;
 import btm.sword.utility.Prefab;
-import btm.sword.utility.SwordTimeUnit;
 import btm.sword.utility.display.ParticleWrapper;
 import btm.sword.utility.entity.HitboxUtil;
 import btm.sword.utility.math.Basis;
 import btm.sword.utility.math.BezierUtil;
 import btm.sword.utility.math.ControlVectors;
 import btm.sword.utility.math.VectorUtil;
+import btm.sword.utility.misc.ConsumerToConsumePair;
 import lombok.Getter;
 
 public class Attack extends SwordAction implements Runnable {
@@ -74,6 +71,10 @@ public class Attack extends SwordAction implements Runnable {
     protected int attackIterations;
     protected double attackStartValue;
     protected double attackEndValue;
+
+    protected double interpolationValueRange;
+    protected double interpolationStep;
+    protected int msPerIteration;
 
     protected final double rangeMultiplier;
 
@@ -180,22 +181,24 @@ public class Attack extends SwordAction implements Runnable {
     }
 
     void applyConsistentEffects() {
+
     }
 
     void applySelfAttackEffects() {
+
     }
 
     protected void startAttack() {
         applySelfAttackEffects();
         playSwingSoundEffects();
 
-        double attackRange = attackEndValue - attackStartValue;
-        double step = attackRange / attackIterations;
+        interpolationValueRange = attackEndValue - attackStartValue;
+        interpolationStep = interpolationValueRange / attackIterations;
         int msPerIteration = Math.max(1, attackMilliseconds / attackIterations);
 
         generateBezierFunction();
         determineOrigin();
-        prev = weaponPathFunction.apply(attackStartValue - step);
+        prev = weaponPathFunction.apply(attackStartValue - interpolationStep);
         startupLogic();
 
         curIteration.set(0);
@@ -203,9 +206,8 @@ public class Attack extends SwordAction implements Runnable {
         attackIterationTask = TimeArbiter.runTimeBoundBukkitTaskOnTimer(
             () -> {
                 applyConsistentEffects();
-
                 // curIteration is incremented HERE----------------------------------------\/
-                cur = weaponPathFunction.apply(attackStartValue + (step * curIteration.getAndIncrement()));
+                cur = weaponPathFunction.apply(attackStartValue + (interpolationStep * curIteration.getAndIncrement()));
                 to = cur.clone().subtract(prev);
                 attackLocation = origin.clone().add(cur);
 
@@ -218,12 +220,12 @@ public class Attack extends SwordAction implements Runnable {
             0, msPerIteration,
             Attack.class, "startAttack",
             new PredicateRunnablePair(
-                () -> curIteration.get() >= attackIterations,
+                this::shouldEndAttack,
                 () -> {
                     handleCallback();
+                    endingLogic();
                     if (nextAttackExists()) {
                         SwordScheduler.runBukkitTaskLater(() -> {
-                            endingLogic();
                             nextAttack.execute(attacker);
                             }, millisecondDelayBeforeNextAttack, TimeUnit.MILLISECONDS
                         );
@@ -231,6 +233,10 @@ public class Attack extends SwordAction implements Runnable {
                 }
             )
         );
+    }
+
+    protected boolean shouldEndAttack() {
+        return curIteration.get() >= attackIterations;
     }
 
     protected void startupLogic() {

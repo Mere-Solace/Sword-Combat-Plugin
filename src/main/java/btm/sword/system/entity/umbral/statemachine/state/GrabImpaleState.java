@@ -1,21 +1,18 @@
 package btm.sword.system.entity.umbral.statemachine.state;
 
-import btm.sword.system.control.SwordScheduler;
-import btm.sword.system.entity.types.Combatant;
+import java.util.concurrent.TimeUnit;
 
-import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
-import btm.sword.Sword;
 import btm.sword.config.Config;
 import btm.sword.system.attack.style.AttackType;
+import btm.sword.system.control.SwordScheduler;
 import btm.sword.system.control.TimeArbiter;
 import btm.sword.system.entity.base.SwordEntity;
+import btm.sword.system.entity.types.Combatant;
 import btm.sword.system.entity.umbral.UmbralBlade;
 import btm.sword.system.entity.umbral.statemachine.UmbralStateFacade;
 import btm.sword.utility.display.DisplayUtil;
-
-import java.util.concurrent.TimeUnit;
 
 public class GrabImpaleState extends UmbralStateFacade {
     private TimeArbiter.TaskHandle slerpTask;

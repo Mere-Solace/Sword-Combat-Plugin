@@ -1,5 +1,6 @@
 package btm.sword.system.control;
 
+import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledFuture;
@@ -35,8 +36,9 @@ public class TimeArbiter {
     @Getter
     private static volatile double GLOBAL_TIME_SCALE = 1.0;
     private static volatile double GLOBAL_TELEPORT_DURATION_SCALING = 1.0;
+
+    public static volatile Consumer<SwordEntity> movementSpeedApplication = swordEntity -> {};
     public static boolean updatingTimeScale = false;
-    public static boolean restartingAllTasks = false;
 
     private static final Map<Integer, TaskHandle> timeBoundTasks = new ConcurrentHashMap<>();
     private static final Supplier<Boolean> pauseAll = () -> false; // TODO: determine from where this should come
@@ -66,8 +68,8 @@ public class TimeArbiter {
                     task.setMarkedToRestart(true);
                 }
             }
-//
-            SwordEntityArbiter.applyToAllRegisteredEntities(applicationOfTimeEffects(timeScale));
+            movementSpeedApplication = applicationOfTimeEffects(timeScale);
+            SwordEntityArbiter.applyToAllRegisteredEntities(movementSpeedApplication);
 
             return true;
         } finally {
@@ -292,6 +294,36 @@ public class TimeArbiter {
                                                                  PredicateRunnablePair... conditionalCallbacks) {
         return createTask(false, precheckRunnable, postcheckRunnable, null,
             conditionalCallbacks, delayMs, periodMs, callingClass, callingMethod);
+    }
+
+    public static TaskHandle runFixedIterationTaskTimer(@Nullable Runnable precheckRunnable,
+                                                        @Nullable Runnable postcheckRunnable,
+                                                        int delayMs,
+                                                        int periodMs,
+                                                        int maxIterations,
+                                                        Class<?> callingClass,
+                                                        String callingMethod,
+                                                        PredicateRunnablePair... conditionalCallbacks) {
+        int[] iteration = {0};
+        PredicateRunnablePair[] endPredicates = Arrays.copyOf(
+            conditionalCallbacks,
+            conditionalCallbacks.length + 1
+        );
+        endPredicates[conditionalCallbacks.length] = new PredicateRunnablePair(
+            () -> iteration[0] > maxIterations, null
+        );
+
+        return createTask(
+            false,
+            () -> {
+            if (precheckRunnable != null) precheckRunnable.run();
+            iteration[0]++;
+            },
+            postcheckRunnable, null,
+            endPredicates,
+            delayMs, periodMs,
+            callingClass, callingMethod
+        );
     }
 
     private static void cleanupTask(int taskId) {

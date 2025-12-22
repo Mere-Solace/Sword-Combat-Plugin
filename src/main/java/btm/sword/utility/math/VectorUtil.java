@@ -27,7 +27,7 @@ public class VectorUtil {
                 Config.Direction.SOUTH());
         }
 
-        Vector upReference = new Vector(0,1,0);
+        Vector upReference = Config.Direction.UP();
         Vector right;
 
         double isDirectionStraightUpOrDown = dir.dot(upReference);
@@ -154,5 +154,16 @@ public class VectorUtil {
      */
     public static double getYaw(Vector v) {
         return Math.toDegrees(Math.atan2(-v.getX(), v.getZ()));
+    }
+
+    public static double getAngleBetweenTwoVectors(Vector v, Vector u) {
+        double vNorm = v.length();
+        double uNorm = u.length();
+        if (vNorm == 0 || uNorm == 0) {
+            return Math.PI / 2; // Don't want an exception to be thrown, so return a default value of 90 degrees
+        }
+
+        double cos = Math.max(-1.0, Math.min(1.0, v.dot(u) / (vNorm * uNorm)));
+        return Math.acos(cos); // radians
     }
 }

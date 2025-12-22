@@ -24,16 +24,6 @@ public class UmbralItemThrowAction extends SwordAction {
             } else {
 
             }
-
-            new BukkitRunnable() {
-                @Override
-                public void run() {
-                    cancel();
-                }
-            }.runTaskTimer(Sword.getInstance(), 0, 1L);
         }
-
-        // if link... Ultimate.
-
     }
 }

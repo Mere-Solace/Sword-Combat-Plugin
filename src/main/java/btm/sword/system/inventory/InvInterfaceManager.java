@@ -1,18 +1,18 @@
 package btm.sword.system.inventory;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import org.bukkit.Material;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.scheduler.BukkitRunnable;
 
-import btm.sword.Sword;
 import btm.sword.config.Config;
 import btm.sword.gamemode.QueueManager;
 import btm.sword.gamemode.type.CaptureTheFlag1v1;
+import btm.sword.system.control.SwordScheduler;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.types.Dummy;
 import btm.sword.system.entity.types.SwordPlayer;
@@ -110,19 +110,16 @@ public class InvInterfaceManager {
                 ArmorStand dummy = (ArmorStand) swordPlayer.world().spawnEntity(swordPlayer.locFromEyeDir(2), EntityType.ARMOR_STAND);
                 dummy.addScoreboardTag("dummy");
 
-                new BukkitRunnable() {
-                    @Override
-                    public void run() {
-                        Dummy swordDummy = (Dummy) SwordEntityArbiter.getOrAdd(dummy);
-                        if (swordDummy == null || swordDummy.isInvalid()) {
-                            cancel();
-                            return;
-                        }
-                        swordDummy.setOwner(swordPlayer);
-                        swordPlayer.getYourDummies().add(swordDummy);
-                        swordPlayer.incrementNumDummies();
+                SwordScheduler.runBukkitTaskLater(() -> {
+                    Dummy swordDummy = (Dummy) SwordEntityArbiter.getOrAdd(dummy);
+                    if (swordDummy == null || swordDummy.isInvalid()) {
+                        return;
                     }
-                }.runTaskLater(Sword.getInstance(), 2L);
+                    swordDummy.setOwner(swordPlayer);
+                    swordPlayer.getYourDummies().add(swordDummy);
+                    swordPlayer.incrementNumDummies();
+                    }, 100, TimeUnit.MILLISECONDS
+                );
             }
         );
 
