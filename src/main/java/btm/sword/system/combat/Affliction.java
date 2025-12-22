@@ -2,10 +2,6 @@ package btm.sword.system.combat;
 
 import btm.sword.system.control.PredicateRunnablePair;
 import btm.sword.system.control.TimeArbiter;
-
-import org.bukkit.scheduler.BukkitRunnable;
-
-import btm.sword.Sword;
 import btm.sword.system.entity.base.SwordEntity;
 
 //STUNNED,        // Duration

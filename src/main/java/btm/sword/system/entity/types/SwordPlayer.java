@@ -8,8 +8,6 @@ import java.util.function.Supplier;
 
 import javax.annotation.Nullable;
 
-import btm.sword.system.control.SwordScheduler;
-
 import org.bukkit.Color;
 import org.bukkit.Material;
 import org.bukkit.entity.Display;
@@ -27,7 +25,6 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.persistence.PersistentDataType;
-import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Transformation;
 import org.joml.Quaternionf;
@@ -35,10 +32,10 @@ import org.joml.Vector3f;
 
 import com.destroystokyo.paper.profile.PlayerProfile;
 
-import btm.sword.Sword;
 import btm.sword.config.Config;
 import btm.sword.system.action.throwing.ThrowAction;
 import btm.sword.system.control.PredicateRunnablePair;
+import btm.sword.system.control.SwordScheduler;
 import btm.sword.system.control.TimeArbiter;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.base.SwordEntity;

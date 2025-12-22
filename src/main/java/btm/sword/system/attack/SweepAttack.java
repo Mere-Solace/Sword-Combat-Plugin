@@ -1,18 +1,9 @@
 package btm.sword.system.attack;
 
-import btm.sword.config.Config;
-import btm.sword.system.attack.style.AttackProfile;
-
-import btm.sword.system.control.SwordScheduler;
-import btm.sword.system.control.TimeArbiter;
-import btm.sword.utility.SwordTimeUnit;
-
-import btm.sword.utility.math.VectorUtil;
+import java.util.ArrayList;
 
 import org.bukkit.Material;
 import org.bukkit.World;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.EntityType;
 import org.bukkit.entity.ItemDisplay;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Transformation;
@@ -20,8 +11,9 @@ import org.bukkit.util.Vector;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
-import java.util.ArrayList;
-import java.util.concurrent.TimeUnit;
+import btm.sword.config.Config;
+import btm.sword.system.attack.style.AttackProfile;
+import btm.sword.utility.math.VectorUtil;
 
 public class SweepAttack extends Attack{
     private ItemDisplay sweepTail;

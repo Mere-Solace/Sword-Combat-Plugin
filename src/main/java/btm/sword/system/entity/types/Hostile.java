@@ -18,7 +18,6 @@ import org.bukkit.util.Vector;
 import com.destroystokyo.paper.entity.Pathfinder;
 
 import btm.sword.Sword;
-import btm.sword.config.Config;
 import btm.sword.system.action.throwing.StuckItem;
 import btm.sword.system.action.utility.GrabAction;
 import btm.sword.system.entity.base.CombatProfile;

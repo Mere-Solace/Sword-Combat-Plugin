@@ -2,13 +2,11 @@ package btm.sword.system.action.attack;
 
 import static btm.sword.system.action.attack.PunchAction.throwPunch;
 
-import btm.sword.system.attack.SweepAttack;
-
 import org.bukkit.inventory.ItemStack;
 
 import btm.sword.config.Config;
 import btm.sword.system.action.SwordAction;
-import btm.sword.system.attack.Attack;
+import btm.sword.system.attack.SweepAttack;
 import btm.sword.system.attack.style.AttackProfile;
 import btm.sword.system.attack.style.AttackType;
 import btm.sword.system.attack.style.WeaponAttackStyle;

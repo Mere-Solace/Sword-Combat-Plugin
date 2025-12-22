@@ -2,14 +2,14 @@ package btm.sword.system.attack.style;
 
 import java.util.function.Function;
 
+import javax.annotation.Nullable;
+
 import org.bukkit.util.Vector;
 
 import btm.sword.config.Config;
 import btm.sword.system.attack.Attack;
 import btm.sword.utility.Prefab;
 import btm.sword.utility.math.ControlVectors;
-
-import javax.annotation.Nullable;
 
 // TODO: consider - add base range multiplier as well
 public enum AttackType implements AttackProfile {

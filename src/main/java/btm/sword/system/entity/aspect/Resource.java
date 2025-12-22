@@ -1,20 +1,13 @@
 package btm.sword.system.entity.aspect;
 
-import btm.sword.system.control.PredicateRunnablePair;
-import btm.sword.system.control.SwordScheduler;
-
-import btm.sword.system.control.TimeArbiter;
-import btm.sword.utility.SwordTimeUnit;
-
-import org.bukkit.scheduler.BukkitRunnable;
-import org.bukkit.scheduler.BukkitTask;
-
-import btm.sword.Sword;
-import lombok.Getter;
-import lombok.Setter;
-
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+
+import btm.sword.system.control.SwordScheduler;
+import btm.sword.system.control.TimeArbiter;
+import btm.sword.utility.SwordTimeUnit;
+import lombok.Getter;
+import lombok.Setter;
 
 /**
  * Represents an {@link Aspect} that behaves as a regenerating resource.
