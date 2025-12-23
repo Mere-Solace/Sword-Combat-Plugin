@@ -3,6 +3,7 @@ package btm.sword.system.attack;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -13,30 +14,34 @@ import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
-import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
 
 import btm.sword.config.Config;
-import btm.sword.system.SwordScheduler;
 import btm.sword.system.action.SwordAction;
 import btm.sword.system.attack.style.AttackProfile;
+import btm.sword.system.control.PredicateRunnablePair;
+import btm.sword.system.control.SwordScheduler;
+import btm.sword.system.control.TimeArbiter;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.types.Combatant;
-import btm.sword.util.Prefab;
-import btm.sword.util.display.ParticleWrapper;
-import btm.sword.util.entity.HitboxUtil;
-import btm.sword.util.math.Basis;
-import btm.sword.util.math.BezierUtil;
-import btm.sword.util.math.ControlVectors;
-import btm.sword.util.math.VectorUtil;
+import btm.sword.utility.Prefab;
+import btm.sword.utility.display.ParticleWrapper;
+import btm.sword.utility.entity.HitboxUtil;
+import btm.sword.utility.math.Basis;
+import btm.sword.utility.math.BezierUtil;
+import btm.sword.utility.math.ControlVectors;
+import btm.sword.utility.math.VectorUtil;
+import btm.sword.utility.misc.ConsumerToConsumePair;
 import lombok.Getter;
 
 public class Attack extends SwordAction implements Runnable {
 
     protected Combatant attacker;
+    protected ItemStack itemUsedInAttack;
     protected LivingEntity attackingEntity;
     protected final AttackProfile attackProfile;
     protected final boolean orientWithPitch;
@@ -60,33 +65,40 @@ public class Attack extends SwordAction implements Runnable {
     @Getter
     protected SwordEntity currentTarget;
 
-    protected int curIteration;
+    protected AtomicInteger curIteration;
 
     protected int attackMilliseconds;
     protected int attackIterations;
     protected double attackStartValue;
     protected double attackEndValue;
-    protected int ticks;
-    protected int tickPeriod;
+
+    protected double interpolationValueRange;
+    protected double interpolationStep;
+    protected int msPerIteration;
 
     protected final double rangeMultiplier;
 
     protected Runnable callback;
     protected int msBeforeCallbackSchedule;
-    protected boolean finishedOrCanceled = false;
 
-    protected Consumer<SwordEntity> onHitInstructions;
+    protected TimeArbiter.TaskHandle attackIterationTask;
+
+    protected ConsumerToConsumePair<?>[] onAttackConnectInstructions = {};
+    protected Consumer<SwordEntity> onEntityHitInstructions;
 
     @Getter
     protected Attack nextAttack;
     protected int millisecondDelayBeforeNextAttack;
 
-    public Attack(AttackProfile profile, boolean orientWithPitch) {
-        controlVectors = profile.controlVectors();
+    public Attack(ItemStack itemUsedInAttack, AttackProfile profile, boolean orientWithPitch) {
+        this.itemUsedInAttack = itemUsedInAttack;
+        this.controlVectors = profile.controlVectors();
         this.attackProfile = profile;
         this.orientWithPitch = orientWithPitch;
 
         hitDuringAttack = new HashSet<>();
+
+        curIteration = new AtomicInteger(0);
 
         this.attackMilliseconds = Config.Combat.ATTACK_CLASS_TIMING_ATTACK_DURATION;
         this.attackIterations = Config.Combat.ATTACK_CLASS_TIMING_ATTACK_ITERATIONS;
@@ -96,21 +108,13 @@ public class Attack extends SwordAction implements Runnable {
         this.rangeMultiplier = Config.Combat.ATTACK_CLASS_MODIFIERS_RANGE_MULTIPLIER;
     }
 
-    public Attack(AttackProfile profile, boolean orientWithPitch,
+    public Attack(ItemStack itemUsedInAttack, AttackProfile profile, boolean orientWithPitch,
                   int attackMilliseconds, int attackIterations, double attackStartValue, double attackEndValue) {
-        this(profile, orientWithPitch);
+        this(itemUsedInAttack, profile, orientWithPitch);
         this.attackMilliseconds = attackMilliseconds;
         this.attackIterations = attackIterations;
         this.attackStartValue = attackStartValue;
         this.attackEndValue = attackEndValue;
-    }
-
-    public void calcTickValues() {
-        int numOfTicks = attackMilliseconds/Prefab.Value.MILLISECONDS_PER_TICK;
-        this.ticks = numOfTicks <= 0 ? 1 : numOfTicks + 1;
-        int msPerIteration = attackMilliseconds/attackIterations;
-        int ticksPerIteration = msPerIteration/Prefab.Value.MILLISECONDS_PER_TICK;
-        this.tickPeriod = ticksPerIteration <= 0 ? 1 : ticksPerIteration;
     }
 
     public Attack setNextAttack(Attack nextAttack, int millisecondDelayBeforeNextAttack) {
@@ -125,12 +129,17 @@ public class Attack extends SwordAction implements Runnable {
         return this;
     }
 
-    public Attack setHitInstructions(Consumer<SwordEntity> onHitInstructions) {
-        this.onHitInstructions = onHitInstructions;
+    public Attack setAttackConnectInstructions(ConsumerToConsumePair<?>... onAttackConnectInstructions) {
+        this.onAttackConnectInstructions = onAttackConnectInstructions;
         return this;
     }
 
-    public boolean hasNextAttack() {
+    public Attack setOnEntityHitInstructions(Consumer<SwordEntity> onEntityHitInstructions) {
+        this.onEntityHitInstructions = onEntityHitInstructions;
+        return this;
+    }
+
+    public boolean nextAttackExists() {
         return nextAttack != null;
     }
 
@@ -149,7 +158,7 @@ public class Attack extends SwordAction implements Runnable {
 
     // TODO: #139 make usage dynamic
     protected void cast() {
-        cast(attacker, 200, this);
+        cast(attacker, attackMilliseconds, this);
     }
 
     private void onRun() {
@@ -172,67 +181,62 @@ public class Attack extends SwordAction implements Runnable {
     }
 
     void applyConsistentEffects() {
+
     }
 
     void applySelfAttackEffects() {
+
     }
 
     protected void startAttack() {
         applySelfAttackEffects();
         playSwingSoundEffects();
 
-        double attackRange = attackEndValue - attackStartValue;
-        double step = attackRange / attackIterations;
-        int msPerIteration = attackMilliseconds / attackIterations;
+        interpolationValueRange = attackEndValue - attackStartValue;
+        interpolationStep = interpolationValueRange / attackIterations;
+        int msPerIteration = Math.max(1, attackMilliseconds / attackIterations);
 
         generateBezierFunction();
         determineOrigin();
-        prev = weaponPathFunction.apply(attackStartValue - step);
+        prev = weaponPathFunction.apply(attackStartValue - interpolationStep);
         startupLogic();
-        calcTickValues();
 
-        curIteration = 0;
-        for (int i = 0; i <= attackIterations; i++) { // TODO: #120 - Research a better way than scheduling all at once with delays
-            final int idx = i;
-            SwordScheduler.runBukkitTaskLater(
-                new BukkitRunnable() {
-                @Override
-                public void run() {
-                    if (finishedOrCanceled) {
-                        cancel();
-                        return;
+        curIteration.set(0);
+
+        attackIterationTask = TimeArbiter.runTimeBoundBukkitTaskOnTimer(
+            () -> {
+                applyConsistentEffects();
+                // curIteration is incremented HERE----------------------------------------\/
+                cur = weaponPathFunction.apply(attackStartValue + (interpolationStep * curIteration.getAndIncrement()));
+                to = cur.clone().subtract(prev);
+                attackLocation = origin.clone().add(cur);
+
+                drawAttackEffects();
+                performHitLogic();
+                swingTest();
+            },
+            () -> prev = cur,
+            null,
+            0, msPerIteration,
+            Attack.class, "startAttack",
+            new PredicateRunnablePair(
+                this::shouldEndAttack,
+                () -> {
+                    handleCallback();
+                    endingLogic();
+                    if (nextAttackExists()) {
+                        SwordScheduler.runBukkitTaskLater(() -> {
+                            nextAttack.execute(attacker);
+                            }, millisecondDelayBeforeNextAttack, TimeUnit.MILLISECONDS
+                        );
                     }
-
-                    applyConsistentEffects();
-
-                    cur = weaponPathFunction.apply(attackStartValue + (step * idx));
-                    to = cur.clone().subtract(prev);
-                    attackLocation = origin.clone().add(cur);
-
-                    drawAttackEffects();
-                    performHitLogic();
-                    swingTest();
-
-                    // allows for chaining of attack logic
-                    if (idx == attackIterations) {
-                        handleCallback();
-                        if (nextAttack != null) {
-                            SwordScheduler.runBukkitTaskLater(
-                                new BukkitRunnable() {
-                                    @Override
-                                    public void run() {
-                                        endingLogic();
-                                        nextAttack.execute(attacker);
-                                    }
-                                }, millisecondDelayBeforeNextAttack, TimeUnit.MILLISECONDS
-                            );
-                        }
-                    }
-                    prev = cur;
-                    curIteration++;
                 }
-            }, calcIterationStartDelay(i, msPerIteration), TimeUnit.MILLISECONDS);
-        }
+            )
+        );
+    }
+
+    protected boolean shouldEndAttack() {
+        return curIteration.get() >= attackIterations;
     }
 
     protected void startupLogic() {
@@ -294,7 +298,10 @@ public class Attack extends SwordAction implements Runnable {
 
                 if (!currentTarget.self().isDead()) {
                     hit();
-                    if (onHitInstructions != null) onHitInstructions.accept(currentTarget);
+                    if (onEntityHitInstructions != null) onEntityHitInstructions.accept(currentTarget);
+                    for (ConsumerToConsumePair<?> connectInstruction : onAttackConnectInstructions) {
+                        connectInstruction.accept();
+                    }
                 }
             }
         }

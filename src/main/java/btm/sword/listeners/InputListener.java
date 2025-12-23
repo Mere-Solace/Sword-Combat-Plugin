@@ -16,13 +16,13 @@ import org.bukkit.inventory.ItemStack;
 
 import com.destroystokyo.paper.event.player.PlayerAttackEntityCooldownResetEvent;
 
-import btm.sword.system.SwordScheduler;
-import btm.sword.system.action.utility.thrown.ThrowAction;
+import btm.sword.system.action.throwing.ThrowAction;
+import btm.sword.system.control.SwordScheduler;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.types.SwordPlayer;
 import btm.sword.system.input.InputType;
 import btm.sword.system.item.KeyRegistry;
-import btm.sword.util.entity.InputUtil;
+import btm.sword.utility.entity.InputUtil;
 import io.papermc.paper.event.player.PrePlayerAttackEntityEvent;
 
 /**

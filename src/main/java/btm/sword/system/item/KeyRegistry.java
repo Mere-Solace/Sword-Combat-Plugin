@@ -82,6 +82,16 @@ public final class KeyRegistry {
     public static final NamespacedKey SHARD_DAMAGE_ADDER_KEY = key(SHARD_DAMAGE_ADDER);
 
 
+    public static final String BREAKABLE_WEAPON = "breakable_weapon";
+
+    public static final NamespacedKey BREAKABLE_WEAPON_KEY = key(BREAKABLE_WEAPON);
+
+
+    public static final String MAX_USES = "max_uses";
+
+    public static final NamespacedKey MAX_USES_KEY = key(MAX_USES);
+
+
     /** Persistent data key for skin/model data references. */
     public static final String MODEL_ID = "model_id";
 

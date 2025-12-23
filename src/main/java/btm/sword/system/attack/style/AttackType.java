@@ -2,12 +2,14 @@ package btm.sword.system.attack.style;
 
 import java.util.function.Function;
 
+import javax.annotation.Nullable;
+
 import org.bukkit.util.Vector;
 
 import btm.sword.config.Config;
 import btm.sword.system.attack.Attack;
-import btm.sword.util.Prefab;
-import btm.sword.util.math.ControlVectors;
+import btm.sword.utility.Prefab;
+import btm.sword.utility.math.ControlVectors;
 
 // TODO: consider - add base range multiplier as well
 public enum AttackType implements AttackProfile {
@@ -170,14 +172,20 @@ public enum AttackType implements AttackProfile {
 
     private final ControlVectors controlVectors;
     private final Function<Attack, Vector> knockbackFunction;
+    private final Vector normalVector;
 
     AttackType(ControlVectors ctrlVectors) {
         this(ctrlVectors, Prefab.Instructions.DEFAULT_KNOCKBACK);
     }
 
     AttackType(ControlVectors ctrlVectors, Function<Attack, Vector> knockback) {
+        this(ctrlVectors, knockback, null);
+    }
+
+    AttackType(ControlVectors ctrlVectors, Function<Attack, Vector> knockback, @Nullable Vector normalVector) {
         this.controlVectors = ctrlVectors;
         this.knockbackFunction = knockback;
+        this.normalVector = normalVector;
     }
 
     public ControlVectors controlVectors() {
@@ -186,5 +194,10 @@ public enum AttackType implements AttackProfile {
 
     public Function<Attack, Vector> knockbackFunction() {
         return knockbackFunction;
+    }
+
+    @Override
+    public Vector normalVector() {
+        return normalVector;
     }
 }

@@ -1,47 +1,49 @@
 package btm.sword.gamemode.type;
 
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
-import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
-import org.bukkit.plugin.java.JavaPlugin;
 
-import btm.sword.gamemode.Gamemode;
+import btm.sword.system.entity.types.SwordPlayer;
 
 public class CaptureTheFlag1v1 extends Gamemode {
 
     private int p1Score = 0;
     private int p2Score = 0;
 
-    public CaptureTheFlag1v1(JavaPlugin plugin, List<Player> players) {
-        super(plugin, players);
-        this.durationSeconds = 180; // 3 minutes
+    public CaptureTheFlag1v1(List<SwordPlayer> players) {
+        super(players);
+        this.durationSeconds = new AtomicInteger(180); // 3 minutes
     }
 
     @Override
     protected void onStart() {
-        Player p1 = players.get(0);
-        Player p2 = players.get(1);
+        SwordPlayer sp1 = players.getFirst();
+        Player p1 = sp1.player();
+        SwordPlayer sp2 = players.getLast();
+        Player p2 = sp2.player();
 
         p1.teleport(p1.getWorld().getSpawnLocation().add(10, 0, 0));
         p2.teleport(p2.getWorld().getSpawnLocation().add(-10, 0, 0));
 
-        p1.sendMessage(ChatColor.GREEN + "CTF Match Started!");
-        p2.sendMessage(ChatColor.GREEN + "CTF Match Started!");
+//        sp1.displayTitle();
     }
 
     @Override
     protected void onStop() {
-        Player p1 = players.get(0);
-        Player p2 = players.get(1);
+        SwordPlayer sp1 = players.getFirst();
+        Player p1 = sp1.player();
+        SwordPlayer sp2 = players.getLast();
+        Player p2 = sp2.player();
+
 
         String result;
         if (p1Score > p2Score) result = p1.getName() + " wins!";
         else if (p2Score > p1Score) result = p2.getName() + " wins!";
         else result = "Tie!";
 
-        p1.sendMessage(ChatColor.GOLD + "Match Over: " + result);
-        p2.sendMessage(ChatColor.GOLD + "Match Over: " + result);
+//        sp1.displayTitle();
     }
 
     @Override
@@ -51,13 +53,13 @@ public class CaptureTheFlag1v1 extends Gamemode {
 
     @Override
     protected String getTitle() {
-        return ChatColor.RED + "Capture The Flag 1v1";
+        return null; // ChatColor.RED + "Capture The Flag 1v1";
     }
 
-    public void captureFlag(Player p) {
-        if (p.equals(players.get(0))) p1Score++;
+    public void captureFlag(SwordPlayer p) {
+        if (p.equals(players.getFirst())) p1Score++;
         else p2Score++;
 
-        p.sendMessage(ChatColor.AQUA + "Flag Captured!");
+//        sp1.displayTitle();
     }
 }

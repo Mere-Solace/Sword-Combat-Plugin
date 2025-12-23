@@ -536,5 +536,5 @@ All physics parameters are configured via [`Config.Physics`](../../src/main/java
 
 For implementation details, see:
 
-- [`ThrownItem.java`](../../src/main/java/btm/sword/system/action/utility/thrown/ThrownItem.java) - Physics simulation
+- [`ThrownItem.java`](../../src/main/java/btm/sword/system/action/utility/throwing/ThrownItem.java) - Physics simulation
 - [`Attack.java`](../../src/main/java/btm/sword/system/attack/Attack.java) - Knockback application

@@ -4,12 +4,12 @@ import java.util.concurrent.TimeUnit;
 
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
-import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitScheduler;
 import org.bukkit.scheduler.BukkitTask;
 
 import btm.sword.Sword;
-import btm.sword.system.SwordScheduler;
+import btm.sword.system.control.SwordScheduler;
+import btm.sword.system.control.TimeArbiter;
 import btm.sword.system.entity.types.Combatant;
 
 public abstract class SwordAction {
@@ -37,13 +37,11 @@ public abstract class SwordAction {
         if (castDuration <= 0) return;
 
         executor.setCastTask(castTask);
-        SwordScheduler.runLater(new BukkitRunnable() {
-            @Override
-            public void run() {
-                if (executor.getAbilityCastTask() != null) {
-                    executor.setCastTask(null);
-                }
+        SwordScheduler.runBukkitTaskLater(() -> {
+            if (executor.getAbilityCastTask() != null) {
+                executor.setCastTask(null);
             }
-        }, castDuration, TimeUnit.MILLISECONDS);
+            // Use Global Time Scale here to effect cast times.
+        }, (int) (castDuration / TimeArbiter.getGLOBAL_TIME_SCALE()), TimeUnit.MILLISECONDS);
     }
 }

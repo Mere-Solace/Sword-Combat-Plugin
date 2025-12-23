@@ -20,7 +20,7 @@ import com.google.gson.GsonBuilder;
 import btm.sword.Sword;
 import btm.sword.system.entity.aspect.value.AspectValue;
 import btm.sword.system.entity.aspect.value.ResourceValue;
-import btm.sword.util.data.RuntimeTypeAdapterFactory;
+import btm.sword.utility.data.RuntimeTypeAdapterFactory;
 
 public class PlayerDataManager {
     static RuntimeTypeAdapterFactory<AspectValue> aspectFactory = RuntimeTypeAdapterFactory

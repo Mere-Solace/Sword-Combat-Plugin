@@ -99,19 +99,18 @@ public class ItemStackBuilder {
      * @return this builder, for chaining
      */
     public ItemStackBuilder unbreakable(boolean unbreakable) {
+        tag(KeyRegistry.BREAKABLE_WEAPON_KEY, PersistentDataType.BOOLEAN, unbreakable);
         meta.setUnbreakable(unbreakable);
         return this;
     }
 
-    /**
-     * Sets the damage value (durability) of the item if it is damageable.
-     *
-     * @param damage the damage to set (the higher the number, the more used the item appears)
-     * @return this builder, for chaining
-     */
-    public ItemStackBuilder durability(int damage) {
-        if (meta instanceof Damageable tool)
-            tool.setDamage(damage);
+    // TODO: use ItemMeta instanceof Damageable to set Max damage, get damage, etc.
+
+    public ItemStackBuilder setDamageValues(int maxDamage, int startingDamage) {
+        if (meta instanceof Damageable damageable) {
+            damageable.setMaxDamage(maxDamage);
+            damageable.setDamage(startingDamage);
+        }
         return this;
     }
 

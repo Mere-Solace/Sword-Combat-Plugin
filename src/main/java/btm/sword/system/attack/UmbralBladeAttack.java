@@ -8,14 +8,23 @@ import org.bukkit.entity.LivingEntity;
 import btm.sword.config.Config;
 import btm.sword.system.attack.style.AttackProfile;
 import btm.sword.system.entity.umbral.UmbralBlade;
-import btm.sword.util.entity.HitboxUtil;
+import btm.sword.utility.entity.HitboxUtil;
 
 
 public class UmbralBladeAttack extends ItemDisplayAttack {
     protected UmbralBlade blade;
 
-    public UmbralBladeAttack(ItemDisplay weaponDisplay, AttackProfile profile, boolean orientWithPitch, boolean displayOnly, int tpDuration, int displaySteps, int attackStepsPerDisplayStep, int attackMilliseconds, double attackStartValue, double attackEndValue) {
-        super(weaponDisplay, profile, orientWithPitch, displayOnly, tpDuration, displaySteps, attackStepsPerDisplayStep, attackMilliseconds, attackStartValue, attackEndValue);
+    public UmbralBladeAttack(ItemDisplay weaponDisplay, AttackProfile profile,
+                             boolean orientWithPitch, boolean displayOnly,
+                             int tpDuration, int displaySteps,
+                             int attackStepsPerDisplayStep, int attackMilliseconds,
+                             double attackStartValue, double attackEndValue) {
+
+        super(weaponDisplay, profile,
+            orientWithPitch, displayOnly,
+            tpDuration, displaySteps,
+            attackStepsPerDisplayStep, attackMilliseconds,
+            attackStartValue, attackEndValue);
     }
 
     public UmbralBladeAttack(ItemDisplay weaponDisplay, AttackProfile profile, boolean orientWithPitch, boolean displayOnly, int tpDuration) {
@@ -26,11 +35,6 @@ public class UmbralBladeAttack extends ItemDisplayAttack {
     public UmbralBladeAttack setBlade(UmbralBlade blade) {
         this.blade = blade;
         return this;
-    }
-
-    @Override
-    protected void cast() {
-        cast(attacker, 200, this);
     }
 
     @Override

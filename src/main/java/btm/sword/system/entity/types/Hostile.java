@@ -18,9 +18,8 @@ import org.bukkit.util.Vector;
 import com.destroystokyo.paper.entity.Pathfinder;
 
 import btm.sword.Sword;
-import btm.sword.config.Config;
+import btm.sword.system.action.throwing.StuckItem;
 import btm.sword.system.action.utility.GrabAction;
-import btm.sword.system.action.utility.thrown.StuckItem;
 import btm.sword.system.entity.base.CombatProfile;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.item.prefab.ItemLibrary;
@@ -151,14 +150,5 @@ public class Hostile extends Combatant {
     }
 
     public void jump() {
-        new BukkitRunnable() {
-            int i = 0;
-            @Override
-            public void run() {
-                if (i >= 1) cancel();
-                mob.setVelocity(Config.Direction.UP().multiply(1));
-                i++;
-            }
-        }.runTaskTimer(Sword.getInstance(), 0L, 1L);
     }
 }

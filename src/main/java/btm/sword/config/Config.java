@@ -14,8 +14,9 @@ import org.bukkit.util.Vector;
 import org.jetbrains.annotations.Nullable;
 
 import btm.sword.system.action.attack.AttackAction;
+import btm.sword.system.action.movement.MovementAction;
 import btm.sword.system.attack.style.AttackType;
-import btm.sword.util.sound.SoundType;
+import btm.sword.utility.sound.SoundType;
 import net.kyori.adventure.text.format.TextColor;
 
 /**
@@ -370,7 +371,7 @@ public class Config {
      *   <li><b>Attack Velocity</b> - Knockback vectors, grounded damping, vertical boost</li>
      * </ul>
      *
-     * @see btm.sword.system.action.utility.thrown.ThrownItem Thrown item physics implementation
+     * @see btm.sword.system.action.throwing.ThrownItem Thrown item physics implementation
      * @see btm.sword.system.attack.Attack Attack knockback application
      */
     public static class Physics {
@@ -646,6 +647,32 @@ public class Config {
                 ConfigurationSection::getDouble
         ); }
 
+
+        public static float SWEEP_ATTACK_X_SCALE = 0.5f;
+        static { register(
+            "combat.sweep_attack_x_scale",
+            SWEEP_ATTACK_X_SCALE, Float.class,
+            v -> SWEEP_ATTACK_X_SCALE = v,
+            Config::loadFloat
+        ); }
+
+        public static float SWEEP_ATTACK_Y_SCALE = 0.25f;
+        static { register(
+            "combat.sweep_attack_y_scale",
+            SWEEP_ATTACK_Y_SCALE, Float.class,
+            v -> SWEEP_ATTACK_Y_SCALE = v,
+            Config::loadFloat
+        ); }
+
+        public static float SWEEP_ATTACK_Z_SCALE = 2.5f;
+        static { register(
+            "combat.sweep_attack_z_scale",
+            SWEEP_ATTACK_Z_SCALE, Float.class,
+            v -> SWEEP_ATTACK_Z_SCALE = v,
+            Config::loadFloat
+        ); }
+
+
         // Hitboxes configuration
         public static double HITBOXES_BASIC_REACH = 1.5;
         static { register("combat.hitboxes_basic_reach",
@@ -872,7 +899,7 @@ public class Config {
                 ConfigurationSection::getInt
         ); }
 
-        public static int IMPALEMENT_PIN_CHECK_INTERVAL = 2;
+        public static int IMPALEMENT_PIN_CHECK_INTERVAL = 100;
         static { register(
                 "combat.impalement_pin_check_interval",
                 IMPALEMENT_PIN_CHECK_INTERVAL, Integer.class,
@@ -990,7 +1017,7 @@ public class Config {
      *   <li><b>Update Intervals</b> - Frequency of background tasks</li>
      * </ul>
      *
-     * @see btm.sword.system.action.utility.thrown.ThrownItem Thrown item lifecycle
+     * @see btm.sword.system.action.throwing.ThrownItem Thrown item lifecycle
      */
     public static class Timing {
         // Thrown items configuration
@@ -1002,7 +1029,7 @@ public class Config {
             ConfigurationSection::getInt
         ); }
 
-        public static int THROWN_ITEMS_DISPOSAL_TIMEOUT = 2000;
+        public static int THROWN_ITEMS_DISPOSAL_TIMEOUT = 30000; // 30 seconds
         static { register(
             "timing.thrown_items_disposal_timeout",
             THROWN_ITEMS_DISPOSAL_TIMEOUT, Integer.class,
@@ -1010,7 +1037,7 @@ public class Config {
             ConfigurationSection::getInt
         ); }
 
-        public static int THROWN_ITEMS_DISPOSAL_CHECK_INTERVAL = 10;
+        public static int THROWN_ITEMS_DISPOSAL_CHECK_INTERVAL = 500;
         static { register(
             "timing.thrown_items_disposal_check_interval",
             THROWN_ITEMS_DISPOSAL_CHECK_INTERVAL, Integer.class,
@@ -1141,7 +1168,7 @@ public class Config {
         ); }
 
         // Item display follow configuration
-        public static int ITEM_DISPLAY_FOLLOW_UPDATE_INTERVAL = 2;
+        public static int ITEM_DISPLAY_FOLLOW_UPDATE_INTERVAL = 100;
         static { register(
             "display.item_display_follow_update_interval",
             ITEM_DISPLAY_FOLLOW_UPDATE_INTERVAL, Integer.class,
@@ -1352,7 +1379,7 @@ public class Config {
             Config::loadSoundType
         ); }
 
-        public static float ATTACK_VOLUME = 0.055f; // 0.0-1.0
+        public static float ATTACK_VOLUME = 0.6f; // 0.0-1.0
         static { register(
             "audio.attack_volume",
             ATTACK_VOLUME, Float.class,
@@ -1360,7 +1387,7 @@ public class Config {
             Config::loadFloat
         ); }
 
-        public static float ATTACK_PITCH = 1.5f; // 0.5-2.0
+        public static float ATTACK_PITCH = 0.7f; // 0.5-2.0
         static { register(
             "audio.attack_pitch",
             ATTACK_PITCH, Float.class,
@@ -1517,8 +1544,7 @@ public class Config {
             ConfigurationSection::getInt
         ); }
 
-        /** In ticks */
-        public static int COMBAT_PROFILE_SHARDS_REGEN_PERIOD = 5000; // 10 seconds TODO: #141 change all values to either ticks or ms
+        public static int COMBAT_PROFILE_SHARDS_REGEN_PERIOD = 5000;
         static { register(
             "entity.combat_profile_shards_regen_period",
             COMBAT_PROFILE_SHARDS_REGEN_PERIOD, Integer.class,
@@ -1543,7 +1569,7 @@ public class Config {
             Config::loadFloat
         ); }
 
-        public static int COMBAT_PROFILE_TOUGHNESS_REGEN_PERIOD = 60;
+        public static int COMBAT_PROFILE_TOUGHNESS_REGEN_PERIOD = 1000;
         static { register(
             "entity.combat_profile_toughness_regen_period",
             COMBAT_PROFILE_TOUGHNESS_REGEN_PERIOD, Integer.class,
@@ -1568,7 +1594,7 @@ public class Config {
             Config::loadFloat
         ); }
 
-        public static int COMBAT_PROFILE_SOULFIRE_REGEN_PERIOD = 5;
+        public static int COMBAT_PROFILE_SOULFIRE_REGEN_PERIOD = 250;
         static { register(
             "entity.combat_profile_soulfire_regen_period",
             COMBAT_PROFILE_SOULFIRE_REGEN_PERIOD, Integer.class,
@@ -1593,7 +1619,7 @@ public class Config {
             Config::loadFloat
         ); }
 
-        public static int COMBAT_PROFILE_FORM_REGEN_PERIOD = 60;
+        public static int COMBAT_PROFILE_FORM_REGEN_PERIOD = 3000;
         static { register(
             "entity.combat_profile_form_regen_period",
             COMBAT_PROFILE_FORM_REGEN_PERIOD, Integer.class,
@@ -1653,8 +1679,8 @@ public class Config {
      *   <li><b>Grab</b> - Pull nearby entities toward player</li>
      * </ul>
      *
-     * @see btm.sword.system.action.MovementAction Movement ability implementation
-     * @see btm.sword.system.action.utility.thrown.ThrownItem Toss projectile physics
+     * @see MovementAction Movement ability implementation
+     * @see btm.sword.system.action.throwing.ThrownItem Toss projectile physics
      */
     public static class Movement {
         // Dash configuration
@@ -1786,12 +1812,12 @@ public class Config {
             ConfigurationSection::getLong
         ); }
 
-        public static long DASH_PARTICLE_TASK_PERIOD = 2L;
+        public static int DASH_PARTICLE_TASK_PERIOD = 2;
         static { register(
             "movement.dash_particle_task_period",
-            DASH_PARTICLE_TASK_PERIOD, Long.class,
+            DASH_PARTICLE_TASK_PERIOD, Integer.class,
             v -> DASH_PARTICLE_TASK_PERIOD = v,
-            ConfigurationSection::getLong
+            ConfigurationSection::getInt
         ); }
 
         public static int DASH_PARTICLE_TIMER_INCREMENT = 2;
@@ -1810,28 +1836,28 @@ public class Config {
             ConfigurationSection::getInt
         ); }
 
-        public static long DASH_GRAB_CHECK_DELAY = 4L;
+        public static int DASH_GRAB_CHECK_DELAY = 200;
         static { register(
             "movement.dash_grab_check_delay",
-            DASH_GRAB_CHECK_DELAY, Long.class,
+            DASH_GRAB_CHECK_DELAY, Integer.class,
             v -> DASH_GRAB_CHECK_DELAY = v,
-            ConfigurationSection::getLong
+            ConfigurationSection::getInt
         ); }
 
-        public static long DASH_VELOCITY_TASK_DELAY = 0L;
+        public static int DASH_VELOCITY_TASK_DELAY = 0;
         static { register(
             "movement.dash_velocity_task_delay",
-            DASH_VELOCITY_TASK_DELAY, Long.class,
+            DASH_VELOCITY_TASK_DELAY, Integer.class,
             v -> DASH_VELOCITY_TASK_DELAY = v,
-            ConfigurationSection::getLong
+            ConfigurationSection::getInt
         ); }
 
-        public static long DASH_VELOCITY_TASK_PERIOD = 1L;
+        public static int DASH_VELOCITY_TASK_PERIOD = 1;
         static { register(
             "movement.dash_velocity_task_period",
-            DASH_VELOCITY_TASK_PERIOD, Long.class,
+            DASH_VELOCITY_TASK_PERIOD, Integer.class,
             v -> DASH_VELOCITY_TASK_PERIOD = v,
-            ConfigurationSection::getLong
+            ConfigurationSection::getInt
         ); }
 
         public static int DASH_PARTICLE_COUNT = 100;

@@ -1,20 +1,21 @@
 package btm.sword.system.entity.umbral.statemachine.state;
 
-import org.bukkit.scheduler.BukkitRunnable;
-import org.bukkit.scheduler.BukkitTask;
+import java.util.concurrent.TimeUnit;
+
 import org.bukkit.util.Vector;
 
-import btm.sword.Sword;
 import btm.sword.config.Config;
 import btm.sword.system.attack.style.AttackType;
+import btm.sword.system.control.SwordScheduler;
+import btm.sword.system.control.TimeArbiter;
 import btm.sword.system.entity.base.SwordEntity;
+import btm.sword.system.entity.types.Combatant;
 import btm.sword.system.entity.umbral.UmbralBlade;
 import btm.sword.system.entity.umbral.statemachine.UmbralStateFacade;
-import btm.sword.util.display.DisplayUtil;
-
+import btm.sword.utility.display.DisplayUtil;
 
 public class GrabImpaleState extends UmbralStateFacade {
-    private BukkitTask slerpTask;
+    private TimeArbiter.TaskHandle slerpTask;
 
     @Override
     public String name() {
@@ -49,26 +50,22 @@ public class GrabImpaleState extends UmbralStateFacade {
         // TODO: potentially -> make random and in cooler more dynamic positions depending on cur blade pos
         Vector offset = new Vector(-1, grabbed.getEyeHeight() * 6, -1);
         slerpTask = DisplayUtil.displaySlerpToOffset(grabbed, blade.getDisplay(), offset,
-            1, 2, 1, 2, false,
+            1, 2, 50, 2, false,
             50,
-            thrower -> // predicate for when the movement should end other than when it reaches destination.
-                thrower.getGrabbedEntity() == null ||
+            () -> { // predicate for when the movement should end other than when it reaches destination.
+                Combatant thrower = blade.getThrower();
+                return thrower.getGrabbedEntity() == null ||
                     thrower.getGrabbedEntity().isDead() ||
                     thrower.isDead() ||
-                    !thrower.getUmbralBlade().inState(GrabImpaleState.class),
-            blade.getThrower(),
-            () -> new BukkitRunnable() {
-                @Override
-                public void run() {
-                    attackEnemy(blade);
-                }
-            }.runTaskLater(Sword.getInstance(), 4L)
+                    !thrower.getUmbralBlade().inState(GrabImpaleState.class);
+            },
+            () -> SwordScheduler.runBukkitTaskLater(() -> attackEnemy(blade),
+                200, TimeUnit.MILLISECONDS)
         );
     }
 
     private void attackEnemy(UmbralBlade blade) {
         if (slerpTask != null && !slerpTask.isCancelled()) slerpTask.cancel();
-
         blade.setHitEntity(null);
         blade.setFinishedLunging(false);
         blade.setTimeCutoff(Config.UmbralBlade.LUNGE_TIME_CUTOFF);

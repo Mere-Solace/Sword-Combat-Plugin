@@ -11,9 +11,10 @@ import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.aspect.value.ResourceValue;
 import btm.sword.system.entity.base.CombatProfile;
-import btm.sword.util.Prefab;
-import btm.sword.util.sound.SoundType;
-import btm.sword.util.sound.SoundUtil;
+import btm.sword.system.entity.base.SoulfireManager;
+import btm.sword.utility.Prefab;
+import btm.sword.utility.sound.SoundType;
+import btm.sword.utility.sound.SoundUtil;
 import lombok.Setter;
 
 
@@ -30,7 +31,7 @@ public class Dummy extends Passive {
      */
     public Dummy(ArmorStand dummy, @NotNull CombatProfile combatProfile) {
         super(dummy, combatProfile);
-        combatProfile.setStat(AspectType.SHARDS, new ResourceValue(10, 20, 1));
+        combatProfile.setStat(AspectType.SHARDS, new ResourceValue(10, 2000, 1));
     }
 
     public ArmorStand armorStand() {
@@ -64,7 +65,7 @@ public class Dummy extends Passive {
         else
             setHit(true);
 
-        reapSoulfire(source, reapedSoulfire);
+        SoulfireManager.transferSoulfire(source, this, reapedSoulfire);
 
         if (baseNumShards > 70000) {
             self.remove();
@@ -100,10 +101,10 @@ public class Dummy extends Passive {
                 aspects.shards().setCur(aspects.shards().effectiveMaxValue());
                 return;
             }
-            shardsLost += baseNumShards;
+            shardsLostDuringToughnessBreak += baseNumShards;
 
 
-            if (shardsLost >= Config.Combat.SHARDS_LOST_PERCENT_TOUGHNESS_RESET * aspects.shards().effectiveMaxValue()) {
+            if (shardsLostDuringToughnessBreak >= Config.Combat.SHARDS_LOST_PERCENT_TOUGHNESS_RESET * aspects.shards().effectiveMaxValue()) {
                 aspects.toughness().setCurPercent(Config.Combat.TOUGHNESS_RECHARGE_PERCENT);
             }
         }

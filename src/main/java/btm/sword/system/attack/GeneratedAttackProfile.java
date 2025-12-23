@@ -5,7 +5,7 @@ import java.util.function.Function;
 import org.bukkit.util.Vector;
 
 import btm.sword.system.attack.style.AttackProfile;
-import btm.sword.util.math.ControlVectors;
+import btm.sword.utility.math.ControlVectors;
 
 public class GeneratedAttackProfile implements AttackProfile {
     private final ControlVectors controlVectors;
@@ -24,5 +24,10 @@ public class GeneratedAttackProfile implements AttackProfile {
     @Override
     public Function<Attack, Vector> knockbackFunction() {
         return knockBackFunction;
+    }
+
+    @Override
+    public Vector normalVector() {
+        return null;
     }
 }

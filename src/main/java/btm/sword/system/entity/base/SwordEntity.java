@@ -1,20 +1,18 @@
 package btm.sword.system.entity.base;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.Particle;
 import org.bukkit.World;
 import org.bukkit.entity.Display;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
-import org.bukkit.entity.Item;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.TextDisplay;
@@ -34,22 +32,26 @@ import com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent;
 
 import btm.sword.Sword;
 import btm.sword.config.Config;
-import btm.sword.system.SwordScheduler;
-import btm.sword.system.attack.HitPacket;
+import btm.sword.system.action.throwing.StuckItem;
+import btm.sword.system.action.throwing.impale.Impalement;
+import btm.sword.system.attack.HitValuePacket;
 import btm.sword.system.combat.Affliction;
+import btm.sword.system.control.EntityController;
+import btm.sword.system.control.PredicateRunnablePair;
+import btm.sword.system.control.SwordScheduler;
+import btm.sword.system.control.TimeArbiter;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.types.Combatant;
-import btm.sword.util.Prefab;
-import btm.sword.util.display.DrawUtil;
-import btm.sword.util.display.ParticleWrapper;
-import btm.sword.util.entity.EntityUtil;
-import btm.sword.util.entity.HitboxUtil;
-import btm.sword.util.math.Basis;
-import btm.sword.util.math.VectorUtil;
-import btm.sword.util.sound.SoundType;
-import btm.sword.util.sound.SoundUtil;
-import io.papermc.paper.entity.TeleportFlag;
+import btm.sword.utility.Debug;
+import btm.sword.utility.Prefab;
+import btm.sword.utility.SwordTimeUnit;
+import btm.sword.utility.entity.EntityUtil;
+import btm.sword.utility.entity.HitboxUtil;
+import btm.sword.utility.math.Basis;
+import btm.sword.utility.math.VectorUtil;
+import btm.sword.utility.sound.SoundType;
+import btm.sword.utility.sound.SoundUtil;
 import lombok.Getter;
 import lombok.Setter;
 import net.kyori.adventure.text.Component;
@@ -74,6 +76,7 @@ public abstract class SwordEntity {
     protected final CombatProfile combatProfile;
     protected final LivingEntity self;
     protected String displayName;
+    protected boolean destroyed;
 
     protected boolean dead;
 
@@ -99,16 +102,15 @@ public abstract class SwordEntity {
     private long hitInvulnerableTickDuration;
 
     private boolean grabbed;
-    private int numberOfImpalements;
-    private int numberOfPinningImpalements;
     private boolean aiEnabled;
 
     protected boolean shielding;
 
-    protected final HashMap<Class<? extends Affliction>, Affliction> afflictions;
+    protected final HashMap<Class<? extends Affliction>, Affliction> afflictions = new HashMap<>();
+    protected final Set<Impalement> impalements = new HashSet<>();
 
     protected boolean toughnessBroken;
-    protected int shardsLost;
+    protected int shardsLostDuringToughnessBreak;
 
     protected final double eyeHeight;
     protected final Vector chestVector;
@@ -152,8 +154,6 @@ public abstract class SwordEntity {
 
         shielding = false;
 
-        afflictions = new HashMap<>();
-
         eyeHeight = self.getEyeHeight(true);
         chestVector = new Vector(0, eyeHeight * 0.45, 0);
 
@@ -174,15 +174,19 @@ public abstract class SwordEntity {
      * Controls the continuous update logic for this entity.
      */
     private void startTicking() {
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                if (shouldTick) {
-                    onTick();
-                }
-                ticks++;
-            }
-        }.runTaskTimer(Sword.getInstance(), 0L, 1L);
+        TimeArbiter.runTimeIndependentBukkitTaskOnTimer(
+          null,
+            () -> {
+              if (shouldTick) onTick();
+              ticks++;
+            },
+            0, 50,
+            SwordEntity.class, "startTicking",
+            new PredicateRunnablePair(
+                this::isDestroyed,
+                () -> Debug.debug(SwordEntity.class, 188, "ending the ticking task")
+            )
+        );
     }
 
     /**
@@ -201,17 +205,17 @@ public abstract class SwordEntity {
                 curTicksInvulnerable = 0;
             }
         }
-        if (!(self instanceof Player)) {
-            self.setAI(!isPinned());
-        }
-        else {
-            if (ticks % 3 == 0) {
-                grounded = EntityUtil.isOnGround(self);
-                if (grounded && this instanceof Combatant c) {
-                    c.resetAirDashesPerformed();
-                }
+//        if (!(self instanceof Player)) {
+////            self.setAI(!isPinned()); // TODO: #160 remake later
+//        }
+
+        if (ticks % 3 == 0) {
+            grounded = EntityUtil.isOnGround(self);
+            if (grounded && this instanceof Combatant c) {
+                c.resetAirDashesPerformed();
             }
         }
+
 
         if (isImpaled()) {
             self.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 1, 1));
@@ -309,6 +313,7 @@ public abstract class SwordEntity {
 
         if (!Sword.getInstance().isEnabled()) return;
 
+        // This Bukkit Runnable is fine. Intricate canceling is required here.
         new BukkitRunnable() {
             int attempts = 0;
 
@@ -340,12 +345,7 @@ public abstract class SwordEntity {
     }
 
     public void onRegister() {
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                restartStatusDisplay();
-            }
-        }.runTaskLater(Sword.getInstance(), 2L);
+        SwordScheduler.runBukkitTaskLater(this::restartStatusDisplay, 100, TimeUnit.MILLISECONDS);
     }
 
     /**
@@ -356,6 +356,7 @@ public abstract class SwordEntity {
         ticks = 0;
         setShouldTick(true);
         resetResources();
+        TimeArbiter.movementSpeedApplication.accept(this);
     }
 
     /**
@@ -365,6 +366,7 @@ public abstract class SwordEntity {
         endStatusDisplay();
         setShouldTick(false);
         aspects.stopAllResourceTasks();
+        if (!(self instanceof Player)) destroyed = true;
     }
 
     public void onZeroHealth() {
@@ -420,15 +422,16 @@ public abstract class SwordEntity {
     /**
      * Increments the count of impalements on this entity.
      */
-    public void addImpalement() {
-        numberOfImpalements++;
+    public void addImpalement(Impalement impalement) {
+        Debug.debug(SwordEntity.class, 425, "addingImpalement");
+        impalements.add(impalement);
     }
 
     /**
      * Decrements the count of impalements on this entity.
      */
-    public void removeImpalement() {
-        numberOfImpalements--;
+    public void removeImpalement(Impalement impalement) {
+        impalements.remove(impalement);
     }
 
     /**
@@ -437,19 +440,7 @@ public abstract class SwordEntity {
      * @return true if impaled, false otherwise
      */
     public boolean isImpaled() {
-        return numberOfImpalements > 0;
-    }
-
-    public void addPinningImpalement() {
-        numberOfPinningImpalements++;
-    }
-
-    public void removePinningImpalement() {
-        numberOfPinningImpalements--;
-    }
-
-    public boolean isPinned() {
-        return numberOfPinningImpalements > 0;
+        return !impalements.isEmpty();
     }
 
     /**
@@ -491,7 +482,7 @@ public abstract class SwordEntity {
         else
             hit = true;
 
-        reapSoulfire(source, reapedSoulfire);
+        SoulfireManager.transferSoulfire(source, this, reapedSoulfire);
 
         this.hitInvulnerableTickDuration = hitInvulnerableTickDuration;
 
@@ -524,13 +515,13 @@ public abstract class SwordEntity {
                     self.damage(74077740, source.self());
                     if (!self.isDead())
                         self.setHealth(0); },
-                    Prefab.Value.MILLISECONDS_PER_TICK * 2, TimeUnit.MILLISECONDS);
+                    SwordTimeUnit.MILLISECONDS_PER_TICK * 2, TimeUnit.MILLISECONDS);
                 return;
             }
-            shardsLost += baseNumShards;
+            shardsLostDuringToughnessBreak += baseNumShards;
 
 
-            if (shardsLost >= Config.Combat.SHARDS_LOST_PERCENT_TOUGHNESS_RESET * aspects.shards().effectiveMaxValue()) {
+            if (shardsLostDuringToughnessBreak >= Config.Combat.SHARDS_LOST_PERCENT_TOUGHNESS_RESET * aspects.shards().effectiveMaxValue()) {
                 aspects.toughness().setCurPercent(Config.Combat.TOUGHNESS_RECHARGE_PERCENT);
             }
         }
@@ -542,7 +533,7 @@ public abstract class SwordEntity {
         }
     }
 
-    public void hit(Combatant source, HitPacket v, Vector knockbackVelocity, Affliction... afflictions) {
+    public void hit(Combatant source, HitValuePacket v, Vector knockbackVelocity, Affliction... afflictions) {
         hit(source,
             v.reapedSoulfire(),
             v.invulnerableTicks(),
@@ -551,114 +542,6 @@ public abstract class SwordEntity {
             v.soulfireLoss(),
             knockbackVelocity,
             afflictions);
-    }
-
-    protected void reapSoulfire(Combatant source, float totalAmount) {
-        float remainder = totalAmount;
-        List<Float> packets = new ArrayList<>();
-
-        // Split into increments up to 5, preferring larger chunks first
-        while (remainder > 0) {
-            if (remainder >= 5.0f) {
-                packets.add(5.0f);
-                remainder -= 5.0f;
-            } else if (remainder >= 1.0f) {
-                packets.add(1.0f);
-                remainder -= 1.0f;
-            } else if (remainder >= 0.5f) {
-                packets.add(0.5f);
-                remainder -= 0.5f;
-            } else {
-                // residual less than 0.5
-                packets.add(remainder);
-                remainder = 0;
-            }
-        }
-
-        for (float packetAmount : packets) {
-            spawnSoulfirePacket(source, packetAmount);
-        }
-    }
-
-    private void spawnSoulfirePacket(Combatant source, float packetAmount) {
-        Location startLoc = this.getChestLocation();
-
-        Location[] currentLoc = new Location[] { startLoc.clone() };
-
-        double speed = 0.75;
-        int period = 1;
-        double endDistance = 1.25;
-
-        // Random normalized vector for initial random direction (arc start)
-        Vector initialDirection = new Vector(
-            (Math.random() * 2) - 1,
-            (Math.random() * 0.5) + 0.5, // slight upward bias
-            (Math.random() * 2) - 1
-        ).normalize();
-
-        int maxTicks = 300;
-        int lerpIterationsBeforeFullFollow = 5;
-        new BukkitRunnable() {
-            int ticksElapsed = 0;
-
-            @Override
-            public void run() {
-                if (source.isDead()) {
-                    Prefab.Particles.SMOKE.display(currentLoc[0]);
-                    cancel();
-                    return;
-                }
-
-                Vector toPlayer = source.getChestLocation().toVector().subtract(currentLoc[0].toVector());
-
-                if (ticksElapsed <= lerpIterationsBeforeFullFollow) {
-                    // Calculate blend factor 0 -> 1 over lifetime for path lerp
-                    double t = (double) ticksElapsed / lerpIterationsBeforeFullFollow;
-
-                    // Interpolate direction from initial random arc direction to direct player direction
-                    Vector blendedDirection = initialDirection.clone().multiply(1 - t).add(toPlayer.clone().normalize().multiply(t)).normalize();
-
-                    // Move current location step along blended direction
-                    currentLoc[0].add(blendedDirection.multiply(speed));
-                }
-                else {
-                    currentLoc[0].add(toPlayer.clone().normalize().multiply(speed));
-                }
-
-                // Check if close enough to player
-                if (toPlayer.lengthSquared() <= endDistance * endDistance) {
-                    Prefab.Particles.SOULFIRE_POOF.display(source.getChestLocation());
-                    if (!source.isDead()) {
-                        source.deliverSoulfire(packetAmount);
-                    }
-                    cancel();
-                    return;
-                }
-                else if (ticksElapsed > maxTicks) {
-                    cancel();
-                    return;
-                }
-
-                // Scale particle size dynamically: twice the packetAmount
-                float scaleFactor = packetAmount * 2f;
-
-
-                // Display scaled particles with SOUL_FIRE_FLAME & SMOKE combination
-                new ParticleWrapper(Particle.SMOKE,
-                    (int) scaleFactor,
-                    0.025, 0.025, 0.025, 0.0001)
-                    .display(currentLoc[0]);
-                Prefab.Particles.UMBRAL_FLAME.display(currentLoc[0]);
-
-                ticksElapsed++;
-            }
-        }.runTaskTimer(Sword.getInstance(), 0L, period);
-    }
-
-    protected void deliverSoulfire(float amount) {
-        aspects.soulfire().add(amount);
-//        Prefab.Sounds.SOULFIRE_GAIN.play(self);
-        Prefab.Sounds.SOULFIRE_GAIN_BACKGROUND.playForAllInRadius(self);
     }
 
     /**
@@ -689,27 +572,31 @@ public abstract class SwordEntity {
         toughnessBroken = true;
         aspects.toughness().setEffAmountPercent(Config.Entity.HIT_TOUGH_BREAK_RECHARGE_AMOUNT_PERCENT);
         aspects.toughness().setEffPeriodPercent(Config.Entity.HIT_TOUGH_BREAK_RECHARGE_PERIOD_PERCENT);
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                if (self == null || self.isDead()) {
+        TimeArbiter.runTimeIndependentBukkitTaskOnTimer(
+            null,
+            null,
+            0, 100,
+            SwordEntity.class, "onToughnessBroken",
+            new PredicateRunnablePair(
+                () -> self == null || self.isDead(),
+                () -> {
                     aspects.toughness().setEffAmountPercent(1f);
                     aspects.toughness().setEffPeriodPercent(1f);
                     toughnessBroken = false;
-                    cancel();
                 }
-
-                if (aspects.toughness().curPercent() > Config.Entity.HIT_TOUGH_BREAK_RECHARGE_CUTOFF_PERCENT) {
+            ),
+            new PredicateRunnablePair(
+                () -> aspects.toughness().curPercent() > Config.Entity.HIT_TOUGH_BREAK_RECHARGE_CUTOFF_PERCENT,
+                () -> {
                     aspects.toughness().setEffAmountPercent(1f);
                     aspects.toughness().setEffPeriodPercent(1f);
                     toughnessBroken = false;
                     Location c = getChestLocation();
                     Prefab.Particles.TOUGH_RECHARGE_1.display(c);
                     Prefab.Particles.TOUGH_RECHARGE_2.display(c);
-                    cancel();
                 }
-            }
-        }.runTaskTimer(Sword.getInstance(), 0L, 2L);
+            )
+        );
     }
 
     /**
@@ -729,12 +616,6 @@ public abstract class SwordEntity {
      */
     public void message(String message) {
         self.sendMessage(message);
-    }
-
-    public void debug(Class<?> clazz, int lineNum, String message) {
-        if (Config.Debug.LOGGING_VERBOSE_CONFIG) {
-            self.sendMessage("{ " + clazz + " } " + " -[" + lineNum + "]- :: " + message);
-        }
     }
 
     /**
@@ -774,19 +655,17 @@ public abstract class SwordEntity {
                 }
             }
 
-            Item dropped = p.getWorld().dropItemNaturally(p.getLocation(), itemStack);
-            new BukkitRunnable() {
-                @Override
-                public void run() {
-                    if (dropped.isDead()) {
-                        cancel();
-                    }
-                    Prefab.Particles.DOPPED_ITEM_MARKER.display(dropped.getLocation());
-                }
-            }.runTaskTimer(Sword.getInstance(), 0L, 5L);
+            // TODO: Convert this into a StuckItem
+
+            if (!itemStack.isEmpty()) {
+                Vector dropVel = Config.Direction.DOWN().multiply(0.5);
+
+                StuckItem stuck = new StuckItem(getChestLocation(), dropVel, itemStack);
+                stuck.register();
+            }
         }
         else {
-            Objects.requireNonNull(self.getEquipment()).setItemInMainHand(itemStack);
+            Objects.requireNonNull(self.getEquipment()).setItemInOffHand(itemStack);
         }
     }
 
@@ -894,18 +773,16 @@ public abstract class SwordEntity {
     /**
      * Sets the velocity of this entity.
      *
-     * @param v the velocity {@link Vector} to set
+     * @param velocity the velocity {@link Vector} to set
      */
-    public void setVelocity(Vector v) {
-        self.setVelocity(v);
+    public void setVelocity(Vector velocity) {
+        TimeArbiter.setVelocity(self, velocity);
     }
 
     public SwordEntity getTargetedEntity(double range) {
         LivingEntity target = (LivingEntity) HitboxUtil.ray(
                 eyeLoc(), dir(), range, 1,
-                entity -> entity instanceof LivingEntity e &&
-                        !isSelf(e) &&
-                        e.isValid());
+                entity -> entity instanceof LivingEntity e && !isSelf(e) && e.isValid());
 
         return target == null ? null : SwordEntityArbiter.getOrAdd(target);
     }
@@ -959,25 +836,15 @@ public abstract class SwordEntity {
         timeOfLastBodyBasisCalculation = System.currentTimeMillis();
     }
 
-    public void teleport(Location location) {
-        self().teleport(location, TeleportFlag.EntityState.RETAIN_PASSENGERS);
-    }
-
-    public void drawBasis() {
-        Basis testBasis = VectorUtil.getBasisWithoutPitch(self());
-        DrawUtil.line(List.of(Prefab.Particles.TEST_SWORD_BLUE),
-                eyeLoc(), testBasis.right(), 4, 0.25);
-        DrawUtil.line(List.of(Prefab.Particles.TEST_SWORD_BLUE),
-                eyeLoc(), testBasis.up(), 4, 0.25);
-        DrawUtil.line(List.of(Prefab.Particles.TEST_SWORD_BLUE),
-                eyeLoc(), testBasis.forward(), 4, 0.25);
-    }
-
     public Vector getChestVector() {
         return chestVector.clone();
     }
 
     public Location getLocation() {
         return self().getLocation();
+    }
+
+    public void teleport(Location location) {
+        EntityController.teleport(self, location);
     }
 }

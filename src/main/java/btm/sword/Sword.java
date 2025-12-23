@@ -12,7 +12,7 @@ import btm.sword.config.ConfigManager;
 import btm.sword.listeners.EntityListener;
 import btm.sword.listeners.InputListener;
 import btm.sword.listeners.PlayerListener;
-import btm.sword.system.action.utility.thrown.InteractiveItemArbiter;
+import btm.sword.system.action.throwing.InteractiveItemArbiter;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.playerdata.PlayerDataManager;
 import io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager;

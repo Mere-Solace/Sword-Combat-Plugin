@@ -5,20 +5,19 @@ import static btm.sword.system.action.attack.PunchAction.throwPunch;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
-import btm.sword.Sword;
-import btm.sword.system.SwordScheduler;
 import btm.sword.system.action.SwordAction;
+import btm.sword.system.control.SwordScheduler;
+import btm.sword.system.control.TimeArbiter;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.types.Combatant;
 import btm.sword.system.entity.umbral.UmbralBlade;
 import btm.sword.system.entity.umbral.input.BladeRequest;
 import btm.sword.system.entity.umbral.statemachine.state.LodgedState;
-import btm.sword.util.Prefab;
-import btm.sword.util.display.DrawUtil;
-import btm.sword.util.math.Basis;
+import btm.sword.utility.Prefab;
+import btm.sword.utility.display.DrawUtil;
+import btm.sword.utility.math.Basis;
 
 public class UmbralBladeAction extends SwordAction {
     // TODO: #122 - Wielding when not holding blade should attack
@@ -100,6 +99,8 @@ public class UmbralBladeAction extends SwordAction {
     }
 
     private static void performBlink(Combatant wielder, SwordEntity target) {
+        Prefab.Sounds.SHADOW_BLINK.playForAllInRadius(wielder.self());
+
         Vector to = target.getChestLocation().toVector().subtract(wielder.getChestLocation().toVector());
 
         // Second call is correct, want more dense particles
@@ -122,28 +123,23 @@ public class UmbralBladeAction extends SwordAction {
             .add(n.clone().multiply(target.getBodyLength() * 0.25))
             .setDirection(facing));
         SwordScheduler.runBukkitTaskLater(() -> {
+            Prefab.Sounds.SHADOW_BLINK.playForAllInRadius(target.self());
             Prefab.Particles.SOULFIRE_POOF.display(wielder.getLocation());
             Prefab.Particles.UMBRAL_FLAME.display(wielder.getLocation());
 
             wielder.resetAirDashesPerformed(); // give em tools to be cool coming down
 
-            new BukkitRunnable() {
-                int iterations = 0;
-                @Override
-                public void run() {
-                    if (iterations > 10) { // 0.5 seconds
-                        cancel();
-                        return;
-                    }
-
+            TimeArbiter.runFixedIterationTaskTimer(
+                null,
+                () -> {
                     target.setVelocity(new Vector());
                     wielder.setVelocity(new Vector());
 
                     wielder.getUmbralBlade().onGrab(wielder);
-
-                    iterations++;
-                }
-            }.runTaskTimer(Sword.getInstance(), 0L, 1L);
+                },
+                0,50,10,
+                UmbralBladeAction.class, "performBlink"
+            );
         }, 60, TimeUnit.MILLISECONDS);
     }
 }

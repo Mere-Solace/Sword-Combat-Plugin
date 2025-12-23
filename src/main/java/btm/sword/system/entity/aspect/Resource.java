@@ -1,9 +1,11 @@
 package btm.sword.system.entity.aspect;
 
-import org.bukkit.scheduler.BukkitRunnable;
-import org.bukkit.scheduler.BukkitTask;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
-import btm.sword.Sword;
+import btm.sword.system.control.SwordScheduler;
+import btm.sword.system.control.TimeArbiter;
+import btm.sword.utility.SwordTimeUnit;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -41,9 +43,9 @@ public class Resource extends Aspect {
     private float effAmountPercent;
 
     /** The scheduled Bukkit task responsible for ticking resource regeneration. */
-    private BukkitTask regenTask;
+    private TimeArbiter.TaskHandle regenTask;
 
-    private BukkitTask restartRegenTask;
+    private ScheduledFuture<?> restartRegenTask;
 
     /**
      * Creates a new regenerating resource aspect.
@@ -70,14 +72,17 @@ public class Resource extends Aspect {
      * </p>
      */
     public void startRegenTask() {
-        regenTask = new BukkitRunnable() {
-            @Override
-            public void run() {
+        regenTask = TimeArbiter.runTimeBoundBukkitTaskOnTimer(
+            () -> {
                 if (curValue < effectiveMaxValue()) {
                     add(effectiveRegenAmount());
                 }
-            }
-        }.runTaskTimer(Sword.getInstance(), 0L, effectivePeriod());
+            },
+            null,
+            null,
+            0, effectivePeriod(),
+            Resource.class, "startRegenTask"
+        );
     }
 
     /**
@@ -87,7 +92,7 @@ public class Resource extends Aspect {
      * </p>
      */
     public void stopRegenTask() {
-        if (regenTask != null && !regenTask.isCancelled() && regenTask.getTaskId() != -1)
+        if (regenTask != null && !regenTask.isCancelled())
             regenTask.cancel();
     }
 
@@ -103,15 +108,13 @@ public class Resource extends Aspect {
     }
 
     public void restartRegenTaskLater(int ticks) {
-        if (restartRegenTask != null && !restartRegenTask.isCancelled() && restartRegenTask.getTaskId() != -1)
-            restartRegenTask.cancel();
+        if (restartRegenTask != null && !restartRegenTask.isCancelled())
+            restartRegenTask.cancel(false);
 
-        restartRegenTask = new BukkitRunnable() {
-            @Override
-            public void run() {
-                restartRegenTask();
-            }
-        }.runTaskLater(Sword.getInstance(), ticks);
+        restartRegenTask = SwordScheduler.runBukkitTaskLater(
+            this::restartRegenTask,
+            SwordTimeUnit.ticksToMillis(ticks), TimeUnit.MILLISECONDS
+        );
     }
 
     /**
@@ -196,8 +199,8 @@ public class Resource extends Aspect {
      * Gets the effective regeneration period (in ticks), factoring in modifiers.
      * @return effective period (ticks)
      */
-    public long effectivePeriod() {
-        return (long)(baseRegenPeriod * effPeriodPercent);
+    public int effectivePeriod() {
+        return (int)(baseRegenPeriod * effPeriodPercent);
     }
 
     /**

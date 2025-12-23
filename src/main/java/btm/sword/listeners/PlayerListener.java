@@ -314,4 +314,9 @@ public class PlayerListener implements Listener {
             swordPlayer.requestUmbralBladeState(BladeRequest.ACTIVATE_AS_SHEATHED);
         }
     }
+
+//    @EventHandler
+//    public void onItemBreak(PlayerItemBreakEvent event) {
+//
+//    }
 }
