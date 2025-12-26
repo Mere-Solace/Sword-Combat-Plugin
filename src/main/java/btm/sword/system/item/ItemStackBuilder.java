@@ -78,6 +78,7 @@ public class ItemStackBuilder {
      */
     public ItemStackBuilder name(Component component) {
         meta.itemName(component);
+        meta.displayName(component);
         return this;
     }
 

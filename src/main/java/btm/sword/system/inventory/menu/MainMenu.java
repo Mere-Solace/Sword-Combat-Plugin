@@ -1,4 +1,4 @@
-package btm.sword.system.inventory;
+package btm.sword.system.inventory.menu;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -16,6 +16,7 @@ import btm.sword.system.control.SwordScheduler;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.types.Dummy;
 import btm.sword.system.entity.types.SwordPlayer;
+import btm.sword.system.inventory.InventoryMenuManager;
 import btm.sword.system.item.ItemStackBuilder;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -24,10 +25,7 @@ import xyz.xenondevs.invui.item.builder.ItemBuilder;
 import xyz.xenondevs.invui.item.impl.SimpleItem;
 import xyz.xenondevs.invui.window.Window;
 
-// barrier is good material for cancel
-// Remember the other types of windows!
-
-public class InvInterfaceManager {
+public class MainMenu extends Menu {
     public static final List<Component> HOW_TO_PLAY = List.of(
         Component.text("", Config.SwordColor.TEXT_ITEM_BASE),
 
@@ -71,13 +69,7 @@ public class InvInterfaceManager {
 
         Component.text("Right Click + Hold + Drop", Config.SwordColor.TEXT_ITEM_CONTROLS)
             .append(Component.text(" – Bullet Time", Config.SwordColor.TEXT_ITEM_BASE))
-            .append(Component.text(" (time slow)", Config.SwordColor.TEXT_ITEM_HEADER)),
-
-        Component.text("", Config.SwordColor.TEXT_ITEM_BASE),
-
-        Component.text("Drop + Drop", Config.SwordColor.TEXT_ITEM_CONTROLS)
-            .append(Component.text(" – Emergency Reset", Config.SwordColor.TEXT_ITEM_BASE)),
-        Component.text("  • Resyncs inputs if your state desyncs", Config.SwordColor.TEXT_ITEM_BASE)
+            .append(Component.text(" (time slow)", Config.SwordColor.TEXT_ITEM_HEADER))
     );
 
 
@@ -88,8 +80,24 @@ public class InvInterfaceManager {
         .lore(HOW_TO_PLAY)
         .build();
 
-    public static void displayMainMenu(SwordPlayer swordPlayer) {
+    public MainMenu(SwordPlayer player) {
+        super(player);
+    }
+
+    @Override
+    public void open() {
         Player player = swordPlayer.player();
+
+        SimpleItem playerInfo = new SimpleItem(
+            swordPlayer.getPlayerHeadItemWithCustomText(
+                Component.text("Character Info"),
+                List.of(Component.text("View your stats, loadout, and progress"))
+            ),
+            click -> {
+                close();
+                InventoryMenuManager.openMenu(CharacterMenu.class, swordPlayer);
+            }
+        );
 
         SimpleItem queueForCTF = new SimpleItem(
             new ItemBuilder(Material.GUSTER_BANNER_PATTERN)
@@ -111,13 +119,13 @@ public class InvInterfaceManager {
                 dummy.addScoreboardTag("dummy");
 
                 SwordScheduler.runBukkitTaskLater(() -> {
-                    Dummy swordDummy = (Dummy) SwordEntityArbiter.getOrAdd(dummy);
-                    if (swordDummy == null || swordDummy.isInvalid()) {
-                        return;
-                    }
-                    swordDummy.setOwner(swordPlayer);
-                    swordPlayer.getYourDummies().add(swordDummy);
-                    swordPlayer.incrementNumDummies();
+                        Dummy swordDummy = (Dummy) SwordEntityArbiter.getOrAdd(dummy);
+                        if (swordDummy == null || swordDummy.isInvalid()) {
+                            return;
+                        }
+                        swordDummy.setOwner(swordPlayer);
+                        swordPlayer.getYourDummies().add(swordDummy);
+                        swordPlayer.incrementNumDummies();
                     }, 100, TimeUnit.MILLISECONDS
                 );
             }
@@ -126,21 +134,23 @@ public class InvInterfaceManager {
         Gui gui = Gui.normal()
             .setStructure(
                 "# # # . . . # # #",
-                "# . . . P . . . #",
+                "# B . . P . . F #",
                 ". . . . D Q . . .",
                 ". . . . . . . . .",
-                "# . . . . . . . #",
-                "# # # . H . # # #")
+                "# . . . H . . . #",
+                "# # # . . . # # #")
             .addIngredient('#', new SimpleItem(new ItemBuilder(Material.BLACK_STAINED_GLASS_PANE)))
             .addIngredient('Q', queueForCTF)
-            .addIngredient('H', swordPlayer.getPlayerHead())
+            .addIngredient('H', playerInfo)
             .addIngredient('P', HOW_TO_PLAY_ITEM)
             .addIngredient('D', spawnDummy)
+            .addIngredient('B', generatePreviousButtonOrDefault(defaultSimpleItem))
+            .addIngredient('F', generateForwardPreviousButtonOrDefault(defaultSimpleItem))
             .build();
 
         Window window = Window.single()
             .setViewer(player)
-            .setTitle("InvUI")
+            .setTitle("MainMenu")
             .setGui(gui)
             .build();
 

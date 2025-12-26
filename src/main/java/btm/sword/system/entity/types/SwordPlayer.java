@@ -2,6 +2,7 @@ package btm.sword.system.entity.types;
 
 import java.time.Duration;
 import java.util.HashSet;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -43,7 +44,9 @@ import btm.sword.system.input.InputAction;
 import btm.sword.system.input.InputExecutionTree;
 import btm.sword.system.input.InputKey;
 import btm.sword.system.input.InputType;
-import btm.sword.system.inventory.InvInterfaceManager;
+import btm.sword.system.inventory.InventoryMenuManager;
+import btm.sword.system.inventory.PlayerMenuManager;
+import btm.sword.system.inventory.menu.MainMenu;
 import btm.sword.system.item.ItemStackBuilder;
 import btm.sword.system.item.KeyRegistry;
 import btm.sword.system.item.SwordItemType;
@@ -68,26 +71,31 @@ import net.kyori.adventure.title.Title;
  * </p>
  */
 @Getter
-@Setter
 public class SwordPlayer extends Combatant {
     private final Player player;
     private final PlayerProfile profile;
     private final String username;
     private final ItemStack playerHead;
 
-    private ItemStack menuButton;
+    private final PlayerMenuManager playerMenuManager;
+    private final ItemStack menuButton;
 
     private final int maxNumDummies = 3;
     private int curNumDummies = 0;
-    private HashSet<Dummy> yourDummies = new HashSet<>();
+    private final HashSet<Dummy> yourDummies = new HashSet<>();
 
     private final InputExecutionTree inputExecutionTree;
     private final long baseInputTimeoutMillis = 1400L;
 
+    @Setter
     private boolean performedDropAction;
+    @Setter
     private boolean changingHandIndex;
+    @Setter
     private boolean interactingWithEntity;
+    @Setter
     private boolean threwItem;
+    @Setter
     private boolean blocking;
 
     private TimeArbiter.TaskHandle rightClickHoldTask;
@@ -133,7 +141,6 @@ public class SwordPlayer extends Combatant {
 
         ItemStack temp = new ItemStack(Material.PLAYER_HEAD);
         SkullMeta skullMeta = (SkullMeta) temp.getItemMeta();
-//
         skullMeta.setPlayerProfile(profile);
 
         playerHead = new ItemStackBuilder(Material.PLAYER_HEAD)
@@ -141,6 +148,8 @@ public class SwordPlayer extends Combatant {
             .hideAll()
             .lore(aspects.toComponentList())
             .build();
+
+        playerMenuManager = new PlayerMenuManager(this);
 
         menuButton = new ItemStackBuilder(Material.ECHO_SHARD)
             .hideAll()
@@ -380,7 +389,7 @@ public class SwordPlayer extends Combatant {
         boolean cancelAction = false;
 
         if (KeyRegistry.hasKey(itemStack, KeyRegistry.MAIN_MENU_BUTTON_KEY)) {
-            InvInterfaceManager.displayMainMenu(this);
+            InventoryMenuManager.openMenu(MainMenu.class, this);
             cancelAction = true;
         }
 
@@ -403,6 +412,11 @@ public class SwordPlayer extends Combatant {
         ItemStack onCursor = e.getCursor();
         ItemStack clicked = e.getCurrentItem();
         int slotNumber = e.getSlot();
+
+        if (clicked == null) {
+
+            return false;
+        }
 
         // Protect necessary items from being interacted with
         if (KeyRegistry.hasKey(clicked, KeyRegistry.MAIN_MENU_BUTTON_KEY) ||
@@ -434,6 +448,19 @@ public class SwordPlayer extends Combatant {
      */
     public Player player() {
         return player;
+    }
+
+    public ItemStack getPlayerHeadItemWithCustomText(Component title, List<Component> lore) {
+        ItemStack temp = new ItemStack(Material.PLAYER_HEAD);
+        SkullMeta skullMeta = (SkullMeta) temp.getItemMeta();
+        skullMeta.setPlayerProfile(profile);
+
+        return new ItemStackBuilder(Material.PLAYER_HEAD)
+            .setMeta(skullMeta)
+            .name(title)
+            .lore(lore)
+            .hideAll()
+            .build();
     }
 
     /**
