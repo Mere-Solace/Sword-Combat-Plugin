@@ -21,15 +21,15 @@ public class CharacterMenu extends Menu {
 
         Gui gui = Gui.normal()
             .setStructure(
+                "# . . . . . . . .",
+                "# . . . . . . . .",
                 "B . . . . . . . .",
                 "F . . . . . . . .",
                 "# . . . . . . . .",
-                "# . . . . . . . .",
-                "# . . . . . . . .",
                 "# . . . . . . . .")
             .addIngredient('#', new SimpleItem(new ItemBuilder(Material.BLACK_STAINED_GLASS_PANE)))
-            .addIngredient('B', generatePreviousButtonOrDefault(defaultSimpleItem))
-            .addIngredient('F', generateForwardPreviousButtonOrDefault(defaultSimpleItem))
+            .addIngredient('B', generatePreviousButtonOrDefault())
+            .addIngredient('F', generateForwardPreviousButtonOrDefault())
             .build();
 
         Window window = Window.single()

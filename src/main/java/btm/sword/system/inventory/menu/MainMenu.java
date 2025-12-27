@@ -134,9 +134,9 @@ public class MainMenu extends Menu {
         Gui gui = Gui.normal()
             .setStructure(
                 "# # # . . . # # #",
-                "# B . . P . . F #",
-                ". . . . D Q . . .",
-                ". . . . . . . . .",
+                "# . . . P . . . #",
+                "B . . . D Q . . .",
+                "F . . . . . . . .",
                 "# . . . H . . . #",
                 "# # # . . . # # #")
             .addIngredient('#', new SimpleItem(new ItemBuilder(Material.BLACK_STAINED_GLASS_PANE)))
@@ -144,8 +144,8 @@ public class MainMenu extends Menu {
             .addIngredient('H', playerInfo)
             .addIngredient('P', HOW_TO_PLAY_ITEM)
             .addIngredient('D', spawnDummy)
-            .addIngredient('B', generatePreviousButtonOrDefault(defaultSimpleItem))
-            .addIngredient('F', generateForwardPreviousButtonOrDefault(defaultSimpleItem))
+            .addIngredient('B', generatePreviousButtonOrDefault())
+            .addIngredient('F', generateForwardPreviousButtonOrDefault())
             .build();
 
         Window window = Window.single()

@@ -12,16 +12,14 @@ public abstract class Menu {
     public abstract void open();
     public void close() {}
 
-    protected static final SimpleItem defaultSimpleItem = new SimpleItem(
-        new ItemBuilder(Material.GRAY_STAINED_GLASS_PANE)
-            .setDisplayName("| | |")
-            .clearItemFlags()
-    );
+//    protected static final SimpleItem defaultSimpleItem = new SimpleItem(
+//        new ItemBuilder(Material.GRAY_STAINED_GLASS_PANE)
+//            .setDisplayName("| | |")
+//            .clearItemFlags()
+//    );
 
-    protected SimpleItem generatePreviousButtonOrDefault(SimpleItem defaultItem) {
-        return swordPlayer.getPlayerMenuManager().noPreviousMenu() ?
-            defaultItem :
-            new SimpleItem(
+    protected SimpleItem generatePreviousButtonOrDefault() {
+        return new SimpleItem(
                 new ItemBuilder(Material.OAK_TRAPDOOR)
                     .clearItemFlags()
                     .setDisplayName("Go back"),
@@ -29,11 +27,9 @@ public abstract class Menu {
             );
     }
 
-    protected SimpleItem generateForwardPreviousButtonOrDefault(SimpleItem defaultItem) {
-        return swordPlayer.getPlayerMenuManager().noPreviousMenu() ?
-            defaultItem :
-            new SimpleItem(
-                new ItemBuilder(Material.OAK_TRAPDOOR)
+    protected SimpleItem generateForwardPreviousButtonOrDefault() {
+        return new SimpleItem(
+                new ItemBuilder(Material.WAXED_COPPER_TRAPDOOR)
                     .clearItemFlags()
                     .setDisplayName("Go forward"),
                 click -> swordPlayer.getPlayerMenuManager().openForwardPreviousMenu()

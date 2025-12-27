@@ -381,7 +381,8 @@ public class Config {
             "physics.thrown_items_gravity_damper",
             THROWN_ITEMS_GRAVITY_DAMPER, Double.class,
             v -> THROWN_ITEMS_GRAVITY_DAMPER = v,
-            ConfigurationSection::getDouble); }
+            ConfigurationSection::getDouble
+        ); }
 
         public static double THROWN_ITEMS_TRAJECTORY_ROTATION = 0.03696; // radians/tick
         static { register(
@@ -1684,11 +1685,19 @@ public class Config {
      */
     public static class Movement {
         // Dash configuration
-        public static double DASH_MAX_DISTANCE = 10.0;
+        public static double DASH_MAX_DISTANCE = 12.0;
         static { register(
             "movement.dash_max_distance",
             DASH_MAX_DISTANCE, Double.class,
             v -> DASH_MAX_DISTANCE = v,
+            ConfigurationSection::getDouble
+        ); }
+
+        public static double DASH_FLAT_ITEM_DASH_SCALER = 0.65;
+        static { register(
+            "movement.dash_flat_item_dash_scaler",
+            DASH_FLAT_ITEM_DASH_SCALER, Double.class,
+            v -> DASH_FLAT_ITEM_DASH_SCALER = v,
             ConfigurationSection::getDouble
         ); }
 
@@ -1852,7 +1861,7 @@ public class Config {
             ConfigurationSection::getInt
         ); }
 
-        public static int DASH_VELOCITY_TASK_PERIOD = 1;
+        public static int DASH_VELOCITY_TASK_PERIOD = 50;
         static { register(
             "movement.dash_velocity_task_period",
             DASH_VELOCITY_TASK_PERIOD, Integer.class,

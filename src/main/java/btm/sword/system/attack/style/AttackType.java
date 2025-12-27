@@ -77,16 +77,16 @@ public enum AttackType implements AttackProfile {
     attack -> attack.getRightVector().multiply(-0.5).add(attack.getForwardVector().multiply(0.1))
     ),
     SLASH2(ControlVectors.of(
-        new Vector(2.6, -1.21, -1.2),
-        new Vector(-1.47, 1.99, 0),
-        new Vector(1.6, -0.11, 7),
-        new Vector(-3.66, 0.26, 1.85)),
+        new Vector(2.6,-1.3,-1.2),
+        new Vector(-3,0.9,1.3),
+        new Vector(1.6,-0.7,7),
+        new Vector(-2.6,1.05,1.85)),
     attack -> attack.getRightVector().multiply(0.5).add(attack.getForwardVector().multiply(0.1))
     ),
     SLASH3(ControlVectors.of(
-        new Vector(-0.15,2.8,-1.5),
+        new Vector(1.2,2.8,-1.5),
         new Vector(-1.1,-2.2,-0.9),
-        new Vector(1.74,1.96,4.3),
+        new Vector(1,1.96,4.3),
         new Vector(-1.1,-1.77,5)),
     attack -> attack.getTo().add(attack.getForwardVector().multiply(2))
     ),

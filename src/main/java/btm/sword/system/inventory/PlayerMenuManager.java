@@ -12,40 +12,44 @@ public class PlayerMenuManager {
 
     public PlayerMenuManager(SwordPlayer swordPlayer) {
         this.swordPlayer = swordPlayer;
-        currentMenuIndex = 0;
+        currentMenuIndex = -1;
+    }
+
+    private <T extends Menu> void addAndOpenMenu(Class<T> menuClass) {
+        T menu = InventoryMenuManager.create(menuClass, swordPlayer);
+        menuHistory.add(menu);
+        menu.open();
     }
 
     public <T extends Menu> void openNewMenu(Class<T> menuClass) {
-        if (currentMenuIndex == menuHistory.size() - 1) {
-            currentMenuIndex++;
-            T menu = InventoryMenuManager.create(menuClass, swordPlayer);
-            menuHistory.add(menu);
-            menu.open();
-        } // if the new menu was the menu forward in history
-        else if (menuHistory.size() - 2 >= currentMenuIndex &&
+        // if current menu exists and is the same as the potential new menu, simply refresh the menu
+        if (currentMenuIndex >= 0
+            && currentMenuIndex < menuHistory.size() &&
+            menuClass.equals(menuHistory.get(currentMenuIndex).getClass())) {
+                reopenCurrentMenu();
+                return;
+        }
+
+        // if next in history matches the new menu, just step forward
+        if (currentMenuIndex + 1 < menuHistory.size() &&
             menuClass.equals(menuHistory.get(currentMenuIndex + 1).getClass())) {
-            currentMenuIndex++;
-            menuHistory.get(currentMenuIndex).open();
+                currentMenuIndex++;
+                menuHistory.get(currentMenuIndex).open();
+                return;
         }
-        else {
-            // remove the last elements up to the current menu
-            int toRemove = menuHistory.size() - 1 - currentMenuIndex;
-            for (int i = 0; i < toRemove; i++) {
-                menuHistory.removeLast();
-            }
-            currentMenuIndex++;
-            T menu = InventoryMenuManager.create(menuClass, swordPlayer);
-            menuHistory.add(menu);
-            menu.open();
+
+        // truncate forward (redo) history
+        while (menuHistory.size() - 1 > currentMenuIndex) {
+            menuHistory.removeLast();
         }
+
+        addAndOpenMenu(menuClass);
+        currentMenuIndex = menuHistory.size() - 1;
     }
 
     public void openPreviousMenu() {
         if (noPreviousMenu()) return;
-
-        int numberOfMenus = menuHistory.size();
-        currentMenuIndex = numberOfMenus - 2; // e.g. if cur index is 1 (size will be 2), go to 0
-        menuHistory.get(currentMenuIndex).open();
+        menuHistory.get(--currentMenuIndex).open();
     }
 
     public void reopenCurrentMenu() {
@@ -54,7 +58,6 @@ public class PlayerMenuManager {
 
     public void openForwardPreviousMenu() {
         if (noForwardPreviousMenu()) return;
-
         menuHistory.get(++currentMenuIndex).open();
     }
 

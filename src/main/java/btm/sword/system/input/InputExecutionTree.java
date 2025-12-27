@@ -8,9 +8,6 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
-import org.bukkit.plugin.Plugin;
-
-import btm.sword.Sword;
 import btm.sword.config.Config;
 import btm.sword.system.action.attack.AttackAction;
 import btm.sword.system.action.attack.DashAttackAction;
@@ -41,8 +38,6 @@ import net.kyori.adventure.text.format.TextDecoration;
  * </p>
  */
 public class InputExecutionTree {
-    private static final Plugin plugin = Sword.getInstance();
-
     private static final int MAX_ATTEMPT_ITERATIONS_BEFORE_FORCE_RESET = 3;
     private int currentAttempts = 0;
 
@@ -100,7 +95,7 @@ public class InputExecutionTree {
         if (next.action != null && !next.action.canCast(owner)) {
             currentAttempts++;
             if (currentAttempts >= MAX_ATTEMPT_ITERATIONS_BEFORE_FORCE_RESET) {
-                reset(); // reset if there is a dead-lock state and the user is spamming
+                reset(); // reset if there is a deadlock state and the user is spamming
             }
             else {
                 return null; // added this so that stepping forward cannot occur
@@ -327,7 +322,7 @@ public class InputExecutionTree {
                 executor -> MovementAction.dash(executor, DashDirection.FORWARD),
                 executor -> executor.calcCooldown(AspectType.CELERITY, 200L, 1000L, 10),
                 Combatant::canAirDash,
-                5f,
+                0f,
                 false,
                 true,
                 true))
@@ -377,7 +372,7 @@ public class InputExecutionTree {
                 executor -> MovementAction.dash(executor, DashDirection.BACKWARD),
                 executor -> executor.calcCooldown(AspectType.CELERITY, 200L, 1000L, 10),
                 Combatant::canAirDash,
-                5f,
+                0f,
                 false,
                 true,
                 true))
