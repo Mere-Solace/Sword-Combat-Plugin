@@ -7,7 +7,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
-import btm.sword.system.entity.types.SwordPlayer;
+import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.inventory.menu.CharacterMenu;
 import btm.sword.system.inventory.menu.MainMenu;
 import btm.sword.system.inventory.menu.Menu;
@@ -22,6 +22,7 @@ public class InventoryMenuManager {
     public static void registerAll() {
         register(MainMenu.class, MainMenu::new);
         register(CharacterMenu.class, CharacterMenu::new);
+        // SkillSelectionMenu is constructed with a slot index and is opened directly
     }
 
     @SuppressWarnings("unchecked")

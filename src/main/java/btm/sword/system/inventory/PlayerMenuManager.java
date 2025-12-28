@@ -2,7 +2,7 @@ package btm.sword.system.inventory;
 
 import java.util.LinkedList;
 
-import btm.sword.system.entity.types.SwordPlayer;
+import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.inventory.menu.Menu;
 
 public class PlayerMenuManager {
@@ -19,6 +19,44 @@ public class PlayerMenuManager {
         T menu = InventoryMenuManager.create(menuClass, swordPlayer);
         menuHistory.add(menu);
         menu.open();
+    }
+
+    /** Add an already-constructed menu instance to the history and open it. */
+    public void openNewMenu(Menu menuInstance) {
+        // if current menu exists and is the same class as the potential new menu, simply refresh
+        if (currentMenuIndex >= 0
+            && currentMenuIndex < menuHistory.size() &&
+            menuInstance.getClass().equals(menuHistory.get(currentMenuIndex).getClass())) {
+                reopenCurrentMenu();
+                return;
+        }
+
+        // if next in history matches the new menu class, just step forward
+        if (currentMenuIndex + 1 < menuHistory.size() &&
+            menuInstance.getClass().equals(menuHistory.get(currentMenuIndex + 1).getClass())) {
+                currentMenuIndex++;
+                menuHistory.get(currentMenuIndex).open();
+                return;
+        }
+
+        // truncate forward (redo) history
+        while (menuHistory.size() - 1 > currentMenuIndex) {
+            menuHistory.removeLast();
+        }
+
+        menuHistory.add(menuInstance);
+        currentMenuIndex = menuHistory.size() - 1;
+        menuInstance.open();
+    }
+
+    /**
+     * Re-open every instance of the supplied menu class in the history without changing the current index.
+     * Useful to refresh background menus (e.g. CharacterMenu) after changes from a child menu.
+     */
+    public void refreshMenu(Class<? extends Menu> menuClass) {
+        for (Menu m : menuHistory) {
+            if (m.getClass().equals(menuClass)) m.open();
+        }
     }
 
     public <T extends Menu> void openNewMenu(Class<T> menuClass) {

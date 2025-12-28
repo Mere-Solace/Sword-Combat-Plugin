@@ -10,7 +10,7 @@ import org.bukkit.boss.BossBar;
 
 import btm.sword.system.control.PredicateRunnablePair;
 import btm.sword.system.control.TimeArbiter;
-import btm.sword.system.entity.types.SwordPlayer;
+import btm.sword.system.entity.impl.SwordPlayer;
 
 public abstract class Gamemode {
 

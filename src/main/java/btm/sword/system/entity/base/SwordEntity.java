@@ -32,8 +32,8 @@ import com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent;
 
 import btm.sword.Sword;
 import btm.sword.config.Config;
-import btm.sword.system.action.throwing.StuckItem;
 import btm.sword.system.action.throwing.impale.Impalement;
+import btm.sword.system.action.throwing.types.DroppedItem;
 import btm.sword.system.attack.HitValuePacket;
 import btm.sword.system.combat.Affliction;
 import btm.sword.system.control.EntityController;
@@ -42,7 +42,7 @@ import btm.sword.system.control.SwordScheduler;
 import btm.sword.system.control.TimeArbiter;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.aspect.AspectType;
-import btm.sword.system.entity.types.Combatant;
+import btm.sword.system.entity.impl.Combatant;
 import btm.sword.utility.Debug;
 import btm.sword.utility.Prefab;
 import btm.sword.utility.SwordTimeUnit;
@@ -660,7 +660,7 @@ public abstract class SwordEntity {
             if (!itemStack.isEmpty()) {
                 Vector dropVel = Config.Direction.DOWN().multiply(0.5);
 
-                StuckItem stuck = new StuckItem(getChestLocation(), dropVel, itemStack);
+                DroppedItem stuck = new DroppedItem(getChestLocation(), dropVel, itemStack);
                 stuck.register();
             }
         }

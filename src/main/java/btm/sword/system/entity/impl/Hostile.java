@@ -1,4 +1,4 @@
-package btm.sword.system.entity.types;
+package btm.sword.system.entity.impl;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,7 +18,7 @@ import org.bukkit.util.Vector;
 import com.destroystokyo.paper.entity.Pathfinder;
 
 import btm.sword.Sword;
-import btm.sword.system.action.throwing.StuckItem;
+import btm.sword.system.action.throwing.types.DroppedItem;
 import btm.sword.system.action.utility.GrabAction;
 import btm.sword.system.entity.base.CombatProfile;
 import btm.sword.system.entity.base.SwordEntity;
@@ -89,7 +89,7 @@ public class Hostile extends Combatant {
                     Math.random() - 0.5
                 ).multiply(0.5);
 
-                StuckItem stuck = new StuckItem(getChestLocation(), dropVel, offHand);
+                DroppedItem stuck = new DroppedItem(getChestLocation(), dropVel, offHand);
                 stuck.register();
             }
         }

@@ -16,6 +16,7 @@ public class PlayerData {
         this.uuid = uuid;
         dateOfFirstLogin = new Date();
         combatProfile = new CombatProfile();
+
     }
 
     public UUID getUniqueId() {

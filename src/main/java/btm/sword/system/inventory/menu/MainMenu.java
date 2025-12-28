@@ -14,8 +14,8 @@ import btm.sword.gamemode.QueueManager;
 import btm.sword.gamemode.type.CaptureTheFlag1v1;
 import btm.sword.system.control.SwordScheduler;
 import btm.sword.system.entity.SwordEntityArbiter;
-import btm.sword.system.entity.types.Dummy;
-import btm.sword.system.entity.types.SwordPlayer;
+import btm.sword.system.entity.impl.Dummy;
+import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.inventory.InventoryMenuManager;
 import btm.sword.system.item.ItemStackBuilder;
 import net.kyori.adventure.text.Component;
@@ -93,10 +93,7 @@ public class MainMenu extends Menu {
                 Component.text("Character Info"),
                 List.of(Component.text("View your stats, loadout, and progress"))
             ),
-            click -> {
-                close();
-                InventoryMenuManager.openMenu(CharacterMenu.class, swordPlayer);
-            }
+            click -> InventoryMenuManager.openMenu(CharacterMenu.class, swordPlayer)
         );
 
         SimpleItem queueForCTF = new SimpleItem(
@@ -135,8 +132,8 @@ public class MainMenu extends Menu {
             .setStructure(
                 "# # # . . . # # #",
                 "# . . . P . . . #",
-                "B . . . D Q . . .",
-                "F . . . . . . . .",
+                "< . . . D Q . . .",
+                "> . . . . . . . .",
                 "# . . . H . . . #",
                 "# # # . . . # # #")
             .addIngredient('#', new SimpleItem(new ItemBuilder(Material.BLACK_STAINED_GLASS_PANE)))
@@ -144,8 +141,8 @@ public class MainMenu extends Menu {
             .addIngredient('H', playerInfo)
             .addIngredient('P', HOW_TO_PLAY_ITEM)
             .addIngredient('D', spawnDummy)
-            .addIngredient('B', generatePreviousButtonOrDefault())
-            .addIngredient('F', generateForwardPreviousButtonOrDefault())
+            .addIngredient('<', generatePreviousButtonOrDefault())
+            .addIngredient('>', generateForwardPreviousButtonOrDefault())
             .build();
 
         Window window = Window.single()

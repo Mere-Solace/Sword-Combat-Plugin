@@ -1,4 +1,4 @@
-package btm.sword.system.action.throwing;
+package btm.sword.system.action.throwing.types;
 
 import org.bukkit.Bukkit;
 import org.bukkit.FluidCollisionMode;
@@ -19,13 +19,15 @@ import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 import btm.sword.Sword;
+import btm.sword.system.action.throwing.InteractiveItem;
+import btm.sword.system.action.throwing.InteractiveItemArbiter;
 import btm.sword.system.control.PredicateRunnablePair;
 import btm.sword.system.control.TimeArbiter;
 import btm.sword.utility.Prefab;
 import btm.sword.utility.display.ParticleWrapper;
 import lombok.Getter;
 
-public class StuckItem implements InteractiveItem {
+public class DroppedItem implements InteractiveItem {
     @Getter
     private final ItemStack itemStack;
     private final World world;
@@ -47,7 +49,7 @@ public class StuckItem implements InteractiveItem {
 
     private boolean stuck = false;
 
-    public StuckItem(Location start, Vector initialVelocity, ItemStack stack) {
+    public DroppedItem(Location start, Vector initialVelocity, ItemStack stack) {
         this.world = start.getWorld();
         this.pos = start.clone();
         this.velocity = initialVelocity.clone();
@@ -219,7 +221,7 @@ public class StuckItem implements InteractiveItem {
           null,
             () -> Prefab.Particles.THROWN_ITEM_MARKER.display(display.getLocation()),
             0, 100,
-            StuckItem.class, "settledStick",
+            DroppedItem.class, "settledStick",
             new PredicateRunnablePair(
                 () -> display == null || display.isDead(),
                 null

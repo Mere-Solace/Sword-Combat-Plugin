@@ -21,7 +21,7 @@ import btm.sword.system.action.throwing.InteractiveItemArbiter;
 import btm.sword.system.control.SwordScheduler;
 import btm.sword.system.control.TimeArbiter;
 import btm.sword.system.entity.SwordEntityArbiter;
-import btm.sword.system.entity.types.Combatant;
+import btm.sword.system.entity.impl.Combatant;
 import btm.sword.utility.Prefab;
 import btm.sword.utility.display.ParticleWrapper;
 import btm.sword.utility.entity.EntityUtil;

@@ -1,4 +1,4 @@
-package btm.sword.system.action.throwing;
+package btm.sword.system.action.throwing.types;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -26,14 +26,17 @@ import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 import btm.sword.config.Config;
+import btm.sword.system.action.throwing.InteractiveItem;
+import btm.sword.system.action.throwing.InteractiveItemArbiter;
+import btm.sword.system.action.throwing.ThrowAction;
 import btm.sword.system.action.throwing.impale.Impalement;
 import btm.sword.system.control.PredicateRunnablePair;
 import btm.sword.system.control.SwordScheduler;
 import btm.sword.system.control.TimeArbiter;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.base.SwordEntity;
-import btm.sword.system.entity.types.Combatant;
-import btm.sword.system.entity.types.SwordPlayer;
+import btm.sword.system.entity.impl.Combatant;
+import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.item.ItemUsageManager;
 import btm.sword.utility.Debug;
 import btm.sword.utility.Prefab;
@@ -234,9 +237,9 @@ public class ThrownItem implements InteractiveItem {
     public void onRelease(double initialVelocity) {
         if (thrower instanceof SwordPlayer sp) {
             sp.setThrewItem(true);
-            SwordScheduler.runBukkitTaskLater(() -> {
-                sp.setThrewItem(false);
-                }, 100, TimeUnit.MILLISECONDS
+            SwordScheduler.runBukkitTaskLater(() ->
+                sp.setThrewItem(false),
+                100, TimeUnit.MILLISECONDS
             );
         }
 

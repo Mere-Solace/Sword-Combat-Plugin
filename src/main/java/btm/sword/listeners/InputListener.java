@@ -19,7 +19,7 @@ import com.destroystokyo.paper.event.player.PlayerAttackEntityCooldownResetEvent
 import btm.sword.system.action.throwing.ThrowAction;
 import btm.sword.system.control.SwordScheduler;
 import btm.sword.system.entity.SwordEntityArbiter;
-import btm.sword.system.entity.types.SwordPlayer;
+import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.input.InputType;
 import btm.sword.system.item.KeyRegistry;
 import btm.sword.utility.entity.InputUtil;

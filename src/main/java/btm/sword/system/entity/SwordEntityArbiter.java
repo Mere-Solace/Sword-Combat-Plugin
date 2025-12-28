@@ -17,10 +17,10 @@ import btm.sword.Sword;
 import btm.sword.system.control.SwordScheduler;
 import btm.sword.system.entity.base.CombatProfile;
 import btm.sword.system.entity.base.SwordEntity;
-import btm.sword.system.entity.types.Dummy;
-import btm.sword.system.entity.types.Hostile;
-import btm.sword.system.entity.types.Passive;
-import btm.sword.system.entity.types.SwordPlayer;
+import btm.sword.system.entity.impl.Dummy;
+import btm.sword.system.entity.impl.Hostile;
+import btm.sword.system.entity.impl.Passive;
+import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.playerdata.PlayerDataManager;
 
 /**

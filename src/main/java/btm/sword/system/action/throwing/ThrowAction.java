@@ -7,8 +7,9 @@ import org.bukkit.scheduler.BukkitRunnable;
 
 import btm.sword.Sword;
 import btm.sword.system.action.SwordAction;
-import btm.sword.system.entity.types.Combatant;
-import btm.sword.system.entity.types.SwordPlayer;
+import btm.sword.system.action.throwing.types.ThrownItem;
+import btm.sword.system.entity.impl.Combatant;
+import btm.sword.system.entity.impl.SwordPlayer;
 
 /**
  * Handles the sequence of actions involved in a {@code Combatant} performing a throw action.

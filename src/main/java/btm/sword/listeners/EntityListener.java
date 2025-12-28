@@ -20,7 +20,7 @@ import com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent;
 import btm.sword.Sword;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.base.SwordEntity;
-import btm.sword.system.entity.types.Combatant;
+import btm.sword.system.entity.impl.Combatant;
 import btm.sword.utility.Prefab;
 
 public class EntityListener implements Listener {

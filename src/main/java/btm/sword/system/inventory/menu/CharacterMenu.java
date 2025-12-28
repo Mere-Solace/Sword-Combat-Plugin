@@ -1,9 +1,10 @@
 package btm.sword.system.inventory.menu;
 
+
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 
-import btm.sword.system.entity.types.SwordPlayer;
+import btm.sword.system.entity.impl.SwordPlayer;
 import xyz.xenondevs.invui.gui.Gui;
 import xyz.xenondevs.invui.item.builder.ItemBuilder;
 import xyz.xenondevs.invui.item.impl.SimpleItem;
@@ -21,15 +22,17 @@ public class CharacterMenu extends Menu {
 
         Gui gui = Gui.normal()
             .setStructure(
-                "# . . . . . . . .",
-                "# . . . . . . . .",
-                "B . . . . . . . .",
-                "F . . . . . . . .",
-                "# . . . . . . . .",
-                "# . . . . . . . .")
+                "# # # . . . # # #",
+                "# . . . S . . . #",
+                "< . . . . . . . .",
+                "> . . . . . . . .",
+                "# . . . . . . . #",
+                "# # # . . . # # #")
             .addIngredient('#', new SimpleItem(new ItemBuilder(Material.BLACK_STAINED_GLASS_PANE)))
-            .addIngredient('B', generatePreviousButtonOrDefault())
-            .addIngredient('F', generateForwardPreviousButtonOrDefault())
+            .addIngredient('S', swordPlayer.getPlayerHead())
+            .addIngredient('<', generatePreviousButtonOrDefault())
+            .addIngredient('>', generateForwardPreviousButtonOrDefault())
+            .addIngredient('!', backButton())
             .build();
 
         Window window = Window.single()

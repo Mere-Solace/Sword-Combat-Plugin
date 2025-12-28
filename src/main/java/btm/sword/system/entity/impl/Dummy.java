@@ -1,4 +1,4 @@
-package btm.sword.system.entity.types;
+package btm.sword.system.entity.impl;
 
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.LivingEntity;

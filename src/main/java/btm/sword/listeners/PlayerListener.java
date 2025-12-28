@@ -21,7 +21,7 @@ import org.intellij.lang.annotations.Subst;
 import btm.sword.Sword;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.base.SwordEntity;
-import btm.sword.system.entity.types.SwordPlayer;
+import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.entity.umbral.input.BladeRequest;
 import io.papermc.paper.event.player.AsyncChatEvent;
 import io.papermc.paper.event.player.PlayerShieldDisableEvent;

@@ -1,4 +1,4 @@
-package btm.sword.system.action.skill;
+package btm.sword.system.action;
 
 import static btm.sword.system.action.attack.PunchAction.throwPunch;
 
@@ -7,11 +7,10 @@ import java.util.concurrent.TimeUnit;
 
 import org.bukkit.util.Vector;
 
-import btm.sword.system.action.SwordAction;
 import btm.sword.system.control.SwordScheduler;
 import btm.sword.system.control.TimeArbiter;
 import btm.sword.system.entity.base.SwordEntity;
-import btm.sword.system.entity.types.Combatant;
+import btm.sword.system.entity.impl.Combatant;
 import btm.sword.system.entity.umbral.UmbralBlade;
 import btm.sword.system.entity.umbral.input.BladeRequest;
 import btm.sword.system.entity.umbral.statemachine.state.LodgedState;

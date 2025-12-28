@@ -7,8 +7,8 @@ import btm.sword.system.action.movement.DashDirection;
 import btm.sword.system.attack.Attack;
 import btm.sword.system.attack.style.AttackProfile;
 import btm.sword.system.attack.style.WeaponAttackStyle;
-import btm.sword.system.entity.types.Combatant;
-import btm.sword.system.entity.types.SwordPlayer;
+import btm.sword.system.entity.impl.Combatant;
+import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.entity.umbral.input.BladeRequest;
 import btm.sword.system.entity.umbral.statemachine.state.StandbyState;
 

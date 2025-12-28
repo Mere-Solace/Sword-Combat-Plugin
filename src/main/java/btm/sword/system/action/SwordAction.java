@@ -10,7 +10,7 @@ import org.bukkit.scheduler.BukkitTask;
 import btm.sword.Sword;
 import btm.sword.system.control.SwordScheduler;
 import btm.sword.system.control.TimeArbiter;
-import btm.sword.system.entity.types.Combatant;
+import btm.sword.system.entity.impl.Combatant;
 
 public abstract class SwordAction {
     protected static final BukkitScheduler s = Bukkit.getScheduler();

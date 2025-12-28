@@ -1,8 +1,8 @@
 package btm.sword.system.entity.base;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 
-import btm.sword.system.attack.Attack;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.aspect.value.AspectValue;
 import btm.sword.system.entity.aspect.value.ResourceValue;
@@ -33,7 +33,7 @@ import lombok.Getter;
  * <h3>Examples of Use:</h3>
  * <ul>
  *   <li>{@link btm.sword.system.entity.base.SwordEntity#resetResources()} resets stats via this profile.</li>
- *   <li>{@link btm.sword.system.entity.types.Combatant} references its {@code CombatProfile} to determine
+ *   <li>{@link btm.sword.system.entity.impl.Combatant} references its {@code CombatProfile} to determine
  *       resource thresholds for mechanics such as dashing, blocking, and casting.</li>
  *   <li>{@link btm.sword.system.combat.Affliction} subclasses may query stats such as
  *       {@link AspectType#TOUGHNESS} to calculate their strength or duration.</li>
@@ -80,13 +80,23 @@ public class CombatProfile {
      */
     private final HashMap<AspectType, AspectValue> stats = new HashMap<>(); // max Stats
 
-    private final Attack[] basicAttacks;
+    // Persisted as integers for compact storage. -1 indicates empty slot.
+    private final ArrayList<Integer> unlockedSkillIds = new ArrayList<>();
+    private final ArrayList<Integer> equippedSkillIds = new ArrayList<>();
 
-    private final Attack[] heavyAttacks;
+    // Number of skill slots unlocked for this profile (default 1, max 3)
+    private int unlockedSkillSlots = 1;
+
+    private static final int MAX_SKILL_SLOTS = 3;
+
+    // Ensure equippedSkillIds has fixed size initialized with -1
+    {
+        for (int i = 0; i < MAX_SKILL_SLOTS; i++) equippedSkillIds.add(-1);
+    }
 
     /**
      * The maximum number of consecutive air-dodges the entity can perform
-     * before landing. Reset in {@link btm.sword.system.entity.types.Combatant#resetAirDashesPerformed()}.
+     * before landing. Reset in {@link btm.sword.system.entity.impl.Combatant#resetAirDashesPerformed()}.
      */
     private int maxAirDodges;
 
@@ -96,14 +106,6 @@ public class CombatProfile {
      */
     public CombatProfile() {
         swordClass = SwordClassType.SWORD_THROWER;
-
-        // I think I'll keep this for a potential customization of the umbral blade, but it's not used anywhere start now
-        basicAttacks = new Attack[]{
-        };
-
-        heavyAttacks = new Attack[]{
-
-        };
 
         // Load combat profile values from config - static field access
         for (AspectType stat : AspectType.values()) {
@@ -163,7 +165,7 @@ public class CombatProfile {
      * Increases the maximum number of air dodges this profile supports.
      * Used by ability upgrades and temporary effects.
      *
-     * @see btm.sword.system.entity.types.Combatant#resetAirDashesPerformed()
+     * @see btm.sword.system.entity.impl.Combatant#resetAirDashesPerformed()
      */
     public void increaseNumAirDodges() {
         maxAirDodges++;

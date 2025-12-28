@@ -1,5 +1,6 @@
-package btm.sword.system.entity.types;
+package btm.sword.system.entity.impl;
 
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import org.bukkit.Location;
@@ -13,7 +14,7 @@ import org.bukkit.util.Vector;
 
 import btm.sword.system.action.SwordAction;
 import btm.sword.system.action.movement.MovementAction;
-import btm.sword.system.action.throwing.ThrownItem;
+import btm.sword.system.action.throwing.types.ThrownItem;
 import btm.sword.system.control.SwordScheduler;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.base.CombatProfile;

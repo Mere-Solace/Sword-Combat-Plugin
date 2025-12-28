@@ -2,25 +2,22 @@ package btm.sword.system.inventory.menu;
 
 import org.bukkit.Material;
 
-import btm.sword.system.entity.types.SwordPlayer;
+import btm.sword.system.entity.impl.SwordPlayer;
 import xyz.xenondevs.invui.item.builder.ItemBuilder;
 import xyz.xenondevs.invui.item.impl.SimpleItem;
 
 public abstract class Menu {
     protected final SwordPlayer swordPlayer;
-    public Menu(SwordPlayer player) { this.swordPlayer = player; }
-    public abstract void open();
-    public void close() {}
 
-//    protected static final SimpleItem defaultSimpleItem = new SimpleItem(
-//        new ItemBuilder(Material.GRAY_STAINED_GLASS_PANE)
-//            .setDisplayName("| | |")
-//            .clearItemFlags()
-//    );
+    public Menu(SwordPlayer player) {
+        this.swordPlayer = player;
+    }
+
+    public abstract void open();
 
     protected SimpleItem generatePreviousButtonOrDefault() {
         return new SimpleItem(
-                new ItemBuilder(Material.OAK_TRAPDOOR)
+                new ItemBuilder(Material.WAXED_COPPER_TRAPDOOR)
                     .clearItemFlags()
                     .setDisplayName("Go back"),
                 click -> swordPlayer.getPlayerMenuManager().openPreviousMenu()
@@ -34,5 +31,12 @@ public abstract class Menu {
                     .setDisplayName("Go forward"),
                 click -> swordPlayer.getPlayerMenuManager().openForwardPreviousMenu()
             );
+    }
+
+    protected SimpleItem backButton() {
+        return new SimpleItem(
+            new ItemBuilder(Material.ARROW).setDisplayName("Back"),
+            click -> swordPlayer.getPlayerMenuManager().openPreviousMenu()
+        );
     }
 }

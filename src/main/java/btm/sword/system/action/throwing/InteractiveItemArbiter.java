@@ -9,8 +9,10 @@ import org.bukkit.entity.ItemDisplay;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
 
+import btm.sword.system.action.throwing.types.DroppedItem;
+import btm.sword.system.action.throwing.types.ThrownItem;
 import btm.sword.system.entity.base.SwordEntity;
-import btm.sword.system.entity.types.Combatant;
+import btm.sword.system.entity.impl.Combatant;
 import btm.sword.system.entity.umbral.UmbralBlade;
 import btm.sword.utility.Prefab;
 import btm.sword.utility.display.ParticleWrapper;
@@ -82,7 +84,7 @@ public class InteractiveItemArbiter {
      * @param executor The combatant performing the grab.
      */
     public static void onGrab(ItemDisplay display, Combatant executor) {
-        InteractiveItem interactiveItem = remove(display, false); // Stop displaying the ItemDisplay
+        InteractiveItem interactiveItem = remove(display, false);
         if (interactiveItem == null) return;
         if (interactiveItem instanceof ThrownItem thrownItem) {
             thrownItem.setRetrieved(true);
@@ -141,7 +143,7 @@ public class InteractiveItemArbiter {
                 Math.random() - 0.5
             ).multiply(0.5);
 
-            StuckItem stuck = new StuckItem(origin, dropVel, stack);
+            DroppedItem stuck = new DroppedItem(origin, dropVel, stack);
             stuck.register();
         }
     }
