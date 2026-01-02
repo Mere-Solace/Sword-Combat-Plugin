@@ -1,6 +1,5 @@
 package btm.sword.system.entity.impl;
 
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import org.bukkit.Location;
@@ -368,8 +367,8 @@ public abstract class Combatant extends SwordEntity {
      * @param multiplier multiplier applied to aspect value for reduction
      * @return the calculated cooldown duration floored at min
      */
-    public long calcCooldown(AspectType type, double min, double base, double multiplier) {
-        return (long) Math.max(min, base - (multiplier * aspects.getAspectVal(type)) );
+    public int calcCooldown(AspectType type, double min, double base, double multiplier) {
+        return (int) Math.max(min, base - (multiplier * aspects.getAspectVal(type)) );
     }
 
     public boolean canPerformUmbralLinkAttack() {

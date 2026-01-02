@@ -301,7 +301,7 @@ public class SwordPlayer extends Combatant {
         else if (node.isDisplay())
             displayInputSequence();
 
-        InputAction action = node.getAction();
+        InputAction action = node.resolveAction();
 
         if (action != null) {
             if (aspects.soulfireCur() < action.getRequiredSoulfire()) {

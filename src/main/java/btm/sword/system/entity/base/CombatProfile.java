@@ -1,13 +1,14 @@
 package btm.sword.system.entity.base;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 
+import btm.sword.system.action.skill.container.PlayerSkillContainer;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.aspect.value.AspectValue;
 import btm.sword.system.entity.aspect.value.ResourceValue;
 import btm.sword.system.playerdata.SwordClassType;
 import lombok.Getter;
+
 
 /**
  * Represents the combat-related statistical profile for a {@link btm.sword.system.entity.base.SwordEntity}.
@@ -80,31 +81,19 @@ public class CombatProfile {
      */
     private final HashMap<AspectType, AspectValue> stats = new HashMap<>(); // max Stats
 
-    // Persisted as integers for compact storage. -1 indicates empty slot.
-    private final ArrayList<Integer> unlockedSkillIds = new ArrayList<>();
-    private final ArrayList<Integer> equippedSkillIds = new ArrayList<>();
-
-    // Number of skill slots unlocked for this profile (default 1, max 3)
-    private int unlockedSkillSlots = 1;
-
-    private static final int MAX_SKILL_SLOTS = 3;
-
-    // Ensure equippedSkillIds has fixed size initialized with -1
-    {
-        for (int i = 0; i < MAX_SKILL_SLOTS; i++) equippedSkillIds.add(-1);
-    }
-
     /**
      * The maximum number of consecutive air-dodges the entity can perform
      * before landing. Reset in {@link btm.sword.system.entity.impl.Combatant#resetAirDashesPerformed()}.
      */
     private int maxAirDodges;
 
+    private final PlayerSkillContainer playerSkillContainer;
+
     /**
      * Constructs a new {@code CombatProfile} with the default {@link SwordClassType#SWORD_THROWER}
      * and baseline {@link AspectType} stat distributions loaded from configuration.
      */
-    public CombatProfile() {
+    public CombatProfile() { // TODO #166 - Allow for dynamic loading of CombatProfile info.
         swordClass = SwordClassType.SWORD_THROWER;
 
         // Load combat profile values from config - static field access
@@ -135,6 +124,8 @@ public class CombatProfile {
         }
 
         this.maxAirDodges = btm.sword.config.Config.Entity.COMBAT_PROFILE_MAX_AIR_DODGES;
+
+        playerSkillContainer = new PlayerSkillContainer(); // Related to #166
     }
 
     /**

@@ -32,11 +32,4 @@ public abstract class Menu {
                 click -> swordPlayer.getPlayerMenuManager().openForwardPreviousMenu()
             );
     }
-
-    protected SimpleItem backButton() {
-        return new SimpleItem(
-            new ItemBuilder(Material.ARROW).setDisplayName("Back"),
-            click -> swordPlayer.getPlayerMenuManager().openPreviousMenu()
-        );
-    }
 }

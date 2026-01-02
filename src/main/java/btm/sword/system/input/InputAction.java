@@ -21,7 +21,7 @@ public class InputAction {
     private final Consumer<Combatant> action;
 
     /** Function to calculate the cooldown duration in milliseconds for this action, based on the executor. */
-    private final Function<Combatant, Long> cooldownCalculation;
+    private final Function<Combatant, Integer> cooldownCalculation;
 
     /** Predicate that tests whether the executor is allowed to cast this ability at a given time. */
     private final Predicate<Combatant> canCastAbility;
@@ -52,7 +52,7 @@ public class InputAction {
      */
     public InputAction(
             Consumer<Combatant> action,
-            Function<Combatant, Long> cooldownCalculation,
+            Function<Combatant, Integer> cooldownCalculation,
             Predicate<Combatant> canCastAbility,
             float requiredSoulfire,
             boolean displayCooldown,
@@ -69,7 +69,7 @@ public class InputAction {
 
     public InputAction(
         Consumer<Combatant> action,
-        Function<Combatant, Long> cooldownCalculation,
+        Function<Combatant, Integer> cooldownCalculation,
         Predicate<Combatant> canCastAbility,
         boolean displayCooldown,
         boolean displayDisabled,
