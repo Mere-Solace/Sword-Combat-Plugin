@@ -57,7 +57,8 @@ public class MovementAction extends SwordAction {
                 return;
             }
         }
-        cast(executor, Config.Movement.DASH_CAST_DURATION, dashConsumer);
+        // execution occurs immediately; input-driven casting is handled by the InputAction's castDuration
+        dashConsumer.run();
     }
 
     private static void strafe(Combatant executor, boolean onGround, int direction) {

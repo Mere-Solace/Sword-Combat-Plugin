@@ -145,8 +145,6 @@ public class ThrowAction extends SwordAction {
         executor.setAttemptingThrow(false);
         executor.setThrowSuccessful(true);
 
-        cast(executor, 10, () ->
-                executor.getThrownItem().onRelease(2)
-        );
+        if (executor.getThrownItem() != null) executor.getThrownItem().onRelease(2);
     }
 }

@@ -94,7 +94,8 @@ public class UmbralBladeAction extends SwordAction {
         }
 
         wielder.consumeSoulfire(40.0f);
-        cast(wielder, 250, () -> performBlink(wielder, target));
+
+        performBlink(wielder, target);
     }
 
     private static void performBlink(Combatant wielder, SwordEntity target) {

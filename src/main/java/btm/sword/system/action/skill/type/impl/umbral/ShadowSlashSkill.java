@@ -2,6 +2,7 @@ package btm.sword.system.action.skill.type.impl.umbral;
 
 import java.util.List;
 
+import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 
 import btm.sword.system.action.skill.SkillId;
@@ -9,7 +10,8 @@ import btm.sword.system.action.skill.SkillIds;
 import btm.sword.system.action.skill.SkillType;
 import btm.sword.system.action.skill.type.ActiveSkill;
 import btm.sword.system.entity.impl.Combatant;
-import xyz.xenondevs.inventoryaccess.component.ComponentWrapper;
+import btm.sword.system.item.ItemStackBuilder;
+import net.kyori.adventure.text.Component;
 
 public class ShadowSlashSkill extends ActiveSkill {
     @Override
@@ -39,16 +41,21 @@ public class ShadowSlashSkill extends ActiveSkill {
 
     @Override
     public ItemStack icon() {
+        return ItemStackBuilder.of(Material.NETHERITE_SWORD)
+            .name(Component.text("Shadow Slash"))
+            .hideAll()
+            .build();
+    }
+
+    @Override
+    public Component name() {
         return null;
     }
 
     @Override
-    public ComponentWrapper name() {
-        return null;
-    }
+    public List<Component> description() {
+        return List.of(
 
-    @Override
-    public List<ComponentWrapper> description() {
-        return List.of();
+        );
     }
 }

@@ -158,7 +158,8 @@ public class Attack extends SwordAction implements Runnable {
 
     // TODO: #139 make usage dynamic
     protected void cast() {
-        cast(attacker, attackMilliseconds, this);
+        // Trigger attack logic immediately; input-level casting will be handled by the InputAction's castDuration
+        onRun();
     }
 
     private void onRun() {

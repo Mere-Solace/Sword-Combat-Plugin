@@ -41,6 +41,7 @@ import btm.sword.system.control.TimeArbiter;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.input.InputAction;
+import btm.sword.system.input.InputActionExecutor;
 import btm.sword.system.input.InputExecutionTree;
 import btm.sword.system.input.InputKey;
 import btm.sword.system.input.InputType;
@@ -83,6 +84,8 @@ public class SwordPlayer extends Combatant {
     private final int maxNumDummies = 3;
     private int curNumDummies = 0;
     private final HashSet<Dummy> yourDummies = new HashSet<>();
+
+
 
     private final InputExecutionTree inputExecutionTree;
     private final long baseInputTimeoutMillis = 1400L;
@@ -146,6 +149,7 @@ public class SwordPlayer extends Combatant {
         playerHead = new ItemStackBuilder(Material.PLAYER_HEAD)
             .setMeta(skullMeta)
             .hideAll()
+            .name(Component.text("Your Stats", Config.SwordColor.TEXT_COOL_DARK))
             .lore(aspects.toComponentList())
             .build();
 
@@ -304,19 +308,13 @@ public class SwordPlayer extends Combatant {
         InputAction action = node.resolveAction();
 
         if (action != null) {
-            if (aspects.soulfireCur() < action.getRequiredSoulfire()) {
-                displayLackOfSoulfire(action.getRequiredSoulfire());
+            if (aspects.soulfireCur() < action.getRequiredSoulfire(this)) {
+                displayLackOfSoulfire(action.getRequiredSoulfire(this));
                 resetTree();
                 return;
             }
 
-            if (action.execute(this)) {
-                consumeSoulfire(action.getRequiredSoulfire()); // begin the depletion of soulfire
-                return;
-            }
-            else {
-                resetTree();
-            }
+            InputActionExecutor.execute(action, this);
         }
 
         Consumer<SwordPlayer> internalAction = node.getInternalAction();

@@ -3,10 +3,10 @@ package btm.sword.system.action.skill.type.impl.umbral;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
 
-import btm.sword.system.action.SwordAction;
 import btm.sword.system.action.UmbralBladeAction;
 import btm.sword.system.action.skill.SkillId;
 import btm.sword.system.action.skill.SkillIds;
@@ -17,20 +17,18 @@ import btm.sword.system.control.TimeArbiter;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.impl.Combatant;
 import btm.sword.system.entity.umbral.UmbralBlade;
+import btm.sword.system.item.ItemStackBuilder;
 import btm.sword.utility.Prefab;
 import btm.sword.utility.display.DrawUtil;
 import btm.sword.utility.math.Basis;
 import net.kyori.adventure.text.Component;
-import xyz.xenondevs.inventoryaccess.component.AdventureComponentWrapper;
-import xyz.xenondevs.inventoryaccess.component.ComponentWrapper;
 
 public class VoidLungeSkill extends ActiveSkill {
 
-    private static final ComponentWrapper NAME =
-        new AdventureComponentWrapper(Component.text("Void Lunge"));
+    private static final Component NAME = Component.text("Void Lunge");
 
     @Override
-    public ComponentWrapper name() {
+    public Component name() {
         return NAME;
     }
 
@@ -46,12 +44,17 @@ public class VoidLungeSkill extends ActiveSkill {
 
     @Override
     public ItemStack icon() {
-        return null;
+        return ItemStackBuilder.of(Material.ENDER_PEARL)
+            .name(Component.text("Void Lunge"))
+            .hideAll()
+            .build();
     }
 
     @Override
-    public List<ComponentWrapper> description() {
-        return List.of();
+    public List<Component> description() {
+        return List.of(
+            Component.text("Dash behind an impaled foe and reclaim your blade.")
+        );
     }
 
     @Override
@@ -68,7 +71,7 @@ public class VoidLungeSkill extends ActiveSkill {
         }
 
         combatant.consumeSoulfire(40.0f);
-        SwordAction.cast(combatant, 250, () -> performBlink(combatant, target));
+        performBlink(combatant, target);
     }
 
     private void performBlink(Combatant combatant, SwordEntity target) {

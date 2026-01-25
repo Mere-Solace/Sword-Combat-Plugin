@@ -54,11 +54,10 @@ public class DashAttackAction extends SwordAction {
             default -> weaponAttackStyle.attacks().getFirst();
         };
 
-        cast(executor, 500, () ->
-            new Attack(itemUsedInAttack, attackDir, !direction.equals(DashDirection.BACKWARD),
-                50,30,0,1)
-                // use the direction of the dash so that players can't spin around and use the long attack omnidirectionally
-                .setOrigin(forward ? executor.getChestLocation().setDirection(executor.getDashDirection()) : null)
-                .execute(executor));
+        new Attack(itemUsedInAttack, attackDir, !direction.equals(DashDirection.BACKWARD),
+            50,30,0,1)
+            // use the direction of the dash so that players can't spin around and use the long attack omnidirectionally
+            .setOrigin(forward ? executor.getChestLocation().setDirection(executor.getDashDirection()) : null)
+            .execute(executor);
     }
 }

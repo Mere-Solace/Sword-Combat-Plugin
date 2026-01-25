@@ -3,10 +3,10 @@ package btm.sword.system.input;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 import btm.sword.system.entity.impl.Combatant;
 import btm.sword.system.entity.impl.SwordPlayer;
-import lombok.Getter;
 
 /**
  * Represents an executable action triggered by player input within the Sword plugin system.
@@ -26,8 +26,12 @@ public class InputAction {
     /** Predicate that tests whether the executor is allowed to cast this ability at a given time. */
     private final Predicate<Combatant> canCastAbility;
 
-    @Getter
-    private final float requiredSoulfire;
+    private final Function<Combatant, Float> requiredSoulfire;
+
+    /** Convenience accessor to compute required soulfire for the provided executor. */
+    public float getRequiredSoulfire(Combatant executor) {
+        return Math.max(0f, requiredSoulfire.apply(executor));
+    }
 
     /** Whether to display the remaining cooldown time to the player if action is on cooldown. */
     private final boolean displayCooldown;
@@ -36,10 +40,18 @@ public class InputAction {
     private final boolean displayDisabled;
 
     private final boolean resetIfCannotPerform;
+    private final Function<Combatant, Integer> castDuration; // function to compute cast duration per executor
 
     /** Timestamp in milliseconds when this action was last successfully executed. */
     @lombok.Getter
     private long timeLastExecuted = 0;
+
+    /**
+     * Convenience accessor to compute cast duration for the provided executor.
+     */
+    public int getCastDurationMillis(Combatant executor) {
+        return Math.max(0, castDuration.apply(executor));
+    }
 
     /**
      * Constructs an InputAction.
@@ -49,49 +61,36 @@ public class InputAction {
      * @param canCastAbility predicate to test if executor can cast the action
      * @param displayCooldown whether to visually show cooldown progress on failure
      * @param displayDisabled whether to visually indicate the ability is disabled on failure
+     * @param resetIfCannotPerform whether to reset the sequence if the action cannot be performed
+     * @param castDuration the function that calculates the duration (ms) to block other abilities while casting
      */
     public InputAction(
             Consumer<Combatant> action,
             Function<Combatant, Integer> cooldownCalculation,
             Predicate<Combatant> canCastAbility,
-            float requiredSoulfire,
+            Function<Combatant, Float> requiredSoulfire,
             boolean displayCooldown,
             boolean displayDisabled,
-            boolean resetIfCannotPerform) {
+            boolean resetIfCannotPerform,
+            Function<Combatant, Integer> castDuration) {
         this.action = action;
         this.cooldownCalculation = cooldownCalculation;
         this.canCastAbility = canCastAbility;
-        this.requiredSoulfire = requiredSoulfire;
+        this.requiredSoulfire = requiredSoulfire != null ? requiredSoulfire : c -> 0f;
         this.displayCooldown = displayCooldown;
         this.displayDisabled = displayDisabled;
         this.resetIfCannotPerform = resetIfCannotPerform;
-    }
-
-    public InputAction(
-        Consumer<Combatant> action,
-        Function<Combatant, Integer> cooldownCalculation,
-        Predicate<Combatant> canCastAbility,
-        boolean displayCooldown,
-        boolean displayDisabled,
-        boolean resetIfCannotPerform) {
-        this.action = action;
-        this.cooldownCalculation = cooldownCalculation;
-        this.canCastAbility = canCastAbility;
-        this.requiredSoulfire = 0f;
-        this.displayCooldown = displayCooldown;
-        this.displayDisabled = displayDisabled;
-        this.resetIfCannotPerform = resetIfCannotPerform;
+        this.castDuration = castDuration != null ? castDuration : c -> 0;
     }
 
     /**
-     * Attempts to execute this action by the specified {@link Combatant} executor.
-     * Will check cooldown and ability readiness before performing the action.
-     * Displays cooldown or disabled visual indicators to the player as configured.
+     * Checks whether the action is ready to execute (cooldown and ability checks).
+     * This does not actually run the action; use {@link #perform(Combatant)} to execute.
      *
      * @param executor the Combatant attempting to execute the action
-     * @return true if action was executed, false otherwise
+     * @return whether the action can be performed or not
      */
-    public boolean execute(Combatant executor) {
+    public boolean handlePerformAttempt(Combatant executor) {
         long currentTime = System.currentTimeMillis();
         long deltaTime = currentTime - getTimeLastExecuted();
         long cooldown = calcCooldown(executor);
@@ -99,23 +98,39 @@ public class InputAction {
         if (deltaTime <= cooldown) {
             if (displayCooldown)
                 ((SwordPlayer) executor).displayCooldown(Math.max(0, cooldown - (currentTime - getTimeLastExecuted())));
+            handleExecutionFailure(executor);
             return false;
         }
-        if (canCast(executor)) {
-            action.accept(executor);
-            setTimeLastExecuted();
-            return true;
-        }
-        else {
+        if (unableToCast(executor)) {
             if (resetIfCannotPerform) {
-                if (displayDisabled)
+                if (displayDisabled) {
                     ((SwordPlayer) executor).displayDisablingEffect();
+                }
+                handleExecutionFailure(executor);
                 return false;
             }
-            else {
-                return true;
-            }
         }
+        handleSoulfireConsumption(executor);
+        return true;
+    }
+
+    private void handleSoulfireConsumption(Combatant combatant) {
+        combatant.consumeSoulfire(requiredSoulfire.apply(combatant)); // begin the depletion of soulfire
+    }
+
+    private void handleExecutionFailure(Combatant combatant) {
+        if (combatant instanceof SwordPlayer swordPlayer) {
+            swordPlayer.resetTree();
+        }
+    }
+
+    /**
+     * Actually performs the action on the executor. Should be invoked once validation
+     * passes (i.e., execute(...) returned true) and will set the last-executed time.
+     */
+    public void perform(Combatant executor) {
+        action.accept(executor);
+        setTimeLastExecuted();
     }
 
 
@@ -137,8 +152,8 @@ public class InputAction {
      * @param executor the Combatant attempting to cast
      * @return true if casting is allowed, false otherwise
      */
-    public boolean canCast(Combatant executor) {
-        return canCastAbility == null || canCastAbility.test(executor);
+    public boolean unableToCast(Combatant executor) {
+        return canCastAbility != null && !canCastAbility.test(executor);
     }
 
     /**
@@ -146,5 +161,82 @@ public class InputAction {
      */
     public void setTimeLastExecuted() {
         timeLastExecuted = System.currentTimeMillis();
+    }
+
+    /**
+     * Builder for InputAction to make construction more readable and maintainable.
+     */
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static class Builder {
+        private Consumer<Combatant> action;
+        private Function<Combatant, Integer> cooldownCalculation;
+        private Predicate<Combatant> canCastAbility;
+        private Function<Combatant, Float> requiredSoulfire = c -> 0f;
+        private boolean displayCooldown = false;
+        private boolean displayDisabled = false;
+        private boolean resetIfCannotPerform = false;
+        private Function<Combatant, Integer> castDuration = c -> 0;
+
+        public Builder action(Consumer<Combatant> action) {
+            this.action = action;
+            return this;
+        }
+
+        public Builder cooldown(Function<Combatant, Integer> cooldownCalculation) {
+            this.cooldownCalculation = cooldownCalculation;
+            return this;
+        }
+
+        public Builder canCast(Predicate<Combatant> canCastAbility) {
+            this.canCastAbility = canCastAbility;
+            return this;
+        }
+
+        public Builder requiredSoulfire(Supplier<Float> requiredSoulfire) {
+            this.requiredSoulfire = requiredSoulfire != null ? c -> requiredSoulfire.get() : c -> 0f;
+            return this;
+        }
+
+        public Builder requiredSoulfire(Function<Combatant, Float> requiredSoulfire) {
+            this.requiredSoulfire = requiredSoulfire != null ? requiredSoulfire : c -> 0f;
+            return this;
+        }
+
+        public Builder displayCooldown(boolean displayCooldown) {
+            this.displayCooldown = displayCooldown;
+            return this;
+        }
+
+        public Builder displayDisabled(boolean displayDisabled) {
+            this.displayDisabled = displayDisabled;
+            return this;
+        }
+
+        public Builder resetIfCannotPerform(boolean resetIfCannotPerform) {
+            this.resetIfCannotPerform = resetIfCannotPerform;
+            return this;
+        }
+
+        /** Use a supplier to provide a (possibly dynamic) constant cast duration in milliseconds. The supplier is evaluated at execution time. */
+        public Builder castDuration(Supplier<Integer> castDurationSupplier) {
+            this.castDuration = castDurationSupplier != null ? c -> castDurationSupplier.get() : c -> 0;
+            return this;
+        }
+
+        public Builder castDuration(Function<Combatant, Integer> castDurationFunction) {
+            this.castDuration = castDurationFunction != null ? castDurationFunction : c -> 0;
+            return this;
+        }
+
+        public InputAction build() {
+            if (action == null) throw new IllegalStateException("InputAction requires an action consumer");
+            Function<Combatant, Integer> cooldown = cooldownCalculation != null ? cooldownCalculation : (c -> 0);
+            Predicate<Combatant> canCast = canCastAbility != null ? canCastAbility : (c -> true);
+            // Keep display and reset flags as configured (defaults defined on fields)
+            return new InputAction(action, cooldown, canCast, requiredSoulfire, displayCooldown, displayDisabled, resetIfCannotPerform, castDuration);
+        }
     }
 }

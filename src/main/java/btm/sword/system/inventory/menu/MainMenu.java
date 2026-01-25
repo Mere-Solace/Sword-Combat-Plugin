@@ -136,7 +136,7 @@ public class MainMenu extends Menu {
                 "> . . . . . . . .",
                 "# . . . H . . . #",
                 "# # # . . . # # #")
-            .addIngredient('#', new SimpleItem(new ItemBuilder(Material.BLACK_STAINED_GLASS_PANE)))
+            .addIngredient('#', BORDER)
             .addIngredient('Q', queueForCTF)
             .addIngredient('H', playerInfo)
             .addIngredient('P', HOW_TO_PLAY_ITEM)

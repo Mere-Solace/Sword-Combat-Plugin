@@ -585,18 +585,18 @@ public class Config {
                 ConfigurationSection::getDouble
         ); }
 
-        public static long ATTACKS_CAST_TIMING_MIN_DURATION = 1L;
+        public static int ATTACKS_CAST_TIMING_MIN_DURATION = 50; // 1 tick (1/20th of a second)
         static { register("combat.attacks_cast_timing_min_duration",
-                ATTACKS_CAST_TIMING_MIN_DURATION, Long.class,
+                ATTACKS_CAST_TIMING_MIN_DURATION, Integer.class,
                 v -> ATTACKS_CAST_TIMING_MIN_DURATION = v,
-                ConfigurationSection::getLong
+                ConfigurationSection::getInt
         ); }
 
-        public static long ATTACKS_CAST_TIMING_MAX_DURATION = 5L;
+        public static int ATTACKS_CAST_TIMING_MAX_DURATION = 2000; // 2 seconds
         static { register("combat.attacks_cast_timing_max_duration",
-                ATTACKS_CAST_TIMING_MAX_DURATION, Long.class,
+                ATTACKS_CAST_TIMING_MAX_DURATION, Integer.class,
                 v -> ATTACKS_CAST_TIMING_MAX_DURATION = v,
-                ConfigurationSection::getLong
+                ConfigurationSection::getInt
         ); }
 
         public static double ATTACKS_CAST_TIMING_REDUCTION_RATE = 0.2; // ticks/combo_count
@@ -2204,7 +2204,7 @@ public class Config {
     //region GRAB
     // ==============================================================================
     public static class Grab {
-        public static int CAST_DURATION = 12;
+        public static int CAST_DURATION = 750;
         static { register(
             "grab.cast_duration",
             CAST_DURATION, Integer.class,
@@ -2213,7 +2213,7 @@ public class Config {
         ); }
 
         // Base grab duration (ticks)
-        public static int BASE_DURATION = 60;
+        public static int BASE_DURATION = 2000;
         static { register(
             "grab.base_duration",
             BASE_DURATION, Integer.class,
@@ -2320,7 +2320,7 @@ public class Config {
             ConfigurationSection::getInt
         ); }
 
-        public static int JUMP_BOOST_DURATION = 2;
+        public static int JUMP_BOOST_DURATION = 2; // ticks, correct
         static { register(
             "grab.jump_boost_duration",
             JUMP_BOOST_DURATION, Integer.class,

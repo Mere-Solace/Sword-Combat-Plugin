@@ -11,7 +11,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
 
-import btm.sword.system.action.SwordAction;
+import btm.sword.system.action.ActionCaster;
 import btm.sword.system.action.movement.MovementAction;
 import btm.sword.system.action.throwing.types.ThrownItem;
 import btm.sword.system.control.SwordScheduler;
@@ -227,7 +227,7 @@ public abstract class Combatant extends SwordEntity {
 
         target.setVelocity(dir().multiply(2));
 
-        SwordAction.cast(this, 75, () -> {
+        ActionCaster.cast(this, 75, () -> {
             Location hitLoc = target.getLocation().add(0, target.getEyeHeight() * 0.5, 0);
             Prefab.Particles.PUNCH_CONNECT.display(hitLoc);
             grabbedEntity.hit(this, Prefab.Attacks.grabHit,
@@ -271,6 +271,7 @@ public abstract class Combatant extends SwordEntity {
      * @return true if able to perform actions, false otherwise
      */
     public boolean canPerformAction() {
+        message("ability cast task - " + (abilityCastTask == null ? "none" : abilityCastTask.getTaskId()));
         return abilityCastTask == null && !isGrabbing && !isGrabbed();
     }
 

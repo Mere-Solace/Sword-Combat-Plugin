@@ -57,8 +57,6 @@ public class PunchAction extends SwordAction {
             Config.Combat.ATTACKS_CAST_TIMING_REDUCTION_RATE);
         executor.setDurationOfLastAttack(cooldown * Config.Combat.ATTACKS_DURATION_MULTIPLIER);
 
-        cast(executor, cooldown,
-            () -> punch(executor, right, distance)
-        );
+        punch(executor, right, distance);
     }
 }

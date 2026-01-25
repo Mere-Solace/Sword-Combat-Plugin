@@ -4,7 +4,7 @@ import java.util.List;
 
 import org.bukkit.inventory.ItemStack;
 
-import xyz.xenondevs.inventoryaccess.component.ComponentWrapper;
+import net.kyori.adventure.text.Component;
 
 /**
  * Always register new skill implementations in {@link SkillRegistry}
@@ -15,6 +15,6 @@ public interface Skill {
     SkillType type();
 
     ItemStack icon();
-    ComponentWrapper name();
-    List<ComponentWrapper> description();
+    Component name();
+    List<Component> description();
 }

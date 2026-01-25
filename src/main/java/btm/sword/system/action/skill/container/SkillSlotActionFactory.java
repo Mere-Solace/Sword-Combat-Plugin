@@ -4,6 +4,7 @@ import btm.sword.system.action.skill.Skill;
 import btm.sword.system.action.skill.SkillId;
 import btm.sword.system.action.skill.SkillRegistry;
 import btm.sword.system.action.skill.type.ActiveSkill;
+import btm.sword.system.action.skill.type.impl.umbral.VoidLungeSkill;
 import btm.sword.system.entity.base.CombatProfile;
 import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.input.InputAction;
@@ -15,14 +16,20 @@ public final class SkillSlotActionFactory {
         ActiveSkill resolvedSkill = resolveActiveSkill(player, slot);
         if (resolvedSkill == null) return null;
 
-        return new InputAction(
-            resolvedSkill::execute,
-            resolvedSkill::calculateCooldown,
-            resolvedSkill::canPerform,
-            true,
-            true,
-            true
-        ); // Can make these dynamic later
+        InputAction.Builder b = InputAction.builder()
+            .action(resolvedSkill::execute)
+            .cooldown(resolvedSkill::calculateCooldown)
+            .canCast(resolvedSkill::canPerform)
+            .displayCooldown(true)
+            .displayDisabled(true)
+            .resetIfCannotPerform(true);
+
+        // Some skills perform an internal cast; where known, surface the cast duration on the action
+        if (resolvedSkill instanceof VoidLungeSkill) {
+            b.castDuration(() -> 250);
+        }
+
+        return b.build(); // Can make these dynamic later
     }
 
     private static ActiveSkill resolveActiveSkill(SwordPlayer player, SkillSlot slot) {
