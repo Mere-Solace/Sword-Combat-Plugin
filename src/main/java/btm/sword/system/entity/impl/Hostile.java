@@ -3,12 +3,7 @@ package btm.sword.system.entity.impl;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
-
-import btm.sword.system.entity.aspect.AspectType;
-
-import btm.sword.system.entity.aspect.Resource;
 
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -23,14 +18,14 @@ import org.bukkit.util.Vector;
 import com.destroystokyo.paper.entity.Pathfinder;
 
 import btm.sword.system.action.throwing.types.DroppedItem;
-import btm.sword.system.action.utility.GrabAction;
-import btm.sword.system.control.SwordScheduler;
 import btm.sword.system.entity.ai.HostileStateMachine;
+import btm.sword.system.entity.ai.MobGoalArbiter;
+import btm.sword.system.entity.ai.WanderProfile;
 import btm.sword.system.entity.ai.state.IdleState;
+import btm.sword.system.entity.aspect.AspectType;
+import btm.sword.system.entity.aspect.Resource;
 import btm.sword.system.entity.base.CombatProfile;
 import btm.sword.system.entity.base.SwordEntity;
-import btm.sword.system.entity.umbral.UmbralBlade;
-import btm.sword.system.entity.umbral.input.BladeRequest;
 import btm.sword.system.item.prefab.ItemLibrary;
 import btm.sword.utility.Prefab;
 import lombok.Getter;
@@ -55,6 +50,7 @@ public class Hostile extends Combatant {
 
     // AI state machine
     private HostileStateMachine aiStateMachine;
+    private WanderProfile wanderProfile = WanderProfile.ROAMER;
     private SwordEntity currentTarget;
     private SwordEntity nearestScannedTarget;
 
@@ -134,6 +130,7 @@ public class Hostile extends Combatant {
     public void onSpawn() {
         super.onSpawn();
         ((Resource) aspects.getAspect(AspectType.SHARDS)).stopRegenTask(); // prevent regen of shards
+        MobGoalArbiter.GOALS.removeAllGoals(mob); // clear all vanilla goals before starting custom AI
         aiStateMachine = new HostileStateMachine(this, new IdleState());
     }
 

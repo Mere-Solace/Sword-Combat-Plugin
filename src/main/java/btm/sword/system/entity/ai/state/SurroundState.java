@@ -4,21 +4,22 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
-import org.bukkit.Location;
+import com.destroystokyo.paper.entity.ai.GoalType;
 
 import btm.sword.config.Config;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.ai.HostileAIFacade;
+import btm.sword.system.entity.ai.MobGoalArbiter;
+import btm.sword.system.entity.ai.goal.SurroundHoldGoal;
 import btm.sword.system.entity.impl.Hostile;
 
 /**
  * Surround AI state for Hostile entities.
- * <p>
- * Distributes allied mobs evenly around the target in an arc formation.
- * The mob assigned arc slot 0 (the "front slot") transitions to {@link PreAttackState}
- * to attack, while others hold their positions. Arc assignments are computed by sorting
- * allies by UUID to produce a deterministic, consistent ordering.
- * </p>
+ *
+ * <p>Distributes allied mobs evenly around the target in an arc formation.
+ * Pathfinding to each mob's arc slot is handled by {@link SurroundHoldGoal}. This state
+ * manages the arc-slot recalculation cadence. The mob assigned arc slot 0 (the "front slot")
+ * transitions to {@link PreAttackState} to attack while others hold position.
  */
 public class SurroundState extends HostileAIFacade {
 
@@ -32,6 +33,7 @@ public class SurroundState extends HostileAIFacade {
         h.setAllyScanTimer(0);
         h.setFrontSlot(false);
         evaluateArcPosition(h);
+        MobGoalArbiter.GOALS.addGoal(h.mob(), 2, new SurroundHoldGoal(h.mob(), h));
     }
 
     @Override
@@ -43,12 +45,11 @@ public class SurroundState extends HostileAIFacade {
             h.setAllyScanTimer(0);
             evaluateArcPosition(h);
         }
-
-        pathfindToArcPosition(h);
     }
 
     @Override
     public void onExit(Hostile h) {
+        MobGoalArbiter.GOALS.removeAllGoals(h.mob(), GoalType.MOVE);
     }
 
     private void evaluateArcPosition(Hostile h) {
@@ -71,29 +72,13 @@ public class SurroundState extends HostileAIFacade {
 
         h.setNearbyAlliesCount(allies.size());
 
-        // Build the full list including this mob, sorted by UUID for a stable arc order
+        // Build the full group list sorted by UUID for a stable arc order
         List<Hostile> allMobs = new ArrayList<>(allies);
         allMobs.add(h);
         allMobs.sort(Comparator.comparing(a -> a.self().getUniqueId()));
 
-        int totalMobs = allMobs.size();
         int myIndex = allMobs.indexOf(h);
         h.setArcSlotIndex(myIndex);
         h.setFrontSlot(myIndex == 0);
-    }
-
-    private void pathfindToArcPosition(Hostile h) {
-        if (h.getCurrentTarget() == null) return;
-
-        double radius = Math.sqrt(Config.Hostile.APPROACH_DISTANCE_SQUARED);
-        int totalMobs = h.getNearbyAlliesCount() + 1;
-        double angle = 2 * Math.PI * h.getArcSlotIndex() / Math.max(1, totalMobs);
-
-        Location targetLoc = h.getCurrentTarget().self().getLocation();
-        double x = targetLoc.getX() + radius * Math.cos(angle);
-        double z = targetLoc.getZ() + radius * Math.sin(angle);
-        Location arcPos = new Location(targetLoc.getWorld(), x, targetLoc.getY(), z);
-
-        h.getPathfinder().moveTo(arcPos, 1.0);
     }
 }

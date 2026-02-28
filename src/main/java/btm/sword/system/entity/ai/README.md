@@ -193,3 +193,56 @@ static { register(
 | `state/AttackState.java` | Charge and melee hit via `randomAttack()` |
 | `state/RetreatState.java` | Back off 8 blocks; hold for `RETREAT_TICKS` |
 | `state/FleeState.java` | Flee from nearest player at low HP |
+| `goal/RandomWanderGoal.java` | First implemented goal; demonstrates key, types, and listener registration in `start()`/`stop()` |
+
+---
+
+## Adventure Goal System Integration
+
+Each FSM state owns one custom `Goal` subclass in the `goal/` subpackage. The goal handles all pathfinding commands for that state; the FSM state itself handles timer management, flag updates, and transition condition evaluation. Neither layer has access to the other's internal state.
+
+### Lifecycle Mapping
+
+| FSM callback | Goal / `MobGoals` API call |
+|--------------|---------------------------|
+| `State.onEnter(Hostile)` | `MobGoalArbiter.GOALS.addGoal(mob, priority, new XxxGoal(mob, hostile))` |
+| `State.onExit(Hostile)` | `MobGoalArbiter.GOALS.removeGoal(mob, XxxGoal.KEY)` |
+| `Goal.start()` | Register any Bukkit event listeners needed for the active period |
+| `Goal.stop()` | Unregister listeners, stop active pathfinding |
+| `Goal.tick()` | Issue or refresh pathfinding commands toward the current target |
+| `Goal.shouldActivate()` | Return `true` immediately — the FSM has already decided to enter the state |
+| `Goal.shouldStayActive()` | Mirror the FSM's own transition exit conditions as a secondary safety net |
+
+`shouldActivate()` returning `true` on every tick is correct for state-owned goals because they are only registered while the FSM is in the owning state. The FSM transition (which calls `removeGoal` in `onExit`) is the primary deactivation mechanism; `shouldStayActive()` returning `false` is a secondary path that lets Paper stop the goal without waiting for the next FSM tick.
+
+### Awareness Flag Pattern
+
+| FSM state | `setAware` value | Reason |
+|-----------|-----------------|--------|
+| `IdleState` | `false` | Prevents vanilla AI from interfering with custom idle wander |
+| `ApproachState` | `true` | Target pursuit and pathfinding require awareness |
+| `SurroundState` | `true` | Arc positioning requires active pathfinding |
+| `PreAttackState` | `true` | Mob must track and face its target during wind-up |
+| `AttackState` | `true` | Charge and melee reach require active pathfinding |
+| `RetreatState` | `true` | Retreat direction pathfinding requires awareness |
+| `FleeState` | `true` | Flee pathfinding requires awareness |
+
+`Mob.setAi(false)` is not used in the current system. It would be appropriate for a future stunned or frozen state where all AI processing should halt.
+
+### Vanilla Goal Removal
+
+All vanilla goals are cleared immediately after mob spawn via `MobGoalArbiter.GOALS.removeAllGoals(mob)`. This prevents vanilla attacks, pathfinding targets, and look behaviours from interfering with the custom FSM-driven goals. Custom goals are then registered selectively by FSM states as the mob transitions between them.
+
+### Goal Class Reference
+
+| FSM State | Goal Class | `GoalType` | Notes |
+|-----------|------------|-----------|-------|
+| `IdleState` | `IdleWanderGoal` | `MOVE` | Patrol near spawn origin; `shouldStayActive` returns `false` when target is acquired |
+| `ApproachState` | `ApproachGoal` | `MOVE` | Pathfind toward `currentTarget` at 1.1x speed; see `docs/systems/adventure-goal-system.md` for skeleton |
+| `SurroundState` | `SurroundHoldGoal` | `MOVE` | Pathfind to arc slot position; `shouldStayActive` checks ally count threshold |
+| `PreAttackState` | (none) | — | Pathfinding is stopped on entry; only `lookAt` is called |
+| `AttackState` | `AttackChargeGoal` | `MOVE` | Charge at 1.6x speed; `shouldStayActive` returns `false` once within 2.5-block melee reach |
+| `RetreatState` | `OnGuardBackoffGoal` | `MOVE` | Back off 8 blocks and strafe laterally; `shouldStayActive` mirrors `retreatTimer > 0` |
+| `FleeState` | `FleeGoal` | `MOVE` | Pathfind away from nearest player; `shouldStayActive` returns `false` when no players are in aggro range |
+
+Only `RandomWanderGoal` is currently implemented. The classes in the table above are planned; they do not yet exist. See `docs/systems/adventure-goal-system.md` for full API documentation, the priority system, and an `ApproachGoal` implementation skeleton.

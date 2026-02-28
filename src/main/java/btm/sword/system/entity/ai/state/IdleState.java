@@ -2,33 +2,27 @@ package btm.sword.system.entity.ai.state;
 
 import java.util.Collection;
 import java.util.Comparator;
-import java.util.Random;
 
-import btm.sword.system.entity.ai.MobGoalArbiter;
-
-import btm.sword.system.entity.ai.goal.RandomWanderGoal;
-
-import com.destroystokyo.paper.entity.ai.Goal;
-
-import org.bukkit.Bukkit;
-import org.bukkit.Location;
 import org.bukkit.entity.Entity;
-import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
+
+import com.destroystokyo.paper.entity.ai.GoalType;
 
 import btm.sword.config.Config;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.ai.HostileAIFacade;
+import btm.sword.system.entity.ai.MobGoalArbiter;
+import btm.sword.system.entity.ai.goal.IdleWanderGoal;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.impl.Hostile;
 import btm.sword.system.entity.impl.SwordPlayer;
 
 /**
  * Idle AI state for Hostile entities.
- * <p>
- * Patrols randomly near the mob's spawn origin, scanning periodically for nearby
- * players to aggro. Transitions to {@link ApproachState} when a player enters aggro range.
- * </p>
+ *
+ * <p>Patrols near the mob's spawn origin via {@link IdleWanderGoal}, scanning
+ * periodically for nearby players to aggro. Transitions to {@link ApproachState} when a
+ * player enters aggro range.
  */
 public class IdleState extends HostileAIFacade {
 
@@ -45,44 +39,18 @@ public class IdleState extends HostileAIFacade {
         h.setAggroScanTimer(0);
         h.setNearestScannedTarget(null);
         h.getPathfinder().stopPathfinding();
-//        Bukkit.getMobGoals().removeAllGoals(h.mob());
-        Bukkit.getMobGoals().addGoal(h.mob(), 1, new RandomWanderGoal(h.mob()));
+        MobGoalArbiter.GOALS.addGoal(h.mob(), 2, new IdleWanderGoal(h.mob(), h));
     }
 
     @Override
     public void onTick(Hostile h) {
-
-
-//        handleWander(h);
         handleAggroScan(h);
     }
 
     @Override
     public void onExit(Hostile h) {
-        h.getMob().setAware(true);
+        MobGoalArbiter.GOALS.removeAllGoals(h.mob(), GoalType.MOVE);
     }
-
-//    private void handleWander(Hostile h) {
-//        lastTimeMoved++;
-//        if (lastTimeMoved < 100) return;
-//
-//        lastTimeMoved = 0;
-//
-////        h.setIdleWanderTimer(h.getIdleWanderTimer() + 1);
-////        if (h.getIdleWanderTimer() < 60) return;
-////        h.setIdleWanderTimer(0);
-//
-//        Location origin = h.getOrigin();
-//        double offsetX = (RANDOM.nextDouble() * 2 - 1) * 8;
-//        double offsetZ = (RANDOM.nextDouble() * 2 - 1) * 8;
-//        Location wanderTarget = origin.clone().add(offsetX, 0, offsetZ);
-//        h.getPathfinder().moveTo(wanderTarget, 1.0);
-//
-//        Goal<Mob> goal = new Go
-//
-//        Bukkit.getMobGoals().addGoal(h.mob(), 1, );
-//        h.broadcastMessage(20, "I'm movin around now! : x_off = " + offsetX + " z_off = " + offsetZ);
-//    }
 
     private void handleAggroScan(Hostile h) {
         h.setAggroScanTimer(h.getAggroScanTimer() + 1);

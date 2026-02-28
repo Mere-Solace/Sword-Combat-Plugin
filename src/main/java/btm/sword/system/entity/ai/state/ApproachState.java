@@ -3,25 +3,23 @@ package btm.sword.system.entity.ai.state;
 import java.util.Comparator;
 import java.util.List;
 
-import org.bukkit.entity.LivingEntity;
+import com.destroystokyo.paper.entity.ai.GoalType;
 
 import btm.sword.config.Config;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.ai.HostileAIFacade;
+import btm.sword.system.entity.ai.MobGoalArbiter;
+import btm.sword.system.entity.ai.goal.ApproachGoal;
 import btm.sword.system.entity.impl.Hostile;
 
 /**
  * Approach AI state for Hostile entities.
- * <p>
- * Moves the mob toward its current target until it reaches attack range.
- * Periodically scans for allied Hostiles targeting the same player; if enough
- * allies are found the mob transitions to {@link SurroundState} instead of attacking alone.
- * </p>
+ *
+ * <p>Pathfinding toward the target is handled by {@link ApproachGoal}. This state manages
+ * the ally-scan cadence and supplies the transition conditions for {@link SurroundState}
+ * and {@link PreAttackState}.
  */
 public class ApproachState extends HostileAIFacade {
-
-    /** Hysteresis squared distance (2 blocks) to prevent start/stop oscillation at the boundary. */
-    private static final double HYSTERESIS_SQ = 4.0;
 
     @Override
     public String name() {
@@ -35,29 +33,18 @@ public class ApproachState extends HostileAIFacade {
         h.getMob().setAware(true);
         h.setAllyScanTimer(0);
         h.setNearbyAlliesCount(0);
+        MobGoalArbiter.GOALS.addGoal(h.mob(), 1, new ApproachGoal(h.mob(), h));
     }
 
     @Override
     public void onTick(Hostile h) {
         if (h.getCurrentTarget() == null || !h.getCurrentTarget().self().isValid()) return;
-
-        moveTowardTarget(h);
         handleAllyScan(h);
     }
 
     @Override
     public void onExit(Hostile h) {
-        h.getPathfinder().stopPathfinding();
-    }
-
-    private void moveTowardTarget(Hostile h) {
-        double distSq = h.self().getLocation().distanceSquared(h.getCurrentTarget().self().getLocation());
-
-        if (distSq > Config.Hostile.APPROACH_DISTANCE_SQUARED + HYSTERESIS_SQ) {
-            h.getPathfinder().moveTo(h.getCurrentTarget().self(), 1.1);
-        } else if (distSq < Config.Hostile.APPROACH_DISTANCE_SQUARED) {
-            h.getPathfinder().stopPathfinding();
-        }
+        MobGoalArbiter.GOALS.removeAllGoals(h.mob(), GoalType.MOVE);
     }
 
     private void handleAllyScan(Hostile h) {

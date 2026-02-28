@@ -1,15 +1,19 @@
 package btm.sword.system.entity.ai.state;
 
+import com.destroystokyo.paper.entity.ai.GoalType;
+
 import btm.sword.system.entity.ai.HostileAIFacade;
+import btm.sword.system.entity.ai.MobGoalArbiter;
+import btm.sword.system.entity.ai.goal.AttackChargeGoal;
 import btm.sword.system.entity.impl.Hostile;
 
 /**
  * Attack AI state for Hostile entities.
- * <p>
- * Charges toward the target at full speed. Once within melee distance (2.5 blocks),
- * executes one of the mob's available attacks via {@link Hostile#randomAttack()}.
- * After the attack fires, the mob transitions to {@link RetreatState}.
- * </p>
+ *
+ * <p>Charges toward the target at 160% speed via {@link AttackChargeGoal}. Once within
+ * melee distance (2.5 blocks), executes one of the mob's available attacks via
+ * {@link Hostile#randomAttack()}. After the attack fires, the mob transitions to
+ * {@link RetreatState}.
  */
 public class AttackState extends HostileAIFacade {
 
@@ -25,7 +29,7 @@ public class AttackState extends HostileAIFacade {
     public void onEnter(Hostile h) {
         h.setAttackDone(false);
         if (h.getCurrentTarget() == null || !h.getCurrentTarget().self().isValid()) return;
-        h.getPathfinder().moveTo(h.getCurrentTarget().self(), 1.6);
+        MobGoalArbiter.GOALS.addGoal(h.mob(), 1, new AttackChargeGoal(h.mob(), h));
     }
 
     @Override
@@ -43,6 +47,6 @@ public class AttackState extends HostileAIFacade {
 
     @Override
     public void onExit(Hostile h) {
-        h.getPathfinder().stopPathfinding();
+        MobGoalArbiter.GOALS.removeAllGoals(h.mob(), GoalType.MOVE);
     }
 }
