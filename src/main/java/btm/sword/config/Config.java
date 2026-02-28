@@ -585,14 +585,14 @@ public class Config {
                 ConfigurationSection::getDouble
         ); }
 
-        public static int ATTACKS_CAST_TIMING_MIN_DURATION = 50; // 1 tick (1/20th of a second)
+        public static int ATTACKS_CAST_TIMING_MIN_DURATION = 25; // 1/2 tick (1/40th of a second)
         static { register("combat.attacks_cast_timing_min_duration",
                 ATTACKS_CAST_TIMING_MIN_DURATION, Integer.class,
                 v -> ATTACKS_CAST_TIMING_MIN_DURATION = v,
                 ConfigurationSection::getInt
         ); }
 
-        public static int ATTACKS_CAST_TIMING_MAX_DURATION = 2000; // 2 seconds
+        public static int ATTACKS_CAST_TIMING_MAX_DURATION = 1200; // 1.4 seconds
         static { register("combat.attacks_cast_timing_max_duration",
                 ATTACKS_CAST_TIMING_MAX_DURATION, Integer.class,
                 v -> ATTACKS_CAST_TIMING_MAX_DURATION = v,
@@ -2335,6 +2335,73 @@ public class Config {
             EXECUTOR_HORIZONTAL_DAMPENING, Double.class,
             v -> EXECUTOR_HORIZONTAL_DAMPENING = v,
             ConfigurationSection::getDouble
+        ); }
+    }
+    //endregion
+
+    // ==============================================================================
+    //region Hostile AI
+    // ==============================================================================
+    /**
+     * Configuration for Hostile entity AI behavior.
+     * <p>
+     * Distance thresholds are stored as squared values at load time so all in-tick
+     * comparisons use {@code distanceSquared()} — no {@code sqrt} is required during gameplay.
+     * </p>
+     */
+    public static class Hostile {
+        /** Aggro range squared (loaded from raw radius and squared on assignment). */
+        public static double AGGRO_RANGE_SQUARED = 256.0;
+        static { register(
+            "hostile.aggro_range",
+            16.0, Double.class,
+            v -> AGGRO_RANGE_SQUARED = v * v,
+            (s, p, d) -> s.getDouble(p, d)
+        ); }
+
+        /** Attack initiation distance squared (loaded from raw radius and squared on assignment). */
+        public static double APPROACH_DISTANCE_SQUARED = 36.0;
+        static { register(
+            "hostile.approach_distance",
+            6.0, Double.class,
+            v -> APPROACH_DISTANCE_SQUARED = v * v,
+            (s, p, d) -> s.getDouble(p, d)
+        ); }
+
+        /** Minimum allied Hostile count targeting the same player to trigger surround behaviour. */
+        public static int SURROUND_MIN_ALLIES = 2;
+        static { register(
+            "hostile.surround_min_allies",
+            2, Integer.class,
+            v -> SURROUND_MIN_ALLIES = v,
+            (s, p, d) -> s.getInt(p, d)
+        ); }
+
+        /** Wind-up ticks before an attack is executed (~1.2 s at 20 TPS). */
+        public static int PRE_ATTACK_TICKS = 24;
+        static { register(
+            "hostile.pre_attack_ticks",
+            24, Integer.class,
+            v -> PRE_ATTACK_TICKS = v,
+            (s, p, d) -> s.getInt(p, d)
+        ); }
+
+        /** Retreat duration in ticks after an attack (~2 s at 20 TPS). */
+        public static int RETREAT_TICKS = 40;
+        static { register(
+            "hostile.retreat_ticks",
+            40, Integer.class,
+            v -> RETREAT_TICKS = v,
+            (s, p, d) -> s.getInt(p, d)
+        ); }
+
+        /** Health fraction threshold below which the mob flees (0.0–1.0). */
+        public static double FLEE_HEALTH_FRACTION = 0.20;
+        static { register(
+            "hostile.flee_health_fraction",
+            0.20, Double.class,
+            v -> FLEE_HEALTH_FRACTION = v,
+            (s, p, d) -> s.getDouble(p, d)
         ); }
     }
     //endregion

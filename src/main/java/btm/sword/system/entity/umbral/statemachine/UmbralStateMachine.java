@@ -18,6 +18,11 @@ public class UmbralStateMachine extends StateMachine<UmbralBlade> {
     }
 
     @Override
+    public void onAnyTransition() {
+
+    }
+
+    @Override
     public void tick() {
         if (deactivated) return;
 

@@ -16,14 +16,19 @@ public class StateMachine<T> {
         currentState.onEnter(context);
     }
 
+    public void onAnyTransition() {}
+
+    public void afterAnyTransition() {}
+
     public void tick() {
         currentState.onTick(context);
         for (var t : transitions.keySet()) {
             if (t.from().isAssignableFrom(currentState.getClass())
                 && t.condition().test(context)) {
-
+                onAnyTransition();
                 t.onTransition().accept(context);
                 setState(createState(t.to()));
+                afterAnyTransition();
                 return;
             }
         }

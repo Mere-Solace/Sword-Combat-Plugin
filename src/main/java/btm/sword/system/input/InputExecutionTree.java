@@ -353,79 +353,10 @@ public class InputExecutionTree {
             .display(true)
             .build();
 
-        // strafe
-        new InputNodeBuilder(root, List.of(
-            InputKey.of(InputType.SHIFT),
-            InputKey.of(InputType.RIGHT)
-        )).action(() -> InputAction.builder()
-                .action(executor -> MovementAction.dash(executor, DashDirection.RIGHT))
-                .cooldown(executor -> executor.calcCooldown(AspectType.CELERITY, 200, 1000, 10))
-                .canCast(Combatant::canStrafe)
-                .requiredSoulfire(() -> 5f)
-                .castDuration(() -> Config.Movement.DASH_CAST_DURATION)
-                .displayDisabled(true)
-                .resetIfCannotPerform(true)
-                .build())
-            .timeoutTicks(7)
-            .cancellable(true)
-            .display(true)
-            .build();
-
-        // strafe attack right
-        new InputNodeBuilder(root, List.of(
-            InputKey.of(InputType.SHIFT),
-            InputKey.of(InputType.RIGHT),
-            InputKey.of(InputType.LEFT)
-        )).action(() -> InputAction.builder()
-                .action(executor -> DashAttackAction.dashAttack(executor, DashDirection.RIGHT))
-                .cooldown(executor -> 0)
-                .canCast(Combatant::canPerformAction)
-                .castDuration(() -> 500)
-                .displayDisabled(true)
-                .resetIfCannotPerform(true)
-                .build())
-            .cancellable(true)
-            .display(true)
-            .build();
-
-        new InputNodeBuilder(root, List.of(
-            InputKey.of(InputType.SHIFT),
-            InputKey.of(InputType.LEFT)
-        )).action(() -> InputAction.builder()
-                .action(executor -> MovementAction.dash(executor, DashDirection.LEFT))
-                .cooldown(executor -> executor.calcCooldown(AspectType.CELERITY, 200, 1000, 10))
-                .canCast(Combatant::canStrafe)
-                .requiredSoulfire(() -> 5f)
-                .castDuration(() -> Config.Movement.DASH_CAST_DURATION)
-                .displayDisabled(true)
-                .resetIfCannotPerform(true)
-                .build())
-            .timeoutTicks(7)
-            .cancellable(true)
-            .display(true)
-            .build();
-
-        // strafe attack left
-        new InputNodeBuilder(root, List.of(
-            InputKey.of(InputType.SHIFT),
-            InputKey.of(InputType.LEFT),
-            InputKey.of(InputType.LEFT)
-        )).action(() -> InputAction.builder()
-                .action(executor -> DashAttackAction.dashAttack(executor, DashDirection.RIGHT))
-                .cooldown(executor -> 0)
-                .canCast(Combatant::canPerformAction)
-                .castDuration(() -> 500)
-                .displayDisabled(true)
-                .resetIfCannotPerform(true)
-                .build())
-            .cancellable(true)
-            .display(true)
-            .build();
-
         // grab
         new InputNodeBuilder(root, List.of(
-            InputKey.of(InputType.SWAP),
-            InputKey.of(InputType.RIGHT)
+            InputKey.of(InputType.SHIFT),
+            InputKey.of(InputType.LEFT)
         )).action(() -> InputAction.builder()
                 .action(GrabAction::grab)
                 .cooldown(executor -> executor.calcCooldown(AspectType.FORTITUDE, 200, 1000, 10))
@@ -447,7 +378,7 @@ public class InputExecutionTree {
             InputKey.of(InputType.LEFT, SwordItemType.UMBRAL_LINK)
         )).action(() -> InputAction.builder()
                 .action(executor -> UmbralBladeAction.basicAttackWithLink(executor, 1))
-                .cooldown(executor -> Math.toIntExact(Math.max(0, (executor.getTimeOfLastAttack() + executor.getDurationOfLastAttack()) - System.currentTimeMillis())))
+                .cooldown(Combatant::getDurationOfLastAttack)
                 .canCast(Combatant::canPerformUmbralLinkAttack)
                 .displayCooldown(true)
                 .displayDisabled(true)
@@ -499,7 +430,7 @@ public class InputExecutionTree {
             InputKey.of(InputType.LEFT)
         )).action(() -> InputAction.builder()
                 .action(executor -> AttackAction.basicAttack(executor, 1))
-                .cooldown(executor -> Math.toIntExact(Math.max(0, (executor.getTimeOfLastAttack() + executor.getDurationOfLastAttack()) - System.currentTimeMillis())))
+                .cooldown(Combatant::getDurationOfLastAttack)
                 .canCast(Combatant::canPerformAction)
                 .castDuration(() -> 0)
                 .displayCooldown(true)
@@ -608,6 +539,7 @@ public class InputExecutionTree {
             InputKey.of(InputType.LEFT),
             InputKey.of(InputType.LEFT)
         )).action(() -> SkillSlotActionFactory.create(owner, SkillSlot.UMBRAL_1))
+            .dynamic(true) // re-resolve each time so skill changes are picked up
             .sameItemRequired(true)
             .cancellable(true)
             .display(true)
@@ -618,6 +550,7 @@ public class InputExecutionTree {
             InputKey.of(InputType.LEFT),
             InputKey.of(InputType.RIGHT)
         )).action(() -> SkillSlotActionFactory.create(owner, SkillSlot.UMBRAL_2))
+            .dynamic(true)
             .sameItemRequired(true)
             .cancellable(true)
             .display(true)
@@ -628,6 +561,7 @@ public class InputExecutionTree {
             InputKey.of(InputType.LEFT),
             InputKey.of(InputType.SWAP)
         )).action(() -> SkillSlotActionFactory.create(owner, SkillSlot.UMBRAL_3))
+            .dynamic(true)
             .sameItemRequired(true)
             .cancellable(true)
             .display(true)
@@ -770,11 +704,26 @@ public class InputExecutionTree {
      * Represents a node in the {@link InputExecutionTree}, used to map input sequences to actions.
      * Each node maintains children inputs leading to subsequent nodes,
      * and stores metadata like whether the sequence requires same item, is cancellable, or displayable.
+     * <p>
+     * For static actions the {@link InputAction} is created once and cached so that
+     * {@code timeLastExecuted} persists correctly across executions, enabling cooldowns to work.
+     * Nodes marked {@code dynamic = true} re-invoke their supplier on every call — used for
+     * skill-slot nodes whose resolved action changes when skills are re-equipped.
+     * </p>
      */
     @Getter
     @Setter
     public static class InputNode {
+        @lombok.Setter(lombok.AccessLevel.NONE)
         private Supplier<InputAction> action;
+        /** Cached InputAction for non-dynamic nodes. Invalidated when the action supplier changes. */
+        private transient InputAction cachedAction;
+        /**
+         * When true, the action supplier is invoked on every {@link #resolveAction()} call
+         * (for skill-slot nodes that depend on the currently equipped skill).
+         * When false (default), the result is cached after the first call.
+         */
+        private boolean dynamic = false;
         private Consumer<SwordPlayer> internalAction;
         private int timeoutTicks;
         private final LinkedHashMap<InputKey, InputNode> children = new LinkedHashMap<>();
@@ -805,8 +754,32 @@ public class InputExecutionTree {
             this(action, -1);
         }
 
+        /**
+         * Sets the action supplier and clears the cached action so the next
+         * {@link #resolveAction()} call re-evaluates it.
+         *
+         * @param action the new action supplier
+         */
+        public void setAction(Supplier<InputAction> action) {
+            this.action = action;
+            this.cachedAction = null;
+        }
+
+        /**
+         * Resolves and returns the {@link InputAction} for this node.
+         * <p>
+         * Non-dynamic nodes cache the result after the first call so that {@code timeLastExecuted}
+         * persists across executions and cooldowns work correctly.
+         * Dynamic nodes (skill slots) invoke the supplier fresh each time.
+         * </p>
+         *
+         * @return the resolved InputAction, or null if no action is set
+         */
         public InputAction resolveAction() {
-            return action == null ? null : action.get();
+            if (action == null) return null;
+            if (dynamic) return action.get();
+            if (cachedAction == null) cachedAction = action.get();
+            return cachedAction;
         }
 
         /**
@@ -900,6 +873,7 @@ public class InputExecutionTree {
         private Boolean cancellable = null;
         private Boolean display = null;
         private Predicate<SwordPlayer> visibleIf;
+        private Boolean dynamic = null;
 
         public InputNodeBuilder(InputNode root, List<InputKey> inputSequence) {
             this.root = root;
@@ -941,6 +915,23 @@ public class InputExecutionTree {
             return this;
         }
 
+        /**
+         * Marks the terminal node as dynamic, meaning its action supplier is re-invoked on every
+         * {@link InputNode#resolveAction()} call rather than being cached.
+         * <p>
+         * Use this for skill-slot nodes whose action changes when the player re-equips a skill.
+         * Dynamic nodes do NOT persist {@code timeLastExecuted} — skill-level cooldown tracking
+         * must be handled on the skill itself when needed.
+         * </p>
+         *
+         * @param dynamic true to disable action caching on the leaf node
+         * @return this builder
+         */
+        public InputNodeBuilder dynamic(boolean dynamic) {
+            this.dynamic = dynamic;
+            return this;
+        }
+
         public void build() {
             InputNode dummy = root;
             for (InputKey inputKey : inputSequence) {
@@ -976,6 +967,9 @@ public class InputExecutionTree {
                 }
                 if (visibleIf != null) {
                     dummy.setVisibleIf(visibleIf);
+                }
+                if (dynamic != null) {
+                    dummy.setDynamic(dynamic);
                 }
             }
         }

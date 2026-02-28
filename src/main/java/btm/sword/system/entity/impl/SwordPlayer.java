@@ -40,6 +40,7 @@ import btm.sword.system.control.SwordScheduler;
 import btm.sword.system.control.TimeArbiter;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.base.SwordEntity;
+import btm.sword.system.input.ActivationContext;
 import btm.sword.system.input.InputAction;
 import btm.sword.system.input.InputActionExecutor;
 import btm.sword.system.input.InputExecutionTree;
@@ -89,6 +90,10 @@ public class SwordPlayer extends Combatant {
 
     private final InputExecutionTree inputExecutionTree;
     private final long baseInputTimeoutMillis = 1400L;
+
+    /** Current input context; controls which action paths are visible in the execution tree. */
+    @Setter
+    private ActivationContext activationContext = ActivationContext.NORMAL;
 
     @Setter
     private boolean performedDropAction;

@@ -188,5 +188,5 @@ For technical details, see:
 ## See Also
 
 - [Configuration Guide](configuration.md) - Detailed config.yaml documentation
-- [Contributing Guide](../../CONTRIBUTING.md) - How to contribute to the project
+- [Contributing Guide](../CONTRIBUTING.md) - How to contribute to the project
 - [Paper Command API Documentation](https://docs.papermc.io/paper/dev/command-api/) - Brigadier command system

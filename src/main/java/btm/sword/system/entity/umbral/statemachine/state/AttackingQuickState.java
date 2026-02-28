@@ -45,6 +45,7 @@ public class AttackingQuickState extends UmbralStateFacade {
     @Override
     public void onEnter(UmbralBlade blade) {
         // handling it here cuz special case, doesn't work with tree well
+        // TODO: is consuming soulfire at this location good?
         blade.getThrower().consumeSoulfire(blade.getCurrentComboStep() * 2.5f);
 
         if (blade.getCurrentComboStep() == 3) {

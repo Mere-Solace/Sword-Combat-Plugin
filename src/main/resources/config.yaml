@@ -61,8 +61,8 @@ combat:
 
   attacks_down_air_threshold: -0.4
 
-  attacks_cast_timing_min_duration: 1
-  attacks_cast_timing_max_duration: 3
+  attacks_cast_timing_min_duration: 25
+  attacks_cast_timing_max_duration: 1200
   attacks_cast_timing_reduction_rate: 0.2
 
   attacks_duration_multiplier: 500
@@ -351,6 +351,16 @@ grab:
   jump_boost_duration: 2
 
   executor_horizontal_dampening: 0.2
+
+
+hostile:
+
+  aggro_range: 16.0
+  approach_distance: 6.0
+  surround_min_allies: 2
+  pre_attack_ticks: 24
+  retreat_ticks: 40
+  flee_health_fraction: 0.20
 
 
 umbral:

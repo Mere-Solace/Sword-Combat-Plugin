@@ -51,8 +51,6 @@ public class MovementAction extends SwordAction {
         switch (direction) {
             case FORWARD -> dashConsumer = () -> new Dash(executor, 1).execute();
             case BACKWARD -> dashConsumer = () -> new Dash(executor, -1).execute();
-            case RIGHT -> dashConsumer = () -> strafe(executor, onGround, 1);
-            case LEFT -> dashConsumer = () -> strafe(executor, onGround, -1);
             default -> {
                 return;
             }

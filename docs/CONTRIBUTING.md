@@ -100,7 +100,7 @@ public class HostileAI {
 
 ### Documentation
 
-- Follow [Microsoft Java Documentation Standards](docs/standards/documentation-standards.md)
+- Follow [Microsoft Java Documentation Standards](standards/documentation-standards.md)
 - All public classes and methods require Javadoc
 - Explain **why**, not **what** in comments
 

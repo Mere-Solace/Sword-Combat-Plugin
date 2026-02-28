@@ -49,8 +49,6 @@ public class DashAttackAction extends SwordAction {
         AttackProfile attackDir = switch (direction) {
             case FORWARD -> weaponAttackStyle.f_dash();
             case BACKWARD -> weaponAttackStyle.b_dash();
-            case RIGHT -> weaponAttackStyle.r_strafe();
-            case LEFT -> weaponAttackStyle.l_strafe();
             default -> weaponAttackStyle.attacks().getFirst();
         };
 

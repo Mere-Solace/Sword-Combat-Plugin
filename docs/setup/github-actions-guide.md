@@ -309,7 +309,7 @@ on:
 ## Related Documentation
 
 - [docs/setup/automation-tools.md](automation-tools.md) - Using tools locally
-- [CONTRIBUTING.md](../../CONTRIBUTING.md) - Contribution workflow
+- [CONTRIBUTING.md](../CONTRIBUTING.md) - Contribution workflow
 - Issue #27 - GitHub Actions CI Pipeline
 - Issue #21 - Automated Linting
 

@@ -168,7 +168,7 @@ public class Attack extends SwordAction implements Runnable {
             Config.Combat.ATTACKS_CAST_TIMING_MIN_DURATION,
             Config.Combat.ATTACKS_CAST_TIMING_MAX_DURATION,
             Config.Combat.ATTACKS_CAST_TIMING_REDUCTION_RATE);
-        attacker.setDurationOfLastAttack(cooldown * Config.Combat.ATTACKS_DURATION_MULTIPLIER);
+        attacker.setDurationOfLastAttack(cooldown);
         startAttack();
     }
 

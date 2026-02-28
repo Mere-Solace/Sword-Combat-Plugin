@@ -1,10 +1,14 @@
 package btm.sword.system.input;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
+import btm.sword.system.action.constraint.ActionConstraint;
 import btm.sword.system.entity.impl.Combatant;
 import btm.sword.system.entity.impl.SwordPlayer;
 
@@ -14,6 +18,8 @@ import btm.sword.system.entity.impl.SwordPlayer;
  * and optional display of cooldown or disabled states to the player.
  * <p>
  * Uses {@link Combatant} as the executor and may display messages via {@link SwordPlayer} methods.
+ * {@link ActionConstraint}s provide composable precondition checks that replace scattered
+ * {@code canPerform*()} calls.
  * </p>
  */
 public class InputAction {
@@ -25,6 +31,9 @@ public class InputAction {
 
     /** Predicate that tests whether the executor is allowed to cast this ability at a given time. */
     private final Predicate<Combatant> canCastAbility;
+
+    /** Composable constraints evaluated before execution; all must pass for the action to fire. */
+    private final List<ActionConstraint> constraints;
 
     private final Function<Combatant, Float> requiredSoulfire;
 
@@ -59,6 +68,8 @@ public class InputAction {
      * @param action the action to execute on {@link Combatant}
      * @param cooldownCalculation function that computes cooldown based on executor; returns milliseconds
      * @param canCastAbility predicate to test if executor can cast the action
+     * @param constraints composable preconditions that must all pass before execution
+     * @param requiredSoulfire function returning the soulfire cost for the executor
      * @param displayCooldown whether to visually show cooldown progress on failure
      * @param displayDisabled whether to visually indicate the ability is disabled on failure
      * @param resetIfCannotPerform whether to reset the sequence if the action cannot be performed
@@ -68,6 +79,7 @@ public class InputAction {
             Consumer<Combatant> action,
             Function<Combatant, Integer> cooldownCalculation,
             Predicate<Combatant> canCastAbility,
+            List<ActionConstraint> constraints,
             Function<Combatant, Float> requiredSoulfire,
             boolean displayCooldown,
             boolean displayDisabled,
@@ -76,6 +88,7 @@ public class InputAction {
         this.action = action;
         this.cooldownCalculation = cooldownCalculation;
         this.canCastAbility = canCastAbility;
+        this.constraints = constraints != null ? List.copyOf(constraints) : List.of();
         this.requiredSoulfire = requiredSoulfire != null ? requiredSoulfire : c -> 0f;
         this.displayCooldown = displayCooldown;
         this.displayDisabled = displayDisabled;
@@ -101,6 +114,20 @@ public class InputAction {
             handleExecutionFailure(executor);
             return false;
         }
+
+        // Check composable constraints — all must pass
+        for (ActionConstraint constraint : constraints) {
+            if (!constraint.test(executor)) {
+                if (displayDisabled) {
+                    ((SwordPlayer) executor).displayDisablingEffect();
+                }
+                if (resetIfCannotPerform) {
+                    handleExecutionFailure(executor);
+                }
+                return false;
+            }
+        }
+
         if (unableToCast(executor)) {
             if (resetIfCannotPerform) {
                 if (displayDisabled) {
@@ -157,6 +184,16 @@ public class InputAction {
     }
 
     /**
+     * Returns the constraints attached to this action. Constraints are evaluated in
+     * {@link #handlePerformAttempt(Combatant)} and in readiness display checks.
+     *
+     * @return unmodifiable list of constraints
+     */
+    public List<ActionConstraint> getConstraints() {
+        return constraints;
+    }
+
+    /**
      * Sets the timestamp when this action was last executed to the current time.
      */
     public void setTimeLastExecuted() {
@@ -170,10 +207,12 @@ public class InputAction {
         return new Builder();
     }
 
+    /** @noinspection ClassCanBeRecord */
     public static class Builder {
         private Consumer<Combatant> action;
         private Function<Combatant, Integer> cooldownCalculation;
         private Predicate<Combatant> canCastAbility;
+        private final List<ActionConstraint> constraints = new ArrayList<>();
         private Function<Combatant, Float> requiredSoulfire = c -> 0f;
         private boolean displayCooldown = false;
         private boolean displayDisabled = false;
@@ -192,6 +231,18 @@ public class InputAction {
 
         public Builder canCast(Predicate<Combatant> canCastAbility) {
             this.canCastAbility = canCastAbility;
+            return this;
+        }
+
+        /**
+         * Adds composable {@link ActionConstraint}s that must all pass before the action can fire.
+         * Constraints are evaluated before the legacy {@code canCast} predicate.
+         *
+         * @param actionConstraints one or more constraints to add
+         * @return this builder
+         */
+        public Builder constraints(ActionConstraint... actionConstraints) {
+            this.constraints.addAll(Arrays.asList(actionConstraints));
             return this;
         }
 
@@ -235,8 +286,8 @@ public class InputAction {
             if (action == null) throw new IllegalStateException("InputAction requires an action consumer");
             Function<Combatant, Integer> cooldown = cooldownCalculation != null ? cooldownCalculation : (c -> 0);
             Predicate<Combatant> canCast = canCastAbility != null ? canCastAbility : (c -> true);
-            // Keep display and reset flags as configured (defaults defined on fields)
-            return new InputAction(action, cooldown, canCast, requiredSoulfire, displayCooldown, displayDisabled, resetIfCannotPerform, castDuration);
+            return new InputAction(action, cooldown, canCast, constraints, requiredSoulfire,
+                displayCooldown, displayDisabled, resetIfCannotPerform, castDuration);
         }
     }
 }
