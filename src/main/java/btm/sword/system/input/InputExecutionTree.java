@@ -291,21 +291,6 @@ public class InputExecutionTree {
         new InputNodeBuilder(root, List.of(
             InputKey.of(InputType.SWAP),
             InputKey.of(InputType.SWAP),
-            InputKey.of(InputType.LEFT, SwordItemType.UMBRAL_LINK)
-        )).action(() -> InputAction.builder()
-                .action(UmbralBladeAction::shadowBlink)
-                .cooldown(executor -> 1000)
-                .canCast(Combatant::canPerformShadowBlink)
-                .displayDisabled(true)
-                .resetIfCannotPerform(true)
-                .build())
-            .cancellable(true)
-            .display(true)
-            .build();
-
-        new InputNodeBuilder(root, List.of(
-            InputKey.of(InputType.SWAP),
-            InputKey.of(InputType.SWAP),
             InputKey.of(InputType.LEFT)
         )).action(() -> InputAction.builder()
                 .action(executor -> DashAttackAction.dashAttack(executor, DashDirection.FORWARD))
@@ -477,6 +462,26 @@ public class InputExecutionTree {
             .display(true)
             .build();
 
+        // lunges (umbral throw)
+        new InputNodeBuilder(root, List.of(
+            InputKey.of(InputType.DROP, SwordItemType.UMBRAL_LINK),
+            InputKey.of(InputType.RIGHT, SwordItemType.UMBRAL_LINK)
+        )).action(
+                () -> InputAction.builder()
+                    .action(UmbralBladeAction::lunge)
+                    .cooldown(executor -> 200)
+                    .canCast(Combatant::canPerformUmbralAction)
+                    .requiredSoulfire(() -> 10f)
+                    .displayCooldown(true)
+                    .displayDisabled(true)
+                    .resetIfCannotPerform(false)
+                    .build())
+            .timeoutTicks(100)
+            .sameItemRequired(true)
+            .cancellable(true)
+            .display(true)
+            .build();
+
         // throw hold action
         new InputNodeBuilder(root, List.of(
             InputKey.of(InputType.DROP),
@@ -567,25 +572,7 @@ public class InputExecutionTree {
             .display(true)
             .build();
 
-//
-//        // Slow em down
-//        new InputNodeBuilder(root, List.of(
-//            InputKey.of(InputType.RIGHT),
-//            InputKey.of(InputType.RIGHT_HOLD),
-//            InputKey.of(InputType.DROP)
-//        )).action(() -> new InputAction(
-//                UtilityAction::bulletTime,
-//                executor -> 5000,
-//                Combatant::canPerformAction,
-//                70f,
-//                true,
-//                true,
-//                true))
-//            .minHoldTime(500)
-//            .sameItemRequired(true)
-//            .cancellable(true)
-//            .display(true)
-//            .build();
+
 
         // umbral blade toggling and wielding
         new InputNodeBuilder(root, List.of(
@@ -668,27 +655,6 @@ public class InputExecutionTree {
                 .cooldown(executor -> 0)
                 .canCast(Combatant::canPerformUmbralAction)
                 .requiredSoulfire(() -> 25f)
-                .displayCooldown(true)
-                .displayDisabled(true)
-                .resetIfCannotPerform(false)
-                .build())
-            .timeoutTicks(100)
-            .sameItemRequired(true)
-            .cancellable(true)
-            .display(true)
-            .build();
-
-        // lunges (umbral throw)
-        new InputNodeBuilder(root, List.of(
-            InputKey.of(InputType.DROP),
-            InputKey.of(InputType.SWAP),
-            InputKey.of(InputType.RIGHT)
-        )).action(
-            () -> InputAction.builder()
-                .action(UmbralBladeAction::lunge)
-                .cooldown(executor -> 200)
-                .canCast(Combatant::canPerformUmbralAction)
-                .requiredSoulfire(() -> 10f)
                 .displayCooldown(true)
                 .displayDisabled(true)
                 .resetIfCannotPerform(false)

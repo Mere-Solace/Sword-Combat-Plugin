@@ -1,14 +1,14 @@
 package btm.sword.utility.statemachine;
 
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.Predicate;
 
 public class StateMachine<T> {
     protected final T context;
     protected State<T> currentState;
-    protected final Map<Transition<T>, Predicate<T>> transitions = new HashMap<>();
+    protected final Map<Transition<T>, Predicate<T>> transitions = new LinkedHashMap<>();
 
     public StateMachine(T context, State<T> initialState) {
         this.context = context;
