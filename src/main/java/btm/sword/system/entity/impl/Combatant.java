@@ -24,6 +24,7 @@ import btm.sword.system.entity.umbral.statemachine.state.LodgedState;
 import btm.sword.system.entity.umbral.statemachine.state.RecallingState;
 import btm.sword.system.entity.umbral.statemachine.state.SheathedState;
 import btm.sword.system.entity.umbral.statemachine.state.StandbyState;
+import btm.sword.system.input.ActivationContext;
 import btm.sword.system.item.KeyRegistry;
 import btm.sword.utility.Prefab;
 import lombok.Getter;
@@ -188,6 +189,7 @@ public abstract class Combatant extends SwordEntity {
         LivingEntity t = target.self();
         setGrabbing(true);
         target.setGrabbed(true);
+        if (target instanceof SwordPlayer sp) sp.setActivationContext(ActivationContext.STUNNED);
         setGrabbedEntity(target);
         Prefab.Particles.GRAB_CLOUD.display(t.getLocation().add(new Vector(0, 1, 0)));
         Prefab.Sounds.PUNCH_CONNECT.playForAllInRadius(self);
@@ -199,6 +201,7 @@ public abstract class Combatant extends SwordEntity {
     public void onGrabLetGo() {
         isGrabbing = false;
         grabbedEntity.setGrabbed(false);
+        if (grabbedEntity instanceof SwordPlayer sp) sp.setActivationContext(ActivationContext.NORMAL);
     }
 
     /**
@@ -210,6 +213,7 @@ public abstract class Combatant extends SwordEntity {
 
         isGrabbing = false;
         grabbedEntity.setGrabbed(false);
+        if (grabbedEntity instanceof SwordPlayer sp) sp.setActivationContext(ActivationContext.NORMAL);
         MovementAction.toss(this, grabbedEntity);
     }
 

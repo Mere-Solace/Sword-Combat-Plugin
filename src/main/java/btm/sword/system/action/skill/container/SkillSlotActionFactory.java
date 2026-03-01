@@ -11,10 +11,24 @@ import btm.sword.system.input.InputAction;
 
 public final class SkillSlotActionFactory {
 
-    public static InputAction create(SwordPlayer player, SkillSlot slot) {
+    /**
+     * Resolves an {@link InputAction} for the skill equipped in {@code slot}.
+     *
+     * @param player the player whose skill container is queried
+     * @param slot the slot to resolve
+     * @param holdVariant {@code true} if the caller registered a hold-style input sequence;
+     *                    returns {@code null} when the equipped skill's {@code requiresHold()} does
+     *                    not match, making that input branch silently inert
+     * @return the cached or newly built {@link InputAction}, or {@code null} if no skill is
+     *         equipped or the hold variant does not match
+     */
+    public static InputAction create(SwordPlayer player, SkillSlot slot, boolean holdVariant) {
 
         ActiveSkill resolvedSkill = resolveActiveSkill(player, slot);
         if (resolvedSkill == null) return null;
+        if (resolvedSkill.requiresHold() != holdVariant) return null;
+
+        if (resolvedSkill.getCachedInputAction() != null) return resolvedSkill.getCachedInputAction();
 
         InputAction.Builder b = InputAction.builder()
             .action(resolvedSkill::execute)
@@ -29,7 +43,20 @@ public final class SkillSlotActionFactory {
             b.castDuration(() -> 250);
         }
 
-        return b.build(); // Can make these dynamic later
+        InputAction action = b.build();
+        resolvedSkill.setCachedInputAction(action);
+        return action;
+    }
+
+    /**
+     * Convenience overload for umbral skill slots that do not use the hold/tap distinction.
+     *
+     * @param player the player whose skill container is queried
+     * @param slot the slot to resolve
+     * @return the cached or newly built {@link InputAction}, or {@code null} if no skill is equipped
+     */
+    public static InputAction create(SwordPlayer player, SkillSlot slot) {
+        return create(player, slot, false);
     }
 
     private static ActiveSkill resolveActiveSkill(SwordPlayer player, SkillSlot slot) {

@@ -475,6 +475,10 @@ public class SwordPlayer extends Combatant {
         return performedDropAction;
     }
 
+    public boolean isInNormalActivationState() {
+        return activationContext == ActivationContext.NORMAL;
+    }
+
     /**
      * Resets the input execution tree to its root state.
      */

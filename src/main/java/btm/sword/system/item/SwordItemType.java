@@ -15,7 +15,10 @@ public enum SwordItemType {
     BROAD_SWORD("broad_sword"),
     ZWEIHANDER("zweihander"),
 
-    PISTOL("pistol");
+    PISTOL("pistol"),
+
+    ACTIVE_1("active_1"),
+    ACTIVE_2("active_2");
 
     private final String string;
 

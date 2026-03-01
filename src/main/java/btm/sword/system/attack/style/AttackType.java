@@ -88,7 +88,7 @@ public enum AttackType implements AttackProfile {
         new Vector(-1.1,-2.2,-0.9),
         new Vector(1,1.96,4.3),
         new Vector(-1.1,-1.77,5)),
-    attack -> attack.getTo().add(attack.getForwardVector().multiply(2))
+    attack -> attack.getTo().add(attack.getForwardVector().multiply(0.5))
     ),
 
     UP_SMASH(ControlVectors.of(

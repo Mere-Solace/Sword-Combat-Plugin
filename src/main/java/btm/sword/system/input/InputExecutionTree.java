@@ -286,6 +286,7 @@ public class InputExecutionTree {
             .timeoutTicks(7)
             .cancellable(true)
             .display(true)
+            .visibleIf(SwordPlayer::isInNormalActivationState)
             .build();
 
         new InputNodeBuilder(root, List.of(
@@ -303,6 +304,7 @@ public class InputExecutionTree {
             .timeoutTicks(3)
             .cancellable(true)
             .display(true)
+            .visibleIf(SwordPlayer::isInNormalActivationState)
             .build();
 
         new InputNodeBuilder(root, List.of(
@@ -319,6 +321,7 @@ public class InputExecutionTree {
             .timeoutTicks(7)
             .cancellable(true)
             .display(true)
+            .visibleIf(SwordPlayer::isInNormalActivationState)
             .build();
 
         new InputNodeBuilder(root, List.of(
@@ -336,6 +339,7 @@ public class InputExecutionTree {
             .timeoutTicks(3)
             .cancellable(true)
             .display(true)
+            .visibleIf(SwordPlayer::isInNormalActivationState)
             .build();
 
         // grab
@@ -354,6 +358,7 @@ public class InputExecutionTree {
             .timeoutTicks(20)
             .cancellable(true)
             .display(true)
+            .visibleIf(SwordPlayer::isInNormalActivationState)
             .build();
 
         // Item dependent actions:
@@ -373,6 +378,7 @@ public class InputExecutionTree {
             .sameItemRequired(true)
             .cancellable(true)
             .display(true)
+            .visibleIf(SwordPlayer::isInNormalActivationState)
             .build();
 
         new InputNodeBuilder(root, List.of(
@@ -390,6 +396,7 @@ public class InputExecutionTree {
             .sameItemRequired(true)
             .cancellable(true)
             .display(true)
+            .visibleIf(SwordPlayer::isInNormalActivationState)
             .build();
 
         new InputNodeBuilder(root, List.of(
@@ -408,6 +415,7 @@ public class InputExecutionTree {
             .sameItemRequired(true)
             .cancellable(true)
             .display(true)
+            .visibleIf(SwordPlayer::isInNormalActivationState)
             .build();
 
         // basic attacks
@@ -425,6 +433,7 @@ public class InputExecutionTree {
             .sameItemRequired(true)
             .cancellable(true)
             .display(true)
+            .visibleIf(SwordPlayer::isInNormalActivationState)
             .build();
 
         new InputNodeBuilder(root, List.of(
@@ -442,6 +451,7 @@ public class InputExecutionTree {
             .sameItemRequired(true)
             .cancellable(true)
             .display(true)
+            .visibleIf(SwordPlayer::isInNormalActivationState)
             .build();
 
         new InputNodeBuilder(root, List.of(
@@ -460,6 +470,7 @@ public class InputExecutionTree {
             .sameItemRequired(true)
             .cancellable(true)
             .display(true)
+            .visibleIf(SwordPlayer::isInNormalActivationState)
             .build();
 
         // lunges (umbral throw)
@@ -480,6 +491,7 @@ public class InputExecutionTree {
             .sameItemRequired(true)
             .cancellable(true)
             .display(true)
+            .visibleIf(SwordPlayer::isInNormalActivationState)
             .build();
 
         // throw hold action
@@ -496,6 +508,7 @@ public class InputExecutionTree {
             .sameItemRequired(true)
             .cancellable(true)
             .display(true)
+            .visibleIf(SwordPlayer::isInNormalActivationState)
             .build();
 
         // throw
@@ -515,6 +528,7 @@ public class InputExecutionTree {
             .sameItemRequired(true)
             .cancellable(true)
             .display(true)
+            .visibleIf(SwordPlayer::isInNormalActivationState)
             .build();
 
         // just in case
@@ -533,6 +547,7 @@ public class InputExecutionTree {
             .sameItemRequired(true)
             .cancellable(true)
             .display(true)
+            .visibleIf(SwordPlayer::isInNormalActivationState)
             .build();
 
 
@@ -548,6 +563,7 @@ public class InputExecutionTree {
             .sameItemRequired(true)
             .cancellable(true)
             .display(true)
+            .visibleIf(SwordPlayer::isInNormalActivationState)
             .build();
 
         new InputNodeBuilder(root, List.of(
@@ -559,6 +575,7 @@ public class InputExecutionTree {
             .sameItemRequired(true)
             .cancellable(true)
             .display(true)
+            .visibleIf(SwordPlayer::isInNormalActivationState)
             .build();
 
         new InputNodeBuilder(root, List.of(
@@ -570,6 +587,7 @@ public class InputExecutionTree {
             .sameItemRequired(true)
             .cancellable(true)
             .display(true)
+            .visibleIf(SwordPlayer::isInNormalActivationState)
             .build();
 
 
@@ -589,6 +607,7 @@ public class InputExecutionTree {
             .sameItemRequired(true)
             .cancellable(true)
             .display(true)
+            .visibleIf(SwordPlayer::isInNormalActivationState)
             .build();
 
         new InputNodeBuilder(root, List.of(
@@ -605,6 +624,7 @@ public class InputExecutionTree {
             .sameItemRequired(true)
             .cancellable(true)
             .display(true)
+            .visibleIf(SwordPlayer::isInNormalActivationState)
             .build();
 
         // heavy sweeps (umbral attacks)
@@ -624,6 +644,7 @@ public class InputExecutionTree {
             .sameItemRequired(true)
             .cancellable(true)
             .display(true)
+            .visibleIf(SwordPlayer::isInNormalActivationState)
             .build();
 
         new InputNodeBuilder(root, List.of(
@@ -643,6 +664,7 @@ public class InputExecutionTree {
             .sameItemRequired(true)
             .cancellable(true)
             .display(true)
+            .visibleIf(SwordPlayer::isInNormalActivationState)
             .build();
 
         new InputNodeBuilder(root, List.of(
@@ -663,6 +685,60 @@ public class InputExecutionTree {
             .sameItemRequired(true)
             .cancellable(true)
             .display(true)
+            .visibleIf(SwordPlayer::isInNormalActivationState)
+            .build();
+
+        // Active Skill slots (ACTIVE_1 and ACTIVE_2)
+        // Tap variant — default for most active skills
+        new InputNodeBuilder(root, List.of(
+            InputKey.of(InputType.SWAP, SwordItemType.ACTIVE_1),
+            InputKey.of(InputType.RIGHT_TAP, SwordItemType.ACTIVE_1)
+        )).action(() -> SkillSlotActionFactory.create(owner, SkillSlot.ACTIVE_1, false))
+            .dynamic(true)
+            .sameItemRequired(true)
+            .cancellable(true)
+            .display(true)
+            .visibleIf(SwordPlayer::isInNormalActivationState)
+            .build();
+
+        // Hold variant — for throwable or chargeable active skills
+        new InputNodeBuilder(root, List.of(
+            InputKey.of(InputType.SWAP, SwordItemType.ACTIVE_1),
+            InputKey.of(InputType.RIGHT, SwordItemType.ACTIVE_1),
+            InputKey.of(InputType.RIGHT_HOLD, SwordItemType.ACTIVE_1)
+        )).action(() -> SkillSlotActionFactory.create(owner, SkillSlot.ACTIVE_1, true))
+            .dynamic(true)
+            .minHoldTime(600)
+            .sameItemRequired(true)
+            .cancellable(true)
+            .display(true)
+            .visibleIf(SwordPlayer::isInNormalActivationState)
+            .build();
+
+        // ACTIVE_2 tap variant
+        new InputNodeBuilder(root, List.of(
+            InputKey.of(InputType.SWAP, SwordItemType.ACTIVE_2),
+            InputKey.of(InputType.RIGHT_TAP, SwordItemType.ACTIVE_2)
+        )).action(() -> SkillSlotActionFactory.create(owner, SkillSlot.ACTIVE_2, false))
+            .dynamic(true)
+            .sameItemRequired(true)
+            .cancellable(true)
+            .display(true)
+            .visibleIf(SwordPlayer::isInNormalActivationState)
+            .build();
+
+        // ACTIVE_2 hold variant
+        new InputNodeBuilder(root, List.of(
+            InputKey.of(InputType.SWAP, SwordItemType.ACTIVE_2),
+            InputKey.of(InputType.RIGHT, SwordItemType.ACTIVE_2),
+            InputKey.of(InputType.RIGHT_HOLD, SwordItemType.ACTIVE_2)
+        )).action(() -> SkillSlotActionFactory.create(owner, SkillSlot.ACTIVE_2, true))
+            .dynamic(true)
+            .minHoldTime(600)
+            .sameItemRequired(true)
+            .cancellable(true)
+            .display(true)
+            .visibleIf(SwordPlayer::isInNormalActivationState)
             .build();
     }
 
