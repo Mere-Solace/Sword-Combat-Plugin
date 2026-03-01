@@ -77,7 +77,8 @@ public abstract class Combatant extends SwordEntity {
         this.airDashesPerformed = 0;
 
         this.attrHealth = self().getAttribute(Attribute.MAX_HEALTH);
-        if (attrHealth != null) attrHealth.setBaseValue(combatProfile.getStat(AspectType.SHARDS).getValue());
+        // TODO: bake in this 2*assumption (1 health visually is a half heart), and also remember to update this baseValue somewhere.
+        if (attrHealth != null) attrHealth.setBaseValue(2 * combatProfile.getStat(AspectType.SHARDS).getValue());
 
         this.attrAbsorption = self().getAttribute(Attribute.MAX_ABSORPTION);
         if (attrAbsorption != null) attrAbsorption.setBaseValue(combatProfile.getStat(AspectType.TOUGHNESS).getValue());

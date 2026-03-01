@@ -86,8 +86,6 @@ public class SwordPlayer extends Combatant {
     private int curNumDummies = 0;
     private final HashSet<Dummy> yourDummies = new HashSet<>();
 
-
-
     private final InputExecutionTree inputExecutionTree;
     private final long baseInputTimeoutMillis = 1400L;
 
@@ -389,12 +387,17 @@ public class SwordPlayer extends Combatant {
      * @return true to cancel the action, false to allow processing
      */
     public boolean handleItemInteraction(ItemStack itemStack, InputType inputType) {
-        boolean cancelAction = false;
+        boolean cancelAction;
 
         if (KeyRegistry.hasKey(itemStack, KeyRegistry.MAIN_MENU_BUTTON_KEY)) {
             InventoryMenuManager.openMenu(MainMenu.class, this);
             cancelAction = true;
         }
+        else {
+            cancelAction = false;
+        }
+
+        // TODO: Enhance handling of usable items like bows/shields/food in main hand
 
         message(" cancelAction: " + cancelAction);
 
@@ -440,7 +443,7 @@ public class SwordPlayer extends Combatant {
 
     public void updateVisualStats() {
         player.setAbsorptionAmount(aspects.toughnessCur());
-        player.setHealth(Math.max(1, aspects.shardsCur()));
+        player.setHealth(Math.max(2, 2 * aspects.shardsCur()));
         player.setFoodLevel((int) (20 * (aspects.soulfireCur()/aspects.soulfireMaxVal())));
     }
 
@@ -537,7 +540,7 @@ public class SwordPlayer extends Combatant {
     public void displayDisablingEffect() {
         self.showTitle(Title.title(
                 Component.text(""),
-                Component.text("*}- Disabled -{*", NamedTextColor.DARK_GRAY, TextDecoration.ITALIC),
+                Component.text("*}- " + activationContext.name() + " -{*", NamedTextColor.DARK_GRAY, TextDecoration.ITALIC),
                 Title.Times.times(
                     Duration.ofMillis(20),
                     Duration.ofMillis(baseInputTimeoutMillis),

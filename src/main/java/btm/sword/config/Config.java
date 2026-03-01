@@ -1538,7 +1538,7 @@ public class Config {
         ); }
 
         // Combat profile shards configuration
-        public static int COMBAT_PROFILE_SHARDS_CURRENT = 10;
+        public static int COMBAT_PROFILE_SHARDS_CURRENT = 5;
         static { register(
             "entity.combat_profile_shards_current",
             COMBAT_PROFILE_SHARDS_CURRENT, Integer.class,
@@ -1546,7 +1546,7 @@ public class Config {
             ConfigurationSection::getInt
         ); }
 
-        public static int COMBAT_PROFILE_SHARDS_REGEN_PERIOD = 5000;
+        public static int COMBAT_PROFILE_SHARDS_REGEN_PERIOD = 10000;
         static { register(
             "entity.combat_profile_shards_regen_period",
             COMBAT_PROFILE_SHARDS_REGEN_PERIOD, Integer.class,
@@ -1554,12 +1554,12 @@ public class Config {
             ConfigurationSection::getInt
         ); }
 
-        public static float COMBAT_PROFILE_SHARDS_REGEN_AMOUNT = 1.0f;
+        public static int COMBAT_PROFILE_SHARDS_REGEN_AMOUNT = 1;
         static { register(
             "entity.combat_profile_shards_regen_amount",
-            COMBAT_PROFILE_SHARDS_REGEN_AMOUNT, Float.class,
+            COMBAT_PROFILE_SHARDS_REGEN_AMOUNT, Integer.class,
             v -> COMBAT_PROFILE_SHARDS_REGEN_AMOUNT = v,
-            Config::loadFloat
+            ConfigurationSection::getInt
         ); }
 
         // Combat profile toughness configuration

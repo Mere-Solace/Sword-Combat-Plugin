@@ -37,6 +37,9 @@ public class Prefab {
         public static final ParticleWrapper THROWN_ITEM_IMPALE = new ParticleWrapper(Particle.TRIAL_SPAWNER_DETECTION, 4, 0.1, 0.1, 0.1, 0);
 
         public static final ParticleWrapper THROWN_ITEM_MARKER = new ParticleWrapper(Particle.TRIAL_SPAWNER_DETECTION, 3, 0.1, 0.1, 0.1, 0);
+
+        /** Slow upward stream from the center of a landing prediction marker. */
+        public static final ParticleWrapper LANDING_STREAM = new ParticleWrapper(Particle.TRIAL_SPAWNER_DETECTION, 1, 0, 0, 0, 0);
         public static final ParticleWrapper DOPPED_ITEM_MARKER = new ParticleWrapper(Particle.TRIAL_SPAWNER_DETECTION_OMINOUS, 4, 0.1, 0.1, 0.1, 0);
 
         public static final ParticleWrapper TEST_SWORD_BLUE = new ParticleWrapper(Particle.DUST_COLOR_TRANSITION, 5, 0.025, 0.025, 0.025, 1,

@@ -970,6 +970,11 @@ public class UmbralBlade extends ThrownItem {
     }
 
     @Override
+    protected boolean shouldShowLandingMarker() {
+        return false;
+    }
+
+    @Override
     protected void teleport() {
         TimeArbiter.teleportDisplay(display, cur, to, 2);
     }

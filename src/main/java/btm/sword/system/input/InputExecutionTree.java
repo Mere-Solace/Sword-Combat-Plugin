@@ -692,7 +692,7 @@ public class InputExecutionTree {
         // Tap variant — default for most active skills
         new InputNodeBuilder(root, List.of(
             InputKey.of(InputType.SWAP, SwordItemType.ACTIVE_1),
-            InputKey.of(InputType.RIGHT_TAP, SwordItemType.ACTIVE_1)
+            InputKey.of(InputType.RIGHT, SwordItemType.ACTIVE_1)
         )).action(() -> SkillSlotActionFactory.create(owner, SkillSlot.ACTIVE_1, false))
             .dynamic(true)
             .sameItemRequired(true)
@@ -718,7 +718,7 @@ public class InputExecutionTree {
         // ACTIVE_2 tap variant
         new InputNodeBuilder(root, List.of(
             InputKey.of(InputType.SWAP, SwordItemType.ACTIVE_2),
-            InputKey.of(InputType.RIGHT_TAP, SwordItemType.ACTIVE_2)
+            InputKey.of(InputType.RIGHT, SwordItemType.ACTIVE_2)
         )).action(() -> SkillSlotActionFactory.create(owner, SkillSlot.ACTIVE_2, false))
             .dynamic(true)
             .sameItemRequired(true)

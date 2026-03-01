@@ -6,16 +6,21 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
+import org.bukkit.Color;
 import org.bukkit.FluidCollisionMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
+import org.bukkit.entity.Display;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.ItemDisplay;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.TextDisplay;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.RayTraceResult;
@@ -28,6 +33,7 @@ import org.joml.Vector3f;
 import btm.sword.config.Config;
 import btm.sword.system.action.throwing.InteractiveItem;
 import btm.sword.system.action.throwing.InteractiveItemArbiter;
+import btm.sword.system.action.throwing.ItemThrowStyle;
 import btm.sword.system.action.throwing.ThrowAction;
 import btm.sword.system.action.throwing.impale.Impalement;
 import btm.sword.system.control.PredicateRunnablePair;
@@ -38,6 +44,7 @@ import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.impl.Combatant;
 import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.item.ItemUsageManager;
+import btm.sword.system.item.KeyRegistry;
 import btm.sword.utility.Debug;
 import btm.sword.utility.Prefab;
 import btm.sword.utility.display.DisplayUtil;
@@ -47,7 +54,9 @@ import btm.sword.utility.math.Basis;
 import btm.sword.utility.math.VectorUtil;
 import lombok.Getter;
 import lombok.Setter;
+import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 
 /**
  * Represents a thrown item entity that is actively simulated in the world.
@@ -106,6 +115,11 @@ public class ThrownItem implements InteractiveItem {
     protected TimeArbiter.TaskHandle disposeTask;
 
     protected boolean setupSuccessful;
+
+    private TextDisplay landingMarker;
+    private TimeArbiter.TaskHandle landingParticleTask;
+    private ItemThrowStyle throwStyle;
+    private float landingMarkerSize = 4.0f;
 
     public ThrownItem(Combatant thrower, Consumer<ItemDisplay> displaySetupInstructions, int setupPeriod) {
         this.thrower = thrower;
@@ -245,6 +259,10 @@ public class ThrownItem implements InteractiveItem {
 
         generateFunctions(initialVelocity);
 
+        if (shouldShowLandingMarker()) {
+            spawnLandingMarker(precomputeLanding());
+        }
+
         handleOnReleaseActions();
 
         xDisplayOffset = yDisplayOffset = zDisplayOffset = 0;
@@ -262,9 +280,9 @@ public class ThrownItem implements InteractiveItem {
                 teleport();
                 rotate();
 
-                Prefab.Particles.THROW_TRAIl.display(cur); // TODO: #119 - Make type of particles dynamic
+                Prefab.Particles.THROW_TRAIl.display(prev); // TODO: #119 - Make type of particles dynamic
                 if (blockTrail != null && timeStep.get() % 3 == 0) // TODO: #119 - Make period dynamic
-                    blockTrail.display(cur);
+                    blockTrail.display(prev);
 
                 evaluate();
                 prev = cur.clone();
@@ -293,8 +311,9 @@ public class ThrownItem implements InteractiveItem {
     }
 
     protected void teleport() {
-        String name = display.getItemStack().getType().toString();
-        if (name.endsWith("_SWORD")) {
+        ItemThrowStyle style = getThrowStyle();
+        if (style == ItemThrowStyle.SPEAR || style == ItemThrowStyle.HATCHET) {
+            // Tip tracks velocity direction — spear stays pointed, hatchet flips around that axis
             TimeArbiter.teleportDisplay(display, cur, velocity, 2);
         }
         else {
@@ -365,47 +384,30 @@ public class ThrownItem implements InteractiveItem {
     }
 
     /**
-     * Applies appropriate rotation to the display based on item type.
+     * Applies appropriate rotation to the display based on the item's {@link ItemThrowStyle}.
      * <p>
-     * Ensures visually realistic spin behavior per tool class.
+     * SPEAR items keep their tip pointed forward with no spin. HATCHET items flip forward
+     * on the Z-axis (like a knife throw). LOB items tumble slowly. Everything else spins
+     * at the default rate.
      */
     private void rotate() {
+        switch (getThrowStyle()) {
+            case SPEAR -> { return; } // tip stays pointed forward, no spin
+            case HATCHET -> applyRotation(false, (float) Config.Physics.THROWN_ITEMS_ROTATION_SPEED_AXE);
+            case LOB -> applyRotation(true, (float) (Config.Physics.THROWN_ITEMS_ROTATION_SPEED_DEFAULT_SPEED * 0.4));
+            default -> applyRotation(true, (float) Config.Physics.THROWN_ITEMS_ROTATION_SPEED_DEFAULT_SPEED);
+        }
+    }
+
+    private void applyRotation(boolean rotateX, float speed) {
         Transformation curTr = display.getTransformation();
         Quaternionf curRotation = curTr.getLeftRotation();
-        Quaternionf newRotation;
-        String name = display.getItemStack().getType().toString();
-
-        // TODO: #127 - Make more extensible somehow?
-        if (name.endsWith("_SWORD")) {
-            newRotation = curRotation.rotateZ((float) Config.Physics.THROWN_ITEMS_ROTATION_SPEED_SWORD);
-        }
-        else if (name.endsWith("_AXE")) {
-            newRotation = curRotation.rotateZ((float) Config.Physics.THROWN_ITEMS_ROTATION_SPEED_AXE);
-        }
-        else if (name.endsWith("_HOE")) {
-            newRotation = curRotation.rotateZ((float) Config.Physics.THROWN_ITEMS_ROTATION_SPEED_HOE);
-        }
-        else if (name.endsWith("_PICKAXE")) {
-            newRotation = curRotation.rotateZ((float) Config.Physics.THROWN_ITEMS_ROTATION_SPEED_PICKAXE);
-        }
-        else if (name.endsWith("_SHOVEL")) {
-            newRotation = curRotation.rotateZ((float) Config.Physics.THROWN_ITEMS_ROTATION_SPEED_SHOVEL);
-        }
-        else if (display.getItemStack().getType() == Material.SHIELD) {
-            newRotation = curRotation.rotateX((float) Config.Physics.THROWN_ITEMS_ROTATION_SPEED_SHIELD);
-        }
-        else {
-            newRotation = curRotation.rotateX((float) Config.Physics.THROWN_ITEMS_ROTATION_SPEED_DEFAULT_SPEED);
-        }
-
-        display.setTransformation(
-                new Transformation(
-                        curTr.getTranslation(),
-                        newRotation,
-                        curTr.getScale(),
-                        curTr.getRightRotation()
-                )
-        );
+        Quaternionf newRotation = rotateX
+            ? curRotation.rotateX(speed)
+            : curRotation.rotateZ(speed);
+        display.setTransformation(new Transformation(
+            curTr.getTranslation(), newRotation, curTr.getScale(), curTr.getRightRotation()
+        ));
     }
 
     /**
@@ -414,6 +416,7 @@ public class ThrownItem implements InteractiveItem {
      * Delegates to the correct outcome handler depending on state flags.
      */
     protected void onEnd() {
+        removeLandingMarker();
         if (caught) onCatch();
         else if (hit) onHit();
         else if (grounded) onGrounded();
@@ -720,6 +723,186 @@ public class ThrownItem implements InteractiveItem {
         }
     }
 
+    // -----------------------------------------------------------------------
+    // Throw style
+    // -----------------------------------------------------------------------
+
+    /**
+     * Returns the {@link ItemThrowStyle} for this item, reading from the item's PDC first,
+     * then falling back to a material-based default.
+     * <p>
+     * The result is cached after the first call.
+     */
+    protected ItemThrowStyle getThrowStyle() {
+        if (throwStyle != null) return throwStyle;
+        if (itemStack != null && !itemStack.isEmpty()) {
+            String stored = KeyRegistry.getKeyField(itemStack, KeyRegistry.THROW_STYLE_KEY, PersistentDataType.STRING);
+            if (stored != null) {
+                try {
+                    throwStyle = ItemThrowStyle.valueOf(stored);
+                    return throwStyle;
+                } catch (IllegalArgumentException ignored) { }
+            }
+        }
+        throwStyle = deriveThrowStyle();
+        return throwStyle;
+    }
+
+    private ItemThrowStyle deriveThrowStyle() {
+        if (itemStack == null || itemStack.isEmpty()) return ItemThrowStyle.PITCH;
+        String name = itemStack.getType().toString();
+        if (name.endsWith("_SWORD")) return ItemThrowStyle.SPEAR;
+        if (name.endsWith("_AXE") || name.endsWith("_HOE")
+                || name.endsWith("_SHOVEL") || name.endsWith("_PICKAXE")) return ItemThrowStyle.HATCHET;
+        if (itemStack.getType().isBlock()) return ItemThrowStyle.LOB;
+        return ItemThrowStyle.PITCH;
+    }
+
+    // -----------------------------------------------------------------------
+    // Landing marker (issue #15)
+    // -----------------------------------------------------------------------
+
+    /**
+     * Whether this thrown item should display a landing prediction marker.
+     * Subclasses that handle their own landing feedback (e.g. UmbralBlade) may override this.
+     */
+    protected boolean shouldShowLandingMarker() {
+        return true;
+    }
+
+    /**
+     * Simulates the flight trajectory to find the first block that will be struck,
+     * returning the hit position and the face that was hit.
+     *
+     * @return the predicted landing, or {@code null} if no block is found within range
+     */
+    private LandingPrediction precomputeLanding() {
+        if (origin == null || positionFunction == null) return null;
+
+        double maxTime = timeCutoff > 0 ? timeCutoff : 200;
+        double step = timeScalingFactor > 0 ? timeScalingFactor : 1.0;
+
+        Location prevLoc = origin.clone();
+        for (double t = step; t <= maxTime + step; t += step) {
+            Location nextLoc = origin.clone().add(positionFunction.apply(t));
+
+            Vector diff = nextLoc.toVector().subtract(prevLoc.toVector());
+            double len = diff.length();
+            if (len < 1e-6) {
+                prevLoc = nextLoc;
+                continue;
+            }
+
+            RayTraceResult result = prevLoc.getWorld().rayTraceBlocks(
+                prevLoc, diff.normalize(), len + 0.3, FluidCollisionMode.NEVER, true);
+
+            if (result != null && result.getHitBlock() != null && !result.getHitBlock().getType().isAir()) {
+                BlockFace face = result.getHitBlockFace();
+                Location hitPos = result.getHitPosition().toLocation(prevLoc.getWorld());
+                return new LandingPrediction(hitPos, face != null ? face : BlockFace.UP);
+            }
+            prevLoc = nextLoc;
+        }
+        return null;
+    }
+
+    /**
+     * Spawns the landing prediction marker at the precomputed landing location.
+     * <p>
+     * Ground landings get a flat ⊗ marker lying 0.2 blocks above the surface with an upward
+     * particle stream. Wall landings get a vertical marker with {@link Display.Billboard#FIXED}.
+     */
+    private void spawnLandingMarker(LandingPrediction prediction) {
+        if (prediction == null || display == null || !display.isValid()) return;
+
+        boolean isWall = prediction.face() != BlockFace.UP && prediction.face() != BlockFace.DOWN;
+        Location markerPos = prediction.position().clone();
+        markerPos.setYaw(0);
+        markerPos.setPitch(0);
+
+        if (!isWall) {
+            markerPos.add(0, 0.2, 0);
+        } else {
+            // Float the marker slightly off the wall surface
+            markerPos.add(
+                prediction.face().getModX() * 0.05,
+                prediction.face().getModY() * 0.05,
+                prediction.face().getModZ() * 0.05
+            );
+        }
+
+        landingMarker = (TextDisplay) display.getWorld().spawnEntity(markerPos, EntityType.TEXT_DISPLAY);
+        landingMarker.text(
+            Component.text(" ︾ \n》 《\n ︽ ")
+                .color(TextColor.color(255, 0, 0))
+                .decorate(TextDecoration.BOLD)
+        );
+        landingMarker.setBillboard(Display.Billboard.FIXED);
+        landingMarker.setDefaultBackground(false);
+        landingMarker.setBackgroundColor(Color.fromARGB(0, 0, 0, 0));
+        landingMarker.setBrightness(new Display.Brightness(15, 15));
+        landingMarker.setShadowed(true);
+        landingMarker.setGlowColorOverride(Color.fromRGB(255, 0, 0));
+        landingMarker.setGlowing(true);
+
+        Transformation tr;
+        if (!isWall) {
+            markerPos.setDirection(thrower.getFlatDir());
+            // Rotate the text face to point upward so the marker lies flat on the ground
+            tr = new Transformation(
+                new Vector3f(0, 0, 1.5f),
+                new Quaternionf().rotateX((float) (-Math.PI / 2)),
+                new Vector3f(landingMarkerSize),
+                new Quaternionf()
+            );
+        } else {
+            tr = new Transformation(
+                new Vector3f(0, -1.5f, 0),
+                new Quaternionf().rotateY(wallFaceYaw(prediction.face())),
+                new Vector3f(landingMarkerSize),
+                new Quaternionf()
+            );
+        }
+        landingMarker.setTransformation(tr);
+
+        // Particle stream from the exact landing point (at ground/wall surface, below the text)
+        Location streamBase = prediction.position().clone();
+        landingParticleTask = TimeArbiter.runTimeBoundBukkitTaskOnTimer(
+            null,
+            () -> Prefab.Particles.LANDING_STREAM.display(streamBase),
+            null,
+            0, 150,
+            ThrownItem.class, "landingMarkerStream",
+            new PredicateRunnablePair(() -> landingMarker == null || !landingMarker.isValid(), null)
+        );
+    }
+
+    /** Returns the Y-axis rotation (radians) that makes a FIXED TextDisplay face outward from a wall. */
+    private float wallFaceYaw(BlockFace face) {
+        return switch (face) {
+            case NORTH -> 0f;
+            case SOUTH -> (float) Math.PI;
+            case EAST -> (float) (Math.PI / 2);
+            case WEST -> (float) (-Math.PI / 2);
+            default -> 0f;
+        };
+    }
+
+    /** Removes the landing prediction marker and cancels the particle stream task. */
+    private void removeLandingMarker() {
+        if (landingMarker != null && landingMarker.isValid()) {
+            landingMarker.remove();
+        }
+        landingMarker = null;
+        if (landingParticleTask != null && !landingParticleTask.isCancelled()) {
+            landingParticleTask.cancel();
+        }
+        landingParticleTask = null;
+    }
+
+    /** Holds the precomputed landing position and the block face that was struck. */
+    private record LandingPrediction(Location position, BlockFace face) {}
+
     public void setTimeStep(int timeStep) {
         this.timeStep.set(timeStep);
     }
@@ -766,6 +949,7 @@ public class ThrownItem implements InteractiveItem {
      * Should be called when the thrown item is collected or deleted.
      */
     public void dispose() {
+        removeLandingMarker();
         if (display != null) {
             display.remove(); // TODO: load chunks whenever something is being despawned.
         }

@@ -92,6 +92,13 @@ public final class KeyRegistry {
     public static final NamespacedKey MAX_USES_KEY = key(MAX_USES);
 
 
+    /** Persistent data key for the throw style of a thrown item. */
+    public static final String THROW_STYLE = "throw_style";
+
+    /** Cached {@link NamespacedKey} for {@link #THROW_STYLE}. */
+    public static final NamespacedKey THROW_STYLE_KEY = key(THROW_STYLE);
+
+
     /** Persistent data key for skin/model data references. */
     public static final String MODEL_ID = "model_id";
 
