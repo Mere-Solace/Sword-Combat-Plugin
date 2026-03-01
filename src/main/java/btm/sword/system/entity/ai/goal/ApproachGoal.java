@@ -2,8 +2,10 @@ package btm.sword.system.entity.ai.goal;
 
 import java.util.EnumSet;
 
+import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Mob;
+import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 
 import com.destroystokyo.paper.entity.ai.Goal;
@@ -32,8 +34,17 @@ public class ApproachGoal implements Goal<@NotNull Mob> {
     /** Squared hysteresis margin (2 blocks) to prevent start/stop oscillation at the boundary. */
     private static final double HYSTERESIS_SQ = 4.0;
 
+    /**
+     * Degrees of angle change per swivel tick.
+     * A 90-degree turn takes 6 ticks; a 180-degree reversal takes 12 ticks (~0.6 s).
+     */
+    private static final double SWIVEL_DEGS_PER_TICK = 15.0;
+
     private final Mob mob;
     private final Hostile hostile;
+
+    /** Ticks remaining in the initial swivel phase before pathfinding begins. */
+    private int swivelTicksRemaining;
 
     /**
      * Constructs an {@code ApproachGoal} for the given mob and its Sword wrapper.
@@ -71,24 +82,39 @@ public class ApproachGoal implements Goal<@NotNull Mob> {
             <= Config.Hostile.AGGRO_RANGE_SQUARED;
     }
 
-    /** Issues the first pathfind command when the goal becomes active. */
+    /**
+     * Computes swivel ticks then either starts pathfinding immediately (small angle)
+     * or enters the swivel phase first ({@link LookAtTargetGoal} handles the actual rotation).
+     */
     @Override
     public void start() {
-        pathfindToTarget();
+        swivelTicksRemaining = computeSwivelTicks();
+        if (swivelTicksRemaining == 0) {
+            pathfindToTarget();
+        }
     }
 
     /** Stops pathfinding when the goal deactivates. */
     @Override
     public void stop() {
         mob.getPathfinder().stopPathfinding();
+        swivelTicksRemaining = 0;
     }
 
     /**
-     * Re-issues the pathfind command each tick so the mob tracks a moving target.
+     * During the swivel phase, waits for the mob to turn before pathfinding.
+     * After the swivel completes, re-issues the pathfind command each tick to track the target.
      * Pathfinding stops once within the approach threshold (plus hysteresis band).
      */
     @Override
     public void tick() {
+        if (swivelTicksRemaining > 0) {
+            swivelTicksRemaining--;
+            if (swivelTicksRemaining == 0) {
+                pathfindToTarget();
+            }
+            return;
+        }
         if (hostile.getCurrentTarget() == null || !hostile.getCurrentTarget().self().isValid()) return;
         double distSq = mob.getLocation().distanceSquared(hostile.getCurrentTarget().self().getLocation());
         if (distSq > Config.Hostile.APPROACH_DISTANCE_SQUARED + HYSTERESIS_SQ) {
@@ -111,5 +137,23 @@ public class ApproachGoal implements Goal<@NotNull Mob> {
     private void pathfindToTarget() {
         if (hostile.getCurrentTarget() == null) return;
         mob.getPathfinder().moveTo(hostile.getCurrentTarget().self(), APPROACH_SPEED);
+    }
+
+    /**
+     * Calculates how many swivel ticks are needed before pathfinding starts.
+     * Based on the angle between the mob's current facing direction and the direction to the target.
+     * Returns 0 for angles smaller than {@value #SWIVEL_DEGS_PER_TICK} degrees (no swivel needed).
+     */
+    private int computeSwivelTicks() {
+        if (hostile.getCurrentTarget() == null || !hostile.getCurrentTarget().self().isValid()) return 0;
+        Location mobLoc = mob.getLocation();
+        Location targetLoc = hostile.getCurrentTarget().self().getLocation();
+        Vector toTarget = targetLoc.subtract(mobLoc).toVector().setY(0);
+        if (toTarget.lengthSquared() < 0.001) return 0;
+        Vector facing = mobLoc.getDirection().setY(0);
+        if (facing.lengthSquared() < 0.001) return 0;
+        double dot = Math.max(-1.0, Math.min(1.0, facing.normalize().dot(toTarget.normalize())));
+        double angleDeg = Math.toDegrees(Math.acos(dot));
+        return (int) (angleDeg / SWIVEL_DEGS_PER_TICK);
     }
 }

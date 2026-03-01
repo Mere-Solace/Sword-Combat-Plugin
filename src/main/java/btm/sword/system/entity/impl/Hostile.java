@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.function.Consumer;
 
+import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Entity;
@@ -54,6 +55,13 @@ public class Hostile extends Combatant {
     private SwordEntity currentTarget;
     private SwordEntity nearestScannedTarget;
 
+    /**
+     * Persistent aggro target — not cleared when the mob returns to idle.
+     * Allows the mob to immediately re-engage the same player when they re-enter range
+     * after a brief retreat. Only cleared when the target dies or enters an invulnerable game mode.
+     */
+    private SwordEntity aggroTarget;
+
     // AI timers (all count upward and reset at their cadence threshold)
     private int aggroScanTimer;
     private int allyScanTimer;
@@ -69,8 +77,18 @@ public class Hostile extends Combatant {
     private boolean frontSlot;
     private int nearbyAlliesCount;
 
-    // Attack result flag
+    // Attack result flag and post-attack branching
     private boolean attackDone;
+
+    /** Random 0–2 roll set atomically with {@code attackDone = true}; selects the post-attack branch. */
+    private int attackPostRoll;
+
+    /** {@code true} when this {@code AttackState} entry is a combo follow-up. */
+    private boolean combo;
+
+    // Post-attack state timers (count downward)
+    private int onGuardTimer;
+    private int attackReadyTimer;
 
     ItemStack itemInLeftHand = new ItemStack(Material.SHIELD);
     ItemStack itemInRightHand = new ItemStack(ItemLibrary.sword);
@@ -185,6 +203,19 @@ public class Hostile extends Combatant {
 //                blade.getDisplay().setItemStack(new ItemStack(Material.AIR));
 //            }
 //        }, 250, TimeUnit.MILLISECONDS);
+    }
+
+    /**
+     * Returns {@code true} if the given target is a player in creative or spectator mode
+     * and should therefore be excluded from aggro scanning and combat targeting.
+     *
+     * @param target the {@link SwordEntity} to test
+     * @return {@code true} if the target is a {@link Player} in creative or spectator mode
+     */
+    public static boolean isInvulnerableGameMode(SwordEntity target) {
+        if (!(target.self() instanceof Player player)) return false;
+        GameMode mode = player.getGameMode();
+        return mode == GameMode.CREATIVE || mode == GameMode.SPECTATOR;
     }
 
     /**

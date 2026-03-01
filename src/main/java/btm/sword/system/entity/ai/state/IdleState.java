@@ -57,6 +57,20 @@ public class IdleState extends HostileAIFacade {
         if (h.getAggroScanTimer() < 10) return;
         h.setAggroScanTimer(0);
 
+        // If the mob remembers a previous target, re-engage them immediately when in range.
+        SwordEntity remembered = h.getAggroTarget();
+        if (remembered != null) {
+            if (!remembered.self().isValid()) {
+                h.setAggroTarget(null); // target died; forget them
+            } else if (!Hostile.isInvulnerableGameMode(remembered)) {
+                double distSq = h.self().getLocation().distanceSquared(remembered.self().getLocation());
+                if (distSq <= Config.Hostile.AGGRO_RANGE_SQUARED) {
+                    h.setNearestScannedTarget(remembered);
+                    return;
+                }
+            }
+        }
+
         double aggroRadius = Math.sqrt(Config.Hostile.AGGRO_RANGE_SQUARED);
         Collection<Entity> nearby = h.self().getWorld().getNearbyEntities(
             h.self().getLocation(), aggroRadius, aggroRadius, aggroRadius,
@@ -66,6 +80,7 @@ public class IdleState extends HostileAIFacade {
         SwordEntity nearest = nearby.stream()
             .map(e -> SwordEntityArbiter.get((Player) e))
             .filter(se -> se instanceof SwordPlayer)
+            .filter(se -> !Hostile.isInvulnerableGameMode(se))
             .min(Comparator.comparingDouble(
                 se -> h.self().getLocation().distanceSquared(se.self().getLocation())
             ))

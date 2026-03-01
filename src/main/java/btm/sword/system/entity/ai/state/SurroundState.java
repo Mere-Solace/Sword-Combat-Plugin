@@ -10,6 +10,7 @@ import btm.sword.config.Config;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.ai.HostileAIFacade;
 import btm.sword.system.entity.ai.MobGoalArbiter;
+import btm.sword.system.entity.ai.goal.LookAtTargetGoal;
 import btm.sword.system.entity.ai.goal.SurroundHoldGoal;
 import btm.sword.system.entity.impl.Hostile;
 
@@ -34,6 +35,7 @@ public class SurroundState extends HostileAIFacade {
         h.setFrontSlot(false);
         evaluateArcPosition(h);
         MobGoalArbiter.GOALS.addGoal(h.mob(), 2, new SurroundHoldGoal(h.mob(), h));
+        MobGoalArbiter.GOALS.addGoal(h.mob(), 3, new LookAtTargetGoal(h.mob(), h));
     }
 
     @Override
@@ -50,6 +52,7 @@ public class SurroundState extends HostileAIFacade {
     @Override
     public void onExit(Hostile h) {
         MobGoalArbiter.GOALS.removeAllGoals(h.mob(), GoalType.MOVE);
+        MobGoalArbiter.GOALS.removeAllGoals(h.mob(), GoalType.LOOK);
     }
 
     private void evaluateArcPosition(Hostile h) {

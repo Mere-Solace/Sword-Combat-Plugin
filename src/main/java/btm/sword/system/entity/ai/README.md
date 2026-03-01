@@ -2,7 +2,7 @@
 
 ## Overview
 
-This package implements a finite state machine (FSM) driven AI for `Hostile` entities. It governs every phase of enemy behaviour — idle patrol, player detection, approach, group coordination, attack wind-up, attack execution, post-attack retreat, and low-health flight — through seven concrete states wired together with twelve transitions.
+This package implements a finite state machine (FSM) driven AI for `Hostile` entities. It governs every phase of enemy behaviour — idle patrol, player detection, approach, group coordination, attack wind-up, attack execution, three post-attack branches, and low-health flight — through nine concrete states wired together with twenty transitions.
 
 The design mirrors the `UmbralBlade` FSM found in `system/entity/umbral/statemachine/`. `HostileAIFacade` plays the same role as `UmbralStateFacade`: a common abstract base that enables wildcard transitions (transitions whose `from` type matches any concrete state in the machine). The generic `StateMachine<T>` / `State<T>` / `Transition<T>` infrastructure in `utility/statemachine/` is shared between both machines without modification.
 
@@ -12,45 +12,52 @@ The design mirrors the `UmbralBlade` FSM found in `system/entity/umbral/statemac
 
 ```
                          +-------+
-           +------------>| IDLE  |<------------------------------+
-           |             +-------+                               |
-           |               |                                     |
-           |   [target in aggro range]                           |
-           |               v                                     |
-           |   +-----------+--+                                  |
-           |   |  APPROACH    |                                  |
-           |   +-----------+--+                                  |
-           |       |       |                                     |
-           |       |       | [ally count >= surround_min_allies] |
-           |       |       v                                     |
-           |       |   +----------+                              |
-           |       |   | SURROUND |                              |
-           |       |   +----+-----+                              |
-           |       |        |                                    |
-           |       |        | [front arc slot]                   |
-           |       |        |                                    |
-           |       | [dist < approach_dist]                      |
-           |       |        |                                    |
-           |       v        v                                     |
-           |   +------------+--+                                  |
-           |   |  PRE_ATTACK   |                                  |
-           |   +---------------+                                  |
-           |          |                                           |
-           |          | [pre_attack_timer <= 0]                   |
-           |          v                                           |
-           |      +--------+                                      |
-           |      | ATTACK |                                      |
-           |      +---+----+                                      |
-           |          |                                           |
-           |          | [attack landed]                           |
-           |          v                                           |
-           |      +--------+     [cooldown elapsed +             |
-           +------+ RETREAT|----> target in aggro range] --> APPROACH
-                  +--------+
-                       |
-                       | [cooldown elapsed +
-                       |  target left aggro range]
-                       +-----> IDLE (above)
+           +------------>| IDLE  |<----------------------------+
+           |             +-------+                             |
+           |               |                                   |
+           |   [target in aggro range]                         |
+           |               v                                   |
+           |   +-----------+--+                                |
+           |   |  APPROACH    |                                |
+           |   +-----------+--+                                |
+           |       |       |                                   |
+           |       |       | [ally count >= surround_min]      |
+           |       |       v                                   |
+           |       |   +----------+                            |
+           |       |   | SURROUND |                            |
+           |       |   +----+-----+                            |
+           |       |        |                                  |
+           |       |        | [front arc slot]                 |
+           |       |        |                                  |
+           |       | [dist < approach_dist]                    |
+           |       |        |                                  |
+           |       v        v                                  |
+           |   +------------+--+                               |
+           |   |  PRE_ATTACK   |                               |
+           |   +---------------+                               |
+           |          |                                        |
+           |          | [pre_attack_timer <= 0]                |
+           |          v                                        |
+           |      +--------+                                   |
+           |      | ATTACK |                                   |
+           |      +---+----+                                   |
+           |          |                                        |
+           |          | [attack landed]                        |
+           |          |                                        |
+           |    roll 0|    roll 1|    roll 2|                  |
+           |          v          v          v                  |
+           |    +--------+  +----------+  (self-loop           |
+           |    |ON_GUARD|  |ATK_READY |   combo re-entry)     |
+           |    +--------+  +----------+                       |
+           |        |           |                              |
+           |    [timer]     [timer]                            |
+           |    expired     expired                            |
+           |        |           |                              |
+           +--------+-----------+  [target in range] -> PRE_ATTACK
+                    |              [target lost]     -> IDLE (above)
+                    |
+                    | [target left range before attack lands]
+                    +----> APPROACH
 
   ANY STATE --[health < flee_health_fraction]--> +------+
                                                  | FLEE |
@@ -58,9 +65,13 @@ The design mirrors the `UmbralBlade` FSM found in `system/entity/umbral/statemac
                                                     |
                                     [no players     |
                                      in aggro range]+----> IDLE
+
+  ANY STATE --[target switches to creative/spectator]--> IDLE
 ```
 
-Transition #9 (`ATTACK -> APPROACH`, target escapes aggro range) and the `SURROUND -> APPROACH` back-edge (ally count drops below threshold) are omitted from the ASCII art for readability; see the transition table below.
+Transitions `SURROUND → APPROACH` (ally count drops), `ATTACK → APPROACH` (target escapes mid-charge),
+and the `RETREAT` sub-graph (orphaned but retained) are omitted from the ASCII art for readability;
+see the transition table below.
 
 ---
 
@@ -68,18 +79,26 @@ Transition #9 (`ATTACK -> APPROACH`, target escapes aggro range) and the `SURROU
 
 | # | From | To | Condition | Side Effect |
 |---|------|----|-----------|-------------|
-| 1 | ANY (`HostileAIFacade`) | `FleeState` | Not already fleeing AND `health / maxHealth < FLEE_HEALTH_FRACTION` | Clear `currentTarget` |
-| 2 | `IdleState` | `ApproachState` | `nearestScannedTarget != null` | Set `currentTarget` from scanned target |
-| 3 | `ApproachState` | `SurroundState` | `nearbyAlliesCount >= SURROUND_MIN_ALLIES` | None |
-| 4 | `ApproachState` | `PreAttackState` | `distanceSquared(target) < APPROACH_DISTANCE_SQUARED` | None |
-| 5 | `SurroundState` | `ApproachState` | `nearbyAlliesCount < SURROUND_MIN_ALLIES` | None |
-| 6 | `SurroundState` | `PreAttackState` | `isFrontSlot()` | Set `frontSlot = false` |
-| 7 | `PreAttackState` | `AttackState` | `preAttackTimer <= 0` | None |
-| 8 | `AttackState` | `RetreatState` | `isAttackDone()` | None |
-| 9 | `AttackState` | `ApproachState` | Target invalid or `distanceSquared > AGGRO_RANGE_SQUARED` | None |
-| 10 | `RetreatState` | `ApproachState` | `retreatTimer <= 0` AND target still in aggro range | None |
-| 11 | `RetreatState` | `IdleState` | `retreatTimer <= 0` AND target left aggro range or invalid | Clear `currentTarget` |
-| 12 | `FleeState` | `IdleState` | No `Player` entity within aggro radius | None |
+| 1 | ANY (`HostileAIFacade`) | `FleeState` | Not already fleeing AND `health / maxHealth < FLEE_HEALTH_FRACTION` | Clear `currentTarget` and `aggroTarget` |
+| 2 | ANY (`HostileAIFacade`) | `IdleState` | Not already idle AND `currentTarget` is a player in creative/spectator | Clear `currentTarget` and `aggroTarget` |
+| 3 | `IdleState` | `ApproachState` | `nearestScannedTarget != null` | Set `currentTarget` and `aggroTarget` from scanned target |
+| 4 | `ApproachState` | `SurroundState` | `nearbyAlliesCount >= SURROUND_MIN_ALLIES` | None |
+| 5 | `ApproachState` | `PreAttackState` | `distanceSquared(target) < APPROACH_DISTANCE_SQUARED` | None |
+| 6 | `SurroundState` | `ApproachState` | `nearbyAlliesCount < SURROUND_MIN_ALLIES` | None |
+| 7 | `SurroundState` | `PreAttackState` | `isFrontSlot()` | Set `frontSlot = false` |
+| 8 | `PreAttackState` | `AttackState` | `preAttackTimer <= 0` | None |
+| 9 | `AttackState` | `OnGuardState` | `isAttackDone() && attackPostRoll == 0` AND target in aggro range | None |
+| 10 | `AttackState` | `AttackReadyState` | `isAttackDone() && attackPostRoll == 1` AND target in aggro range | None |
+| 11 | `AttackState` | `AttackState` (combo) | `isAttackDone() && attackPostRoll == 2` AND target in aggro range | Set `combo = true` |
+| 12 | `AttackState` | `IdleState` | `isAttackDone()` AND target lost or left aggro range | Clear `currentTarget`; clear `aggroTarget` only if target is dead/invalid |
+| 13 | `AttackState` | `ApproachState` | Attack NOT done AND target invalid or `distanceSquared > AGGRO_RANGE_SQUARED` | None |
+| 14 | `OnGuardState` | `PreAttackState` | `onGuardTimer <= 0` AND target still in aggro range | None |
+| 15 | `OnGuardState` | `IdleState` | `onGuardTimer <= 0` AND target lost or left aggro range | Clear `currentTarget`; clear `aggroTarget` only if target dead/invalid |
+| 16 | `AttackReadyState` | `AttackState` | `attackReadyTimer <= 0` AND target in aggro range | None |
+| 17 | `AttackReadyState` | `IdleState` | `attackReadyTimer <= 0` AND target lost or left aggro range | Clear `currentTarget`; clear `aggroTarget` only if target dead/invalid |
+| 18 | `RetreatState` | `ApproachState` | `retreatTimer <= 0` AND target still in aggro range | None |
+| 19 | `RetreatState` | `IdleState` | `retreatTimer <= 0` AND target left aggro range or invalid | Clear `currentTarget`; clear `aggroTarget` only if target dead/invalid |
+| 20 | `FleeState` | `IdleState` | No `Player` entity within aggro radius | None |
 
 ---
 
@@ -87,31 +106,58 @@ Transition #9 (`ATTACK -> APPROACH`, target escapes aggro range) and the `SURROU
 
 ### `IdleState`
 
-The mob is not engaged with a target. Bukkit's built-in awareness system is disabled (`setAware(false)`) so vanilla AI goals do not interfere. Every 60 ticks the mob pathfinds to a random point within 8 blocks of its spawn `origin` at 60% movement speed. Every 10 ticks an aggro scan queries nearby `Player` entities within `aggro_range` blocks using `World.getNearbyEntities()`, converts them to `SwordPlayer` wrappers through `SwordEntityArbiter`, and stores the closest one in `nearestScannedTarget`. When that field becomes non-null, transition #2 fires and the mob immediately enters `ApproachState`.
+The mob is not engaged with a target. Bukkit's built-in awareness system is enabled (`setAware(true)`) so the custom `IdleWanderGoal` can run. Every 10 ticks an aggro scan runs:
+
+1. **Remembered target check**: if `aggroTarget` is still alive and in aggro range (and not in creative/spectator), it is used as `nearestScannedTarget` immediately — no full scan needed. This lets mobs instantly re-engage the same player after a brief retreat.
+2. **Fresh scan**: if no usable `aggroTarget` exists, `World.getNearbyEntities()` finds all `Player` entities in aggro range, converts them to `SwordPlayer` wrappers, and picks the nearest. Players in creative or spectator mode are excluded.
+
+Players in creative or spectator mode are also excluded from being set as `aggroTarget` (transition #2 clears it if the mode changes mid-combat).
 
 ### `ApproachState`
 
-The mob has acquired a target. Bukkit awareness is re-enabled and `Mob.setTarget()` is set to the target living entity. Each tick the mob pathfinds toward its target at 110% speed if the distance squared is more than `APPROACH_DISTANCE_SQUARED + 4.0` (a 2-block hysteresis band prevents oscillation at the boundary); pathfinding stops when the mob is within the threshold. Every 20 ticks an ally scan counts other `Hostile` entities registered in `SwordEntityArbiter` that share the same current target UUID. If that count reaches `SURROUND_MIN_ALLIES` the group transitions to `SurroundState`; if the mob instead closes to within `APPROACH_DISTANCE_SQUARED` it transitions directly to `PreAttackState`.
+The mob has acquired a target. Bukkit awareness is re-enabled and `Mob.setTarget()` is set to the target living entity. On entry, `ApproachGoal` computes the angle between the mob's current facing direction and the direction to the target. If the angle exceeds 15°, the goal delays pathfinding for `(angleDeg / 15)` ticks while `LookAtTargetGoal` rotates the mob — producing a visible swivel before movement begins. After the swivel, the mob pathfinds at 110% speed, stopping within `APPROACH_DISTANCE_SQUARED + 4.0` (hysteresis band). Every 20 ticks an ally scan counts `Hostile` entities targeting the same player; if the count reaches `SURROUND_MIN_ALLIES` the group enters `SurroundState`.
 
 ### `SurroundState`
 
-The mob is part of a coordinated group attack. Every 20 ticks each mob in the group re-evaluates its arc slot by building a list of all allies (including itself) targeting the same entity, sorting them by `UUID` for a deterministic ordering, then computing a position on a circle of radius `approach_distance` around the target using its index in that list. Arc slot 0 is the "front slot"; the mob at slot 0 sets `frontSlot = true` and immediately transitions to `PreAttackState` via transition #6. All other mobs pathfind to their arc positions and wait. If the ally count falls below `SURROUND_MIN_ALLIES` the group reverts to `ApproachState` (transition #5).
+The mob is part of a coordinated group attack. Every 20 ticks each mob in the group re-evaluates its arc slot by building a list of all allies (including itself) targeting the same entity, sorting them by `UUID` for a deterministic ordering, then computing a position on a circle of radius `approach_distance` around the target using its index in that list. Arc slot 0 is the "front slot"; the mob at slot 0 sets `frontSlot = true` and immediately transitions to `PreAttackState` via transition #7. All other mobs pathfind to their arc positions and wait. If the ally count falls below `SURROUND_MIN_ALLIES` the group reverts to `ApproachState` (transition #6).
 
 ### `PreAttackState`
 
-The mob has committed to an attack. Pathfinding stops immediately. On entry: `TRIAL_SPAWNER_DETECTION_OMINOUS` particles are spawned at the mob's eye location (count 25, spread 0.4), and `BLOCK_TRIAL_SPAWNER_AMBIENT_OMINOUS` sound is broadcast to all players within 20 blocks. The `preAttackTimer` is set to `PRE_ATTACK_TICKS` and counts down by 1 each tick. Throughout the wind-up, `Mob.lookAt()` is called with maximum yaw and pitch speed so the mob continuously faces its target. When the timer reaches zero, transition #7 fires.
+The mob has committed to an attack. Pathfinding stops immediately. On entry: `TRIAL_SPAWNER_DETECTION_OMINOUS` particles are spawned at the mob's eye location (count 25, spread 0.4), and `BLOCK_TRIAL_SPAWNER_AMBIENT_OMINOUS` sound is broadcast to all players within 20 blocks. The `preAttackTimer` is set to `PRE_ATTACK_TICKS` and counts down by 1 each tick. Throughout the wind-up, `Mob.lookAt()` is called with maximum yaw and pitch speed so the mob continuously faces its target. When the timer reaches zero, transition #8 fires.
 
 ### `AttackState`
 
-The mob charges toward its target at 160% speed. Each tick, once the distance squared drops to 6.25 (2.5-block melee reach), `Hostile.randomAttack()` is called. `randomAttack()` selects uniformly from `possibleAttacks` — a `List<Consumer<Combatant>>` populated at construction time. The default list contains one entry: a basic melee hit that calls `SwordEntity.hit()` with a `Prefab.Attacks.defaultMobHit` packet and 0.5-magnitude knockback directed away from the mob. After the attack fires, `attackDone` is set to `true` and transition #8 sends the mob to `RetreatState`. Transition #9 provides an escape path if the target moves out of aggro range before melee reach is achieved.
+The mob charges toward its target at 160% speed via `AttackChargeGoal`. On entry, if the `combo` flag is set, a `Particle.CRIT` burst (8 particles) is spawned at the mob's eye location to signal the combo continuation, and `combo` is immediately reset to `false`.
+
+Each tick, once the distance squared drops to 6.25 (2.5-block melee reach), `Hostile.randomAttack()` is called, `attackDone` is set to `true`, and `attackPostRoll` is set to a random integer 0–2. Three post-attack branches are selected by the roll:
+
+- **Roll 0** → `OnGuardState` (transition #9): back off and strafe laterally.
+- **Roll 1** → `AttackReadyState` (transition #10): pause and telegraph a follow-up.
+- **Roll 2** → `AttackState` (combo, transition #11): immediate re-entry with a crit visual.
+
+If the attack lands but the target has left aggro range, transition #12 returns to `IdleState`. If the target escapes before melee reach is achieved (attack not yet done), transition #13 re-enters `ApproachState`.
+
+### `OnGuardState`
+
+One of three post-attack branches (roll 0). On entry, `onGuardTimer` is set to `ON_GUARD_TICKS`, a `Particle.SMOKE` burst (12 particles) is spawned at the mob's eye location, and two goals are registered: `OnGuardBackoffGoal` (MOVE, priority 2) and `LookAtTargetGoal` (LOOK, priority 3). `OnGuardBackoffGoal` backs the mob off to `ON_GUARD_SAFE_DISTANCE` blocks from the target and then strafes laterally by incrementally advancing an orbit angle every 10 ticks, creating a weaving defensive circle. `LookAtTargetGoal` keeps the mob facing its target throughout.
+
+When `onGuardTimer` reaches zero: transition #14 fires if the target is still in aggro range (→ `PreAttackState`); transition #15 fires if the target is gone (→ `IdleState`).
+
+### `AttackReadyState`
+
+One of three post-attack branches (roll 1). On entry, `attackReadyTimer` is set to `ATTACK_READY_TICKS`, pathfinding is stopped, and a `Particle.CRIT` burst (10 particles) is spawned to telegraph the follow-up. The mob holds position and faces the target each tick via `Mob.lookAt()` at maximum turn speed. This creates a visible "loading" pause before the next attack.
+
+When `attackReadyTimer` reaches zero: transition #16 fires if the target is still in aggro range (→ `AttackState`); transition #17 fires if the target is gone (→ `IdleState`). Unlike `PreAttackState`, there is no wind-up particle or sound — the crit burst on entry serves as the sole telegraph.
 
 ### `RetreatState`
 
-After landing an attack the mob backs off before re-engaging. On entry the mob's position relative to the target is used to compute a retreat direction vector; it pathfinds 8 blocks directly away from the target at 110% speed. The `retreatTimer` is initialised to `RETREAT_TICKS` and counts down by 1 per tick. Once the timer reaches zero, transition #10 re-enters `ApproachState` if the target is still within aggro range, or transition #11 returns to `IdleState` if the target has left.
+After landing an attack the mob backs off before re-engaging. On entry the mob's position relative to the target is used to compute a retreat direction vector; it pathfinds 8 blocks directly away from the target at 110% speed. The `retreatTimer` is initialised to `RETREAT_TICKS` and counts down by 1 per tick. Once the timer reaches zero, transition #18 re-enters `ApproachState` if the target is still within aggro range, or transition #19 returns to `IdleState` if the target has left.
+
+> **Note:** `RetreatState` is no longer reachable from `AttackState` — all post-attack branches now lead to `OnGuardState`, `AttackReadyState`, or `AttackState` (combo). `RetreatState` and its transitions are retained for potential future use.
 
 ### `FleeState`
 
-The mob's health has dropped below `FLEE_HEALTH_FRACTION` of its maximum. `currentTarget` is cleared on transition entry. `Mob.setAware(true)` is called so the mob can move freely. Every 20 ticks the nearest `Player` within aggro range is located and a flee direction is computed as the vector pointing away from that player; the mob pathfinds 16 blocks along that vector at 150% speed. The direction is recalculated on a cadence rather than every tick to reduce the cost of `World.getNearbyPlayers()`. Transition #12 checks for the complete absence of players in aggro range and returns to `IdleState`.
+The mob's health has dropped below `FLEE_HEALTH_FRACTION` of its maximum. `currentTarget` is cleared on transition entry. `Mob.setAware(true)` is called so the mob can move freely. Every 20 ticks the nearest `Player` within aggro range is located and a flee direction is computed as the vector pointing away from that player; the mob pathfinds 16 blocks along that vector at 150% speed. The direction is recalculated on a cadence rather than every tick to reduce the cost of `World.getNearbyPlayers()`. Transition #20 checks for the complete absence of players in aggro range and returns to `IdleState`.
 
 ---
 
@@ -125,6 +171,8 @@ The mob's health has dropped below `FLEE_HEALTH_FRACTION` of its maximum. `curre
 | `fleeScanTimer` | `FleeState` | 20 ticks (1 s) | Recalculate flee direction toward nearest player |
 | `preAttackTimer` | `PreAttackState` | counts down from `PRE_ATTACK_TICKS` | Fires attack on reaching 0 |
 | `retreatTimer` | `RetreatState` | counts down from `RETREAT_TICKS` | Allows re-engage on reaching 0 |
+| `onGuardTimer` | `OnGuardState` | counts down from `ON_GUARD_TICKS` | Allows re-engage on reaching 0 |
+| `attackReadyTimer` | `AttackReadyState` | counts down from `ATTACK_READY_TICKS` | Triggers follow-up attack on reaching 0 |
 
 Timers that count upward reset to zero at their cadence threshold and are stored as fields on `Hostile` so their values persist across state boundaries. Timers that count downward are initialised in `onEnter` and reset to zero in `onExit`.
 
@@ -185,15 +233,26 @@ static { register(
 | File | Role |
 |------|------|
 | `HostileAIFacade.java` | Abstract base for all Hostile AI states; enables wildcard transitions |
-| `HostileStateMachine.java` | Extends `StateMachine<Hostile>`; registers all 12 transitions |
-| `state/IdleState.java` | Patrol and aggro scan |
-| `state/ApproachState.java` | Pathfind toward target; ally scan |
-| `state/SurroundState.java` | Arc formation; front-slot attack delegation |
+| `HostileStateMachine.java` | Extends `StateMachine<Hostile>`; registers all 20 transitions |
+| `state/IdleState.java` | Patrol, aggro scan; prioritises `aggroTarget` for fast re-engagement |
+| `state/ApproachState.java` | Pathfind toward target; ally scan; look goal wired |
+| `state/SurroundState.java` | Arc formation; front-slot attack delegation; look goal wired |
 | `state/PreAttackState.java` | Wind-up timer; ominous particles and sound |
-| `state/AttackState.java` | Charge and melee hit via `randomAttack()` |
-| `state/RetreatState.java` | Back off 8 blocks; hold for `RETREAT_TICKS` |
-| `state/FleeState.java` | Flee from nearest player at low HP |
-| `goal/RandomWanderGoal.java` | First implemented goal; demonstrates key, types, and listener registration in `start()`/`stop()` |
+| `state/AttackState.java` | Charge and melee hit via `randomAttack()`; `attackPostRoll` selects post-attack branch |
+| `state/OnGuardState.java` | Post-attack branch (roll 0): orbit target at safe distance; face target continuously |
+| `state/AttackReadyState.java` | Post-attack branch (roll 1): hold position and telegraph follow-up attack |
+| `state/RetreatState.java` | Back off 8 blocks; hold for `RETREAT_TICKS`; look goal wired (currently unreachable) |
+| `state/FleeState.java` | Flee from nearest player at low HP; look goal wired |
+| `goal/IdleWanderGoal.java` | Three-phase idle patrol: IDLE → LOOK → WALK |
+| `goal/ApproachGoal.java` | Pathfind toward target at 1.1x; swivel delay on entry |
+| `goal/SurroundHoldGoal.java` | Pathfind to arc position around target |
+| `goal/AttackChargeGoal.java` | Charge toward target at 1.6x |
+| `goal/OnGuardBackoffGoal.java` | Orbit target at safe distance; strafe via advancing orbit angle |
+| `goal/RetreatBackoffGoal.java` | One-shot backoff 8 blocks away from target |
+| `goal/FleeGoal.java` | Recalculate flee direction every 20 ticks; pathfind away from nearest player |
+| `goal/LookAtTargetGoal.java` | Look goal that faces `currentTarget` each tick (Approach, Surround, Attack, OnGuard) |
+| `goal/LookWhereGoingGoal.java` | Look goal that faces the mob's velocity direction (Retreat, Flee) |
+| `goal/ObserveGoal.java` | Look goal that pans to random nearby points; available for future states |
 
 ---
 
@@ -224,6 +283,8 @@ Each FSM state owns one custom `Goal` subclass in the `goal/` subpackage. The go
 | `SurroundState` | `true` | Arc positioning requires active pathfinding |
 | `PreAttackState` | `true` | Mob must track and face its target during wind-up |
 | `AttackState` | `true` | Charge and melee reach require active pathfinding |
+| `OnGuardState` | `true` | Orbit pathfinding requires awareness |
+| `AttackReadyState` | `true` | Mob is stationary but aware, facing target |
 | `RetreatState` | `true` | Retreat direction pathfinding requires awareness |
 | `FleeState` | `true` | Flee pathfinding requires awareness |
 
@@ -235,14 +296,18 @@ All vanilla goals are cleared immediately after mob spawn via `MobGoalArbiter.GO
 
 ### Goal Class Reference
 
-| FSM State | Goal Class | `GoalType` | Notes |
-|-----------|------------|-----------|-------|
-| `IdleState` | `IdleWanderGoal` | `MOVE` | Patrol near spawn origin; `shouldStayActive` returns `false` when target is acquired |
-| `ApproachState` | `ApproachGoal` | `MOVE` | Pathfind toward `currentTarget` at 1.1x speed; see `docs/systems/adventure-goal-system.md` for skeleton |
-| `SurroundState` | `SurroundHoldGoal` | `MOVE` | Pathfind to arc slot position; `shouldStayActive` checks ally count threshold |
-| `PreAttackState` | (none) | — | Pathfinding is stopped on entry; only `lookAt` is called |
-| `AttackState` | `AttackChargeGoal` | `MOVE` | Charge at 1.6x speed; `shouldStayActive` returns `false` once within 2.5-block melee reach |
-| `RetreatState` | `OnGuardBackoffGoal` | `MOVE` | Back off 8 blocks and strafe laterally; `shouldStayActive` mirrors `retreatTimer > 0` |
-| `FleeState` | `FleeGoal` | `MOVE` | Pathfind away from nearest player; `shouldStayActive` returns `false` when no players are in aggro range |
+| FSM State | Move Goal | Look Goal | Notes |
+|-----------|-----------|-----------|-------|
+| `IdleState` | `IdleWanderGoal` (`MOVE`) | (none — IdleWanderGoal handles look internally) | Patrol near spawn origin in a three-phase IDLE → LOOK → WALK cycle |
+| `ApproachState` | `ApproachGoal` (`MOVE`) | `LookAtTargetGoal` (`LOOK`) | Pathfind at 1.1x; swivel phase delays pathfinding on entry until mob has turned to face target |
+| `SurroundState` | `SurroundHoldGoal` (`MOVE`) | `LookAtTargetGoal` (`LOOK`) | Pathfind to arc slot position; face target while holding |
+| `PreAttackState` | (none) | (none — manual `lookAt` with high turn speed) | Pathfinding stopped on entry; mob faces target via direct `lookAt` calls |
+| `AttackState` | `AttackChargeGoal` (`MOVE`) | `LookAtTargetGoal` (`LOOK`) | Charge at 1.6x speed; face target during charge |
+| `OnGuardState` | `OnGuardBackoffGoal` (`MOVE`) | `LookAtTargetGoal` (`LOOK`) | Orbit target at safe distance (priority 2 MOVE, priority 3 LOOK) |
+| `AttackReadyState` | (none — pathfinding stopped) | (none — manual `lookAt` at 100f/100f) | Hold position; face target via direct `lookAt` calls each tick |
+| `RetreatState` | `RetreatBackoffGoal` (`MOVE`) | `LookWhereGoingGoal` (`LOOK`) | Back off 8 blocks; face direction of travel |
+| `FleeState` | `FleeGoal` (`MOVE`) | `LookWhereGoingGoal` (`LOOK`) | Pathfind away from nearest player; face direction of travel |
 
-Only `RandomWanderGoal` is currently implemented. The classes in the table above are planned; they do not yet exist. See `docs/systems/adventure-goal-system.md` for full API documentation, the priority system, and an `ApproachGoal` implementation skeleton.
+`ObserveGoal` (`LOOK`) is implemented and available but not yet wired to a state. It is intended for future hold or observe states where the mob should casually look around without a specific target.
+
+All combat states that use goals remove them via `removeAllGoals(mob, GoalType.MOVE)` and/or `removeAllGoals(mob, GoalType.LOOK)` in `onExit`.

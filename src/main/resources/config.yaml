@@ -361,6 +361,9 @@ hostile:
   pre_attack_ticks: 24
   retreat_ticks: 40
   flee_health_fraction: 0.20
+  on_guard_ticks: 40
+  on_guard_safe_distance: 6.0
+  attack_ready_ticks: 16
 
 
 umbral:

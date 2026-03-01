@@ -5,6 +5,7 @@ import com.destroystokyo.paper.entity.ai.GoalType;
 import btm.sword.config.Config;
 import btm.sword.system.entity.ai.HostileAIFacade;
 import btm.sword.system.entity.ai.MobGoalArbiter;
+import btm.sword.system.entity.ai.goal.LookWhereGoingGoal;
 import btm.sword.system.entity.ai.goal.RetreatBackoffGoal;
 import btm.sword.system.entity.impl.Hostile;
 
@@ -27,6 +28,7 @@ public class RetreatState extends HostileAIFacade {
         h.setRetreatTimer(Config.Hostile.RETREAT_TICKS);
         if (h.getCurrentTarget() == null || !h.getCurrentTarget().self().isValid()) return;
         MobGoalArbiter.GOALS.addGoal(h.mob(), 1, new RetreatBackoffGoal(h.mob(), h));
+        MobGoalArbiter.GOALS.addGoal(h.mob(), 2, new LookWhereGoingGoal(h.mob()));
     }
 
     @Override
@@ -38,5 +40,6 @@ public class RetreatState extends HostileAIFacade {
     public void onExit(Hostile h) {
         h.setRetreatTimer(0);
         MobGoalArbiter.GOALS.removeAllGoals(h.mob(), GoalType.MOVE);
+        MobGoalArbiter.GOALS.removeAllGoals(h.mob(), GoalType.LOOK);
     }
 }

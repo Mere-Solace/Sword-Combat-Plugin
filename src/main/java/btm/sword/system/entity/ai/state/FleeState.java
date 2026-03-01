@@ -5,6 +5,7 @@ import com.destroystokyo.paper.entity.ai.GoalType;
 import btm.sword.system.entity.ai.HostileAIFacade;
 import btm.sword.system.entity.ai.MobGoalArbiter;
 import btm.sword.system.entity.ai.goal.FleeGoal;
+import btm.sword.system.entity.ai.goal.LookWhereGoingGoal;
 import btm.sword.system.entity.impl.Hostile;
 
 /**
@@ -27,6 +28,7 @@ public class FleeState extends HostileAIFacade {
     public void onEnter(Hostile h) {
         h.getMob().setAware(true);
         MobGoalArbiter.GOALS.addGoal(h.mob(), 1, new FleeGoal(h.mob(), h));
+        MobGoalArbiter.GOALS.addGoal(h.mob(), 2, new LookWhereGoingGoal(h.mob()));
     }
 
     @Override
@@ -37,5 +39,6 @@ public class FleeState extends HostileAIFacade {
     @Override
     public void onExit(Hostile h) {
         MobGoalArbiter.GOALS.removeAllGoals(h.mob(), GoalType.MOVE);
+        MobGoalArbiter.GOALS.removeAllGoals(h.mob(), GoalType.LOOK);
     }
 }

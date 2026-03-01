@@ -2403,6 +2403,33 @@ public class Config {
             v -> FLEE_HEALTH_FRACTION = v,
             (s, p, d) -> s.getDouble(p, d)
         ); }
+
+        /** OnGuard duration in ticks after an attack (~2 s at 20 TPS). */
+        public static int ON_GUARD_TICKS = 40;
+        static { register(
+            "hostile.on_guard_ticks",
+            40, Integer.class,
+            v -> ON_GUARD_TICKS = v,
+            (s, p, d) -> s.getInt(p, d)
+        ); }
+
+        /** Safe orbit radius squared for OnGuard strafing (loaded from raw distance and squared on assignment). */
+        public static double ON_GUARD_SAFE_DISTANCE_SQUARED = 36.0;
+        static { register(
+            "hostile.on_guard_safe_distance",
+            6.0, Double.class,
+            v -> ON_GUARD_SAFE_DISTANCE_SQUARED = v * v,
+            (s, p, d) -> s.getDouble(p, d)
+        ); }
+
+        /** AttackReady hold duration in ticks — brief pause before a combo follow-up (~0.8 s at 20 TPS). */
+        public static int ATTACK_READY_TICKS = 16;
+        static { register(
+            "hostile.attack_ready_ticks",
+            16, Integer.class,
+            v -> ATTACK_READY_TICKS = v,
+            (s, p, d) -> s.getInt(p, d)
+        ); }
     }
     //endregion
 

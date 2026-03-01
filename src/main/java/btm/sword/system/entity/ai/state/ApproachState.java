@@ -10,6 +10,7 @@ import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.ai.HostileAIFacade;
 import btm.sword.system.entity.ai.MobGoalArbiter;
 import btm.sword.system.entity.ai.goal.ApproachGoal;
+import btm.sword.system.entity.ai.goal.LookAtTargetGoal;
 import btm.sword.system.entity.impl.Hostile;
 
 /**
@@ -34,6 +35,7 @@ public class ApproachState extends HostileAIFacade {
         h.setAllyScanTimer(0);
         h.setNearbyAlliesCount(0);
         MobGoalArbiter.GOALS.addGoal(h.mob(), 1, new ApproachGoal(h.mob(), h));
+        MobGoalArbiter.GOALS.addGoal(h.mob(), 2, new LookAtTargetGoal(h.mob(), h));
     }
 
     @Override
@@ -45,6 +47,7 @@ public class ApproachState extends HostileAIFacade {
     @Override
     public void onExit(Hostile h) {
         MobGoalArbiter.GOALS.removeAllGoals(h.mob(), GoalType.MOVE);
+        MobGoalArbiter.GOALS.removeAllGoals(h.mob(), GoalType.LOOK);
     }
 
     private void handleAllyScan(Hostile h) {
