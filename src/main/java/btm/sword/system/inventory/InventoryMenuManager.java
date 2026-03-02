@@ -11,6 +11,7 @@ import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.inventory.menu.CharacterMenu;
 import btm.sword.system.inventory.menu.MainMenu;
 import btm.sword.system.inventory.menu.Menu;
+import btm.sword.system.inventory.menu.MovesetMenu;
 
 public class InventoryMenuManager {
     private static final Map<Class<? extends Menu>, Function<SwordPlayer, ? extends Menu>> MENU_REGISTRY = new ConcurrentHashMap<>();
@@ -22,6 +23,7 @@ public class InventoryMenuManager {
     public static void registerAll() {
         register(MainMenu.class, MainMenu::new);
         register(CharacterMenu.class, CharacterMenu::new);
+        register(MovesetMenu.class, MovesetMenu::new);
         // SkillSelectionMenu is constructed with a slot index and is opened directly
     }
 

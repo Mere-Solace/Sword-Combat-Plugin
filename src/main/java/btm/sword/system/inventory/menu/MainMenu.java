@@ -32,44 +32,37 @@ public class MainMenu extends Menu {
         Component.text("Combat Basics", Config.SwordColor.TEXT_ITEM_HEADER, TextDecoration.ITALIC),
 
         Component.text("Left Click", Config.SwordColor.TEXT_ITEM_CONTROLS)
-            .append(Component.text(" – Basic Slash Chain", Config.SwordColor.TEXT_ITEM_BASE)),
-        Component.text("  • SLASH1 → SLASH2 → SLASH3", Config.SwordColor.TEXT_ITEM_BASE),
-
-        Component.text("", Config.SwordColor.TEXT_ITEM_BASE),
-
-        Component.text("Swap + Swap", Config.SwordColor.TEXT_ITEM_CONTROLS)
-            .append(Component.text(" – Forward Dash", Config.SwordColor.TEXT_ITEM_BASE)),
-        Component.text("  • Can be used in mid-air", Config.SwordColor.TEXT_ITEM_BASE),
-
-        Component.text("Swap + Swap + Left Click", Config.SwordColor.TEXT_ITEM_CONTROLS)
-            .append(Component.text(" – Forward Dash Attack", Config.SwordColor.TEXT_ITEM_BASE)),
-
-        Component.text("", Config.SwordColor.TEXT_ITEM_BASE),
-
-        Component.text("Shift + Shift", Config.SwordColor.TEXT_ITEM_CONTROLS)
-            .append(Component.text(" – Backward Dash", Config.SwordColor.TEXT_ITEM_BASE)),
-        Component.text("Shift + Shift + Left Click", Config.SwordColor.TEXT_ITEM_CONTROLS)
-            .append(Component.text(" – Back Dash Attack", Config.SwordColor.TEXT_ITEM_BASE)),
-
-        Component.text("", Config.SwordColor.TEXT_ITEM_BASE),
+            .append(Component.text(" – Basic Attack Chain (× 3)", Config.SwordColor.TEXT_ITEM_BASE)),
+        Component.text("  • Chain up to 3 slashes", Config.SwordColor.TEXT_ITEM_BASE),
 
         Component.text("Shift + Left Click", Config.SwordColor.TEXT_ITEM_CONTROLS)
             .append(Component.text(" – Grab", Config.SwordColor.TEXT_ITEM_BASE)),
-        Component.text("  • Short-range control tool; does not deal full damage", Config.SwordColor.TEXT_ITEM_BASE),
+        Component.text("  • Short-range control tool", Config.SwordColor.TEXT_ITEM_BASE),
 
-        Component.text("", Config.SwordColor.TEXT_ITEM_BASE),
-
-        Component.text("Drop + Right Click", Config.SwordColor.TEXT_ITEM_CONTROLS)
-            .append(Component.text(" – Ready Throw", Config.SwordColor.TEXT_ITEM_BASE)),
-        Component.text("Drop + Right Hold", Config.SwordColor.TEXT_ITEM_CONTROLS)
+        Component.text("Drop + Right Click, hold to release", Config.SwordColor.TEXT_ITEM_CONTROLS)
             .append(Component.text(" – Throw Weapon", Config.SwordColor.TEXT_ITEM_BASE)),
         Component.text("  • Thrown weapons deal Toughness / Shards damage on hit", Config.SwordColor.TEXT_ITEM_BASE),
 
         Component.text("", Config.SwordColor.TEXT_ITEM_BASE),
 
-        Component.text("Right Click + Hold + Drop", Config.SwordColor.TEXT_ITEM_CONTROLS)
-            .append(Component.text(" – Bullet Time", Config.SwordColor.TEXT_ITEM_BASE))
-            .append(Component.text(" (time slow)", Config.SwordColor.TEXT_ITEM_HEADER))
+        Component.text("Umbral Blade", Config.SwordColor.TEXT_ITEM_HEADER, TextDecoration.ITALIC),
+
+        Component.text("Shift + Swap", Config.SwordColor.TEXT_ITEM_CONTROLS)
+            .append(Component.text(" – Toggle Standby / Sheathed", Config.SwordColor.TEXT_ITEM_BASE)),
+        Component.text("Shift + Drop", Config.SwordColor.TEXT_ITEM_CONTROLS)
+            .append(Component.text(" – Wield Blade", Config.SwordColor.TEXT_ITEM_BASE)),
+        Component.text("Left Click × 3 (Standby)", Config.SwordColor.TEXT_ITEM_CONTROLS)
+            .append(Component.text(" – Quick Attacks", Config.SwordColor.TEXT_ITEM_BASE)),
+        Component.text("Drop + Left Click (× 3)", Config.SwordColor.TEXT_ITEM_CONTROLS)
+            .append(Component.text(" – Heavy Sweep", Config.SwordColor.TEXT_ITEM_BASE)),
+        Component.text("Drop + Right Click (Standby)", Config.SwordColor.TEXT_ITEM_CONTROLS)
+            .append(Component.text(" – Lunge", Config.SwordColor.TEXT_ITEM_BASE)),
+        Component.text("Swap + Left [combo]", Config.SwordColor.TEXT_ITEM_CONTROLS)
+            .append(Component.text(" – Umbral Skills", Config.SwordColor.TEXT_ITEM_BASE)),
+
+        Component.text("", Config.SwordColor.TEXT_ITEM_BASE),
+
+        Component.text("→ Open Combat Reference for a full moveset guide.", Config.SwordColor.TEXT_ITEM_HEADER)
     );
 
 
@@ -128,19 +121,29 @@ public class MainMenu extends Menu {
             }
         );
 
+        SimpleItem combatReference = new SimpleItem(
+            new ItemStackBuilder(Material.WRITABLE_BOOK)
+                .hideAll()
+                .name(Component.text("Combat Reference", Config.SwordColor.TEXT_COOL, TextDecoration.BOLD))
+                .lore(List.of(Component.text("View your full moveset and toggle movement inputs.", Config.SwordColor.TEXT_ITEM_BASE)))
+                .build(),
+            click -> InventoryMenuManager.openMenu(MovesetMenu.class, swordPlayer)
+        );
+
         Gui gui = Gui.normal()
             .setStructure(
                 "# # # . . . # # #",
                 "# . . . P . . . #",
                 "< . . . D Q . . .",
                 "> . . . . . . . .",
-                "# . . . H . . . #",
+                "# . . . H . M . #",
                 "# # # . . . # # #")
             .addIngredient('#', BORDER)
             .addIngredient('Q', queueForCTF)
             .addIngredient('H', playerInfo)
             .addIngredient('P', HOW_TO_PLAY_ITEM)
             .addIngredient('D', spawnDummy)
+            .addIngredient('M', combatReference)
             .addIngredient('<', generatePreviousButtonOrDefault())
             .addIngredient('>', generateForwardPreviousButtonOrDefault())
             .build();

@@ -499,6 +499,22 @@ public class SwordPlayer extends Combatant {
     }
 
     /**
+     * Toggles movement (dash) inputs on or off and rebuilds the input tree to reflect the change.
+     */
+    public void toggleMovementInputs() {
+        inputExecutionTree.toggleMovementInputs();
+    }
+
+    /**
+     * Returns whether movement (dash) inputs are currently enabled for this player.
+     *
+     * @return true if movement inputs are enabled
+     */
+    public boolean isMovementEnabled() {
+        return inputExecutionTree.isMovementEnabled();
+    }
+
+    /**
      * Displays the current input sequence progress of the player as a title.
      */
     public void displayInputSequence() {
@@ -725,14 +741,16 @@ public class SwordPlayer extends Combatant {
         if (offItemStackAtTimeOfHold.getType().equals(Material.SHIELD)) {
             setBlocking(true);
         }
-
         indexOfRightHold = getCurrentInvIndex();
 
-        // TODO: #123 - This is where to implement catches for start clicking different items
+        if (!holdingUmbralItemInMainHand()) {
 
-        if (!mainItemStackAtTimeOfHold.isEmpty() &&
-            !holdingUmbralItemInMainHand()) {
-            setItemStackInHand(new ItemStack(Material.GUNPOWDER), true); // can change the logic here later
+            // TODO: #123 - This is where to implement catches for start clicking different items
+
+            if (!mainItemStackAtTimeOfHold.isEmpty() &&
+                !holdingUmbralItemInMainHand()) {
+                setItemStackInHand(new ItemStack(Material.GUNPOWDER), true); // can change the logic here later
+            }
         }
 
         rightClickHoldTask = TimeArbiter.runTimeIndependentBukkitTaskOnTimer(

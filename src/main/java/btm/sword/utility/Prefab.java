@@ -201,29 +201,33 @@ public class Prefab {
     }
 
     public static class Text {
-         public static final List<Component> SOUL_LINK_LORE = List.of(
+        public static final List<Component> SOUL_LINK_LORE = List.of(
             Component.text("", Config.SwordColor.TEXT_ITEM_BASE),
 
             Component.text("Soul Link Controls", Config.SwordColor.TEXT_ITEM_HEADER, TextDecoration.ITALIC),
 
-            Component.text("Drop + Swap", Config.SwordColor.TEXT_ITEM_CONTROLS)
-                .append(Component.text(" – Toggle Standby/Sheathed", Config.SwordColor.TEXT_ITEM_BASE)),
+            Component.text("Shift + Swap", Config.SwordColor.TEXT_ITEM_CONTROLS)
+                .append(Component.text(" – Toggle Standby / Sheathed", Config.SwordColor.TEXT_ITEM_BASE)),
             Component.text("  • Standby: ", Config.SwordColor.TEXT_ITEM_HEADER)
-                .append(Component.text("Blade hovers and awaits commands", Config.SwordColor.TEXT_ITEM_BASE)),
+                .append(Component.text("Blade hovers, awaits commands", Config.SwordColor.TEXT_ITEM_BASE)),
             Component.text("  • Sheathed: ", Config.SwordColor.TEXT_ITEM_HEADER)
                 .append(Component.text("Blade returns to your hip", Config.SwordColor.TEXT_ITEM_BASE)),
 
             Component.text("", Config.SwordColor.TEXT_ITEM_BASE),
 
-            Component.text("Swap + Left Click", Config.SwordColor.TEXT_ITEM_CONTROLS)
-                .append(Component.text(" – Wield Blade", Config.SwordColor.TEXT_ITEM_HEADER)),
-            Component.text("  • Equips the Blade into your hand", Config.SwordColor.TEXT_ITEM_BASE),
+            Component.text("Shift + Drop", Config.SwordColor.TEXT_ITEM_CONTROLS)
+                .append(Component.text(" – Wield Blade", Config.SwordColor.TEXT_ITEM_BASE)),
+            Component.text("  • Equips the Blade directly into your hand", Config.SwordColor.TEXT_ITEM_BASE),
 
             Component.text("", Config.SwordColor.TEXT_ITEM_BASE),
 
             Component.text("Left Click", Config.SwordColor.TEXT_ITEM_CONTROLS)
-                .append(Component.text(" – Quick Soulfire Slash (if Standby + enough Soulfire)", Config.SwordColor.TEXT_ITEM_BASE)),
-            Component.text("  • Otherwise: Punch", Config.SwordColor.TEXT_ITEM_BASE)
+                .append(Component.text(" – Quick Attack (Standby, costs Soulfire)", Config.SwordColor.TEXT_ITEM_BASE)),
+
+            Component.text("", Config.SwordColor.TEXT_ITEM_BASE),
+
+            Component.text("Drop + Right Click", Config.SwordColor.TEXT_ITEM_CONTROLS)
+                .append(Component.text(" – Lunge (Standby, costs Soulfire)", Config.SwordColor.TEXT_ITEM_BASE))
         );
 
         public static final List<Component> UMBRAL_BLADE_LORE = List.of(
@@ -231,25 +235,20 @@ public class Prefab {
 
             Component.text("Umbral Blade Techniques", Config.SwordColor.TEXT_ITEM_HEADER, TextDecoration.ITALIC),
 
-            Component.text("Swap + Left Click", Config.SwordColor.TEXT_ITEM_CONTROLS)
+            Component.text("Left Click (×1/2/3)", Config.SwordColor.TEXT_ITEM_CONTROLS)
+                .append(Component.text(" – Attack Chain", Config.SwordColor.TEXT_ITEM_BASE)),
+            Component.text("Drop + Left Click (×1)", Config.SwordColor.TEXT_ITEM_CONTROLS)
                 .append(Component.text(" – Heavy Sweep", Config.SwordColor.TEXT_ITEM_BASE)),
-            Component.text("  • Additional Left clicks increase sweep power", Config.SwordColor.TEXT_ITEM_BASE),
-
-            Component.text("", Config.SwordColor.TEXT_ITEM_BASE),
-
-            Component.text("Drop + Left Click", Config.SwordColor.TEXT_ITEM_CONTROLS)
+            Component.text("  • Repeated Left clicks increase sweep force", Config.SwordColor.TEXT_ITEM_BASE),
+            Component.text("Drop + Right Click", Config.SwordColor.TEXT_ITEM_CONTROLS)
                 .append(Component.text(" – Lunge Throw", Config.SwordColor.TEXT_ITEM_BASE)),
-            Component.text("  • Repeated Left clicks increase force", Config.SwordColor.TEXT_ITEM_BASE),
+            Component.text("Shift + Swap", Config.SwordColor.TEXT_ITEM_CONTROLS)
+                .append(Component.text(" – Return to Standby", Config.SwordColor.TEXT_ITEM_BASE)),
 
             Component.text("", Config.SwordColor.TEXT_ITEM_BASE),
 
-            Component.text("Left Click (Wielded Form)", Config.SwordColor.TEXT_ITEM_CONTROLS)
-                .append(Component.text(" – Normal Attack Chain", Config.SwordColor.TEXT_ITEM_BASE)),
-
-            Component.text("", Config.SwordColor.TEXT_ITEM_BASE),
-
-            Component.text("Drop + Swap", Config.SwordColor.TEXT_ITEM_CONTROLS)
-                .append(Component.text(" – Return to Standby", Config.SwordColor.TEXT_ITEM_BASE))
+            Component.text("Swap + Left [combo]", Config.SwordColor.TEXT_ITEM_CONTROLS)
+                .append(Component.text(" – Umbral Skills", Config.SwordColor.TEXT_ITEM_BASE))
         );
 
     }

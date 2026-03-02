@@ -52,6 +52,7 @@ public class InputExecutionTree {
     private Component baseSequenceToDisplay;
     private Component potentialInputSelectionText;
     private ScheduledFuture<?> timeoutTimer;
+    private boolean movementEnabled = false;
 
     public InputExecutionTree(SwordPlayer owner) {
         this.owner = owner;
@@ -269,9 +270,11 @@ public class InputExecutionTree {
         return currentNode.timeoutTicks;
     }
 
-    public void initializeInputTree() {
-        // Item independent actions:
-        // dodge forward, dodge backward
+    /**
+     * Registers the four dash inputs (SWAP+SWAP, SWAP+SWAP+LEFT, SHIFT+SHIFT, SHIFT+SHIFT+LEFT)
+     * into the execution tree. Called only when movement is enabled.
+     */
+    public void initializeMovementInputs() {
         new InputNodeBuilder(root, List.of(
             InputKey.of(InputType.SWAP),
             InputKey.of(InputType.SWAP)
@@ -341,7 +344,51 @@ public class InputExecutionTree {
             .display(true)
             .visibleIf(SwordPlayer::isInNormalActivationState)
             .build();
+    }
 
+    /**
+     * Enables movement (dash) inputs and adds them to the execution tree immediately.
+     */
+    public void enableMovementInputs() {
+        movementEnabled = true;
+        initializeMovementInputs();
+    }
+
+    /**
+     * Returns whether movement (dash) inputs are currently enabled.
+     *
+     * @return true if movement inputs are enabled
+     */
+    public boolean isMovementEnabled() {
+        return movementEnabled;
+    }
+
+    /**
+     * Toggles movement inputs on or off and rebuilds the entire tree to reflect the change.
+     */
+    public void toggleMovementInputs() {
+        movementEnabled = !movementEnabled;
+        rebuildTree();
+    }
+
+    /**
+     * Clears and fully rebuilds the execution tree from scratch, re-registering all base inputs
+     * and conditionally re-registering movement inputs if they were enabled.
+     * <p>
+     * This is distinct from {@link #reset()}, which only moves the traversal cursor back to
+     * root — {@code rebuildTree()} replaces all registered nodes.
+     * </p>
+     */
+    public void rebuildTree() {
+        root.getChildren().clear();
+        reset();
+        initializeInputTree();
+        if (movementEnabled) {
+            initializeMovementInputs();
+        }
+    }
+
+    public void initializeInputTree() {
         // grab
         new InputNodeBuilder(root, List.of(
             InputKey.of(InputType.SHIFT),
@@ -473,7 +520,27 @@ public class InputExecutionTree {
             .visibleIf(SwordPlayer::isInNormalActivationState)
             .build();
 
-        // lunges (umbral throw)
+//        // lunges (umbral throw)
+//        new InputNodeBuilder(root, List.of(
+//            InputKey.of(InputType.DROP, SwordItemType.UMBRAL_LINK),
+//            InputKey.of(InputType.RIGHT, SwordItemType.UMBRAL_LINK)
+//        )).action(
+//                () -> InputAction.builder()
+//                    .action(UmbralBladeAction::lunge)
+//                    .cooldown(executor -> 200)
+//                    .canCast(Combatant::canPerformUmbralAction)
+//                    .requiredSoulfire(() -> 10f)
+//                    .displayCooldown(true)
+//                    .displayDisabled(true)
+//                    .resetIfCannotPerform(false)
+//                    .build())
+//            .timeoutTicks(100)
+//            .sameItemRequired(true)
+//            .cancellable(true)
+//            .display(true)
+//            .visibleIf(SwordPlayer::isInNormalActivationState)
+//            .build();
+
         new InputNodeBuilder(root, List.of(
             InputKey.of(InputType.DROP, SwordItemType.UMBRAL_LINK),
             InputKey.of(InputType.RIGHT, SwordItemType.UMBRAL_LINK)
@@ -843,19 +910,6 @@ public class InputExecutionTree {
          */
         public void addChild(InputKey inputKey, Supplier<InputAction> action, int minHoldLength) {
             children.putIfAbsent(inputKey, new InputNode(action, minHoldLength));
-        }
-
-        /**
-         * Finds child node where input matches AND the condition is matched
-         */
-        public InputNode retrieveAvailableNode(InputType type, SwordPlayer owner) {
-            for (Map.Entry<InputKey, InputNode> entry : children.entrySet()) {
-                if (entry.getKey().input().equals(type) &&
-                    entry.getKey().checkAccessibility(owner)) {
-                    return entry.getValue();
-                }
-            }
-            return null;
         }
 
         /**
