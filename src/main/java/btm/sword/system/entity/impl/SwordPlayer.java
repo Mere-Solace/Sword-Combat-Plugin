@@ -9,6 +9,8 @@ import java.util.function.Supplier;
 
 import javax.annotation.Nullable;
 
+import btm.sword.system.item.SwordItemType;
+
 import org.bukkit.Color;
 import org.bukkit.Material;
 import org.bukkit.entity.Display;
@@ -44,14 +46,13 @@ import btm.sword.system.input.ActivationContext;
 import btm.sword.system.input.InputAction;
 import btm.sword.system.input.InputActionExecutor;
 import btm.sword.system.input.InputExecutionTree;
-import btm.sword.system.input.InputKey;
+import btm.sword.system.input.InputRegistrar;
 import btm.sword.system.input.InputType;
 import btm.sword.system.inventory.InventoryMenuManager;
 import btm.sword.system.inventory.PlayerMenuManager;
 import btm.sword.system.inventory.menu.MainMenu;
 import btm.sword.system.item.ItemStackBuilder;
 import btm.sword.system.item.KeyRegistry;
-import btm.sword.system.item.SwordItemType;
 import btm.sword.system.playerdata.PlayerData;
 import btm.sword.utility.SwordTimeUnit;
 import btm.sword.utility.display.DisplayUtil;
@@ -165,7 +166,8 @@ public class SwordPlayer extends Combatant {
             .build();
 
         inputExecutionTree = new InputExecutionTree(this);
-        inputExecutionTree.initializeInputTree();
+        InputRegistrar.initializeInputTree(inputExecutionTree.getRoot(), this);
+        InputRegistrar.initializeMovementInputs(inputExecutionTree.getRoot());
 
         performedDropAction = false;
         changingHandIndex = false;
@@ -245,9 +247,6 @@ public class SwordPlayer extends Combatant {
      * @param input the input type from the player to process
      */
     public void act(InputType input) {
-        ItemStack item = getItemStackInHand(true);
-        InputKey inputKey = InputKey.of(input, SwordItemType.fromString(item));
-
         if (isAttemptingThrow()) {
             if (input != InputType.RIGHT && input != InputType.RIGHT_HOLD) {
                 ThrowAction.throwCancel(this);
@@ -284,31 +283,31 @@ public class SwordPlayer extends Combatant {
         }
 
         if (input == InputType.RIGHT_TAP || input == InputType.SHIFT_TAP) {
-            if (!inputExecutionTree.nextExists(inputKey)) return;
+            if (!inputExecutionTree.nextExists(input)) return;
         }
 
         if (input == InputType.RIGHT_HOLD) {
-            long minTime = inputExecutionTree.getMinHoldLengthOfNext(inputKey);
+            long minTime = inputExecutionTree.getMinHoldLengthOfNext(input);
             if (minTime == -1 || timeRightHeld < minTime) {
                 if (isAttemptingThrow()) ThrowAction.throwCancel(this);
                 return;
             }
         }
         else if (input == InputType.SHIFT_HOLD) {
-            long minTime = inputExecutionTree.getMinHoldLengthOfNext(inputKey);
+            long minTime = inputExecutionTree.getMinHoldLengthOfNext(input);
             if (minTime == -1 || timeSneakHeld < minTime) {
                 return;
             }
         }
 
-        InputExecutionTree.InputNode node = inputExecutionTree.step(inputKey);
+        InputExecutionTree.InputNode node = inputExecutionTree.step(input);
 
         if (node == null)
             return;
         else if (node.isDisplay())
             displayInputSequence();
 
-        InputAction action = node.resolveAction();
+        InputAction action = inputExecutionTree.getNextAction();
 
         if (action != null) {
             if (aspects.soulfireCur() < action.getRequiredSoulfire(this)) {
@@ -383,10 +382,10 @@ public class SwordPlayer extends Combatant {
      * Can be used to filter out inputs or trigger cancellations.
      *
      * @param itemStack the item stack involved in the input
-     * @param inputType the input type being evaluated
+     * @param input the input type being evaluated
      * @return true to cancel the action, false to allow processing
      */
-    public boolean handleItemInteraction(ItemStack itemStack, InputType inputType) {
+    public boolean handleItemInteraction(ItemStack itemStack, InputType input) {
         boolean cancelAction;
 
         if (KeyRegistry.hasKey(itemStack, KeyRegistry.MAIN_MENU_BUTTON_KEY)) {
@@ -430,7 +429,6 @@ public class SwordPlayer extends Combatant {
             slotNumber == 0 || slotNumber == 8 || slotNumber == 38 || slotNumber == 40) {
             return true; // Cancel the action
         }
-
 //        message("\n\n~|------Beginning of new inventory interact event------|~"
 //                + "\n       Inventory: " + inv.getType()
 //                + "\n       Click type: " + clickType
@@ -478,8 +476,30 @@ public class SwordPlayer extends Combatant {
         return performedDropAction;
     }
 
-    public boolean isInNormalActivationState() {
+    public boolean normalActState() {
         return activationContext == ActivationContext.NORMAL;
+    }
+
+    public boolean nonUmbralState() {
+        return normalActState() && !holdingUmbralItemInMainHand();
+    }
+
+    public boolean soulLinkState() {
+        return normalActState() && holdingSoulLink();
+    }
+
+    public boolean umbralBladeState() {
+        return normalActState() && holdingUmbralBlade();
+    }
+
+    public boolean umbralState() {
+        return normalActState() && holdingUmbralItemInMainHand();
+    }
+
+    public boolean activeItemState(int slot) {
+        return normalActState() &&
+                SwordItemType.fromString(getItemStackInHand(true)) ==
+                    (slot == 1 ? SwordItemType.ACTIVE_1 : SwordItemType.ACTIVE_2);
     }
 
     /**
@@ -496,13 +516,6 @@ public class SwordPlayer extends Combatant {
      */
     public boolean isAtRoot() {
         return inputExecutionTree.isAtRoot();
-    }
-
-    /**
-     * Toggles movement (dash) inputs on or off and rebuilds the input tree to reflect the change.
-     */
-    public void toggleMovementInputs() {
-        inputExecutionTree.toggleMovementInputs();
     }
 
     /**

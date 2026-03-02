@@ -30,9 +30,6 @@ public class UmbralBladeAction extends SwordAction {
         else if (wielder.holdingSoulLink()) {
             blade.request(BladeRequest.WIELD);
         }
-        else {
-            blade.request(BladeRequest.ATTACK_QUICK);
-        }
     }
 
     public static void toggle(Combatant wielder) {
@@ -43,6 +40,8 @@ public class UmbralBladeAction extends SwordAction {
     }
 
     public static void lunge(Combatant wielder) {
+        wielder.message("Trying to Lunge!");
+
         UmbralBlade blade = wielder.getUmbralBlade();
         if (blade == null) return;
 

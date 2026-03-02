@@ -141,7 +141,7 @@ public class MovesetMenu extends Menu {
         SimpleItem movementToggle = new SimpleItem(
             buildMovementToggleItem(movementOn),
             click -> {
-                swordPlayer.toggleMovementInputs();
+//                swordPlayer.toggleMovementInputs();
                 this.open();
             }
         );

@@ -1,7 +1,9 @@
 package btm.sword.system.input;
 
+import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ScheduledFuture;
@@ -11,26 +13,15 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import btm.sword.config.Config;
-import btm.sword.system.action.UmbralBladeAction;
-import btm.sword.system.action.attack.AttackAction;
-import btm.sword.system.action.attack.DashAttackAction;
-import btm.sword.system.action.movement.DashDirection;
-import btm.sword.system.action.movement.MovementAction;
-import btm.sword.system.action.skill.container.SkillSlot;
-import btm.sword.system.action.skill.container.SkillSlotActionFactory;
-import btm.sword.system.action.throwing.ThrowAction;
-import btm.sword.system.action.utility.GrabAction;
-import btm.sword.system.action.utility.UtilityAction;
 import btm.sword.system.control.SwordScheduler;
-import btm.sword.system.entity.aspect.AspectType;
-import btm.sword.system.entity.impl.Combatant;
 import btm.sword.system.entity.impl.SwordPlayer;
-import btm.sword.system.item.SwordItemType;
 import btm.sword.utility.SwordTimeUnit;
 import lombok.Getter;
 import lombok.Setter;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextDecoration;
+
+import javax.annotation.Nullable;
 
 /**
  * Represents a finite state tree that tracks sequences of player {@link InputType} inputs,
@@ -45,14 +36,16 @@ public class InputExecutionTree {
     private static final int MAX_ATTEMPT_ITERATIONS_BEFORE_FORCE_RESET = 3;
     private int currentAttempts = 0;
 
-    private final InputNode root = new InputNode(null);
+    @Getter
+    private final InputNode root = new InputNode((ActionContextPair) null);
+    @Getter
+    private InputAction nextAction = null;
     private final SwordPlayer owner;
 
     private InputNode currentNode;
     private Component baseSequenceToDisplay;
     private Component potentialInputSelectionText;
     private ScheduledFuture<?> timeoutTimer;
-    private boolean movementEnabled = false;
 
     public InputExecutionTree(SwordPlayer owner) {
         this.owner = owner;
@@ -62,8 +55,6 @@ public class InputExecutionTree {
         timeoutTimer = null;
     }
 
-
-
     /**
      * Processes an input step in the execution tree, updating current node and sequence.
      * Returns the new node reached or null if the input is invalid or sequence is reset.
@@ -71,7 +62,7 @@ public class InputExecutionTree {
      *
      * @return the resulting {@link InputNode} or null if invalid/reset
      */
-    public InputNode step(InputKey inputKey) {
+    public InputNode step(InputType input) {
         stopTimeoutTimer();
         potentialInputSelectionText = Component.text(""); // reset potential input before new step
         // before taking input, if it is known that the current node is a leaf, reset and take input from the root
@@ -83,21 +74,21 @@ public class InputExecutionTree {
         }
 
         // initialize a new node that points to the traversal of the input
-        InputNode next = currentNode.retrieveAvailableNode(inputKey, owner);
+        InputNode next = currentNode.retrieveAvailableNode(input, owner);
 
         if (next == null) {
             if (isAtRoot()) return null;
             else {
                 reset();
                 if (currentNode.isCancellable())
-                    return step(inputKey);
+                    return step(input);
 
                 else
                     return null;
             }
         }
 
-        InputAction nextAction = next.resolveAction();
+        nextAction = next.resolveAction(owner);
 
         if (nextAction != null && !InputActionExecutor.canCast(nextAction, owner)) {
             currentAttempts++; // unsuccessful attempt
@@ -110,32 +101,36 @@ public class InputExecutionTree {
         }
         currentAttempts = 0; // successful attempt
 
-        baseSequenceToDisplay = baseSequenceToDisplay.append(Component.text(inputToString(inputKey.input()),
+        baseSequenceToDisplay = baseSequenceToDisplay.append(Component.text(inputToString(input),
             Config.SwordColor.TITLE_INPUT_STRING, TextDecoration.BOLD));
 
         currentNode = next;
 
         if (hasChildren()) {
-            baseSequenceToDisplay = baseSequenceToDisplay.append(Component.text(" ➞ ",
-                Config.SwordColor.TITLE_INPUT_STRING, TextDecoration.ITALIC));
+            boolean alreadyAppended = false;
 
-            Iterator<Map.Entry<InputKey, InputNode>> it = currentNode.getChildren().entrySet().iterator();
+            Iterator<Map.Entry<InputType, InputNode>> it = currentNode.getChildren().entrySet().iterator();
             boolean inputAccepted = false;
             while (it.hasNext()) {
-                Map.Entry<InputKey, InputNode> entry = it.next();
+                Map.Entry<InputType, InputNode> entry = it.next();
 
                 // Skip paths that are not visible or not accessible to this player in the current state
-                if (entry.getValue().hiddenFor(owner) || !entry.getKey().checkAccessibility(owner)) {
+                if (entry.getValue().hiddenFor(owner)) {
                     continue;
                 }
+                else if (!alreadyAppended) {
+                    baseSequenceToDisplay = baseSequenceToDisplay.append(Component.text(" ➞ ",
+                        Config.SwordColor.TITLE_INPUT_STRING, TextDecoration.ITALIC));
+                    alreadyAppended = true;
+                }
 
-                InputAction action = entry.getValue().resolveAction();
+                InputAction action = entry.getValue().resolveAction(owner);
 
                 boolean ready;
                 if (action == null) {
-                    ready = true;
+                    ready = !entry.getValue().getChildren().isEmpty();
                 }
-                else if (entry.getKey().input().equals(InputType.DROP)) {
+                else if (entry.getKey().equals(InputType.DROP)) {
                     ready = InputActionExecutor.canCast(action, owner) && !owner.getItemTypeInHand(true).isAir();
                 }
                 else {
@@ -143,7 +138,7 @@ public class InputExecutionTree {
                 }
 
                 potentialInputSelectionText = potentialInputSelectionText
-                    .append(Component.text(inputToString(entry.getKey().input()),
+                    .append(Component.text(inputToString(entry.getKey()),
                         ready ?
                             Config.SwordColor.TEXT_ITEM_BASE :
                             Config.SwordColor.TEXT_COOL_DARK,
@@ -207,11 +202,11 @@ public class InputExecutionTree {
     /**
      * Checks if the current node has a child corresponding to the specified input.
      *
-     * @param inputKey the {@link InputType} to check
+     * @param input the {@link InputType} to check
      * @return true if a child node exists, false otherwise
      */
-    public boolean nextExists(InputKey inputKey) {
-        return currentNode.retrieveAvailableNode(inputKey, owner) != null;
+    public boolean nextExists(InputType input) {
+        return currentNode.retrieveAvailableNode(input, owner) != null;
     }
 
     /**
@@ -260,7 +255,7 @@ public class InputExecutionTree {
      * @param holdType the hold input type
      * @return minimum hold time in milliseconds, or -1 if no such node exists
      */
-    public long getMinHoldLengthOfNext(InputKey holdType) {
+    public long getMinHoldLengthOfNext(InputType holdType) {
         InputNode next = currentNode.retrieveAvailableNode(holdType, owner);
         if (next == null) return -1;
         return next.getMinHoldTime();
@@ -271,543 +266,17 @@ public class InputExecutionTree {
     }
 
     /**
-     * Registers the four dash inputs (SWAP+SWAP, SWAP+SWAP+LEFT, SHIFT+SHIFT, SHIFT+SHIFT+LEFT)
-     * into the execution tree. Called only when movement is enabled.
-     */
-    public void initializeMovementInputs() {
-        new InputNodeBuilder(root, List.of(
-            InputKey.of(InputType.SWAP),
-            InputKey.of(InputType.SWAP)
-        )).action(() -> InputAction.builder()
-                .action(executor -> MovementAction.dash(executor, DashDirection.FORWARD))
-                .cooldown(executor -> executor.calcCooldown(AspectType.CELERITY, 200, 1000, 10))
-                .canCast(Combatant::canAirDash)
-                .castDuration(() -> Config.Movement.DASH_CAST_DURATION)
-                .displayDisabled(true)
-                .resetIfCannotPerform(true)
-                .build())
-            .timeoutTicks(7)
-            .cancellable(true)
-            .display(true)
-            .visibleIf(SwordPlayer::isInNormalActivationState)
-            .build();
-
-        new InputNodeBuilder(root, List.of(
-            InputKey.of(InputType.SWAP),
-            InputKey.of(InputType.SWAP),
-            InputKey.of(InputType.LEFT)
-        )).action(() -> InputAction.builder()
-                .action(executor -> DashAttackAction.dashAttack(executor, DashDirection.FORWARD))
-                .cooldown(executor -> 0)
-                .canCast(Combatant::canPerformAction)
-                .castDuration(() -> 500)
-                .displayDisabled(true)
-                .resetIfCannotPerform(true)
-                .build())
-            .timeoutTicks(3)
-            .cancellable(true)
-            .display(true)
-            .visibleIf(SwordPlayer::isInNormalActivationState)
-            .build();
-
-        new InputNodeBuilder(root, List.of(
-            InputKey.of(InputType.SHIFT),
-            InputKey.of(InputType.SHIFT)
-        )).action(() -> InputAction.builder()
-                .action(executor -> MovementAction.dash(executor, DashDirection.BACKWARD))
-                .cooldown(executor -> executor.calcCooldown(AspectType.CELERITY, 200, 1000, 10))
-                .canCast(Combatant::canAirDash)
-                .castDuration(() -> Config.Movement.DASH_CAST_DURATION)
-                .displayDisabled(true)
-                .resetIfCannotPerform(true)
-                .build())
-            .timeoutTicks(7)
-            .cancellable(true)
-            .display(true)
-            .visibleIf(SwordPlayer::isInNormalActivationState)
-            .build();
-
-        new InputNodeBuilder(root, List.of(
-            InputKey.of(InputType.SHIFT),
-            InputKey.of(InputType.SHIFT),
-            InputKey.of(InputType.LEFT)
-        )).action(() -> InputAction.builder()
-                .action(executor -> DashAttackAction.dashAttack(executor, DashDirection.BACKWARD))
-                .cooldown(executor -> 0)
-                .canCast(Combatant::canPerformAction)
-                .castDuration(() -> 500)
-                .displayDisabled(true)
-                .resetIfCannotPerform(true)
-                .build())
-            .timeoutTicks(3)
-            .cancellable(true)
-            .display(true)
-            .visibleIf(SwordPlayer::isInNormalActivationState)
-            .build();
-    }
-
-    /**
-     * Enables movement (dash) inputs and adds them to the execution tree immediately.
-     */
-    public void enableMovementInputs() {
-        movementEnabled = true;
-        initializeMovementInputs();
-    }
-
-    /**
-     * Returns whether movement (dash) inputs are currently enabled.
+     * Returns whether movement (dash) inputs are enabled.
+     * Movement inputs are always initialized at construction time via
+     * {@link InputRegistrar#initializeMovementInputs(InputNode)}.
      *
-     * @return true if movement inputs are enabled
+     * @return always true
      */
     public boolean isMovementEnabled() {
-        return movementEnabled;
+        return true;
     }
 
-    /**
-     * Toggles movement inputs on or off and rebuilds the entire tree to reflect the change.
-     */
-    public void toggleMovementInputs() {
-        movementEnabled = !movementEnabled;
-        rebuildTree();
-    }
-
-    /**
-     * Clears and fully rebuilds the execution tree from scratch, re-registering all base inputs
-     * and conditionally re-registering movement inputs if they were enabled.
-     * <p>
-     * This is distinct from {@link #reset()}, which only moves the traversal cursor back to
-     * root — {@code rebuildTree()} replaces all registered nodes.
-     * </p>
-     */
-    public void rebuildTree() {
-        root.getChildren().clear();
-        reset();
-        initializeInputTree();
-        if (movementEnabled) {
-            initializeMovementInputs();
-        }
-    }
-
-    public void initializeInputTree() {
-        // grab
-        new InputNodeBuilder(root, List.of(
-            InputKey.of(InputType.SHIFT),
-            InputKey.of(InputType.LEFT)
-        )).action(() -> InputAction.builder()
-                .action(GrabAction::grab)
-                .cooldown(executor -> executor.calcCooldown(AspectType.FORTITUDE, 200, 1000, 10))
-                .canCast(Combatant::canPerformAction)
-                .requiredSoulfire(() -> 2f)
-                .castDuration(() -> Config.Grab.CAST_DURATION)
-                .displayDisabled(true)
-                .resetIfCannotPerform(true)
-                .build())
-            .timeoutTicks(20)
-            .cancellable(true)
-            .display(true)
-            .visibleIf(SwordPlayer::isInNormalActivationState)
-            .build();
-
-        // Item dependent actions:
-
-        // basic umbral attacks
-        new InputNodeBuilder(root, List.of(
-            InputKey.of(InputType.LEFT, SwordItemType.UMBRAL_LINK)
-        )).action(() -> InputAction.builder()
-                .action(executor -> UmbralBladeAction.basicAttackWithLink(executor, 1))
-                .cooldown(Combatant::getDurationOfLastAttack)
-                .canCast(Combatant::canPerformUmbralLinkAttack)
-                .displayCooldown(true)
-                .displayDisabled(true)
-                .resetIfCannotPerform(true)
-                .build())
-            .timeoutTicks(60)
-            .sameItemRequired(true)
-            .cancellable(true)
-            .display(true)
-            .visibleIf(SwordPlayer::isInNormalActivationState)
-            .build();
-
-        new InputNodeBuilder(root, List.of(
-            InputKey.of(InputType.LEFT, SwordItemType.UMBRAL_LINK),
-            InputKey.of(InputType.LEFT, SwordItemType.UMBRAL_LINK)
-        )).action(() -> InputAction.builder()
-                .action(executor -> UmbralBladeAction.basicAttackWithLink(executor, 2))
-                .cooldown(executor -> 0)
-                .canCast(Combatant::canPerformUmbralLinkAttack)
-                .displayCooldown(true)
-                .displayDisabled(true)
-                .resetIfCannotPerform(true)
-                .build())
-            .timeoutTicks(60)
-            .sameItemRequired(true)
-            .cancellable(true)
-            .display(true)
-            .visibleIf(SwordPlayer::isInNormalActivationState)
-            .build();
-
-        new InputNodeBuilder(root, List.of(
-            InputKey.of(InputType.LEFT, SwordItemType.UMBRAL_LINK),
-            InputKey.of(InputType.LEFT, SwordItemType.UMBRAL_LINK),
-            InputKey.of(InputType.LEFT, SwordItemType.UMBRAL_LINK)
-        )).action(() -> InputAction.builder()
-                .action(executor -> UmbralBladeAction.basicAttackWithLink(executor, 3))
-                .cooldown(executor -> 0)
-                .canCast(Combatant::canPerformUmbralLinkAttack)
-                .displayCooldown(true)
-                .displayDisabled(true)
-                .resetIfCannotPerform(false)
-                .build())
-            .timeoutTicks(60)
-            .sameItemRequired(true)
-            .cancellable(true)
-            .display(true)
-            .visibleIf(SwordPlayer::isInNormalActivationState)
-            .build();
-
-        // basic attacks
-        new InputNodeBuilder(root, List.of(
-            InputKey.of(InputType.LEFT)
-        )).action(() -> InputAction.builder()
-                .action(executor -> AttackAction.basicAttack(executor, 1))
-                .cooldown(Combatant::getDurationOfLastAttack)
-                .canCast(Combatant::canPerformAction)
-                .castDuration(() -> 0)
-                .displayCooldown(true)
-                .displayDisabled(true)
-                .resetIfCannotPerform(false)
-                .build())
-            .sameItemRequired(true)
-            .cancellable(true)
-            .display(true)
-            .visibleIf(SwordPlayer::isInNormalActivationState)
-            .build();
-
-        new InputNodeBuilder(root, List.of(
-            InputKey.of(InputType.LEFT),
-            InputKey.of(InputType.LEFT)
-        )).action(() -> InputAction.builder()
-                .action(executor -> AttackAction.basicAttack(executor, 2))
-                .cooldown(executor -> 0)
-                .canCast(Combatant::canPerformAction)
-                .castDuration(() -> 0)
-                .displayCooldown(true)
-                .displayDisabled(true)
-                .resetIfCannotPerform(false)
-                .build())
-            .sameItemRequired(true)
-            .cancellable(true)
-            .display(true)
-            .visibleIf(SwordPlayer::isInNormalActivationState)
-            .build();
-
-        new InputNodeBuilder(root, List.of(
-            InputKey.of(InputType.LEFT),
-            InputKey.of(InputType.LEFT),
-            InputKey.of(InputType.LEFT)
-        )).action(() -> InputAction.builder()
-                .action(executor -> AttackAction.basicAttack(executor, 3))
-                .cooldown(executor -> 0)
-                .canCast(Combatant::canPerformAction)
-                .castDuration(() -> 1) // changed
-                .displayCooldown(true)
-                .displayDisabled(true)
-                .resetIfCannotPerform(false)
-                .build())
-            .sameItemRequired(true)
-            .cancellable(true)
-            .display(true)
-            .visibleIf(SwordPlayer::isInNormalActivationState)
-            .build();
-
-//        // lunges (umbral throw)
-//        new InputNodeBuilder(root, List.of(
-//            InputKey.of(InputType.DROP, SwordItemType.UMBRAL_LINK),
-//            InputKey.of(InputType.RIGHT, SwordItemType.UMBRAL_LINK)
-//        )).action(
-//                () -> InputAction.builder()
-//                    .action(UmbralBladeAction::lunge)
-//                    .cooldown(executor -> 200)
-//                    .canCast(Combatant::canPerformUmbralAction)
-//                    .requiredSoulfire(() -> 10f)
-//                    .displayCooldown(true)
-//                    .displayDisabled(true)
-//                    .resetIfCannotPerform(false)
-//                    .build())
-//            .timeoutTicks(100)
-//            .sameItemRequired(true)
-//            .cancellable(true)
-//            .display(true)
-//            .visibleIf(SwordPlayer::isInNormalActivationState)
-//            .build();
-
-        new InputNodeBuilder(root, List.of(
-            InputKey.of(InputType.DROP, SwordItemType.UMBRAL_LINK),
-            InputKey.of(InputType.RIGHT, SwordItemType.UMBRAL_LINK)
-        )).action(
-                () -> InputAction.builder()
-                    .action(UmbralBladeAction::lunge)
-                    .cooldown(executor -> 200)
-                    .canCast(Combatant::canPerformUmbralAction)
-                    .requiredSoulfire(() -> 10f)
-                    .displayCooldown(true)
-                    .displayDisabled(true)
-                    .resetIfCannotPerform(false)
-                    .build())
-            .timeoutTicks(100)
-            .sameItemRequired(true)
-            .cancellable(true)
-            .display(true)
-            .visibleIf(SwordPlayer::isInNormalActivationState)
-            .build();
-
-        // throw hold action
-        new InputNodeBuilder(root, List.of(
-            InputKey.of(InputType.DROP),
-            InputKey.of(InputType.RIGHT)
-        )).action(() -> InputAction.builder()
-                .action(ThrowAction::throwReady)
-                .cooldown(executor -> 0)
-                .canCast(Combatant::canPerformAction)
-                .displayDisabled(false)
-                .resetIfCannotPerform(true)
-                .build())
-            .sameItemRequired(true)
-            .cancellable(true)
-            .display(true)
-            .visibleIf(SwordPlayer::isInNormalActivationState)
-            .build();
-
-        // throw
-        new InputNodeBuilder(root, List.of(
-            InputKey.of(InputType.DROP),
-            InputKey.of(InputType.RIGHT),
-            InputKey.of(InputType.RIGHT_HOLD)
-        )).action(() -> InputAction.builder()
-                .action(ThrowAction::throwItem)
-                .cooldown(executor -> 0)
-                .canCast(Combatant::canPerformAction)
-                .castDuration(() -> 10)
-                .displayDisabled(false)
-                .resetIfCannotPerform(true)
-                .build())
-            .minHoldTime(600)
-            .sameItemRequired(true)
-            .cancellable(true)
-            .display(true)
-            .visibleIf(SwordPlayer::isInNormalActivationState)
-            .build();
-
-        // just in case
-        new InputNodeBuilder(root, List.of(
-            InputKey.of(InputType.DROP),
-            InputKey.of(InputType.DROP)
-        )).action(() -> InputAction.builder()
-                .action(UtilityAction::death)
-                .cooldown(executor -> 0)
-                .canCast(Combatant::canPerformAction)
-                .castDuration(() -> 0)
-                .displayCooldown(true)
-                .displayDisabled(true)
-                .resetIfCannotPerform(true)
-                .build())
-            .sameItemRequired(true)
-            .cancellable(true)
-            .display(true)
-            .visibleIf(SwordPlayer::isInNormalActivationState)
-            .build();
-
-
-        // Skill mappings:
-
-        // Umbral Skills (1, 2, and 3)
-        new InputNodeBuilder(root, List.of(
-            InputKey.of(InputType.SWAP),
-            InputKey.of(InputType.LEFT),
-            InputKey.of(InputType.LEFT)
-        )).action(() -> SkillSlotActionFactory.create(owner, SkillSlot.UMBRAL_1))
-            .dynamic(true) // re-resolve each time so skill changes are picked up
-            .sameItemRequired(true)
-            .cancellable(true)
-            .display(true)
-            .visibleIf(SwordPlayer::isInNormalActivationState)
-            .build();
-
-        new InputNodeBuilder(root, List.of(
-            InputKey.of(InputType.SWAP),
-            InputKey.of(InputType.LEFT),
-            InputKey.of(InputType.RIGHT)
-        )).action(() -> SkillSlotActionFactory.create(owner, SkillSlot.UMBRAL_2))
-            .dynamic(true)
-            .sameItemRequired(true)
-            .cancellable(true)
-            .display(true)
-            .visibleIf(SwordPlayer::isInNormalActivationState)
-            .build();
-
-        new InputNodeBuilder(root, List.of(
-            InputKey.of(InputType.SWAP),
-            InputKey.of(InputType.LEFT),
-            InputKey.of(InputType.SWAP)
-        )).action(() -> SkillSlotActionFactory.create(owner, SkillSlot.UMBRAL_3))
-            .dynamic(true)
-            .sameItemRequired(true)
-            .cancellable(true)
-            .display(true)
-            .visibleIf(SwordPlayer::isInNormalActivationState)
-            .build();
-
-
-
-        // umbral blade toggling and wielding
-        new InputNodeBuilder(root, List.of(
-            InputKey.of(InputType.SHIFT),
-            InputKey.of(InputType.SWAP)
-        )).action(() -> InputAction.builder()
-                .action(UmbralBladeAction::toggle)
-                .cooldown(executor -> 400)
-                .canCast(Combatant::canPerformAction)
-                .displayCooldown(true)
-                .displayDisabled(true)
-                .resetIfCannotPerform(true)
-                .build())
-            .sameItemRequired(true)
-            .cancellable(true)
-            .display(true)
-            .visibleIf(SwordPlayer::isInNormalActivationState)
-            .build();
-
-        new InputNodeBuilder(root, List.of(
-            InputKey.of(InputType.SHIFT),
-            InputKey.of(InputType.DROP)
-        )).action(() -> InputAction.builder()
-                .action(UmbralBladeAction::wield)
-                .cooldown(executor -> 400)
-                .canCast(Combatant::canPerformAction)
-                .displayCooldown(true)
-                .displayDisabled(true)
-                .resetIfCannotPerform(true)
-                .build())
-            .sameItemRequired(true)
-            .cancellable(true)
-            .display(true)
-            .visibleIf(SwordPlayer::isInNormalActivationState)
-            .build();
-
-        // heavy sweeps (umbral attacks)
-        new InputNodeBuilder(root, List.of(
-            InputKey.of(InputType.DROP),
-            InputKey.of(InputType.LEFT)
-        )).action(() -> InputAction.builder()
-                .action(UmbralBladeAction::sweep)
-                .cooldown(executor -> 4000)
-                .canCast(Combatant::canPerformUmbralAction)
-                .requiredSoulfire(() -> 10f)
-                .displayCooldown(true)
-                .displayDisabled(true)
-                .resetIfCannotPerform(false)
-                .build())
-            .timeoutTicks(100)
-            .sameItemRequired(true)
-            .cancellable(true)
-            .display(true)
-            .visibleIf(SwordPlayer::isInNormalActivationState)
-            .build();
-
-        new InputNodeBuilder(root, List.of(
-            InputKey.of(InputType.DROP),
-            InputKey.of(InputType.LEFT),
-            InputKey.of(InputType.RIGHT)
-        )).action(() -> InputAction.builder()
-                .action(UmbralBladeAction::sweep)
-                .cooldown(executor -> 0)
-                .canCast(Combatant::canPerformUmbralAction)
-                .requiredSoulfire(() -> 15f)
-                .displayCooldown(true)
-                .displayDisabled(true)
-                .resetIfCannotPerform(false)
-                .build())
-            .timeoutTicks(100)
-            .sameItemRequired(true)
-            .cancellable(true)
-            .display(true)
-            .visibleIf(SwordPlayer::isInNormalActivationState)
-            .build();
-
-        new InputNodeBuilder(root, List.of(
-            InputKey.of(InputType.DROP),
-            InputKey.of(InputType.LEFT),
-            InputKey.of(InputType.RIGHT),
-            InputKey.of(InputType.LEFT)
-        )).action(() -> InputAction.builder()
-                .action(UmbralBladeAction::sweep)
-                .cooldown(executor -> 0)
-                .canCast(Combatant::canPerformUmbralAction)
-                .requiredSoulfire(() -> 25f)
-                .displayCooldown(true)
-                .displayDisabled(true)
-                .resetIfCannotPerform(false)
-                .build())
-            .timeoutTicks(100)
-            .sameItemRequired(true)
-            .cancellable(true)
-            .display(true)
-            .visibleIf(SwordPlayer::isInNormalActivationState)
-            .build();
-
-        // Active Skill slots (ACTIVE_1 and ACTIVE_2)
-        // Tap variant — default for most active skills
-        new InputNodeBuilder(root, List.of(
-            InputKey.of(InputType.SWAP, SwordItemType.ACTIVE_1),
-            InputKey.of(InputType.RIGHT, SwordItemType.ACTIVE_1)
-        )).action(() -> SkillSlotActionFactory.create(owner, SkillSlot.ACTIVE_1, false))
-            .dynamic(true)
-            .sameItemRequired(true)
-            .cancellable(true)
-            .display(true)
-            .visibleIf(SwordPlayer::isInNormalActivationState)
-            .build();
-
-        // Hold variant — for throwable or chargeable active skills
-        new InputNodeBuilder(root, List.of(
-            InputKey.of(InputType.SWAP, SwordItemType.ACTIVE_1),
-            InputKey.of(InputType.RIGHT, SwordItemType.ACTIVE_1),
-            InputKey.of(InputType.RIGHT_HOLD, SwordItemType.ACTIVE_1)
-        )).action(() -> SkillSlotActionFactory.create(owner, SkillSlot.ACTIVE_1, true))
-            .dynamic(true)
-            .minHoldTime(600)
-            .sameItemRequired(true)
-            .cancellable(true)
-            .display(true)
-            .visibleIf(SwordPlayer::isInNormalActivationState)
-            .build();
-
-        // ACTIVE_2 tap variant
-        new InputNodeBuilder(root, List.of(
-            InputKey.of(InputType.SWAP, SwordItemType.ACTIVE_2),
-            InputKey.of(InputType.RIGHT, SwordItemType.ACTIVE_2)
-        )).action(() -> SkillSlotActionFactory.create(owner, SkillSlot.ACTIVE_2, false))
-            .dynamic(true)
-            .sameItemRequired(true)
-            .cancellable(true)
-            .display(true)
-            .visibleIf(SwordPlayer::isInNormalActivationState)
-            .build();
-
-        // ACTIVE_2 hold variant
-        new InputNodeBuilder(root, List.of(
-            InputKey.of(InputType.SWAP, SwordItemType.ACTIVE_2),
-            InputKey.of(InputType.RIGHT, SwordItemType.ACTIVE_2),
-            InputKey.of(InputType.RIGHT_HOLD, SwordItemType.ACTIVE_2)
-        )).action(() -> SkillSlotActionFactory.create(owner, SkillSlot.ACTIVE_2, true))
-            .dynamic(true)
-            .minHoldTime(600)
-            .sameItemRequired(true)
-            .cancellable(true)
-            .display(true)
-            .visibleIf(SwordPlayer::isInNormalActivationState)
-            .build();
-    }
+    public record ActionContextPair(Supplier<InputAction> action, Predicate<SwordPlayer> context) { }
 
     /**
      * Represents a node in the {@link InputExecutionTree}, used to map input sequences to actions.
@@ -823,103 +292,133 @@ public class InputExecutionTree {
     @Getter
     @Setter
     public static class InputNode {
-        @lombok.Setter(lombok.AccessLevel.NONE)
-        private Supplier<InputAction> action;
-        /** Cached InputAction for non-dynamic nodes. Invalidated when the action supplier changes. */
-        private transient InputAction cachedAction;
         /**
-         * When true, the action supplier is invoked on every {@link #resolveAction()} call
+         * When adding entries, note that order of insertion creates an implicit priority system.
+         * Add higher priority context + action 's first.
+         */
+        @lombok.Setter(lombok.AccessLevel.NONE)
+        private LinkedList<ActionContextPair> actions;
+        /** Cached InputAction for non-dynamic single-action nodes. Invalidated when the action supplier changes. */
+        private transient InputAction cachedAction;
+        /** Per-pair cache for multi-action non-dynamic nodes. Keyed by identity. */
+        private transient Map<ActionContextPair, InputAction> pairCache;
+        /**
+         * When true, the action supplier is invoked on every {@link #resolveAction(SwordPlayer)} call
          * (for skill-slot nodes that depend on the currently equipped skill).
          * When false (default), the result is cached after the first call.
          */
         private boolean dynamic = false;
         private Consumer<SwordPlayer> internalAction;
         private int timeoutTicks;
-        private final LinkedHashMap<InputKey, InputNode> children = new LinkedHashMap<>();
+        private final LinkedHashMap<InputType, InputNode> children = new LinkedHashMap<>();
         private boolean sameItemRequired;
         private boolean cancellable;
         private boolean display;
         private final int minHoldTime;
-        private Predicate<SwordPlayer> visibleIf = p -> true; // dynamic visibility predicate
 
         /**
-         * Constructs an InputNode with an associated action and hold time.
+         * Constructs an InputNode with an associated action list and hold time.
          *
-         * @param action the associated {@link InputAction}, or null if none
+         * @param actions the associated Linked List of {@link ActionContextPair}'s, or null if none
          * @param minHoldTime minimum hold time in milliseconds for hold inputs, or -1 if none
          */
-        public InputNode(Supplier<InputAction> action, int minHoldTime) {
-            this.action = action;
+        public InputNode(LinkedList<ActionContextPair> actions, int minHoldTime) {
+            this.actions = actions;
             this.minHoldTime = minHoldTime;
             this.timeoutTicks = 20;
         }
 
         /**
-         * Constructs an InputNode with an associated action and no hold time limit.
+         * Constructs an InputNode with a single action and no hold time limit.
          *
-         * @param action the associated {@link InputAction}, or null if none
+         * @param action the associated {@link ActionContextPair}, or null if none
          */
-        public InputNode(Supplier<InputAction> action) {
-            this(action, -1);
+        public InputNode(ActionContextPair action) {
+            this(action != null ? new LinkedList<>(List.of(action)) : null, -1);
         }
 
         /**
-         * Sets the action supplier and clears the cached action so the next
-         * {@link #resolveAction()} call re-evaluates it.
+         * Sets the full action list and clears all caches.
          *
-         * @param action the new action supplier
+         * @param actions the new action list
          */
-        public void setAction(Supplier<InputAction> action) {
-            this.action = action;
+        public void setActions(LinkedList<ActionContextPair> actions) {
+            this.actions = actions;
             this.cachedAction = null;
+            this.pairCache = null;
         }
 
         /**
-         * Resolves and returns the {@link InputAction} for this node.
+         * Resolves and returns the {@link InputAction} for this node given the player's current state.
          * <p>
-         * Non-dynamic nodes cache the result after the first call so that {@code timeLastExecuted}
-         * persists across executions and cooldowns work correctly.
-         * Dynamic nodes (skill slots) invoke the supplier fresh each time.
+         * Iterates {@link #actions} in insertion order and returns the first pair whose
+         * {@link ActionContextPair#context()} predicate passes. Single-action non-dynamic nodes
+         * cache their result in {@link #cachedAction} to preserve cooldown state. Multi-action
+         * or dynamic nodes use a per-pair {@link IdentityHashMap} cache for the same reason.
          * </p>
          *
-         * @return the resolved InputAction, or null if no action is set
+         * @param owner the player to evaluate context predicates against
+         * @return the resolved InputAction, or null if no action is set or no context passes
          */
-        public InputAction resolveAction() {
-            if (action == null) return null;
-            if (dynamic) return action.get();
-            if (cachedAction == null) cachedAction = action.get();
-            return cachedAction;
+        public InputAction resolveAction(SwordPlayer owner) {
+            owner.message("Resolving an action");
+
+            if (actions == null || actions.isEmpty()) return null;
+            if (!dynamic && actions.size() == 1) {
+                ActionContextPair pair = actions.getFirst();
+                if (!pair.context().test(owner)) return null;
+                if (cachedAction == null) cachedAction = pair.action().get();
+                return cachedAction;
+            }
+            for (ActionContextPair pair : actions) {
+                if (pair.context().test(owner)) {
+                    if (dynamic) return pair.action().get();
+                    if (pairCache == null) pairCache = new IdentityHashMap<>();
+                    return pairCache.computeIfAbsent(pair, p -> p.action().get());
+                }
+            }
+            return null;
         }
 
         /**
-         * Adds a child node for the specified input with an associated action and no hold time.
+         * Adds a child node for the specified input with no hold time.
          *
-         * @param inputKey the {@link InputType} input triggering the child node
-         * @param action the {@link InputAction} associated with the child node, or null
+         * @param input the {@link InputType} input triggering the child node
+         * @param action unused parameter kept for API compatibility; node starts with null actions
          */
-        public void addChild(InputKey inputKey, Supplier<InputAction> action) {
-            children.putIfAbsent(inputKey, new InputNode(action));
+        public void addChild(InputType input, ActionContextPair action) {
+            children.putIfAbsent(input, new InputNode(action));
         }
 
         /**
-         * Adds a child node for the specified input with an associated action and minimum hold time.
+         * Adds a child node for the specified input with a minimum hold time.
          *
-         * @param inputKey the input triggering the child node
-         * @param action the action associated with the child node
+         * @param input the input triggering the child node
+         * @param action unused parameter kept for API compatibility; node starts with null actions
          * @param minHoldLength minimum hold time in ms required for this input
          */
-        public void addChild(InputKey inputKey, Supplier<InputAction> action, int minHoldLength) {
-            children.putIfAbsent(inputKey, new InputNode(action, minHoldLength));
+        public void addChild(InputType input, @Nullable ActionContextPair action, int minHoldLength) {
+            InputNode child = children.get(input);
+            if (child != null && child.actions != null) {
+                child.actions.add(action);
+                return;
+            }
+            children.putIfAbsent(input,
+                new InputNode(action == null ? null : new LinkedList<>(List.of(action)), minHoldLength)
+            );
         }
 
         /**
-         * Finds a child node by a concrete InputKey and owner. This is the runtime path resolver
+         * Finds a child node by a concrete InputType and owner. This is the runtime path resolver
          * that takes into account predicates attached to keys or nodes.
+         *
+         * @param input the key to look up
+         * @param owner the player for predicate evaluation
+         * @return the matching child node, or null if not found
          */
-        public InputNode retrieveAvailableNode(InputKey inputKey, SwordPlayer owner) {
-            for (Map.Entry<InputKey, InputNode> entry : children.entrySet()) {
-                if (!entry.getKey().input().equals(inputKey.input())) continue;
-                if (!entry.getKey().checkAccessibility(owner)) continue;
+        public InputNode retrieveAvailableNode(InputType input, SwordPlayer owner) {
+            for (Map.Entry<InputType, InputNode> entry : children.entrySet()) {
+                if (!entry.getKey().equals(input)) continue;
                 // node-level visibility
                 if (entry.getValue().hiddenFor(owner)) continue;
                 return entry.getValue();
@@ -929,55 +428,73 @@ public class InputExecutionTree {
 
         /**
          * Gets a child node by exact key reference (used by the builder during construction).
+         *
+         * @param key the exact key reference to look up
+         * @return the child node, or null if not found
          */
-        public InputNode getChildByKey(InputKey key) {
+        public InputNode getChildByKey(InputType key) {
             return children.get(key);
         }
 
         /**
-         * Checks whether adding inputKey would create an overlapping acceptor (i.e., any existing
-         * child already accepts one of the same allowed item types for the same input). This prevents
-         * ambiguous overlapping sequences when using specific allowed types.
+         * Returns true if no existing child has the same {@link InputType} as {@code input}.
+         * Since all paths with the same InputType now share a single node (with multiple
+         * context-gated actions), a second registration for the same InputType is intentional —
+         * it will append to the existing node's action list via {@link #addAction(ActionContextPair)}.
+         *
+         * @param input the key to check for matching children
+         * @return true if no child with this InputType exists
          */
-        public boolean noMatchingChild(InputKey inputKey) {
-            for (InputKey k : children.keySet()) {
-                if (!k.input().equals(inputKey.input())) continue;
-                for (btm.sword.system.item.SwordItemType t : inputKey.allowedItemTypes()) {
-                    if (k.allows(t)) return false;
-                }
+        public boolean noMatchingChild(InputType input) {
+            for (InputType k : children.keySet()) {
+                if (k.equals(input)) return false;
             }
             return true;
         }
 
-        public void setVisibleIf(Predicate<SwordPlayer> visibleIf) {
-            this.visibleIf = visibleIf != null ? visibleIf : (p -> true);
-        }
-
+        /**
+         * Returns true if this node has no passing context for the given player,
+         * meaning it should not be shown in the HUD display.
+         *
+         * @param player the player to evaluate
+         * @return true if all contexts fail (node is hidden), false if any context passes
+         */
         public boolean hiddenFor(SwordPlayer player) {
-            return !visibleIf.test(player);
+            if (actions == null || actions.isEmpty()) return false;
+            for (ActionContextPair pair : actions) {
+                if (pair.context().test(player)) return false;
+            }
+            return true;
         }
     }
 
+    /**
+     * Builder for registering input sequences into an {@link InputExecutionTree}.
+     */
     public static class InputNodeBuilder {
-        private final List<InputKey> inputSequence;
+        private final List<InputType> inputSequence;
         private final InputNode root;
 
-        private Supplier<InputAction> action;
+        private LinkedList<ActionContextPair> actions;
         private Integer timeoutTicks = null;
         private Integer minHoldTime = null;
         private Boolean sameItemRequired = null;
         private Boolean cancellable = null;
         private Boolean display = null;
-        private Predicate<SwordPlayer> visibleIf;
         private Boolean dynamic = null;
 
-        public InputNodeBuilder(InputNode root, List<InputKey> inputSequence) {
+        public InputNodeBuilder(InputNode root, List<InputType> inputSequence) {
             this.root = root;
             this.inputSequence = inputSequence;
         }
 
-        public InputNodeBuilder action(Supplier<InputAction> action) {
-            this.action = action;
+        public InputNodeBuilder action(ActionContextPair action) {
+            this.actions = new LinkedList<>(List.of(action));
+            return this;
+        }
+
+        public InputNodeBuilder action(LinkedList<ActionContextPair> actions) {
+            this.actions = actions;
             return this;
         }
 
@@ -1006,14 +523,9 @@ public class InputExecutionTree {
             return this;
         }
 
-        public InputNodeBuilder visibleIf(Predicate<SwordPlayer> predicate) {
-            this.visibleIf = predicate;
-            return this;
-        }
-
         /**
          * Marks the terminal node as dynamic, meaning its action supplier is re-invoked on every
-         * {@link InputNode#resolveAction()} call rather than being cached.
+         * {@link InputNode#resolveAction(SwordPlayer)} call rather than being cached.
          * <p>
          * Use this for skill-slot nodes whose action changes when the player re-equips a skill.
          * Dynamic nodes do NOT persist {@code timeLastExecuted} — skill-level cooldown tracking
@@ -1028,15 +540,19 @@ public class InputExecutionTree {
             return this;
         }
 
+        /**
+         * Builds and registers the input sequence into the tree.
+         * If the leaf node already exists (shared path), the action is appended to its list.
+         */
         public void build() {
             InputNode dummy = root;
-            for (InputKey inputKey : inputSequence) {
-                if (dummy.noMatchingChild(inputKey)) {
+            for (InputType input : inputSequence) {
+                if (dummy.noMatchingChild(input)) {
                     if (minHoldTime != null &&
-                        (inputKey.input() == InputType.RIGHT_HOLD || inputKey.input() == InputType.SHIFT_HOLD)) {
-                        dummy.addChild(inputKey, null, minHoldTime);
+                        (input == InputType.RIGHT_HOLD || input == InputType.SHIFT_HOLD)) {
+                        dummy.addChild(input, null, minHoldTime);
                     } else {
-                        dummy.addChild(inputKey, null);
+                        dummy.addChild(input, null);
                     }
                     if (sameItemRequired != null) {
                         dummy.setSameItemRequired(sameItemRequired);
@@ -1048,12 +564,12 @@ public class InputExecutionTree {
                         dummy.setDisplay(display);
                     }
                 }
-                dummy = dummy.getChildByKey(inputKey);
+                dummy = dummy.getChildByKey(input);
                 if (dummy == null) break; // Defensive null check to avoid NPE
             }
             if (dummy != null) {
-                if (action != null) {
-                    dummy.setAction(action);
+                if (actions != null) {
+                    dummy.setActions(actions);
                 }
                 if (timeoutTicks != null) {
                     dummy.setTimeoutTicks(timeoutTicks);
@@ -1061,23 +577,10 @@ public class InputExecutionTree {
                 if (display != null) {
                     dummy.setDisplay(display);
                 }
-                if (visibleIf != null) {
-                    dummy.setVisibleIf(visibleIf);
-                }
                 if (dynamic != null) {
                     dummy.setDynamic(dynamic);
                 }
             }
         }
     }
-
-    /**
-     * Convenience method to add a new input sequence to the tree at runtime using the builder.
-     */
-    public void addSequence(List<InputKey> sequence, Consumer<InputNodeBuilder> setup) {
-        InputNodeBuilder builder = new InputNodeBuilder(root, sequence);
-        setup.accept(builder);
-        builder.build();
-    }
-
 }

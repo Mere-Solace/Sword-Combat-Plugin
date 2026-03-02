@@ -4,7 +4,7 @@ package btm.sword.system.input;
  * Defines the context in which a player's {@link InputExecutionTree} operates.
  * <p>
  * Contexts allow the same physical input tree to expose or suppress different action paths
- * depending on the player's current gameplay state. Nodes use {@link InputExecutionTree.InputNode#visibleIf}
+ * depending on the player's current gameplay state. Nodes use
  * predicates that check the player's active context via
  * {@link btm.sword.system.entity.impl.SwordPlayer#getActivationContext()}.
  * </p>
@@ -29,11 +29,7 @@ public enum ActivationContext {
      * Player is stunned (grabbed, incapacitated, or otherwise suppressed).
      * Nodes restricted to {@link #NORMAL} are hidden; a limited escape subset may be shown.
      */
-    STUNNED,
+    INCAPACITATED,
 
-    /**
-     * Player is in an ongoing channel or cast that restricts available follow-up inputs.
-     * Movement and utility actions are hidden; only interrupts or continuations are visible.
-     */
-    CHANNELING
+    THROWING
 }
