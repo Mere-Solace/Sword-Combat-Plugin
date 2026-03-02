@@ -292,7 +292,7 @@ public class InputRegistrar {
                 .displayDisabled(false)
                 .resetIfCannotPerform(true)
                 .build(),
-                SwordPlayer::nonUmbralState)
+                SwordPlayer::throwingState)
             )))
             .minHoldTime(600)
             .sameItemRequired(true)

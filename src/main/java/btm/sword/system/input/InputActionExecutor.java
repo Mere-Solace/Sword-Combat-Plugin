@@ -41,7 +41,6 @@ public final class InputActionExecutor {
         if (action == null) return;
         if (!action.handlePerformAttempt(executor)) return;
         
-        executor.message("Executing an ability");
         // schedule or perform the action using the centralized ActionCaster
         ActionCaster.cast(executor, action.getCastDurationMillis(executor), () -> action.perform(executor));
     }

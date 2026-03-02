@@ -43,6 +43,7 @@ import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.impl.Combatant;
 import btm.sword.system.entity.impl.SwordPlayer;
+import btm.sword.system.input.ActivationContext;
 import btm.sword.system.item.ItemUsageManager;
 import btm.sword.system.item.KeyRegistry;
 import btm.sword.utility.Debug;
@@ -192,6 +193,7 @@ public class ThrownItem implements InteractiveItem {
             // Interacting with an entity will cause the shield holding mechanic to falter
             if (sp.isInteractingWithEntity()) {
                 sp.setAttemptingThrow(false);
+                sp.setActivationContext(ActivationContext.NORMAL);
                 sp.setThrowSuccessful(true);
                 // this throw should be weaker because it's automatic. Could turn into a lunge or thrust or smth else
                 sp.getThrownItem().onRelease(2);

@@ -276,7 +276,6 @@ public abstract class Combatant extends SwordEntity {
      * @return true if able to perform actions, false otherwise
      */
     public boolean canPerformAction() {
-        message("ability cast task - " + (abilityCastTask == null ? "none" : abilityCastTask.getTaskId()));
         return abilityCastTask == null && !isGrabbing && !isGrabbed();
     }
 

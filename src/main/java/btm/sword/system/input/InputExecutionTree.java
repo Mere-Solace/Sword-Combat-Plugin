@@ -349,6 +349,23 @@ public class InputExecutionTree {
         }
 
         /**
+         * Appends new action pairs to this node's existing action list and clears all caches.
+         * Used when multiple {@link InputNodeBuilder} registrations share the same terminal node
+         * (e.g. ACTIVE_1 and ACTIVE_2 both live on SWAP {@literal >} RIGHT).
+         *
+         * @param newActions the action pairs to append in priority order
+         */
+        public void appendActions(LinkedList<ActionContextPair> newActions) {
+            if (this.actions == null) {
+                this.actions = new LinkedList<>(newActions);
+            } else {
+                this.actions.addAll(newActions);
+            }
+            this.cachedAction = null;
+            this.pairCache = null;
+        }
+
+        /**
          * Resolves and returns the {@link InputAction} for this node given the player's current state.
          * <p>
          * Iterates {@link #actions} in insertion order and returns the first pair whose
@@ -361,8 +378,6 @@ public class InputExecutionTree {
          * @return the resolved InputAction, or null if no action is set or no context passes
          */
         public InputAction resolveAction(SwordPlayer owner) {
-            owner.message("Resolving an action");
-
             if (actions == null || actions.isEmpty()) return null;
             if (!dynamic && actions.size() == 1) {
                 ActionContextPair pair = actions.getFirst();
@@ -453,14 +468,25 @@ public class InputExecutionTree {
         }
 
         /**
-         * Returns true if this node has no passing context for the given player,
-         * meaning it should not be shown in the HUD display.
+         * Returns true if this node is inaccessible for the given player.
+         * <p>
+         * For leaf nodes (with actions): hidden if no action's context predicate passes.
+         * For intermediate nodes (null or empty actions): hidden only if every child is also
+         * hidden — this prevents stepping into a path whose entire subtree is context-gated
+         * (e.g. the F {@literal >} L umbral-skill prefix when not holding soul link).
+         * </p>
          *
          * @param player the player to evaluate
-         * @return true if all contexts fail (node is hidden), false if any context passes
+         * @return true if no accessible path exists through this node, false otherwise
          */
         public boolean hiddenFor(SwordPlayer player) {
-            if (actions == null || actions.isEmpty()) return false;
+            if (actions == null || actions.isEmpty()) {
+                if (children.isEmpty()) return true;
+                for (InputNode child : children.values()) {
+                    if (!child.hiddenFor(player)) return false;
+                }
+                return true;
+            }
             for (ActionContextPair pair : actions) {
                 if (pair.context().test(player)) return false;
             }
@@ -569,7 +595,11 @@ public class InputExecutionTree {
             }
             if (dummy != null) {
                 if (actions != null) {
-                    dummy.setActions(actions);
+                    if (dummy.getActions() == null || dummy.getActions().isEmpty()) {
+                        dummy.setActions(actions);
+                    } else {
+                        dummy.appendActions(actions);
+                    }
                 }
                 if (timeoutTicks != null) {
                     dummy.setTimeoutTicks(timeoutTicks);

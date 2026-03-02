@@ -247,7 +247,7 @@ public class SwordPlayer extends Combatant {
      * @param input the input type from the player to process
      */
     public void act(InputType input) {
-        if (isAttemptingThrow()) {
+        if (throwingState()) {
             if (input != InputType.RIGHT && input != InputType.RIGHT_HOLD) {
                 ThrowAction.throwCancel(this);
                 resetTree();
@@ -289,7 +289,7 @@ public class SwordPlayer extends Combatant {
         if (input == InputType.RIGHT_HOLD) {
             long minTime = inputExecutionTree.getMinHoldLengthOfNext(input);
             if (minTime == -1 || timeRightHeld < minTime) {
-                if (isAttemptingThrow()) ThrowAction.throwCancel(this);
+                if (throwingState()) ThrowAction.throwCancel(this);
                 return;
             }
         }
@@ -398,8 +398,6 @@ public class SwordPlayer extends Combatant {
 
         // TODO: Enhance handling of usable items like bows/shields/food in main hand
 
-        message(" cancelAction: " + cancelAction);
-
         return cancelAction;
     }
 
@@ -478,6 +476,11 @@ public class SwordPlayer extends Combatant {
 
     public boolean normalActState() {
         return activationContext == ActivationContext.NORMAL;
+    }
+
+    /** Returns true while the player is in throw-ready posture (between throwReady and release/cancel). */
+    public boolean throwingState() {
+        return activationContext == ActivationContext.THROWING;
     }
 
     public boolean nonUmbralState() {
