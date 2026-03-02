@@ -10,8 +10,8 @@ import btm.sword.system.attack.SweepAttack;
 import btm.sword.system.attack.style.AttackProfile;
 import btm.sword.system.attack.style.AttackType;
 import btm.sword.system.attack.style.WeaponAttackStyle;
-import btm.sword.system.entity.types.Combatant;
-import btm.sword.system.entity.types.SwordPlayer;
+import btm.sword.system.entity.impl.Combatant;
+import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.item.ItemUsageManager;
 import btm.sword.utility.misc.ConsumerToConsumePair;
 

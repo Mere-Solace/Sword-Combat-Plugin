@@ -1,0 +1,40 @@
+package btm.sword.system.inventory;
+
+// barrier is good material for cancel
+// Remember the other types of windows!
+
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
+
+import btm.sword.system.entity.impl.SwordPlayer;
+import btm.sword.system.inventory.menu.CharacterMenu;
+import btm.sword.system.inventory.menu.MainMenu;
+import btm.sword.system.inventory.menu.Menu;
+import btm.sword.system.inventory.menu.MovesetMenu;
+
+public class InventoryMenuManager {
+    private static final Map<Class<? extends Menu>, Function<SwordPlayer, ? extends Menu>> MENU_REGISTRY = new ConcurrentHashMap<>();
+
+    public static <T extends Menu> void register(Class<T> menuType, Function<SwordPlayer, T> creator) {
+        MENU_REGISTRY.put(menuType, creator);
+    }
+
+    public static void registerAll() {
+        register(MainMenu.class, MainMenu::new);
+        register(CharacterMenu.class, CharacterMenu::new);
+        register(MovesetMenu.class, MovesetMenu::new);
+        // SkillSelectionMenu is constructed with a slot index and is opened directly
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T extends Menu> T create(Class<T> menuType, SwordPlayer player) {
+        Function<SwordPlayer, ? extends Menu> menuCreationFunc = MENU_REGISTRY.get(menuType);
+        if (menuCreationFunc == null) throw new IllegalArgumentException("No menu registered: " + menuType);
+        return (T) menuCreationFunc.apply(player);
+    }
+
+    public static void openMenu(Class<? extends Menu> menuType, SwordPlayer swordPlayer) {
+        swordPlayer.getPlayerMenuManager().openNewMenu(menuType);
+    }
+}

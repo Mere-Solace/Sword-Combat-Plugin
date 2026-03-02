@@ -14,6 +14,7 @@ import btm.sword.listeners.InputListener;
 import btm.sword.listeners.PlayerListener;
 import btm.sword.system.action.throwing.InteractiveItemArbiter;
 import btm.sword.system.entity.SwordEntityArbiter;
+import btm.sword.system.inventory.InventoryMenuManager;
 import btm.sword.system.playerdata.PlayerDataManager;
 import io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
@@ -50,6 +51,8 @@ public final class Sword extends JavaPlugin {
 
         // Catch and register all entities whose data is already cached by the server
         SwordEntityArbiter.registerAllExistingEntities();
+
+        InventoryMenuManager.registerAll();
 
         PlayerDataManager.initialize();
 

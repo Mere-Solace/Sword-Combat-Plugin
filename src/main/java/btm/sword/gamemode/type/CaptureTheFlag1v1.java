@@ -5,7 +5,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.bukkit.entity.Player;
 
-import btm.sword.system.entity.types.SwordPlayer;
+import btm.sword.system.entity.impl.SwordPlayer;
 
 public class CaptureTheFlag1v1 extends Gamemode {
 

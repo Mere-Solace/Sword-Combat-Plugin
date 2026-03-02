@@ -146,7 +146,7 @@ See [docs/setup/automation-tools.md](docs/setup/automation-tools.md) and [docs/s
 
 - **[Automation Tools Guide](docs/setup/automation-tools.md)**: Quality tools and local usage
 - **[GitHub Actions Guide](docs/setup/github-actions-guide.md)**: CI/CD pipeline and automated checks
-- **[Contributing](CONTRIBUTING.md)**: Contribution guidelines
+- **[Contributing](docs/CONTRIBUTING.md)**: Contribution guidelines
 - **[Documentation Standards](docs/standards/documentation-standards.md)**: Javadoc guidelines
 - **[Development Environment Setup](docs/setup/development-environment.md)**: Java 21 and IDE configuration
 
@@ -200,7 +200,7 @@ Contributions are welcome! This is a work in progress with many features yet to 
    - Includes troubleshooting for common setup issues
 
 2. **Read Guidelines**
-   - See [CONTRIBUTING.md](CONTRIBUTING.md) for:
+   - See [CONTRIBUTING.md](docs/CONTRIBUTING.md) for:
      - Code style and formatting
      - Submitting pull requests
      - Reporting issues

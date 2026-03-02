@@ -7,8 +7,9 @@ import org.bukkit.scheduler.BukkitRunnable;
 
 import btm.sword.Sword;
 import btm.sword.system.action.SwordAction;
-import btm.sword.system.entity.types.Combatant;
-import btm.sword.system.entity.types.SwordPlayer;
+import btm.sword.system.action.throwing.types.ThrownItem;
+import btm.sword.system.entity.impl.Combatant;
+import btm.sword.system.entity.impl.SwordPlayer;
 
 /**
  * Handles the sequence of actions involved in a {@code Combatant} performing a throw action.
@@ -46,11 +47,15 @@ public class ThrowAction extends SwordAction {
      */
     public static void throwReady(Combatant executor) {
         // Guard against throwing the Umbral Items
-        // TODO: #122 - Add logic here for lunging/directing/hurling the umbral blade
+        // TODO: #122 - Add logic here for lunging/directing/hurling the umbral blade, actually,
+        //  just have a separate input path with a different key...
+        //  it's not working there right now though, should be fixed
+
         if (executor instanceof SwordPlayer swordPlayer && swordPlayer.isUmbralItem(swordPlayer.getMainItemStackAtTimeOfHold())) {
-            UmbralItemThrowAction.umbralLungePreparation(executor);
-            swordPlayer.resetTree();
-            swordPlayer.displayMistake(); // display something cool
+//            UmbralBladeAction.lunge(executor);
+//            UmbralItemThrowAction.umbralLungeP1reparation(executor);
+//            swordPlayer.resetTree();
+//            swordPlayer.displayMistake(); // display something cool
             return;
         }
 
@@ -61,14 +66,10 @@ public class ThrowAction extends SwordAction {
         Consumer<ItemDisplay> setupInstructions;
         ThrownItem thrownItem;
         if (executor instanceof SwordPlayer sp && !sp.getItemStackInHand(true).isEmpty()) {
-            setupInstructions = display -> {
-                display.setItemStack(sp.getMainItemStackAtTimeOfHold());
-            };
+            setupInstructions = display -> display.setItemStack(sp.getMainItemStackAtTimeOfHold());
         }
         else {
-            setupInstructions = display -> {
-                display.setItemStack(executor.getItemStackInHand(true));
-            };
+            setupInstructions = display -> display.setItemStack(executor.getItemStackInHand(true));
         }
 
         thrownItem = new ThrownItem(executor, setupInstructions, 1);
@@ -144,8 +145,6 @@ public class ThrowAction extends SwordAction {
         executor.setAttemptingThrow(false);
         executor.setThrowSuccessful(true);
 
-        cast(executor, 10, () ->
-                executor.getThrownItem().onRelease(2)
-        );
+        if (executor.getThrownItem() != null) executor.getThrownItem().onRelease(2);
     }
 }

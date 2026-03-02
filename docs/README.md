@@ -24,7 +24,7 @@ This directory contains technical decisions, development guides, user documentat
 
 ### For Developers
 
-- [Contributing Guide](../CONTRIBUTING.md) - How to contribute to the project
+- [Contributing Guide](CONTRIBUTING.md) - How to contribute to the project
 - [Architecture Decisions](decisions/) - Technical decision records
 - [Setup Guides](setup/) - Development environment configuration
 - [Configuration Lifecycle](setup/configuration-lifecycle.md) - How config files work from dev to runtime
@@ -40,4 +40,4 @@ This project follows:
 
 ## For Contributors
 
-See [CONTRIBUTING.md](../CONTRIBUTING.md) for contribution guidelines.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidelines.

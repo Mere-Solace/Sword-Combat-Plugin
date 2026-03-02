@@ -10,7 +10,7 @@ import org.bukkit.util.Vector;
 
 import btm.sword.system.control.PredicateRunnablePair;
 import btm.sword.system.control.TimeArbiter;
-import btm.sword.system.entity.types.Combatant;
+import btm.sword.system.entity.impl.Combatant;
 import btm.sword.utility.Prefab;
 import btm.sword.utility.display.ParticleWrapper;
 

@@ -7,8 +7,8 @@ import btm.sword.system.action.movement.DashDirection;
 import btm.sword.system.attack.Attack;
 import btm.sword.system.attack.style.AttackProfile;
 import btm.sword.system.attack.style.WeaponAttackStyle;
-import btm.sword.system.entity.types.Combatant;
-import btm.sword.system.entity.types.SwordPlayer;
+import btm.sword.system.entity.impl.Combatant;
+import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.entity.umbral.input.BladeRequest;
 import btm.sword.system.entity.umbral.statemachine.state.StandbyState;
 
@@ -49,16 +49,13 @@ public class DashAttackAction extends SwordAction {
         AttackProfile attackDir = switch (direction) {
             case FORWARD -> weaponAttackStyle.f_dash();
             case BACKWARD -> weaponAttackStyle.b_dash();
-            case RIGHT -> weaponAttackStyle.r_strafe();
-            case LEFT -> weaponAttackStyle.l_strafe();
             default -> weaponAttackStyle.attacks().getFirst();
         };
 
-        cast(executor, 500, () ->
-            new Attack(itemUsedInAttack, attackDir, !direction.equals(DashDirection.BACKWARD),
-                50,30,0,1)
-                // use the direction of the dash so that players can't spin around and use the long attack omnidirectionally
-                .setOrigin(forward ? executor.getChestLocation().setDirection(executor.getDashDirection()) : null)
-                .execute(executor));
+        new Attack(itemUsedInAttack, attackDir, !direction.equals(DashDirection.BACKWARD),
+            50,30,0,1)
+            // use the direction of the dash so that players can't spin around and use the long attack omnidirectionally
+            .setOrigin(forward ? executor.getChestLocation().setDirection(executor.getDashDirection()) : null)
+            .execute(executor);
     }
 }

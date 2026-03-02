@@ -1,16 +1,11 @@
 package btm.sword.system.action;
 
-import java.util.concurrent.TimeUnit;
 
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitScheduler;
-import org.bukkit.scheduler.BukkitTask;
 
 import btm.sword.Sword;
-import btm.sword.system.control.SwordScheduler;
-import btm.sword.system.control.TimeArbiter;
-import btm.sword.system.entity.types.Combatant;
 
 public abstract class SwordAction {
     protected static final BukkitScheduler s = Bukkit.getScheduler();
@@ -24,24 +19,7 @@ public abstract class SwordAction {
     //
     // abilities may still be canceled internally before the cast runnable is up, though.
 
-    /**
-     * @param executor The combatant casting this runnable ability
-     * @param castDuration Duration in milliseconds for which the ability will block other abilities from being performed
-     * @param action The runnable action to be executed and subsequently set as the cast task of the executor
-     */
-    public static void cast(Combatant executor, int castDuration, Runnable action) {
-        BukkitTask castTask = s.runTask(plugin, action);
-
-        // TODO: This is probably the best place for soulfire usage.
-
-        if (castDuration <= 0) return;
-
-        executor.setCastTask(castTask);
-        SwordScheduler.runBukkitTaskLater(() -> {
-            if (executor.getAbilityCastTask() != null) {
-                executor.setCastTask(null);
-            }
-            // Use Global Time Scale here to effect cast times.
-        }, (int) (castDuration / TimeArbiter.getGLOBAL_TIME_SCALE()), TimeUnit.MILLISECONDS);
-    }
+    // Casting logic has been moved to {@link ActionCaster} to centralize cast scheduling and
+    // make casting independent from the abstract action class. Callers should use
+    // `ActionCaster.cast(executor, durationMillis, runnable)` instead.
 }

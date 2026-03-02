@@ -4,7 +4,7 @@ import org.bukkit.util.Vector;
 
 import btm.sword.system.action.SwordAction;
 import btm.sword.system.entity.base.SwordEntity;
-import btm.sword.system.entity.types.Combatant;
+import btm.sword.system.entity.impl.Combatant;
 
 public class UmbralItemThrowAction extends SwordAction {
 

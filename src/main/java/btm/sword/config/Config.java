@@ -15,6 +15,7 @@ import org.jetbrains.annotations.Nullable;
 
 import btm.sword.system.action.attack.AttackAction;
 import btm.sword.system.action.movement.MovementAction;
+import btm.sword.system.action.throwing.types.ThrownItem;
 import btm.sword.system.attack.style.AttackType;
 import btm.sword.utility.sound.SoundType;
 import net.kyori.adventure.text.format.TextColor;
@@ -371,7 +372,7 @@ public class Config {
      *   <li><b>Attack Velocity</b> - Knockback vectors, grounded damping, vertical boost</li>
      * </ul>
      *
-     * @see btm.sword.system.action.throwing.ThrownItem Thrown item physics implementation
+     * @see ThrownItem Thrown item physics implementation
      * @see btm.sword.system.attack.Attack Attack knockback application
      */
     public static class Physics {
@@ -381,7 +382,8 @@ public class Config {
             "physics.thrown_items_gravity_damper",
             THROWN_ITEMS_GRAVITY_DAMPER, Double.class,
             v -> THROWN_ITEMS_GRAVITY_DAMPER = v,
-            ConfigurationSection::getDouble); }
+            ConfigurationSection::getDouble
+        ); }
 
         public static double THROWN_ITEMS_TRAJECTORY_ROTATION = 0.03696; // radians/tick
         static { register(
@@ -583,18 +585,18 @@ public class Config {
                 ConfigurationSection::getDouble
         ); }
 
-        public static long ATTACKS_CAST_TIMING_MIN_DURATION = 1L;
+        public static int ATTACKS_CAST_TIMING_MIN_DURATION = 25; // 1/2 tick (1/40th of a second)
         static { register("combat.attacks_cast_timing_min_duration",
-                ATTACKS_CAST_TIMING_MIN_DURATION, Long.class,
+                ATTACKS_CAST_TIMING_MIN_DURATION, Integer.class,
                 v -> ATTACKS_CAST_TIMING_MIN_DURATION = v,
-                ConfigurationSection::getLong
+                ConfigurationSection::getInt
         ); }
 
-        public static long ATTACKS_CAST_TIMING_MAX_DURATION = 5L;
+        public static int ATTACKS_CAST_TIMING_MAX_DURATION = 1200; // 1.4 seconds
         static { register("combat.attacks_cast_timing_max_duration",
-                ATTACKS_CAST_TIMING_MAX_DURATION, Long.class,
+                ATTACKS_CAST_TIMING_MAX_DURATION, Integer.class,
                 v -> ATTACKS_CAST_TIMING_MAX_DURATION = v,
-                ConfigurationSection::getLong
+                ConfigurationSection::getInt
         ); }
 
         public static double ATTACKS_CAST_TIMING_REDUCTION_RATE = 0.2; // ticks/combo_count
@@ -1017,7 +1019,7 @@ public class Config {
      *   <li><b>Update Intervals</b> - Frequency of background tasks</li>
      * </ul>
      *
-     * @see btm.sword.system.action.throwing.ThrownItem Thrown item lifecycle
+     * @see ThrownItem Thrown item lifecycle
      */
     public static class Timing {
         // Thrown items configuration
@@ -1536,7 +1538,7 @@ public class Config {
         ); }
 
         // Combat profile shards configuration
-        public static int COMBAT_PROFILE_SHARDS_CURRENT = 10;
+        public static int COMBAT_PROFILE_SHARDS_CURRENT = 5;
         static { register(
             "entity.combat_profile_shards_current",
             COMBAT_PROFILE_SHARDS_CURRENT, Integer.class,
@@ -1544,7 +1546,7 @@ public class Config {
             ConfigurationSection::getInt
         ); }
 
-        public static int COMBAT_PROFILE_SHARDS_REGEN_PERIOD = 5000;
+        public static int COMBAT_PROFILE_SHARDS_REGEN_PERIOD = 10000;
         static { register(
             "entity.combat_profile_shards_regen_period",
             COMBAT_PROFILE_SHARDS_REGEN_PERIOD, Integer.class,
@@ -1552,12 +1554,12 @@ public class Config {
             ConfigurationSection::getInt
         ); }
 
-        public static float COMBAT_PROFILE_SHARDS_REGEN_AMOUNT = 1.0f;
+        public static int COMBAT_PROFILE_SHARDS_REGEN_AMOUNT = 1;
         static { register(
             "entity.combat_profile_shards_regen_amount",
-            COMBAT_PROFILE_SHARDS_REGEN_AMOUNT, Float.class,
+            COMBAT_PROFILE_SHARDS_REGEN_AMOUNT, Integer.class,
             v -> COMBAT_PROFILE_SHARDS_REGEN_AMOUNT = v,
-            Config::loadFloat
+            ConfigurationSection::getInt
         ); }
 
         // Combat profile toughness configuration
@@ -1680,15 +1682,23 @@ public class Config {
      * </ul>
      *
      * @see MovementAction Movement ability implementation
-     * @see btm.sword.system.action.throwing.ThrownItem Toss projectile physics
+     * @see ThrownItem Toss projectile physics
      */
     public static class Movement {
         // Dash configuration
-        public static double DASH_MAX_DISTANCE = 10.0;
+        public static double DASH_MAX_DISTANCE = 12.0;
         static { register(
             "movement.dash_max_distance",
             DASH_MAX_DISTANCE, Double.class,
             v -> DASH_MAX_DISTANCE = v,
+            ConfigurationSection::getDouble
+        ); }
+
+        public static double DASH_FLAT_ITEM_DASH_SCALER = 0.65;
+        static { register(
+            "movement.dash_flat_item_dash_scaler",
+            DASH_FLAT_ITEM_DASH_SCALER, Double.class,
+            v -> DASH_FLAT_ITEM_DASH_SCALER = v,
             ConfigurationSection::getDouble
         ); }
 
@@ -1852,7 +1862,7 @@ public class Config {
             ConfigurationSection::getInt
         ); }
 
-        public static int DASH_VELOCITY_TASK_PERIOD = 1;
+        public static int DASH_VELOCITY_TASK_PERIOD = 50;
         static { register(
             "movement.dash_velocity_task_period",
             DASH_VELOCITY_TASK_PERIOD, Integer.class,
@@ -2194,7 +2204,7 @@ public class Config {
     //region GRAB
     // ==============================================================================
     public static class Grab {
-        public static int CAST_DURATION = 12;
+        public static int CAST_DURATION = 750;
         static { register(
             "grab.cast_duration",
             CAST_DURATION, Integer.class,
@@ -2203,7 +2213,7 @@ public class Config {
         ); }
 
         // Base grab duration (ticks)
-        public static int BASE_DURATION = 60;
+        public static int BASE_DURATION = 2000;
         static { register(
             "grab.base_duration",
             BASE_DURATION, Integer.class,
@@ -2310,7 +2320,7 @@ public class Config {
             ConfigurationSection::getInt
         ); }
 
-        public static int JUMP_BOOST_DURATION = 2;
+        public static int JUMP_BOOST_DURATION = 2; // ticks, correct
         static { register(
             "grab.jump_boost_duration",
             JUMP_BOOST_DURATION, Integer.class,
@@ -2325,6 +2335,100 @@ public class Config {
             EXECUTOR_HORIZONTAL_DAMPENING, Double.class,
             v -> EXECUTOR_HORIZONTAL_DAMPENING = v,
             ConfigurationSection::getDouble
+        ); }
+    }
+    //endregion
+
+    // ==============================================================================
+    //region Hostile AI
+    // ==============================================================================
+    /**
+     * Configuration for Hostile entity AI behavior.
+     * <p>
+     * Distance thresholds are stored as squared values at load time so all in-tick
+     * comparisons use {@code distanceSquared()} — no {@code sqrt} is required during gameplay.
+     * </p>
+     */
+    public static class Hostile {
+        /** Aggro range squared (loaded from raw radius and squared on assignment). */
+        public static double AGGRO_RANGE_SQUARED = 256.0;
+        static { register(
+            "hostile.aggro_range",
+            16.0, Double.class,
+            v -> AGGRO_RANGE_SQUARED = v * v,
+            (s, p, d) -> s.getDouble(p, d)
+        ); }
+
+        /** Attack initiation distance squared (loaded from raw radius and squared on assignment). */
+        public static double APPROACH_DISTANCE_SQUARED = 36.0;
+        static { register(
+            "hostile.approach_distance",
+            6.0, Double.class,
+            v -> APPROACH_DISTANCE_SQUARED = v * v,
+            (s, p, d) -> s.getDouble(p, d)
+        ); }
+
+        /** Minimum allied Hostile count targeting the same player to trigger surround behaviour. */
+        public static int SURROUND_MIN_ALLIES = 2;
+        static { register(
+            "hostile.surround_min_allies",
+            2, Integer.class,
+            v -> SURROUND_MIN_ALLIES = v,
+            (s, p, d) -> s.getInt(p, d)
+        ); }
+
+        /** Wind-up ticks before an attack is executed (~1.2 s at 20 TPS). */
+        public static int PRE_ATTACK_TICKS = 24;
+        static { register(
+            "hostile.pre_attack_ticks",
+            24, Integer.class,
+            v -> PRE_ATTACK_TICKS = v,
+            (s, p, d) -> s.getInt(p, d)
+        ); }
+
+        /** Retreat duration in ticks after an attack (~2 s at 20 TPS). */
+        public static int RETREAT_TICKS = 40;
+        static { register(
+            "hostile.retreat_ticks",
+            40, Integer.class,
+            v -> RETREAT_TICKS = v,
+            (s, p, d) -> s.getInt(p, d)
+        ); }
+
+        /** Health fraction threshold below which the mob flees (0.0–1.0). */
+        public static double FLEE_HEALTH_FRACTION = 0.20;
+        static { register(
+            "hostile.flee_health_fraction",
+            0.20, Double.class,
+            v -> FLEE_HEALTH_FRACTION = v,
+            (s, p, d) -> s.getDouble(p, d)
+        ); }
+
+        /** OnGuard duration in ticks after an attack (~2 s at 20 TPS). */
+        public static int ON_GUARD_TICKS = 40;
+        static { register(
+            "hostile.on_guard_ticks",
+            40, Integer.class,
+            v -> ON_GUARD_TICKS = v,
+            (s, p, d) -> s.getInt(p, d)
+        ); }
+
+        /** Safe orbit radius squared for OnGuard strafing (loaded from raw distance and squared on assignment). */
+        public static double ON_GUARD_SAFE_DISTANCE_SQUARED = 36.0;
+        static { register(
+            "hostile.on_guard_safe_distance",
+            6.0, Double.class,
+            v -> ON_GUARD_SAFE_DISTANCE_SQUARED = v * v,
+            (s, p, d) -> s.getDouble(p, d)
+        ); }
+
+        /** AttackReady hold duration in ticks — brief pause before a combo follow-up (~0.8 s at 20 TPS). */
+        public static int ATTACK_READY_TICKS = 16;
+        static { register(
+            "hostile.attack_ready_ticks",
+            16, Integer.class,
+            v -> ATTACK_READY_TICKS = v,
+            (s, p, d) -> s.getInt(p, d)
         ); }
     }
     //endregion

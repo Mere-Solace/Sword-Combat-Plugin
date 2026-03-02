@@ -27,7 +27,7 @@ import btm.sword.system.control.TimeArbiter;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.base.SwordEntity;
-import btm.sword.system.entity.types.Combatant;
+import btm.sword.system.entity.impl.Combatant;
 import btm.sword.utility.Prefab;
 import btm.sword.utility.display.ParticleWrapper;
 import btm.sword.utility.entity.HitboxUtil;
@@ -158,7 +158,8 @@ public class Attack extends SwordAction implements Runnable {
 
     // TODO: #139 make usage dynamic
     protected void cast() {
-        cast(attacker, attackMilliseconds, this);
+        // Trigger attack logic immediately; input-level casting will be handled by the InputAction's castDuration
+        onRun();
     }
 
     private void onRun() {
@@ -167,7 +168,7 @@ public class Attack extends SwordAction implements Runnable {
             Config.Combat.ATTACKS_CAST_TIMING_MIN_DURATION,
             Config.Combat.ATTACKS_CAST_TIMING_MAX_DURATION,
             Config.Combat.ATTACKS_CAST_TIMING_REDUCTION_RATE);
-        attacker.setDurationOfLastAttack(cooldown * Config.Combat.ATTACKS_DURATION_MULTIPLIER);
+        attacker.setDurationOfLastAttack(cooldown);
         startAttack();
     }
 

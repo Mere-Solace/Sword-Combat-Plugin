@@ -9,7 +9,7 @@ import btm.sword.system.action.SwordAction;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.base.SwordEntity;
-import btm.sword.system.entity.types.Combatant;
+import btm.sword.system.entity.impl.Combatant;
 import btm.sword.utility.Prefab;
 import btm.sword.utility.entity.HitboxUtil;
 import btm.sword.utility.math.Basis;
@@ -55,10 +55,8 @@ public class PunchAction extends SwordAction {
             Config.Combat.ATTACKS_CAST_TIMING_MIN_DURATION,
             Config.Combat.ATTACKS_CAST_TIMING_MAX_DURATION,
             Config.Combat.ATTACKS_CAST_TIMING_REDUCTION_RATE);
-        executor.setDurationOfLastAttack(cooldown * Config.Combat.ATTACKS_DURATION_MULTIPLIER);
+        executor.setDurationOfLastAttack(cooldown);
 
-        cast(executor, cooldown,
-            () -> punch(executor, right, distance)
-        );
+        punch(executor, right, distance);
     }
 }

@@ -7,7 +7,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 import btm.sword.gamemode.type.CaptureTheFlag1v1;
 import btm.sword.gamemode.type.Gamemode;
-import btm.sword.system.entity.types.SwordPlayer;
+import btm.sword.system.entity.impl.SwordPlayer;
 
 public class QueueManager {
     private static final Map<Class<? extends Gamemode>, Queue<SwordPlayer>> queueMap;

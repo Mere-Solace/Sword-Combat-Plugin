@@ -1,5 +1,6 @@
 # User-specific stuff
 .idea/
+._notes
 
 *.iml
 *.ipr
@@ -15,9 +16,6 @@ atlassian-ide-plugin.xml
 
 # VS Code
 .vscode/
-
-# Claude Code
-.claude/
 
 # Eclipse
 .classpath
@@ -118,6 +116,8 @@ $RECYCLE.BIN/
 # Windows shortcuts
 *.lnk
 
+.claude/
+CLAUDE.md
 .gradle
 build/
 

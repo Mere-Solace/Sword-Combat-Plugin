@@ -21,8 +21,8 @@ import btm.sword.system.control.TimeArbiter;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.base.SwordEntity;
-import btm.sword.system.entity.types.Combatant;
-import btm.sword.system.entity.types.SwordPlayer;
+import btm.sword.system.entity.impl.Combatant;
+import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.utility.Prefab;
 import btm.sword.utility.SwordTimeUnit;
 import btm.sword.utility.entity.HitboxUtil;
@@ -45,128 +45,127 @@ public class GrabAction extends SwordAction {
      */
     // TODO: #147 clean this nest up
     public static void grab(Combatant executor) {
-        cast(executor, Config.Grab.CAST_DURATION, () -> {
-            int baseDuration = Config.Grab.BASE_DURATION;
-            double baseGrabRange = Config.Grab.BASE_RANGE;
-            double baseGrabThickness = Config.Grab.BASE_THICKNESS;
+        // execute immediately; casting/ability blocking is managed by the InputAction's castDuration
+        int baseDuration = Config.Grab.BASE_DURATION;
+        double baseGrabRange = Config.Grab.BASE_RANGE;
+        double baseGrabThickness = Config.Grab.BASE_THICKNESS;
 
-            long duration = (long) executor.calcValueAdditive(AspectType.MIGHT, 100L, baseDuration,
-                Config.Grab.DURATION_SCALING);
-            double range = executor.calcValueAdditive(AspectType.WILLPOWER, 4.5, baseGrabRange,
-                Config.Grab.RANGE_SCALING);
-            double grabThickness = executor.calcValueAdditive(AspectType.WILLPOWER, 0.75, baseGrabThickness,
-                Config.Grab.THICKNESS_SCALING);
+        long duration = (long) executor.calcValueAdditive(AspectType.MIGHT, 100L, baseDuration,
+            Config.Grab.DURATION_SCALING);
+        double range = executor.calcValueAdditive(AspectType.WILLPOWER, 4.5, baseGrabRange,
+            Config.Grab.RANGE_SCALING);
+        double grabThickness = executor.calcValueAdditive(AspectType.WILLPOWER, 0.75, baseGrabThickness,
+            Config.Grab.THICKNESS_SCALING);
 
-            LivingEntity ex = executor.self();
-            Location o = ex.getEyeLocation();
+        LivingEntity ex = executor.self();
+        Location o = ex.getEyeLocation();
 
-            if (executor.getItemStackInHand(true).isEmpty() || executor.holdingSoulLink()) {
-                Entity grabbedItem = HitboxUtil.ray(o, o.getDirection(), range, grabThickness,
-                    entity -> entity.getType() == EntityType.ITEM_DISPLAY &&
-                        !entity.isDead() &&
-                        entity instanceof ItemDisplay id &&
-                        InteractiveItemArbiter.checkIfInteractive(id));
+        if (executor.getItemStackInHand(true).isEmpty() || executor.holdingSoulLink()) {
+            Entity grabbedItem = HitboxUtil.ray(o, o.getDirection(), range, grabThickness,
+                entity -> entity.getType() == EntityType.ITEM_DISPLAY &&
+                    !entity.isDead() &&
+                    entity instanceof ItemDisplay id &&
+                    InteractiveItemArbiter.checkIfInteractive(id));
 
-                if (executor.holdingSoulLink() &&
-                    grabbedItem instanceof ItemDisplay display &&
-                    InteractiveItemArbiter.isUmbralBlade(display)) {
-                    InteractiveItemArbiter.onGrab(display, executor);
+            if (executor.holdingSoulLink() &&
+                grabbedItem instanceof ItemDisplay display &&
+                InteractiveItemArbiter.isUmbralBlade(display)) {
+                InteractiveItemArbiter.onGrab(display, executor);
 
-                    Prefab.Particles.GRAB_ATTEMPT.display(display.getLocation());
-                } else if (!executor.holdingSoulLink() &&
-                    grabbedItem instanceof ItemDisplay display &&
-                    !display.isDead() &&
-                    !display.getItemStack().isEmpty()) {
-                    InteractiveItemArbiter.onGrab(display, executor);
+                Prefab.Particles.GRAB_ATTEMPT.display(display.getLocation());
+            } else if (!executor.holdingSoulLink() &&
+                grabbedItem instanceof ItemDisplay display &&
+                !display.isDead() &&
+                !display.getItemStack().isEmpty()) {
+                InteractiveItemArbiter.onGrab(display, executor);
 
-                    Prefab.Particles.GRAB_ATTEMPT.display(display.getLocation());
-                    return;
-                }
-            }
-
-            HashSet<LivingEntity> hit = HitboxUtil.line(ex, o, o.getDirection(), range, grabThickness);
-            if (hit.isEmpty()) {
-                Prefab.Particles.GRAB_ATTEMPT.display(ex.getEyeLocation().add(ex.getEyeLocation().getDirection().multiply(range)));
+                Prefab.Particles.GRAB_ATTEMPT.display(display.getLocation());
                 return;
             }
+        }
 
-            LivingEntity target = hit.stream().toList().getFirst();
+        HashSet<LivingEntity> hit = HitboxUtil.line(ex, o, o.getDirection(), range, grabThickness);
+        if (hit.isEmpty()) {
+            Prefab.Particles.GRAB_ATTEMPT.display(ex.getEyeLocation().add(ex.getEyeLocation().getDirection().multiply(range)));
+            return;
+        }
 
-            if (target == null) {
-                Prefab.Particles.GRAB_ATTEMPT.display(ex.getEyeLocation().add(ex.getEyeLocation().getDirection().multiply(range)));
-                return;
-            }
+        LivingEntity target = hit.stream().toList().getFirst();
 
-            Prefab.Particles.GRAB_ATTEMPT.display(target.getLocation());
+        if (target == null) {
+            Prefab.Particles.GRAB_ATTEMPT.display(ex.getEyeLocation().add(ex.getEyeLocation().getDirection().multiply(range)));
+            return;
+        }
 
-            RayTraceResult impedanceCheck = ex.getWorld().rayTraceBlocks(
-                executor.getChestLocation(),
-                target.getLocation().subtract(ex.getLocation()).toVector().normalize(),
-                Math.sqrt(target.getLocation().subtract(ex.getLocation()).toVector().lengthSquared()), FluidCollisionMode.NEVER,
-                true,
-                block -> !block.isCollidable());
+        Prefab.Particles.GRAB_ATTEMPT.display(target.getLocation());
 
-            if (impedanceCheck != null &&
-                impedanceCheck.getHitBlock() != null &&
-                !impedanceCheck.getHitBlock().getType().isAir()) {
-                return;
-            }
+        RayTraceResult impedanceCheck = ex.getWorld().rayTraceBlocks(
+            executor.getChestLocation(),
+            target.getLocation().subtract(ex.getLocation()).toVector().normalize(),
+            Math.sqrt(target.getLocation().subtract(ex.getLocation()).toVector().lengthSquared()), FluidCollisionMode.NEVER,
+            true,
+            block -> !block.isCollidable());
 
-            SwordEntity swordTarget = SwordEntityArbiter.getOrAdd(target);
-            if (swordTarget == null || swordTarget.isHit()) return;
+        if (impedanceCheck != null &&
+            impedanceCheck.getHitBlock() != null &&
+            !impedanceCheck.getHitBlock().getType().isAir()) {
+            return;
+        }
 
-            if (swordTarget instanceof Combatant c && c.isAttemptingThrow()) c.setThrowCancelled(true);
+        SwordEntity swordTarget = SwordEntityArbiter.getOrAdd(target);
+        if (swordTarget == null || swordTarget.isHit()) return;
 
-            if (executor instanceof SwordPlayer swordPlayer) {
-                swordPlayer.setTargetedEntity(swordTarget);
-            }
-            executor.onGrab(swordTarget);
+        if (swordTarget instanceof Combatant c && c.isAttemptingThrow()) c.setThrowCancelled(true);
 
-            final int[] iterations = {0};
-            TimeArbiter.runTimeBoundBukkitTaskOnTimer(
-                null,
-                () -> {
-                    Vector v = ex.getVelocity();
-                    ex.addPotionEffect(new PotionEffect(
-                        PotionEffectType.JUMP_BOOST,
-                        Config.Grab.JUMP_BOOST_DURATION, Config.Grab.JUMP_BOOST_AMPLIFIER));
-                    ex.setVelocity(new Vector(
-                        v.getX() * Config.Grab.EXECUTOR_HORIZONTAL_DAMPENING,
-                        v.getY(),
-                        v.getZ() * Config.Grab.EXECUTOR_HORIZONTAL_DAMPENING));
+        if (executor instanceof SwordPlayer swordPlayer) {
+            swordPlayer.setTargetedEntity(swordTarget);
+        }
+        executor.onGrab(swordTarget);
 
-                    double holdDist = Config.Grab.HOLD_DISTANCE;
-                    Vector direction = ex.getLocation().toVector().add(ex.getEyeLocation().getDirection().multiply(holdDist)).subtract(target.getLocation().toVector());
-                    double distanceSquared = direction.lengthSquared();
-                    double bufferDistance = Config.Grab.HOLD_BUFFER;
-                    double pullSpeed = Config.Grab.PULL_SPEED;
+        final int[] iterations = {0};
+        TimeArbiter.runTimeBoundBukkitTaskOnTimer(
+            null,
+            () -> {
+                Vector v = ex.getVelocity();
+                ex.addPotionEffect(new PotionEffect(
+                    PotionEffectType.JUMP_BOOST,
+                    Config.Grab.JUMP_BOOST_DURATION, Config.Grab.JUMP_BOOST_AMPLIFIER));
+                ex.setVelocity(new Vector(
+                    v.getX() * Config.Grab.EXECUTOR_HORIZONTAL_DAMPENING,
+                    v.getY(),
+                    v.getZ() * Config.Grab.EXECUTOR_HORIZONTAL_DAMPENING));
 
-                    if (distanceSquared < bufferDistance * bufferDistance) {
-                        target.setVelocity(new Vector(0, target.getVelocity().getY() * Config.Grab.CLOSE_Y_VELOCITY_SCALE, 0));
-                    } else {
-                        double force = pullSpeed;
-                        if (Math.abs(target.getEyeLocation().getY() - ex.getEyeLocation().getY()) > Config.Grab.VERTICAL_FORCE_THRESHOLD) {
-                            force *= 2;
-                        }
-                        Vector velocity = direction.normalize().multiply(force);
-                        if (Double.isFinite(velocity.getX()) && Double.isFinite(velocity.getY()) && Double.isFinite(velocity.getZ())) {
-                            target.setVelocity(velocity);
-                        }
+                double holdDist = Config.Grab.HOLD_DISTANCE;
+                Vector direction = ex.getLocation().toVector().add(ex.getEyeLocation().getDirection().multiply(holdDist)).subtract(target.getLocation().toVector());
+                double distanceSquared = direction.lengthSquared();
+                double bufferDistance = Config.Grab.HOLD_BUFFER;
+                double pullSpeed = Config.Grab.PULL_SPEED;
+
+                if (distanceSquared < bufferDistance * bufferDistance) {
+                    target.setVelocity(new Vector(0, target.getVelocity().getY() * Config.Grab.CLOSE_Y_VELOCITY_SCALE, 0));
+                } else {
+                    double force = pullSpeed;
+                    if (Math.abs(target.getEyeLocation().getY() - ex.getEyeLocation().getY()) > Config.Grab.VERTICAL_FORCE_THRESHOLD) {
+                        force *= 2;
                     }
-                    iterations[0]++;
-                },
-                null,
-                0, SwordTimeUnit.MILLISECONDS_PER_TICK,
-                GrabAction.class, "grab",
-                new PredicateRunnablePair(
-                    () -> iterations[0] >= duration - 1 || target.isDead(),
-                    executor::onGrabLetGo
-                ),
-                new PredicateRunnablePair(
-                    () -> !executor.isGrabbing(),
-                    executor::onGrabThrow
-                )
-            );
-        });
+                    Vector velocity = direction.normalize().multiply(force);
+                    if (Double.isFinite(velocity.getX()) && Double.isFinite(velocity.getY()) && Double.isFinite(velocity.getZ())) {
+                        target.setVelocity(velocity);
+                    }
+                }
+                iterations[0]++;
+            },
+            null,
+            0, SwordTimeUnit.MILLISECONDS_PER_TICK,
+            GrabAction.class, "grab",
+            new PredicateRunnablePair(
+                () -> iterations[0] >= duration - 1 || target.isDead(),
+                executor::onGrabLetGo
+            ),
+            new PredicateRunnablePair(
+                () -> !executor.isGrabbing(),
+                executor::onGrabThrow
+            )
+        );
     }
 }
