@@ -31,7 +31,6 @@ import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 import btm.sword.config.Config;
-import btm.sword.system.action.throwing.InteractiveItem;
 import btm.sword.system.action.throwing.InteractiveItemArbiter;
 import btm.sword.system.action.throwing.ItemThrowStyle;
 import btm.sword.system.action.throwing.ThrowAction;
@@ -68,11 +67,9 @@ import net.kyori.adventure.text.format.TextDecoration;
  */
 @Getter
 @Setter
-public class ThrownItem implements InteractiveItem {
+public class ThrownItem extends SimulatedDisplay {
     protected final Combatant thrower;
     private ParticleWrapper blockTrail;
-    protected ItemDisplay display;
-    protected ItemStack itemStack;
     protected Consumer<ItemDisplay> displaySetupInstructions;
 
     protected Impalement thisImpalement;
@@ -245,13 +242,14 @@ public class ThrownItem implements InteractiveItem {
     }
 
     /**
-     * Called when the item is released (actually thrown).
+     * Initializes flight state without starting the timer loop.
      * <p>
-     * Initializes trajectory, physics parameters, and continuous motion updates.
+     * Called by state classes (e.g. LungingState) that drive physics via {@link #stepFlight()} each tick
+     * instead of using the self-contained {@link #onRelease(double)} loop.
      *
-     * @param initialVelocity The starting velocity magnitude of the throw.
+     * @param initialVelocity The starting velocity magnitude.
      */
-    public void onRelease(double initialVelocity) {
+    public void initFlight(double initialVelocity) {
         if (thrower instanceof SwordPlayer sp) {
             sp.setThrewItem(true);
             SwordScheduler.runBukkitTaskLater(() ->
@@ -270,28 +268,57 @@ public class ThrownItem implements InteractiveItem {
 
         xDisplayOffset = yDisplayOffset = zDisplayOffset = 0;
         determineOrientation();
+    }
+
+    /**
+     * Executes one physics tick: applies functions, teleports, rotates, emits particles, evaluates collisions.
+     */
+    protected void tickFlight() {
+        applyFunctions();
+
+        if (!prev.equals(cur) && cur.clone().subtract(prev).toVector().dot(velocity) > 0) {
+            DisplayUtil.setSmoothTeleportDuration(display, 1);
+        }
+
+        teleport();
+        rotate();
+
+        Prefab.Particles.THROW_TRAIl.display(prev); // TODO: #119 - Make type of particles dynamic
+        if (blockTrail != null && timeStep.get() % 3 == 0) // TODO: #119 - Make period dynamic
+            blockTrail.display(prev);
+
+        evaluate();
+        prev = cur.clone();
+
+        timeStep.incrementAndGet();
+    }
+
+    /**
+     * Runs one physics tick and returns {@code true} if the flight is over.
+     * <p>
+     * Used by FSM state classes (e.g. LungingState) to drive physics synchronously from {@code onTick()}.
+     *
+     * @return {@code true} when a termination condition is met (grounded, hit, caught, dead display, or timed out)
+     */
+    public boolean stepFlight() {
+        tickFlight();
+        return grounded || hit || caught || display.isDead()
+            || (timeCutoff > 0 && timeStep.get() * timeScalingFactor > timeCutoff);
+    }
+
+    /**
+     * Called when the item is released (actually thrown).
+     * <p>
+     * Initializes trajectory, physics parameters, and continuous motion updates.
+     *
+     * @param initialVelocity The starting velocity magnitude of the throw.
+     */
+    public void onRelease(double initialVelocity) {
+        initFlight(initialVelocity);
 
         TimeArbiter.runTimeBoundBukkitTaskOnTimer(
             null,
-            () -> {
-                applyFunctions();
-
-                if (!prev.equals(cur) && cur.clone().subtract(prev).toVector().dot(velocity) > 0) {
-                    DisplayUtil.setSmoothTeleportDuration(display, 1);
-                }
-
-                teleport();
-                rotate();
-
-                Prefab.Particles.THROW_TRAIl.display(prev); // TODO: #119 - Make type of particles dynamic
-                if (blockTrail != null && timeStep.get() % 3 == 0) // TODO: #119 - Make period dynamic
-                    blockTrail.display(prev);
-
-                evaluate();
-                prev = cur.clone();
-
-                timeStep.incrementAndGet();
-            },
+            this::tickFlight,
             null,
             0, 50,
             ThrownItem.class, "onRelease",

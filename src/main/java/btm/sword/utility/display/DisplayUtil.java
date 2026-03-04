@@ -186,7 +186,7 @@ public class DisplayUtil {
      * @param heightOffset vertical height offset from the entity's location
      * @param followHead whether to align the display's direction to the entity's head yaw instead of body yaw
      */
-    public static <T> void itemDisplayFollow(
+    public static <T> TimeArbiter.TaskHandle itemDisplayFollow(
         SwordEntity entity, ItemDisplay itemDisplay, Vector direction,
         double heightOffset, boolean followHead,
         Predicate<T> condition, T toTest,
@@ -199,7 +199,7 @@ public class DisplayUtil {
         entity.self().addPassenger(itemDisplay);
 
         AtomicInteger iteration = new AtomicInteger(0);
-        TimeArbiter.runTimeBoundBukkitTaskOnTimer(
+        return TimeArbiter.runTimeBoundBukkitTaskOnTimer(
             null,
             () -> {
                 Location l = entity.self().getLocation().add(offset);

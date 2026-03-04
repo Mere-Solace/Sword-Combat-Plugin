@@ -38,9 +38,9 @@ This package implements the UmbralBlade: the signature weapon of Sword: Combat E
 | `WieldState` | Blade item placed in slot 0; display hidden (viewRange = 0). | None | Teleports display to thrower, restores viewRange, puts link back in slot 0 |
 | `AttackingQuickState` | Private `attack()` helper inlined from former `UmbralBlade.performSimpleAttack`. Consumes soulfire per combo step. | Attack task (scheduled inside `attack()` → `Attack.execute()`) | `setAttackCompleted(false)`, clears glow — does NOT cancel any attack task |
 | `AttackingHeavyState` | Private `attack()` helper inlined from former `UmbralBlade.performWideUmbralSweepAttack`. Dynamic Bezier curve toward targeted entity. | Attack task (scheduled inside `attack()` → `Attack.execute()`) | `setAttackCompleted(false)`, clears glow — does NOT cancel any attack task |
-| `LungingState` | Blade thrown on Bezier trajectory via `onRelease()`. Transitions to `LodgedState` on hit or `RecallingState` on timeout. | Motion loop from `ThrownItem.onRelease()` (a `TimeArbiter` task) | Clears `finishedLunging`, glow, and calls `cleanupBeforeNewThrow()` to stop the motion loop |
-| `GrabImpaleState` | Slerps display to a position above the grabbed entity, then launches a lunge. | `DisplayUtil.displaySlerpToOffset` task (stored in `slerpTask`), then a `SwordScheduler.runBukkitTaskLater` (stored in `attackTask`) that calls `attackEnemy()` which calls `onRelease()` | `setFinishedLunging(false)`, clears glow; cancels both `slerpTask` and `attackTask` |
-| `LodgedState` | Blade fixed at impact location with glow. | None | `cleanupBeforeNewThrow()`, clears glow |
+| `LungingState` | Blade thrown on Bezier trajectory. Physics are driven synchronously from `onTick()` via `stepFlight()` — no timer task. Transitions to `LodgedState` on hit (damage applied in transition action) or `RecallingState` on timeout. | `initFlight()` in `onEnter()` (sets up trajectory; no task started) | Clears `finishedLunging`, glow |
+| `GrabImpaleState` | Slerps display to a position above the grabbed entity, then launches a lunge driven by `onTick()` via `lungeActive` flag + `stepFlight()`. | `DisplayUtil.displaySlerpToOffset` task (stored in `slerpTask`), then a `SwordScheduler.runBukkitTaskLater` (stored in `attackTask`) that calls `attackEnemy()` which calls `initFlight()` | `setFinishedLunging(false)`, clears `lungeActive`, glow; cancels both `slerpTask` and `attackTask` |
+| `LodgedState` | Blade fixed at impact location with glow. Starts entity follow task in `onEnter()` if `hitEntity` is set. | `DisplayUtil.itemDisplayFollow` task (stored in `followTask`) | `followTask.cancel()`, `resetFlightState()`, clears glow |
 | `RecallingState` | Blade slerps back to player chest. Pushes `STANDBY` on arrival. | `DisplayUtil.displaySlerpToOffset` directly (stored in `returnTask`) | `returnTask.cancel()` if not already cancelled |
 | `RecoverState` | Respawns the display entity when it is null or invalid. | `TimeArbiter.runTimeIndependentBukkitTaskOnTimer` (stored in `recoverTask`). **Stores `blade` as an instance field** — the known stateless-rule violation. | `recoverTask.cancel()` |
 | `WaitingState` | Registers blade as interactable, starts idle movement. The `blade -> true` transition fires immediately on the next tick, so in practice this state is never observed for longer than one tick. | `startIdleMovement()` | `endIdleMovement()`, `unregisterAsInteractableItem()` |
@@ -81,7 +81,7 @@ All transitions are defined in `UmbralStateMachine.initTransitions()`, using `Li
 | `WieldState` | `StandbyState` | `TOGGLE` |
 | `AttackingQuickState` | `RecallingState` | `attackCompleted == true` |
 | `AttackingHeavyState` | `RecallingState` | `attackCompleted == true` |
-| `GrabImpaleState` | `LodgedState` | `hitEntity != null` |
+| `GrabImpaleState` | `LodgedState` | `hitEntity != null` — transition action applies knockback damage |
 | `GrabImpaleState` | `RecallingState` | `finishedLunging == true` |
 | `WaitingState` | `StandbyState` | `blade -> true` (always fires) |
 | `RecallingState` | `SheathedState` | `SHEATH` |
@@ -94,7 +94,7 @@ All transitions are defined in `UmbralStateMachine.initTransitions()`, using `Li
 | `LodgedState` | `WieldState` | `WIELD` |
 | `LodgedState` | `StandbyState` | `STANDBY` |
 | `LodgedState` | `AttackingHeavyState` | `ATTACK_HEAVY` |
-| `LungingState` | `LodgedState` | `hitEntity != null` |
+| `LungingState` | `LodgedState` | `hitEntity != null` — transition action applies knockback damage |
 | `LungingState` | `RecallingState` | `finishedLunging == true` |
 
 Dead transitions previously present (`LodgedState -> WaitingState` with `blade -> false` and `WaitingState -> RecallingState` with `isTooFarOrIdleTooLong`) have been removed.
@@ -129,9 +129,11 @@ Player input
 - Base `dispose()`, `onEnd()`, `onGrounded()`, `onHit()`, `onCatch()`
 - `InteractiveItem` contract (via `onGrab()`, `disposeWithNewInteractiveItem()`)
 
-`UmbralBlade` overrides: `groundedCheck()` (uses `prev` as ray origin, not `cur`), `generateFunctions()` (detours to `calcBezierTrajectory()` when `ctrlPointsForLunge` is set), `onGrounded()` (issues `RECALL` instead of embedding), `onEnd()` (sets `finishedLunging = true`), `teleport()` (uses `TimeArbiter.teleportDisplay` instead of the base method), `onCatch()` (no-op), `shouldShowLandingMarker()` (returns false), `handleItemDamageAndCheckIfBroken()` (no-op), `disposeWithNewInteractiveItem()` (issues `RECALL`), `dispose()` (also deactivates state machine).
+`UmbralBlade` overrides: `groundedCheck()` (uses `prev` as ray origin, not `cur`), `generateFunctions()` (detours to `calcBezierTrajectory()` when `ctrlPointsForLunge` is set), `onGrounded()` (issues `RECALL` instead of embedding), `onEnd()` (public; sets `finishedLunging = true`, calls `resetFlightState()`), `onHit()` (no-op — hit effects are applied explicitly in FSM transition actions), `teleport()` (uses `TimeArbiter.teleportDisplay` instead of the base method), `onCatch()` (no-op), `shouldShowLandingMarker()` (returns false), `handleItemDamageAndCheckIfBroken()` (no-op), `disposeWithNewInteractiveItem()` (issues `RECALL`), `dispose()` (also deactivates state machine).
 
-Most of `ThrownItem`'s lifecycle (`onReady()`, `handleOnReleaseActions()`, item damage, landing marker) is either bypassed or no-oped by these overrides. `onRelease()` is the only `ThrownItem` path that `UmbralBlade` actively uses (called from `LungingState.onEnter()` and `GrabImpaleState.attackEnemy()`).
+**Physics lifecycle for lunge:** State classes call `blade.initFlight(velocity)` in `onEnter()` to set up the trajectory without starting a timer task. Each FSM tick, `onTick()` calls `blade.stepFlight()`, which runs one physics tick and returns `true` when a termination condition is met. On termination, the state calls `blade.onEnd()` synchronously — this sets `hitEntity`/`finishedLunging` before transitions are evaluated in the same `tick()` call, eliminating the race condition that previously caused server hangs.
+
+Most of `ThrownItem`'s lifecycle (`onReady()`, `handleOnReleaseActions()`, item damage, landing marker) is either bypassed or no-oped by these overrides. `initFlight()` + `stepFlight()` are the `ThrownItem` paths used by `LungingState` and `GrabImpaleState`; `onRelease()` is used only by normal (non-UmbralBlade) thrown weapons.
 
 ## Known Issues
 

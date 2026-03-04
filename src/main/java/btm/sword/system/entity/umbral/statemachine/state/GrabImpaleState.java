@@ -18,6 +18,7 @@ import btm.sword.utility.display.DisplayUtil;
 public class GrabImpaleState extends UmbralStateFacade {
     private TimeArbiter.TaskHandle slerpTask;
     private ScheduledFuture<?> attackTask;
+    private boolean lungeActive = false;
 
     @Override
     public String name() {
@@ -38,6 +39,7 @@ public class GrabImpaleState extends UmbralStateFacade {
 
     @Override
     public void onExit(UmbralBlade blade) {
+        lungeActive = false;
         blade.setFinishedLunging(false);
         blade.getDisplay().setGlowing(false);
         if (slerpTask != null && !slerpTask.isCancelled()) slerpTask.cancel();
@@ -46,7 +48,11 @@ public class GrabImpaleState extends UmbralStateFacade {
 
     @Override
     public void onTick(UmbralBlade blade) {
-
+        if (!lungeActive) return;
+        if (blade.stepFlight()) {
+            blade.onEnd();
+            lungeActive = false;
+        }
     }
 
     private void moveToReadyPosition(UmbralBlade blade) {
@@ -76,6 +82,7 @@ public class GrabImpaleState extends UmbralStateFacade {
         blade.setTimeCutoff(Config.UmbralBlade.LUNGE_TIME_CUTOFF);
         blade.setTimeScalingFactor(Config.UmbralBlade.LUNGE_TIME_SCALING_FACTOR);
         blade.setCtrlPointsForLunge(AttackType.LUNGE1.controlVectors());
-        blade.onRelease(Config.UmbralBlade.LUNGE_ON_RELEASE_VELOCITY);
+        blade.initFlight(Config.UmbralBlade.LUNGE_ON_RELEASE_VELOCITY);
+        lungeActive = true;
     }
 }
