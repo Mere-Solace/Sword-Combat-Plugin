@@ -43,6 +43,7 @@ import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.impl.Combatant;
 import btm.sword.system.entity.impl.SwordPlayer;
+import btm.sword.system.input.ActivationContext;
 import btm.sword.system.item.ItemUsageManager;
 import btm.sword.system.item.KeyRegistry;
 import btm.sword.utility.Debug;
@@ -192,6 +193,7 @@ public class ThrownItem implements InteractiveItem {
             // Interacting with an entity will cause the shield holding mechanic to falter
             if (sp.isInteractingWithEntity()) {
                 sp.setAttemptingThrow(false);
+                sp.setActivationContext(ActivationContext.NORMAL);
                 sp.setThrowSuccessful(true);
                 // this throw should be weaker because it's automatic. Could turn into a lunge or thrust or smth else
                 sp.getThrownItem().onRelease(2);
@@ -222,7 +224,8 @@ public class ThrownItem implements InteractiveItem {
 
                 throwerEntity.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 1, 2));
 
-                TimeArbiter.teleportDisplay(display, throwerEntity.getEyeLocation(), null, 2);
+                TimeArbiter.teleportDisplay(display, throwerEntity.getEyeLocation(), null, 2,
+                    ThrownItem.class, 228);
             },
             0, 50,
             ThrownItem.class, "onReady",
@@ -314,10 +317,10 @@ public class ThrownItem implements InteractiveItem {
         ItemThrowStyle style = getThrowStyle();
         if (style == ItemThrowStyle.SPEAR || style == ItemThrowStyle.HATCHET) {
             // Tip tracks velocity direction — spear stays pointed, hatchet flips around that axis
-            TimeArbiter.teleportDisplay(display, cur, velocity, 2);
+            TimeArbiter.teleportDisplay(display, cur, velocity, 2, ThrownItem.class, 320);
         }
         else {
-            TimeArbiter.teleportDisplay(display, cur, currentBasis.forward(), 2);
+            TimeArbiter.teleportDisplay(display, cur, currentBasis.forward(), 2, ThrownItem.class, 323);
         }
     }
 
@@ -390,9 +393,9 @@ public class ThrownItem implements InteractiveItem {
      * on the Z-axis (like a knife throw). LOB items tumble slowly. Everything else spins
      * at the default rate.
      */
-    private void rotate() {
+    protected void rotate() {
         switch (getThrowStyle()) {
-            case SPEAR -> { return; } // tip stays pointed forward, no spin
+            case SPEAR -> {} // tip stays pointed forward, no spin
             case HATCHET -> applyRotation(false, (float) Config.Physics.THROWN_ITEMS_ROTATION_SPEED_AXE);
             case LOB -> applyRotation(true, (float) (Config.Physics.THROWN_ITEMS_ROTATION_SPEED_DEFAULT_SPEED * 0.4));
             default -> applyRotation(true, (float) Config.Physics.THROWN_ITEMS_ROTATION_SPEED_DEFAULT_SPEED);
@@ -450,7 +453,7 @@ public class ThrownItem implements InteractiveItem {
         SwordScheduler.runBukkitTaskLater(() -> {
             Location land = probe.clone();
             land.setDirection(to.normalize());
-            TimeArbiter.teleportDisplay(display, land, null, 1);
+            TimeArbiter.teleportDisplay(display, land, null, 1, ThrownItem.class, 456);
             },
             51, TimeUnit.MILLISECONDS
         );

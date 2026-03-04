@@ -11,7 +11,6 @@ public enum BladeRequest {
     ATTACK_HEAVY,
 
     LUNGE,
-    IMPALE,
     GRAB_IMPALE,
 
     FINISHER,
@@ -19,8 +18,6 @@ public enum BladeRequest {
     RECALL,
 
     ACTIVATE_TO_PREVIOUS,
-    ACTIVATE_AS_SHEATHED,
     DEACTIVATE,
-    RESUME_FROM_REPAIR,
-    REPAIR_DISPLAY
+    RESUME_FROM_REPAIR
 }

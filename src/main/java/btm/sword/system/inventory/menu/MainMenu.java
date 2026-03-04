@@ -134,10 +134,10 @@ public class MainMenu extends Menu {
             .setStructure(
                 "# # # . . . # # #",
                 "# . . . P . . . #",
-                "< . . . D Q . . .",
-                "> . . . . . . . .",
+                ". . . . D Q . . .",
+                ". . . . . . . . .",
                 "# . . . H . M . #",
-                "# # # . . . # # #")
+                "# # # < . > # # #")
             .addIngredient('#', BORDER)
             .addIngredient('Q', queueForCTF)
             .addIngredient('H', playerInfo)

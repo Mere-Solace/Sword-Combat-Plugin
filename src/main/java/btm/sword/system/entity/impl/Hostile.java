@@ -3,7 +3,6 @@ package btm.sword.system.entity.impl;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 import org.bukkit.GameMode;
@@ -20,7 +19,6 @@ import org.bukkit.util.Vector;
 import com.destroystokyo.paper.entity.Pathfinder;
 
 import btm.sword.system.action.throwing.types.DroppedItem;
-import btm.sword.system.control.SwordScheduler;
 import btm.sword.system.entity.ai.HostileStateMachine;
 import btm.sword.system.entity.ai.MobGoalArbiter;
 import btm.sword.system.entity.ai.WanderProfile;
@@ -125,15 +123,15 @@ public class Hostile extends Combatant {
             target.hit(h, Prefab.Attacks.defaultMobHit, knockback);
         });
 
-        // Register the grab attack — stuns the player for ~400 ms before releasing
-        possibleAttacks.add(c -> {
-            Hostile h = (Hostile) c;
-            SwordEntity target = h.getCurrentTarget();
-            if (target == null || !target.self().isValid()) return;
-            h.onGrab(target);
-            SwordScheduler.runBukkitTaskLater(h::onGrabHit, 400, TimeUnit.MILLISECONDS);
-            SwordScheduler.runBukkitTaskLater(h::onGrabLetGo, 800, TimeUnit.MILLISECONDS);
-        });
+//        // Register the grab attack — stuns the player for ~400 ms before releasing
+//        possibleAttacks.add(c -> {
+//            Hostile h = (Hostile) c;
+//            SwordEntity target = h.getCurrentTarget();
+//            if (target == null || !target.self().isValid()) return;
+//            h.onGrab(target);
+//            SwordScheduler.runBukkitTaskLater(h::onGrabHit, 400, TimeUnit.MILLISECONDS);
+//            SwordScheduler.runBukkitTaskLater(h::onGrabLetGo, 800, TimeUnit.MILLISECONDS);
+//        });
 
         EntityEquipment equipment = associatedEntity.getEquipment();
         if (equipment != null) {

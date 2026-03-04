@@ -1,11 +1,17 @@
 package btm.sword.system.entity.umbral.statemachine.state;
 
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
+
 import org.bukkit.Color;
+import org.bukkit.Location;
+import org.bukkit.util.Vector;
 
 import btm.sword.system.control.TimeArbiter;
 import btm.sword.system.entity.umbral.UmbralBlade;
 import btm.sword.system.entity.umbral.input.BladeRequest;
 import btm.sword.system.entity.umbral.statemachine.UmbralStateFacade;
+import btm.sword.utility.display.DisplayUtil;
 
 /**
  * State where the UmbralBlade is being recalled to the wielder.
@@ -30,6 +36,9 @@ import btm.sword.system.entity.umbral.statemachine.UmbralStateFacade;
  *
  */
 public class RecallingState extends UmbralStateFacade {
+    private static final int MAX_STATIONARY_ITERATIONS = 4;
+    private static final double EPSILON_SQUARED = 0.004;
+
     private TimeArbiter.TaskHandle returnTask;
 
     @Override
@@ -42,7 +51,31 @@ public class RecallingState extends UmbralStateFacade {
         blade.getDisplay().setGlowing(true);
         blade.getDisplay().setGlowColorOverride(Color.fromRGB(1, 1, 1));
 
-        returnTask = blade.returnToWielderAndRequestState(BladeRequest.STANDBY);
+        AtomicReference<Location> currentBladeLoc = new AtomicReference<>(blade.getDisplay().getLocation());
+        AtomicReference<Location> previousBladeLoc = new AtomicReference<>(blade.getDisplay().getLocation());
+        final int[] stationaryCount = {0};
+
+        Supplier<Boolean> stationaryCheck = () -> {
+            currentBladeLoc.set(blade.getDisplay().getLocation());
+            Vector difference = currentBladeLoc.get().toVector().subtract(previousBladeLoc.get().toVector());
+            if (difference.lengthSquared() < EPSILON_SQUARED) {
+                stationaryCount[0]++;
+            } else {
+                stationaryCount[0] = 0;
+            }
+            previousBladeLoc.set(currentBladeLoc.get());
+            return stationaryCount[0] > MAX_STATIONARY_ITERATIONS;
+        };
+
+        returnTask = DisplayUtil.displaySlerpToOffset(
+            blade.getThrower(), blade.getDisplay(),
+            blade.getThrower().getChestVector(),
+            1.5, 5, 100, 1.5,
+            false,
+            500,
+            stationaryCheck,
+            () -> blade.request(BladeRequest.STANDBY)
+        );
     }
 
     @Override

@@ -126,10 +126,10 @@ public class CharacterMenu extends Menu {
             .setStructure(
                 "# # # . S . # # #", // Stats and class info. Add a click that takes the player to change their class
                 "# . { 1 2 3 { . #", // 3 Umbral Skills
-                "< . 4 - 9 - 5 . .", // 2 other active skills and 1 Core Passive
-                "> . { 6 7 8 { . .", // 3 other passives
+                "# . 4 - 9 - 5 . .", // 2 other active skills and 1 Core Passive
+                "# . { 6 7 8 { . .", // 3 other passives
                 "# . . . . . . . #",
-                "# # # . W . # # #") // weapon combat proficiencies and info (equip normal weapon-specific passives and skills
+                "# # # < W > # # #") // weapon combat proficiencies and info (equip normal weapon-specific passives and skills
             .addIngredient('#', BORDER)
             .addIngredient('S', swordPlayer.getPlayerHead())
             .addIngredient('<', generatePreviousButtonOrDefault())

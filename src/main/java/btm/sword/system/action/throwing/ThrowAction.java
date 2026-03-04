@@ -10,6 +10,7 @@ import btm.sword.system.action.SwordAction;
 import btm.sword.system.action.throwing.types.ThrownItem;
 import btm.sword.system.entity.impl.Combatant;
 import btm.sword.system.entity.impl.SwordPlayer;
+import btm.sword.system.input.ActivationContext;
 
 /**
  * Handles the sequence of actions involved in a {@code Combatant} performing a throw action.
@@ -62,6 +63,7 @@ public class ThrowAction extends SwordAction {
         executor.setAttemptingThrow(true);
         executor.setThrowCancelled(false);
         executor.setThrowSuccessful(false);
+        if (executor instanceof SwordPlayer sp) sp.setActivationContext(ActivationContext.THROWING);
 
         Consumer<ItemDisplay> setupInstructions;
         ThrownItem thrownItem;
@@ -115,6 +117,7 @@ public class ThrowAction extends SwordAction {
         executor.setAttemptingThrow(false);
         executor.setThrowCancelled(true);
         executor.setThrowSuccessful(false);
+        if (executor instanceof SwordPlayer sp) sp.setActivationContext(ActivationContext.NORMAL);
 
         if (executor instanceof SwordPlayer sp) {
             sp.setItemAtIndex(sp.getMainHandItemStackDuringThrow(), sp.getThrownItemIndex());
@@ -144,6 +147,7 @@ public class ThrowAction extends SwordAction {
 
         executor.setAttemptingThrow(false);
         executor.setThrowSuccessful(true);
+        if (executor instanceof SwordPlayer sp) sp.setActivationContext(ActivationContext.NORMAL);
 
         if (executor.getThrownItem() != null) executor.getThrownItem().onRelease(2);
     }

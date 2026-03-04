@@ -344,7 +344,9 @@ public class TimeArbiter {
         // TODO: find a way to lessen velocity while still getting the entity to the same spot if time is slowed down/sped up
     }
 
-    public static void teleportDisplay(Display display, Location destination, @Nullable Vector direction, int teleportDuration) {
+    public static void teleportDisplay(Display display, Location destination, @Nullable Vector direction, int teleportDuration, Class<?> clazz, int lineNum) {
+//        Sword.getInstance().getLogger().info("Teleporting Display From: Class " + clazz + " line: " + lineNum);
+        // ^ Debug purposes. Will need to remove unused params later
         DisplayUtil.setSmoothTeleportDuration(display,
             teleportDuration == 0 ? 0 : Math.max(1, (int) (teleportDuration * GLOBAL_TELEPORT_DURATION_SCALING))
         );

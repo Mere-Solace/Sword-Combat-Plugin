@@ -11,6 +11,7 @@ import java.util.function.Supplier;
 import btm.sword.system.action.constraint.ActionConstraint;
 import btm.sword.system.entity.impl.Combatant;
 import btm.sword.system.entity.impl.SwordPlayer;
+import lombok.Getter;
 
 /**
  * Represents an executable action triggered by player input within the Sword plugin system.
@@ -32,7 +33,15 @@ public class InputAction {
     /** Predicate that tests whether the executor is allowed to cast this ability at a given time. */
     private final Predicate<Combatant> canCastAbility;
 
-    /** Composable constraints evaluated before execution; all must pass for the action to fire. */
+    /** Composable constraints evaluated before execution; all must pass for the action to fire.
+     * -- GETTER --
+     *  Returns the constraints attached to this action. Constraints are evaluated in
+     *
+     *  and in readiness display checks.
+     *
+     * @return unmodifiable list of constraints
+     */
+    @Getter
     private final List<ActionConstraint> constraints;
 
     private final Function<Combatant, Float> requiredSoulfire;
@@ -184,16 +193,6 @@ public class InputAction {
     }
 
     /**
-     * Returns the constraints attached to this action. Constraints are evaluated in
-     * {@link #handlePerformAttempt(Combatant)} and in readiness display checks.
-     *
-     * @return unmodifiable list of constraints
-     */
-    public List<ActionConstraint> getConstraints() {
-        return constraints;
-    }
-
-    /**
      * Sets the timestamp when this action was last executed to the current time.
      */
     public void setTimeLastExecuted() {
@@ -207,7 +206,7 @@ public class InputAction {
         return new Builder();
     }
 
-    /** @noinspection ClassCanBeRecord */
+    /** */
     public static class Builder {
         private Consumer<Combatant> action;
         private Function<Combatant, Integer> cooldownCalculation;

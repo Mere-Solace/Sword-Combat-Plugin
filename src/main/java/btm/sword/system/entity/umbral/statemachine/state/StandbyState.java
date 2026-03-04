@@ -1,11 +1,14 @@
 package btm.sword.system.entity.umbral.statemachine.state;
 
+import org.bukkit.util.Vector;
+
 import btm.sword.config.Config;
 import btm.sword.system.action.throwing.InteractiveItemArbiter;
 import btm.sword.system.control.TimeArbiter;
 import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.entity.umbral.UmbralBlade;
 import btm.sword.system.entity.umbral.statemachine.UmbralStateFacade;
+import btm.sword.utility.display.DisplayUtil;
 import net.kyori.adventure.text.Component;
 
 public class StandbyState extends UmbralStateFacade {
@@ -22,7 +25,11 @@ public class StandbyState extends UmbralStateFacade {
         blade.getDisplay().setGlowing(true);
         blade.getDisplay().setGlowColorOverride(Config.SwordColor.UMBRAL_GLOW);
 
-        followTask = blade.hoverBehindWielder();
+        followTask = DisplayUtil.itemDisplayFollowLerp(
+            blade.getThrower(), blade.getDisplay(),
+            new Vector(0.7, 0.7, -0.5),
+            5, 150, false
+        );
         blade.startIdleMovement();
         if (blade.getThrower() instanceof SwordPlayer swordPlayer) {
             swordPlayer.displayTitle(null, Component.text("Ready.").color(Config.SwordColor.TEXT_COOL),

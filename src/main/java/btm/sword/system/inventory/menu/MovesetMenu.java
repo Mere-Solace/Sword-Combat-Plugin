@@ -141,19 +141,19 @@ public class MovesetMenu extends Menu {
         SimpleItem movementToggle = new SimpleItem(
             buildMovementToggleItem(movementOn),
             click -> {
-                swordPlayer.toggleMovementInputs();
+//                swordPlayer.toggleMovementInputs();
                 this.open();
             }
         );
 
         Gui gui = Gui.normal()
             .setStructure(
-                "# # # # # # # # #",
+                "# # # . . . # # #",
                 "# A B C . D E . #",
+                ". . . . . . . . .",
+                ". F G H . I . . .",
                 "# . . . . . . . #",
-                "# F G H . I . . #",
-                "# . . . . . M . #",
-                "# # # # # # # < #")
+                "# # # < . > # # #")
             .addIngredient('#', BORDER)
             .addIngredient('A', basicAttack)
             .addIngredient('B', grab)

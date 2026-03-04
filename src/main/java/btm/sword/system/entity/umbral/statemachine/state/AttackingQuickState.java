@@ -1,10 +1,21 @@
 package btm.sword.system.entity.umbral.statemachine.state;
 
+import java.util.List;
+
+import org.bukkit.Location;
 import org.bukkit.util.Transformation;
+import org.bukkit.util.Vector;
 
 import btm.sword.config.Config;
+import btm.sword.system.action.movement.DashDirection;
+import btm.sword.system.attack.Attack;
+import btm.sword.system.attack.UmbralBladeAttack;
+import btm.sword.system.attack.style.AttackType;
+import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.umbral.UmbralBlade;
 import btm.sword.system.entity.umbral.statemachine.UmbralStateFacade;
+import btm.sword.utility.Prefab;
+import btm.sword.utility.display.DrawUtil;
 
 /**
  * State where the UmbralBlade is performing a quick attack.
@@ -61,8 +72,7 @@ public class AttackingQuickState extends UmbralStateFacade {
             );
         }
 
-        // Attack execution is handled by performAttack method
-        blade.performSimpleAttack(5.0); // second param doesn't matter here
+        attack(blade, 5.0);
 
         // TODO: #121 - Potentially add per state glow changes or just a method for this
         blade.getDisplay().setGlowing(true);
@@ -77,5 +87,49 @@ public class AttackingQuickState extends UmbralStateFacade {
 
     @Override
     public void onTick(UmbralBlade blade) {
+    }
+
+    private static void attack(UmbralBlade blade, double range) {
+        if (blade.isDashing()) {
+            dashAttack(blade, blade.getDashDirection());
+            return;
+        }
+        SwordEntity target = blade.getThrower().getTargetedEntity(range);
+        Attack attack;
+        Location attackOrigin;
+
+        if (target == null || target.isInvalid()) {
+            attackOrigin = blade.getThrower().getChestLocation().clone()
+                .add(blade.getThrower().dir().multiply(range));
+        } else {
+            DrawUtil.secant(List.of(Prefab.Particles.TEST_SPARKLE), blade.getDisplay().getLocation(), target.getChestLocation(), 0.5);
+            Vector to = target.getChestLocation().toVector()
+                .subtract(blade.getDisplay().getLocation().toVector());
+            attackOrigin = target.getChestLocation().clone()
+                .subtract(to.normalize()).setDirection(to.normalize());
+        }
+
+        attack = blade.getBasicAttacks()[
+            Math.max(0, Math.min(blade.getCurrentComboStep() - 1, blade.getBasicAttacks().length - 1))
+        ].apply(blade.getThrower());
+
+        attack.setOriginOfAll(attackOrigin).execute(blade.getThrower());
+    }
+
+    private static void dashAttack(UmbralBlade blade, DashDirection direction) {
+        AttackType type;
+        switch (direction) {
+            case FORWARD -> type = AttackType.F_DASH_ATTACK;
+            case BACKWARD -> type = AttackType.B_DASH_ATTACK;
+            default -> type = AttackType.WIDE_UMBRAL_SLASH3;
+        }
+        new UmbralBladeAttack(blade.getDisplay(), type,
+            direction.equals(DashDirection.FORWARD), false, 1,
+            5, 10, 200,
+            0, 1)
+            .setBlade(blade)
+            .setInitialMovementTicks(1)
+            .setCallback(blade.getAttackEndCallback(), 200)
+            .execute(blade.getThrower());
     }
 }

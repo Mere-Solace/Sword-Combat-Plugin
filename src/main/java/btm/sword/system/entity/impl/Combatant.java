@@ -190,7 +190,7 @@ public abstract class Combatant extends SwordEntity {
         LivingEntity t = target.self();
         setGrabbing(true);
         target.setGrabbed(true);
-        if (target instanceof SwordPlayer sp) sp.setActivationContext(ActivationContext.STUNNED);
+        if (target instanceof SwordPlayer sp) sp.setActivationContext(ActivationContext.INCAPACITATED);
         setGrabbedEntity(target);
         Prefab.Particles.GRAB_CLOUD.display(t.getLocation().add(new Vector(0, 1, 0)));
         Prefab.Sounds.PUNCH_CONNECT.playForAllInRadius(self);
@@ -276,7 +276,6 @@ public abstract class Combatant extends SwordEntity {
      * @return true if able to perform actions, false otherwise
      */
     public boolean canPerformAction() {
-        message("ability cast task - " + (abilityCastTask == null ? "none" : abilityCastTask.getTaskId()));
         return abilityCastTask == null && !isGrabbing && !isGrabbed();
     }
 

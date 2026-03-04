@@ -1,5 +1,6 @@
 package btm.sword.system.entity.umbral.statemachine.state;
 
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 import org.bukkit.util.Vector;
@@ -16,6 +17,7 @@ import btm.sword.utility.display.DisplayUtil;
 
 public class GrabImpaleState extends UmbralStateFacade {
     private TimeArbiter.TaskHandle slerpTask;
+    private ScheduledFuture<?> attackTask;
 
     @Override
     public String name() {
@@ -38,6 +40,8 @@ public class GrabImpaleState extends UmbralStateFacade {
     public void onExit(UmbralBlade blade) {
         blade.setFinishedLunging(false);
         blade.getDisplay().setGlowing(false);
+        if (slerpTask != null && !slerpTask.isCancelled()) slerpTask.cancel();
+        if (attackTask != null) attackTask.cancel(false);
     }
 
     @Override
@@ -59,12 +63,13 @@ public class GrabImpaleState extends UmbralStateFacade {
                     thrower.isDead() ||
                     !thrower.getUmbralBlade().inState(GrabImpaleState.class);
             },
-            () -> SwordScheduler.runBukkitTaskLater(() -> attackEnemy(blade),
+            () -> attackTask = SwordScheduler.runBukkitTaskLater(() -> attackEnemy(blade),
                 200, TimeUnit.MILLISECONDS)
         );
     }
 
     private void attackEnemy(UmbralBlade blade) {
+        if (!blade.inState(GrabImpaleState.class)) return;
         if (slerpTask != null && !slerpTask.isCancelled()) slerpTask.cancel();
         blade.setHitEntity(null);
         blade.setFinishedLunging(false);
