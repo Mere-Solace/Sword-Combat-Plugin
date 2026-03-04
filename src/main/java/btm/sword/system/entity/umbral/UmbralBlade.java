@@ -422,7 +422,7 @@ public class UmbralBlade extends ThrownItem {
 
         ControlVectors adjusted = ctrlPointsForLunge.adjustToBasis(currentBasis, 1);
         this.positionFunction = BezierUtil.cubicBezier3D(adjusted);
-        this.velocityFunction = t -> dir.multiply(0.5);
+        this.velocityFunction = t -> dir.clone().multiply(0.5);
     }
 
     public void onGrab(Combatant combatant) {
@@ -478,10 +478,15 @@ public class UmbralBlade extends ThrownItem {
     }
 
     @Override
-    protected void onEnd() {
+    public void onEnd() {
         super.onEnd();
         finishedLunging = true;
-        cleanupBeforeNewThrow();
+        resetFlightState();
+    }
+
+    @Override
+    public void onHit() {
+        // no-op — hit effects are applied explicitly in FSM transition actions and LodgedState.onEnter()
     }
 
     @Override
@@ -503,7 +508,7 @@ public class UmbralBlade extends ThrownItem {
         bladeStateMachine.setDeactivated(true);
     }
 
-    public void cleanupBeforeNewThrow() {
+    public void resetFlightState() {
         hit = false;
         grounded = false;
         caught = false;

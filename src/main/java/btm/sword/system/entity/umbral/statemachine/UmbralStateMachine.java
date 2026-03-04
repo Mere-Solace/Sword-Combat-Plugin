@@ -2,7 +2,9 @@ package btm.sword.system.entity.umbral.statemachine;
 
 import org.bukkit.GameMode;
 import org.bukkit.Location;
+import org.bukkit.util.Vector;
 
+import btm.sword.config.Config;
 import btm.sword.system.control.TimeArbiter;
 import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.entity.umbral.UmbralBlade;
@@ -21,6 +23,8 @@ import btm.sword.system.entity.umbral.statemachine.state.SheathedState;
 import btm.sword.system.entity.umbral.statemachine.state.StandbyState;
 import btm.sword.system.entity.umbral.statemachine.state.WaitingState;
 import btm.sword.system.entity.umbral.statemachine.state.WieldState;
+import btm.sword.utility.Prefab;
+import btm.sword.utility.math.VectorUtil;
 import btm.sword.utility.statemachine.State;
 import btm.sword.utility.statemachine.StateMachine;
 import btm.sword.utility.statemachine.Transition;
@@ -220,7 +224,11 @@ public class UmbralStateMachine extends StateMachine<UmbralBlade> {
             GrabImpaleState.class,
             LodgedState.class,
             b -> b.getHitEntity() != null,
-            b -> {}
+            b -> {
+                Vector kb = VectorUtil.getProjOntoPlane(b.getVelocity(), Config.Direction.UP())
+                    .multiply(Config.Combat.THROWN_DAMAGE_SWORD_AXE_KNOCKBACK_AIRBORNE);
+                b.getHitEntity().hit(b.getThrower(), Prefab.Attacks.thrownWeapon, kb);
+            }
         ));
 
         addTransition(new Transition<>(
@@ -334,7 +342,11 @@ public class UmbralStateMachine extends StateMachine<UmbralBlade> {
             LungingState.class,
             LodgedState.class,
             b -> b.getHitEntity() != null,
-            b -> {}
+            b -> {
+                Vector kb = VectorUtil.getProjOntoPlane(b.getVelocity(), Config.Direction.UP())
+                    .multiply(Config.Combat.THROWN_DAMAGE_SWORD_AXE_KNOCKBACK_AIRBORNE);
+                b.getHitEntity().hit(b.getThrower(), Prefab.Attacks.thrownWeapon, kb);
+            }
         ));
 
         addTransition(new Transition<>(

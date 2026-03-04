@@ -18,7 +18,7 @@ public class LungingState extends UmbralStateFacade {
         blade.setTimeCutoff(Config.UmbralBlade.LUNGE_TIME_CUTOFF);
         blade.setTimeScalingFactor(Config.UmbralBlade.LUNGE_TIME_SCALING_FACTOR);
         blade.setCtrlPointsForLunge(AttackType.LUNGE1.controlVectors());
-        blade.onRelease(Config.UmbralBlade.LUNGE_ON_RELEASE_VELOCITY);
+        blade.initFlight(Config.UmbralBlade.LUNGE_ON_RELEASE_VELOCITY);
 
         blade.getDisplay().setGlowing(true);
         blade.getDisplay().setGlowColorOverride(Config.SwordColor.UMBRAL_GLOW);
@@ -28,11 +28,12 @@ public class LungingState extends UmbralStateFacade {
     public void onExit(UmbralBlade blade) {
         blade.setFinishedLunging(false);
         blade.getDisplay().setGlowing(false);
-        blade.cleanupBeforeNewThrow();
     }
 
     @Override
     public void onTick(UmbralBlade blade) {
-
+        if (blade.stepFlight()) {
+            blade.onEnd();
+        }
     }
 }

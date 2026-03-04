@@ -3,7 +3,6 @@ package btm.sword.system.action.throwing.types;
 import org.bukkit.Bukkit;
 import org.bukkit.FluidCollisionMode;
 import org.bukkit.Location;
-import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.World;
 import org.bukkit.block.data.BlockData;
@@ -13,25 +12,17 @@ import org.bukkit.entity.ItemDisplay;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.RayTraceResult;
-import org.bukkit.util.Transformation;
 import org.bukkit.util.Vector;
-import org.joml.Quaternionf;
-import org.joml.Vector3f;
 
 import btm.sword.Sword;
-import btm.sword.system.action.throwing.InteractiveItem;
 import btm.sword.system.action.throwing.InteractiveItemArbiter;
 import btm.sword.system.control.PredicateRunnablePair;
 import btm.sword.system.control.TimeArbiter;
 import btm.sword.utility.Prefab;
 import btm.sword.utility.display.ParticleWrapper;
-import lombok.Getter;
 
-public class DroppedItem implements InteractiveItem {
-    @Getter
-    private final ItemStack itemStack;
+public class DroppedItem extends SimulatedDisplay {
     private final World world;
-    private final ItemDisplay display;
 
     private Location pos;
     private Vector to;
@@ -57,7 +48,7 @@ public class DroppedItem implements InteractiveItem {
         this.itemStack = stack;
 
         this.display = spawnDisplay(start, stack);
-        determineOrientation();
+        determineOrientation(); // inherited from SimulatedDisplay
 
         startPhysics();
     }
@@ -78,45 +69,6 @@ public class DroppedItem implements InteractiveItem {
     public void register() {
         if (display != null) {
             InteractiveItemArbiter.put(this);
-        }
-    }
-
-    public void determineOrientation() {
-        String name = display.getItemStack().getType().toString();
-
-        // *** These numbers are fine for now, config later but this system may change.
-
-        if (name.endsWith("_SWORD")) {
-            display.setTransformation(new Transformation(
-                new Vector3f(),
-                new Quaternionf()
-                    .rotateY((float) Math.PI / 2)
-                    .rotateZ((float) Math.PI / 2),
-                new Vector3f(1, 1, 1),
-                new Quaternionf()
-            ));
-        } else if (name.endsWith("AXE") || name.endsWith("_HOE") || name.endsWith("_SHOVEL")) {
-            display.setTransformation(new Transformation(
-                new Vector3f(),
-                new Quaternionf().rotateY((float) -Math.PI / 2)
-                    .rotateZ((float) Math.PI / 4),
-                new Vector3f(1.5f, 1.5f, 1.5f),
-                new Quaternionf()
-            ));
-        } else if (display.getItemStack().getType() == Material.SHIELD) {
-            display.setTransformation(new Transformation(
-                new Vector3f(0, 0, 0),
-                new Quaternionf().rotateY((float) (Math.PI / 1.01f) * 0),
-                new Vector3f(1, 1, 1),
-                new Quaternionf()
-            ));
-        } else {
-            display.setTransformation(new Transformation(
-                new Vector3f(),
-                new Quaternionf().rotateZ((float) Math.PI / 8),
-                new Vector3f(1, 1, 1),
-                new Quaternionf()
-            ));
         }
     }
 
@@ -239,10 +191,5 @@ public class DroppedItem implements InteractiveItem {
         if (display != null && !display.isDead()) {
             display.remove();
         }
-    }
-
-    @Override
-    public ItemDisplay getDisplay() {
-        return display;
     }
 }
