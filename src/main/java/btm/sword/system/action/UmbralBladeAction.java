@@ -5,8 +5,6 @@ import static btm.sword.system.action.attack.PunchAction.throwPunch;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import btm.sword.utility.Debug;
-
 import org.bukkit.util.Vector;
 
 import btm.sword.system.control.SwordScheduler;
@@ -17,6 +15,7 @@ import btm.sword.system.entity.umbral.UmbralBlade;
 import btm.sword.system.entity.umbral.input.BladeRequest;
 import btm.sword.system.entity.umbral.statemachine.state.LodgedState;
 import btm.sword.system.entity.umbral.statemachine.state.WieldState;
+import btm.sword.utility.Debug;
 import btm.sword.utility.Prefab;
 import btm.sword.utility.display.DrawUtil;
 import btm.sword.utility.math.Basis;
