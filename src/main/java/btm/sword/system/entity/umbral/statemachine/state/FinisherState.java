@@ -16,7 +16,7 @@ import btm.sword.system.entity.umbral.statemachine.UmbralStateFacade;
 public class FinisherState extends UmbralStateFacade {
     @Override
     public String name() {
-        return "";
+        return "FINISHER";
     }
 
     @Override

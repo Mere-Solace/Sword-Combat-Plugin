@@ -70,7 +70,7 @@ public class ItemDisplayAttack extends Attack {
     protected void drawAttackEffects() {
         if (drawParticles) super.drawAttackEffects();
         if (curIteration.get() % displaySteps == 0) {
-            TimeArbiter.teleportDisplay(weaponDisplay, attackLocation, cur, tpDuration);
+            TimeArbiter.teleportDisplay(weaponDisplay, attackLocation, cur, tpDuration, ItemDisplayAttack.class, 73);
         }
     }
 
@@ -82,7 +82,8 @@ public class ItemDisplayAttack extends Attack {
             TimeArbiter.teleportDisplay(
                 weaponDisplay,
                 origin.clone().add(prev), cur,
-                ticksSpentMovingToInitialLocation * 2);
+                ticksSpentMovingToInitialLocation * 2,
+                ItemDisplayAttack.class, 86);
         }
     }
 

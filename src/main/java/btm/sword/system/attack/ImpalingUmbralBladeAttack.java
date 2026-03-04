@@ -10,7 +10,6 @@ import org.bukkit.util.Vector;
 import btm.sword.system.attack.style.AttackProfile;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.base.SwordEntity;
-import btm.sword.system.entity.umbral.input.BladeRequest;
 import btm.sword.utility.entity.HitboxUtil;
 
 // will Pierce through all enemies and then stick out of the last one. Must Forward Calculate, then... Maybe just stick out of the first one hit
@@ -52,6 +51,5 @@ public class ImpalingUmbralBladeAttack extends UmbralBladeAttack {
         SwordEntity impaled = SwordEntityArbiter.getOrAdd(hit);
 
         blade.setHitEntity(impaled);
-        blade.request(BladeRequest.IMPALE);
     }
 }

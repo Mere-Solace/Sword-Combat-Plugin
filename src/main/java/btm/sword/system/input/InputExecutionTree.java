@@ -12,6 +12,8 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
+import javax.annotation.Nullable;
+
 import btm.sword.config.Config;
 import btm.sword.system.control.SwordScheduler;
 import btm.sword.system.entity.impl.SwordPlayer;
@@ -20,8 +22,6 @@ import lombok.Getter;
 import lombok.Setter;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextDecoration;
-
-import javax.annotation.Nullable;
 
 /**
  * Represents a finite state tree that tracks sequences of player {@link InputType} inputs,

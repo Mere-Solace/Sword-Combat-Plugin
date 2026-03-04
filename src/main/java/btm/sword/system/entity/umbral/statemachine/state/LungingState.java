@@ -28,6 +28,7 @@ public class LungingState extends UmbralStateFacade {
     public void onExit(UmbralBlade blade) {
         blade.setFinishedLunging(false);
         blade.getDisplay().setGlowing(false);
+        blade.cleanupBeforeNewThrow();
     }
 
     @Override

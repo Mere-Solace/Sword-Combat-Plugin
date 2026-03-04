@@ -172,7 +172,7 @@ public class InputRegistrar {
                 .displayDisabled(true)
                 .resetIfCannotPerform(false)
                 .build(),
-                SwordPlayer::nonUmbralState)
+                SwordPlayer::normalActState)
             )))
             .timeoutTicks(60)
             .sameItemRequired(true)
@@ -204,7 +204,7 @@ public class InputRegistrar {
                 .displayDisabled(true)
                 .resetIfCannotPerform(false)
                 .build(),
-                SwordPlayer::nonUmbralState)
+                SwordPlayer::normalActState)
             )))
             .timeoutTicks(60)
             .sameItemRequired(true)
@@ -236,7 +236,7 @@ public class InputRegistrar {
                     .displayDisabled(true)
                     .resetIfCannotPerform(false)
                     .build(),
-                    SwordPlayer::nonUmbralState)
+                    SwordPlayer::normalActState)
             )))
             .timeoutTicks(60)
             .sameItemRequired(true)
@@ -252,14 +252,14 @@ public class InputRegistrar {
         )).action(new LinkedList<>(List.of(
             new InputExecutionTree.ActionContextPair(
                 () -> InputAction.builder()
-                    .action(UmbralBladeAction::lunge)
-                    .cooldown(executor -> 200)
-                    .canCast(Combatant::canPerformUmbralAction)
-                    .requiredSoulfire(() -> 10f)
-                    .displayCooldown(true)
-                    .displayDisabled(true)
-                    .resetIfCannotPerform(false)
-                    .build(),
+                .action(UmbralBladeAction::lunge)
+                .cooldown(executor -> 200)
+                .canCast(Combatant::canPerformUmbralAction)
+                .requiredSoulfire(() -> 10f)
+                .displayCooldown(true)
+                .displayDisabled(true)
+                .resetIfCannotPerform(false)
+                .build(),
                 SwordPlayer::soulLinkState),
             new InputExecutionTree.ActionContextPair(
                 () -> InputAction.builder()
@@ -292,7 +292,7 @@ public class InputRegistrar {
                 .displayDisabled(false)
                 .resetIfCannotPerform(true)
                 .build(),
-                SwordPlayer::throwingState)
+                SwordPlayer::throwingNonUmbralState)
             )))
             .minHoldTime(600)
             .sameItemRequired(true)
@@ -402,7 +402,7 @@ public class InputRegistrar {
                 .displayDisabled(true)
                 .resetIfCannotPerform(true)
                 .build(),
-                SwordPlayer::umbralState)
+                SwordPlayer::normalActState)
             )))
             .sameItemRequired(true)
             .cancellable(true)

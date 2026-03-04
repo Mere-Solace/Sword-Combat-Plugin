@@ -16,7 +16,8 @@ public class WieldState extends UmbralStateFacade {
 
     @Override
     public void onExit(UmbralBlade blade) {
-        TimeArbiter.teleportDisplay(blade.getDisplay(), blade.getThrower().getLocation(), null, 0);
+        TimeArbiter.teleportDisplay(blade.getDisplay(), blade.getThrower().getLocation(), null, 0,
+            WieldState.class, 20);
         blade.getDisplay().setViewRange(300);
         blade.getThrower().setItemInInventory(0, blade.getLink());
     }

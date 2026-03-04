@@ -125,15 +125,15 @@ public class Hostile extends Combatant {
             target.hit(h, Prefab.Attacks.defaultMobHit, knockback);
         });
 
-        // Register the grab attack — stuns the player for ~400 ms before releasing
-        possibleAttacks.add(c -> {
-            Hostile h = (Hostile) c;
-            SwordEntity target = h.getCurrentTarget();
-            if (target == null || !target.self().isValid()) return;
-            h.onGrab(target);
-            SwordScheduler.runBukkitTaskLater(h::onGrabHit, 400, TimeUnit.MILLISECONDS);
-            SwordScheduler.runBukkitTaskLater(h::onGrabLetGo, 800, TimeUnit.MILLISECONDS);
-        });
+//        // Register the grab attack — stuns the player for ~400 ms before releasing
+//        possibleAttacks.add(c -> {
+//            Hostile h = (Hostile) c;
+//            SwordEntity target = h.getCurrentTarget();
+//            if (target == null || !target.self().isValid()) return;
+//            h.onGrab(target);
+//            SwordScheduler.runBukkitTaskLater(h::onGrabHit, 400, TimeUnit.MILLISECONDS);
+//            SwordScheduler.runBukkitTaskLater(h::onGrabLetGo, 800, TimeUnit.MILLISECONDS);
+//        });
 
         EntityEquipment equipment = associatedEntity.getEquipment();
         if (equipment != null) {

@@ -17,17 +17,14 @@ public class InputBuffer {
 
     public boolean consumeIfPresent(BladeRequest request) {
         long now = System.currentTimeMillis();
-        while (!queue.isEmpty()) {
-            var head = queue.peekFirst();
-            if (now - head.timestampMs > DEFAULT_TIMEOUT_MS) {
-                queue.pollFirst();
-                continue;
-            }
-            if (head.request == request) {
-                queue.pollFirst();
+        queue.removeIf(entry -> now - entry.timestampMs() > DEFAULT_TIMEOUT_MS);
+        var it = queue.iterator();
+        while (it.hasNext()) {
+            var entry = it.next();
+            if (entry.request() == request) {
+                it.remove();
                 return true;
             }
-            return false;
         }
         return false;
     }

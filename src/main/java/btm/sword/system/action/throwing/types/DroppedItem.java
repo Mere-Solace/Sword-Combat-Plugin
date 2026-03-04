@@ -139,7 +139,7 @@ public class DroppedItem implements InteractiveItem {
         applyGravityAndDrag();
         moveAndCheckCollision();
 
-        TimeArbiter.teleportDisplay(display, pos, to, 2);
+        TimeArbiter.teleportDisplay(display, pos, to, 2, DroppedItem.class, 142);
     }
 
     private void stopPhysics() {

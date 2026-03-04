@@ -311,7 +311,7 @@ public class PlayerListener implements Listener {
             swordPlayer.requestUmbralBladeState(BladeRequest.DEACTIVATE);
         }
         else if (Objects.equals(event.getPlayer().getGameMode(), GameMode.SPECTATOR)) {
-            swordPlayer.requestUmbralBladeState(BladeRequest.ACTIVATE_AS_SHEATHED);
+            swordPlayer.requestUmbralBladeState(BladeRequest.ACTIVATE_TO_PREVIOUS);
         }
     }
 

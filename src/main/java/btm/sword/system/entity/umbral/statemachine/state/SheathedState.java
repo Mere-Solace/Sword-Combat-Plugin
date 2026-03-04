@@ -1,6 +1,7 @@
 package btm.sword.system.entity.umbral.statemachine.state;
 
 import btm.sword.system.action.throwing.InteractiveItemArbiter;
+import btm.sword.system.control.TimeArbiter;
 import btm.sword.system.entity.umbral.UmbralBlade;
 import btm.sword.system.entity.umbral.statemachine.UmbralStateFacade;
 
@@ -25,6 +26,15 @@ public class SheathedState extends UmbralStateFacade {
 
     @Override
     public void onTick(UmbralBlade blade) {
-        blade.updateSheathedPosition();
+        if (blade.getDisplay() == null) return;
+
+        TimeArbiter.teleportDisplay(
+            blade.getDisplay(),
+            blade.getThrower().self().getLocation(),
+            blade.getThrower().getFlatDir(),
+            2,
+            SheathedState.class, 36
+        );
+        blade.getThrower().self().addPassenger(blade.getDisplay());
     }
 }

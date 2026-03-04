@@ -148,12 +148,12 @@ public class MovesetMenu extends Menu {
 
         Gui gui = Gui.normal()
             .setStructure(
-                "# # # # # # # # #",
+                "# # # . . . # # #",
                 "# A B C . D E . #",
+                ". . . . . . . . .",
+                ". F G H . I . . .",
                 "# . . . . . . . #",
-                "# F G H . I . . #",
-                "# . . . . . M . #",
-                "# # # # # # # < #")
+                "# # # < . > # # #")
             .addIngredient('#', BORDER)
             .addIngredient('A', basicAttack)
             .addIngredient('B', grab)

@@ -9,8 +9,6 @@ import java.util.function.Supplier;
 
 import javax.annotation.Nullable;
 
-import btm.sword.system.item.SwordItemType;
-
 import org.bukkit.Color;
 import org.bukkit.Material;
 import org.bukkit.entity.Display;
@@ -53,6 +51,7 @@ import btm.sword.system.inventory.PlayerMenuManager;
 import btm.sword.system.inventory.menu.MainMenu;
 import btm.sword.system.item.ItemStackBuilder;
 import btm.sword.system.item.KeyRegistry;
+import btm.sword.system.item.SwordItemType;
 import btm.sword.system.playerdata.PlayerData;
 import btm.sword.utility.SwordTimeUnit;
 import btm.sword.utility.display.DisplayUtil;
@@ -96,6 +95,9 @@ public class SwordPlayer extends Combatant {
 
     @Setter
     private boolean performedDropAction;
+    @Getter
+    @Setter
+    private ItemStack lastHeldItemBeforeDrop = new ItemStack(Material.AIR);
     @Setter
     private boolean changingHandIndex;
     @Setter
@@ -483,6 +485,10 @@ public class SwordPlayer extends Combatant {
         return activationContext == ActivationContext.THROWING;
     }
 
+    public boolean throwingNonUmbralState() {
+        return (throwingState() || nonUmbralState());
+    }
+
     public boolean nonUmbralState() {
         return normalActState() && !holdingUmbralItemInMainHand();
     }
@@ -496,7 +502,9 @@ public class SwordPlayer extends Combatant {
     }
 
     public boolean umbralState() {
-        return normalActState() && holdingUmbralItemInMainHand();
+        return normalActState() &&
+            (holdingUmbralItemInMainHand() ||
+            isUmbralItem(lastHeldItemBeforeDrop));
     }
 
     public boolean activeItemState(int slot) {

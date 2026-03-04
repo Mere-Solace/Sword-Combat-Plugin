@@ -5,6 +5,8 @@ import static btm.sword.system.action.attack.PunchAction.throwPunch;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import btm.sword.utility.Debug;
+
 import org.bukkit.util.Vector;
 
 import btm.sword.system.control.SwordScheduler;
@@ -14,20 +16,23 @@ import btm.sword.system.entity.impl.Combatant;
 import btm.sword.system.entity.umbral.UmbralBlade;
 import btm.sword.system.entity.umbral.input.BladeRequest;
 import btm.sword.system.entity.umbral.statemachine.state.LodgedState;
+import btm.sword.system.entity.umbral.statemachine.state.WieldState;
 import btm.sword.utility.Prefab;
 import btm.sword.utility.display.DrawUtil;
 import btm.sword.utility.math.Basis;
 
 public class UmbralBladeAction extends SwordAction {
-    // TODO: #122 - Wielding when not holding blade should attack
     public static void wield(Combatant wielder) {
+
+        Debug.debug(UmbralBladeAction.class, 26, "Wield gets called.");
+
         UmbralBlade blade = wielder.getUmbralBlade();
         if (blade == null) return;
 
-        if (wielder.holdingUmbralBlade()) {
+        if (blade.inState(WieldState.class)) {
             blade.request(BladeRequest.TOGGLE);
         }
-        else if (wielder.holdingSoulLink()) {
+        else {
             blade.request(BladeRequest.WIELD);
         }
     }
@@ -40,8 +45,6 @@ public class UmbralBladeAction extends SwordAction {
     }
 
     public static void lunge(Combatant wielder) {
-        wielder.message("Trying to Lunge!");
-
         UmbralBlade blade = wielder.getUmbralBlade();
         if (blade == null) return;
 
@@ -66,7 +69,6 @@ public class UmbralBladeAction extends SwordAction {
 
         if (wielder.getAspects().soulfireCur() >= 10f && !blade.inState(LodgedState.class)) {
             blade.requestQuickAttack(comboStep);
-            blade.request(BladeRequest.ATTACK_QUICK);
             return;
         }
 
@@ -77,7 +79,7 @@ public class UmbralBladeAction extends SwordAction {
         UmbralBlade blade = wielder.getUmbralBlade();
         if (blade == null) return;
 
-        blade.request(BladeRequest.ATTACK_HEAVY);
+        blade.request(BladeRequest.FINISHER);
     }
 
     public static void shadowBlink(Combatant wielder) {

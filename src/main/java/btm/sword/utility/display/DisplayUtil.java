@@ -78,7 +78,8 @@ public class DisplayUtil {
                 TimeArbiter.teleportDisplay(
                     display,
                     update, update.toVector().subtract(display.getLocation().toVector()),
-                    tpDuration
+                    tpDuration,
+                    DisplayUtil.class, 82
                 );
             },
             null,
@@ -143,7 +144,8 @@ public class DisplayUtil {
                 TimeArbiter.teleportDisplay(
                     display,
                     update, update.toVector().subtract(display.getLocation().toVector()),
-                    tpDuration
+                    tpDuration,
+                    DisplayUtil.class, 148
                 );
             },
             null,
@@ -208,7 +210,8 @@ public class DisplayUtil {
                 TimeArbiter.teleportDisplay(
                     itemDisplay,
                     l, curDir,
-                    2
+                    2,
+                    DisplayUtil.class, 214
                 );
 
                 if (iteration.incrementAndGet() % Config.Display.ITEM_DISPLAY_FOLLOW_PARTICLE_INTERVAL == 0)
@@ -250,7 +253,8 @@ public class DisplayUtil {
                 TimeArbiter.teleportDisplay(
                     display,
                     updated, entity.forwardBasisVector(withPitch),
-                    tpDuration
+                    tpDuration,
+                    DisplayUtil.class, 257
                 );
             },
             null,
