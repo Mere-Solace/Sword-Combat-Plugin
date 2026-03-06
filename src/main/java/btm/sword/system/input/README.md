@@ -18,7 +18,8 @@ The input execution system translates raw Minecraft player events (left-click, r
 | `InputExecutionTree.InputNode` | A trie node. Holds children, a `Supplier<InputAction>`, node metadata, and a visibility predicate |
 | `InputExecutionTree.InputNodeBuilder` | Builder for registering sequences into the trie during `initializeInputTree()` |
 | `InputAction` | Encapsulates the executable unit: action consumer, cooldown, cast gating predicate, `ActionConstraint` list, soulfire cost, and cast duration |
-| `InputActionExecutor` | Static helper that runs `canCast` checks and delegates to `ActionCaster.cast()` |
+| `InputActionExecutor` | Static helper. Exposes `ReadinessState readiness()` (full per-reason check), `canCast()` (delegates to `readiness()`), `soulfireStatusColor()`, and `execute()` |
+| `InputActionExecutor.ReadinessState` | Enum: `READY`, `ON_COOLDOWN`, `INSUFFICIENT_SOULFIRE`, `DISABLED`. Priority order: cooldown > disabled > soulfire |
 | `ActivationContext` | Enum of three player contexts (`NORMAL`, `STUNNED`, `CHANNELING`) used by node `visibleIf` predicates |
 
 Supporting classes outside this package:
@@ -355,9 +356,24 @@ Because these nodes are dynamic, `timeLastExecuted` does not persist on the retu
 After each `step()` call, if the new node has children, the tree builds two `Component` objects:
 
 - `baseSequenceToDisplay` — the sequence entered so far as symbols (`L`, `R`, `•`, `▁▁`, `D`, `F`, `S`).
-- `potentialInputSelectionText` — the next available inputs, colored based on `InputActionExecutor.canCast()`.
+- `potentialInputSelectionText` — the next available inputs, color-coded by *why* they are unavailable.
 
 `SwordPlayer.displayInputSequence()` renders both as a subtitle using `Title.times` matching the current node's timeout window. Nodes with `display = false` suppress this call.
+
+### Color-Coded Readiness
+
+Each follow-up input in the HUD is colored using `InputActionExecutor.readiness()`:
+
+| State | Color | Decoration | Meaning |
+|---|---|---|---|
+| `READY` | `TEXT_ITEM_BASE` (gold) | Bold | Available now |
+| `ON_COOLDOWN` | Magenta gradient | Italic | Dark → bright as cooldown expires |
+| `INSUFFICIENT_SOULFIRE` | Blue gradient | Italic | Dark → bright as soulfire approaches cost |
+| `DISABLED` | `TEXT_COOL_DARK` (dark gray) | Italic | Constraint or canCast predicate failing |
+
+Cooldown supersedes all other states (per `ReadinessState` priority order). The HUD's traversal gate also uses `canCast()` (which delegates to `readiness()`), so actions on cooldown are blocked at the step level, not just at execution.
+
+After a successful cast, `SwordPlayer.displaySoulfirePostCast()` shows the remaining input sequence alongside current/max soulfire as a subtitle, colored by `InputActionExecutor.soulfireStatusColor()`.
 
 ---
 
@@ -397,14 +413,15 @@ Issue #167 ("InputExecutionTree Upgrade") targets four areas. Current status of 
 
 ### Remaining Gaps Summary
 
-| Gap | Description |
-|---|---|
-| `ActivationContext` not wired | No nodes use `visibleIf` on context; no state transitions write `activationContext` |
-| Dynamic constraint adoption | Most nodes still use `canCast(Predicate)` instead of `.constraints(...)` |
-| Dynamic cooldown for skills | Skill `InputAction`s are recreated each call; `timeLastExecuted` is lost |
-| `ACTIVE_1` / `ACTIVE_2` slots | No input sequences defined for active skill slots |
-| Soulfire double-check | `act()` checks soulfire before `handlePerformAttempt`, but `handlePerformAttempt` also consumes it — the display path and consumption path are slightly misaligned |
-| `SwordAction` extension | Concrete action classes still extend `SwordAction` for the scheduler reference; this coupling could be removed by making the references package-private constants |
+| Gap | Status | Description |
+|---|---|---|
+| `ActivationContext` not wired | Open | No nodes use `visibleIf` on context; no state transitions write `activationContext` |
+| Dynamic constraint adoption | Open | Most nodes still use `canCast(Predicate)` instead of `.constraints(...)` |
+| Dynamic cooldown for skills | Open | Skill `InputAction`s are recreated each call; `timeLastExecuted` is lost |
+| `ACTIVE_1` / `ACTIVE_2` slots | Open | No input sequences defined for active skill slots |
+| Soulfire double-check | Resolved | `handlePerformAttempt` is the single execution gate. `canCast` delegates to `readiness()` for HUD coloring. |
+| `canCast()` cooldown gap | Resolved | `readiness()` checks cooldown first; `canCast()` now delegates to it, so the traversal gate and HUD both block on-cooldown actions. |
+| `SwordAction` extension | Open | Concrete action classes still extend `SwordAction` for the scheduler reference; this coupling could be removed by making the references package-private constants |
 
 ---
 

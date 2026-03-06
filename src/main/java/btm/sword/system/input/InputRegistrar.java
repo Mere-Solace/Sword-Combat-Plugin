@@ -252,6 +252,7 @@ public class InputRegistrar {
         )).action(new LinkedList<>(List.of(
             new InputExecutionTree.ActionContextPair(
                 () -> InputAction.builder()
+                .name("Lunge")
                 .action(UmbralBladeAction::lunge)
                 .cooldown(executor -> 200)
                 .canCast(Combatant::canPerformUmbralAction)
@@ -263,10 +264,11 @@ public class InputRegistrar {
                 SwordPlayer::soulLinkState),
             new InputExecutionTree.ActionContextPair(
                 () -> InputAction.builder()
+                .name("Throw Ready")
                 .action(ThrowAction::throwReady)
                 .cooldown(executor -> 0)
-                .canCast(Combatant::canPerformAction)
-                .displayDisabled(false)
+                .canCast(c -> c.canPerformAction() && (c instanceof SwordPlayer sp && sp.nonUmbralState()))
+                .displayDisabled(true)
                 .resetIfCannotPerform(true)
                 .build(),
                 SwordPlayer::nonUmbralState)
@@ -309,7 +311,7 @@ public class InputRegistrar {
                 () -> InputAction.builder()
                 .action(UtilityAction::death)
                 .cooldown(executor -> 0)
-                .canCast(Combatant::canPerformAction)
+                .canCast(c -> true)
                 .castDuration(() -> 0)
                 .displayCooldown(true)
                 .displayDisabled(true)
@@ -317,7 +319,6 @@ public class InputRegistrar {
                 .build(),
                 sp -> true) // debug tool only
             )))
-            .sameItemRequired(true)
             .cancellable(true)
             .display(true)
             .build();

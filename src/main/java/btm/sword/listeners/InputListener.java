@@ -176,7 +176,7 @@ public class InputListener implements Listener {
     public void onPlayerDropEvent(PlayerDropItemEvent event) {
         SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer());
         ItemStack item = swordPlayer.getItemStackInHand(true);
-        swordPlayer.setLastHeldItemBeforeDrop(item);
+        swordPlayer.setLastHeldItemBeforeDrop(event.getItemDrop().getItemStack());
 
         // Prevent dropping the menu button
         if (KeyRegistry.hasKey(item, KeyRegistry.MAIN_MENU_BUTTON_KEY)) {

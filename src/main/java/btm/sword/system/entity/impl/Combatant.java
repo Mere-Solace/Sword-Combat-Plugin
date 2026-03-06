@@ -256,14 +256,12 @@ public abstract class Combatant extends SwordEntity {
 
     public boolean holdingUmbralBlade() {
         ItemStack itemStack = getItemStackInHand(true);
-        return !itemStack.isEmpty() &&
-            KeyRegistry.hasKey(itemStack, KeyRegistry.UMBRAL_BLADE_KEY);
+        return !itemStack.isEmpty() && KeyRegistry.hasKey(itemStack, KeyRegistry.UMBRAL_BLADE_KEY);
     }
 
     public boolean holdingSoulLink() {
         ItemStack itemStack = getItemStackInHand(true);
-        return !itemStack.isEmpty() &&
-            KeyRegistry.hasKey(itemStack, KeyRegistry.SOUL_LINK_KEY);
+        return !itemStack.isEmpty() && KeyRegistry.hasKey(itemStack, KeyRegistry.SOUL_LINK_KEY);
     }
 
     /**

@@ -21,6 +21,7 @@ import btm.sword.utility.SwordTimeUnit;
 import lombok.Getter;
 import lombok.Setter;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 
 /**
@@ -37,7 +38,7 @@ public class InputExecutionTree {
     private int currentAttempts = 0;
 
     @Getter
-    private final InputNode root = new InputNode((ActionContextPair) null);
+    private final InputNode root = new InputNode(null);
     @Getter
     private InputAction nextAction = null;
     private final SwordPlayer owner;
@@ -106,52 +107,76 @@ public class InputExecutionTree {
 
         currentNode = next;
 
-        if (hasChildren()) {
-            boolean alreadyAppended = false;
+        if (!hasChildren()) return next;
 
-            Iterator<Map.Entry<InputType, InputNode>> it = currentNode.getChildren().entrySet().iterator();
-            boolean inputAccepted = false;
-            while (it.hasNext()) {
-                Map.Entry<InputType, InputNode> entry = it.next();
+        boolean alreadyAppendedArrow = false;
 
-                // Skip paths that are not visible or not accessible to this player in the current state
-                if (entry.getValue().hiddenFor(owner)) {
-                    continue;
-                }
-                else if (!alreadyAppended) {
-                    baseSequenceToDisplay = baseSequenceToDisplay.append(Component.text(" ➞ ",
-                        Config.SwordColor.TITLE_INPUT_STRING, TextDecoration.ITALIC));
-                    alreadyAppended = true;
-                }
+        Iterator<Map.Entry<InputType, InputNode>> it = currentNode.getChildren().entrySet().iterator();
+        boolean inputAccepted = false;
+        while (it.hasNext()) { // iterate through all children nodes
+            Map.Entry<InputType, InputNode> entry = it.next();
 
-                InputAction action = entry.getValue().resolveAction(owner);
+            // Skip paths that are not visible or not accessible to this player in the current state
+            if (entry.getValue().hiddenFor(owner)) {
+                continue;
+            }
+            else if (!alreadyAppendedArrow) {
+                baseSequenceToDisplay = baseSequenceToDisplay.append(Component.text(" ➞ ",
+                    Config.SwordColor.TITLE_INPUT_STRING, TextDecoration.ITALIC));
+                alreadyAppendedArrow = true;
+            }
 
-                boolean ready;
-                if (action == null) {
-                    ready = !entry.getValue().getChildren().isEmpty();
-                }
-                else if (entry.getKey().equals(InputType.DROP)) {
-                    ready = InputActionExecutor.canCast(action, owner) && !owner.getItemTypeInHand(true).isAir();
+            InputAction action = entry.getValue().resolveAction(owner);
+
+            InputActionExecutor.ReadinessState readiness;
+
+            if (action != null) {
+                owner.message(action.name);
+                if (entry.getKey().equals(InputType.DROP) && owner.getItemTypeInHand(true).isAir()) {
+                    readiness = InputActionExecutor.ReadinessState.DISABLED;
                 }
                 else {
-                    ready = InputActionExecutor.canCast(action, owner);
+                    readiness = InputActionExecutor.readiness(action, owner);
                 }
-
-                potentialInputSelectionText = potentialInputSelectionText
-                    .append(Component.text(inputToString(entry.getKey()),
-                        ready ?
-                            Config.SwordColor.TEXT_ITEM_BASE :
-                            Config.SwordColor.TEXT_COOL_DARK,
-                        ready ?
-                            TextDecoration.BOLD :
-                            TextDecoration.ITALIC))
-                    .append(it.hasNext() ?
-                        Component.text(", ", Config.SwordColor.TEXT_COOL_DARK) :
-                        Component.text(""));
-                inputAccepted = true;
             }
-            if (inputAccepted) startTimeoutTimer();
+            else {
+                // Pure prefix node (no own actions): navigable if it has children.
+                // Leaf node whose context predicates all failed: nothing to cast → DISABLED.
+                boolean isPurePrefix = entry.getValue().getActions() == null
+                    || entry.getValue().getActions().isEmpty();
+                readiness = (isPurePrefix && !entry.getValue().getChildren().isEmpty())
+                    ? InputActionExecutor.ReadinessState.READY
+                    : InputActionExecutor.ReadinessState.DISABLED;
+            }
+
+            TextColor hudColor = switch (readiness) {
+                case READY -> Config.SwordColor.TEXT_ITEM_BASE;
+                case ON_COOLDOWN -> {
+                    long elapsed = System.currentTimeMillis() - action.getTimeLastExecuted();
+                    long total = action.calcCooldown(owner);
+                    float t = total > 0 ? Math.min(1f, (float) elapsed / total) : 1f;
+                    yield cooldownColor(t);
+                }
+                case INSUFFICIENT_SOULFIRE -> {
+                    float required = action.getRequiredSoulfire(owner);
+                    float t = required > 0
+                        ? Math.min(1f, owner.getAspects().soulfireCur() / required)
+                        : 1f;
+                    yield InputActionExecutor.soulfireStatusColor(t);
+                }
+                case DISABLED -> Config.SwordColor.TEXT_COOL_DARK;
+            };
+            TextDecoration hudDeco = (readiness == InputActionExecutor.ReadinessState.READY)
+                ? TextDecoration.BOLD : TextDecoration.STRIKETHROUGH;
+
+            potentialInputSelectionText = potentialInputSelectionText
+                .append(Component.text(inputToString(entry.getKey()), hudColor, hudDeco))
+                .append(it.hasNext() ?
+                    Component.text(", ", Config.SwordColor.TEXT_COOL_DARK) :
+                    Component.text(""));
+            inputAccepted = true;
         }
+        if (inputAccepted) startTimeoutTimer();
 
         return next;
     }
@@ -220,6 +245,33 @@ public class InputExecutionTree {
 
     public Component getInputSequenceAsComponent() {
         return Component.textOfChildren(baseSequenceToDisplay, potentialInputSelectionText);
+    }
+
+    /**
+     * Returns a magenta-range {@link TextColor} for a cooldown progress fraction.
+     * {@code t = 0} (just fired, no progress) → dark magenta {@code (60, 10, 60)}.
+     * {@code t = 1} (cooldown nearly expired) → bright magenta {@code (220, 80, 220)}.
+     *
+     * @param t cooldown progress fraction (0.0–1.0, clamped)
+     * @return interpolated TextColor
+     */
+    private static TextColor cooldownColor(float t) {
+//        TextColor.color(0, 34, 64);
+//        TextColor.color(110, 144, 174);
+        int r0 = 0;
+        int b0 = 34;
+        int g0 = 64;
+        int r1 = 110;
+        int g1 = 144;
+        int b1 = 174;
+        int r_diff = r1-r0;
+        int g_diff = g1-g0;
+        int b_diff = b1-b0;
+        float clamped = Math.max(0f, Math.min(1f, t));
+        int r = (int) (r0 + clamped * (r_diff));
+        int g = (int) (g0 + clamped * (g_diff));
+        int b = (int) (b0 + clamped * (b_diff));
+        return TextColor.color(r, g, b);
     }
 
     /**
@@ -386,7 +438,9 @@ public class InputExecutionTree {
                 return cachedAction;
             }
             for (ActionContextPair pair : actions) {
+                owner.message(pair.action.get().name);
                 if (pair.context().test(owner)) {
+                    owner.message("  ^ passed context test!");
                     if (dynamic) return pair.action().get();
                     if (pairCache == null) pairCache = new IdentityHashMap<>();
                     return pairCache.computeIfAbsent(pair, p -> p.action().get());
@@ -455,7 +509,7 @@ public class InputExecutionTree {
          * Returns true if no existing child has the same {@link InputType} as {@code input}.
          * Since all paths with the same InputType now share a single node (with multiple
          * context-gated actions), a second registration for the same InputType is intentional —
-         * it will append to the existing node's action list via {@link #addAction(ActionContextPair)}.
+         * it will append to the existing node's action list.
          *
          * @param input the key to check for matching children
          * @return true if no child with this InputType exists

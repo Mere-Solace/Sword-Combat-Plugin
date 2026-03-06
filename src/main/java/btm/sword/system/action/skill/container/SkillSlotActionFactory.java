@@ -41,6 +41,7 @@ public final class SkillSlotActionFactory {
         // Some skills perform an internal cast; where known, surface the cast duration on the action
         if (resolvedSkill instanceof VoidLungeSkill) {
             b.castDuration(() -> 250);
+            b.requiredSoulfire(c -> 40f);
         }
 
         InputAction action = b.build();

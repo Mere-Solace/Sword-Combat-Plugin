@@ -24,6 +24,7 @@ import lombok.Getter;
  * </p>
  */
 public class InputAction {
+    public final String name;
     /** The action to perform when executed, defined as a consumer of a Combatant. */
     private final Consumer<Combatant> action;
 
@@ -85,6 +86,7 @@ public class InputAction {
      * @param castDuration the function that calculates the duration (ms) to block other abilities while casting
      */
     public InputAction(
+            String name,
             Consumer<Combatant> action,
             Function<Combatant, Integer> cooldownCalculation,
             Predicate<Combatant> canCastAbility,
@@ -94,6 +96,7 @@ public class InputAction {
             boolean displayDisabled,
             boolean resetIfCannotPerform,
             Function<Combatant, Integer> castDuration) {
+        this.name = name;
         this.action = action;
         this.cooldownCalculation = cooldownCalculation;
         this.canCastAbility = canCastAbility;
@@ -146,6 +149,16 @@ public class InputAction {
                 return false;
             }
         }
+
+        if (executor instanceof SwordPlayer swordPlayer) {
+            float required = getRequiredSoulfire(executor);
+            if (swordPlayer.getAspects().soulfireCur() < required) {
+                swordPlayer.displayLackOfSoulfire(required);
+                handleExecutionFailure(executor);
+                return false;
+            }
+        }
+
         handleSoulfireConsumption(executor);
         return true;
     }
@@ -163,10 +176,15 @@ public class InputAction {
     /**
      * Actually performs the action on the executor. Should be invoked once validation
      * passes (i.e., execute(...) returned true) and will set the last-executed time.
+     * Displays a soulfire cur/max subtitle to the player immediately after the cast.
      */
     public void perform(Combatant executor) {
         action.accept(executor);
         setTimeLastExecuted();
+        int consumed = requiredSoulfire.apply(executor).intValue();
+        if (executor instanceof SwordPlayer sp && consumed > 0) {
+            sp.displaySoulfireConsumed(consumed);
+        }
     }
 
 
@@ -208,6 +226,7 @@ public class InputAction {
 
     /** */
     public static class Builder {
+        private String name = "Pass-Through";
         private Consumer<Combatant> action;
         private Function<Combatant, Integer> cooldownCalculation;
         private Predicate<Combatant> canCastAbility;
@@ -217,6 +236,11 @@ public class InputAction {
         private boolean displayDisabled = false;
         private boolean resetIfCannotPerform = false;
         private Function<Combatant, Integer> castDuration = c -> 0;
+
+        public Builder name(String name) {
+            this.name = name;
+            return this;
+        }
 
         public Builder action(Consumer<Combatant> action) {
             this.action = action;
@@ -285,7 +309,7 @@ public class InputAction {
             if (action == null) throw new IllegalStateException("InputAction requires an action consumer");
             Function<Combatant, Integer> cooldown = cooldownCalculation != null ? cooldownCalculation : (c -> 0);
             Predicate<Combatant> canCast = canCastAbility != null ? canCastAbility : (c -> true);
-            return new InputAction(action, cooldown, canCast, constraints, requiredSoulfire,
+            return new InputAction(name, action, cooldown, canCast, constraints, requiredSoulfire,
                 displayCooldown, displayDisabled, resetIfCannotPerform, castDuration);
         }
     }

@@ -64,13 +64,10 @@ public class VoidLungeSkill extends ActiveSkill {
 
         SwordEntity target = combatant.getTargetedEntity(40);
 
-        if (target == null || target.isDead() ||
-            combatant.getAspects().soulfireCur() < 40.0f) {
-            // do smth idk
+        if (target == null || target.isDead()) {
             return;
         }
 
-        combatant.consumeSoulfire(40.0f);
         performBlink(combatant, target);
     }
 

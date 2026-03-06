@@ -312,12 +312,6 @@ public class SwordPlayer extends Combatant {
         InputAction action = inputExecutionTree.getNextAction();
 
         if (action != null) {
-            if (aspects.soulfireCur() < action.getRequiredSoulfire(this)) {
-                displayLackOfSoulfire(action.getRequiredSoulfire(this));
-                resetTree();
-                return;
-            }
-
             InputActionExecutor.execute(action, this);
         }
 
@@ -476,6 +470,18 @@ public class SwordPlayer extends Combatant {
         return performedDropAction;
     }
 
+    @Override
+    public boolean holdingUmbralBlade() {
+        return super.holdingUmbralBlade() ||
+            (isPerformedDropAction() && KeyRegistry.hasKey(getLastHeldItemBeforeDrop(), KeyRegistry.UMBRAL_BLADE_KEY));
+    }
+
+    @Override
+    public boolean holdingSoulLink() {
+        return super.holdingSoulLink() ||
+            (isPerformedDropAction() && KeyRegistry.hasKey(getLastHeldItemBeforeDrop(), KeyRegistry.SOUL_LINK_KEY));
+    }
+
     public boolean normalActState() {
         return activationContext == ActivationContext.NORMAL;
     }
@@ -490,7 +496,8 @@ public class SwordPlayer extends Combatant {
     }
 
     public boolean nonUmbralState() {
-        return normalActState() && !holdingUmbralItemInMainHand();
+        message(lastHeldItemBeforeDrop.toString());
+        return normalActState() && !holdingSoulLink() && !holdingUmbralBlade();
     }
 
     public boolean soulLinkState() {
@@ -502,9 +509,7 @@ public class SwordPlayer extends Combatant {
     }
 
     public boolean umbralState() {
-        return normalActState() &&
-            (holdingUmbralItemInMainHand() ||
-            isUmbralItem(lastHeldItemBeforeDrop));
+        return normalActState() && (holdingSoulLink() || holdingUmbralBlade());
     }
 
     public boolean activeItemState(int slot) {
@@ -562,6 +567,18 @@ public class SwordPlayer extends Combatant {
                     Duration.ofMillis(20),
                     Duration.ofMillis(baseInputTimeoutMillis),
                     Duration.ofMillis(20))));
+    }
+
+    /**
+     * Displays current and max soulfire as a subtitle immediately after a successful cast.
+     * Shows the remaining input sequence (if any) alongside the soulfire values, with a color
+     * that interpolates from dark to bright based on how full soulfire is.
+     */
+    public void displaySoulfireConsumed(int consumed) {
+        float cur = aspects.soulfireCur();
+        itemNameDisplay(Component.text("»  " + (int) cur, TextColor.color(80, 80, 80), TextDecoration.BOLD)
+            .append(Component.text("  ᅳ" + consumed, TextColor.color(30, 108, 167), TextDecoration.BOLD))
+            .append(Component.text("  «", TextColor.color(80, 80, 80), TextDecoration.BOLD)));
     }
 
     public void displayLackOfSoulfire(float required) {
@@ -625,6 +642,19 @@ public class SwordPlayer extends Combatant {
                     Duration.ofMillis(fade_out))));
     }
 
+    public void itemNameDisplay(Component displayName) {
+        ItemStack stack = getItemStackInHand(true).clone();
+        if (stack.isEmpty() || stack.getType().isAir()) stack = new ItemStack(Material.GUNPOWDER);
+        ItemMeta metaData = stack.getItemMeta();
+        if (metaData == null) {
+            return;
+        }
+        metaData.displayName(displayName);
+
+        stack.setItemMeta(metaData);
+        player.sendEquipmentChange(self, EquipmentSlot.HAND, stack);
+    }
+
     /**
      * Changes the display name of the item in the player's main hand temporarily, showing it with a color and style.
      *
@@ -633,19 +663,12 @@ public class SwordPlayer extends Combatant {
      * @param style the {@link TextDecoration} to apply, or null for none
      */
     public void itemNameDisplay(String toDisplay, TextColor color, TextDecoration style) {
-        ItemStack stack = getItemStackInHand(true).clone();
-        if (stack.isEmpty() || stack.getType().isAir()) stack = new ItemStack(Material.GUNPOWDER);
-        ItemMeta metaData = stack.getItemMeta();
-        if (metaData == null) {
-            return;
+        if (style == null) {
+            itemNameDisplay(Component.text(toDisplay, color));
         }
-        if (style == null)
-            metaData.itemName(Component.text(toDisplay, color));
-        else
-            metaData.itemName(Component.text(toDisplay, color, style));
-
-        stack.setItemMeta(metaData);
-        player.sendEquipmentChange(self, EquipmentSlot.HAND, stack);
+        else {
+            itemNameDisplay(Component.text(toDisplay, color, style));
+        }
     }
 
     /**
