@@ -1,7 +1,10 @@
 package btm.sword.system.input;
 
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
 import btm.sword.config.Config;
 import btm.sword.system.action.UmbralBladeAction;
@@ -36,87 +39,8 @@ public class InputRegistrar {
      * @param root the root node of the execution tree
      */
     public static void initializeMovementInputs(InputExecutionTree.InputNode root) {
-        new InputExecutionTree.InputNodeBuilder(root, List.of(
-            InputType.SWAP,
-            InputType.SWAP
-        )).action(new LinkedList<>(List.of(
-            new InputExecutionTree.ActionContextPair(
-                () -> InputAction.builder()
-                .action(executor -> MovementAction.dash(executor, DashDirection.FORWARD))
-                .cooldown(executor -> executor.calcCooldown(AspectType.CELERITY, 200, 1000, 10))
-                .canCast(Combatant::canAirDash)
-                .castDuration(() -> Config.Movement.DASH_CAST_DURATION)
-                .displayDisabled(true)
-                .resetIfCannotPerform(true)
-                .build(),
-                Combatant::canAirDash)
-            )))
-            .timeoutTicks(7)
-            .cancellable(true)
-            .display(true)
-            .build();
-
-        new InputExecutionTree.InputNodeBuilder(root, List.of(
-            InputType.SWAP,
-            InputType.SWAP,
-            InputType.LEFT
-        )).action(new LinkedList<>(List.of(
-            new InputExecutionTree.ActionContextPair(
-                () -> InputAction.builder()
-                .action(executor -> DashAttackAction.dashAttack(executor, DashDirection.FORWARD))
-                .cooldown(executor -> 0)
-                .canCast(Combatant::canPerformAction)
-                .castDuration(() -> 500)
-                .displayDisabled(true)
-                .resetIfCannotPerform(true)
-                .build(),
-                SwordPlayer::normalActState)
-            )))
-            .timeoutTicks(3)
-            .cancellable(true)
-            .display(true)
-            .build();
-
-        new InputExecutionTree.InputNodeBuilder(root, List.of(
-            InputType.SHIFT,
-            InputType.SHIFT
-        )).action(new LinkedList<>(List.of(
-            new InputExecutionTree.ActionContextPair(
-                () -> InputAction.builder()
-                .action(executor -> MovementAction.dash(executor, DashDirection.BACKWARD))
-                .cooldown(executor -> executor.calcCooldown(AspectType.CELERITY, 200, 1000, 10))
-                .canCast(Combatant::canAirDash)
-                .castDuration(() -> Config.Movement.DASH_CAST_DURATION)
-                .displayDisabled(true)
-                .resetIfCannotPerform(true)
-                .build(),
-                SwordPlayer::normalActState)
-            )))
-            .timeoutTicks(7)
-            .cancellable(true)
-            .display(true)
-            .build();
-
-        new InputExecutionTree.InputNodeBuilder(root, List.of(
-            InputType.SHIFT,
-            InputType.SHIFT,
-            InputType.LEFT
-        )).action(new LinkedList<>(List.of(
-            new InputExecutionTree.ActionContextPair(
-                () -> InputAction.builder()
-                .action(executor -> DashAttackAction.dashAttack(executor, DashDirection.BACKWARD))
-                .cooldown(executor -> 0)
-                .canCast(Combatant::canPerformAction)
-                .castDuration(() -> 500)
-                .displayDisabled(true)
-                .resetIfCannotPerform(true)
-                .build(),
-                SwordPlayer::normalActState)
-            )))
-            .timeoutTicks(3)
-            .cancellable(true)
-            .display(true)
-            .build();
+        registerDash(root, InputType.SWAP, DashDirection.FORWARD, Combatant::canAirDash);
+        registerDash(root, InputType.SHIFT, DashDirection.BACKWARD, SwordPlayer::normalActState);
     }
 
     /**
@@ -148,101 +72,8 @@ public class InputRegistrar {
             .display(true)
             .build();
 
-        // basic umbral attacks — registered BEFORE basic attacks so they're first in the action list
-        new InputExecutionTree.InputNodeBuilder(root, List.of(
-            InputType.LEFT
-        )).action(new LinkedList<>(List.of(
-            new InputExecutionTree.ActionContextPair(
-                () -> InputAction.builder()
-                .action(executor -> UmbralBladeAction.basicAttackWithLink(executor, 1))
-                .cooldown(Combatant::getDurationOfLastAttack)
-                .canCast(Combatant::canPerformUmbralLinkAttack)
-                .displayCooldown(true)
-                .displayDisabled(true)
-                .resetIfCannotPerform(true)
-                .build(),
-                SwordPlayer::soulLinkState),
-            new InputExecutionTree.ActionContextPair(
-                () -> InputAction.builder()
-                .action(executor -> AttackAction.basicAttack(executor, 1))
-                .cooldown(Combatant::getDurationOfLastAttack)
-                .canCast(Combatant::canPerformAction)
-                .castDuration(() -> 0)
-                .displayCooldown(true)
-                .displayDisabled(true)
-                .resetIfCannotPerform(false)
-                .build(),
-                SwordPlayer::normalActState)
-            )))
-            .timeoutTicks(60)
-            .sameItemRequired(true)
-            .cancellable(true)
-            .display(true)
-            .build();
-
-        new InputExecutionTree.InputNodeBuilder(root, List.of(
-            InputType.LEFT,
-            InputType.LEFT
-        )).action(new LinkedList<>(List.of(
-            new InputExecutionTree.ActionContextPair(
-                () -> InputAction.builder()
-                .action(executor -> UmbralBladeAction.basicAttackWithLink(executor, 2))
-                .cooldown(executor -> 0)
-                .canCast(Combatant::canPerformUmbralLinkAttack)
-                .displayCooldown(true)
-                .displayDisabled(true)
-                .resetIfCannotPerform(true)
-                .build(),
-                SwordPlayer::soulLinkState),
-            new InputExecutionTree.ActionContextPair(
-                () -> InputAction.builder()
-                .action(executor -> AttackAction.basicAttack(executor, 2))
-                .cooldown(executor -> 0)
-                .canCast(Combatant::canPerformAction)
-                .castDuration(() -> 0)
-                .displayCooldown(true)
-                .displayDisabled(true)
-                .resetIfCannotPerform(false)
-                .build(),
-                SwordPlayer::normalActState)
-            )))
-            .timeoutTicks(60)
-            .sameItemRequired(true)
-            .cancellable(true)
-            .display(true)
-            .build();
-
-        new InputExecutionTree.InputNodeBuilder(root, List.of(
-            InputType.LEFT,
-            InputType.LEFT,
-            InputType.LEFT
-        )).action(new LinkedList<>(List.of(
-            new InputExecutionTree.ActionContextPair(
-                () -> InputAction.builder().action(executor -> UmbralBladeAction.basicAttackWithLink(executor, 3))
-                    .cooldown(executor -> 0)
-                    .canCast(Combatant::canPerformUmbralLinkAttack)
-                    .displayCooldown(true)
-                    .displayDisabled(true)
-                    .resetIfCannotPerform(false)
-                    .build(),
-                SwordPlayer::soulLinkState),
-            new InputExecutionTree.ActionContextPair(
-                () -> InputAction.builder()
-                    .action(executor -> AttackAction.basicAttack(executor, 3))
-                    .cooldown(executor -> 0)
-                    .canCast(Combatant::canPerformAction)
-                    .castDuration(() -> 0)
-                    .displayCooldown(true)
-                    .displayDisabled(true)
-                    .resetIfCannotPerform(false)
-                    .build(),
-                    SwordPlayer::normalActState)
-            )))
-            .timeoutTicks(60)
-            .sameItemRequired(true)
-            .cancellable(true)
-            .display(true)
-            .build();
+        // basic attack combo chain (L, LL, LLL) — umbral variants registered first for priority
+        registerBasicAttackCombo(root, 3);
 
 
         // lunge (umbral link DROP + RIGHT) — registered FIRST, takes priority over throw when holding soul link
@@ -481,14 +312,136 @@ public class InputRegistrar {
             .build();
 
         // Active Skill slots (ACTIVE_1 and ACTIVE_2)
+        registerActiveSkillSlot(root, owner, SkillSlot.ACTIVE_1, 1);
+        registerActiveSkillSlot(root, owner, SkillSlot.ACTIVE_2, 2);
+    }
+
+    // ── Helper methods ──────────────────────────────────────────────────────
+
+    /**
+     * Registers the basic attack combo chain (L, LL, LLL...) with both umbral-link and
+     * normal-state variants. The first combo step uses {@code getDurationOfLastAttack} as
+     * its cooldown; subsequent steps have zero cooldown so the chain flows naturally.
+     *
+     * @param root      the tree root node
+     * @param maxSteps  number of combo steps to register (e.g. 3 for L, LL, LLL)
+     */
+    private static void registerBasicAttackCombo(InputExecutionTree.InputNode root, int maxSteps) {
+        Function<Combatant, Integer> attackCastDuration = executor -> (int) executor.calcValueReductive(
+            AspectType.CELERITY,
+            Config.Combat.ATTACKS_CAST_TIMING_MIN_DURATION,
+            Config.Combat.ATTACKS_CAST_TIMING_MAX_DURATION,
+            Config.Combat.ATTACKS_CAST_TIMING_REDUCTION_RATE);
+
+        for (int step = 1; step <= maxSteps; step++) {
+            final int comboStep = step;
+            boolean isFirst = step == 1;
+            boolean isLast = step == maxSteps;
+
+            Function<Combatant, Integer> cooldown = isFirst
+                ? Combatant::getDurationOfLastAttack
+                : executor -> 0;
+
+            new InputExecutionTree.InputNodeBuilder(root,
+                Collections.nCopies(step, InputType.LEFT)
+            ).action(new LinkedList<>(List.of(
+                new InputExecutionTree.ActionContextPair(
+                    () -> InputAction.builder()
+                        .action(executor -> UmbralBladeAction.basicAttackWithLink(executor, comboStep))
+                        .cooldown(cooldown)
+                        .canCast(Combatant::canPerformUmbralLinkAttack)
+                        .castDuration(attackCastDuration)
+                        .displayCooldown(true)
+                        .displayDisabled(true)
+                        .resetIfCannotPerform(!isLast)
+                        .build(),
+                    SwordPlayer::soulLinkState),
+                new InputExecutionTree.ActionContextPair(
+                    () -> InputAction.builder()
+                        .action(executor -> AttackAction.basicAttack(executor, comboStep))
+                        .cooldown(cooldown)
+                        .canCast(Combatant::canPerformAction)
+                        .castDuration(attackCastDuration)
+                        .displayCooldown(true)
+                        .displayDisabled(true)
+                        .resetIfCannotPerform(false)
+                        .build(),
+                    SwordPlayer::normalActState)
+            )))
+                .timeoutTicks(60)
+                .sameItemRequired(true)
+                .cancellable(true)
+                .display(true)
+                .build();
+        }
+    }
+
+    /**
+     * Registers a dash and its follow-up dash-attack for the given input key and direction.
+     * Dash: {@code key, key}. Dash-attack: {@code key, key, LEFT}.
+     *
+     * @param root      the tree root node
+     * @param key       the double-tap input (SWAP for forward, SHIFT for backward)
+     * @param direction the dash direction
+     * @param context   context predicate for the dash action
+     */
+    private static void registerDash(InputExecutionTree.InputNode root,
+                                     InputType key, DashDirection direction,
+                                     Predicate<SwordPlayer> context) {
+        new InputExecutionTree.InputNodeBuilder(root, List.of(key, key))
+            .action(new LinkedList<>(List.of(
+                new InputExecutionTree.ActionContextPair(
+                    () -> InputAction.builder()
+                        .action(executor -> MovementAction.dash(executor, direction))
+                        .cooldown(executor -> executor.calcCooldown(AspectType.CELERITY, 200, 1000, 10))
+                        .canCast(Combatant::canAirDash)
+                        .castDuration(() -> Config.Movement.DASH_CAST_DURATION)
+                        .displayDisabled(true)
+                        .resetIfCannotPerform(true)
+                        .build(),
+                    context)
+            )))
+            .timeoutTicks(7)
+            .cancellable(true)
+            .display(true)
+            .build();
+
+        new InputExecutionTree.InputNodeBuilder(root, List.of(key, key, InputType.LEFT))
+            .action(new LinkedList<>(List.of(
+                new InputExecutionTree.ActionContextPair(
+                    () -> InputAction.builder()
+                        .action(executor -> DashAttackAction.dashAttack(executor, direction))
+                        .cooldown(executor -> 0)
+                        .canCast(Combatant::canPerformAction)
+                        .castDuration(() -> 500)
+                        .displayDisabled(true)
+                        .resetIfCannotPerform(true)
+                        .build(),
+                    SwordPlayer::normalActState)
+            )))
+            .timeoutTicks(3)
+            .cancellable(true)
+            .display(true)
+            .build();
+    }
+
+    /**
+     * Registers tap and hold variants for an active skill slot.
+     *
+     * @param root      the tree root node
+     * @param owner     the player who owns the tree
+     * @param slot      the skill slot to bind
+     * @param slotIndex the hotbar slot index (1 or 2) for context predicate
+     */
+    private static void registerActiveSkillSlot(InputExecutionTree.InputNode root,
+                                                SwordPlayer owner,
+                                                SkillSlot slot, int slotIndex) {
         // Tap variant
-        new InputExecutionTree.InputNodeBuilder(root, List.of(
-            InputType.SWAP,
-            InputType.RIGHT
-        )).action(new LinkedList<>(List.of(
-            new InputExecutionTree.ActionContextPair(
-                () -> SkillSlotActionFactory.create(owner, SkillSlot.ACTIVE_1, false),
-                sp -> sp.activeItemState(1))
+        new InputExecutionTree.InputNodeBuilder(root, List.of(InputType.SWAP, InputType.RIGHT))
+            .action(new LinkedList<>(List.of(
+                new InputExecutionTree.ActionContextPair(
+                    () -> SkillSlotActionFactory.create(owner, slot, false),
+                    sp -> sp.activeItemState(slotIndex))
             )))
             .dynamic(true)
             .sameItemRequired(true)
@@ -498,44 +451,11 @@ public class InputRegistrar {
 
         // Hold variant
         new InputExecutionTree.InputNodeBuilder(root, List.of(
-            InputType.SWAP,
-            InputType.RIGHT,
-            InputType.RIGHT_HOLD
+            InputType.SWAP, InputType.RIGHT, InputType.RIGHT_HOLD
         )).action(new LinkedList<>(List.of(
                 new InputExecutionTree.ActionContextPair(
-                    () -> SkillSlotActionFactory.create(owner, SkillSlot.ACTIVE_1, true),
-                    sp -> sp.activeItemState(1))
-            )))
-            .dynamic(true)
-            .sameItemRequired(true)
-            .cancellable(true)
-            .display(true)
-            .build();
-
-        // ACTIVE_2 tap variant
-        new InputExecutionTree.InputNodeBuilder(root, List.of(
-            InputType.SWAP,
-            InputType.RIGHT
-        )).action(new LinkedList<>(List.of(
-            new InputExecutionTree.ActionContextPair(
-                () -> SkillSlotActionFactory.create(owner, SkillSlot.ACTIVE_2, false),
-                sp -> sp.activeItemState(2))
-            )))
-            .dynamic(true)
-            .sameItemRequired(true)
-            .cancellable(true)
-            .display(true)
-            .build();
-
-        // ACTIVE_2 hold variant
-        new InputExecutionTree.InputNodeBuilder(root, List.of(
-            InputType.SWAP,
-            InputType.RIGHT,
-            InputType.RIGHT_HOLD
-        )).action(new LinkedList<>(List.of(
-            new InputExecutionTree.ActionContextPair(
-                () -> SkillSlotActionFactory.create(owner, SkillSlot.ACTIVE_2, true),
-                sp -> sp.activeItemState(2))
+                    () -> SkillSlotActionFactory.create(owner, slot, true),
+                    sp -> sp.activeItemState(slotIndex))
             )))
             .dynamic(true)
             .sameItemRequired(true)

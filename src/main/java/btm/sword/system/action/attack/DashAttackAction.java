@@ -19,8 +19,7 @@ public class DashAttackAction extends SwordAction {
 
         boolean forward = direction.equals(DashDirection.FORWARD);
 
-        executor.setTimeOfLastAttack(System.currentTimeMillis());
-        executor.setDurationOfLastAttack(700);
+        executor.applyAttackCooldown();
 
         if (weaponAttackStyle.equals(WeaponAttackStyle.PUNCH)) { // catch any untagged items and perform a punch with it
             PunchAction.throwPunch(executor, true, forward ? 3.5 : 1);

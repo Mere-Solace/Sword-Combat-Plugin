@@ -10,6 +10,7 @@ import btm.sword.system.attack.SweepAttack;
 import btm.sword.system.attack.style.AttackProfile;
 import btm.sword.system.attack.style.AttackType;
 import btm.sword.system.attack.style.WeaponAttackStyle;
+import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.impl.Combatant;
 import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.item.ItemUsageManager;
@@ -73,8 +74,12 @@ public class AttackAction extends SwordAction {
 
     public static void basicSlash(Combatant executor, ItemStack itemUsedInAttack, AttackProfile profile, Boolean orientWithPitch) {
         new SweepAttack(itemUsedInAttack, profile,
-            orientWithPitch, 40,
-            60, 0.1, 0.9)
+            orientWithPitch)
+            .setAttackDuration(attacker -> (int) attacker.calcValueReductive(
+                AspectType.CELERITY,
+                Config.Combat.ATTACKS_CAST_TIMING_MIN_DURATION,
+                Config.Combat.ATTACKS_CAST_TIMING_MAX_DURATION,
+                Config.Combat.ATTACKS_CAST_TIMING_REDUCTION_RATE))
             .setAttackConnectInstructions(
                 new ConsumerToConsumePair<>(
                     itemStack -> ItemUsageManager.damageItemStack(itemStack, 20, executor.self()),

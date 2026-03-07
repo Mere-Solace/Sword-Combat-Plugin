@@ -11,6 +11,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
 
+import btm.sword.config.Config;
 import btm.sword.system.action.ActionCaster;
 import btm.sword.system.action.movement.MovementAction;
 import btm.sword.system.action.throwing.types.ThrownItem;
@@ -372,6 +373,23 @@ public abstract class Combatant extends SwordEntity {
      */
     public int calcCooldown(AspectType type, double min, double base, double multiplier) {
         return (int) Math.max(min, base - (multiplier * aspects.getAspectVal(type)) );
+    }
+
+    /**
+     * Calculates and applies the standard attack cooldown based on FINESSE.
+     * Sets both {@code timeOfLastAttack} and {@code durationOfLastAttack} so the
+     * input tree's cooldown check ({@code getDurationOfLastAttack}) works correctly.
+     *
+     * @return the computed cooldown duration in milliseconds
+     */
+    public int applyAttackCooldown() {
+        setTimeOfLastAttack(System.currentTimeMillis());
+        int cooldown = (int) calcValueReductive(AspectType.FINESSE,
+            Config.Combat.ATTACKS_CAST_TIMING_MIN_DURATION,
+            Config.Combat.ATTACKS_CAST_TIMING_MAX_DURATION,
+            Config.Combat.ATTACKS_CAST_TIMING_REDUCTION_RATE);
+        setDurationOfLastAttack(cooldown);
+        return cooldown;
     }
 
     public boolean canPerformUmbralLinkAttack() {
