@@ -592,7 +592,7 @@ public class Config {
                 ConfigurationSection::getInt
         ); }
 
-        public static int ATTACKS_CAST_TIMING_MAX_DURATION = 1200; // 1.4 seconds
+        public static int ATTACKS_CAST_TIMING_MAX_DURATION = 200;
         static { register("combat.attacks_cast_timing_max_duration",
                 ATTACKS_CAST_TIMING_MAX_DURATION, Integer.class,
                 v -> ATTACKS_CAST_TIMING_MAX_DURATION = v,
