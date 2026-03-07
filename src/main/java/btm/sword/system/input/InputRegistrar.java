@@ -327,6 +327,12 @@ public class InputRegistrar {
      * @param maxSteps  number of combo steps to register (e.g. 3 for L, LL, LLL)
      */
     private static void registerBasicAttackCombo(InputExecutionTree.InputNode root, int maxSteps) {
+        Function<Combatant, Integer> attackCastDuration = executor -> (int) executor.calcValueReductive(
+            AspectType.CELERITY,
+            Config.Combat.ATTACKS_CAST_TIMING_MIN_DURATION,
+            Config.Combat.ATTACKS_CAST_TIMING_MAX_DURATION,
+            Config.Combat.ATTACKS_CAST_TIMING_REDUCTION_RATE);
+
         for (int step = 1; step <= maxSteps; step++) {
             final int comboStep = step;
             boolean isFirst = step == 1;
@@ -344,6 +350,7 @@ public class InputRegistrar {
                         .action(executor -> UmbralBladeAction.basicAttackWithLink(executor, comboStep))
                         .cooldown(cooldown)
                         .canCast(Combatant::canPerformUmbralLinkAttack)
+                        .castDuration(attackCastDuration)
                         .displayCooldown(true)
                         .displayDisabled(true)
                         .resetIfCannotPerform(!isLast)
@@ -354,6 +361,7 @@ public class InputRegistrar {
                         .action(executor -> AttackAction.basicAttack(executor, comboStep))
                         .cooldown(cooldown)
                         .canCast(Combatant::canPerformAction)
+                        .castDuration(attackCastDuration)
                         .displayCooldown(true)
                         .displayDisabled(true)
                         .resetIfCannotPerform(false)
