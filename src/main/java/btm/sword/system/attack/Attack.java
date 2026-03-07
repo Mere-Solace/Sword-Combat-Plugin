@@ -25,7 +25,6 @@ import btm.sword.system.control.PredicateRunnablePair;
 import btm.sword.system.control.SwordScheduler;
 import btm.sword.system.control.TimeArbiter;
 import btm.sword.system.entity.SwordEntityArbiter;
-import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.impl.Combatant;
 import btm.sword.utility.Prefab;
@@ -77,6 +76,8 @@ public class Attack extends SwordAction implements Runnable {
     protected int msPerIteration;
 
     protected final double rangeMultiplier;
+
+    protected Function<Combatant, Integer> attackDurationResolver;
 
     protected Runnable callback;
     protected int msBeforeCallbackSchedule;
@@ -139,6 +140,19 @@ public class Attack extends SwordAction implements Runnable {
         return this;
     }
 
+    /**
+     * Sets a dynamic resolver for the attack animation duration in milliseconds.
+     * Evaluated at execution time with the attacking {@link Combatant}, allowing
+     * the duration to scale with player stats, weapon type, or combo position.
+     *
+     * @param resolver function that computes animation duration from the attacker
+     * @return this attack for chaining
+     */
+    public Attack setAttackDuration(Function<Combatant, Integer> resolver) {
+        this.attackDurationResolver = resolver;
+        return this;
+    }
+
     public boolean nextAttackExists() {
         return nextAttack != null;
     }
@@ -156,19 +170,15 @@ public class Attack extends SwordAction implements Runnable {
         cast();
     }
 
-    // TODO: #139 make usage dynamic
     protected void cast() {
-        // Trigger attack logic immediately; input-level casting will be handled by the InputAction's castDuration
         onRun();
     }
 
     private void onRun() {
-        attacker.setTimeOfLastAttack(System.currentTimeMillis());
-        int cooldown = (int) attacker.calcValueReductive(AspectType.FINESSE,
-            Config.Combat.ATTACKS_CAST_TIMING_MIN_DURATION,
-            Config.Combat.ATTACKS_CAST_TIMING_MAX_DURATION,
-            Config.Combat.ATTACKS_CAST_TIMING_REDUCTION_RATE);
-        attacker.setDurationOfLastAttack(cooldown);
+        attacker.applyAttackCooldown();
+        if (attackDurationResolver != null) {
+            this.attackMilliseconds = attackDurationResolver.apply(attacker);
+        }
         startAttack();
     }
 

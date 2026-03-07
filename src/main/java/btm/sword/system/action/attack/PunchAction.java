@@ -4,10 +4,8 @@ import org.bukkit.Location;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 
-import btm.sword.config.Config;
 import btm.sword.system.action.SwordAction;
 import btm.sword.system.entity.SwordEntityArbiter;
-import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.impl.Combatant;
 import btm.sword.utility.Prefab;
@@ -50,13 +48,7 @@ public class PunchAction extends SwordAction {
     }
 
     public static void throwPunch(Combatant executor, boolean right, double distance) {
-        executor.setTimeOfLastAttack(System.currentTimeMillis());
-        int cooldown = (int) executor.calcValueReductive(AspectType.FINESSE,
-            Config.Combat.ATTACKS_CAST_TIMING_MIN_DURATION,
-            Config.Combat.ATTACKS_CAST_TIMING_MAX_DURATION,
-            Config.Combat.ATTACKS_CAST_TIMING_REDUCTION_RATE);
-        executor.setDurationOfLastAttack(cooldown);
-
+        executor.applyAttackCooldown();
         punch(executor, right, distance);
     }
 }
