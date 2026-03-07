@@ -47,17 +47,15 @@ public class InputListener implements Listener {
      */
     @EventHandler
     public void onNormalAttack(PrePlayerAttackEntityEvent event) {
+        event.setCancelled(true);
         SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer());
-        ItemStack item = swordPlayer.getItemStackInHand(true);
 
-        if (swordPlayer.handleItemInteraction(item, InputType.LEFT)) {
-            event.setCancelled(true);
-            return;
-        }
+        if (!swordPlayer.getInputBuffer().accept(InputType.LEFT)) return;
+
+        ItemStack item = swordPlayer.getItemStackInHand(true);
+        if (swordPlayer.handleItemInteraction(item, InputType.LEFT)) return;
 
         swordPlayer.act(InputType.LEFT);
-
-        event.setCancelled(true);
     }
 
     @EventHandler // imagine that...
@@ -96,10 +94,9 @@ public class InputListener implements Listener {
 
         if (swordPlayer.hasPerformedDropAction()) return;
 
-        // TODO: #124 - Log all interactions and figure out if this fires when PrePlayerAttack fires.
-        // TODO: #124 - If so, use the flag set in the above method to cancel this event and return.
-
         if ((action == Action.LEFT_CLICK_AIR || action == Action.LEFT_CLICK_BLOCK)) {
+            if (!swordPlayer.getInputBuffer().accept(InputType.LEFT)) return;
+
             if (swordPlayer.handleItemInteraction(item, InputType.LEFT)) {
                 event.setCancelled(true);
                 return;
@@ -107,12 +104,10 @@ public class InputListener implements Listener {
             swordPlayer.act(InputType.LEFT);
         }
         else if (action == Action.RIGHT_CLICK_AIR || action == Action.RIGHT_CLICK_BLOCK) {
+            if (!swordPlayer.getInputBuffer().accept(InputType.RIGHT)) return;
+
             if (swordPlayer.handleItemInteraction(item, InputType.RIGHT)) {
                 event.setCancelled(true);
-                return;
-            }
-
-            if (swordPlayer.isInteractingWithEntity()) {
                 return;
             }
 
@@ -138,24 +133,20 @@ public class InputListener implements Listener {
      */
     @EventHandler
     public void onPlayerEntityInteract(PlayerInteractEntityEvent event) {
+        event.setCancelled(true);
         SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer());
-        ItemStack item = swordPlayer.getItemStackInHand(true);
 
         swordPlayer.setInteractingWithEntity(true);
-
-        if (swordPlayer.handleItemInteraction(item, InputType.RIGHT)) {
-            event.setCancelled(true);
-            return;
-        }
-        swordPlayer.act(InputType.RIGHT);
-
         Consumer<SwordPlayer> resetInteractingFlag =
                 sp -> sp.setInteractingWithEntity(false);
         SwordScheduler.runConsumerNextTick(resetInteractingFlag, swordPlayer);
 
-        event.setCancelled(true);
+        if (!swordPlayer.getInputBuffer().accept(InputType.RIGHT)) return;
 
-//        event.getRightClicked(); // For later use, not need currently.
+        ItemStack item = swordPlayer.getItemStackInHand(true);
+        if (swordPlayer.handleItemInteraction(item, InputType.RIGHT)) return;
+
+        swordPlayer.act(InputType.RIGHT);
     }
 
     @EventHandler

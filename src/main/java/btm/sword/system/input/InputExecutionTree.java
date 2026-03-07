@@ -438,6 +438,9 @@ public class InputExecutionTree {
                 return cachedAction;
             }
             for (ActionContextPair pair : actions) {
+                if (pair == null || pair.action == null || pair.action.get() == null) {
+                    continue;
+                }
                 owner.message(pair.action.get().name);
                 if (pair.context().test(owner)) {
                     owner.message("  ^ passed context test!");
