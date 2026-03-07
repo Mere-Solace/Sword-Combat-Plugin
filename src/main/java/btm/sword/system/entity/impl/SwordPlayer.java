@@ -43,6 +43,7 @@ import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.input.ActivationContext;
 import btm.sword.system.input.InputAction;
 import btm.sword.system.input.InputActionExecutor;
+import btm.sword.system.input.InputBuffer;
 import btm.sword.system.input.InputExecutionTree;
 import btm.sword.system.input.InputRegistrar;
 import btm.sword.system.input.InputType;
@@ -87,6 +88,7 @@ public class SwordPlayer extends Combatant {
     private final HashSet<Dummy> yourDummies = new HashSet<>();
 
     private final InputExecutionTree inputExecutionTree;
+    private final InputBuffer inputBuffer;
     private final long baseInputTimeoutMillis = 1400L;
 
     /** Current input context; controls which action paths are visible in the execution tree. */
@@ -168,6 +170,7 @@ public class SwordPlayer extends Combatant {
             .build();
 
         inputExecutionTree = new InputExecutionTree(this);
+        inputBuffer = new InputBuffer();
         InputRegistrar.initializeInputTree(inputExecutionTree.getRoot(), this);
         InputRegistrar.initializeMovementInputs(inputExecutionTree.getRoot());
 
@@ -198,6 +201,7 @@ public class SwordPlayer extends Combatant {
     @Override
     protected void onTick() {
         super.onTick();
+        inputBuffer.tick();
 
         if (player.getHealth() > 0) updateVisualStats();
 
