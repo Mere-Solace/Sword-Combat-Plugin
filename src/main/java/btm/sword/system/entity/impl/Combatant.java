@@ -388,7 +388,7 @@ public abstract class Combatant extends SwordEntity {
             Config.Combat.ATTACKS_CAST_TIMING_MIN_DURATION,
             Config.Combat.ATTACKS_CAST_TIMING_MAX_DURATION,
             Config.Combat.ATTACKS_CAST_TIMING_REDUCTION_RATE);
-        setDurationOfLastAttack(cooldown);
+        setDurationOfLastAttack((int) (cooldown * Config.Combat.ATTACKS_COOLDOWN_MULT));
         return cooldown;
     }
 

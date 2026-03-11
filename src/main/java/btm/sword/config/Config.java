@@ -613,6 +613,13 @@ public class Config {
                 ConfigurationSection::getInt
         ); }
 
+        public static double ATTACKS_COOLDOWN_MULT = 2.0; // ticks/combo_count
+        static { register("combat.attacks_cooldown_mult",
+            ATTACKS_COOLDOWN_MULT, Double.class,
+            v -> ATTACKS_COOLDOWN_MULT = v,
+            ConfigurationSection::getDouble
+        ); }
+
         // Attacks range multipliers configuration
         public static double ATTACKS_RANGE_MULTIPLIERS_BASIC_1 = 1.4;
         static { register("combat.attacks_range_multipliers_basic_1",
