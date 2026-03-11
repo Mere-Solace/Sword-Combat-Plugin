@@ -50,6 +50,8 @@ import btm.sword.system.input.InputType;
 import btm.sword.system.inventory.InventoryMenuManager;
 import btm.sword.system.inventory.PlayerMenuManager;
 import btm.sword.system.inventory.menu.MainMenu;
+import btm.sword.system.item.ItemClass;
+import btm.sword.system.item.ItemClassifier;
 import btm.sword.system.item.ItemStackBuilder;
 import btm.sword.system.item.KeyRegistry;
 import btm.sword.system.item.SwordItemType;
@@ -172,25 +174,22 @@ public class SwordPlayer extends Combatant {
                 .hideAll()
                 .name(Component.text("~ | Main Menu | ~", Config.SwordColor.TEXT_COOL, TextDecoration.BOLD))
                 .tag(KeyRegistry.MAIN_MENU_BUTTON_KEY, PersistentDataType.STRING, "yes")
+                .tag(KeyRegistry.ITEM_CLASS_KEY, PersistentDataType.STRING, ItemClass.BLOCKED.name())
                 .build(),
             8,
             KeyRegistry.MAIN_MENU_BUTTON_KEY
         );
 
         shieldItem = new SlotAnchoredItem(
-            new ItemStackBuilder(Material.SHIELD)
-                .tag(KeyRegistry.SHIELD_KEY, PersistentDataType.STRING, "yes")
-                .build(),
+            new ItemStackBuilder(Material.SHIELD).build(),
             40,
-            KeyRegistry.SHIELD_KEY
+            Material.SHIELD
         );
 
         chestplateItem = new SlotAnchoredItem(
-            new ItemStackBuilder(Material.NETHERITE_CHESTPLATE)
-                .tag(KeyRegistry.CHESTPLATE_KEY, PersistentDataType.STRING, "yes")
-                .build(),
+            new ItemStackBuilder(Material.NETHERITE_CHESTPLATE).build(),
             38,
-            KeyRegistry.CHESTPLATE_KEY
+            Material.NETHERITE_CHESTPLATE
         );
 
         inputExecutionTree = new InputExecutionTree(this);
@@ -277,6 +276,8 @@ public class SwordPlayer extends Combatant {
      * @param input the input type from the player to process
      */
     public void act(InputType input) {
+        if (ItemClassifier.isBlocked(getItemStackInHand(true))) return;
+
         if (throwingState()) {
             if (input != InputType.RIGHT && input != InputType.RIGHT_HOLD) {
                 ThrowAction.throwCancel(this);
@@ -391,27 +392,29 @@ public class SwordPlayer extends Combatant {
     }
 
     /**
-     * Evaluates an inventory item input before processing it in {@link #act(InputType)}.
-     * Can be used to filter out inputs or trigger cancellations.
+     * Dispatches an input event for items that carry a Sword-managed type key.
+     * This is the primary point of contact for typed-item input handling, called by
+     * {@link btm.sword.listeners.InputListener} before any class-based filtering or
+     * routing through {@link #act(InputType)}.
+     * <p>
+     * If this method returns {@code true}, the caller must cancel the originating Bukkit
+     * event and skip all further input processing — even if no action was taken (e.g.
+     * shift is suppressed for the menu button without opening the menu).
+     * </p>
      *
-     * @param itemStack the item stack involved in the input
+     * @param itemStack the item stack involved in the input; must not be null
      * @param input the input type being evaluated
-     * @return true to cancel the action, false to allow processing
+     * @return {@code true} if the input was fully handled and the event should be cancelled
      */
     public boolean handleItemInteraction(ItemStack itemStack, InputType input) {
-        boolean cancelAction;
-
         if (KeyRegistry.hasKey(itemStack, KeyRegistry.MAIN_MENU_BUTTON_KEY)) {
-            InventoryMenuManager.openMenu(MainMenu.class, this);
-            cancelAction = true;
-        }
-        else {
-            cancelAction = false;
+            if (input != InputType.SHIFT) {
+                InventoryMenuManager.openMenu(MainMenu.class, this);
+            }
+            return true;
         }
 
-        // TODO: Enhance handling of usable items like bows/shields/food in main hand
-
-        return cancelAction;
+        return false;
     }
 
     /**
@@ -511,7 +514,6 @@ public class SwordPlayer extends Combatant {
     }
 
     public boolean nonUmbralState() {
-        message(lastHeldItemBeforeDrop.toString());
         return normalActState() && !holdingSoulLink() && !holdingUmbralBlade();
     }
 

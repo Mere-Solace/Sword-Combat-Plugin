@@ -1,9 +1,7 @@
 package btm.sword.listeners;
 
-import java.util.Objects;
 
 import org.bukkit.Location;
-import org.bukkit.NamespacedKey;
 import org.bukkit.damage.DamageSource;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
@@ -11,13 +9,11 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityPickupItemEvent;
-import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.util.Vector;
 
 import com.destroystokyo.paper.event.entity.EntityAddToWorldEvent;
 import com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent;
 
-import btm.sword.Sword;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.impl.Combatant;
@@ -118,11 +114,6 @@ public class EntityListener implements Listener {
      */
     @EventHandler
     public void entityPickupItemEvent(EntityPickupItemEvent event) {
-        // Test call to see how NamespacedKey works
-        String itemType = event.getItem().getItemStack().getItemMeta().getPersistentDataContainer()
-                .get(new NamespacedKey(Sword.getInstance(), "weapon"), PersistentDataType.STRING);
-        if (Objects.equals(itemType, "long_sword")) {
-            event.getEntity().sendMessage("Picked up a sword");
-        }
+
     }
 }

@@ -131,7 +131,6 @@ public class InputExecutionTree {
             InputActionExecutor.ReadinessState readiness;
 
             if (action != null) {
-                owner.message(action.name);
                 if (entry.getKey().equals(InputType.DROP) && owner.getItemTypeInHand(true).isAir()) {
                     readiness = InputActionExecutor.ReadinessState.DISABLED;
                 }
@@ -441,9 +440,7 @@ public class InputExecutionTree {
                 if (pair == null || pair.action == null || pair.action.get() == null) {
                     continue;
                 }
-                owner.message(pair.action.get().name);
                 if (pair.context().test(owner)) {
-                    owner.message("  ^ passed context test!");
                     if (dynamic) return pair.action().get();
                     if (pairCache == null) pairCache = new IdentityHashMap<>();
                     return pairCache.computeIfAbsent(pair, p -> p.action().get());

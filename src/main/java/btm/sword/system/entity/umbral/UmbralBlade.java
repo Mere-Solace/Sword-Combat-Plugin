@@ -456,7 +456,7 @@ public class UmbralBlade extends ThrownItem {
             if (inState(LungingState.class) ||
                 inState(AttackingHeavyState.class) ||
                 inState(AttackingQuickState.class)) {
-                thrower.setVelocity(thrower.self().getVelocity().add(to.clone().multiply(1.5)));
+//                thrower.setVelocity(thrower.self().getVelocity().add(to.clone().multiply(1.5)));
             }
 
             request(BladeRequest.WIELD);

@@ -65,13 +65,15 @@ public class Dash {
         // Try to find an interactive item to dash-to/ grab
         ItemDisplay targetedItem = findTargetedItem(eyeLoc);
 
-        double FLAT_DASH_PITCH_THRESHOLD = 0.35;
+        double FLAT_DASH_PITCH_THRESHOLD = 0.20;
 
         // if grounded and looking
         flatDash = onGround && (
             (direction > 0 && executor.dir().dot(Config.Direction.UP()) < FLAT_DASH_PITCH_THRESHOLD) ||
                 (direction <= 0 && executor.dir().dot(Config.Direction.UP()) > -FLAT_DASH_PITCH_THRESHOLD)
         );
+
+        executor.message("Flat dash: " + flatDash);
 
         // Handle item dash/grab logic separately; if it succeeds, return early
         if (handleTargetedItemDash(targetedItem)) return;
@@ -104,7 +106,7 @@ public class Dash {
         if (targetedItem instanceof ItemDisplay display &&
             InteractiveItemArbiter.isUmbralBlade(display) &&
             executor.holdingSoulLink()) {
-            return dashToItem(display);
+            return dashToItem(display, true);
         }
 
         boolean shouldDash = !executor.holdingSoulLink();
@@ -113,7 +115,7 @@ public class Dash {
             targetedItem instanceof ItemDisplay id &&
             !id.isDead() &&
             !id.getItemStack().isEmpty()) {
-            return dashToItem(id);
+            return dashToItem(id, false);
         }
 
         return false;
@@ -139,7 +141,7 @@ public class Dash {
     }
 
     @SuppressWarnings("all")
-    private boolean dashToItem(ItemDisplay itemDisplay) {
+    private boolean dashToItem(ItemDisplay itemDisplay, boolean umbral) {
         scheduleParticleDisplay(executor);
 
         if (isDashToItemImpeded(itemDisplay))
@@ -147,12 +149,12 @@ public class Dash {
 
         double length = itemDisplay.getLocation().subtract(ex.getEyeLocation()).length();
 
-        if (flatDash) {
+        if (flatDash && !umbral) {
             performFlatDashToItemFromGround(length);
         }
         else {
             executor.setVelocity(executor.dir()
-                .multiply(Math.log(length)));
+                .multiply(Math.log(length/2)));
         }
         Vector u = executor.getFlatDir().multiply(direction * Config.Movement.DASH_FORWARD_MULTIPLIER)
             .add(Config.Direction.UP().multiply(Config.Movement.DASH_UPWARD_MULTIPLIER));

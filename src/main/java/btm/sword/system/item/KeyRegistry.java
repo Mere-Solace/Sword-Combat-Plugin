@@ -61,19 +61,6 @@ public final class KeyRegistry {
     public static final NamespacedKey NON_MOVABLE_KEY = key(NON_MOVABLE);
 
 
-    /** Persistent data key identifying the pinned offhand shield. */
-    public static final String SHIELD = "shield";
-
-    /** Cached {@link NamespacedKey} for {@link #SHIELD}. */
-    public static final NamespacedKey SHIELD_KEY = key(SHIELD);
-
-
-    /** Persistent data key identifying the pinned netherite chestplate. */
-    public static final String CHESTPLATE = "chestplate";
-
-    /** Cached {@link NamespacedKey} for {@link #CHESTPLATE}. */
-    public static final NamespacedKey CHESTPLATE_KEY = key(CHESTPLATE);
-
 
     public static final String SOUL_LINK = "soul_link";
 
@@ -125,6 +112,17 @@ public final class KeyRegistry {
 
     /** Cached {@link NamespacedKey} for {@link #THROW_STYLE}. */
     public static final NamespacedKey THROW_STYLE_KEY = key(THROW_STYLE);
+
+
+    /**
+     * Persistent data key for an explicit {@link ItemClass} override.
+     * Stores the {@link ItemClass} name as a string. When present, this value
+     * takes priority over all material-based classification in {@link ItemClassifier}.
+     */
+    public static final String ITEM_CLASS = "item_class";
+
+    /** Cached {@link NamespacedKey} for {@link #ITEM_CLASS}. */
+    public static final NamespacedKey ITEM_CLASS_KEY = key(ITEM_CLASS);
 
 
     /** Persistent data key for skin/model data references. */

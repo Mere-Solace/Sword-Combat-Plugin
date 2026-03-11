@@ -21,7 +21,7 @@ import btm.sword.system.control.SwordScheduler;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.input.InputType;
-import btm.sword.system.item.special.NonMovableItem;
+import btm.sword.system.item.ItemClassifier;
 import btm.sword.utility.entity.InputUtil;
 import io.papermc.paper.event.player.PrePlayerAttackEntityEvent;
 
@@ -33,6 +33,17 @@ import io.papermc.paper.event.player.PrePlayerAttackEntityEvent;
  * including attacks, start-clicks, drops, swaps, and sneaking — and delegates
  * them to the internal {@link InputType}-based system used by the Sword plugin.
  * </p>
+ *
+ * <h2>Input routing priority</h2>
+ * <ol>
+ *   <li>{@link SwordPlayer#handleItemInteraction} — first call for every event. If it
+ *       returns {@code true}, the event is cancelled and no further processing occurs.
+ *       Handles {@link btm.sword.system.item.ItemClass#BLOCKED} items (e.g. menu button).</li>
+ *   <li>{@link ItemClassifier#isUsable} guard — for right-click and drop paths only.
+ *       Lets vanilla right-click behavior (eating, blocking, charging) and normal item
+ *       drops pass through untouched for {@link btm.sword.system.item.ItemClass#USABLE} items.</li>
+ *   <li>Sword input tree — all remaining inputs route through {@link SwordPlayer#act}.</li>
+ * </ol>
  */
 public class InputListener implements Listener {
     /**
@@ -47,13 +58,14 @@ public class InputListener implements Listener {
      */
     @EventHandler
     public void onNormalAttack(PrePlayerAttackEntityEvent event) {
-        event.setCancelled(true);
         SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer());
+        ItemStack item = swordPlayer.getItemStackInHand(true);
+
+        if (swordPlayer.handleItemInteraction(item, InputType.LEFT)) return;
+
+        event.setCancelled(true);
 
         if (!swordPlayer.getInputBuffer().accept(InputType.LEFT)) return;
-
-        ItemStack item = swordPlayer.getItemStackInHand(true);
-        if (swordPlayer.handleItemInteraction(item, InputType.LEFT)) return;
 
         swordPlayer.act(InputType.LEFT);
     }
@@ -61,18 +73,8 @@ public class InputListener implements Listener {
     @EventHandler // imagine that...
     public void onAttackCooldownResetEvent(PlayerAttackEntityCooldownResetEvent event) {
         SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer());
-        ItemStack item = swordPlayer.getItemStackInHand(true);
 
         swordPlayer.message("PlayerAttackEntityCooldownResetEvent");
-
-//        if (swordPlayer.handleItemInteraction(item, InputType.LEFT)) {
-//            event.setCancelled(true);
-//            return;
-//        }
-//
-//        swordPlayer.act(InputType.LEFT);
-//
-//        event.setCancelled(true);
     }
 
     /**
@@ -95,21 +97,24 @@ public class InputListener implements Listener {
         if (swordPlayer.hasPerformedDropAction()) return;
 
         if ((action == Action.LEFT_CLICK_AIR || action == Action.LEFT_CLICK_BLOCK)) {
-            if (!swordPlayer.getInputBuffer().accept(InputType.LEFT)) return;
-
             if (swordPlayer.handleItemInteraction(item, InputType.LEFT)) {
                 event.setCancelled(true);
                 return;
             }
+
+            if (!swordPlayer.getInputBuffer().accept(InputType.LEFT)) return;
+
             swordPlayer.act(InputType.LEFT);
         }
         else if (action == Action.RIGHT_CLICK_AIR || action == Action.RIGHT_CLICK_BLOCK) {
-            if (!swordPlayer.getInputBuffer().accept(InputType.RIGHT)) return;
-
             if (swordPlayer.handleItemInteraction(item, InputType.RIGHT)) {
                 event.setCancelled(true);
                 return;
             }
+
+            if (ItemClassifier.isUsable(item)) return;
+
+            if (!swordPlayer.getInputBuffer().accept(InputType.RIGHT)) return;
 
             if (swordPlayer.isAtRoot() &&
                     event.hasBlock() &&
@@ -133,8 +138,17 @@ public class InputListener implements Listener {
      */
     @EventHandler
     public void onPlayerEntityInteract(PlayerInteractEntityEvent event) {
-        event.setCancelled(true);
         SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer());
+        ItemStack item = swordPlayer.getItemStackInHand(true);
+
+        if (swordPlayer.handleItemInteraction(item, InputType.RIGHT)) {
+            event.setCancelled(true);
+            return;
+        }
+
+        if (ItemClassifier.isUsable(item)) return;
+
+        event.setCancelled(true);
 
         swordPlayer.setInteractingWithEntity(true);
         Consumer<SwordPlayer> resetInteractingFlag =
@@ -142,9 +156,6 @@ public class InputListener implements Listener {
         SwordScheduler.runConsumerNextTick(resetInteractingFlag, swordPlayer);
 
         if (!swordPlayer.getInputBuffer().accept(InputType.RIGHT)) return;
-
-        ItemStack item = swordPlayer.getItemStackInHand(true);
-        if (swordPlayer.handleItemInteraction(item, InputType.RIGHT)) return;
 
         swordPlayer.act(InputType.RIGHT);
     }
@@ -166,21 +177,18 @@ public class InputListener implements Listener {
     @EventHandler
     public void onPlayerDropEvent(PlayerDropItemEvent event) {
         SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer());
-        ItemStack item = swordPlayer.getItemStackInHand(true);
-        swordPlayer.setLastHeldItemBeforeDrop(event.getItemDrop().getItemStack());
+        ItemStack item = event.getItemDrop().getItemStack();
+        swordPlayer.setLastHeldItemBeforeDrop(item);
 
-        // Prevent dropping any non-movable item (menu button, Soul Link, etc.)
-        if (NonMovableItem.isNonMovable(item)) {
+        // Typed items (BLOCKED → opens menu, cancels drop)
+        if (swordPlayer.handleItemInteraction(item, InputType.DROP)) {
             event.setCancelled(true);
             return;
         }
 
         swordPlayer.setPerformedDropAction(true);
 
-        if (swordPlayer.handleItemInteraction(item, InputType.DROP)) {
-            event.setCancelled(true);
-        }
-        else if (!swordPlayer.isDroppingInInv()) {
+        if (!swordPlayer.isDroppingInInv()) {
             swordPlayer.act(InputType.DROP);
             event.setCancelled(true);
         }
@@ -205,6 +213,8 @@ public class InputListener implements Listener {
         SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer());
 
         if (event.isSneaking()) {
+            ItemStack item = swordPlayer.getItemStackInHand(true);
+            if (swordPlayer.handleItemInteraction(item, InputType.SHIFT)) return;
             swordPlayer.act(InputType.SHIFT);
         }
         else {
