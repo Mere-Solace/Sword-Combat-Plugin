@@ -53,6 +53,8 @@ import btm.sword.system.inventory.menu.MainMenu;
 import btm.sword.system.item.ItemStackBuilder;
 import btm.sword.system.item.KeyRegistry;
 import btm.sword.system.item.SwordItemType;
+import btm.sword.system.item.special.NonMovableItem;
+import btm.sword.system.item.special.SlotAnchoredItem;
 import btm.sword.system.playerdata.PlayerData;
 import btm.sword.utility.SwordTimeUnit;
 import btm.sword.utility.display.DisplayUtil;
@@ -81,7 +83,9 @@ public class SwordPlayer extends Combatant {
     private final ItemStack playerHead;
 
     private final PlayerMenuManager playerMenuManager;
-    private final ItemStack menuButton;
+    private final SlotAnchoredItem menuButton;
+    private final SlotAnchoredItem shieldItem;
+    private final SlotAnchoredItem chestplateItem;
 
     private final int maxNumDummies = 3;
     private int curNumDummies = 0;
@@ -163,11 +167,31 @@ public class SwordPlayer extends Combatant {
 
         playerMenuManager = new PlayerMenuManager(this);
 
-        menuButton = new ItemStackBuilder(Material.ECHO_SHARD)
-            .hideAll()
-            .name(Component.text("~ | Main Menu | ~", Config.SwordColor.TEXT_COOL, TextDecoration.BOLD))
-            .tag(KeyRegistry.MAIN_MENU_BUTTON_KEY, PersistentDataType.STRING, "yes")
-            .build();
+        menuButton = new SlotAnchoredItem(
+            new ItemStackBuilder(Material.ECHO_SHARD)
+                .hideAll()
+                .name(Component.text("~ | Main Menu | ~", Config.SwordColor.TEXT_COOL, TextDecoration.BOLD))
+                .tag(KeyRegistry.MAIN_MENU_BUTTON_KEY, PersistentDataType.STRING, "yes")
+                .build(),
+            8,
+            KeyRegistry.MAIN_MENU_BUTTON_KEY
+        );
+
+        shieldItem = new SlotAnchoredItem(
+            new ItemStackBuilder(Material.SHIELD)
+                .tag(KeyRegistry.SHIELD_KEY, PersistentDataType.STRING, "yes")
+                .build(),
+            40,
+            KeyRegistry.SHIELD_KEY
+        );
+
+        chestplateItem = new SlotAnchoredItem(
+            new ItemStackBuilder(Material.NETHERITE_CHESTPLATE)
+                .tag(KeyRegistry.CHESTPLATE_KEY, PersistentDataType.STRING, "yes")
+                .build(),
+            38,
+            KeyRegistry.CHESTPLATE_KEY
+        );
 
         inputExecutionTree = new InputExecutionTree(this);
         inputBuffer = new InputBuffer();
@@ -349,31 +373,20 @@ public class SwordPlayer extends Combatant {
     }
 
     private void inventoryUpkeep() {
-        if (getItemStackInHand(false).getType() != Material.SHIELD) {
-            setItemStackInHand(ItemStack.of(Material.SHIELD), false);
+        if (!shieldItem.isSatisfied(player)) {
+            shieldItem.restore(player);
         }
 
-        if (player.getEquipment().getChestplate().isEmpty() ||
-            !player.getEquipment().getChestplate().getType().equals(Material.NETHERITE_CHESTPLATE)) {
-            player.getEquipment().setChestplate(ItemStack.of(Material.NETHERITE_CHESTPLATE));
+        if (!chestplateItem.isSatisfied(player)) {
+            chestplateItem.restore(player);
         }
 
-        ItemStack item8 = player.getInventory().getItem(8);
-        if (item8 == null || !KeyRegistry.hasKey(item8, KeyRegistry.MAIN_MENU_BUTTON_KEY)) {
-            player.getInventory().setItem(8, menuButton);
+        if (!menuButton.isSatisfied(player)) {
+            menuButton.restore(player);
         }
 
-        ItemStack item0 = player.getInventory().getItem(0);
-        if (getUmbralBlade() != null) {
-            if (item0 == null) {
-                player.getInventory().setItem(0, getUmbralBlade().getLink());
-            }
-            else {
-                boolean hasLink = KeyRegistry.hasKey(item0, KeyRegistry.SOUL_LINK_KEY);
-                boolean hasBlade = KeyRegistry.hasKey(item0, KeyRegistry.UMBRAL_BLADE_KEY);
-
-                if (!hasLink && !hasBlade) player.getInventory().setItem(0, getUmbralBlade().getLink());
-            }
+        if (getUmbralBlade() != null && !getUmbralBlade().getLinkAnchor().isSatisfied(player)) {
+            getUmbralBlade().getLinkAnchor().restore(player);
         }
     }
 
@@ -421,10 +434,8 @@ public class SwordPlayer extends Combatant {
             return false;
         }
 
-        // Protect necessary items from being interacted with
-        if (KeyRegistry.hasKey(clicked, KeyRegistry.MAIN_MENU_BUTTON_KEY) ||
-                KeyRegistry.hasKey(onCursor, KeyRegistry.MAIN_MENU_BUTTON_KEY) ||
-            slotNumber == 0 || slotNumber == 8 || slotNumber == 38 || slotNumber == 40) {
+        // Protect non-movable items from being interacted with
+        if (NonMovableItem.isNonMovable(clicked) || NonMovableItem.isNonMovable(onCursor)) {
             return true; // Cancel the action
         }
 //        message("\n\n~|------Beginning of new inventory interact event------|~"

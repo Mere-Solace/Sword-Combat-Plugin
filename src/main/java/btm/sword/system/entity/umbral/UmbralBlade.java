@@ -48,6 +48,7 @@ import btm.sword.system.entity.umbral.statemachine.state.StandbyState;
 import btm.sword.system.item.ItemStackBuilder;
 import btm.sword.system.item.KeyRegistry;
 import btm.sword.system.item.SwordItemType;
+import btm.sword.system.item.special.SoulLinkItem;
 import btm.sword.utility.Prefab;
 import btm.sword.utility.display.DisplayUtil;
 import btm.sword.utility.display.DrawUtil;
@@ -71,7 +72,8 @@ public class UmbralBlade extends ThrownItem {
     private Function<Combatant, Attack>[] basicAttacks;
     private int currentComboStep = -1;
 
-    private ItemStack link;
+    @Getter(lombok.AccessLevel.NONE)
+    private SoulLinkItem link;
     private ItemStack blade;
 
     private ItemStack weapon;
@@ -99,6 +101,25 @@ public class UmbralBlade extends ThrownItem {
     private DashDirection dashDirection = DashDirection.NONE;
 
     private final InputBuffer inputBuffer = new InputBuffer();
+
+    /**
+     * Returns the Soul Link {@link ItemStack} for use as an inventory item.
+     * Use {@link #getLinkAnchor()} when slot-restoration logic is needed.
+     *
+     * @return the Soul Link ItemStack
+     */
+    public ItemStack getLink() {
+        return link.getItemStack();
+    }
+
+    /**
+     * Returns the {@link SoulLinkItem} anchor for slot-restoration and satisfaction checks.
+     *
+     * @return the Soul Link anchor
+     */
+    public SoulLinkItem getLinkAnchor() {
+        return link;
+    }
 
     public UmbralBlade(Combatant thrower, ItemStack weapon) {
         super(thrower, display -> {
@@ -352,7 +373,7 @@ public class UmbralBlade extends ThrownItem {
 
     private void generateUmbralItems() {
         // item Stack used for determining umbral blade inputs
-        this.link = new ItemStackBuilder(Material.HEAVY_CORE)
+        this.link = new SoulLinkItem(new ItemStackBuilder(Material.HEAVY_CORE)
             .hideAll()
             .name(Component.text("~ ", Config.SwordColor.TEXT_ITEM_NAME)
                 .append(Component.text(thrower.getDisplayName() + "'s Soul Link",
@@ -362,7 +383,7 @@ public class UmbralBlade extends ThrownItem {
             .unbreakable(true)
             .tag(KeyRegistry.SOUL_LINK_KEY, PersistentDataType.STRING, thrower.getUniqueId().toString())
             .tagSwordItem(SwordItemType.UMBRAL_LINK)
-            .build();
+            .build());
 
         this.blade = new ItemStackBuilder(weapon.getType())
             .hideAll()

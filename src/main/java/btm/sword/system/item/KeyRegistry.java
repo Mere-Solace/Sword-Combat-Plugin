@@ -47,6 +47,34 @@ public final class KeyRegistry {
     //  Commonly Used Keys
     // ------------------------------
 
+    /** Persistent data key marking an item as system-managed ({@code SpecialItem}). */
+    public static final String SPECIAL_ITEM = "special_item";
+
+    /** Cached {@link NamespacedKey} for {@link #SPECIAL_ITEM}. */
+    public static final NamespacedKey SPECIAL_ITEM_KEY = key(SPECIAL_ITEM);
+
+
+    /** Persistent data key marking an item as immovable by the player ({@code NonMovableItem}). */
+    public static final String NON_MOVABLE = "non_movable";
+
+    /** Cached {@link NamespacedKey} for {@link #NON_MOVABLE}. */
+    public static final NamespacedKey NON_MOVABLE_KEY = key(NON_MOVABLE);
+
+
+    /** Persistent data key identifying the pinned offhand shield. */
+    public static final String SHIELD = "shield";
+
+    /** Cached {@link NamespacedKey} for {@link #SHIELD}. */
+    public static final NamespacedKey SHIELD_KEY = key(SHIELD);
+
+
+    /** Persistent data key identifying the pinned netherite chestplate. */
+    public static final String CHESTPLATE = "chestplate";
+
+    /** Cached {@link NamespacedKey} for {@link #CHESTPLATE}. */
+    public static final NamespacedKey CHESTPLATE_KEY = key(CHESTPLATE);
+
+
     public static final String SOUL_LINK = "soul_link";
 
     public static final NamespacedKey SOUL_LINK_KEY = key(SOUL_LINK);

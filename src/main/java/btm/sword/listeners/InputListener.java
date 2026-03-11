@@ -21,7 +21,7 @@ import btm.sword.system.control.SwordScheduler;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.input.InputType;
-import btm.sword.system.item.KeyRegistry;
+import btm.sword.system.item.special.NonMovableItem;
 import btm.sword.utility.entity.InputUtil;
 import io.papermc.paper.event.player.PrePlayerAttackEntityEvent;
 
@@ -169,8 +169,8 @@ public class InputListener implements Listener {
         ItemStack item = swordPlayer.getItemStackInHand(true);
         swordPlayer.setLastHeldItemBeforeDrop(event.getItemDrop().getItemStack());
 
-        // Prevent dropping the menu button
-        if (KeyRegistry.hasKey(item, KeyRegistry.MAIN_MENU_BUTTON_KEY)) {
+        // Prevent dropping any non-movable item (menu button, Soul Link, etc.)
+        if (NonMovableItem.isNonMovable(item)) {
             event.setCancelled(true);
             return;
         }
