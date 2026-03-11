@@ -100,11 +100,11 @@ public class Prefab {
     // using Suppliers so that this basic record-like class (AttackHitValue) can use the values from the config.
     public static class Attacks {
         public static final HitValuePacket defaultMobHit = new HitValuePacket(
-            () -> 5f,
-            () -> 15,
-            () -> 1,
-            () -> 10f,
-            () -> 10f
+            () -> Config.Combat.HIT_DEFAULT_MOB_REAPED_SOULFIRE,
+            () -> Config.Combat.HIT_DEFAULT_MOB_INVULN_TICKS,
+            () -> Config.Combat.HIT_DEFAULT_MOB_SHARD_DAMAGE,
+            () -> Config.Combat.HIT_DEFAULT_MOB_TOUGHNESS_DAMAGE,
+            () -> Config.Combat.HIT_DEFAULT_MOB_SOULFIRE_LOSS
         );
 
         public static final HitValuePacket basicAttack = new HitValuePacket(
@@ -116,11 +116,11 @@ public class Prefab {
         );
 
         public static final HitValuePacket grabHit = new HitValuePacket(
-            () -> 1f,
-            () -> 0,
-            () -> 0,
-            () -> 5f,
-            () -> 5f
+            () -> Config.Combat.HIT_GRAB_REAPED_SOULFIRE,
+            () -> Config.Combat.HIT_GRAB_INVULN_TICKS,
+            () -> Config.Combat.HIT_GRAB_SHARD_DAMAGE,
+            () -> Config.Combat.HIT_GRAB_TOUGHNESS_DAMAGE,
+            () -> Config.Combat.HIT_GRAB_SOULFIRE_LOSS
         );
 
         public static final HitValuePacket thrownWeapon = new HitValuePacket(
@@ -132,19 +132,19 @@ public class Prefab {
         );
 
         public static final HitValuePacket umbralItemDisplayAttack = new HitValuePacket(
-            () -> 0f,
-            () -> 5,
-            () -> 1,
-            () -> 15f,
-            () -> 10f
+            () -> Config.Combat.HIT_UMBRAL_DISPLAY_REAPED_SOULFIRE,
+            () -> Config.Combat.HIT_UMBRAL_DISPLAY_INVULN_TICKS,
+            () -> Config.Combat.HIT_UMBRAL_DISPLAY_SHARD_DAMAGE,
+            () -> Config.Combat.HIT_UMBRAL_DISPLAY_TOUGHNESS_DAMAGE,
+            () -> Config.Combat.HIT_UMBRAL_DISPLAY_SOULFIRE_LOSS
         );
 
         public static final HitValuePacket punch = new HitValuePacket(
-            () -> 7.5f,
-            () -> 2,
-            () -> 1,
-            () -> 5f,
-            () -> 5f
+            () -> Config.Combat.HIT_PUNCH_REAPED_SOULFIRE,
+            () -> Config.Combat.HIT_PUNCH_INVULN_TICKS,
+            () -> Config.Combat.HIT_PUNCH_SHARD_DAMAGE,
+            () -> Config.Combat.HIT_PUNCH_TOUGHNESS_DAMAGE,
+            () -> Config.Combat.HIT_PUNCH_SOULFIRE_LOSS
         );
     }
 
@@ -185,6 +185,12 @@ public class Prefab {
             () -> Config.Audio.THROW_SOUND,
             () -> Config.Audio.THROW_VOLUME,
             () -> Config.Audio.THROW_PITCH
+        );
+
+        public static final SoundWrapper PRE_ATTACK = new SoundWrapper(
+            () -> Config.Audio.PRE_ATTACK_SOUND,
+            () -> Config.Audio.PRE_ATTACK_VOLUME,
+            () -> Config.Audio.PRE_ATTACK_PITCH
         );
 
         public static final SoundWrapper SOULFIRE_GAIN_BACKGROUND = new SoundWrapper(

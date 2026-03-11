@@ -73,7 +73,7 @@ public class Dash {
                 (direction <= 0 && executor.dir().dot(Config.Direction.UP()) > -FLAT_DASH_PITCH_THRESHOLD)
         );
 
-        executor.message("Flat dash: " + flatDash);
+        executor.movementInfo("Flat dash: " + flatDash);
 
         // Handle item dash/grab logic separately; if it succeeds, return early
         if (handleTargetedItemDash(targetedItem)) return;

@@ -19,6 +19,7 @@ import org.bukkit.util.Vector;
 import com.destroystokyo.paper.entity.Pathfinder;
 
 import btm.sword.system.action.throwing.types.DroppedItem;
+import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.ai.HostileStateMachine;
 import btm.sword.system.entity.ai.MobGoalArbiter;
 import btm.sword.system.entity.ai.WanderProfile;
@@ -189,7 +190,7 @@ public class Hostile extends Combatant {
     public void broadcastMessage(double radius, String message) {
         for (Entity entity : self().getNearbyEntities(radius, radius, radius)) {
             if (entity instanceof Player player) {
-                player.sendMessage("[" + self().getName() + "] " + message);
+                SwordEntityArbiter.getOrAdd(player).combatInfo("[" + self().getName() + "] " + message);
             }
         }
     }

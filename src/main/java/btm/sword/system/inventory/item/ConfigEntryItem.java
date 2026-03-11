@@ -6,6 +6,7 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.jetbrains.annotations.NotNull;
 
 import btm.sword.config.Config;
 import btm.sword.config.ConfigManager;
@@ -16,9 +17,6 @@ import btm.sword.utility.sound.SoundType;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
-
-import org.jetbrains.annotations.NotNull;
-
 import xyz.xenondevs.invui.item.ItemProvider;
 import xyz.xenondevs.invui.item.builder.ItemBuilder;
 import xyz.xenondevs.invui.item.impl.AbstractItem;

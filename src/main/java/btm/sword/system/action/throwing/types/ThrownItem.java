@@ -331,7 +331,7 @@ public class ThrownItem extends SimulatedDisplay {
                                 display.isDead() ? "display dead" :
                                     (timeCutoff > 0 && timeStep.get() * timeScalingFactor > timeCutoff) ? "time cutoff" :
                                         "unknown";
-                    thrower.message("Ending due to: " + reason);
+                    thrower.combatInfo("Ending due to: " + reason);
 
                     onEnd();
                 }

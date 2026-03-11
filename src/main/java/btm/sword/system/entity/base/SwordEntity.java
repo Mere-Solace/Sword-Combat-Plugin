@@ -618,6 +618,24 @@ public abstract class SwordEntity {
         self.sendMessage(message);
     }
 
+    public void info(String message) {
+        if (Config.Debug.LOGGING_VERBOSE_CONFIG) {
+            this.message(message);
+        }
+    }
+
+    public void combatInfo(String message) {
+        if (Config.Debug.LOGGING_VERBOSE_COMBAT) {
+            this.message(message);
+        }
+    }
+
+    public void movementInfo(String message) {
+        if (Config.Debug.LOGGING_VERBOSE_MOVEMENT) {
+            this.message(message);
+        }
+    }
+
     /**
      * Gives an {@link ItemStack} to this entity.
      * <p>

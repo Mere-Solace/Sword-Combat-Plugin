@@ -39,24 +39,26 @@ import xyz.xenondevs.invui.window.Window;
  */
 public class ConfigMenu extends Menu {
 
-    /** Materials cycled through for section buttons in discovery order. */
-    private static final Material[] SECTION_MATERIALS = {
-        Material.HEAVY_CORE,
-        Material.REDSTONE,
-        Material.RABBIT_FOOT,
-        Material.ENDER_EYE,
-        Material.WATER_BUCKET,
-        Material.FEATHER,
-        Material.YELLOW_DYE,
-        Material.NAUTILUS_SHELL,
-        Material.SPYGLASS,
-        Material.CYAN_DYE,
-        Material.CLOCK,
-        Material.STONE_SWORD,
-        Material.COMPARATOR,
-        Material.REPEATER,
-        Material.ORANGE_DYE,
-    };
+    /** Material assigned to each config section button — keyed by first YAML path segment. */
+    private static final Map<String, Material> SECTION_MATERIALS;
+    static {
+        SECTION_MATERIALS = new LinkedHashMap<>();
+        SECTION_MATERIALS.put("color",       Material.HEAVY_CORE);
+        SECTION_MATERIALS.put("angle",       Material.REDSTONE);
+        SECTION_MATERIALS.put("physics",     Material.RABBIT_FOOT);
+        SECTION_MATERIALS.put("combat",      Material.ENDER_EYE);
+        SECTION_MATERIALS.put("timing",      Material.WATER_BUCKET);
+        SECTION_MATERIALS.put("display",     Material.FEATHER);
+        SECTION_MATERIALS.put("detection",   Material.YELLOW_DYE);
+        SECTION_MATERIALS.put("audio",       Material.NAUTILUS_SHELL);
+        SECTION_MATERIALS.put("entity",      Material.SPYGLASS);
+        SECTION_MATERIALS.put("movement",    Material.CYAN_DYE);
+        SECTION_MATERIALS.put("world",       Material.CLOCK);
+        SECTION_MATERIALS.put("debug",       Material.STONE_SWORD);
+        SECTION_MATERIALS.put("grab",        Material.COMPARATOR);
+        SECTION_MATERIALS.put("hostile",     Material.REPEATER);
+        SECTION_MATERIALS.put("umbralblade", Material.ORANGE_DYE);
+    }
 
     public ConfigMenu(SwordPlayer player) {
         super(player);
@@ -77,12 +79,10 @@ public class ConfigMenu extends Menu {
 
         // Build one section button per group
         List<Item> sectionItems = new ArrayList<>();
-        int idx = 0;
         for (Map.Entry<String, List<Config.ConfigEntry<?>>> e : sections.entrySet()) {
             String section = e.getKey();
             List<Config.ConfigEntry<?>> entries = e.getValue();
-            Material mat = SECTION_MATERIALS[idx % SECTION_MATERIALS.length];
-            idx++;
+            Material mat = SECTION_MATERIALS.getOrDefault(section.toLowerCase(), Material.PAPER);
 
             sectionItems.add(new SimpleItem(
                 new ItemStackBuilder(mat)

@@ -1,15 +1,12 @@
 package btm.sword.system.entity.ai.state;
 
-import java.util.Collection;
 
 import org.bukkit.Particle;
-import org.bukkit.Sound;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.Player;
 
 import btm.sword.config.Config;
 import btm.sword.system.entity.ai.HostileAIFacade;
 import btm.sword.system.entity.impl.Hostile;
+import btm.sword.utility.Prefab;
 
 /**
  * Pre-attack (wind-up) AI state for Hostile entities.
@@ -37,16 +34,9 @@ public class PreAttackState extends HostileAIFacade {
             25, 0.4, 0.4, 0.4, 0
         );
 
-        for (Entity entity : h.self().getNearbyEntities(20, 20, 20)) {
-            if (entity instanceof Player player) {
-                player.sendMessage(h.self().getName() + " | Gonna getcha!");
-            }
-        }
+        h.broadcastMessage(10, "Gonna Getcha!");
 
-        Collection<Player> nearbyPlayers = h.self().getWorld().getNearbyPlayers(h.self().getLocation(), 20);
-        for (Player player : nearbyPlayers) {
-            player.playSound(h.self().getLocation(), Sound.ITEM_GOAT_HORN_SOUND_7, 2.0f, 1.0f);
-        }
+        Prefab.Sounds.PRE_ATTACK.playForAllInRadius(h.self());
 
         faceTarget(h);
     }

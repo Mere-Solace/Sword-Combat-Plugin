@@ -1020,11 +1020,95 @@ public class Config {
 
         public static float ATTACK_CLASS_HIT_SOULFIRE = 6;
         static { register(
-            "combat.attack_class_hit_toughness",
+            "combat.attack_class_hit_soulfire",
             ATTACK_CLASS_HIT_SOULFIRE, Float.class,
             v -> ATTACK_CLASS_HIT_SOULFIRE = v,
             Config::loadFloat
         ); }
+
+        // Hit packets — default mob (mobs that damage the player)
+        public static float HIT_DEFAULT_MOB_REAPED_SOULFIRE = 5f;
+        static { register("combat.hit_default_mob_reaped_soulfire", HIT_DEFAULT_MOB_REAPED_SOULFIRE,
+            Float.class, v -> HIT_DEFAULT_MOB_REAPED_SOULFIRE = v, Config::loadFloat); }
+
+        public static int HIT_DEFAULT_MOB_INVULN_TICKS = 15;
+        static { register("combat.hit_default_mob_invuln_ticks", HIT_DEFAULT_MOB_INVULN_TICKS,
+            Integer.class, v -> HIT_DEFAULT_MOB_INVULN_TICKS = v, ConfigurationSection::getInt); }
+
+        public static int HIT_DEFAULT_MOB_SHARD_DAMAGE = 1;
+        static { register("combat.hit_default_mob_shard_damage", HIT_DEFAULT_MOB_SHARD_DAMAGE,
+            Integer.class, v -> HIT_DEFAULT_MOB_SHARD_DAMAGE = v, ConfigurationSection::getInt); }
+
+        public static float HIT_DEFAULT_MOB_TOUGHNESS_DAMAGE = 10f;
+        static { register("combat.hit_default_mob_toughness_damage", HIT_DEFAULT_MOB_TOUGHNESS_DAMAGE,
+            Float.class, v -> HIT_DEFAULT_MOB_TOUGHNESS_DAMAGE = v, Config::loadFloat); }
+
+        public static float HIT_DEFAULT_MOB_SOULFIRE_LOSS = 1f;
+        static { register("combat.hit_default_mob_soulfire_loss", HIT_DEFAULT_MOB_SOULFIRE_LOSS,
+            Float.class, v -> HIT_DEFAULT_MOB_SOULFIRE_LOSS = v, Config::loadFloat); }
+
+        // Hit packets — grab
+        public static float HIT_GRAB_REAPED_SOULFIRE = 1f;
+        static { register("combat.hit_grab_reaped_soulfire", HIT_GRAB_REAPED_SOULFIRE,
+            Float.class, v -> HIT_GRAB_REAPED_SOULFIRE = v, Config::loadFloat); }
+
+        public static int HIT_GRAB_INVULN_TICKS = 0;
+        static { register("combat.hit_grab_invuln_ticks", HIT_GRAB_INVULN_TICKS,
+            Integer.class, v -> HIT_GRAB_INVULN_TICKS = v, ConfigurationSection::getInt); }
+
+        public static int HIT_GRAB_SHARD_DAMAGE = 0;
+        static { register("combat.hit_grab_shard_damage", HIT_GRAB_SHARD_DAMAGE,
+            Integer.class, v -> HIT_GRAB_SHARD_DAMAGE = v, ConfigurationSection::getInt); }
+
+        public static float HIT_GRAB_TOUGHNESS_DAMAGE = 5f;
+        static { register("combat.hit_grab_toughness_damage", HIT_GRAB_TOUGHNESS_DAMAGE,
+            Float.class, v -> HIT_GRAB_TOUGHNESS_DAMAGE = v, Config::loadFloat); }
+
+        public static float HIT_GRAB_SOULFIRE_LOSS = 5f;
+        static { register("combat.hit_grab_soulfire_loss", HIT_GRAB_SOULFIRE_LOSS,
+            Float.class, v -> HIT_GRAB_SOULFIRE_LOSS = v, Config::loadFloat); }
+
+        // Hit packets — umbral item display attack
+        public static float HIT_UMBRAL_DISPLAY_REAPED_SOULFIRE = 0f;
+        static { register("combat.hit_umbral_display_reaped_soulfire", HIT_UMBRAL_DISPLAY_REAPED_SOULFIRE,
+            Float.class, v -> HIT_UMBRAL_DISPLAY_REAPED_SOULFIRE = v, Config::loadFloat); }
+
+        public static int HIT_UMBRAL_DISPLAY_INVULN_TICKS = 5;
+        static { register("combat.hit_umbral_display_invuln_ticks", HIT_UMBRAL_DISPLAY_INVULN_TICKS,
+            Integer.class, v -> HIT_UMBRAL_DISPLAY_INVULN_TICKS = v, ConfigurationSection::getInt); }
+
+        public static int HIT_UMBRAL_DISPLAY_SHARD_DAMAGE = 1;
+        static { register("combat.hit_umbral_display_shard_damage", HIT_UMBRAL_DISPLAY_SHARD_DAMAGE,
+            Integer.class, v -> HIT_UMBRAL_DISPLAY_SHARD_DAMAGE = v, ConfigurationSection::getInt); }
+
+        public static float HIT_UMBRAL_DISPLAY_TOUGHNESS_DAMAGE = 15f;
+        static { register("combat.hit_umbral_display_toughness_damage", HIT_UMBRAL_DISPLAY_TOUGHNESS_DAMAGE,
+            Float.class, v -> HIT_UMBRAL_DISPLAY_TOUGHNESS_DAMAGE = v, Config::loadFloat); }
+
+        public static float HIT_UMBRAL_DISPLAY_SOULFIRE_LOSS = 10f;
+        static { register("combat.hit_umbral_display_soulfire_loss", HIT_UMBRAL_DISPLAY_SOULFIRE_LOSS,
+            Float.class, v -> HIT_UMBRAL_DISPLAY_SOULFIRE_LOSS = v, Config::loadFloat); }
+
+        // Hit packets — punch
+        public static float HIT_PUNCH_REAPED_SOULFIRE = 7.5f;
+        static { register("combat.hit_punch_reaped_soulfire", HIT_PUNCH_REAPED_SOULFIRE,
+            Float.class, v -> HIT_PUNCH_REAPED_SOULFIRE = v, Config::loadFloat); }
+
+        public static int HIT_PUNCH_INVULN_TICKS = 2;
+        static { register("combat.hit_punch_invuln_ticks", HIT_PUNCH_INVULN_TICKS,
+            Integer.class, v -> HIT_PUNCH_INVULN_TICKS = v, ConfigurationSection::getInt); }
+
+        public static int HIT_PUNCH_SHARD_DAMAGE = 1;
+        static { register("combat.hit_punch_shard_damage", HIT_PUNCH_SHARD_DAMAGE,
+            Integer.class, v -> HIT_PUNCH_SHARD_DAMAGE = v, ConfigurationSection::getInt); }
+
+        public static float HIT_PUNCH_TOUGHNESS_DAMAGE = 5f;
+        static { register("combat.hit_punch_toughness_damage", HIT_PUNCH_TOUGHNESS_DAMAGE,
+            Float.class, v -> HIT_PUNCH_TOUGHNESS_DAMAGE = v, Config::loadFloat); }
+
+        public static float HIT_PUNCH_SOULFIRE_LOSS = 5f;
+        static { register("combat.hit_punch_soulfire_loss", HIT_PUNCH_SOULFIRE_LOSS,
+            Float.class, v -> HIT_PUNCH_SOULFIRE_LOSS = v, Config::loadFloat); }
     }
     //endregion
 

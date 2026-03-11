@@ -225,14 +225,24 @@ public final class ConfigManager {
      * </p>
      */
     public void saveToProject() {
-        // Data folder is <project>/run/plugins/Sword/ — go up three levels to project root
-        File projectConfig = new File(
-            plugin.getDataFolder().getParentFile().getParentFile().getParentFile(),
-            "src/main/resources/config.yaml"
-        );
+        // Walk up from the plugin data folder looking for build.gradle, which uniquely marks the
+        // project root regardless of whether the server runs from run/, ./, or elsewhere.
+        File projectRoot = null;
+        File dir = plugin.getDataFolder().getAbsoluteFile();
+        while (dir != null) {
+            if (new File(dir, "build.gradle").exists() || new File(dir, "build.gradle.kts").exists()) {
+                projectRoot = dir;
+                break;
+            }
+            dir = dir.getParentFile();
+        }
+        if (projectRoot == null) {
+            plugin.getLogger().warning("Project root not found (no build.gradle) — is the server running via ./gradlew runServer?");
+            return;
+        }
+        File projectConfig = new File(projectRoot, "src/main/resources/config.yaml");
         if (!projectConfig.exists()) {
-            plugin.getLogger().warning("Project config not found at: " + projectConfig.getAbsolutePath()
-                + " — is the server running via ./gradlew runServer?");
+            plugin.getLogger().warning("Project config not found at: " + projectConfig.getAbsolutePath());
             return;
         }
         try {
