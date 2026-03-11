@@ -45,7 +45,6 @@ import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.input.ActivationContext;
 import btm.sword.system.item.ItemUsageManager;
 import btm.sword.system.item.KeyRegistry;
-import btm.sword.utility.Debug;
 import btm.sword.utility.Prefab;
 import btm.sword.utility.display.DisplayUtil;
 import btm.sword.utility.display.ParticleWrapper;

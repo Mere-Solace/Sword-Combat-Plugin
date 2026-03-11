@@ -1,13 +1,10 @@
 package btm.sword.system.entity.umbral.statemachine.state;
 
-import org.bukkit.entity.LivingEntity;
 
 import btm.sword.config.Config;
-import btm.sword.system.control.TimeArbiter;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.umbral.UmbralBlade;
 import btm.sword.system.entity.umbral.statemachine.UmbralStateFacade;
-import btm.sword.utility.display.DisplayUtil;
 
 /**
  * State where the UmbralBlade is lodged in an entity or block.
