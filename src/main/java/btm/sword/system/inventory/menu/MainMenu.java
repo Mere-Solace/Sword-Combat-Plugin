@@ -130,13 +130,13 @@ public class MainMenu extends Menu {
             click -> InventoryMenuManager.openMenu(MovesetMenu.class, swordPlayer)
         );
 
-        Gui gui = Gui.normal()
+        Gui.Builder.Normal builder = Gui.normal()
             .setStructure(
                 "# # # . . . # # #",
                 "# . . . P . . . #",
                 ". . . . D Q . . .",
                 ". . . . . . . . .",
-                "# . . . H . M . #",
+                "# . . . H . M V #",
                 "# # # < . > # # #")
             .addIngredient('#', BORDER)
             .addIngredient('Q', queueForCTF)
@@ -145,8 +145,18 @@ public class MainMenu extends Menu {
             .addIngredient('D', spawnDummy)
             .addIngredient('M', combatReference)
             .addIngredient('<', generatePreviousButtonOrDefault())
-            .addIngredient('>', generateForwardPreviousButtonOrDefault())
-            .build();
+            .addIngredient('>', generateForwardPreviousButtonOrDefault());
+
+        if (player.isOp()) {
+            builder.addIngredient('V', new SimpleItem(
+                new ItemStackBuilder(Material.DEBUG_STICK)
+                    .name(Component.text("Dev Menu", Config.SwordColor.TEXT_COOL, TextDecoration.BOLD))
+                    .build(),
+                click -> InventoryMenuManager.openMenu(DevMenu.class, swordPlayer)
+            ));
+        }
+
+        Gui gui = builder.build();
 
         Window window = Window.single()
             .setViewer(player)

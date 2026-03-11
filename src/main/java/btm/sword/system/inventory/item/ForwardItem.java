@@ -15,7 +15,7 @@ public class ForwardItem extends PageItem {
 
     @Override
     public ItemProvider getItemProvider(PagedGui<?> gui) {
-        ItemBuilder builder = new ItemBuilder(Material.GREEN_STAINED_GLASS_PANE);
+        ItemBuilder builder = new ItemBuilder(Material.SPRUCE_TRAPDOOR);
         builder.setDisplayName("Next page")
             .addLoreLines(gui.hasNextPage()
                 ? "Go to page " + (gui.getCurrentPage() + 2) + "/" + gui.getPageAmount()

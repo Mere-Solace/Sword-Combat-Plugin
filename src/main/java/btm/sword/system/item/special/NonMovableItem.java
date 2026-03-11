@@ -4,6 +4,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
 
 import btm.sword.system.item.KeyRegistry;
+import btm.sword.utility.Debug;
 
 /**
  * A {@link SpecialItem} that cannot be moved, thrown, or used to cast abilities.
@@ -44,6 +45,7 @@ public abstract class NonMovableItem extends SpecialItem {
      * @return {@code true} if the stack carries {@link KeyRegistry#NON_MOVABLE_KEY}
      */
     public static boolean isNonMovable(ItemStack item) {
+        if (!Debug.SPECIAL_ITEM_CHECKS_ENABLED) return false;
         return item != null && !item.isEmpty() && KeyRegistry.hasKey(item, KeyRegistry.NON_MOVABLE_KEY);
     }
 }

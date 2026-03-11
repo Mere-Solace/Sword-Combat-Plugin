@@ -15,7 +15,7 @@ public class PreviousItem extends PageItem {
 
     @Override
     public ItemProvider getItemProvider(PagedGui<?> gui) {
-        ItemBuilder builder = new ItemBuilder(Material.RED_STAINED_GLASS_PANE);
+        ItemBuilder builder = new ItemBuilder(Material.SPRUCE_TRAPDOOR);
         builder.setDisplayName("Previous page")
             .addLoreLines(gui.hasPreviousPage()
                 ? "Go to page " + gui.getCurrentPage() + "/" + gui.getPageAmount()

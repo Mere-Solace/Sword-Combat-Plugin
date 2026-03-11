@@ -96,6 +96,25 @@ public class Config {
         ENTRIES.add(new ConfigEntry<>(path, defaultValue, type, assign, loader));
     }
 
+    /**
+     * Forces all nested static classes in {@link Config} to initialize.
+     * <p>
+     * Each nested class registers its entries in a static initializer block; those
+     * initializers only run when the class is first accessed. Call this method once
+     * during plugin startup (before {@code ConfigManager.loadConfig()}) so that every
+     * section is present in {@link #ENTRIES} before the first read or menu open.
+     * </p>
+     */
+    public static void forceInitializeAll() {
+        for (Class<?> nested : Config.class.getDeclaredClasses()) {
+            try {
+                Class.forName(nested.getName(), true, nested.getClassLoader());
+            } catch (ClassNotFoundException ignored) {
+                // unreachable — class is already known to the JVM
+            }
+        }
+    }
+
     // ==============================================================================
     // HELPER METHODS FOR COMMON TYPES
     // ==============================================================================
@@ -1353,6 +1372,32 @@ public class Config {
             v -> SOUNDS_GLOBAL_PITCH = v,
             Config::loadFloat
         ); }
+
+        // Throw sound configuration
+        public static SoundType PRE_ATTACK_SOUND = SoundType.ENTITY_EVOKER_FANGS_ATTACK;
+        static { register(
+            "audio.pre_attack_sound",
+            PRE_ATTACK_SOUND, SoundType.class,
+            v -> PRE_ATTACK_SOUND = v,
+            Config::loadSoundType
+        ); }
+
+        public static float PRE_ATTACK_VOLUME = 2.0f; // 0.0-1.0
+        static { register(
+            "audio.pre_attack_volume",
+            PRE_ATTACK_VOLUME, Float.class,
+            v -> THROW_VOLUME = v,
+            Config::loadFloat
+        ); }
+
+        public static float PRE_ATTACK_PITCH = 1.0f;
+        static { register(
+            "audio.pre_attack_pitch",
+            PRE_ATTACK_PITCH, Float.class,
+            v -> THROW_PITCH = v,
+            Config::loadFloat
+        ); }
+
 
         // Throw sound configuration
         public static SoundType THROW_SOUND = SoundType.ENTITY_ENDER_DRAGON_FLAP;

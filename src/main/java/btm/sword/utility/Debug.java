@@ -15,9 +15,18 @@ import btm.sword.utility.math.VectorUtil;
 
 public class Debug {
 
+    /** Master toggle for {@link #debug} output. Controlled via the in-game dev menu. */
+    public static boolean VERBOSE_ENABLED = false;
+
+    /**
+     * When {@code false}, {@link btm.sword.system.item.special.NonMovableItem#isNonMovable}
+     * always returns {@code false}, letting devs freely move special items for testing.
+     */
+    public static boolean SPECIAL_ITEM_CHECKS_ENABLED = true;
+
     @SuppressWarnings("all")
     public static void debug(Class<?> clazz, int lineNum, String message) {
-        if (false && Config.Debug.LOGGING_VERBOSE_CONFIG) { // for me to change
+        if (VERBOSE_ENABLED && Config.Debug.LOGGING_VERBOSE_CONFIG) {
             String toSend = "> " + clazz + " line" + " [" + lineNum + "] :: " + message;
             Sword.print(toSend);
 

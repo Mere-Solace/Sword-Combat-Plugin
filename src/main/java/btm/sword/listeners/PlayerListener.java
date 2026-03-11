@@ -23,6 +23,7 @@ import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.entity.umbral.input.BladeRequest;
+import btm.sword.utility.ChatInputCapture;
 import io.papermc.paper.event.player.AsyncChatEvent;
 import io.papermc.paper.event.player.PlayerShieldDisableEvent;
 import net.kyori.adventure.key.Key;
@@ -234,6 +235,8 @@ public class PlayerListener implements Listener {
      */
     @EventHandler
     public void onMessage(AsyncChatEvent event) {
+        if (ChatInputCapture.handle(event)) return;
+
         Player player = event.getPlayer();
 
         Component msg = event.message();
