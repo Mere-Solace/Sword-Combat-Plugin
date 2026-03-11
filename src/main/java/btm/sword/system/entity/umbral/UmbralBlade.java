@@ -481,7 +481,7 @@ public class UmbralBlade extends ThrownItem {
 
     @Override
     protected void rotate() {
-
+        // no-op
     }
 
     @Override

@@ -94,19 +94,18 @@ public class InteractiveItemArbiter {
 //            }
         }
 
-//        ItemStack item = display.getItemStack();
+        // UmbralBlade manages its own item state (weapon/link/blade fields) and never populates
+        // the inherited SimulatedDisplay.itemStack field — check before the null guard below.
+        if (interactiveItem instanceof UmbralBlade umbralBlade) {
+            umbralBlade.setRetrieved(true);
+            umbralBlade.onGrab(executor);
+            return;
+        }
 
         ItemStack item = interactiveItem.getItemStack();
         if (item == null) return;
         if (!item.isEmpty()) {
-            if (interactiveItem instanceof UmbralBlade umbralBlade) {
-                umbralBlade.onGrab(executor);
-                return;
-            }
-            else {
-                interactiveItem.dispose();
-            }
-
+            interactiveItem.dispose();
             executor.giveItem(item);
             Location displayLoc = display.getLocation();
             if (item.getType().isBlock()) {

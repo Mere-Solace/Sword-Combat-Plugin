@@ -1,13 +1,10 @@
 package btm.sword.system.entity.umbral.statemachine.state;
 
-import org.bukkit.entity.LivingEntity;
 
 import btm.sword.config.Config;
-import btm.sword.system.control.TimeArbiter;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.umbral.UmbralBlade;
 import btm.sword.system.entity.umbral.statemachine.UmbralStateFacade;
-import btm.sword.utility.display.DisplayUtil;
 
 /**
  * State where the UmbralBlade is lodged in an entity or block.
@@ -42,7 +39,6 @@ import btm.sword.utility.display.DisplayUtil;
  *
  */
 public class LodgedState extends UmbralStateFacade {
-    private TimeArbiter.TaskHandle followTask;
 
     @Override
     public String name() {
@@ -55,27 +51,27 @@ public class LodgedState extends UmbralStateFacade {
         blade.getDisplay().setGlowColorOverride(Config.SwordColor.UMBRAL_GLOW);
 
         SwordEntity target = blade.getHitEntity();
-        if (target != null) {
-            LivingEntity le = target.self();
-            double heightOffset = Math.max(0, Math.min(blade.getCur().getY() - le.getLocation().getY(), le.getHeight()));
-            boolean followHead = !Config.Combat.IMPALEMENT_HEAD_FOLLOW_EXCEPTIONS.contains(target.type())
-                && heightOffset >= (le.getEyeLocation().getY() - le.getLocation().getY()) * Config.Combat.IMPALEMENT_HEAD_ZONE_RATIO;
 
-            followTask = DisplayUtil.itemDisplayFollow(
-                target, blade.getDisplay(),
-                blade.getVelocity().clone().normalize(),
-                heightOffset, followHead,
-                null, null, null, null
-            );
-        }
+        blade.startImpalementTask(target);
+//        if (target != null) {
+//            LivingEntity le = target.self();
+//            double heightOffset = Math.max(0, Math.min(blade.getCur().getY() - le.getLocation().getY(), le.getHeight()));
+//            boolean followHead = !Config.Combat.IMPALEMENT_HEAD_FOLLOW_EXCEPTIONS.contains(target.type())
+//                && heightOffset >= (le.getEyeLocation().getY() - le.getLocation().getY()) * Config.Combat.IMPALEMENT_HEAD_ZONE_RATIO;
+//
+//            followTask = DisplayUtil.itemDisplayFollow(
+//                target, blade.getDisplay(),
+//                blade.getVelocity().clone().normalize(),
+//                heightOffset, followHead,
+//                null, null, null, null
+//            );
+//        }
     }
 
     @Override
     public void onExit(UmbralBlade blade) {
         blade.getDisplay().setGlowing(false);
         blade.resetFlightState();
-        if (followTask != null && !followTask.isCancelled()) followTask.cancel();
-        followTask = null;
     }
 
     @Override

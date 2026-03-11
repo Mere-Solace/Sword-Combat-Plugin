@@ -25,6 +25,7 @@ import btm.sword.system.entity.umbral.statemachine.state.LodgedState;
 import btm.sword.system.entity.umbral.statemachine.state.RecallingState;
 import btm.sword.system.entity.umbral.statemachine.state.SheathedState;
 import btm.sword.system.entity.umbral.statemachine.state.StandbyState;
+import btm.sword.system.entity.umbral.statemachine.state.WieldState;
 import btm.sword.system.input.ActivationContext;
 import btm.sword.system.item.KeyRegistry;
 import btm.sword.utility.Prefab;
@@ -276,6 +277,14 @@ public abstract class Combatant extends SwordEntity {
      */
     public boolean canPerformAction() {
         return abilityCastTask == null && !isGrabbing && !isGrabbed();
+    }
+
+    public boolean canPerformWieldAction() {
+        return canPerformAction() && (
+                umbralBlade.inState(StandbyState.class) ||
+                umbralBlade.inState(SheathedState.class) ||
+                umbralBlade.inState(WieldState.class)
+            );
     }
 
     public boolean canPerformUmbralAction() {

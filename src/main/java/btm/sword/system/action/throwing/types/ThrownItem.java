@@ -45,7 +45,6 @@ import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.input.ActivationContext;
 import btm.sword.system.item.ItemUsageManager;
 import btm.sword.system.item.KeyRegistry;
-import btm.sword.utility.Debug;
 import btm.sword.utility.Prefab;
 import btm.sword.utility.display.DisplayUtil;
 import btm.sword.utility.display.ParticleWrapper;
@@ -522,11 +521,11 @@ public class ThrownItem extends SimulatedDisplay {
     public void onHit() {
         if (hitEntity == null) return;
 
-        // TODO: #127 - Better checks for weapon, can tag with impactType = 'impale'
         String name = display.getItemStack().getType().toString();
 
         handleItemDamageAndCheckIfBroken();
 
+        // TODO: #127 - Better checks for weapon, can tag with impactType = 'impale'
         if (name.endsWith("_SWORD") || name.endsWith("AXE")) {
             startImpalementTask(hitEntity);
         }
@@ -543,19 +542,11 @@ public class ThrownItem extends SimulatedDisplay {
 
         int currentDamage = ItemUsageManager.currentItemDamage(itemStack);
 
-        Debug.debug(ThrownItem.class, 514, "Current Damage: " + currentDamage);
-
         int maxThrownItemUses = 3;
         int onThrowHitDamageToItem = ItemUsageManager.maxItemDamage(itemStack) / maxThrownItemUses;
 
-        Debug.debug(ThrownItem.class, 514, "OnThrowHitDamage: " + onThrowHitDamageToItem);
-        Debug.debug(ThrownItem.class, 514, "Check Value: " + onThrowHitDamageToItem * (1 - maxThrownItemUses));
-
-
         if (currentDamage >= onThrowHitDamageToItem * (maxThrownItemUses - 1)) {
             Prefab.Particles.ITEM_THROW_BREAK.display(display.getLocation());
-
-            Debug.debug(ThrownItem.class, 519, "Item is getting destroyed");
 
             itemStack.damage(77777777, thrower.self());
             display.remove();
@@ -579,7 +570,7 @@ public class ThrownItem extends SimulatedDisplay {
         }
     }
 
-    private void startImpalementTask(SwordEntity target) {
+    public void startImpalementTask(SwordEntity target) {
         Vector kb = EntityUtil.isOnGround(target.self()) ?
             velocity.clone().multiply(Config.Combat.THROWN_DAMAGE_SWORD_AXE_KNOCKBACK_GROUNDED) :
             VectorUtil.getProjOntoPlane(velocity, Config.Direction.UP()).multiply(Config.Combat.THROWN_DAMAGE_SWORD_AXE_KNOCKBACK_AIRBORNE);
