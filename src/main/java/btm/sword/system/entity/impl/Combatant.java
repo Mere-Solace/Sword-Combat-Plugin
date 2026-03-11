@@ -2,6 +2,8 @@ package btm.sword.system.entity.impl;
 
 import java.util.concurrent.TimeUnit;
 
+import btm.sword.system.entity.umbral.statemachine.state.WieldState;
+
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.attribute.Attribute;
@@ -276,6 +278,14 @@ public abstract class Combatant extends SwordEntity {
      */
     public boolean canPerformAction() {
         return abilityCastTask == null && !isGrabbing && !isGrabbed();
+    }
+
+    public boolean canPerformWieldAction() {
+        return canPerformAction() && (
+                umbralBlade.inState(StandbyState.class) ||
+                umbralBlade.inState(SheathedState.class) ||
+                umbralBlade.inState(WieldState.class)
+            );
     }
 
     public boolean canPerformUmbralAction() {

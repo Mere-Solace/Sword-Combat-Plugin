@@ -229,7 +229,7 @@ public class InputRegistrar {
                 () -> InputAction.builder()
                 .action(UmbralBladeAction::wield)
                 .cooldown(executor -> 400)
-                .canCast(Combatant::canPerformAction)
+                .canCast(Combatant::canPerformWieldAction)
                 .displayCooldown(true)
                 .displayDisabled(true)
                 .resetIfCannotPerform(true)
