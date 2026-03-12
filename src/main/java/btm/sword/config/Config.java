@@ -2416,6 +2416,13 @@ public class Config {
             , v -> LOGGING_VERBOSE_CONFIG = v,
             ConfigurationSection::getBoolean); }
 
+        public static boolean LOGGING_VERBOSE_DEBUG = false;
+        static { register(
+            "debug.logging_verbose_debug",
+            LOGGING_VERBOSE_DEBUG, Boolean.class,
+            v -> LOGGING_VERBOSE_DEBUG = v,
+            ConfigurationSection::getBoolean); }
+
         // Visualization configuration
         public static boolean VISUALIZATION_SHOW_HITBOXES = false;
         static { register(

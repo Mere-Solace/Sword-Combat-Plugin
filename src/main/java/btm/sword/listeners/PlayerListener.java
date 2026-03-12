@@ -142,7 +142,7 @@ public class PlayerListener implements Listener {
      */
     @EventHandler
     public void inventoryEvent(InventoryEvent event) {
-        if (!Debug.VERBOSE_ENABLED) return;
+        if (!Debug.VERBOSE_ENABLED.get()) return;
         for (HumanEntity human : event.getViewers()) {
             if (human instanceof Player) {
                 SwordEntityArbiter.get(human)

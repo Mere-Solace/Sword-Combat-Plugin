@@ -1,6 +1,7 @@
 package btm.sword.utility;
 
 import java.util.List;
+import java.util.function.Supplier;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -15,8 +16,11 @@ import btm.sword.utility.math.VectorUtil;
 
 public class Debug {
 
-    /** Master toggle for {@link #debug} output. Controlled via the in-game dev menu. */
-    public static boolean VERBOSE_ENABLED = false;
+    /**
+     * Master toggle for {@link #debug} output. Reads from {@link Config.Debug#LOGGING_VERBOSE_DEBUG}
+     * so the value persists across hot-reloads and is configurable from config.yaml.
+     */
+    public static final Supplier<Boolean> VERBOSE_ENABLED = () -> Config.Debug.LOGGING_VERBOSE_DEBUG;
 
     /**
      * When {@code false}, {@link btm.sword.system.item.special.NonMovableItem#isNonMovable}
@@ -26,7 +30,7 @@ public class Debug {
 
     @SuppressWarnings("all")
     public static void debug(Class<?> clazz, int lineNum, String message) {
-        if (VERBOSE_ENABLED && Config.Debug.LOGGING_VERBOSE_CONFIG) {
+        if (VERBOSE_ENABLED.get() && Config.Debug.LOGGING_VERBOSE_CONFIG) {
             String toSend = "> " + clazz + " line" + " [" + lineNum + "] :: " + message;
             Sword.print(toSend);
 
