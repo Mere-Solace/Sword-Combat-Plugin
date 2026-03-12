@@ -122,6 +122,10 @@ public class InputListener implements Listener {
                 return;
             }
 
+            if (swordPlayer.isUnableToBlock()){
+                swordPlayer.displayDisablingEffect();
+                return;
+            }
             swordPlayer.act(InputType.RIGHT);
         }
     }
@@ -156,6 +160,11 @@ public class InputListener implements Listener {
         SwordScheduler.runConsumerNextTick(resetInteractingFlag, swordPlayer);
 
         if (!swordPlayer.getInputBuffer().accept(InputType.RIGHT)) return;
+
+        if (swordPlayer.isUnableToBlock()){
+            swordPlayer.displayDisablingEffect();
+            return;
+        }
 
         swordPlayer.act(InputType.RIGHT);
     }

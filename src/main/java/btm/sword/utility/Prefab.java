@@ -15,6 +15,7 @@ import org.bukkit.util.Vector;
 
 import btm.sword.config.Config;
 import btm.sword.system.attack.Attack;
+import btm.sword.system.attack.Blockability;
 import btm.sword.system.attack.HitValuePacket;
 import btm.sword.utility.display.ParticleWrapper;
 import btm.sword.utility.sound.SoundType;
@@ -64,8 +65,9 @@ public class Prefab {
         public static final ParticleWrapper UMBRAL_FLAME = new ParticleWrapper(Particle.DUST_COLOR_TRANSITION, 3, 0.05, 0.05, 0.05, 1,
             new Particle.DustTransition(Color.fromRGB(53, 166, 240), Color.fromRGB(52, 72, 81), 0.5f));
 
-        public static final ParticleWrapper THROW_TRAIl = new ParticleWrapper(Particle.DUST, 1, 0.2, 0.2, 0.2,
-                new Particle.DustOptions(Color.WHITE, 2.5f));
+        public static final ParticleWrapper THROW_TRAIl = new ParticleWrapper(Particle.CRIT, 2, 0.1, 0.1, 0.1, 0);
+//        public static final ParticleWrapper THROW_TRAIl = new ParticleWrapper(Particle.DUST, 1, 0.2, 0.2, 0.2,
+//                new Particle.DustOptions(Color.WHITE, 2.5f));
 
         public static final ParticleWrapper ITEM_THROW_BREAK = new ParticleWrapper(Particle.ENCHANTED_HIT, 150, 0.4, 0.4, 0.4);
 
@@ -145,6 +147,21 @@ public class Prefab {
             () -> Config.Combat.HIT_PUNCH_SHARD_DAMAGE,
             () -> Config.Combat.HIT_PUNCH_TOUGHNESS_DAMAGE,
             () -> Config.Combat.HIT_PUNCH_SOULFIRE_LOSS
+        );
+
+        /**
+         * Hit packet for UmbralBlade lunge and grab-impale hits.
+         * SHIELD_PASSING: reduces damage by {@link Config.Combat#SHIELD_PASSING_BYPASS_POWER}
+         * even against a blocking defender — these attacks pierce the guard.
+         */
+        public static final HitValuePacket umbralImpale = new HitValuePacket(
+            () -> 0f,
+            () -> Config.Combat.THROWN_DAMAGE_SWORD_AXE_INVULNERABILITY_TICKS,
+            () -> Config.Combat.THROWN_DAMAGE_SWORD_AXE_BASE_SHARDS,
+            () -> Config.Combat.THROWN_DAMAGE_SWORD_AXE_TOUGHNESS_DAMAGE,
+            () -> Config.Combat.THROWN_DAMAGE_SWORD_AXE_SOULFIRE_REDUCTION,
+            Blockability.SHIELD_PASSING,
+            () -> Config.Combat.SHIELD_PASSING_BYPASS_POWER
         );
     }
 

@@ -227,7 +227,7 @@ public class UmbralStateMachine extends StateMachine<UmbralBlade> {
             b -> {
                 Vector kb = VectorUtil.getProjOntoPlane(b.getVelocity(), Config.Direction.UP())
                     .multiply(Config.Combat.THROWN_DAMAGE_SWORD_AXE_KNOCKBACK_AIRBORNE);
-                b.getHitEntity().hit(b.getThrower(), Prefab.Attacks.thrownWeapon, kb);
+                b.getHitEntity().hit(b.getThrower(), Prefab.Attacks.umbralImpale, kb);
             }
         ));
 
@@ -345,7 +345,7 @@ public class UmbralStateMachine extends StateMachine<UmbralBlade> {
             b -> {
                 Vector kb = VectorUtil.getProjOntoPlane(b.getVelocity(), Config.Direction.UP())
                     .multiply(Config.Combat.THROWN_DAMAGE_SWORD_AXE_KNOCKBACK_AIRBORNE);
-                b.getHitEntity().hit(b.getThrower(), Prefab.Attacks.thrownWeapon, kb);
+                b.getHitEntity().hit(b.getThrower(), Prefab.Attacks.umbralImpale, kb);
             }
         ));
 

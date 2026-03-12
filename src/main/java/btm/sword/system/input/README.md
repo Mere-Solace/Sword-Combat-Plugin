@@ -126,6 +126,10 @@ root (InputNode, action = null)
 
 `SwordPlayer.act()` calls `step()` and then, on a non-null result, calls `InputActionExecutor.execute()` on the resolved action.
 
+### Important Development Note
+Visibility predicates of sequential nodes are checked BEFORE the action of the current node is executed. Keep this in mind when developing sequential action systems.
+
+
 ### Timeout
 
 Each `InputNode` has a `timeoutTicks` field (default 20 ticks = 1 second). When a node with children is reached, a one-shot timer fires `reset()` after `timeoutTicks * 50 ms`. Starting a new input restarts the timer. The timeout enforces that players must complete a combo within the allotted window or the sequence resets.
