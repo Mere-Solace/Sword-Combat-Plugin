@@ -138,11 +138,11 @@ public class HostileStateMachine extends StateMachine<Hostile> {
             h -> h.setFrontSlot(false)
         ));
 
-        // 8. PreAttackState → AttackState: wind-up timer expired
+        // 8. PreAttackState → AttackState: wind-up timer expired and mob is not incapacitated
         addTransition(new Transition<>(
             PreAttackState.class,
             AttackState.class,
-            h -> h.getPreAttackTimer() <= 0,
+            h -> h.getPreAttackTimer() <= 0 && !h.isIncapacitated(),
             h -> {}
         ));
 
@@ -203,18 +203,8 @@ public class HostileStateMachine extends StateMachine<Hostile> {
             }
         ));
 
-        // 13. AttackState → ApproachState: target escaped aggro range before attack landed
-        addTransition(new Transition<>(
-            AttackState.class,
-            ApproachState.class,
-            h -> {
-                if (h.isAttackDone()) return false;
-                if (h.getCurrentTarget() == null || !h.getCurrentTarget().self().isValid()) return true;
-                return h.self().getLocation()
-                    .distanceSquared(h.getCurrentTarget().self().getLocation()) > Config.Hostile.AGGRO_RANGE_SQUARED;
-            },
-            h -> {}
-        ));
+        // 13. (removed) AttackState → ApproachState on target escape is obsolete:
+        //     attack now fires immediately on entry, so attackDone is always true before any tick.
 
         // 14. OnGuardState → PreAttackState: on-guard timer expired and target still in range
         addTransition(new Transition<>(

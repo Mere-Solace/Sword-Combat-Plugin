@@ -3,7 +3,9 @@ package btm.sword.system.action.throwing;
 import java.util.function.Consumer;
 
 import org.bukkit.entity.ItemDisplay;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.jetbrains.annotations.Nullable;
 
 import btm.sword.Sword;
 import btm.sword.system.action.SwordAction;
@@ -35,6 +37,15 @@ import btm.sword.system.input.ActivationContext;
  */
 public class ThrowAction extends SwordAction {
     /**
+     * Initializes the throw sequence for the given executor using the item currently in the main hand.
+     *
+     * @param executor the combatant beginning a throw action
+     */
+    public static void throwReady(Combatant executor) {
+        throwReady(executor, null);
+    }
+
+    /**
      * Initializes the throw sequence for the given executor.
      * <p>
      * This method marks the executor as attempting a throw, spawns an
@@ -43,43 +54,34 @@ public class ThrowAction extends SwordAction {
      * <p>
      * If the executor is a {@link SwordPlayer}, the thrown item's display will mirror
      * the item currently in hand (based on the item snapshot taken at hold time).
+     * If {@code itemOverride} is non-null, that item is used for the display and logical
+     * item stack regardless of what the executor holds — used by mob AI to throw a specific item.
      *
-     * @param executor The combatant beginning a throw action.
+     * @param executor     the combatant beginning a throw action
+     * @param itemOverride the explicit item to throw, or {@code null} to derive from the executor's hand
      */
-    public static void throwReady(Combatant executor) {
-        // Guard against throwing the Umbral Items
-        // TODO: #122 - Add logic here for lunging/directing/hurling the umbral blade, actually,
-        //  just have a separate input path with a different key...
-        //  it's not working there right now though, should be fixed
-
-        if (executor instanceof SwordPlayer swordPlayer && swordPlayer.isUmbralItem(swordPlayer.getMainItemStackAtTimeOfHold())) {
-//            UmbralBladeAction.lunge(executor);
-//            UmbralItemThrowAction.umbralLungeP1reparation(executor);
-//            swordPlayer.resetTree();
-//            swordPlayer.displayMistake(); // display something cool
-            return;
-        }
-
+    public static void throwReady(Combatant executor, @Nullable ItemStack itemOverride) {
         executor.setAttemptingThrow(true);
         executor.setThrowCancelled(false);
         executor.setThrowSuccessful(false);
         if (executor instanceof SwordPlayer sp) sp.setActivationContext(ActivationContext.THROWING);
 
         Consumer<ItemDisplay> setupInstructions;
-        ThrownItem thrownItem;
-        if (executor instanceof SwordPlayer sp && !sp.getItemStackInHand(true).isEmpty()) {
+        ItemStack logicalItem;
+
+        if (itemOverride != null) {
+            setupInstructions = display -> display.setItemStack(itemOverride);
+            logicalItem = itemOverride;
+        } else if (executor instanceof SwordPlayer sp && !sp.getItemStackInHand(true).isEmpty()) {
             setupInstructions = display -> display.setItemStack(sp.getMainItemStackAtTimeOfHold());
-        }
-        else {
+            logicalItem = sp.getMainItemStackAtTimeOfHold();
+        } else {
             setupInstructions = display -> display.setItemStack(executor.getItemStackInHand(true));
+            logicalItem = executor.getItemStackInHand(true);
         }
 
-        thrownItem = new ThrownItem(executor, setupInstructions, 1);
-
-        thrownItem.setItemStack(executor instanceof SwordPlayer sp && !sp.getItemStackInHand(true).isEmpty() ?
-            sp.getMainItemStackAtTimeOfHold() :
-            executor.getItemStackInHand(true));
-
+        ThrownItem thrownItem = new ThrownItem(executor, setupInstructions, 1);
+        thrownItem.setItemStack(logicalItem);
         executor.setThrownItem(thrownItem);
 
         // This Bukkit Runnable is fine for now

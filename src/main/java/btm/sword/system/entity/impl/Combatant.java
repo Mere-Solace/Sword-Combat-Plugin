@@ -192,6 +192,7 @@ public abstract class Combatant extends SwordEntity {
         LivingEntity t = target.self();
         setGrabbing(true);
         target.setGrabbed(true);
+        target.onGrabbed();
         if (target instanceof SwordPlayer sp) sp.setActivationContext(ActivationContext.INCAPACITATED);
         setGrabbedEntity(target);
         Prefab.Particles.GRAB_CLOUD.display(t.getLocation().add(new Vector(0, 1, 0)));
@@ -204,6 +205,7 @@ public abstract class Combatant extends SwordEntity {
     public void onGrabLetGo() {
         isGrabbing = false;
         grabbedEntity.setGrabbed(false);
+        grabbedEntity.onReleased();
         if (grabbedEntity instanceof SwordPlayer sp) sp.setActivationContext(ActivationContext.NORMAL);
     }
 
@@ -216,6 +218,7 @@ public abstract class Combatant extends SwordEntity {
 
         isGrabbing = false;
         grabbedEntity.setGrabbed(false);
+        grabbedEntity.onReleased();
         if (grabbedEntity instanceof SwordPlayer sp) sp.setActivationContext(ActivationContext.NORMAL);
         MovementAction.toss(this, grabbedEntity);
     }

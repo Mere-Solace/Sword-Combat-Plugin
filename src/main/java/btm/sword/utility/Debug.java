@@ -38,6 +38,11 @@ public class Debug {
         }
     }
 
+    public static void combatDebug(Class<?> clazz, int lineNum, String message) {
+        if (!Config.Debug.LOGGING_VERBOSE_COMBAT) return;
+        debug(clazz, lineNum, "[Combat] " + message);
+    }
+
     public static void debugBlob(Location debugLocation) {
         Prefab.Particles.DEBUG_BLOB.display(debugLocation);
     }

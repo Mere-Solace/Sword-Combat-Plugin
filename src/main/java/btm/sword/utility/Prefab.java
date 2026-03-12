@@ -65,7 +65,7 @@ public class Prefab {
         public static final ParticleWrapper UMBRAL_FLAME = new ParticleWrapper(Particle.DUST_COLOR_TRANSITION, 3, 0.05, 0.05, 0.05, 1,
             new Particle.DustTransition(Color.fromRGB(53, 166, 240), Color.fromRGB(52, 72, 81), 0.5f));
 
-        public static final ParticleWrapper THROW_TRAIl = new ParticleWrapper(Particle.CRIT, 2, 0.1, 0.1, 0.1, 0);
+        public static final ParticleWrapper THROW_TRAIl = new ParticleWrapper(Particle.CRIT, 1, 0, 0, 0, 0);
 //        public static final ParticleWrapper THROW_TRAIl = new ParticleWrapper(Particle.DUST, 1, 0.2, 0.2, 0.2,
 //                new Particle.DustOptions(Color.WHITE, 2.5f));
 
@@ -202,6 +202,18 @@ public class Prefab {
             () -> Config.Audio.THROW_SOUND,
             () -> Config.Audio.THROW_VOLUME,
             () -> Config.Audio.THROW_PITCH
+        );
+
+        public static final SoundWrapper BLOCK_BROKEN = new SoundWrapper(
+            () -> Config.Audio.BLOCK_BROKEN_SOUND,
+            () -> Config.Audio.BLOCK_BROKEN_VOLUME,
+            () -> Config.Audio.BLOCK_BROKEN_PITCH
+        );
+
+        public static final SoundWrapper PARRY_ATTEMPT = new SoundWrapper(
+            () -> Config.Audio.PARRY_ATTEMPT_SOUND,
+            () -> Config.Audio.PARRY_ATTEMPT_VOLUME,
+            () -> Config.Audio.PARRY_ATTEMPT_PITCH
         );
 
         public static final SoundWrapper PRE_ATTACK = new SoundWrapper(
