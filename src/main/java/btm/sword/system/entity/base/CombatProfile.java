@@ -161,4 +161,41 @@ public class CombatProfile {
     public void increaseNumAirDodges() {
         maxAirDodges++;
     }
+
+    /**
+     * Reloads all stat values from the current {@link btm.sword.config.Config.Entity} fields.
+     * <p>
+     * Does not affect the live {@link EntityAspects}; call
+     * {@link EntityAspects#reloadFromProfile(CombatProfile)} afterwards to apply the new
+     * values to a running entity.
+     * </p>
+     */
+    public void reloadFromConfig() {
+        for (AspectType stat : AspectType.values()) {
+            switch (stat) {
+                case SHARDS -> stats.put(stat, new ResourceValue(
+                    btm.sword.config.Config.Entity.COMBAT_PROFILE_SHARDS_CURRENT,
+                    btm.sword.config.Config.Entity.COMBAT_PROFILE_SHARDS_REGEN_PERIOD,
+                    btm.sword.config.Config.Entity.COMBAT_PROFILE_SHARDS_REGEN_AMOUNT
+                ));
+                case TOUGHNESS -> stats.put(stat, new ResourceValue(
+                    btm.sword.config.Config.Entity.COMBAT_PROFILE_TOUGHNESS_CURRENT,
+                    btm.sword.config.Config.Entity.COMBAT_PROFILE_TOUGHNESS_REGEN_PERIOD,
+                    btm.sword.config.Config.Entity.COMBAT_PROFILE_TOUGHNESS_REGEN_AMOUNT
+                ));
+                case SOULFIRE -> stats.put(stat, new ResourceValue(
+                    btm.sword.config.Config.Entity.COMBAT_PROFILE_SOULFIRE_CURRENT,
+                    btm.sword.config.Config.Entity.COMBAT_PROFILE_SOULFIRE_REGEN_PERIOD,
+                    btm.sword.config.Config.Entity.COMBAT_PROFILE_SOULFIRE_REGEN_AMOUNT
+                ));
+                case FORM -> stats.put(stat, new ResourceValue(
+                    btm.sword.config.Config.Entity.COMBAT_PROFILE_FORM_CURRENT,
+                    btm.sword.config.Config.Entity.COMBAT_PROFILE_FORM_REGEN_PERIOD,
+                    btm.sword.config.Config.Entity.COMBAT_PROFILE_FORM_REGEN_AMOUNT
+                ));
+                default -> stats.put(stat, new AspectValue(1));
+            }
+        }
+        maxAirDodges = btm.sword.config.Config.Entity.COMBAT_PROFILE_MAX_AIR_DODGES;
+    }
 }

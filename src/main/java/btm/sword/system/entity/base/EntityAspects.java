@@ -270,6 +270,34 @@ public class EntityAspects {
                 "\nForm: " + formCur();
     }
 
+    /**
+     * Updates live {@link Resource} and {@link Aspect} values from a freshly loaded
+     * {@link CombatProfile} without replacing the resource objects themselves.
+     * <p>
+     * Resources have their regen task restarted so the new period takes effect immediately.
+     * The current value is preserved (capped to the new max if necessary).
+     * Static aspects have their base value replaced directly.
+     * </p>
+     *
+     * @param profile the updated profile to read values from
+     */
+    public void reloadFromProfile(CombatProfile profile) {
+        for (Aspect aspect : stats) {
+            btm.sword.system.entity.aspect.value.AspectValue val = profile.getStat(aspect.type);
+            if (val == null) continue;
+            if (aspect instanceof Resource resource
+                && val instanceof btm.sword.system.entity.aspect.value.ResourceValue rv) {
+                resource.stopRegenTask();
+                resource.setBaseValue(rv.getValue());
+                resource.setBaseRegenPeriod(rv.getRegenPeriod());
+                resource.setBaseRegenAmount(rv.getRegenAmount());
+                resource.startRegenTask();
+            } else {
+                aspect.setBaseValue(val.getValue());
+            }
+        }
+    }
+
     public void stopAllResourceTasks() {
         if (restartTask != null && !restartTask.isCancelled()) restartTask.cancel();
         shards().stopRegenTask();

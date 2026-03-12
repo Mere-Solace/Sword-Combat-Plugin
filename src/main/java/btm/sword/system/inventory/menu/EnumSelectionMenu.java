@@ -111,12 +111,12 @@ public class EnumSelectionMenu extends Menu {
 
         PagedGui<Item> gui = PagedGui.items()
             .setStructure(
-                "# # # B # # # # #",
+                "# # # # # # # # #",
                 "x x x x x x x x x",
                 "x x x x x x x x x",
                 "x x x x x x x x x",
                 "x x x x x x x x x",
-                "# # # < . > # # #")
+                "B # # < . > # # #")
             .addIngredient('#', BORDER)
             .addIngredient('x', Markers.CONTENT_LIST_SLOT_HORIZONTAL)
             .addIngredient('B', back)
@@ -127,7 +127,7 @@ public class EnumSelectionMenu extends Menu {
 
         Window.single()
             .setViewer(player)
-            .setTitle("SoundType — " + byPrefix.size() + " categories")
+            .setTitle(entry.path + "  |  SoundType — " + byPrefix.size() + " categories")
             .setGui(gui)
             .build()
             .open();
@@ -175,8 +175,8 @@ public class EnumSelectionMenu extends Menu {
         );
 
         String title = soundPrefix != null
-            ? soundPrefix + " sounds  (" + constants.size() + ")"
-            : type.getSimpleName() + "  (" + constants.size() + " values)";
+            ? entry.path + "  |  " + soundPrefix + " (" + constants.size() + ")"
+            : entry.path + "  |  " + type.getSimpleName() + " (" + constants.size() + ")";
 
         PagedGui<Item> gui = PagedGui.items()
             .setStructure(
@@ -268,12 +268,92 @@ public class EnumSelectionMenu extends Menu {
 
     /**
      * Picks the display material for a given enum constant.
-     * {@link Material} constants use themselves; {@link SoundType} uses a note block;
-     * everything else uses paper.
+     * {@link Material} constants use themselves; {@link SoundType} dispatches to
+     * {@link #soundTypeMaterial(SoundType)} for prefix-aware matching; everything else uses paper.
      */
     private static Material resolveItemMaterial(Enum<?> value) {
         if (value instanceof Material m) return m;
-        if (value instanceof SoundType) return Material.NOTE_BLOCK;
+        if (value instanceof SoundType st) return soundTypeMaterial(st);
         return Material.PAPER;
+    }
+
+    /**
+     * Resolves a display {@link Material} for a {@link SoundType} constant by inspecting
+     * its name prefix. BLOCK_ sounds attempt to match a block material, ENTITY_ sounds
+     * attempt a spawn egg, AMBIENT_ sounds map to biome-representative blocks.
+     */
+    private static Material soundTypeMaterial(SoundType st) {
+        String name = st.name();
+        if (name.startsWith("BLOCK_")) return blockSoundMaterial(name);
+        if (name.startsWith("ENTITY_")) return entitySoundMaterial(name);
+        if (name.startsWith("AMBIENT_")) return ambientSoundMaterial(name);
+        if (name.startsWith("ITEM_")) return itemSoundMaterial(name);
+        return Material.NOTE_BLOCK;
+    }
+
+    /**
+     * Tries to match a BLOCK_ sound name to a real {@link Material} by progressively
+     * stripping underscore-delimited segments from the right until a valid obtainable item is found.
+     * Requires {@link Material#isItem()} to avoid non-obtainable blocks like BAMBOO_SAPLING.
+     */
+    private static Material blockSoundMaterial(String name) {
+        String rest = name.substring("BLOCK_".length());
+        String[] parts = rest.split("_");
+        for (int len = parts.length - 1; len >= 1; len--) {
+            String candidate = String.join("_", java.util.Arrays.copyOf(parts, len));
+            try {
+                Material mat = Material.valueOf(candidate);
+                if (!mat.isAir() && mat.isItem()) return mat;
+            } catch (IllegalArgumentException ignored) { }
+        }
+        return Material.STONE;
+    }
+
+    /**
+     * Tries to match an ITEM_ sound name to a real item {@link Material} by progressively
+     * stripping underscore-delimited segments from the right.
+     */
+    private static Material itemSoundMaterial(String name) {
+        String rest = name.substring("ITEM_".length());
+        String[] parts = rest.split("_");
+        for (int len = parts.length - 1; len >= 1; len--) {
+            String candidate = String.join("_", java.util.Arrays.copyOf(parts, len));
+            try {
+                Material mat = Material.valueOf(candidate);
+                if (mat.isItem() && !mat.isAir()) return mat;
+            } catch (IllegalArgumentException ignored) { }
+        }
+        return Material.CHEST;
+    }
+
+    /**
+     * Tries to match an ENTITY_ sound name to a spawn egg by progressively stripping
+     * trailing segments and appending {@code _SPAWN_EGG}.
+     */
+    private static Material entitySoundMaterial(String name) {
+        String rest = name.substring("ENTITY_".length());
+        String[] parts = rest.split("_");
+        for (int len = parts.length - 1; len >= 1; len--) {
+            String candidate = String.join("_", java.util.Arrays.copyOf(parts, len)) + "_SPAWN_EGG";
+            try {
+                return Material.valueOf(candidate);
+            } catch (IllegalArgumentException ignored) { }
+        }
+        return Material.SKELETON_SKULL;
+    }
+
+    /**
+     * Maps an AMBIENT_ sound name to a biome-representative block material based on
+     * keyword matching.
+     */
+    private static Material ambientSoundMaterial(String name) {
+        if (name.contains("UNDERWATER")) return Material.WATER_BUCKET;
+        if (name.contains("BASALT_DELTAS")) return Material.BASALT;
+        if (name.contains("CRIMSON")) return Material.CRIMSON_NYLIUM;
+        if (name.contains("SOUL_SAND_VALLEY")) return Material.SOUL_SAND;
+        if (name.contains("WARPED_FOREST")) return Material.WARPED_NYLIUM;
+        if (name.contains("NETHER_WASTES")) return Material.NETHERRACK;
+        if (name.contains("CAVE")) return Material.MOSSY_COBBLESTONE;
+        return Material.FERN;
     }
 }

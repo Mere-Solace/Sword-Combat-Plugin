@@ -11,6 +11,7 @@ import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.inventory.menu.CharacterMenu;
 import btm.sword.system.inventory.menu.ConfigMenu;
 import btm.sword.system.inventory.menu.DevMenu;
+import btm.sword.system.inventory.menu.DevStatEditorMenu;
 import btm.sword.system.inventory.menu.MainMenu;
 import btm.sword.system.inventory.menu.Menu;
 import btm.sword.system.inventory.menu.MovesetMenu;
@@ -27,6 +28,7 @@ public class InventoryMenuManager {
         register(CharacterMenu.class, CharacterMenu::new);
         register(MovesetMenu.class, MovesetMenu::new);
         register(DevMenu.class, DevMenu::new);
+        register(DevStatEditorMenu.class, DevStatEditorMenu::new);
         register(ConfigMenu.class, ConfigMenu::new);
         // SkillSelectionMenu is constructed with a slot index and is opened directly
     }

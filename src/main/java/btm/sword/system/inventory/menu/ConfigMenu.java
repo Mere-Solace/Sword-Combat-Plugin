@@ -122,11 +122,11 @@ public class ConfigMenu extends Menu {
 
         PagedGui<Item> gui = PagedGui.items()
             .setStructure(
-                "B # # S # X # # #",
+                "# # # S # X # # #",
                 "# # # # # # # # #",
                 "x x x x x x x x x",
                 "x x x x x x x x x",
-                "# # # < . > # # #")
+                "B # # < . > # # #")
             .addIngredient('#', BORDER)
             .addIngredient('x', Markers.CONTENT_LIST_SLOT_HORIZONTAL)
             .addIngredient('S', saveServer)

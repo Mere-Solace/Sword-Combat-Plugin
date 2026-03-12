@@ -73,10 +73,21 @@ public class DevMenu extends Menu {
             click -> new ConfigMenu(swordPlayer).open()
         );
 
+        SimpleItem reloadProfile = new SimpleItem(
+            new ItemStackBuilder(Material.RECOVERY_COMPASS)
+                .name(Component.text("Reload Combat Profile", NamedTextColor.AQUA, TextDecoration.BOLD))
+                .build(),
+            click -> {
+                swordPlayer.getCombatProfile().reloadFromConfig();
+                swordPlayer.getAspects().reloadFromProfile(swordPlayer.getCombatProfile());
+                swordPlayer.message("§aCombat profile reloaded from config.");
+            }
+        );
+
         Gui gui = Gui.normal()
             .setStructure(
                 "# # # # # # # # #",
-                "# A B C D E . F #",
+                "# A B C D E G F #",
                 "# # # < . > # # #")
             .addIngredient('#', BORDER)
             .addIngredient('A', verboseDebug)
@@ -84,6 +95,7 @@ public class DevMenu extends Menu {
             .addIngredient('C', verboseMovement)
             .addIngredient('D', verboseConfig)
             .addIngredient('E', specialItemChecks)
+            .addIngredient('G', reloadProfile)
             .addIngredient('F', configEditor)
             .addIngredient('<', generatePreviousButtonOrDefault())
             .addIngredient('>', generateForwardPreviousButtonOrDefault())

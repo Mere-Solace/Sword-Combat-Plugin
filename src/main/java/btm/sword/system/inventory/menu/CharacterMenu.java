@@ -19,6 +19,7 @@ import btm.sword.system.action.skill.container.SkillSlot;
 import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.item.ItemStackBuilder;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import xyz.xenondevs.invui.gui.Gui;
@@ -109,6 +110,25 @@ public class CharacterMenu extends Menu {
         return click -> new SkillSelectionMenu(swordPlayer, slot).open();
     }
 
+    /**
+     * Builds a dev-only button that opens {@link DevStatEditorMenu}.
+     * Hidden for non-op players (replaced with BORDER).
+     */
+    private SimpleItem buildDevStatsButton(Player player) {
+        if (!player.isOp()) {
+            return new SimpleItem(
+                new ItemStackBuilder(Material.AIR).build(),
+                click -> { }
+            );
+        }
+        return new SimpleItem(
+            new ItemStackBuilder(Material.COMMAND_BLOCK)
+                .name(Component.text("[Dev] Edit Stats", NamedTextColor.RED, TextDecoration.BOLD))
+                .build(),
+            click -> new DevStatEditorMenu(swordPlayer).open()
+        );
+    }
+
     private Consumer<Click> unlockSlot(SkillSlot slot) {
         // TODO: confirmation screen first?
         // TODO: should require the consumption of something (or achievement of something)
@@ -126,14 +146,15 @@ public class CharacterMenu extends Menu {
             .setStructure(
                 "# # # . S . # # #", // Stats and class info. Add a click that takes the player to change their class
                 "# . { 1 2 3 { . #", // 3 Umbral Skills
-                "# . 4 - 9 - 5 . .", // 2 other active skills and 1 Core Passive
-                "# . { 6 7 8 { . .", // 3 other passives
-                "# . . . . . . . #",
+                ". . 4 - 9 - 5 . .", // 2 other active skills and 1 Core Passive
+                ". . { 6 7 8 { . .", // 3 other passives
+                "# . . . . . . D #",
                 "# # # < W > # # #") // weapon combat proficiencies and info (equip normal weapon-specific passives and skills
             .addIngredient('#', BORDER)
             .addIngredient('S', swordPlayer.getPlayerHead())
             .addIngredient('<', generatePreviousButtonOrDefault())
-            .addIngredient('>', generateForwardPreviousButtonOrDefault());
+            .addIngredient('>', generateForwardPreviousButtonOrDefault())
+            .addIngredient('D', buildDevStatsButton(player));
 
         for (Map.Entry<Character, SkillSlot> entry : menuSlots.entrySet()) {
             normal.addIngredient(entry.getKey(), generateMenuSlotButton(entry.getValue()));
