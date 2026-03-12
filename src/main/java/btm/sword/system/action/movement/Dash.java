@@ -80,11 +80,11 @@ public class Dash {
 
         // Default straight dash behavior
         double dashPower = flatDash ? Config.Movement.DASH_BASE_POWER * 2 : Config.Movement.DASH_BASE_POWER;
-        double dashMagnitude = dashPower * direction;
+        double dashMag = dashPower * direction;
 
         Vector dir = flatDash ? executor.getFlatDir() : executor.dir();
 
-        performDash(dir, dashMagnitude);
+        performDash(dir, dashMag);
 
         if (!onGround) executor.increaseAirDashesPerformed();
     }
@@ -190,10 +190,10 @@ public class Dash {
 
     private void performFlatDashToItemFromGround(double distanceToItem) {
         executor.setVelocity(executor.dir()
-            .add(Config.Direction.UP().multiply(Config.Movement.DASH_FLAT_ITEM_DASH_SCALER)));
+            .add(Config.Direction.UP().multiply(Config.Movement.DASH_FLAT_ITEM_DASH_UPWARD_SCALER)));
 
         SwordScheduler.runBukkitTaskLater(() ->
-            executor.setVelocity(executor.dir().multiply(Math.log(distanceToItem))),
+            executor.setVelocity(executor.dir().multiply(Math.log(distanceToItem * Config.Movement.DASH_FLAT_ITEM_DASH_DISTANCE_SCALER))),
             100, TimeUnit.MILLISECONDS
         );
     }

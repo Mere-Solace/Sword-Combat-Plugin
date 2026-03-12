@@ -1830,11 +1830,19 @@ public class Config {
             ConfigurationSection::getDouble
         ); }
 
-        public static double DASH_FLAT_ITEM_DASH_SCALER = 0.65;
+        public static double DASH_FLAT_ITEM_DASH_UPWARD_SCALER = 0.65;
         static { register(
-            "movement.dash_flat_item_dash_scaler",
-            DASH_FLAT_ITEM_DASH_SCALER, Double.class,
-            v -> DASH_FLAT_ITEM_DASH_SCALER = v,
+            "movement.dash_flat_item_dash_upward_scaler",
+            DASH_FLAT_ITEM_DASH_UPWARD_SCALER, Double.class,
+            v -> DASH_FLAT_ITEM_DASH_UPWARD_SCALER = v,
+            ConfigurationSection::getDouble
+        ); }
+
+        public static double DASH_FLAT_ITEM_DASH_DISTANCE_SCALER = 0.4;
+        static { register(
+            "movement.dash_flat_item_dash_distance_scaler",
+            DASH_FLAT_ITEM_DASH_DISTANCE_SCALER, Double.class,
+            v -> DASH_FLAT_ITEM_DASH_DISTANCE_SCALER = v,
             ConfigurationSection::getDouble
         ); }
 

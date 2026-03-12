@@ -236,7 +236,7 @@ entity:
   combat_profile_shards_regen_amount: 1
   
   combat_profile_toughness_current: 20.0
-  combat_profile_toughness_regen_period: 60
+  combat_profile_toughness_regen_period: 1000
   combat_profile_toughness_regen_amount: 0.25
   
   combat_profile_soulfire_current: 100.0
@@ -255,7 +255,7 @@ entity:
 movement:
   
   dash_max_distance: 12.0
-  dash_flat_item_dash_scaler: 0.65
+  dash_flat_item_dash_scaler: 0.35
   speed_duration: 5
   speed_amplifier: 3
   dash_cast_duration: 5
@@ -311,6 +311,7 @@ movement:
   grab_pull_strength: 0.8
   grab_max_range: 3.0
   grab_hold_duration: 40
+  dash_flat_item_dash_distance_scaler: 0.5
 
 
 world:

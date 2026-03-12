@@ -43,21 +43,21 @@ public class ConfigMenu extends Menu {
     private static final Map<String, Material> SECTION_MATERIALS;
     static {
         SECTION_MATERIALS = new LinkedHashMap<>();
-        SECTION_MATERIALS.put("color",       Material.HEAVY_CORE);
-        SECTION_MATERIALS.put("angle",       Material.REDSTONE);
-        SECTION_MATERIALS.put("physics",     Material.RABBIT_FOOT);
-        SECTION_MATERIALS.put("combat",      Material.ENDER_EYE);
-        SECTION_MATERIALS.put("timing",      Material.WATER_BUCKET);
-        SECTION_MATERIALS.put("display",     Material.FEATHER);
-        SECTION_MATERIALS.put("detection",   Material.YELLOW_DYE);
+        SECTION_MATERIALS.put("umbralblade",       Material.HEAVY_CORE);
+        SECTION_MATERIALS.put("hostile",       Material.REDSTONE);
+        SECTION_MATERIALS.put("grab",     Material.RABBIT_FOOT);
+        SECTION_MATERIALS.put("debug",      Material.ENDER_EYE);
+        SECTION_MATERIALS.put("world",      Material.WATER_BUCKET);
+        SECTION_MATERIALS.put("movement",     Material.FEATHER);
+        SECTION_MATERIALS.put("entity",   Material.YELLOW_DYE);
         SECTION_MATERIALS.put("audio",       Material.NAUTILUS_SHELL);
-        SECTION_MATERIALS.put("entity",      Material.SPYGLASS);
-        SECTION_MATERIALS.put("movement",    Material.CYAN_DYE);
-        SECTION_MATERIALS.put("world",       Material.CLOCK);
-        SECTION_MATERIALS.put("debug",       Material.STONE_SWORD);
-        SECTION_MATERIALS.put("grab",        Material.COMPARATOR);
-        SECTION_MATERIALS.put("hostile",     Material.REPEATER);
-        SECTION_MATERIALS.put("umbralblade", Material.ORANGE_DYE);
+        SECTION_MATERIALS.put("detection",      Material.SPYGLASS);
+        SECTION_MATERIALS.put("display",    Material.CYAN_DYE);
+        SECTION_MATERIALS.put("timing",       Material.CLOCK);
+        SECTION_MATERIALS.put("combat",       Material.STONE_SWORD);
+        SECTION_MATERIALS.put("physics",        Material.COMPARATOR);
+        SECTION_MATERIALS.put("angle",     Material.REPEATER);
+        SECTION_MATERIALS.put("color", Material.ORANGE_DYE);
     }
 
     public ConfigMenu(SwordPlayer player) {
