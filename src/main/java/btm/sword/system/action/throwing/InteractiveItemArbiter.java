@@ -88,10 +88,6 @@ public class InteractiveItemArbiter {
         if (interactiveItem == null) return;
         if (interactiveItem instanceof ThrownItem thrownItem) {
             thrownItem.setRetrieved(true);
-//            if (thrownItem.getHitEntity() instanceof SwordEntity swordEntity && swordEntity.self().isValid()) {
-//                Impalement impalement = thrownItem.getThisImpalement();
-//                swordEntity.removeImpalement(impalement);
-//            }
         }
 
         // UmbralBlade manages its own item state (weapon/link/blade fields) and never populates

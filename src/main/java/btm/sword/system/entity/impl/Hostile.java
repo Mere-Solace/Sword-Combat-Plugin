@@ -132,8 +132,8 @@ public class Hostile extends Combatant {
 
         EntityEquipment equipment = associatedEntity.getEquipment();
         if (equipment != null) {
-            equipment.setItemInMainHand(itemInLeftHand);
-            equipment.setItemInOffHand(itemInRightHand);
+            equipment.setItemInMainHand(itemInRightHand);
+            equipment.setItemInOffHand(itemInLeftHand);
             equipment.setChestplate(new ItemStack(Material.NETHERITE_CHESTPLATE));
         }
     }
@@ -169,7 +169,7 @@ public class Hostile extends Combatant {
     @Override
     public void onZeroHealth() {
         if (!dead) {
-            ItemStack offHand = getItemStackInHand(false);
+            ItemStack offHand = getItemStackInHand(true);
             if (!offHand.isEmpty()) {
                 Vector dropVel = new Vector(
                     Math.random() - 0.5,

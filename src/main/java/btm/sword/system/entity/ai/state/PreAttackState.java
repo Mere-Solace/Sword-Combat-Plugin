@@ -60,7 +60,7 @@ public class PreAttackState extends HostileAIFacade {
             MobGoalArbiter.GOALS.addGoal(h.mob(), 2, new LookAtTargetGoal(h.mob(), h));
         } else {
             MobGoalArbiter.GOALS.addGoal(h.mob(), 1, new PreAttackRetreatGoal(h.mob(), h));
-            MobGoalArbiter.GOALS.addGoal(h.mob(), 2, new LookAtTargetGoal(h.mob(), h));
+            MobGoalArbiter.GOALS.addGoal(h.mob(), 1, new LookAtTargetGoal(h.mob(), h));
         }
     }
 

@@ -8,6 +8,7 @@ import com.destroystokyo.paper.entity.ai.GoalType;
 
 import btm.sword.system.entity.ai.HostileAIFacade;
 import btm.sword.system.entity.ai.MobGoalArbiter;
+import btm.sword.system.entity.ai.goal.LookAtTargetGoal;
 import btm.sword.system.entity.impl.Hostile;
 
 /**
@@ -43,6 +44,8 @@ public class AttackState extends HostileAIFacade {
         }
 
         if (h.isIncapacitated()) return;
+
+        MobGoalArbiter.GOALS.addGoal(h.mob(), 1, new LookAtTargetGoal(h.mob(), h));
 
         if (h.getPendingAbility() != null) {
             h.getPendingAbility().execute(h);

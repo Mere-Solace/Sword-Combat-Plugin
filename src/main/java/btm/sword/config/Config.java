@@ -1499,7 +1499,54 @@ public class Config {
             Config::loadFloat
         ); }
 
-        // Throw sound configuration
+        public static SoundType BLOCK_BROKEN_SOUND = SoundType.ITEM_SHIELD_BREAK;
+        static { register(
+            "audio.block_broken_sound",
+            BLOCK_BROKEN_SOUND, SoundType.class,
+            v -> BLOCK_BROKEN_SOUND = v,
+            Config::loadSoundType
+        ); }
+
+        public static float BLOCK_BROKEN_VOLUME = 1.0f; // 0.0-1.0
+        static { register(
+            "audio.block_broken_volume",
+            BLOCK_BROKEN_VOLUME, Float.class,
+            v -> BLOCK_BROKEN_VOLUME = v,
+            Config::loadFloat
+        ); }
+
+        public static float BLOCK_BROKEN_PITCH = 1.0f;
+        static { register(
+            "audio.block_broken_pitch",
+            BLOCK_BROKEN_PITCH, Float.class,
+            v -> BLOCK_BROKEN_PITCH = v,
+            Config::loadFloat
+        ); }
+
+        public static SoundType PARRY_ATTEMPT_SOUND = SoundType.RANDOM_BANE_SLASH;
+        static { register(
+            "audio.parry_attempt_sound",
+            PARRY_ATTEMPT_SOUND, SoundType.class,
+            v -> PARRY_ATTEMPT_SOUND = v,
+            Config::loadSoundType
+        ); }
+
+        public static float PARRY_ATTEMPT_VOLUME = 1.0f; // 0.0-1.0
+        static { register(
+            "audio.parry_sound_volume",
+            PARRY_ATTEMPT_VOLUME, Float.class,
+            v -> PARRY_ATTEMPT_VOLUME = v,
+            Config::loadFloat
+        ); }
+
+        public static float PARRY_ATTEMPT_PITCH = 1.0f;
+        static { register(
+            "audio.parry_attempt_pitch",
+            PARRY_ATTEMPT_PITCH, Float.class,
+            v -> PARRY_ATTEMPT_PITCH = v,
+            Config::loadFloat
+        ); }
+
         public static SoundType PRE_ATTACK_SOUND = SoundType.ENTITY_EVOKER_FANGS_ATTACK;
         static { register(
             "audio.pre_attack_sound",

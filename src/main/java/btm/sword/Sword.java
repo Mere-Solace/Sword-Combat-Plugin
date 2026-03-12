@@ -12,7 +12,10 @@ import btm.sword.config.ConfigManager;
 import btm.sword.listeners.EntityListener;
 import btm.sword.listeners.InputListener;
 import btm.sword.listeners.PlayerListener;
+import btm.sword.listeners.SystemListener;
+import btm.sword.listeners.WorldListener;
 import btm.sword.system.action.throwing.InteractiveItemArbiter;
+import btm.sword.system.action.throwing.ProjectileManager;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.inventory.InventoryMenuManager;
 import btm.sword.system.playerdata.PlayerDataManager;
@@ -42,6 +45,8 @@ public final class Sword extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new InputListener(), this);
         getServer().getPluginManager().registerEvents(new PlayerListener(), this);
         getServer().getPluginManager().registerEvents(new EntityListener(), this);
+        getServer().getPluginManager().registerEvents(new WorldListener(), this);
+        getServer().getPluginManager().registerEvents(new SystemListener(), this);
 
         // Register commands using Paper's Brigadier lifecycle system
         LifecycleEventManager<@NotNull Plugin> manager = this.getLifecycleManager();
@@ -51,6 +56,9 @@ public final class Sword extends JavaPlugin {
 
         // Catch and register all entities whose data is already cached by the server
         SwordEntityArbiter.registerAllExistingEntities();
+
+        // Start the standalone projectile tick loop (does not affect FSM-driven projectiles)
+        ProjectileManager.startTicking();
 
         InventoryMenuManager.registerAll();
 

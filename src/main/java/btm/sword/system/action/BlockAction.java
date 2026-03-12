@@ -8,6 +8,7 @@ import btm.sword.system.attack.HitValuePacket;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.impl.Combatant;
 import btm.sword.system.entity.impl.SwordPlayer;
+import btm.sword.utility.Prefab;
 import btm.sword.utility.sound.SoundType;
 import btm.sword.utility.sound.SoundUtil;
 
@@ -105,7 +106,8 @@ public final class BlockAction {
         player.setParryWindowEnd(System.currentTimeMillis() + Config.Combat.PARRY_WINDOW_MS);
         player.setBlocking(false);
         player.disableShield(Config.Combat.PARRY_SHIELD_COOLDOWN_TICKS);
-        SoundUtil.playSound(player.self(), SoundType.ITEM_SHIELD_BLOCK, 1.0f, 1.5f);
+
+        Prefab.Sounds.PARRY_ATTEMPT.playForAllInRadius(player.getLocation(), 15);
     }
 
     /**
@@ -189,8 +191,9 @@ public final class BlockAction {
         player.disableShield(Config.Combat.EXHAUSTED_BLOCKING_COOLDOWN_TICKS);
         player.setBlocking(false);
         player.cancelBlockDrainTask();
-        SoundUtil.playSound(player.self(), SoundType.ITEM_SHIELD_BREAK,
-            1.0f, 0.8f);
+
+        Prefab.Sounds.BLOCK_BROKEN.playForAllInRadius(player.getLocation(), 15);
+
         ActionCaster.cast(player, Config.Combat.BLOCK_BREAK_STAGGER_MS, () -> {});
     }
 }
