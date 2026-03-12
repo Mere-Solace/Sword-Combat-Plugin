@@ -10,6 +10,7 @@ import java.util.function.Supplier;
 import javax.annotation.Nullable;
 
 import org.bukkit.Color;
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Display;
 import org.bukkit.entity.EntityType;
@@ -18,6 +19,7 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.TextDisplay;
 import org.bukkit.event.inventory.ClickType;
+import org.bukkit.event.inventory.InventoryAction;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
@@ -26,6 +28,7 @@ import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Transformation;
+import org.bukkit.util.Vector;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
@@ -34,6 +37,7 @@ import com.destroystokyo.paper.profile.PlayerProfile;
 import btm.sword.config.Config;
 import btm.sword.system.action.BlockAction;
 import btm.sword.system.action.throwing.ThrowAction;
+import btm.sword.system.action.throwing.types.DroppedItem;
 import btm.sword.system.control.PredicateRunnablePair;
 import btm.sword.system.control.SwordScheduler;
 import btm.sword.system.control.TimeArbiter;
@@ -483,6 +487,7 @@ public class SwordPlayer extends Combatant {
      */
     public boolean handleInventoryInput(InventoryClickEvent e) {
         ClickType clickType = e.getClick();
+        InventoryAction action = e.getAction();
         ItemStack onCursor = e.getCursor();
         ItemStack clicked = e.getCurrentItem();
 
@@ -513,7 +518,65 @@ public class SwordPlayer extends Combatant {
             return true;
         }
 
+        // Handle Q / Ctrl+Q drops from inventory slots and cursor
+        boolean fromCursor = action == InventoryAction.DROP_ONE_CURSOR || action == InventoryAction.DROP_ALL_CURSOR;
+        boolean dropAll = action == InventoryAction.DROP_ALL_SLOT || action == InventoryAction.DROP_ALL_CURSOR;
+
+        if (action == InventoryAction.DROP_ONE_SLOT || action == InventoryAction.DROP_ALL_SLOT
+                || action == InventoryAction.DROP_ONE_CURSOR || action == InventoryAction.DROP_ALL_CURSOR) {
+
+            ItemStack source = fromCursor ? onCursor : clicked;
+            if (source == null || source.isEmpty()) return false;
+
+            ItemStack toDrop = source.clone();
+            if (!dropAll) toDrop.setAmount(1);
+
+            if (fromCursor) {
+                if (dropAll || source.getAmount() <= 1) {
+                    player.setItemOnCursor(null);
+                } else {
+                    ItemStack remaining = source.clone();
+                    remaining.setAmount(remaining.getAmount() - 1);
+                    player.setItemOnCursor(remaining);
+                }
+            } else {
+                if (dropAll || source.getAmount() <= 1) {
+                    e.getInventory().setItem(e.getSlot(), null);
+                } else {
+                    ItemStack remaining = source.clone();
+                    remaining.setAmount(remaining.getAmount() - 1);
+                    e.getInventory().setItem(e.getSlot(), remaining);
+                }
+            }
+
+            spawnInventoryDrop(toDrop);
+            return true;
+        }
+
         return false;
+    }
+
+    /**
+     * Spawns an appropriate world drop for an item leaving the player's inventory.
+     * <p>
+     * {@link ItemClass#THROWABLE} items (weapons, axes, etc.) become {@link DroppedItem}s with
+     * custom physics so they must be picked up manually from the ground. All other items become
+     * standard Bukkit item entities.
+     * </p>
+     *
+     * @param item the stack to drop into the world; must not be null or empty
+     */
+    private void spawnInventoryDrop(ItemStack item) {
+        Vector flatDir = player.getLocation().getDirection().clone().setY(0);
+        if (flatDir.lengthSquared() > 0) flatDir.normalize().multiply(0.4);
+
+        Location dropLocation = player.getLocation().clone().add(flatDir).add(0, 1.0, 0);
+
+        if (ItemClassifier.classify(item) == ItemClass.THROWABLE) {
+            new DroppedItem(dropLocation, new Vector(0, 0, 0), item).register();
+        } else {
+            player.getWorld().dropItem(dropLocation, item);
+        }
     }
 
     public void updateVisualStats() {
