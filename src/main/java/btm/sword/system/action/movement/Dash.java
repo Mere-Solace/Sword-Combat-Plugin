@@ -149,7 +149,7 @@ public class Dash {
 
         double length = itemDisplay.getLocation().subtract(ex.getEyeLocation()).length();
 
-        if (flatDash && !umbral) {
+        if (flatDash && !umbral && direction > 0) {
             performFlatDashToItemFromGround(length);
         }
         else {

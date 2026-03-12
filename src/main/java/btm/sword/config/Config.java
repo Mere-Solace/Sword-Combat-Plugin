@@ -1109,6 +1109,48 @@ public class Config {
         public static float HIT_PUNCH_SOULFIRE_LOSS = 5f;
         static { register("combat.hit_punch_soulfire_loss", HIT_PUNCH_SOULFIRE_LOSS,
             Float.class, v -> HIT_PUNCH_SOULFIRE_LOSS = v, Config::loadFloat); }
+
+        // Block & parry configuration
+        public static float BLOCK_SOULFIRE_DRAIN_PER_SECOND = 2.5f;
+        static { register("combat.block_soulfire_drain_per_second", BLOCK_SOULFIRE_DRAIN_PER_SECOND,
+            Float.class, v -> BLOCK_SOULFIRE_DRAIN_PER_SECOND = v, Config::loadFloat); }
+
+        public static float BLOCK_SOULFIRE_COST_ON_HIT = 20.0f;
+        static { register("combat.block_soulfire_cost_on_hit", BLOCK_SOULFIRE_COST_ON_HIT,
+            Float.class, v -> BLOCK_SOULFIRE_COST_ON_HIT = v, Config::loadFloat); }
+
+        public static int BLOCK_BREAK_STAGGER_MS = 1000;
+        static { register("combat.block_break_stagger_ms", BLOCK_BREAK_STAGGER_MS,
+            Integer.class, v -> BLOCK_BREAK_STAGGER_MS = v, ConfigurationSection::getInt); }
+
+        public static int PARRY_AVAILABLE_MS = 400;
+        static { register("combat.parry_available_ms", PARRY_AVAILABLE_MS,
+            Integer.class, v -> PARRY_AVAILABLE_MS = v, ConfigurationSection::getInt); }
+
+        public static int PARRY_WINDOW_MS = 200;
+        static { register("combat.parry_window_ms", PARRY_WINDOW_MS,
+            Integer.class, v -> PARRY_WINDOW_MS = v, ConfigurationSection::getInt); }
+
+        public static float PARRY_SOULFIRE_GAIN = 25.0f;
+        static { register("combat.parry_soulfire_gain", PARRY_SOULFIRE_GAIN,
+            Float.class, v -> PARRY_SOULFIRE_GAIN = v, Config::loadFloat); }
+
+        public static int PARRY_STAGGER_MS = 1000;
+        static { register("combat.parry_stagger_ms", PARRY_STAGGER_MS,
+            Integer.class, v -> PARRY_STAGGER_MS = v, ConfigurationSection::getInt); }
+
+        /** Ticks the shield is put on cooldown after a successful parry (prevents re-raising immediately). */
+        public static int PARRY_SHIELD_COOLDOWN_TICKS = 25;
+        static { register("combat.parry_shield_cooldown_ticks", PARRY_SHIELD_COOLDOWN_TICKS,
+            Integer.class, v -> PARRY_SHIELD_COOLDOWN_TICKS = v, ConfigurationSection::getInt); }
+
+        public static int EXHAUSTED_BLOCKING_COOLDOWN_TICKS = 30;
+        static { register("combat.exhausted_blocking_cooldown_ticks", EXHAUSTED_BLOCKING_COOLDOWN_TICKS,
+            Integer.class, v -> EXHAUSTED_BLOCKING_COOLDOWN_TICKS = v, ConfigurationSection::getInt); }
+
+        public static float SHIELD_PASSING_BYPASS_POWER = 0.5f;
+        static { register("combat.shield_passing_bypass_power", SHIELD_PASSING_BYPASS_POWER,
+            Float.class, v -> SHIELD_PASSING_BYPASS_POWER = v, Config::loadFloat); }
     }
     //endregion
 

@@ -34,6 +34,7 @@ import org.joml.Vector3f;
 import com.destroystokyo.paper.profile.PlayerProfile;
 
 import btm.sword.config.Config;
+import btm.sword.system.action.BlockAction;
 import btm.sword.system.action.throwing.ThrowAction;
 import btm.sword.system.control.PredicateRunnablePair;
 import btm.sword.system.control.SwordScheduler;
@@ -58,6 +59,7 @@ import btm.sword.system.item.SwordItemType;
 import btm.sword.system.item.special.NonMovableItem;
 import btm.sword.system.item.special.SlotAnchoredItem;
 import btm.sword.system.playerdata.PlayerData;
+import btm.sword.utility.Prefab;
 import btm.sword.utility.SwordTimeUnit;
 import btm.sword.utility.display.DisplayUtil;
 import lombok.Getter;
@@ -114,6 +116,12 @@ public class SwordPlayer extends Combatant {
     private boolean threwItem;
     @Setter
     private boolean blocking;
+
+    /** System.currentTimeMillis() deadline for the active parry hit-detection window. */
+    @Setter
+    private long parryWindowEnd = 0L;
+
+    private TimeArbiter.TaskHandle blockDrainTask;
 
     private TimeArbiter.TaskHandle rightClickHoldTask;
     private boolean holdingRight;
@@ -266,6 +274,57 @@ public class SwordPlayer extends Combatant {
         endStatusDisplay();
         endIndicatorDisplay();
         destroyed = true;
+    }
+
+    /**
+     * Returns true if the parry hit-detection window is active (an incoming
+     * BLOCKABLE hit within this window will be parried).
+     *
+     * @return true if the parry window is active
+     */
+    @Override
+    public boolean isInParryWindow() {
+        return System.currentTimeMillis() < parryWindowEnd;
+    }
+
+    /**
+     * Cancels the active soulfire block drain task, if any.
+     */
+    public void cancelBlockDrainTask() {
+        if (blockDrainTask != null && !blockDrainTask.isCancelled()) {
+            blockDrainTask.cancel();
+            blockDrainTask = null;
+        }
+    }
+
+    /**
+     * Starts the repeating soulfire drain ticker while blocking.
+     * Drains {@link Config.Combat#BLOCK_SOULFIRE_DRAIN_PER_SECOND} per second.
+     * Breaks the block automatically if soulfire hits zero. Called from
+     * {@link btm.sword.system.action.BlockAction#startBlock}.
+     */
+    public void startBlockDrain() {
+        cancelBlockDrainTask();
+        // Tick every 200ms (5 times/sec); each tick drains 1/5 of the per-second cost.
+        int periodMs = 200;
+        blockDrainTask = TimeArbiter.runTimeIndependentBukkitTaskOnTimer(
+            null,
+            () -> {
+                if (!isBlocking()) return;
+                Prefab.Particles.UMBRAL_FLAME.display(getChestLocation().add(dir()));
+                float drainPerTick = Config.Combat.BLOCK_SOULFIRE_DRAIN_PER_SECOND / (1000f / periodMs);
+                aspects.soulfire().remove(drainPerTick);
+                if (aspects.soulfire().cur() <= 0) {
+                    BlockAction.onBlockBroken(this);
+                }
+            },
+            periodMs, periodMs,
+            SwordPlayer.class, "startBlockDrain",
+            new PredicateRunnablePair(
+                () -> !isBlocking(),
+                this::cancelBlockDrainTask
+            )
+        );
     }
 
     /**
@@ -486,6 +545,15 @@ public class SwordPlayer extends Combatant {
      */
     public boolean hasPerformedDropAction() {
         return performedDropAction;
+    }
+
+    public void disableShield(int ticks) {
+        self.clearActiveItem();
+        player.setCooldown(getItemStackInHand(false), ticks);
+    }
+
+    public boolean isUnableToBlock() {
+        return player.getCooldown(getItemStackInHand(false)) > 0;
     }
 
     @Override
@@ -802,9 +870,6 @@ public class SwordPlayer extends Combatant {
         mainItemStackAtTimeOfHold = getItemStackInHand(true);
         offItemStackAtTimeOfHold = getItemStackInHand(false);
 
-        if (offItemStackAtTimeOfHold.getType().equals(Material.SHIELD)) {
-            setBlocking(true);
-        }
         indexOfRightHold = getCurrentInvIndex();
 
         if (!holdingUmbralItemInMainHand()) {
@@ -819,7 +884,9 @@ public class SwordPlayer extends Combatant {
 
         rightClickHoldTask = TimeArbiter.runTimeIndependentBukkitTaskOnTimer(
             () -> {
-                inputExecutionTree.restartTimeoutTimer();
+                // While blocking, let the trie timeout expire naturally — that closes the parry window.
+                // For all other right-hold scenarios (throw ready, etc.) keep the timer alive.
+                if (!isBlocking()) inputExecutionTree.restartTimeoutTimer();
                 // player must ALWAYS be holding a shield in offhand, then... I can work with this though
                 if (!player.isHandRaised() && !player.isBlocking()) {
                     endHoldingRight();
@@ -850,6 +917,7 @@ public class SwordPlayer extends Combatant {
         rightHoldTimeStart = 0L;
         timeRightHeld = 0L;
         setBlocking(false);
+        cancelBlockDrainTask();
     }
 
     /**
@@ -859,6 +927,7 @@ public class SwordPlayer extends Combatant {
         holdingRight = false;
         timeRightHeld = System.currentTimeMillis() - rightHoldTimeStart;
         setBlocking(false);
+        cancelBlockDrainTask();
         setItemStackInHand(offItemStackAtTimeOfHold, false);
         if (!mainItemStackAtTimeOfHold.isEmpty() && !threwItem && !holdingUmbralItemInMainHand())
             setItemAtIndex(mainItemStackAtTimeOfHold, indexOfRightHold);

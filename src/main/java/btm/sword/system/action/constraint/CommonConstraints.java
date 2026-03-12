@@ -3,6 +3,7 @@ package btm.sword.system.action.constraint;
 import org.bukkit.Material;
 
 import btm.sword.system.entity.impl.Combatant;
+import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.entity.umbral.statemachine.state.LodgedState;
 import btm.sword.system.entity.umbral.statemachine.state.RecallingState;
 import btm.sword.system.entity.umbral.statemachine.state.SheathedState;
@@ -84,4 +85,11 @@ public final class CommonConstraints {
         c -> c.getAbilityCastTask() == null && !c.isGrabbing() && !c.isGrabbed()
             && c.getUmbralBlade() != null
             && c.getUmbralBlade().inState(LodgedState.class);
+
+    /**
+     * Passes when the combatant is not currently blocking (holding shield up).
+     * For non-player combatants (which cannot block), this always passes.
+     */
+    public static final ActionConstraint NOT_BLOCKING =
+        c -> !(c instanceof SwordPlayer sp) || !sp.isBlocking();
 }

@@ -32,6 +32,7 @@ import com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent;
 
 import btm.sword.Sword;
 import btm.sword.config.Config;
+import btm.sword.system.action.BlockAction;
 import btm.sword.system.action.throwing.impale.Impalement;
 import btm.sword.system.action.throwing.types.DroppedItem;
 import btm.sword.system.attack.HitValuePacket;
@@ -43,6 +44,7 @@ import btm.sword.system.control.TimeArbiter;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.impl.Combatant;
+import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.utility.Debug;
 import btm.sword.utility.Prefab;
 import btm.sword.utility.SwordTimeUnit;
@@ -533,7 +535,36 @@ public abstract class SwordEntity {
         }
     }
 
+    /**
+     * Returns true if a parry hit-detection window is currently active on this entity.
+     * Overridden in {@link SwordPlayer} to check the real parry window timestamp.
+     *
+     * @return true if an incoming BLOCKABLE hit will be parried
+     */
+    public boolean isInParryWindow() {
+        return false;
+    }
+
     public void hit(Combatant source, HitValuePacket v, Vector knockbackVelocity, Affliction... afflictions) {
+        if (this instanceof SwordPlayer defender && defender.isBlocking()) {
+            BlockAction.BlockResult result = BlockAction.resolveBlock(source, defender, v);
+            switch (result) {
+                case BLOCKED, PARRIED -> { return; }
+                case SHIELD_PASSED -> {
+                    HitValuePacket scaled = BlockAction.applyBypassScale(v);
+                    hit(source,
+                        scaled.reapedSoulfire(),
+                        scaled.invulnerableTicks(),
+                        scaled.shardDamage(),
+                        scaled.toughnessDamage(),
+                        scaled.soulfireLoss(),
+                        knockbackVelocity,
+                        afflictions);
+                    return;
+                }
+                default -> { /* NOT_BLOCKED: fall through to normal hit */ }
+            }
+        }
         hit(source,
             v.reapedSoulfire(),
             v.invulnerableTicks(),

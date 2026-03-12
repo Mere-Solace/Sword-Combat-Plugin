@@ -6,7 +6,10 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
+import org.bukkit.Material;
+
 import btm.sword.config.Config;
+import btm.sword.system.action.BlockAction;
 import btm.sword.system.action.UmbralBladeAction;
 import btm.sword.system.action.attack.AttackAction;
 import btm.sword.system.action.attack.DashAttackAction;
@@ -20,6 +23,7 @@ import btm.sword.system.action.utility.UtilityAction;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.impl.Combatant;
 import btm.sword.system.entity.impl.SwordPlayer;
+import btm.sword.utility.SwordTimeUnit;
 
 /**
  * Registers all input sequences into an {@link InputExecutionTree}.
@@ -28,6 +32,11 @@ import btm.sword.system.entity.impl.SwordPlayer;
  * {@link InputExecutionTree.ActionContextPair} rather than on {@link InputType}.
  * Shared nodes (e.g. DROP + RIGHT for lunge and throw) are populated in priority order —
  * the first registered action whose context passes is executed.
+ * </p>
+ * <p>
+ * Visibility predicates of sequential nodes are checked BEFORE the action
+ * of the current node is executed.
+ * Keep this in mind when developing sequential action systems.
  * </p>
  */
 public class InputRegistrar {
@@ -68,6 +77,51 @@ public class InputRegistrar {
                 SwordPlayer::normalActState)
             )))
             .timeoutTicks(20)
+            .cancellable(true)
+            .display(true)
+            .build();
+
+        // Block: RIGHT begins blocking (if shield in offhand). The node timeout is the parry window —
+        // while it is alive, SWAP can follow to trigger a parry. The hold task does NOT restart the
+        // timer while blocking, so the window closes naturally after PARRY_AVAILABLE_MS ticks.
+        // Registered before any other RIGHT-prefixed paths so the node exists with the correct timeout.
+        new InputExecutionTree.InputNodeBuilder(root, List.of(
+            InputType.RIGHT
+        )).action(new LinkedList<>(List.of(
+            new InputExecutionTree.ActionContextPair(
+                () -> InputAction.builder()
+                    .name("Block")
+                    .action(c -> BlockAction.startBlock((SwordPlayer) c))
+                    .cooldown(executor -> 0)
+                    .canCast(c -> true)
+                    .displayDisabled(false)
+                    .resetIfCannotPerform(false)
+                    .build(),
+                sp -> sp.normalActState() && sp.getItemStackInHand(false).getType() == Material.SHIELD)
+        )))
+            .timeoutTicks(SwordTimeUnit.millisToTicks(Config.Combat.PARRY_AVAILABLE_MS))
+            .cancellable(true)
+            .display(true)
+            .build();
+
+        // Parry: RIGHT → SWAP while the trie is still at the RIGHT node (within timeout).
+        // Context predicate confirms the Bukkit player is actively blocking. If the window
+        // has expired (trie reset) SWAP hits root instead → dash or skill.
+        new InputExecutionTree.InputNodeBuilder(root, List.of(
+            InputType.RIGHT,
+            InputType.SWAP
+        )).action(new LinkedList<>(List.of(
+            new InputExecutionTree.ActionContextPair(
+                () -> InputAction.builder()
+                .name("Parry")
+                .action(c -> BlockAction.parryAttempt((SwordPlayer) c))
+                .cooldown(executor -> 0)
+                .canCast(c -> true)
+                .displayDisabled(false)
+                .resetIfCannotPerform(false)
+                .build(),
+                sp -> true)
+            )))
             .cancellable(true)
             .display(true)
             .build();

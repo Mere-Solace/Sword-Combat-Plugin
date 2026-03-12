@@ -303,7 +303,7 @@ public class PlayerListener implements Listener {
      */
     @EventHandler
     public void playerShieldBreakEvent(PlayerShieldDisableEvent event) {
-        event.setCancelled(true);
+//        event.setCancelled(true);
     }
 
     @EventHandler
