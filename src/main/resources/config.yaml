@@ -378,6 +378,9 @@ hostile:
   pre_attack_ticks: 24
   retreat_ticks: 40
   flee_health_fraction: 0.2
+  mob_slash_cooldown_ticks: 20
+  mob_throw_cooldown_ticks: 60
+  mob_throw_arc_height: 0.4
 
 
 umbral:

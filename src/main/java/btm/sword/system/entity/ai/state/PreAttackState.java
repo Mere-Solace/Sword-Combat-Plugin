@@ -1,20 +1,33 @@
 package btm.sword.system.entity.ai.state;
 
-
 import org.bukkit.Particle;
+
+import com.destroystokyo.paper.entity.ai.GoalType;
 
 import btm.sword.config.Config;
 import btm.sword.system.entity.ai.HostileAIFacade;
+import btm.sword.system.entity.ai.MobGoalArbiter;
+import btm.sword.system.entity.ai.ability.AbilityCategory;
+import btm.sword.system.entity.ai.goal.ApproachGoal;
+import btm.sword.system.entity.ai.goal.LookAtTargetGoal;
+import btm.sword.system.entity.ai.goal.PreAttackRetreatGoal;
 import btm.sword.system.entity.impl.Hostile;
 import btm.sword.utility.Prefab;
 
 /**
  * Pre-attack (wind-up) AI state for Hostile entities.
- * <p>
- * Stops the mob in place, plays ominous visual and audio cues, then after the
- * configured wind-up period fires the {@link AttackState} transition. While winding up,
- * the mob continuously faces its target.
- * </p>
+ *
+ * <p>Selects a {@link btm.sword.system.entity.ai.ability.MobAbility} and then moves the mob
+ * during the telegraph:
+ * <ul>
+ *   <li>{@link AbilityCategory#MELEE} — mob approaches the target at 110% speed via
+ *       {@link ApproachGoal}.</li>
+ *   <li>{@link AbilityCategory#RANGED} — mob retreats from the target via
+ *       {@link PreAttackRetreatGoal}.</li>
+ *   <li>No ability available — mob stops pathfinding.</li>
+ * </ul>
+ * After the configured wind-up ticks, transitions to {@link AttackState} which fires the ability
+ * immediately — no proximity gate.
  */
 public class PreAttackState extends HostileAIFacade {
 
@@ -26,7 +39,9 @@ public class PreAttackState extends HostileAIFacade {
     @Override
     public void onEnter(Hostile h) {
         h.setPreAttackTimer(Config.Hostile.PRE_ATTACK_TICKS);
-        h.getPathfinder().stopPathfinding();
+        h.selectAbility();
+
+        h.getMob().setAware(true);
 
         h.self().getWorld().spawnParticle(
             Particle.TRIAL_SPAWNER_DETECTION_OMINOUS,
@@ -38,22 +53,26 @@ public class PreAttackState extends HostileAIFacade {
 
         Prefab.Sounds.PRE_ATTACK.playForAllInRadius(h.self());
 
-        faceTarget(h);
+        if (h.getPendingAbility() == null) {
+            h.getPathfinder().stopPathfinding();
+        } else if (h.getPendingAbility().category() == AbilityCategory.MELEE) {
+            MobGoalArbiter.GOALS.addGoal(h.mob(), 1, new ApproachGoal(h.mob(), h));
+            MobGoalArbiter.GOALS.addGoal(h.mob(), 2, new LookAtTargetGoal(h.mob(), h));
+        } else {
+            MobGoalArbiter.GOALS.addGoal(h.mob(), 1, new PreAttackRetreatGoal(h.mob(), h));
+            MobGoalArbiter.GOALS.addGoal(h.mob(), 2, new LookAtTargetGoal(h.mob(), h));
+        }
     }
 
     @Override
     public void onTick(Hostile h) {
         h.setPreAttackTimer(h.getPreAttackTimer() - 1);
-        faceTarget(h);
     }
 
     @Override
     public void onExit(Hostile h) {
         h.setPreAttackTimer(0);
-    }
-
-    private void faceTarget(Hostile h) {
-        if (h.getCurrentTarget() == null || !h.getCurrentTarget().self().isValid()) return;
-        h.getMob().lookAt(h.getCurrentTarget().self(), 100f, 100f);
+        MobGoalArbiter.GOALS.removeAllGoals(h.mob(), GoalType.MOVE);
+        MobGoalArbiter.GOALS.removeAllGoals(h.mob(), GoalType.LOOK);
     }
 }

@@ -2616,6 +2616,33 @@ public class Config {
             v -> ATTACK_READY_TICKS = v,
             (s, p, d) -> s.getInt(p, d)
         ); }
+
+        /** Cooldown in ticks after the mob uses its melee slash ability (1 s at 20 TPS). */
+        public static int MOB_SLASH_COOLDOWN_TICKS = 20;
+        static { register(
+            "hostile.mob_slash_cooldown_ticks",
+            20, Integer.class,
+            v -> MOB_SLASH_COOLDOWN_TICKS = v,
+            (s, p, d) -> s.getInt(p, d)
+        ); }
+
+        /** Cooldown in ticks after the mob uses its throw ability (3 s at 20 TPS). */
+        public static int MOB_THROW_COOLDOWN_TICKS = 60;
+        static { register(
+            "hostile.mob_throw_cooldown_ticks",
+            60, Integer.class,
+            v -> MOB_THROW_COOLDOWN_TICKS = v,
+            (s, p, d) -> s.getInt(p, d)
+        ); }
+
+        /** Parabolic arc height multiplier for the mob throw ability. */
+        public static double MOB_THROW_ARC_HEIGHT = 0.4;
+        static { register(
+            "hostile.mob_throw_arc_height",
+            0.4, Double.class,
+            v -> MOB_THROW_ARC_HEIGHT = v,
+            (s, p, d) -> s.getDouble(p, d)
+        ); }
     }
     //endregion
 

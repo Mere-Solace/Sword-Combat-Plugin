@@ -1,9 +1,11 @@
 package btm.sword.system.entity.impl;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
-import java.util.function.Consumer;
 
 import org.bukkit.GameMode;
 import org.bukkit.Location;
@@ -17,19 +19,22 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
 
 import com.destroystokyo.paper.entity.Pathfinder;
+import com.destroystokyo.paper.entity.ai.GoalType;
 
 import btm.sword.system.action.throwing.types.DroppedItem;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.ai.HostileStateMachine;
 import btm.sword.system.entity.ai.MobGoalArbiter;
 import btm.sword.system.entity.ai.WanderProfile;
+import btm.sword.system.entity.ai.ability.MobAbility;
+import btm.sword.system.entity.ai.ability.MobSlashAbility;
+import btm.sword.system.entity.ai.ability.MobThrowAbility;
 import btm.sword.system.entity.ai.state.IdleState;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.aspect.Resource;
 import btm.sword.system.entity.base.CombatProfile;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.item.prefab.ItemLibrary;
-import btm.sword.utility.Prefab;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -48,7 +53,18 @@ public class Hostile extends Combatant {
     private final Mob mob;
     private final Pathfinder pathfinder;
     private Location origin;
-    private final List<Consumer<Combatant>> possibleAttacks;
+
+    /** Ordered list of abilities this mob can select from during pre-attack. */
+    private final List<MobAbility> possibleAbilities;
+
+    /** The ability selected at the start of PreAttackState; executed on AttackState entry. */
+    private MobAbility pendingAbility;
+
+    /** Per-ability cooldown counters (ticks remaining). Decremented each tick; removed at 0. */
+    private final Map<String, Integer> abilityCooldowns;
+
+    /** {@code true} while this mob is grabbed — suppresses AI movement and attack execution. */
+    private boolean incapacitated;
 
     // AI state machine
     private HostileStateMachine aiStateMachine;
@@ -106,33 +122,13 @@ public class Hostile extends Combatant {
         pathfinder = mob.getPathfinder();
         pathfinder.setCanFloat(false);
         pathfinder.setCanOpenDoors(true);
-//        pathfinder.
 
         origin = mob.getLocation();
-        possibleAttacks = new ArrayList<>();
+        possibleAbilities = new ArrayList<>();
+        abilityCooldowns = new HashMap<>();
 
-        // Register the basic melee attack
-        possibleAttacks.add(c -> {
-            Hostile h = (Hostile) c;
-            SwordEntity target = h.getCurrentTarget();
-            if (target == null || !target.self().isValid()) return;
-            Vector knockback = target.self().getLocation()
-                .subtract(h.self().getLocation())
-                .toVector();
-            if (knockback.lengthSquared() > 0.001) knockback.normalize();
-            knockback.multiply(0.5);
-            target.hit(h, Prefab.Attacks.defaultMobHit, knockback);
-        });
-
-//        // Register the grab attack — stuns the player for ~400 ms before releasing
-//        possibleAttacks.add(c -> {
-//            Hostile h = (Hostile) c;
-//            SwordEntity target = h.getCurrentTarget();
-//            if (target == null || !target.self().isValid()) return;
-//            h.onGrab(target);
-//            SwordScheduler.runBukkitTaskLater(h::onGrabHit, 400, TimeUnit.MILLISECONDS);
-//            SwordScheduler.runBukkitTaskLater(h::onGrabLetGo, 800, TimeUnit.MILLISECONDS);
-//        });
+        possibleAbilities.add(new MobSlashAbility());
+        possibleAbilities.add(new MobThrowAbility());
 
         EntityEquipment equipment = associatedEntity.getEquipment();
         if (equipment != null) {
@@ -150,6 +146,7 @@ public class Hostile extends Combatant {
     @Override
     public void onTick() {
         super.onTick();
+        tickAbilityCooldowns();
         if (aiStateMachine != null) {
             aiStateMachine.tick();
         }
@@ -185,6 +182,19 @@ public class Hostile extends Combatant {
             }
         }
         super.onZeroHealth();
+    }
+
+    @Override
+    public void onGrabbed() {
+        incapacitated = true;
+        mob.setAware(false);
+        MobGoalArbiter.GOALS.removeAllGoals(mob, GoalType.MOVE);
+    }
+
+    @Override
+    public void onReleased() {
+        incapacitated = false;
+        mob.setAware(true);
     }
 
     public void broadcastMessage(double radius, String message) {
@@ -230,13 +240,46 @@ public class Hostile extends Combatant {
     }
 
     /**
-     * Executes a random attack from {@link #possibleAttacks}.
-     * No-op if the attack list is empty.
+     * Selects a random available ability from {@link #possibleAbilities} and stores it in
+     * {@link #pendingAbility}. If no ability passes {@link MobAbility#canUse(Hostile)},
+     * {@code pendingAbility} is set to {@code null}.
      */
-    public void randomAttack() {
-        if (possibleAttacks.isEmpty()) return;
-        Random random = new Random();
-        possibleAttacks.get(random.nextInt(possibleAttacks.size())).accept(this);
+    public void selectAbility() {
+        List<MobAbility> available = new ArrayList<>();
+        for (MobAbility ability : possibleAbilities) {
+            if (ability.canUse(this)) {
+                available.add(ability);
+            }
+        }
+        if (available.isEmpty()) {
+            pendingAbility = null;
+            return;
+        }
+        pendingAbility = available.get(new Random().nextInt(available.size()));
+    }
+
+    /**
+     * Sets the cooldown for the named ability.
+     *
+     * @param name  the ability name (from {@link MobAbility#name()})
+     * @param ticks the cooldown duration in ticks
+     */
+    public void setAbilityCooldown(String name, int ticks) {
+        abilityCooldowns.put(name, ticks);
+    }
+
+    /** Decrements all per-ability cooldown counters and removes entries that reach zero. */
+    private void tickAbilityCooldowns() {
+        Iterator<Map.Entry<String, Integer>> it = abilityCooldowns.entrySet().iterator();
+        while (it.hasNext()) {
+            Map.Entry<String, Integer> entry = it.next();
+            int remaining = entry.getValue() - 1;
+            if (remaining <= 0) {
+                it.remove();
+            } else {
+                entry.setValue(remaining);
+            }
+        }
     }
 
     public Location getOrigin() {

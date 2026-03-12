@@ -536,6 +536,18 @@ public abstract class SwordEntity {
     }
 
     /**
+     * Called when this entity is grabbed by a {@link Combatant}.
+     * Override in subclasses to react to being grabbed (e.g., to disable AI).
+     */
+    public void onGrabbed() {}
+
+    /**
+     * Called when this entity is released from a grab.
+     * Override in subclasses to re-enable behaviour suppressed during the grab.
+     */
+    public void onReleased() {}
+
+    /**
      * Returns true if a parry hit-detection window is currently active on this entity.
      * Overridden in {@link SwordPlayer} to check the real parry window timestamp.
      *
