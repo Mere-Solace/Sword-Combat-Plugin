@@ -38,7 +38,7 @@ public class DevMenu extends Menu {
 
         SimpleItem verboseDebug = toggle(
             "Debug.debug() output",
-            () -> Debug.VERBOSE_ENABLED.get(),
+            Debug.VERBOSE_ENABLED::get,
             () -> Config.Debug.LOGGING_VERBOSE_DEBUG = !Config.Debug.LOGGING_VERBOSE_DEBUG
         );
 
@@ -87,8 +87,8 @@ public class DevMenu extends Menu {
         Gui gui = Gui.normal()
             .setStructure(
                 "# # # # # # # # #",
-                "# A B C D E . . #",
-                "# G F . . . . . #",
+                "# A B C . G . F #",
+                "# D E . . . . . #",
                 "# # # < . > # # #")
             .addIngredient('#', BORDER)
             .addIngredient('A', verboseDebug)

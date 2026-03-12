@@ -2596,7 +2596,7 @@ public class Config {
             "hostile.aggro_range",
             16.0, Double.class,
             v -> AGGRO_RANGE_SQUARED = v * v,
-            (s, p, d) -> s.getDouble(p, d)
+            ConfigurationSection::getDouble
         ); }
 
         /** Attack initiation distance squared (loaded from raw radius and squared on assignment). */
@@ -2605,7 +2605,7 @@ public class Config {
             "hostile.approach_distance",
             6.0, Double.class,
             v -> APPROACH_DISTANCE_SQUARED = v * v,
-            (s, p, d) -> s.getDouble(p, d)
+            ConfigurationSection::getDouble
         ); }
 
         /** Minimum allied Hostile count targeting the same player to trigger surround behaviour. */
@@ -2614,7 +2614,7 @@ public class Config {
             "hostile.surround_min_allies",
             2, Integer.class,
             v -> SURROUND_MIN_ALLIES = v,
-            (s, p, d) -> s.getInt(p, d)
+            ConfigurationSection::getInt
         ); }
 
         /** Wind-up ticks before an attack is executed (~1.2 s at 20 TPS). */
@@ -2623,7 +2623,7 @@ public class Config {
             "hostile.pre_attack_ticks",
             24, Integer.class,
             v -> PRE_ATTACK_TICKS = v,
-            (s, p, d) -> s.getInt(p, d)
+            ConfigurationSection::getInt
         ); }
 
         /** Retreat duration in ticks after an attack (~2 s at 20 TPS). */
@@ -2632,7 +2632,7 @@ public class Config {
             "hostile.retreat_ticks",
             40, Integer.class,
             v -> RETREAT_TICKS = v,
-            (s, p, d) -> s.getInt(p, d)
+            ConfigurationSection::getInt
         ); }
 
         /** Health fraction threshold below which the mob flees (0.0–1.0). */
@@ -2641,7 +2641,7 @@ public class Config {
             "hostile.flee_health_fraction",
             0.20, Double.class,
             v -> FLEE_HEALTH_FRACTION = v,
-            (s, p, d) -> s.getDouble(p, d)
+            ConfigurationSection::getDouble
         ); }
 
         /** OnGuard duration in ticks after an attack (~2 s at 20 TPS). */
@@ -2650,7 +2650,7 @@ public class Config {
             "hostile.on_guard_ticks",
             40, Integer.class,
             v -> ON_GUARD_TICKS = v,
-            (s, p, d) -> s.getInt(p, d)
+            ConfigurationSection::getInt
         ); }
 
         /** Safe orbit radius squared for OnGuard strafing (loaded from raw distance and squared on assignment). */
@@ -2659,7 +2659,7 @@ public class Config {
             "hostile.on_guard_safe_distance",
             6.0, Double.class,
             v -> ON_GUARD_SAFE_DISTANCE_SQUARED = v * v,
-            (s, p, d) -> s.getDouble(p, d)
+            ConfigurationSection::getDouble
         ); }
 
         /** AttackReady hold duration in ticks — brief pause before a combo follow-up (~0.8 s at 20 TPS). */
@@ -2668,7 +2668,7 @@ public class Config {
             "hostile.attack_ready_ticks",
             16, Integer.class,
             v -> ATTACK_READY_TICKS = v,
-            (s, p, d) -> s.getInt(p, d)
+            ConfigurationSection::getInt
         ); }
 
         /** Cooldown in ticks after the mob uses its melee slash ability (1 s at 20 TPS). */
@@ -2677,7 +2677,7 @@ public class Config {
             "hostile.mob_slash_cooldown_ticks",
             20, Integer.class,
             v -> MOB_SLASH_COOLDOWN_TICKS = v,
-            (s, p, d) -> s.getInt(p, d)
+            ConfigurationSection::getInt
         ); }
 
         /** Cooldown in ticks after the mob uses its throw ability (3 s at 20 TPS). */
@@ -2686,7 +2686,7 @@ public class Config {
             "hostile.mob_throw_cooldown_ticks",
             60, Integer.class,
             v -> MOB_THROW_COOLDOWN_TICKS = v,
-            (s, p, d) -> s.getInt(p, d)
+            ConfigurationSection::getInt
         ); }
 
         /** Parabolic arc height multiplier for the mob throw ability. */
@@ -2695,7 +2695,7 @@ public class Config {
             "hostile.mob_throw_arc_height",
             0.4, Double.class,
             v -> MOB_THROW_ARC_HEIGHT = v,
-            (s, p, d) -> s.getDouble(p, d)
+            ConfigurationSection::getDouble
         ); }
     }
     //endregion
