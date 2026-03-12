@@ -11,6 +11,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityPickupItemEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.event.inventory.InventoryEvent;
 import org.bukkit.event.player.PlayerGameModeChangeEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
@@ -23,7 +24,9 @@ import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.entity.umbral.input.BladeRequest;
+import btm.sword.system.item.special.NonMovableItem;
 import btm.sword.utility.ChatInputCapture;
+import btm.sword.utility.Debug;
 import io.papermc.paper.event.player.AsyncChatEvent;
 import io.papermc.paper.event.player.PlayerShieldDisableEvent;
 import net.kyori.adventure.key.Key;
@@ -139,12 +142,29 @@ public class PlayerListener implements Listener {
      */
     @EventHandler
     public void inventoryEvent(InventoryEvent event) {
-        // Testing
+        if (!Debug.VERBOSE_ENABLED.get()) return;
         for (HumanEntity human : event.getViewers()) {
             if (human instanceof Player) {
                 SwordEntityArbiter.get(human)
                     .message("getInventory(): " + event.getInventory() + "\n  getView(): " + event.getView());
             }
+        }
+    }
+
+    /**
+     * Prevents players from dragging non-movable items across inventory slots.
+     * <p>
+     * Drag events are not routed through {@link SwordPlayer#handleInventoryInput},
+     * so this handler independently cancels any drag where the cursor item is
+     * tagged as a {@link btm.sword.system.item.special.NonMovableItem}.
+     * </p>
+     *
+     * @param event the {@link InventoryDragEvent} triggered when a player drags an item
+     */
+    @EventHandler
+    public void inventoryDragEvent(InventoryDragEvent event) {
+        if (NonMovableItem.isNonMovable(event.getOldCursor())) {
+            event.setCancelled(true);
         }
     }
 

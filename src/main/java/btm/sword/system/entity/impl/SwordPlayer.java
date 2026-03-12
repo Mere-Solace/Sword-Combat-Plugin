@@ -18,10 +18,8 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.TextDisplay;
 import org.bukkit.event.inventory.ClickType;
-import org.bukkit.event.inventory.InventoryAction;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.EquipmentSlot;
-import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
@@ -484,29 +482,37 @@ public class SwordPlayer extends Combatant {
      * @return true if the event was handled and should be cancelled, false otherwise
      */
     public boolean handleInventoryInput(InventoryClickEvent e) {
-        Inventory inv = e.getInventory();
         ClickType clickType = e.getClick();
-        InventoryAction action = e.getAction();
         ItemStack onCursor = e.getCursor();
         ItemStack clicked = e.getCurrentItem();
-        int slotNumber = e.getSlot();
+
+        // Protect non-movable items on cursor from being placed into any slot
+        if (NonMovableItem.isNonMovable(onCursor)) {
+            return true;
+        }
 
         if (clicked == null) {
-
             return false;
         }
 
-        // Protect non-movable items from being interacted with
-        if (NonMovableItem.isNonMovable(clicked) || NonMovableItem.isNonMovable(onCursor)) {
-            return true; // Cancel the action
+        // Protect non-movable items in slots from being moved or interacted with
+        if (NonMovableItem.isNonMovable(clicked)) {
+            return true;
         }
-//        message("\n\n~|------Beginning of new inventory interact event------|~"
-//                + "\n       Inventory: " + inv.getType()
-//                + "\n       Click type: " + clickType
-//                + "\n       Action type: " + action
-//                + "\n       Item on cursor: " + onCursor
-//                + "\n       Current Item in slot: " + clicked
-//                + "\n       slot number: " + slotNumber);
+
+        // Protect non-movable items in hotbar slots from being swapped via number keys
+        if (clickType == ClickType.NUMBER_KEY) {
+            int hotbarSlot = e.getHotbarButton();
+            if (hotbarSlot >= 0 && NonMovableItem.isNonMovable(player.getInventory().getItem(hotbarSlot))) {
+                return true;
+            }
+        }
+
+        // Protect non-movable items in the offhand slot from being swapped via F key
+        if (clickType == ClickType.SWAP_OFFHAND && NonMovableItem.isNonMovable(player.getInventory().getItem(40))) {
+            return true;
+        }
+
         return false;
     }
 

@@ -90,7 +90,6 @@ public class SlotAnchoredItem extends NonMovableItem {
      * @param player the player whose inventory to restore the item into
      */
     public void restore(Player player) {
-        // TODO: uncomment
-//        player.getInventory().setItem(targetSlot, itemStack);
+        player.getInventory().setItem(targetSlot, itemStack);
     }
 }
