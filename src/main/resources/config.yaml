@@ -272,6 +272,7 @@ movement:
   dash_grab_distance_squared: 8.5
   dash_block_check_offset_y: -0.75
   dash_velocity_damping: 0.6
+  dash_downward_flat_check_multiplier: 3.0
   dash_particle_task_delay: 0
   dash_particle_task_period: 2
   dash_particle_timer_increment: 2

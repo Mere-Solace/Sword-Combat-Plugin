@@ -4,6 +4,12 @@ main: btm.sword.Sword
 api-version: '1.21.8'
 loader: btm.sword.SwordPluginLoader
 
+dependencies:
+  server:
+    ProtocolLib:
+      load: BEFORE
+      required: true
+
 permissions:
   sword.use:
     description: Allows use of /sword command

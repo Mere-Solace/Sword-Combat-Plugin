@@ -7,6 +7,7 @@ import org.bukkit.Material;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
+import org.bukkit.event.inventory.ClickType;
 import org.bukkit.inventory.ItemStack;
 
 import btm.sword.config.Config;
@@ -138,6 +139,9 @@ public class MainMenu extends Menu {
                 .lore(List.of(Component.text("Click with an item to destroy it.", Config.SwordColor.TEXT_ITEM_BASE)))
                 .build(),
             click -> {
+                if (click.getClickType() == ClickType.DOUBLE_CLICK) {
+
+                }
                 ItemStack cursor = click.getPlayer().getItemOnCursor();
                 if (cursor.isEmpty() || NonMovableItem.isNonMovable(cursor)) return;
                 click.getPlayer().setItemOnCursor(new ItemStack(Material.AIR));

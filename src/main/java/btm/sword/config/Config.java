@@ -2056,6 +2056,15 @@ public class Config {
             ConfigurationSection::getDouble
         ); }
 
+        /** Downward flat check multiplier for dash mechanics. */
+        public static double DASH_DOWNWARD_FLAT_CHECK_MULTIPLIER = 3.0;
+        static { register(
+            "movement.dash_downward_flat_check_multiplier",
+            DASH_DOWNWARD_FLAT_CHECK_MULTIPLIER, Double.class,
+            v -> DASH_DOWNWARD_FLAT_CHECK_MULTIPLIER = v,
+            ConfigurationSection::getDouble
+        ); }
+
         public static long DASH_PARTICLE_TASK_DELAY = 0L;
         static { register(
             "movement.dash_particle_task_delay",

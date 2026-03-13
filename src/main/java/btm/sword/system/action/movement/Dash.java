@@ -38,7 +38,7 @@ public class Dash {
     private boolean flatDash;
 
     private static final Supplier<Double> MAX_STRAIGHT_DASH_DISTANCE = () -> Config.Movement.DASH_MAX_DISTANCE;
-
+    double FLAT_DASH_PITCH_THRESHOLD = 0.20;
 
     public Dash(Combatant executor, int direction) {
         this.executor = executor;
@@ -66,12 +66,10 @@ public class Dash {
         // Try to find an interactive item to dash-to/ grab
         ItemDisplay targetedItem = findTargetedItem(eyeLoc);
 
-        double FLAT_DASH_PITCH_THRESHOLD = 0.20;
-
         // if grounded and looking
         flatDash = onGround && (
             (direction > 0 && executor.dir().dot(Config.Direction.UP()) < FLAT_DASH_PITCH_THRESHOLD) ||
-                (direction <= 0 && executor.dir().dot(Config.Direction.UP()) > -FLAT_DASH_PITCH_THRESHOLD)
+                (direction <= 0 && executor.dir().dot(Config.Direction.UP()) > -FLAT_DASH_PITCH_THRESHOLD * Config.Movement.DASH_DOWNWARD_FLAT_CHECK_MULTIPLIER)
         );
 
         Debug.movement("flatDash=" + flatDash);
@@ -150,7 +148,12 @@ public class Dash {
 
         double length = itemDisplay.getLocation().subtract(ex.getEyeLocation()).length();
 
-        if (flatDash && !umbral && direction > 0) {
+        // flat dashing was for making dashing strong when the player would be dashing across the ground
+        // to mitigate the effects of friction from the ground.
+        // Since dashing to an item in the air is only a forward action,
+        // we should only check if the dash is a 'flat dash' if the direction is forward
+
+        if (flatDash && !umbral) {
             performFlatDashToItemFromGround(length);
         }
         else {

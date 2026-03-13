@@ -2,6 +2,9 @@ package btm.sword.system.inventory;
 
 import java.util.LinkedList;
 
+import org.bukkit.Material;
+import org.bukkit.inventory.ItemStack;
+
 import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.inventory.menu.Menu;
 
@@ -15,10 +18,15 @@ public class PlayerMenuManager {
         currentMenuIndex = -1;
     }
 
+    private void performOpen(Menu menu) {
+        swordPlayer.player().setItemOnCursor(new ItemStack(Material.AIR));
+        menu.open();
+    }
+
     private <T extends Menu> void addAndOpenMenu(Class<T> menuClass) {
         T menu = InventoryMenuManager.create(menuClass, swordPlayer);
         menuHistory.add(menu);
-        menu.open();
+        performOpen(menu);
     }
 
     /** Add an already-constructed menu instance to the history and open it. */
@@ -35,7 +43,7 @@ public class PlayerMenuManager {
         if (currentMenuIndex + 1 < menuHistory.size() &&
             menuInstance.getClass().equals(menuHistory.get(currentMenuIndex + 1).getClass())) {
                 currentMenuIndex++;
-                menuHistory.get(currentMenuIndex).open();
+                performOpen(menuHistory.get(currentMenuIndex));
                 return;
         }
 
@@ -46,7 +54,7 @@ public class PlayerMenuManager {
 
         menuHistory.add(menuInstance);
         currentMenuIndex = menuHistory.size() - 1;
-        menuInstance.open();
+        performOpen(menuInstance);
     }
 
     /**
@@ -72,7 +80,7 @@ public class PlayerMenuManager {
         if (currentMenuIndex + 1 < menuHistory.size() &&
             menuClass.equals(menuHistory.get(currentMenuIndex + 1).getClass())) {
                 currentMenuIndex++;
-                menuHistory.get(currentMenuIndex).open();
+                performOpen(menuHistory.get(currentMenuIndex));
                 return;
         }
 
@@ -87,16 +95,16 @@ public class PlayerMenuManager {
 
     public void openPreviousMenu() {
         if (noPreviousMenu()) return;
-        menuHistory.get(--currentMenuIndex).open();
+        performOpen(menuHistory.get(--currentMenuIndex));
     }
 
     public void reopenCurrentMenu() {
-        menuHistory.get(currentMenuIndex).open();
+        performOpen(menuHistory.get(currentMenuIndex));
     }
 
     public void openForwardPreviousMenu() {
         if (noForwardPreviousMenu()) return;
-        menuHistory.get(++currentMenuIndex).open();
+        performOpen(menuHistory.get(++currentMenuIndex));
     }
 
     public boolean noPreviousMenu() {

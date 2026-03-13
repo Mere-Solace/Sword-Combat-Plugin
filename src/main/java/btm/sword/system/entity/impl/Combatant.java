@@ -89,7 +89,10 @@ public abstract class Combatant extends SwordEntity {
         this.attrArmor = self().getAttribute(Attribute.ARMOR);
         if (attrArmor != null) attrArmor.setBaseValue(combatProfile.getStat(AspectType.FORM).getValue());
 
+        // Doesn't affect block placement range...
         this.attrInteractionRange = self().getAttribute(Attribute.ENTITY_INTERACTION_RANGE);
+        // TODO: make dynamic based on circumstance?
+        if (attrInteractionRange != null) attrInteractionRange.setBaseValue(0.25); // reduce reach distance
     }
 
     @Override

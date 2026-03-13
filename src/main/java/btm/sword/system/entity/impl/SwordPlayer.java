@@ -495,13 +495,21 @@ public class SwordPlayer extends Combatant {
         ItemStack onCursor = e.getCursor();
         ItemStack clicked = e.getCurrentItem();
 
-        // Protect non-movable items on cursor from being placed into any slot
-        if (NonMovableItem.isNonMovable(onCursor)) {
+        if (clicked == null) {
+            return false;
+        }
+
+        // Clicking the main menu button inside the inventory opens the menu
+        // Check this first to prevent the even from getting eaten by other checks
+        if (KeyRegistry.hasKey(clicked, KeyRegistry.MAIN_MENU_BUTTON_KEY) ||
+            KeyRegistry.hasKey(onCursor, KeyRegistry.MAIN_MENU_BUTTON_KEY)) {
+            InventoryMenuManager.openMenu(MainMenu.class, this);
             return true;
         }
 
-        if (clicked == null) {
-            return false;
+        // Protect non-movable items on cursor from being placed into any slot
+        if (NonMovableItem.isNonMovable(onCursor)) {
+            return true;
         }
 
         // Protect non-movable items in slots from being moved or interacted with
@@ -519,12 +527,6 @@ public class SwordPlayer extends Combatant {
 
         // Protect non-movable items in the offhand slot from being swapped via F key
         if (clickType == ClickType.SWAP_OFFHAND && NonMovableItem.isNonMovable(player.getInventory().getItem(40))) {
-            return true;
-        }
-
-        // Clicking the main menu button inside the inventory opens the menu
-        if (KeyRegistry.hasKey(clicked, KeyRegistry.MAIN_MENU_BUTTON_KEY)) {
-            InventoryMenuManager.openMenu(MainMenu.class, this);
             return true;
         }
 

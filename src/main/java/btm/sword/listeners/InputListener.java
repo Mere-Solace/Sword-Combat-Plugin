@@ -97,6 +97,15 @@ public class InputListener implements Listener {
         ItemStack item = swordPlayer.getItemStackInHand(true);
 
         Action action = event.getAction();
+
+        // Suppress Minecraft's auto-repeated right-click events while a hold is already being tracked.
+        // These repeat each tick when aiming at a block, causing the hold to end and restart in a loop.
+        // Cancelling synchronously here also suppresses block interaction feedback (sounds, particles).
+        if ((action == Action.RIGHT_CLICK_BLOCK || action == Action.RIGHT_CLICK_AIR) && swordPlayer.isHoldingRight()) {
+            event.setCancelled(true);
+            return;
+        }
+
         SwordScheduler.runBukkitTaskLater(() -> {
             if (swordPlayer.isInInventorySession()) return;
             if (swordPlayer.hasPerformedDropAction()) return;
