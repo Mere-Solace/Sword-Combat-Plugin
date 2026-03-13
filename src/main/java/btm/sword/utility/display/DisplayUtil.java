@@ -90,7 +90,7 @@ public class DisplayUtil {
                 () -> iterations.getAndIncrement() > maxIterations || entity.isInvalid() || !display.isValid(),
                 () -> {
 
-                    Debug.debug(DisplayUtil.class, 90, "Display not valid. Current tick: " + iterations.get());
+                    Debug.system("display invalid, tick=" + iterations.get());
 
                     if (display.isValid() && removeOnArrival) display.remove();
                     if (callback != null) {
@@ -103,7 +103,7 @@ public class DisplayUtil {
                     currentDirectionToTarget.get().lengthSquared() < endDistance * endDistance,
                 () -> {
 
-                    Debug.debug(DisplayUtil.class, 101, "Got close enough Current tick: " + iterations.get());
+                    Debug.system("display arrived, tick=" + iterations.get());
 
                     if (display.isValid() && removeOnArrival) display.remove();
                     if (callback != null) {

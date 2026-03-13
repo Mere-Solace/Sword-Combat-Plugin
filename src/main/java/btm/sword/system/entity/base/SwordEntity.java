@@ -186,7 +186,7 @@ public abstract class SwordEntity {
             SwordEntity.class, "startTicking",
             new PredicateRunnablePair(
                 this::isDestroyed,
-                () -> Debug.debug(SwordEntity.class, 188, "ending the ticking task")
+                () -> Debug.system("tick task ending")
             )
         );
     }
@@ -425,7 +425,7 @@ public abstract class SwordEntity {
      * Increments the count of impalements on this entity.
      */
     public void addImpalement(Impalement impalement) {
-        Debug.debug(SwordEntity.class, 425, "addingImpalement");
+        Debug.combat("addImpalement");
         impalements.add(impalement);
     }
 
@@ -661,21 +661,16 @@ public abstract class SwordEntity {
         self.sendMessage(message);
     }
 
-    public void info(String message) {
-        if (Config.Debug.LOGGING_VERBOSE_CONFIG) {
+    /**
+     * Sends a debug message to this entity's chat and to the server console,
+     * gated by {@link Config.Debug#LOGGING_VERBOSE_INVENTORY}.
+     *
+     * @param message the inventory debug string to emit
+     */
+    public void inventoryInfo(String message) {
+        if (Config.Debug.LOGGING_VERBOSE_INVENTORY) {
             this.message(message);
-        }
-    }
-
-    public void combatInfo(String message) {
-        if (Config.Debug.LOGGING_VERBOSE_COMBAT) {
-            this.message(message);
-        }
-    }
-
-    public void movementInfo(String message) {
-        if (Config.Debug.LOGGING_VERBOSE_MOVEMENT) {
-            this.message(message);
+            Sword.print("[Inventory][" + self.getName() + "] " + message);
         }
     }
 

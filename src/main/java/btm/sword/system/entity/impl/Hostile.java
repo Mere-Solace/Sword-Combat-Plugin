@@ -22,7 +22,6 @@ import com.destroystokyo.paper.entity.Pathfinder;
 import com.destroystokyo.paper.entity.ai.GoalType;
 
 import btm.sword.system.action.throwing.types.DroppedItem;
-import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.ai.HostileStateMachine;
 import btm.sword.system.entity.ai.MobGoalArbiter;
 import btm.sword.system.entity.ai.WanderProfile;
@@ -35,6 +34,7 @@ import btm.sword.system.entity.aspect.Resource;
 import btm.sword.system.entity.base.CombatProfile;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.item.prefab.ItemLibrary;
+import btm.sword.utility.Debug;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -200,7 +200,7 @@ public class Hostile extends Combatant {
     public void broadcastMessage(double radius, String message) {
         for (Entity entity : self().getNearbyEntities(radius, radius, radius)) {
             if (entity instanceof Player player) {
-                SwordEntityArbiter.getOrAdd(player).combatInfo("[" + self().getName() + "] " + message);
+                Debug.hostile("[" + self().getName() + "] " + message);
             }
         }
     }

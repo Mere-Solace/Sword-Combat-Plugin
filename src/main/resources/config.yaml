@@ -325,13 +325,15 @@ world:
 
 
 debug:
-  
-  logging_verbose_combat: false
-  logging_verbose_movement: false
-  
-  logging_verbose_config: false
 
   logging_verbose_debug: false
+
+  logging_verbose_combat: false
+  logging_verbose_movement: false
+  logging_verbose_inventory: false
+  logging_verbose_system: false
+  logging_verbose_umbral: false
+  logging_verbose_hostile: false
 
   visualization_show_hitboxes: false
   visualization_show_raytraces: false

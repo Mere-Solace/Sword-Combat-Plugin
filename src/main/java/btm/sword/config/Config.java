@@ -2387,14 +2387,23 @@ public class Config {
      *
      * <h2>Debug Tools</h2>
      * <ul>
-     *   <li><b>Verbose Logging</b> - Detailed console output for combat/movement/config</li>
+     *   <li><b>Verbose Logging</b> - Per-system console/chat output (combat, movement, inventory,
+     *       system, umbral, hostile, general debug)</li>
      *   <li><b>Visualization</b> - Particle-based hitbox and raytrace rendering</li>
      * </ul>
      *
      * <p><b>Warning:</b> Visualization features generate many particles and may impact performance.</p>
      */
     public static class Debug {
-        // Logging configuration
+        // Logging — general
+        public static boolean LOGGING_VERBOSE_DEBUG = false;
+        static { register(
+            "debug.logging_verbose_debug",
+            LOGGING_VERBOSE_DEBUG, Boolean.class,
+            v -> LOGGING_VERBOSE_DEBUG = v,
+            ConfigurationSection::getBoolean); }
+
+        // Logging — per system
         public static boolean LOGGING_VERBOSE_COMBAT = false;
         static { register(
             "debug.logging_verbose_combat",
@@ -2409,18 +2418,32 @@ public class Config {
             v -> LOGGING_VERBOSE_MOVEMENT = v,
             ConfigurationSection::getBoolean); }
 
-        public static boolean LOGGING_VERBOSE_CONFIG = true;
+        public static boolean LOGGING_VERBOSE_INVENTORY = false;
         static { register(
-            "debug.logging_verbose_config",
-            LOGGING_VERBOSE_CONFIG, Boolean.class
-            , v -> LOGGING_VERBOSE_CONFIG = v,
+            "debug.logging_verbose_inventory",
+            LOGGING_VERBOSE_INVENTORY, Boolean.class,
+            v -> LOGGING_VERBOSE_INVENTORY = v,
             ConfigurationSection::getBoolean); }
 
-        public static boolean LOGGING_VERBOSE_DEBUG = false;
+        public static boolean LOGGING_VERBOSE_SYSTEM = false;
         static { register(
-            "debug.logging_verbose_debug",
-            LOGGING_VERBOSE_DEBUG, Boolean.class,
-            v -> LOGGING_VERBOSE_DEBUG = v,
+            "debug.logging_verbose_system",
+            LOGGING_VERBOSE_SYSTEM, Boolean.class,
+            v -> LOGGING_VERBOSE_SYSTEM = v,
+            ConfigurationSection::getBoolean); }
+
+        public static boolean LOGGING_VERBOSE_UMBRAL = false;
+        static { register(
+            "debug.logging_verbose_umbral",
+            LOGGING_VERBOSE_UMBRAL, Boolean.class,
+            v -> LOGGING_VERBOSE_UMBRAL = v,
+            ConfigurationSection::getBoolean); }
+
+        public static boolean LOGGING_VERBOSE_HOSTILE = false;
+        static { register(
+            "debug.logging_verbose_hostile",
+            LOGGING_VERBOSE_HOSTILE, Boolean.class,
+            v -> LOGGING_VERBOSE_HOSTILE = v,
             ConfigurationSection::getBoolean); }
 
         // Visualization configuration

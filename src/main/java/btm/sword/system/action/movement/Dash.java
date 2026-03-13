@@ -22,6 +22,7 @@ import btm.sword.system.control.SwordScheduler;
 import btm.sword.system.control.TimeArbiter;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.impl.Combatant;
+import btm.sword.utility.Debug;
 import btm.sword.utility.Prefab;
 import btm.sword.utility.display.ParticleWrapper;
 import btm.sword.utility.entity.EntityUtil;
@@ -73,7 +74,7 @@ public class Dash {
                 (direction <= 0 && executor.dir().dot(Config.Direction.UP()) > -FLAT_DASH_PITCH_THRESHOLD)
         );
 
-        executor.movementInfo("Flat dash: " + flatDash);
+        Debug.movement("flatDash=" + flatDash);
 
         // Handle item dash/grab logic separately; if it succeeds, return early
         if (handleTargetedItemDash(targetedItem)) return;
