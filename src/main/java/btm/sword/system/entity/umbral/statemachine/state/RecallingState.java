@@ -72,7 +72,7 @@ public class RecallingState extends UmbralStateFacade {
             blade.getThrower().getChestVector(),
             1.5, 5, 100, 1.5,
             false,
-            500,
+            80,
             stationaryCheck,
             () -> blade.request(BladeRequest.STANDBY)
         );
@@ -88,6 +88,8 @@ public class RecallingState extends UmbralStateFacade {
 
     @Override
     public void onTick(UmbralBlade blade) {
-
+        if (returnTask != null && returnTask.isCancelled()) {
+            blade.request(BladeRequest.STANDBY);
+        }
     }
 }

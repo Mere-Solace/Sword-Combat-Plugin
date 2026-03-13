@@ -1,21 +1,23 @@
 package btm.sword.system.entity.umbral.statemachine.state;
 
+import btm.sword.config.Config;
 import btm.sword.system.entity.umbral.UmbralBlade;
+import btm.sword.system.entity.umbral.input.BladeRequest;
 import btm.sword.system.entity.umbral.statemachine.UmbralStateFacade;
 
 /**
- * State where the UmbralBlade is waiting after an attack completes.
+ * State where the UmbralBlade hovers at a fixed world position after being parked.
  * <p>
- * In this state, the blade hovers in place with idle animations, registered
- * as an interactable item that can be picked up or commanded. If left idle
- * too long or the wielder moves too far, it will automatically return.
+ * In this state, the blade bobs in place with idle animations and is registered as
+ * an interactable item. If left idle too long or the wielder moves too far, it
+ * automatically requests a recall.
  * </p>
  * <p>
  * <b>Entry Actions:</b>
  * <ul>
- *   <li>Start idle movement animations</li>
+ *   <li>Restart idle movement so the blade bobs at its current world position</li>
  *   <li>Register blade as interactable item</li>
- *   <li>Set display transformation</li>
+ *   <li>Record entry time for timeout tracking</li>
  * </ul>
  * </p>
  * <p>
@@ -28,13 +30,15 @@ import btm.sword.system.entity.umbral.statemachine.UmbralStateFacade;
  * <p>
  * <b>Typical Transitions:</b>
  * <ul>
- *   <li>WAITING → STANDBY (wielder picks it up)</li>
- *   <li>WAITING → RETURNING (auto-return triggered)</li>
+ *   <li>WAITING → RECALLING (auto-return when idle too long or player too far)</li>
+ *   <li>WAITING → STANDBY (wielder dash-grabs the blade)</li>
  * </ul>
  * </p>
  *
  */
 public class WaitingState extends UmbralStateFacade {
+    private long entryTime;
+
     @Override
     public String name() {
         return "WAITING";
@@ -42,8 +46,10 @@ public class WaitingState extends UmbralStateFacade {
 
     @Override
     public void onEnter(UmbralBlade blade) {
-        blade.registerAsInteractableItem();
+        blade.endIdleMovement();
         blade.startIdleMovement();
+        blade.registerAsInteractableItem();
+        entryTime = System.currentTimeMillis();
     }
 
     @Override
@@ -54,7 +60,19 @@ public class WaitingState extends UmbralStateFacade {
 
     @Override
     public void onTick(UmbralBlade blade) {
-        // Monitor distance to wielder and time idle
-        // Trigger RETURNING transition if too far or too long
+        long elapsed = System.currentTimeMillis() - entryTime;
+        if (elapsed > Config.UmbralBlade.WAITING_TIMEOUT_MS) {
+            blade.request(BladeRequest.RECALL);
+            return;
+        }
+
+        if (blade.getDisplay() == null || !blade.getDisplay().isValid()) return;
+
+        double maxDist = Config.UmbralBlade.WAITING_MAX_DISTANCE;
+        double distSq = blade.getThrower().self().getLocation()
+            .distanceSquared(blade.getDisplay().getLocation());
+        if (distSq > maxDist * maxDist) {
+            blade.request(BladeRequest.RECALL);
+        }
     }
 }

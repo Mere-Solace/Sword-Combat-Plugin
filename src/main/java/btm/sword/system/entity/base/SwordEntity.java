@@ -45,6 +45,7 @@ import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.impl.Combatant;
 import btm.sword.system.entity.impl.SwordPlayer;
+import btm.sword.system.input.ActivationContext;
 import btm.sword.utility.Debug;
 import btm.sword.utility.Prefab;
 import btm.sword.utility.SwordTimeUnit;
@@ -562,6 +563,11 @@ public abstract class SwordEntity {
     }
 
     public void hit(Combatant source, HitValuePacket v, Vector knockbackVelocity, Affliction... afflictions) {
+        if (this instanceof SwordPlayer defender &&
+                defender.getActivationContext() == ActivationContext.CHANNELING) {
+            defender.setChannelInterrupted(true);
+        }
+
         if (this instanceof SwordPlayer defender && defender.isBlocking()) {
             BlockAction.BlockResult result = BlockAction.resolveBlock(source, defender, v);
             switch (result) {

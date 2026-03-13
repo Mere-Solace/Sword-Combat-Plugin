@@ -140,6 +140,10 @@ combat:
   attack_class_hit_toughness: 15
   attack_class_hit_soulfire: 6
 
+  channel_soulfire_cost: 50.0
+  channel_heal_amount: 1.0
+  channel_duration_ms: 2000
+
 
 timing:
   
@@ -373,7 +377,9 @@ hostile:
 
 
 umbral:
-  
+
   time_cutoff: 1.2
   time_scaling_factor: 9
   on_release: 3
+  waiting_timeout_ms: 8000
+  waiting_max_distance: 20.0

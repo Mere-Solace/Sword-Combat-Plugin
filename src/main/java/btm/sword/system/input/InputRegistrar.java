@@ -294,6 +294,29 @@ public class InputRegistrar {
             .display(true)
             .build();
 
+        // hover blade at world position (DROP + SWAP while holding soul link)
+        new InputExecutionTree.InputNodeBuilder(root, List.of(
+            InputType.DROP,
+            InputType.SWAP
+        )).action(new LinkedList<>(List.of(
+            new InputExecutionTree.ActionContextPair(
+                () -> InputAction.builder()
+                .name("Hover Blade")
+                .action(UmbralBladeAction::hoverBlade)
+                .cooldown(executor -> 200)
+                .canCast(Combatant::canPerformUmbralAction)
+                .displayCooldown(true)
+                .displayDisabled(true)
+                .resetIfCannotPerform(false)
+                .build(),
+                SwordPlayer::soulLinkState)
+            )))
+            .timeoutTicks(100)
+            .sameItemRequired(true)
+            .cancellable(true)
+            .display(true)
+            .build();
+
         // heavy sweeps (umbral attacks)
         new InputExecutionTree.InputNodeBuilder(root, List.of(
             InputType.DROP,
@@ -359,6 +382,30 @@ public class InputRegistrar {
                 SwordPlayer::normalActState)
             )))
             .timeoutTicks(100)
+            .sameItemRequired(true)
+            .cancellable(true)
+            .display(true)
+            .build();
+
+        // Healing channel: hold RIGHT while wielding the blade (umbral wield state)
+        new InputExecutionTree.InputNodeBuilder(root, List.of(
+            InputType.RIGHT,
+            InputType.RIGHT_HOLD
+        )).action(new LinkedList<>(List.of(
+            new InputExecutionTree.ActionContextPair(
+                () -> InputAction.builder()
+                .name("Channel")
+                .action(UmbralBladeAction::channel)
+                .cooldown(executor -> 3000)
+                .canCast(Combatant::canPerformUmbralAction)
+                .requiredSoulfire(() -> (float) Config.Combat.CHANNEL_SOULFIRE_COST)
+                .displayCooldown(true)
+                .displayDisabled(true)
+                .resetIfCannotPerform(false)
+                .build(),
+                SwordPlayer::umbralState)
+            )))
+            .minHoldTime((int) Config.Combat.CHANNEL_DURATION_MS)
             .sameItemRequired(true)
             .cancellable(true)
             .display(true)

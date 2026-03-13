@@ -7,14 +7,18 @@ import java.util.concurrent.TimeUnit;
 
 import org.bukkit.util.Vector;
 
+import btm.sword.config.Config;
+import btm.sword.system.control.PredicateRunnablePair;
 import btm.sword.system.control.SwordScheduler;
 import btm.sword.system.control.TimeArbiter;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.impl.Combatant;
+import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.entity.umbral.UmbralBlade;
 import btm.sword.system.entity.umbral.input.BladeRequest;
 import btm.sword.system.entity.umbral.statemachine.state.LodgedState;
 import btm.sword.system.entity.umbral.statemachine.state.WieldState;
+import btm.sword.system.input.ActivationContext;
 import btm.sword.utility.Debug;
 import btm.sword.utility.Prefab;
 import btm.sword.utility.display.DrawUtil;
@@ -72,6 +76,46 @@ public class UmbralBladeAction extends SwordAction {
         }
 
         throwPunch(wielder, comboStep == 1 || comboStep == 3,-1);
+    }
+
+    public static void channel(Combatant wielder) {
+        UmbralBlade blade = wielder.getUmbralBlade();
+        if (blade == null || !blade.inState(WieldState.class)) return;
+        if (!(wielder instanceof SwordPlayer sp)) return;
+        if (wielder.getAspects().soulfireCur() < (float) Config.Combat.CHANNEL_SOULFIRE_COST) return;
+
+        wielder.consumeSoulfire((float) Config.Combat.CHANNEL_SOULFIRE_COST);
+        sp.setActivationContext(ActivationContext.CHANNELING);
+        sp.setChannelInterrupted(false);
+
+        final long startTime = System.currentTimeMillis();
+        TimeArbiter.runTimeBoundBukkitTaskOnTimer(
+            null,
+            () -> wielder.setVelocity(new Vector()),
+            null,
+            0, 50,
+            UmbralBladeAction.class, "channel",
+            new PredicateRunnablePair(
+                () -> sp.isChannelInterrupted() ||
+                    System.currentTimeMillis() - startTime >= Config.Combat.CHANNEL_DURATION_MS,
+                () -> {
+                    if (!sp.isChannelInterrupted()) {
+                        sp.getAspects().shards().add((float) Config.Combat.CHANNEL_HEAL_AMOUNT);
+                        Prefab.Particles.SOULFIRE_POOF.display(sp.getChestLocation());
+                        Prefab.Sounds.SHADOW_BLINK.playForAllInRadius(sp.self());
+                    }
+                    sp.setActivationContext(ActivationContext.NORMAL);
+                    sp.setChannelInterrupted(false);
+                }
+            )
+        );
+    }
+
+    public static void hoverBlade(Combatant wielder) {
+        UmbralBlade blade = wielder.getUmbralBlade();
+        if (blade == null) return;
+
+        blade.request(BladeRequest.WAITING);
     }
 
     public static void spiralFinisher(Combatant wielder) {

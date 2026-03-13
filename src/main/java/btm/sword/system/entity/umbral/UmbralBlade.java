@@ -67,6 +67,15 @@ import net.kyori.adventure.text.format.TextDecoration;
 @Getter
 @Setter
 public class UmbralBlade extends ThrownItem {
+    /** Type of dash-reclaim attack to perform on the next quick or heavy attack entry. */
+    public enum ReclaimType {
+        NONE,
+        /** Ground dash reclaim — overhead slam downward. */
+        OVERHEAD_SLAM,
+        /** Air dash reclaim — aerial spike downward. */
+        AERIAL_SPIKE
+    }
+
     private UmbralStateMachine bladeStateMachine;
 
     private Function<Combatant, Attack>[] basicAttacks;
@@ -99,6 +108,8 @@ public class UmbralBlade extends ThrownItem {
     private boolean skillFinished;
 
     private DashDirection dashDirection = DashDirection.NONE;
+
+    private ReclaimType reclaimType = ReclaimType.NONE;
 
     private final InputBuffer inputBuffer = new InputBuffer();
 
@@ -462,9 +473,18 @@ public class UmbralBlade extends ThrownItem {
             request(BladeRequest.WIELD);
         }
         else {
-            request(BladeRequest.STANDBY);
-
-            // Do a spinning attack like katarina?
+            if (isDashing()) {
+                if (combatant.self().isOnGround()) {
+                    reclaimType = ReclaimType.OVERHEAD_SLAM;
+                    currentComboStep = 0;
+                    request(BladeRequest.ATTACK_QUICK);
+                } else {
+                    reclaimType = ReclaimType.AERIAL_SPIKE;
+                    request(BladeRequest.ATTACK_HEAVY);
+                }
+            } else {
+                request(BladeRequest.STANDBY);
+            }
         }
     }
 

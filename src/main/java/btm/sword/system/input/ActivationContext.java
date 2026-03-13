@@ -31,5 +31,11 @@ public enum ActivationContext {
      */
     INCAPACITATED,
 
-    THROWING
+    THROWING,
+
+    /**
+     * Player is channeling a healing ability. Most inputs are suppressed;
+     * taking damage sets an interrupt flag to cancel the channel.
+     */
+    CHANNELING
 }

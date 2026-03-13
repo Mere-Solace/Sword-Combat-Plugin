@@ -181,6 +181,13 @@ public class UmbralStateMachine extends StateMachine<UmbralBlade> {
             b -> {}
         ));
 
+        addTransition(new Transition<>(
+            StandbyState.class,
+            WaitingState.class,
+            b -> b.isRequestedAndActive(BladeRequest.WAITING),
+            b -> {}
+        ));
+
         // =====================================================================
         // FINISHER
         // =====================================================================
@@ -244,8 +251,36 @@ public class UmbralStateMachine extends StateMachine<UmbralBlade> {
         // =====================================================================
         addTransition(new Transition<>(
             WaitingState.class,
+            RecallingState.class,
+            b -> b.isRequestedAndActive(BladeRequest.RECALL),
+            b -> {}
+        ));
+
+        addTransition(new Transition<>(
+            WaitingState.class,
             StandbyState.class,
-            b -> true,
+            b -> b.isRequestedAndActive(BladeRequest.STANDBY),
+            b -> {}
+        ));
+
+        addTransition(new Transition<>(
+            WaitingState.class,
+            LungingState.class,
+            b -> b.isRequestedAndActive(BladeRequest.LUNGE),
+            b -> {}
+        ));
+
+        addTransition(new Transition<>(
+            WaitingState.class,
+            AttackingQuickState.class,
+            b -> b.isRequestedAndActive(BladeRequest.ATTACK_QUICK),
+            b -> {}
+        ));
+
+        addTransition(new Transition<>(
+            WaitingState.class,
+            AttackingHeavyState.class,
+            b -> b.isRequestedAndActive(BladeRequest.ATTACK_HEAVY),
             b -> {}
         ));
 
@@ -354,6 +389,13 @@ public class UmbralStateMachine extends StateMachine<UmbralBlade> {
             LungingState.class,
             RecallingState.class,
             b -> b.isFinishedLunging(),
+            b -> {}
+        ));
+
+        addTransition(new Transition<>(
+            LungingState.class,
+            RecallingState.class,
+            b -> b.isRequestedAndActive(BladeRequest.STANDBY),
             b -> {}
         ));
     }

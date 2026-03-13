@@ -107,6 +107,11 @@ public class SwordPlayer extends Combatant {
     @Setter
     private ActivationContext activationContext = ActivationContext.NORMAL;
 
+    /** Set to true by the damage pipeline when a healing channel is interrupted by incoming damage. */
+    @Getter
+    @Setter
+    private boolean channelInterrupted = false;
+
     private boolean performedDropAction;
     @Getter
     @Setter

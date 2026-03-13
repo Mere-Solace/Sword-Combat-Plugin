@@ -1151,6 +1151,33 @@ public class Config {
         public static float SHIELD_PASSING_BYPASS_POWER = 0.5f;
         static { register("combat.shield_passing_bypass_power", SHIELD_PASSING_BYPASS_POWER,
             Float.class, v -> SHIELD_PASSING_BYPASS_POWER = v, Config::loadFloat); }
+
+        /** Soulfire cost per tick while channeling. */
+        public static double CHANNEL_SOULFIRE_COST = 50.0;
+        static { register(
+            "combat.channel_soulfire_cost",
+            CHANNEL_SOULFIRE_COST, Double.class,
+            v -> CHANNEL_SOULFIRE_COST = v,
+            ConfigurationSection::getDouble
+        ); }
+
+        /** Health restored per tick while channeling. */
+        public static double CHANNEL_HEAL_AMOUNT = 1.0;
+        static { register(
+            "combat.channel_heal_amount",
+            CHANNEL_HEAL_AMOUNT, Double.class,
+            v -> CHANNEL_HEAL_AMOUNT = v,
+            ConfigurationSection::getDouble
+        ); }
+
+        /** Duration in milliseconds for the channel ability. */
+        public static long CHANNEL_DURATION_MS = 2000;
+        static { register(
+            "combat.channel_duration_ms",
+            CHANNEL_DURATION_MS, Long.class,
+            v -> CHANNEL_DURATION_MS = v,
+            (section, path, def) -> section.getLong(path, def)
+        ); }
     }
     //endregion
 
@@ -2774,6 +2801,24 @@ public class Config {
             LUNGE_ON_RELEASE_VELOCITY, Integer.class,
             v -> LUNGE_ON_RELEASE_VELOCITY = v,
             ConfigurationSection::getInt
+        ); }
+
+        /** Timeout in milliseconds before Waiting state transitions. */
+        public static long WAITING_TIMEOUT_MS = 8000;
+        static { register(
+            "umbral.waiting_timeout_ms",
+            WAITING_TIMEOUT_MS, Long.class,
+            v -> WAITING_TIMEOUT_MS = v,
+            (section, path, def) -> section.getLong(path, def)
+        ); }
+
+        /** Maximum distance the blade can be from player while in Waiting state. */
+        public static double WAITING_MAX_DISTANCE = 20.0;
+        static { register(
+            "umbral.waiting_max_distance",
+            WAITING_MAX_DISTANCE, Double.class,
+            v -> WAITING_MAX_DISTANCE = v,
+            ConfigurationSection::getDouble
         ); }
     }
     //endregion

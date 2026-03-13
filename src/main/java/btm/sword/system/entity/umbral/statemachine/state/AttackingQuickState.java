@@ -13,6 +13,7 @@ import btm.sword.system.attack.UmbralBladeAttack;
 import btm.sword.system.attack.style.AttackType;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.umbral.UmbralBlade;
+import btm.sword.system.entity.umbral.UmbralBlade.ReclaimType;
 import btm.sword.system.entity.umbral.statemachine.UmbralStateFacade;
 import btm.sword.utility.Prefab;
 import btm.sword.utility.display.DrawUtil;
@@ -55,24 +56,28 @@ public class AttackingQuickState extends UmbralStateFacade {
 
     @Override
     public void onEnter(UmbralBlade blade) {
-        // handling it here cuz special case, doesn't work with tree well
-        // TODO: is consuming soulfire at this location good?
-        blade.getThrower().consumeSoulfire(blade.getCurrentComboStep() * 2.5f);
+        if (blade.getReclaimType() == ReclaimType.OVERHEAD_SLAM) {
+            reclaimAttack(blade, AttackType.OVERHEAD_SLAM);
+        } else {
+            // handling it here cuz special case, doesn't work with tree well
+            // TODO: is consuming soulfire at this location good?
+            blade.getThrower().consumeSoulfire(blade.getCurrentComboStep() * 2.5f);
 
-        if (blade.getCurrentComboStep() == 3) {
-            Transformation curTr = blade.getDisplay().getTransformation();
+            if (blade.getCurrentComboStep() == 3) {
+                Transformation curTr = blade.getDisplay().getTransformation();
 
-            blade.getDisplay().setTransformation(
-                new Transformation(
-                    curTr.getTranslation(),
-                    curTr.getLeftRotation().rotateY((float) Math.PI / 2),
-                    curTr.getScale(),
-                    curTr.getRightRotation()
-                )
-            );
+                blade.getDisplay().setTransformation(
+                    new Transformation(
+                        curTr.getTranslation(),
+                        curTr.getLeftRotation().rotateY((float) Math.PI / 2),
+                        curTr.getScale(),
+                        curTr.getRightRotation()
+                    )
+                );
+            }
+
+            attack(blade, 5.0);
         }
-
-        attack(blade, 5.0);
 
         // TODO: #121 - Potentially add per state glow changes or just a method for this
         blade.getDisplay().setGlowing(true);
@@ -82,6 +87,7 @@ public class AttackingQuickState extends UmbralStateFacade {
     @Override
     public void onExit(UmbralBlade blade) {
         blade.setAttackCompleted(false);
+        blade.setReclaimType(ReclaimType.NONE);
         blade.getDisplay().setGlowing(false);
     }
 
@@ -114,6 +120,21 @@ public class AttackingQuickState extends UmbralStateFacade {
         ].apply(blade.getThrower());
 
         attack.setOriginOfAll(attackOrigin).execute(blade.getThrower());
+    }
+
+    private static void reclaimAttack(UmbralBlade blade, AttackType type) {
+        new UmbralBladeAttack(blade.getDisplay(), type,
+            false, false, 0,
+            15, 15, 300,
+            0, 1)
+            .setBlade(blade)
+            .setInitialMovementTicks(5)
+            .setOnEntityHitInstructions(target -> {
+                blade.getThrower().getAspects().soulfire().add(5f);
+                Prefab.Particles.BLEED.display(target.getChestLocation());
+            })
+            .setCallback(blade.getAttackEndCallback(), 200)
+            .execute(blade.getThrower());
     }
 
     private static void dashAttack(UmbralBlade blade, DashDirection direction) {

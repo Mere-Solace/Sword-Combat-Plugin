@@ -9,8 +9,10 @@ import btm.sword.config.Config;
 import btm.sword.system.attack.Attack;
 import btm.sword.system.attack.GeneratedAttackProfile;
 import btm.sword.system.attack.UmbralBladeAttack;
+import btm.sword.system.attack.style.AttackType;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.umbral.UmbralBlade;
+import btm.sword.system.entity.umbral.UmbralBlade.ReclaimType;
 import btm.sword.system.entity.umbral.statemachine.UmbralStateFacade;
 import btm.sword.utility.Prefab;
 import btm.sword.utility.display.DrawUtil;
@@ -54,7 +56,11 @@ public class AttackingHeavyState extends UmbralStateFacade {
 
     @Override
     public void onEnter(UmbralBlade blade) {
-        attack(blade, 8);
+        if (blade.getReclaimType() == ReclaimType.AERIAL_SPIKE) {
+            reclaimAttack(blade, AttackType.AERIAL_SPIKE);
+        } else {
+            attack(blade, 8);
+        }
         blade.getDisplay().setGlowing(true);
         blade.getDisplay().setGlowColorOverride(Config.SwordColor.FEROCIOUS_SWEEP);
     }
@@ -62,12 +68,28 @@ public class AttackingHeavyState extends UmbralStateFacade {
     @Override
     public void onExit(UmbralBlade blade) {
         blade.setAttackCompleted(false);
+        blade.setReclaimType(ReclaimType.NONE);
         blade.getDisplay().setGlowing(false);
     }
 
     @Override
     public void onTick(UmbralBlade blade) {
 
+    }
+
+    private static void reclaimAttack(UmbralBlade blade, AttackType type) {
+        new UmbralBladeAttack(blade.getDisplay(), type,
+            false, false, 0,
+            20, 15, 400,
+            0, 1)
+            .setBlade(blade)
+            .setInitialMovementTicks(5)
+            .setOnEntityHitInstructions(target -> {
+                blade.getThrower().getAspects().soulfire().add(8f);
+                Prefab.Particles.BLEED.display(target.getChestLocation());
+            })
+            .setCallback(blade.getAttackEndCallback(), 200)
+            .execute(blade.getThrower());
     }
 
     private static void attack(UmbralBlade blade, double range) {
