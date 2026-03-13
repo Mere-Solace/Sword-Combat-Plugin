@@ -15,6 +15,7 @@ import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
 
 import btm.sword.Sword;
+import btm.sword.config.Config;
 import btm.sword.system.action.throwing.InteractiveItemArbiter;
 import btm.sword.system.control.PredicateRunnablePair;
 import btm.sword.system.control.TimeArbiter;
@@ -172,7 +173,7 @@ public class DroppedItem extends SimulatedDisplay {
         TimeArbiter.runTimeIndependentBukkitTaskOnTimer(
           null,
             () -> Prefab.Particles.THROWN_ITEM_MARKER.display(display.getLocation()),
-            0, 100,
+            0, Config.Timing.THROWN_ITEMS_DISPOSAL_CHECK_INTERVAL,
             DroppedItem.class, "settledStick",
             new PredicateRunnablePair(
                 () -> display == null || display.isDead(),

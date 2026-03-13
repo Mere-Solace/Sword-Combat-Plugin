@@ -10,6 +10,7 @@ import java.util.function.Function;
 import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.inventory.menu.CharacterMenu;
 import btm.sword.system.inventory.menu.ConfigMenu;
+import btm.sword.system.inventory.menu.CreativeInventoryMenu;
 import btm.sword.system.inventory.menu.DevMenu;
 import btm.sword.system.inventory.menu.DevStatEditorMenu;
 import btm.sword.system.inventory.menu.MainMenu;
@@ -30,6 +31,7 @@ public class InventoryMenuManager {
         register(DevMenu.class, DevMenu::new);
         register(DevStatEditorMenu.class, DevStatEditorMenu::new);
         register(ConfigMenu.class, ConfigMenu::new);
+        register(CreativeInventoryMenu.class, CreativeInventoryMenu::new);
         // SkillSelectionMenu is constructed with a slot index and is opened directly
     }
 

@@ -319,6 +319,7 @@ movement:
 world:
   
   block_interaction_allow_block_breaking: false
+  block_interaction_allow_block_placing: false
   block_interaction_respect_world_guard: true
   
   explosions_set_fire: false

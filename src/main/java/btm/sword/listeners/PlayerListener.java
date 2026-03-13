@@ -241,6 +241,11 @@ public class PlayerListener implements Listener {
             case SHIFT_RIGHT -> {
                 sp.inventoryInfo("shift-right click, dropping that thang");
 
+                if (current == null || current.isEmpty() || NonMovableItem.isNonMovable(current)) {
+                    event.setCancelled(true);
+                    break;
+                }
+
                 sp.spawnInventoryDrop(current);
                 sp.setItemAtIndex(new ItemStack(Material.AIR), slot);
 

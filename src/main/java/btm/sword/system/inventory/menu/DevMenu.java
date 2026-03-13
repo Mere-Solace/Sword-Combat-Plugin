@@ -5,6 +5,7 @@ import java.util.function.Consumer;
 
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 
 import btm.sword.config.Config;
 import btm.sword.system.entity.impl.SwordPlayer;
@@ -105,11 +106,28 @@ public class DevMenu extends Menu {
             click -> new ConfigMenu(swordPlayer).open()
         );
 
+        SimpleItem blockPlacing = toggle(
+            "Block placing",
+            () -> Config.World.BLOCK_INTERACTION_ALLOW_BLOCK_PLACING,
+            () -> Config.World.BLOCK_INTERACTION_ALLOW_BLOCK_PLACING = !Config.World.BLOCK_INTERACTION_ALLOW_BLOCK_PLACING
+        );
+
+        SimpleItem woodenAxe = giveItem(Material.WOODEN_AXE, "Wooden Axe");
+        SimpleItem witherSkeletonEgg = giveItem(Material.WITHER_SKELETON_SPAWN_EGG, "Wither Skeleton Spawn Egg");
+
+        SimpleItem creativeInventory = new SimpleItem(
+            new ItemStackBuilder(Material.CHEST)
+                .name(Component.text("Creative Inventory", NamedTextColor.YELLOW, TextDecoration.BOLD))
+                .build(),
+            click -> new CreativeInventoryMenu(swordPlayer).open()
+        );
+
         Gui gui = Gui.normal()
             .setStructure(
                 "# # # # # # # # #",
                 "A B C D H E F . J",
                 ". . . . . . . . I",
+                "W S L . . . . . K",
                 "# # # < . > # # #")
             .addIngredient('#', BORDER)
             .addIngredient('A', verboseDebug)
@@ -122,6 +140,10 @@ public class DevMenu extends Menu {
             .addIngredient('H', specialItemChecks)
             .addIngredient('I', reloadProfile)
             .addIngredient('J', configEditor)
+            .addIngredient('L', blockPlacing)
+            .addIngredient('W', woodenAxe)
+            .addIngredient('S', witherSkeletonEgg)
+            .addIngredient('K', creativeInventory)
             .addIngredient('<', generatePreviousButtonOrDefault())
             .addIngredient('>', generateForwardPreviousButtonOrDefault())
             .build();
@@ -133,6 +155,22 @@ public class DevMenu extends Menu {
             .build();
 
         window.open();
+    }
+
+    /**
+     * Builds a {@link SimpleItem} that gives the player one stack of the given material on click.
+     *
+     * @param material the material to give
+     * @param label    display name for the item button
+     * @return a {@link SimpleItem} that gives the item on click
+     */
+    private SimpleItem giveItem(Material material, String label) {
+        return new SimpleItem(
+            new ItemStackBuilder(material)
+                .name(Component.text(label, NamedTextColor.WHITE))
+                .build(),
+            click -> click.getPlayer().getInventory().addItem(new ItemStack(material))
+        );
     }
 
     /**

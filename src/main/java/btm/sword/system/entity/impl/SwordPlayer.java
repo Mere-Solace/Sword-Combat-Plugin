@@ -522,6 +522,12 @@ public class SwordPlayer extends Combatant {
             return true;
         }
 
+        // Clicking the main menu button inside the inventory opens the menu
+        if (KeyRegistry.hasKey(clicked, KeyRegistry.MAIN_MENU_BUTTON_KEY)) {
+            InventoryMenuManager.openMenu(MainMenu.class, this);
+            return true;
+        }
+
         // Block all Q / Ctrl+Q drops from inventory — players cannot drop items via inventory
         if (action == InventoryAction.DROP_ONE_SLOT || action == InventoryAction.DROP_ALL_SLOT
                 || action == InventoryAction.DROP_ONE_CURSOR || action == InventoryAction.DROP_ALL_CURSOR) {

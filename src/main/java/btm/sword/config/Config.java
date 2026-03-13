@@ -2360,6 +2360,13 @@ public class Config {
             v -> BLOCK_INTERACTION_ALLOW_BLOCK_BREAKING = v,
             ConfigurationSection::getBoolean); }
 
+        public static boolean BLOCK_INTERACTION_ALLOW_BLOCK_PLACING = false;
+        static { register(
+            "world.block_interaction_allow_block_placing",
+            BLOCK_INTERACTION_ALLOW_BLOCK_PLACING, Boolean.class,
+            v -> BLOCK_INTERACTION_ALLOW_BLOCK_PLACING = v,
+            ConfigurationSection::getBoolean); }
+
         public static boolean BLOCK_INTERACTION_RESPECT_WORLD_GUARD = true;
         static { register(
             "world.block_interaction_respect_world_guard",
