@@ -3,6 +3,7 @@ package btm.sword.listeners;
 import java.util.Objects;
 
 import org.bukkit.GameMode;
+import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
@@ -22,6 +23,7 @@ import org.bukkit.event.player.PlayerGameModeChangeEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
+import org.bukkit.inventory.ItemStack;
 import org.intellij.lang.annotations.Subst;
 
 import btm.sword.Sword;
@@ -164,8 +166,11 @@ public class PlayerListener implements Listener {
      */
     @EventHandler
     public void onInventoryOpen(InventoryOpenEvent event) {
+        Debug.inventory("Opened inventory...");
         if (event.getPlayer() instanceof Player p) {
-            ((SwordPlayer) SwordEntityArbiter.getOrAdd(p)).setInInventorySession(true);
+            SwordPlayer sp = ((SwordPlayer) SwordEntityArbiter.getOrAdd(p));
+            sp.setInInventorySession(true);
+            Debug.inventory("in session?=" + sp.isInInventorySession());
         }
     }
 
@@ -221,6 +226,9 @@ public class PlayerListener implements Listener {
         ClickType clickType = event.getClick();
         InventoryAction action = event.getAction();
 
+        ItemStack current = event.getCurrentItem();
+        int slot = event.getSlot();
+
         sp.inventoryInfo("click=" + clickType + " action=" + action);
 
         switch (clickType) {
@@ -231,7 +239,11 @@ public class PlayerListener implements Listener {
                 event.setResult(Event.Result.DENY);
             }
             case SHIFT_RIGHT -> {
-                sp.inventoryInfo("shift-right click");
+                sp.inventoryInfo("shift-right click, dropping that thang");
+
+                sp.spawnInventoryDrop(current);
+                sp.setItemAtIndex(new ItemStack(Material.AIR), slot);
+
                 event.setCancelled(true);
             }
             default -> {}

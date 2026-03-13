@@ -1248,6 +1248,15 @@ public class Config {
             v -> ATTACKS_COMBO_WINDOW_BASE = v,
             ConfigurationSection::getInt
         ); }
+
+        /** Delay in milliseconds between right-click inputs. */
+        public static int RIGHT_INTERACT_DELAY = 1;
+        static { register(
+            "timing.right_interact_delay",
+            RIGHT_INTERACT_DELAY, Integer.class,
+            v -> RIGHT_INTERACT_DELAY = v,
+            ConfigurationSection::getInt
+        ); }
     }
     //endregion
 

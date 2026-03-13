@@ -69,7 +69,6 @@ public class InputRegistrar {
                 .action(GrabAction::grab)
                 .cooldown(executor -> executor.calcCooldown(AspectType.FORTITUDE, 200, 1000, 10))
                 .canCast(Combatant::canPerformAction)
-                .requiredSoulfire(() -> 2f)
                 .castDuration(() -> Config.Grab.CAST_DURATION)
                 .displayDisabled(true)
                 .resetIfCannotPerform(true)

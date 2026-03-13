@@ -14,6 +14,7 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Display;
 import org.bukkit.entity.EntityType;
+import org.bukkit.entity.Item;
 import org.bukkit.entity.ItemDisplay;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
@@ -61,6 +62,7 @@ import btm.sword.system.item.SwordItemType;
 import btm.sword.system.item.special.NonMovableItem;
 import btm.sword.system.item.special.SlotAnchoredItem;
 import btm.sword.system.playerdata.PlayerData;
+import btm.sword.utility.Debug;
 import btm.sword.utility.Prefab;
 import btm.sword.utility.SwordTimeUnit;
 import btm.sword.utility.display.DisplayUtil;
@@ -105,7 +107,6 @@ public class SwordPlayer extends Combatant {
     @Setter
     private ActivationContext activationContext = ActivationContext.NORMAL;
 
-    @Setter
     private boolean performedDropAction;
     @Getter
     @Setter
@@ -142,6 +143,8 @@ public class SwordPlayer extends Combatant {
 
     private boolean swappingInInv;
     private boolean droppingInInv;
+    @Setter
+    private boolean inInventorySession;
 
     private BukkitTask targetIndicatorTask;
     private SwordEntity targetedEntity;
@@ -224,6 +227,7 @@ public class SwordPlayer extends Combatant {
 
         swappingInInv = false;
         droppingInInv = false;
+        inInventorySession = false;
     }
 
     /**
@@ -518,38 +522,9 @@ public class SwordPlayer extends Combatant {
             return true;
         }
 
-        // Handle Q / Ctrl+Q drops from inventory slots and cursor
-        boolean fromCursor = action == InventoryAction.DROP_ONE_CURSOR || action == InventoryAction.DROP_ALL_CURSOR;
-        boolean dropAll = action == InventoryAction.DROP_ALL_SLOT || action == InventoryAction.DROP_ALL_CURSOR;
-
+        // Block all Q / Ctrl+Q drops from inventory — players cannot drop items via inventory
         if (action == InventoryAction.DROP_ONE_SLOT || action == InventoryAction.DROP_ALL_SLOT
                 || action == InventoryAction.DROP_ONE_CURSOR || action == InventoryAction.DROP_ALL_CURSOR) {
-
-            ItemStack source = fromCursor ? onCursor : clicked;
-            if (source == null || source.isEmpty()) return false;
-
-            ItemStack toDrop = source.clone();
-            if (!dropAll) toDrop.setAmount(1);
-
-            if (fromCursor) {
-                if (dropAll || source.getAmount() <= 1) {
-                    player.setItemOnCursor(null);
-                } else {
-                    ItemStack remaining = source.clone();
-                    remaining.setAmount(remaining.getAmount() - 1);
-                    player.setItemOnCursor(remaining);
-                }
-            } else {
-                if (dropAll || source.getAmount() <= 1) {
-                    e.getInventory().setItem(e.getSlot(), null);
-                } else {
-                    ItemStack remaining = source.clone();
-                    remaining.setAmount(remaining.getAmount() - 1);
-                    e.getInventory().setItem(e.getSlot(), remaining);
-                }
-            }
-
-            spawnInventoryDrop(toDrop);
             return true;
         }
 
@@ -563,19 +538,22 @@ public class SwordPlayer extends Combatant {
      * custom physics so they must be picked up manually from the ground. All other items become
      * standard Bukkit item entities.
      * </p>
+     * <p>
+     * Called both from {@link #handleInventoryInput} (Q/Ctrl+Q in inventory) and from
+     * {@link btm.sword.listeners.InputListener#onPlayerDropEvent} when the player drags an item
+     * outside the inventory window.
+     * </p>
      *
      * @param item the stack to drop into the world; must not be null or empty
      */
-    private void spawnInventoryDrop(ItemStack item) {
-        Vector flatDir = player.getLocation().getDirection().clone().setY(0);
-        if (flatDir.lengthSquared() > 0) flatDir.normalize().multiply(0.4);
-
-        Location dropLocation = player.getLocation().clone().add(flatDir).add(0, 1.0, 0);
+    public void spawnInventoryDrop(ItemStack item) {
+        Location dropLocation = locFromFlatDir(1.5);
 
         if (ItemClassifier.classify(item) == ItemClass.THROWABLE) {
             new DroppedItem(dropLocation, new Vector(0, 0, 0), item).register();
         } else {
-            player.getWorld().dropItem(dropLocation, item);
+            Item itemDrop = player.getWorld().dropItem(dropLocation, item);
+            itemDrop.setPickupDelay(20);
         }
     }
 
@@ -1093,11 +1071,29 @@ public class SwordPlayer extends Combatant {
      * Resets the flag shortly after (1 tick).
      */
     public void setDroppingInInv() {
+        Debug.inventory(">> set dropping in inv");
+
         droppingInInv = true;
         SwordScheduler.runBukkitTaskLater(
-            () -> droppingInInv = false,
-            50, TimeUnit.MILLISECONDS
+            () -> {
+                Debug.inventory(">> no longer dropping in inv");
+                droppingInInv = false;
+            },
+            100, TimeUnit.MILLISECONDS
         );
+    }
+
+    public void setPerformedDropAction() {
+        performedDropAction = true;
+        SwordScheduler.runBukkitTaskLater(
+            () -> performedDropAction = false,
+            100, TimeUnit.MILLISECONDS
+        );
+    }
+
+    @SuppressWarnings("all")
+    public boolean isInInventorySession() {
+        return inInventorySession;
     }
 
     public void incrementNumDummies() {

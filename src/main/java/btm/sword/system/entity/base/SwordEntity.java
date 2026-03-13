@@ -404,6 +404,10 @@ public abstract class SwordEntity {
         return eyeLoc().add(dir().multiply(distance));
     }
 
+    public Location locFromFlatDir(double distance) {
+        return eyeLoc().add(getFlatBodyDir().multiply(distance));
+    }
+
     public EntityType type() {
         return self.getType();
     }
