@@ -121,6 +121,109 @@ tasks.withType(Checkstyle) {
     }
 }
 
+// Javadoc coverage checker — reports public classes and methods missing Javadoc
+task javadocCoverage {
+    group = 'verification'
+    description = 'Reports Javadoc coverage for all public classes and methods.'
+
+    doLast {
+        def srcDir = file('src/main/java')
+        if (!srcDir.exists()) {
+            logger.lifecycle('No source directory found at src/main/java')
+            return
+        }
+
+        // Returns true if the trimmed line looks like a public/protected class or method declaration.
+        // Intentionally excludes fields — only classes, interfaces, enums, records, and methods.
+        def isDeclaration = { String line ->
+            if (!(line =~ /^(public|protected)\s+/)) return false
+            if (line =~ /\b(class|interface|enum|record)\s+\w+/) return true
+            // Methods have a '(' somewhere after the modifier; exclude field-only lines
+            if (line.contains('(') && !(line =~ /^\s*(public|protected)\s+(static\s+)?(final\s+)?[A-Z_]+\s*[=;]/)) return true
+            return false
+        }
+
+        def missing = []
+        def total = 0
+        def covered = 0
+
+        srcDir.eachFileRecurse(groovy.io.FileType.FILES) { file ->
+            if (!file.name.endsWith('.java')) return
+
+            def relPath = srcDir.toURI().relativize(file.toURI()).toString()
+            def lines = file.readLines('UTF-8')
+            def inJavadoc = false
+            def pendingJavadoc = false
+
+            lines.eachWithIndex { line, idx ->
+                def t = line.trim()
+
+                // Single-line Javadoc: /** ... */
+                if (t.startsWith('/**') && t.contains('*/')) {
+                    pendingJavadoc = true
+                    inJavadoc = false
+                    return
+                }
+
+                // Start of multi-line Javadoc block
+                if (t.startsWith('/**')) {
+                    inJavadoc = true
+                    pendingJavadoc = false
+                    return
+                }
+
+                // End of multi-line Javadoc block
+                if (inJavadoc) {
+                    if (t.endsWith('*/')) {
+                        inJavadoc = false
+                        pendingJavadoc = true
+                    }
+                    return
+                }
+
+                // Annotations between Javadoc and declaration don't break the chain
+                if (t.startsWith('@')) return
+
+                // Blank lines break the chain
+                if (t.isEmpty()) {
+                    pendingJavadoc = false
+                    return
+                }
+
+                if (isDeclaration(t)) {
+                    total++
+                    if (pendingJavadoc) {
+                        covered++
+                    } else {
+                        def shortDecl = t.length() > 80 ? t.take(80) + '...' : t
+                        missing << "  ${relPath}:${idx + 1}  ${shortDecl}"
+                    }
+                    pendingJavadoc = false
+                } else {
+                    pendingJavadoc = false
+                }
+            }
+        }
+
+        def pct = total == 0 ? 100.0 : (covered / total * 100.0).round(1)
+
+        if (missing) {
+            logger.lifecycle('\n── Missing Javadoc ──────────────────────────────────────────────────')
+            missing.each { logger.lifecycle(it) }
+        }
+
+        logger.lifecycle('\n── Javadoc Coverage ─────────────────────────────────────────────────')
+        logger.lifecycle("  Covered : ${covered} / ${total}")
+        logger.lifecycle("  Missing : ${total - covered}")
+        logger.lifecycle("  Coverage: ${pct}%")
+        logger.lifecycle('─────────────────────────────────────────────────────────────────────\n')
+
+        if (total - covered > 0) {
+            logger.warn("javadocCoverage: ${total - covered} public declaration(s) are missing Javadoc.")
+        }
+    }
+}
+
 // Spotless configuration - auto-fixes code formatting
 spotless {
     java {
