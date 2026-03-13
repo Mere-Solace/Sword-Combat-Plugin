@@ -156,6 +156,7 @@ timing:
   intervals_combat_cleanup: 20
   
   attacks_combo_window_base: 3
+  right_interact_delay: 0
 
 
 display:
@@ -219,7 +220,7 @@ audio:
   punch_connect_vol: 1.5
   punch_connect_pitch: 1.0
   pre_attack_sound: ENTITY_DOLPHIN_JUMP
-  parry_attempt_sound: ENTITY_EVOKER_FANGS_ATTACK
+  parry_attempt_sound: ENTITY_ILLUSIONER_CAST_SPELL
 
 
 entity:

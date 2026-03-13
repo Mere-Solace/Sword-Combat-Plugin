@@ -459,7 +459,7 @@ public class VisualProjectile extends SimulatedDisplay {
     @Override
     public void determineOrientation() {
         if (display == null) {
-            Debug.combatDebug(VisualProjectile.class, 463, "Display was null... determineOrientation()");
+            Debug.umbral("display null in determineOrientation()");
             return;
         }
 

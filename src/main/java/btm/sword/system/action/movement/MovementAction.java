@@ -126,7 +126,7 @@ public class MovementAction extends SwordAction {
                     true,
                     block -> block.getType().isCollidable());
 
-                Debug.debug(MovementAction.class, 285, "blockResult :: " + blockResult);
+                Debug.movement("blockResult=" + blockResult);
 
                 double entityRadius = Config.Movement.TOSS_ENTITY_DETECTION_RADIUS;
                 Collection<LivingEntity> entities = world.getNearbyLivingEntities(

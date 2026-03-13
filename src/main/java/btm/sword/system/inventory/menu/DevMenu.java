@@ -25,6 +25,9 @@ import xyz.xenondevs.invui.window.Window;
  * Toggles take effect immediately without a server restart. They are not
  * persisted — all flags reset to their defaults on server restart.
  * </p>
+ *
+ * <p>Row 1 (verbose flags): Debug, Combat, Movement, Inventory, System, Umbral, Hostile</p>
+ * <p>Row 2 (utilities): Special Item Checks, Reload Profile, Config Editor</p>
  */
 public class DevMenu extends Menu {
 
@@ -37,40 +40,51 @@ public class DevMenu extends Menu {
         Player player = swordPlayer.player();
 
         SimpleItem verboseDebug = toggle(
-            "Debug.debug() output",
-            () -> Debug.VERBOSE_ENABLED,
-            () -> Debug.VERBOSE_ENABLED = !Debug.VERBOSE_ENABLED
+            "Debug (general)",
+            () -> Config.Debug.LOGGING_VERBOSE_DEBUG,
+            () -> Config.Debug.LOGGING_VERBOSE_DEBUG = !Config.Debug.LOGGING_VERBOSE_DEBUG
         );
 
         SimpleItem verboseCombat = toggle(
-            "Verbose combat logging",
+            "Combat",
             () -> Config.Debug.LOGGING_VERBOSE_COMBAT,
             () -> Config.Debug.LOGGING_VERBOSE_COMBAT = !Config.Debug.LOGGING_VERBOSE_COMBAT
         );
 
         SimpleItem verboseMovement = toggle(
-            "Verbose movement logging",
+            "Movement",
             () -> Config.Debug.LOGGING_VERBOSE_MOVEMENT,
             () -> Config.Debug.LOGGING_VERBOSE_MOVEMENT = !Config.Debug.LOGGING_VERBOSE_MOVEMENT
         );
 
-        SimpleItem verboseConfig = toggle(
-            "Verbose config logging",
-            () -> Config.Debug.LOGGING_VERBOSE_CONFIG,
-            () -> Config.Debug.LOGGING_VERBOSE_CONFIG = !Config.Debug.LOGGING_VERBOSE_CONFIG
+        SimpleItem verboseInventory = toggle(
+            "Inventory",
+            () -> Config.Debug.LOGGING_VERBOSE_INVENTORY,
+            () -> Config.Debug.LOGGING_VERBOSE_INVENTORY = !Config.Debug.LOGGING_VERBOSE_INVENTORY
+        );
+
+        SimpleItem verboseSystem = toggle(
+            "System (FSM / tasks)",
+            () -> Config.Debug.LOGGING_VERBOSE_SYSTEM,
+            () -> Config.Debug.LOGGING_VERBOSE_SYSTEM = !Config.Debug.LOGGING_VERBOSE_SYSTEM
+        );
+
+        SimpleItem verboseUmbral = toggle(
+            "Umbral",
+            () -> Config.Debug.LOGGING_VERBOSE_UMBRAL,
+            () -> Config.Debug.LOGGING_VERBOSE_UMBRAL = !Config.Debug.LOGGING_VERBOSE_UMBRAL
+        );
+
+        SimpleItem verboseHostile = toggle(
+            "Hostile",
+            () -> Config.Debug.LOGGING_VERBOSE_HOSTILE,
+            () -> Config.Debug.LOGGING_VERBOSE_HOSTILE = !Config.Debug.LOGGING_VERBOSE_HOSTILE
         );
 
         SimpleItem specialItemChecks = toggle(
             "Special item checks",
             () -> Debug.SPECIAL_ITEM_CHECKS_ENABLED,
             () -> Debug.SPECIAL_ITEM_CHECKS_ENABLED = !Debug.SPECIAL_ITEM_CHECKS_ENABLED
-        );
-
-        SimpleItem configEditor = new SimpleItem(
-            new ItemStackBuilder(Material.COMPARATOR)
-                .name(Component.text("Config Editor", NamedTextColor.GOLD, TextDecoration.BOLD))
-                .build(),
-            click -> new ConfigMenu(swordPlayer).open()
         );
 
         SimpleItem reloadProfile = new SimpleItem(
@@ -84,19 +98,30 @@ public class DevMenu extends Menu {
             }
         );
 
+        SimpleItem configEditor = new SimpleItem(
+            new ItemStackBuilder(Material.COMPARATOR)
+                .name(Component.text("Config Editor", NamedTextColor.GOLD, TextDecoration.BOLD))
+                .build(),
+            click -> new ConfigMenu(swordPlayer).open()
+        );
+
         Gui gui = Gui.normal()
             .setStructure(
                 "# # # # # # # # #",
-                "# A B C D E G F #",
+                "A B C D H E F . J",
+                ". . . . . . . . I",
                 "# # # < . > # # #")
             .addIngredient('#', BORDER)
             .addIngredient('A', verboseDebug)
             .addIngredient('B', verboseCombat)
             .addIngredient('C', verboseMovement)
-            .addIngredient('D', verboseConfig)
-            .addIngredient('E', specialItemChecks)
-            .addIngredient('G', reloadProfile)
-            .addIngredient('F', configEditor)
+            .addIngredient('D', verboseInventory)
+            .addIngredient('E', verboseSystem)
+            .addIngredient('F', verboseUmbral)
+            .addIngredient('G', verboseHostile)
+            .addIngredient('H', specialItemChecks)
+            .addIngredient('I', reloadProfile)
+            .addIngredient('J', configEditor)
             .addIngredient('<', generatePreviousButtonOrDefault())
             .addIngredient('>', generateForwardPreviousButtonOrDefault())
             .build();

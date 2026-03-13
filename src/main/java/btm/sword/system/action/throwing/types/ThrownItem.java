@@ -35,6 +35,7 @@ import btm.sword.system.entity.impl.Combatant;
 import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.input.ActivationContext;
 import btm.sword.system.item.ItemUsageManager;
+import btm.sword.utility.Debug;
 import btm.sword.utility.Prefab;
 import btm.sword.utility.display.DisplayUtil;
 import btm.sword.utility.entity.EntityUtil;
@@ -229,7 +230,7 @@ public class ThrownItem extends VisualProjectile {
             : hit ? "hit"
             : caught ? "caught"
             : display.isDead() ? "display dead" : "time cutoff";
-        thrower.combatInfo("Ending due to: " + reason);
+        Debug.combat("throw ended: " + reason);
         super.onEnd();
     }
 

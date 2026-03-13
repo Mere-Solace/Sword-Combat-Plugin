@@ -65,9 +65,10 @@ public class DevStatEditorMenu extends Menu {
         // Layout: 2 rows of 9 — 12 aspects fit neatly
         Gui gui = Gui.normal()
             .setStructure(
-                "# # # B # # # # #",
+                "# # # # # # # # #",
                 "0 1 2 3 4 5 6 7 8",
-                "9 A B C . . . . #")
+                ". . . 9 A C . . .",
+                "# # # # B # # # #")
             .addIngredient('#', BORDER)
             .addIngredient('B', back)
             .addIngredient('0', items.get(0))   // SHARDS

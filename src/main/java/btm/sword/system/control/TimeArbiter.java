@@ -181,8 +181,8 @@ public class TimeArbiter {
                 Sword.getInstance().getLogger().warning("Error when canceling a TaskHandler: " + e);
             }
 
-            Debug.debug(TimeArbiter.class, 183, "Cancelling task [ " + taskID + " ] " +
-                " : Successful ? " + successfullyCanceled + " From: " + callingClass + " " + callingMethodName);
+            Debug.system("cancel task [" + taskID + "] ok=" + successfullyCanceled
+                + " from " + callingClass.getSimpleName() + "." + callingMethodName);
 
             cleanupTask(taskID);
 
@@ -211,8 +211,8 @@ public class TimeArbiter {
                                          Class<?> callingClass, String callingMethodName) {
         int taskID = taskCounter.incrementAndGet();
 
-        Debug.debug(TimeArbiter.class, 211, "Creating new TaskHandle: [ " + taskID +
-            " ] From: " + callingClass + " " + callingMethodName);
+        Debug.system("create task [" + taskID + "] from "
+            + callingClass.getSimpleName() + "." + callingMethodName);
 
         TaskHandle handle = new TaskHandle(taskID, timeBound,
             null, precheck, postcheck, paused, callbacks, delayMs, periodMs,

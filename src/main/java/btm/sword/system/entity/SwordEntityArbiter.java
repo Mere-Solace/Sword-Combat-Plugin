@@ -57,7 +57,10 @@ public class SwordEntityArbiter {
 
             if (Sword.getInstance().isEnabled()) {
                 SwordScheduler.runBukkitTaskLater(
-                    () -> onlineSwordPlayers.get(entityUUID).onRegister(),
+                    () -> {
+                        SwordEntity sp = onlineSwordPlayers.getOrDefault(entityUUID, null);
+                        if (sp != null) sp.onRegister();
+                    },
                     200, TimeUnit.MILLISECONDS
                 );
             }

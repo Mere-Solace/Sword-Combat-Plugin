@@ -1248,6 +1248,15 @@ public class Config {
             v -> ATTACKS_COMBO_WINDOW_BASE = v,
             ConfigurationSection::getInt
         ); }
+
+        /** Delay in milliseconds between right-click inputs. */
+        public static int RIGHT_INTERACT_DELAY = 1;
+        static { register(
+            "timing.right_interact_delay",
+            RIGHT_INTERACT_DELAY, Integer.class,
+            v -> RIGHT_INTERACT_DELAY = v,
+            ConfigurationSection::getInt
+        ); }
     }
     //endregion
 
@@ -2387,14 +2396,23 @@ public class Config {
      *
      * <h2>Debug Tools</h2>
      * <ul>
-     *   <li><b>Verbose Logging</b> - Detailed console output for combat/movement/config</li>
+     *   <li><b>Verbose Logging</b> - Per-system console/chat output (combat, movement, inventory,
+     *       system, umbral, hostile, general debug)</li>
      *   <li><b>Visualization</b> - Particle-based hitbox and raytrace rendering</li>
      * </ul>
      *
      * <p><b>Warning:</b> Visualization features generate many particles and may impact performance.</p>
      */
     public static class Debug {
-        // Logging configuration
+        // Logging — general
+        public static boolean LOGGING_VERBOSE_DEBUG = false;
+        static { register(
+            "debug.logging_verbose_debug",
+            LOGGING_VERBOSE_DEBUG, Boolean.class,
+            v -> LOGGING_VERBOSE_DEBUG = v,
+            ConfigurationSection::getBoolean); }
+
+        // Logging — per system
         public static boolean LOGGING_VERBOSE_COMBAT = false;
         static { register(
             "debug.logging_verbose_combat",
@@ -2409,11 +2427,32 @@ public class Config {
             v -> LOGGING_VERBOSE_MOVEMENT = v,
             ConfigurationSection::getBoolean); }
 
-        public static boolean LOGGING_VERBOSE_CONFIG = true;
+        public static boolean LOGGING_VERBOSE_INVENTORY = false;
         static { register(
-            "debug.logging_verbose_config",
-            LOGGING_VERBOSE_CONFIG, Boolean.class
-            , v -> LOGGING_VERBOSE_CONFIG = v,
+            "debug.logging_verbose_inventory",
+            LOGGING_VERBOSE_INVENTORY, Boolean.class,
+            v -> LOGGING_VERBOSE_INVENTORY = v,
+            ConfigurationSection::getBoolean); }
+
+        public static boolean LOGGING_VERBOSE_SYSTEM = false;
+        static { register(
+            "debug.logging_verbose_system",
+            LOGGING_VERBOSE_SYSTEM, Boolean.class,
+            v -> LOGGING_VERBOSE_SYSTEM = v,
+            ConfigurationSection::getBoolean); }
+
+        public static boolean LOGGING_VERBOSE_UMBRAL = false;
+        static { register(
+            "debug.logging_verbose_umbral",
+            LOGGING_VERBOSE_UMBRAL, Boolean.class,
+            v -> LOGGING_VERBOSE_UMBRAL = v,
+            ConfigurationSection::getBoolean); }
+
+        public static boolean LOGGING_VERBOSE_HOSTILE = false;
+        static { register(
+            "debug.logging_verbose_hostile",
+            LOGGING_VERBOSE_HOSTILE, Boolean.class,
+            v -> LOGGING_VERBOSE_HOSTILE = v,
             ConfigurationSection::getBoolean); }
 
         // Visualization configuration
@@ -2589,7 +2628,7 @@ public class Config {
             "hostile.aggro_range",
             16.0, Double.class,
             v -> AGGRO_RANGE_SQUARED = v * v,
-            (s, p, d) -> s.getDouble(p, d)
+            ConfigurationSection::getDouble
         ); }
 
         /** Attack initiation distance squared (loaded from raw radius and squared on assignment). */
@@ -2598,7 +2637,7 @@ public class Config {
             "hostile.approach_distance",
             6.0, Double.class,
             v -> APPROACH_DISTANCE_SQUARED = v * v,
-            (s, p, d) -> s.getDouble(p, d)
+            ConfigurationSection::getDouble
         ); }
 
         /** Minimum allied Hostile count targeting the same player to trigger surround behaviour. */
@@ -2607,7 +2646,7 @@ public class Config {
             "hostile.surround_min_allies",
             2, Integer.class,
             v -> SURROUND_MIN_ALLIES = v,
-            (s, p, d) -> s.getInt(p, d)
+            ConfigurationSection::getInt
         ); }
 
         /** Wind-up ticks before an attack is executed (~1.2 s at 20 TPS). */
@@ -2616,7 +2655,7 @@ public class Config {
             "hostile.pre_attack_ticks",
             24, Integer.class,
             v -> PRE_ATTACK_TICKS = v,
-            (s, p, d) -> s.getInt(p, d)
+            ConfigurationSection::getInt
         ); }
 
         /** Retreat duration in ticks after an attack (~2 s at 20 TPS). */
@@ -2625,7 +2664,7 @@ public class Config {
             "hostile.retreat_ticks",
             40, Integer.class,
             v -> RETREAT_TICKS = v,
-            (s, p, d) -> s.getInt(p, d)
+            ConfigurationSection::getInt
         ); }
 
         /** Health fraction threshold below which the mob flees (0.0–1.0). */
@@ -2634,7 +2673,7 @@ public class Config {
             "hostile.flee_health_fraction",
             0.20, Double.class,
             v -> FLEE_HEALTH_FRACTION = v,
-            (s, p, d) -> s.getDouble(p, d)
+            ConfigurationSection::getDouble
         ); }
 
         /** OnGuard duration in ticks after an attack (~2 s at 20 TPS). */
@@ -2643,7 +2682,7 @@ public class Config {
             "hostile.on_guard_ticks",
             40, Integer.class,
             v -> ON_GUARD_TICKS = v,
-            (s, p, d) -> s.getInt(p, d)
+            ConfigurationSection::getInt
         ); }
 
         /** Safe orbit radius squared for OnGuard strafing (loaded from raw distance and squared on assignment). */
@@ -2652,7 +2691,7 @@ public class Config {
             "hostile.on_guard_safe_distance",
             6.0, Double.class,
             v -> ON_GUARD_SAFE_DISTANCE_SQUARED = v * v,
-            (s, p, d) -> s.getDouble(p, d)
+            ConfigurationSection::getDouble
         ); }
 
         /** AttackReady hold duration in ticks — brief pause before a combo follow-up (~0.8 s at 20 TPS). */
@@ -2661,7 +2700,7 @@ public class Config {
             "hostile.attack_ready_ticks",
             16, Integer.class,
             v -> ATTACK_READY_TICKS = v,
-            (s, p, d) -> s.getInt(p, d)
+            ConfigurationSection::getInt
         ); }
 
         /** Cooldown in ticks after the mob uses its melee slash ability (1 s at 20 TPS). */
@@ -2670,7 +2709,7 @@ public class Config {
             "hostile.mob_slash_cooldown_ticks",
             20, Integer.class,
             v -> MOB_SLASH_COOLDOWN_TICKS = v,
-            (s, p, d) -> s.getInt(p, d)
+            ConfigurationSection::getInt
         ); }
 
         /** Cooldown in ticks after the mob uses its throw ability (3 s at 20 TPS). */
@@ -2679,7 +2718,7 @@ public class Config {
             "hostile.mob_throw_cooldown_ticks",
             60, Integer.class,
             v -> MOB_THROW_COOLDOWN_TICKS = v,
-            (s, p, d) -> s.getInt(p, d)
+            ConfigurationSection::getInt
         ); }
 
         /** Parabolic arc height multiplier for the mob throw ability. */
@@ -2688,7 +2727,7 @@ public class Config {
             "hostile.mob_throw_arc_height",
             0.4, Double.class,
             v -> MOB_THROW_ARC_HEIGHT = v,
-            (s, p, d) -> s.getDouble(p, d)
+            ConfigurationSection::getDouble
         ); }
     }
     //endregion

@@ -10,9 +10,11 @@ import java.util.function.Supplier;
 import javax.annotation.Nullable;
 
 import org.bukkit.Color;
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Display;
 import org.bukkit.entity.EntityType;
+import org.bukkit.entity.Item;
 import org.bukkit.entity.ItemDisplay;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
@@ -21,13 +23,13 @@ import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryAction;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.EquipmentSlot;
-import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Transformation;
+import org.bukkit.util.Vector;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
@@ -36,6 +38,7 @@ import com.destroystokyo.paper.profile.PlayerProfile;
 import btm.sword.config.Config;
 import btm.sword.system.action.BlockAction;
 import btm.sword.system.action.throwing.ThrowAction;
+import btm.sword.system.action.throwing.types.DroppedItem;
 import btm.sword.system.control.PredicateRunnablePair;
 import btm.sword.system.control.SwordScheduler;
 import btm.sword.system.control.TimeArbiter;
@@ -59,6 +62,7 @@ import btm.sword.system.item.SwordItemType;
 import btm.sword.system.item.special.NonMovableItem;
 import btm.sword.system.item.special.SlotAnchoredItem;
 import btm.sword.system.playerdata.PlayerData;
+import btm.sword.utility.Debug;
 import btm.sword.utility.Prefab;
 import btm.sword.utility.SwordTimeUnit;
 import btm.sword.utility.display.DisplayUtil;
@@ -103,7 +107,6 @@ public class SwordPlayer extends Combatant {
     @Setter
     private ActivationContext activationContext = ActivationContext.NORMAL;
 
-    @Setter
     private boolean performedDropAction;
     @Getter
     @Setter
@@ -140,6 +143,8 @@ public class SwordPlayer extends Combatant {
 
     private boolean swappingInInv;
     private boolean droppingInInv;
+    @Setter
+    private boolean inInventorySession;
 
     private BukkitTask targetIndicatorTask;
     private SwordEntity targetedEntity;
@@ -222,6 +227,7 @@ public class SwordPlayer extends Combatant {
 
         swappingInInv = false;
         droppingInInv = false;
+        inInventorySession = false;
     }
 
     /**
@@ -484,30 +490,71 @@ public class SwordPlayer extends Combatant {
      * @return true if the event was handled and should be cancelled, false otherwise
      */
     public boolean handleInventoryInput(InventoryClickEvent e) {
-        Inventory inv = e.getInventory();
         ClickType clickType = e.getClick();
         InventoryAction action = e.getAction();
         ItemStack onCursor = e.getCursor();
         ItemStack clicked = e.getCurrentItem();
-        int slotNumber = e.getSlot();
+
+        // Protect non-movable items on cursor from being placed into any slot
+        if (NonMovableItem.isNonMovable(onCursor)) {
+            return true;
+        }
 
         if (clicked == null) {
-
             return false;
         }
 
-        // Protect non-movable items from being interacted with
-        if (NonMovableItem.isNonMovable(clicked) || NonMovableItem.isNonMovable(onCursor)) {
-            return true; // Cancel the action
+        // Protect non-movable items in slots from being moved or interacted with
+        if (NonMovableItem.isNonMovable(clicked)) {
+            return true;
         }
-//        message("\n\n~|------Beginning of new inventory interact event------|~"
-//                + "\n       Inventory: " + inv.getType()
-//                + "\n       Click type: " + clickType
-//                + "\n       Action type: " + action
-//                + "\n       Item on cursor: " + onCursor
-//                + "\n       Current Item in slot: " + clicked
-//                + "\n       slot number: " + slotNumber);
+
+        // Protect non-movable items in hotbar slots from being swapped via number keys
+        if (clickType == ClickType.NUMBER_KEY) {
+            int hotbarSlot = e.getHotbarButton();
+            if (hotbarSlot >= 0 && NonMovableItem.isNonMovable(player.getInventory().getItem(hotbarSlot))) {
+                return true;
+            }
+        }
+
+        // Protect non-movable items in the offhand slot from being swapped via F key
+        if (clickType == ClickType.SWAP_OFFHAND && NonMovableItem.isNonMovable(player.getInventory().getItem(40))) {
+            return true;
+        }
+
+        // Block all Q / Ctrl+Q drops from inventory — players cannot drop items via inventory
+        if (action == InventoryAction.DROP_ONE_SLOT || action == InventoryAction.DROP_ALL_SLOT
+                || action == InventoryAction.DROP_ONE_CURSOR || action == InventoryAction.DROP_ALL_CURSOR) {
+            return true;
+        }
+
         return false;
+    }
+
+    /**
+     * Spawns an appropriate world drop for an item leaving the player's inventory.
+     * <p>
+     * {@link ItemClass#THROWABLE} items (weapons, axes, etc.) become {@link DroppedItem}s with
+     * custom physics so they must be picked up manually from the ground. All other items become
+     * standard Bukkit item entities.
+     * </p>
+     * <p>
+     * Called both from {@link #handleInventoryInput} (Q/Ctrl+Q in inventory) and from
+     * {@link btm.sword.listeners.InputListener#onPlayerDropEvent} when the player drags an item
+     * outside the inventory window.
+     * </p>
+     *
+     * @param item the stack to drop into the world; must not be null or empty
+     */
+    public void spawnInventoryDrop(ItemStack item) {
+        Location dropLocation = locFromFlatDir(1.5);
+
+        if (ItemClassifier.classify(item) == ItemClass.THROWABLE) {
+            new DroppedItem(dropLocation, new Vector(0, 0, 0), item).register();
+        } else {
+            Item itemDrop = player.getWorld().dropItem(dropLocation, item);
+            itemDrop.setPickupDelay(20);
+        }
     }
 
     public void updateVisualStats() {
@@ -1024,11 +1071,29 @@ public class SwordPlayer extends Combatant {
      * Resets the flag shortly after (1 tick).
      */
     public void setDroppingInInv() {
+        Debug.inventory(">> set dropping in inv");
+
         droppingInInv = true;
         SwordScheduler.runBukkitTaskLater(
-            () -> droppingInInv = false,
-            50, TimeUnit.MILLISECONDS
+            () -> {
+                Debug.inventory(">> no longer dropping in inv");
+                droppingInInv = false;
+            },
+            100, TimeUnit.MILLISECONDS
         );
+    }
+
+    public void setPerformedDropAction() {
+        performedDropAction = true;
+        SwordScheduler.runBukkitTaskLater(
+            () -> performedDropAction = false,
+            100, TimeUnit.MILLISECONDS
+        );
+    }
+
+    @SuppressWarnings("all")
+    public boolean isInInventorySession() {
+        return inInventorySession;
     }
 
     public void incrementNumDummies() {

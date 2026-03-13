@@ -23,6 +23,7 @@ import btm.sword.system.entity.umbral.statemachine.state.SheathedState;
 import btm.sword.system.entity.umbral.statemachine.state.StandbyState;
 import btm.sword.system.entity.umbral.statemachine.state.WaitingState;
 import btm.sword.system.entity.umbral.statemachine.state.WieldState;
+import btm.sword.utility.Debug;
 import btm.sword.utility.Prefab;
 import btm.sword.utility.math.VectorUtil;
 import btm.sword.utility.statemachine.State;
@@ -385,6 +386,7 @@ public class UmbralStateMachine extends StateMachine<UmbralBlade> {
     @Override
     public void setState(State<UmbralBlade> next) {
         previousState = (UmbralStateFacade) currentState;
+        Debug.system(currentState.getClass().getSimpleName() + " -> " + next.getClass().getSimpleName());
         super.setState(next);
 
         @SuppressWarnings("unchecked")

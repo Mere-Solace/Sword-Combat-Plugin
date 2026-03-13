@@ -3,27 +3,38 @@ package btm.sword.listeners;
 import java.util.Objects;
 
 import org.bukkit.GameMode;
+import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
+import org.bukkit.event.Event;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityPickupItemEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.inventory.ClickType;
+import org.bukkit.event.inventory.InventoryAction;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryCloseEvent;
+import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.event.inventory.InventoryEvent;
+import org.bukkit.event.inventory.InventoryOpenEvent;
 import org.bukkit.event.player.PlayerGameModeChangeEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
+import org.bukkit.inventory.ItemStack;
 import org.intellij.lang.annotations.Subst;
 
 import btm.sword.Sword;
+import btm.sword.config.Config;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.entity.umbral.input.BladeRequest;
+import btm.sword.system.item.special.NonMovableItem;
 import btm.sword.utility.ChatInputCapture;
+import btm.sword.utility.Debug;
 import io.papermc.paper.event.player.AsyncChatEvent;
 import io.papermc.paper.event.player.PlayerShieldDisableEvent;
 import net.kyori.adventure.key.Key;
@@ -139,12 +150,56 @@ public class PlayerListener implements Listener {
      */
     @EventHandler
     public void inventoryEvent(InventoryEvent event) {
-        // Testing
+        if (!Config.Debug.LOGGING_VERBOSE_INVENTORY) return;
         for (HumanEntity human : event.getViewers()) {
             if (human instanceof Player) {
                 SwordEntityArbiter.get(human)
                     .message("getInventory(): " + event.getInventory() + "\n  getView(): " + event.getView());
             }
+        }
+    }
+
+    /**
+     * Tracks when the player opens an inventory, enabling drag-outside-window drop detection.
+     *
+     * @param event the {@link InventoryOpenEvent} triggered when a player opens an inventory
+     */
+    @EventHandler
+    public void onInventoryOpen(InventoryOpenEvent event) {
+        Debug.inventory("Opened inventory...");
+        if (event.getPlayer() instanceof Player p) {
+            SwordPlayer sp = ((SwordPlayer) SwordEntityArbiter.getOrAdd(p));
+            sp.setInInventorySession(true);
+            Debug.inventory("in session?=" + sp.isInInventorySession());
+        }
+    }
+
+    /**
+     * Tracks when the player closes an inventory, disabling drag-outside-window drop detection.
+     *
+     * @param event the {@link InventoryCloseEvent} triggered when a player closes an inventory
+     */
+    @EventHandler
+    public void onInventoryClose(InventoryCloseEvent event) {
+        if (event.getPlayer() instanceof Player p) {
+            ((SwordPlayer) SwordEntityArbiter.getOrAdd(p)).setInInventorySession(false);
+        }
+    }
+
+    /**
+     * Prevents players from dragging non-movable items across inventory slots.
+     * <p>
+     * Drag events are not routed through {@link SwordPlayer#handleInventoryInput},
+     * so this handler independently cancels any drag where the cursor item is
+     * tagged as a {@link btm.sword.system.item.special.NonMovableItem}.
+     * </p>
+     *
+     * @param event the {@link InventoryDragEvent} triggered when a player drags an item
+     */
+    @EventHandler
+    public void inventoryDragEvent(InventoryDragEvent event) {
+        if (NonMovableItem.isNonMovable(event.getOldCursor())) {
+            event.setCancelled(true);
         }
     }
 
@@ -162,65 +217,54 @@ public class PlayerListener implements Listener {
     public void inventoryInteractEvent(InventoryClickEvent event) {
         SwordPlayer sp = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getViewers().getFirst());
 
+        Debug.sendInventoryClickDebugMessage(event);
+
         if (sp.handleInventoryInput(event)) {
             event.setCancelled(true);
         }
 
-//		switch (clickType) {
-//			case SWAP_OFFHAND -> sp.setSwappingInInv();
-//			case DROP, CONTROL_DROP -> sp.setDroppingInInv();
-//			case SHIFT_RIGHT -> {
-//				sp.message("Shift start clicking!");
-//				event.setCancelled(true);
-//				new BukkitRunnable() {
-//					final int slot = event.getSlot();
-//					@Override
-//					public void run() {
-//						Item itemDrop = sp.entity().getWorld().dropItem(sp.getChestLocation(), Objects.requireNonNull(inv.getItem(slot)));
-//						itemDrop.setPickupDelay(5);
-//						itemDrop.setVelocity(sp.entity().getEyeLocation().getDirection().multiply(0.5));
-//						itemDrop.setThrower(sp.getUniqueId());
-//						inv.setItem(slot, new ItemStack(Material.AIR));
-//					}
-//				}.runTaskLater(Sword.getInstance(), 1L);
-//			}
-//			case DOUBLE_CLICK -> {
-//				sp.message("Double clicked smth");
-//				sp.entity().getWorld().dropItem(sp.entity().getEyeLocation(), event.getCursor()).setPickupDelay(5);
-//				sp.player().getInventory().setItem(event.getSlot(), new ItemStack(Material.AIR));
-//				event.getCursor().setAmount(0);
-//			}
-//			case SHIFT_LEFT -> {
-//				sp.message("Shift left clicking!");
-//				event.setCancelled(true);
-//				new BukkitRunnable() {
-//					final int slot = event.getSlot();
-//					@Override
-//					public void run() {
-//						Item itemDrop = sp.entity().getWorld().dropItem(sp.getChestLocation(), Objects.requireNonNull(inv.getItem(slot)));
-//						itemDrop.setPickupDelay(5);
-//						itemDrop.setVelocity(sp.entity().getEyeLocation().getDirection().multiply(0.5));
-//						itemDrop.setThrower(sp.getUniqueId());
-//						inv.setItem(slot, new ItemStack(Material.AIR));
-//					}
-//				}.runTaskLater(Sword.getInstance(), 1L);
-//			}
-//		}
-//
-//		switch (action) {
-//			case DROP_ALL_SLOT, DROP_ALL_CURSOR, DROP_ONE_SLOT, DROP_ONE_CURSOR, UNKNOWN -> {
-//				sp.message("Dropping is detected");
-//				sp.setDroppingInInv();
-//			}
-//			case SWAP_WITH_CURSOR, HOTBAR_SWAP -> {
-//				sp.message("Swapping detected");
-//				sp.setSwappingInInv();
-//			}
-//			case PICKUP_ALL, PICKUP_HALF, PICKUP_ONE, PICKUP_SOME -> {
-//				sp.message("You picked something up");
-//			}
-//			case PLACE_ALL, PLACE_SOME, PLACE_ONE -> sp.message("You placed something");
-//		}
+        ClickType clickType = event.getClick();
+        InventoryAction action = event.getAction();
+
+        ItemStack current = event.getCurrentItem();
+        int slot = event.getSlot();
+
+        sp.inventoryInfo("click=" + clickType + " action=" + action);
+
+        switch (clickType) {
+            case SWAP_OFFHAND -> sp.setSwappingInInv();
+            case DROP, CONTROL_DROP -> {
+                sp.setDroppingInInv();
+                event.setCancelled(true);
+                event.setResult(Event.Result.DENY);
+            }
+            case SHIFT_RIGHT -> {
+                sp.inventoryInfo("shift-right click, dropping that thang");
+
+                sp.spawnInventoryDrop(current);
+                sp.setItemAtIndex(new ItemStack(Material.AIR), slot);
+
+                event.setCancelled(true);
+            }
+            default -> {}
+        }
+
+        switch (action) {
+            case DROP_ALL_SLOT, DROP_ALL_CURSOR, DROP_ONE_SLOT, DROP_ONE_CURSOR -> {
+                sp.setDroppingInInv();
+                event.setCancelled(true);
+                event.setResult(Event.Result.DENY);
+            }
+            case SWAP_WITH_CURSOR, HOTBAR_SWAP -> {
+                sp.inventoryInfo("swap");
+                sp.setSwappingInInv();
+            }
+            case PICKUP_ALL, PICKUP_HALF, PICKUP_ONE, PICKUP_SOME ->
+                sp.inventoryInfo("pickup");
+            case PLACE_ALL, PLACE_SOME, PLACE_ONE ->
+                sp.inventoryInfo("place");
+            default -> {}
+        }
     }
 
     /**

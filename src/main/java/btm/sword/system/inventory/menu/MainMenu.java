@@ -18,6 +18,7 @@ import btm.sword.system.entity.impl.Dummy;
 import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.inventory.InventoryMenuManager;
 import btm.sword.system.item.ItemStackBuilder;
+import btm.sword.system.item.special.NonMovableItem;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextDecoration;
 import xyz.xenondevs.invui.gui.Gui;
@@ -130,13 +131,26 @@ public class MainMenu extends Menu {
             click -> InventoryMenuManager.openMenu(MovesetMenu.class, swordPlayer)
         );
 
+        SimpleItem trashItem = new SimpleItem(
+            new ItemStackBuilder(Material.BARRIER)
+                .hideAll()
+                .name(Component.text("Item Trash", Config.SwordColor.TEXT_COOL, TextDecoration.BOLD))
+                .lore(List.of(Component.text("Click with an item to destroy it.", Config.SwordColor.TEXT_ITEM_BASE)))
+                .build(),
+            click -> {
+                ItemStack cursor = click.getPlayer().getItemOnCursor();
+                if (cursor.isEmpty() || NonMovableItem.isNonMovable(cursor)) return;
+                click.getPlayer().setItemOnCursor(new ItemStack(Material.AIR));
+            }
+        );
+
         Gui.Builder.Normal builder = Gui.normal()
             .setStructure(
                 "# # # . . . # # #",
                 "# . . . P . . . #",
                 ". . . . D Q . . .",
                 ". . . . . . . . .",
-                "# . . . H . M V #",
+                "# T . . H . M V #",
                 "# # # < . > # # #")
             .addIngredient('#', BORDER)
             .addIngredient('Q', queueForCTF)
@@ -144,6 +158,7 @@ public class MainMenu extends Menu {
             .addIngredient('P', HOW_TO_PLAY_ITEM)
             .addIngredient('D', spawnDummy)
             .addIngredient('M', combatReference)
+            .addIngredient('T', trashItem)
             .addIngredient('<', generatePreviousButtonOrDefault())
             .addIngredient('>', generateForwardPreviousButtonOrDefault());
 

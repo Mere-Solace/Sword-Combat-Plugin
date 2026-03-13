@@ -23,7 +23,7 @@ import btm.sword.utility.math.Basis;
 public class UmbralBladeAction extends SwordAction {
     public static void wield(Combatant wielder) {
 
-        Debug.debug(UmbralBladeAction.class, 26, "Wield gets called.");
+        Debug.umbral("wield called");
 
         UmbralBlade blade = wielder.getUmbralBlade();
         if (blade == null) return;

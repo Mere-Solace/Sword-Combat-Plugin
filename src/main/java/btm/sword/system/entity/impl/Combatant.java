@@ -28,6 +28,7 @@ import btm.sword.system.entity.umbral.statemachine.state.StandbyState;
 import btm.sword.system.entity.umbral.statemachine.state.WieldState;
 import btm.sword.system.input.ActivationContext;
 import btm.sword.system.item.KeyRegistry;
+import btm.sword.utility.Debug;
 import btm.sword.utility.Prefab;
 import lombok.Getter;
 import lombok.Setter;
@@ -174,8 +175,8 @@ public abstract class Combatant extends SwordEntity {
     }
 
     public void consumeSoulfire(float requiredSoulfire) {
-        combatInfo("Current: " + String.format("%.1f", aspects.soulfireCur()) +
-            " to remove: " + String.format("%.1f", requiredSoulfire));
+        Debug.combat("soulfire cur=" + String.format("%.1f", aspects.soulfireCur())
+            + " cost=" + String.format("%.1f", requiredSoulfire));
         aspects.soulfire().remove(requiredSoulfire);
         aspects.soulfire().restartRegenTaskLater(aspects.soulfire().getBaseRegenPeriod());
     }
