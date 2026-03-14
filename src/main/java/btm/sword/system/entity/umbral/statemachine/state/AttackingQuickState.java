@@ -6,7 +6,6 @@ import org.bukkit.Location;
 import org.bukkit.util.Transformation;
 import org.bukkit.util.Vector;
 
-import btm.sword.config.Config;
 import btm.sword.system.action.movement.DashDirection;
 import btm.sword.system.attack.Attack;
 import btm.sword.system.attack.UmbralBladeAttack;
@@ -79,16 +78,12 @@ public class AttackingQuickState extends UmbralStateFacade {
             attack(blade, 5.0);
         }
 
-        // TODO: #121 - Potentially add per state glow changes or just a method for this
-        blade.getDisplay().setGlowing(true);
-        blade.getDisplay().setGlowColorOverride(Config.SwordColor.UMBRAL_GLOW);
     }
 
     @Override
     public void onExit(UmbralBlade blade) {
         blade.setAttackCompleted(false);
         blade.setReclaimType(ReclaimType.NONE);
-        blade.getDisplay().setGlowing(false);
     }
 
     @Override

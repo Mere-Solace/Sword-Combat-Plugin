@@ -1,5 +1,6 @@
 package btm.sword.system.entity.umbral.statemachine;
 
+import org.bukkit.Color;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.util.Vector;
@@ -431,8 +432,30 @@ public class UmbralStateMachine extends StateMachine<UmbralBlade> {
         Debug.system(currentState.getClass().getSimpleName() + " -> " + next.getClass().getSimpleName());
         super.setState(next);
 
+        applyGlowForState(next, context);
+
         @SuppressWarnings("unchecked")
         Class<? extends State<UmbralBlade>> stateClass = (Class<? extends State<UmbralBlade>>) next.getClass();
         context.setDisplayTransformation(stateClass);
+    }
+
+    private static void applyGlowForState(State<UmbralBlade> state, UmbralBlade blade) {
+        if (blade.getDisplay() == null) return;
+        Color color = glowColorForState(state.getClass());
+        blade.getDisplay().setGlowing(color != null);
+        if (color != null) {
+            blade.getDisplay().setGlowColorOverride(color);
+        }
+    }
+
+    private static Color glowColorForState(Class<?> stateClass) {
+        if (stateClass == StandbyState.class) return Config.SwordColor.STANDBY_GLOW;
+        if (stateClass == AttackingQuickState.class) return Config.SwordColor.ATTACK_QUICK_GLOW;
+        if (stateClass == AttackingHeavyState.class) return Config.SwordColor.FEROCIOUS_SWEEP;
+        if (stateClass == LungingState.class) return Config.SwordColor.LUNGE_GLOW;
+        if (stateClass == LodgedState.class) return Config.SwordColor.LODGED_GLOW;
+        if (stateClass == GrabImpaleState.class) return Config.SwordColor.GRAB_IMPALE_GLOW;
+        if (stateClass == RecallingState.class) return Config.SwordColor.RECALL_GLOW;
+        return null;
     }
 }

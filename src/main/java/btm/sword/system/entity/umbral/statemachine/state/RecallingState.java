@@ -3,7 +3,6 @@ package btm.sword.system.entity.umbral.statemachine.state;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
-import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.util.Vector;
 
@@ -48,9 +47,6 @@ public class RecallingState extends UmbralStateFacade {
 
     @Override
     public void onEnter(UmbralBlade blade) {
-        blade.getDisplay().setGlowing(true);
-        blade.getDisplay().setGlowColorOverride(Color.fromRGB(1, 1, 1));
-
         AtomicReference<Location> currentBladeLoc = new AtomicReference<>(blade.getDisplay().getLocation());
         AtomicReference<Location> previousBladeLoc = new AtomicReference<>(blade.getDisplay().getLocation());
         final int[] stationaryCount = {0};
@@ -80,7 +76,6 @@ public class RecallingState extends UmbralStateFacade {
 
     @Override
     public void onExit(UmbralBlade blade) {
-        blade.getDisplay().setGlowing(false);
         if (returnTask != null && !returnTask.isCancelled()) {
             returnTask.cancel();
         }

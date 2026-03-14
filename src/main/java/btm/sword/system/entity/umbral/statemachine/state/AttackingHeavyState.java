@@ -5,7 +5,6 @@ import java.util.List;
 import org.bukkit.Location;
 import org.bukkit.util.Vector;
 
-import btm.sword.config.Config;
 import btm.sword.system.attack.Attack;
 import btm.sword.system.attack.GeneratedAttackProfile;
 import btm.sword.system.attack.UmbralBladeAttack;
@@ -61,15 +60,12 @@ public class AttackingHeavyState extends UmbralStateFacade {
         } else {
             attack(blade, 8);
         }
-        blade.getDisplay().setGlowing(true);
-        blade.getDisplay().setGlowColorOverride(Config.SwordColor.FEROCIOUS_SWEEP);
     }
 
     @Override
     public void onExit(UmbralBlade blade) {
         blade.setAttackCompleted(false);
         blade.setReclaimType(ReclaimType.NONE);
-        blade.getDisplay().setGlowing(false);
     }
 
     @Override

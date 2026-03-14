@@ -9,8 +9,6 @@ import java.util.function.Supplier;
 
 import javax.annotation.Nullable;
 
-import btm.sword.system.action.UmbralBladeAction;
-
 import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -39,6 +37,7 @@ import com.destroystokyo.paper.profile.PlayerProfile;
 
 import btm.sword.config.Config;
 import btm.sword.system.action.BlockAction;
+import btm.sword.system.action.UmbralBladeAction;
 import btm.sword.system.action.throwing.ThrowAction;
 import btm.sword.system.action.throwing.types.DroppedItem;
 import btm.sword.system.control.PredicateRunnablePair;

@@ -349,6 +349,48 @@ public class Config {
             v -> FEROCIOUS_SWEEP = v,
             Config::loadColor
         ); }
+
+        public static @Nullable Color STANDBY_GLOW = Color.fromRGB(255, 255, 255);
+        static { register("color.standby_glow",
+            STANDBY_GLOW, Color.class,
+            v -> STANDBY_GLOW = v,
+            Config::loadColor
+        ); }
+
+        public static @Nullable Color ATTACK_QUICK_GLOW = Color.fromRGB(0, 220, 255);
+        static { register("color.attack_quick_glow",
+            ATTACK_QUICK_GLOW, Color.class,
+            v -> ATTACK_QUICK_GLOW = v,
+            Config::loadColor
+        ); }
+
+        public static @Nullable Color LUNGE_GLOW = Color.fromRGB(255, 180, 0);
+        static { register("color.lunge_glow",
+            LUNGE_GLOW, Color.class,
+            v -> LUNGE_GLOW = v,
+            Config::loadColor
+        ); }
+
+        public static @Nullable Color LODGED_GLOW = Color.fromRGB(170, 0, 255);
+        static { register("color.lodged_glow",
+            LODGED_GLOW, Color.class,
+            v -> LODGED_GLOW = v,
+            Config::loadColor
+        ); }
+
+        public static @Nullable Color GRAB_IMPALE_GLOW = Color.fromRGB(255, 80, 0);
+        static { register("color.grab_impale_glow",
+            GRAB_IMPALE_GLOW, Color.class,
+            v -> GRAB_IMPALE_GLOW = v,
+            Config::loadColor
+        ); }
+
+        public static @Nullable Color RECALL_GLOW = Color.fromRGB(0, 210, 180);
+        static { register("color.recall_glow",
+            RECALL_GLOW, Color.class,
+            v -> RECALL_GLOW = v,
+            Config::loadColor
+        ); }
     }
     //endregion
 

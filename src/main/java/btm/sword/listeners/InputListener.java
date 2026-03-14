@@ -3,8 +3,6 @@ package btm.sword.listeners;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
-import btm.sword.system.input.ActivationContext;
-
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -27,7 +25,6 @@ import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.input.InputType;
 import btm.sword.system.item.ItemClassifier;
-import btm.sword.utility.Debug;
 import btm.sword.utility.entity.InputUtil;
 import io.papermc.paper.event.player.PrePlayerAttackEntityEvent;
 
@@ -106,6 +103,15 @@ public class InputListener implements Listener {
         if ((action == Action.RIGHT_CLICK_BLOCK || action == Action.RIGHT_CLICK_AIR) && swordPlayer.isHoldingRight()) {
             event.setCancelled(true);
             return;
+        }
+
+        // Restore spawn eggs after use so they are never consumed — allows infinite spawning.
+        if ((action == Action.RIGHT_CLICK_AIR || action == Action.RIGHT_CLICK_BLOCK)
+                && item != null && !item.isEmpty() && item.getType().name().endsWith("_SPAWN_EGG")) {
+            ItemStack snapshot = item.clone();
+            SwordScheduler.runBukkitTaskLater(
+                () -> event.getPlayer().getInventory().setItemInMainHand(snapshot),
+                1, TimeUnit.MILLISECONDS);
         }
 
         SwordScheduler.runBukkitTaskLater(() -> {

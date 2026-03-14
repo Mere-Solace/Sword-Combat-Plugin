@@ -4,9 +4,6 @@ package btm.sword.utility;
 import java.util.List;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
-
-import btm.sword.utility.entity.PotionEffectWrapper;
 
 import org.bukkit.Color;
 import org.bukkit.Material;
@@ -14,7 +11,6 @@ import org.bukkit.Particle;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
-import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 
@@ -23,6 +19,7 @@ import btm.sword.system.attack.Attack;
 import btm.sword.system.attack.Blockability;
 import btm.sword.system.attack.HitValuePacket;
 import btm.sword.utility.display.ParticleWrapper;
+import btm.sword.utility.entity.PotionEffectWrapper;
 import btm.sword.utility.sound.SoundType;
 import btm.sword.utility.sound.SoundWrapper;
 import net.kyori.adventure.text.Component;

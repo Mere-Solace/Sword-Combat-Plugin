@@ -20,14 +20,11 @@ public class LungingState extends UmbralStateFacade {
         blade.setCtrlPointsForLunge(AttackType.LUNGE1.controlVectors());
         blade.initFlight(Config.UmbralBlade.LUNGE_ON_RELEASE_VELOCITY);
 
-        blade.getDisplay().setGlowing(true);
-        blade.getDisplay().setGlowColorOverride(Config.SwordColor.UMBRAL_GLOW);
     }
 
     @Override
     public void onExit(UmbralBlade blade) {
         blade.setFinishedLunging(false);
-        blade.getDisplay().setGlowing(false);
     }
 
     @Override

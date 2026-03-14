@@ -1,7 +1,6 @@
 package btm.sword.system.entity.umbral.statemachine.state;
 
 
-import btm.sword.config.Config;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.umbral.UmbralBlade;
 import btm.sword.system.entity.umbral.statemachine.UmbralStateFacade;
@@ -47,9 +46,6 @@ public class LodgedState extends UmbralStateFacade {
 
     @Override
     public void onEnter(UmbralBlade blade) {
-        blade.getDisplay().setGlowing(true);
-        blade.getDisplay().setGlowColorOverride(Config.SwordColor.UMBRAL_GLOW);
-
         SwordEntity target = blade.getHitEntity();
 
         blade.startImpalementTask(target);
@@ -70,7 +66,6 @@ public class LodgedState extends UmbralStateFacade {
 
     @Override
     public void onExit(UmbralBlade blade) {
-        blade.getDisplay().setGlowing(false);
         blade.resetFlightState();
     }
 
