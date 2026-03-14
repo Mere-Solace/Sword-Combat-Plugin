@@ -89,9 +89,7 @@ public class Dash {
     }
 
     private void addDashSpeedPotion() {
-        LivingEntity ex = executor.self();
-        PotionEffect speed = new PotionEffect(PotionEffectType.SPEED, Config.Movement.SPEED_DURATION, Config.Movement.SPEED_AMPLIFIER);
-        ex.addPotionEffect(speed);
+        Prefab.PotionEffects.DASH_SPEED.apply(executor);
     }
 
     private ItemDisplay findTargetedItem(Location eyeLoc) {

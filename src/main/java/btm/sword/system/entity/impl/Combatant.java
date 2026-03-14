@@ -286,6 +286,14 @@ public abstract class Combatant extends SwordEntity {
         return abilityCastTask == null && !isGrabbing && !isGrabbed();
     }
 
+    public boolean canPerformHealAction() {
+        return canPerformAction() &&
+            umbralBlade != null &&
+            umbralBlade.inState(WieldState.class) &&
+            aspects.soulfireCur() > 50 && // TODO config this val.
+            aspects.shards().belowMax();
+    }
+
     public boolean canPerformWieldAction() {
         return canPerformAction() && (
                 umbralBlade.inState(StandbyState.class) ||
@@ -312,10 +320,6 @@ public abstract class Combatant extends SwordEntity {
      */
     public boolean canAirDash() {
         return canPerformAction() && getAirDashesPerformed() < getCombatProfile().getMaxAirDodges();
-    }
-
-    public boolean canStrafe() {
-        return canPerformAction() && self().isOnGround();
     }
 
     /**

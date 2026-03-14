@@ -49,7 +49,7 @@ public class InputRegistrar {
      */
     public static void initializeMovementInputs(InputExecutionTree.InputNode root) {
         registerDash(root, InputType.SWAP, DashDirection.FORWARD, Combatant::canAirDash);
-        registerDash(root, InputType.SHIFT, DashDirection.BACKWARD, SwordPlayer::normalActState);
+        registerDash(root, InputType.SHIFT, DashDirection.BACKWARD, Combatant::canAirDash);
     }
 
     /**
@@ -76,6 +76,27 @@ public class InputRegistrar {
                 SwordPlayer::normalActState)
             )))
             .timeoutTicks(20)
+            .cancellable(true)
+            .display(true)
+            .build();
+
+        new InputExecutionTree.InputNodeBuilder(root, List.of(
+            InputType.RIGHT,
+            InputType.SHIFT
+        )).action(new LinkedList<>(List.of(
+                new InputExecutionTree.ActionContextPair(
+                    () -> InputAction.builder()
+                        .name("Channel")
+                        .action(UmbralBladeAction::beginHealChannel)
+                        .cooldown(executor -> 3000)
+                        .canCast(Combatant::canPerformHealAction)
+                        .displayCooldown(true)
+                        .displayDisabled(true)
+                        .resetIfCannotPerform(true)
+                        .build(),
+                    SwordPlayer::umbralBladeState)
+            )))
+            .sameItemRequired(true)
             .cancellable(true)
             .display(true)
             .build();
@@ -126,7 +147,7 @@ public class InputRegistrar {
             .build();
 
         // basic attack combo chain (L, LL, LLL) — umbral variants registered first for priority
-        registerBasicAttackCombo(root, 3);
+        registerBasicAttackCombo(root);
 
 
         // lunge (umbral link DROP + RIGHT) — registered FIRST, takes priority over throw when holding soul link
@@ -387,30 +408,6 @@ public class InputRegistrar {
             .display(true)
             .build();
 
-        // Healing channel: hold RIGHT while wielding the blade (umbral wield state)
-        new InputExecutionTree.InputNodeBuilder(root, List.of(
-            InputType.RIGHT,
-            InputType.RIGHT_HOLD
-        )).action(new LinkedList<>(List.of(
-            new InputExecutionTree.ActionContextPair(
-                () -> InputAction.builder()
-                .name("Channel")
-                .action(UmbralBladeAction::channel)
-                .cooldown(executor -> 3000)
-                .canCast(Combatant::canPerformUmbralAction)
-                .requiredSoulfire(() -> (float) Config.Combat.CHANNEL_SOULFIRE_COST)
-                .displayCooldown(true)
-                .displayDisabled(true)
-                .resetIfCannotPerform(false)
-                .build(),
-                SwordPlayer::umbralState)
-            )))
-            .minHoldTime((int) Config.Combat.CHANNEL_DURATION_MS)
-            .sameItemRequired(true)
-            .cancellable(true)
-            .display(true)
-            .build();
-
         // Active Skill slots (ACTIVE_1 and ACTIVE_2)
         registerActiveSkillSlot(root, owner, SkillSlot.ACTIVE_1, 1);
         registerActiveSkillSlot(root, owner, SkillSlot.ACTIVE_2, 2);
@@ -423,20 +420,19 @@ public class InputRegistrar {
      * normal-state variants. The first combo step uses {@code getDurationOfLastAttack} as
      * its cooldown; subsequent steps have zero cooldown so the chain flows naturally.
      *
-     * @param root      the tree root node
-     * @param maxSteps  number of combo steps to register (e.g. 3 for L, LL, LLL)
+     * @param root the tree root node
      */
-    private static void registerBasicAttackCombo(InputExecutionTree.InputNode root, int maxSteps) {
+    private static void registerBasicAttackCombo(InputExecutionTree.InputNode root) {
         Function<Combatant, Integer> attackCastDuration = executor -> (int) executor.calcValueReductive(
             AspectType.CELERITY,
             Config.Combat.ATTACKS_CAST_TIMING_MIN_DURATION,
             Config.Combat.ATTACKS_CAST_TIMING_MAX_DURATION,
             Config.Combat.ATTACKS_CAST_TIMING_REDUCTION_RATE);
 
-        for (int step = 1; step <= maxSteps; step++) {
+        for (int step = 1; step <= 3; step++) {// TODO: make '3' dynamic or config it.
             final int comboStep = step;
             boolean isFirst = step == 1;
-            boolean isLast = step == maxSteps;
+            boolean isLast = step == 3;
 
             Function<Combatant, Integer> cooldown = isFirst
                 ? Combatant::getDurationOfLastAttack

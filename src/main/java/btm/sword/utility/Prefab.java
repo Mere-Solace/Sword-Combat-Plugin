@@ -4,6 +4,9 @@ package btm.sword.utility;
 import java.util.List;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
+
+import btm.sword.utility.entity.PotionEffectWrapper;
 
 import org.bukkit.Color;
 import org.bukkit.Material;
@@ -11,6 +14,8 @@ import org.bukkit.Particle;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 
 import btm.sword.config.Config;
@@ -232,6 +237,11 @@ public class Prefab {
             () -> 1f,
             () -> 0.05f
         );
+    }
+
+    public static class PotionEffects {
+        public static final PotionEffectWrapper DASH_SPEED = new PotionEffectWrapper(PotionEffectType.SPEED, Config.Movement.SPEED_DURATION, Config.Movement.SPEED_AMPLIFIER);
+        public static final PotionEffectWrapper HEAL_CHANNEL_SLOW = new PotionEffectWrapper(PotionEffectType.SLOWNESS, 1, 4); // TODO: config
     }
 
     public static class Text {

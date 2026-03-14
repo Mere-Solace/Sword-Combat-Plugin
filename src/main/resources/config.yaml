@@ -140,10 +140,6 @@ combat:
   attack_class_hit_toughness: 15
   attack_class_hit_soulfire: 6
 
-  channel_soulfire_cost: 50.0
-  channel_heal_amount: 1.0
-  channel_duration_ms: 2000
-
 
 timing:
   
@@ -239,7 +235,7 @@ entity:
   combat_profile_max_air_dodges: 1
   combat_profile_shards_current: 5
   combat_profile_shards_regen_period: 5000
-  combat_profile_shards_regen_amount: 1
+  combat_profile_shards_regen_amount: 0
   
   combat_profile_toughness_current: 20.0
   combat_profile_toughness_regen_period: 1000
@@ -276,7 +272,6 @@ movement:
   dash_grab_distance_squared: 8.5
   dash_block_check_offset_y: -0.75
   dash_velocity_damping: 0.6
-  dash_downward_flat_check_multiplier: 3.0
   dash_particle_task_delay: 0
   dash_particle_task_period: 2
   dash_particle_timer_increment: 2
@@ -324,7 +319,6 @@ movement:
 world:
   
   block_interaction_allow_block_breaking: false
-  block_interaction_allow_block_placing: false
   block_interaction_respect_world_guard: true
   
   explosions_set_fire: false
@@ -377,9 +371,7 @@ hostile:
 
 
 umbral:
-
+  
   time_cutoff: 1.2
   time_scaling_factor: 9
   on_release: 3
-  waiting_timeout_ms: 8000
-  waiting_max_distance: 20.0

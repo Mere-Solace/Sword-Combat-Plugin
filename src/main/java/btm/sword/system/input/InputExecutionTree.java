@@ -17,6 +17,7 @@ import javax.annotation.Nullable;
 import btm.sword.config.Config;
 import btm.sword.system.control.SwordScheduler;
 import btm.sword.system.entity.impl.SwordPlayer;
+import btm.sword.utility.Debug;
 import btm.sword.utility.SwordTimeUnit;
 import lombok.Getter;
 import lombok.Setter;
@@ -327,6 +328,22 @@ public class InputExecutionTree {
         return true;
     }
 
+    public static final ActionContextPair NOOP = new ActionContextPair(
+        () -> new InputAction(
+            "NOOP",
+            c -> {
+                Debug.system("Noop action 'fired'");
+            },
+            c -> 0,
+            c -> true,
+            null,
+            c -> 0f,
+            false,
+            false,
+            false,
+            c -> 0),
+        c -> true);
+
     public record ActionContextPair(Supplier<InputAction> action, Predicate<SwordPlayer> context) { }
 
     /**
@@ -443,7 +460,14 @@ public class InputExecutionTree {
                 if (pair.context().test(owner)) {
                     if (dynamic) return pair.action().get();
                     if (pairCache == null) pairCache = new IdentityHashMap<>();
-                    return pairCache.computeIfAbsent(pair, p -> p.action().get());
+                    InputAction action = pairCache.computeIfAbsent(pair, p -> p.action().get());
+                    // TODO: allow for the ability to cast from different actions...?
+                    // Running into some issues here with healing and the NoOP, where the healing action
+                    // is available if holding blade, but S -> S should also be able to be fired, if the player does not want to continue healing...
+                    if (action.unableToCast(owner)) {
+                        continue;
+                    }
+                    return action;
                 }
             }
             return null;

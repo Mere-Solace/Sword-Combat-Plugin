@@ -3,6 +3,8 @@ package btm.sword.listeners;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
+import btm.sword.system.input.ActivationContext;
+
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -110,10 +112,8 @@ public class InputListener implements Listener {
             if (swordPlayer.isInInventorySession()) return;
             if (swordPlayer.hasPerformedDropAction()) return;
             if (swordPlayer.isDroppingInInv()) {
-                Debug.inventory("Left click detected because of a drop in inv...");
                 return;
             }
-            Debug.inventory("dropping checks are not quick enough apparently...");
 
             if ((action == Action.LEFT_CLICK_AIR || action == Action.LEFT_CLICK_BLOCK)) {
                 if (swordPlayer.handleItemInteraction(item, InputType.LEFT)) {
@@ -137,6 +137,7 @@ public class InputListener implements Listener {
                 if (swordPlayer.isAtRoot() &&
                     event.hasBlock() &&
                     InputUtil.isInteractible(event.getClickedBlock())) {
+                    // allow blocks like doors and levers to be used
                     return;
                 }
 

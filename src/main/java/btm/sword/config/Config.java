@@ -1162,12 +1162,12 @@ public class Config {
         ); }
 
         /** Health restored per tick while channeling. */
-        public static double CHANNEL_HEAL_AMOUNT = 1.0;
+        public static int CHANNEL_HEAL_AMOUNT = 1;
         static { register(
             "combat.channel_heal_amount",
-            CHANNEL_HEAL_AMOUNT, Double.class,
+            CHANNEL_HEAL_AMOUNT, Integer.class,
             v -> CHANNEL_HEAL_AMOUNT = v,
-            ConfigurationSection::getDouble
+            ConfigurationSection::getInt
         ); }
 
         /** Duration in milliseconds for the channel ability. */

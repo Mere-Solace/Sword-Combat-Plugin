@@ -515,7 +515,7 @@ public abstract class SwordEntity {
         // remove returns true only if the value reaches or goes below 0
         if (toughnessBroken) {
             // If Shards == 0 (dead)
-            if (aspects.shards().remove(baseNumShards)) {
+            if (changeShards(-baseNumShards)) {
                 onZeroHealth();
 
                 SwordScheduler.runBukkitTaskLater(() -> {
@@ -603,6 +603,29 @@ public abstract class SwordEntity {
      */
     public void displayShardLoss() {
         // TODO: later
+    }
+
+    /*
+     * May be negative
+     */
+    public boolean changeShards(int amount) {
+        if (amount < 0) {
+            return aspects.shards().remove(-1 * amount);
+        }
+        else {
+            aspects.shards().add(amount);
+            return false;
+        }
+    }
+
+    public boolean changeSoulfire(float amount) {
+        if (amount < 0) {
+            return aspects.soulfire().remove(-1 * amount);
+        }
+        else {
+            aspects.soulfire().add(amount);
+            return false;
+        }
     }
 
     /**

@@ -138,3 +138,5 @@ runs/
 
 # Local JDK installations
 jdk-*/
+
+.sdkmanrc

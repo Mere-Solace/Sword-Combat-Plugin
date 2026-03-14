@@ -214,14 +214,14 @@ public class UmbralStateMachine extends StateMachine<UmbralBlade> {
         addTransition(new Transition<>(
             AttackingQuickState.class,
             RecallingState.class,
-            b -> b.isAttackCompleted(),
+            UmbralBlade::isAttackCompleted,
             b -> {}
         ));
 
         addTransition(new Transition<>(
             AttackingHeavyState.class,
             RecallingState.class,
-            b -> b.isAttackCompleted(),
+            UmbralBlade::isAttackCompleted,
             b -> {}
         ));
 
@@ -242,7 +242,7 @@ public class UmbralStateMachine extends StateMachine<UmbralBlade> {
         addTransition(new Transition<>(
             GrabImpaleState.class,
             RecallingState.class,
-            b -> b.isFinishedLunging(),
+            UmbralBlade::isFinishedLunging,
             b -> {}
         ));
 
@@ -388,7 +388,7 @@ public class UmbralStateMachine extends StateMachine<UmbralBlade> {
         addTransition(new Transition<>(
             LungingState.class,
             RecallingState.class,
-            b -> b.isFinishedLunging(),
+            UmbralBlade::isFinishedLunging,
             b -> {}
         ));
 

@@ -9,6 +9,8 @@ import java.util.function.Supplier;
 
 import javax.annotation.Nullable;
 
+import btm.sword.system.action.UmbralBladeAction;
+
 import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -144,6 +146,10 @@ public class SwordPlayer extends Combatant {
     private long sneakHoldTimeStart;
     private long timeSneakHeld;
 
+    @Getter
+    @Setter
+    private TimeArbiter.TaskHandle healChannelTask;
+
     private int thrownItemIndex;
 
     private boolean swappingInInv;
@@ -254,6 +260,22 @@ public class SwordPlayer extends Combatant {
         targetEntityIndicatorTick();
 
         expBarTick();
+
+        boolean noHealChannelTask = healChannelTask == null;
+        boolean sneakingAndHolding = isSneakingAndHoldingRight();
+        boolean canHeal = canPerformHealAction();
+        boolean notMaxShards = aspects.shards().belowMax();
+        boolean holdingBlade = holdingUmbralBlade();
+
+        if (noHealChannelTask &&
+            sneakingAndHolding &&
+            canHeal &&
+            notMaxShards &&
+            holdingBlade) {
+
+            Debug.umbral("BEGIN HEAL CHANNEL");
+            UmbralBladeAction.beginHealChannel(this);
+        }
     }
 
     /**
@@ -338,6 +360,10 @@ public class SwordPlayer extends Combatant {
         );
     }
 
+    public boolean isSneakingAndHoldingRight() {
+        return player.isSneaking() && player.isBlocking();
+    }
+
     /**
      * Processes a player input of {@link InputType}, executing associated {@link InputAction}s
      * based on the input execution tree. Handles interrupting throwing, grabbing, swapping,
@@ -347,6 +373,10 @@ public class SwordPlayer extends Combatant {
      */
     public void act(InputType input) {
         if (ItemClassifier.isBlocked(getItemStackInHand(true))) return;
+
+        if (activationContext.equals(ActivationContext.CHANNELING)) {
+            activationContext = ActivationContext.NORMAL;
+        }
 
         if (throwingState()) {
             if (input != InputType.RIGHT && input != InputType.RIGHT_HOLD) {
@@ -926,15 +956,12 @@ public class SwordPlayer extends Combatant {
         holdingRight = true;
         rightHoldTimeStart = System.currentTimeMillis();
 
-        // TODO: #123 - Handle umbral blade holding
         mainItemStackAtTimeOfHold = getItemStackInHand(true);
         offItemStackAtTimeOfHold = getItemStackInHand(false);
 
         indexOfRightHold = getCurrentInvIndex();
 
         if (!holdingUmbralItemInMainHand()) {
-
-            // TODO: #123 - This is where to implement catches for start clicking different items
 
             if (!mainItemStackAtTimeOfHold.isEmpty() &&
                 !holdingUmbralItemInMainHand()) {
