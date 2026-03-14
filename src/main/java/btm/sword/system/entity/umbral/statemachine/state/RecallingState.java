@@ -1,5 +1,6 @@
 package btm.sword.system.entity.umbral.statemachine.state;
 
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
@@ -11,6 +12,8 @@ import btm.sword.system.entity.umbral.UmbralBlade;
 import btm.sword.system.entity.umbral.input.BladeRequest;
 import btm.sword.system.entity.umbral.statemachine.UmbralStateFacade;
 import btm.sword.utility.display.DisplayUtil;
+
+import org.jetbrains.annotations.NotNull;
 
 /**
  * State where the UmbralBlade is being recalled to the wielder.
@@ -49,19 +52,7 @@ public class RecallingState extends UmbralStateFacade {
     public void onEnter(UmbralBlade blade) {
         AtomicReference<Location> currentBladeLoc = new AtomicReference<>(blade.getDisplay().getLocation());
         AtomicReference<Location> previousBladeLoc = new AtomicReference<>(blade.getDisplay().getLocation());
-        final int[] stationaryCount = {0};
-
-        Supplier<Boolean> stationaryCheck = () -> {
-            currentBladeLoc.set(blade.getDisplay().getLocation());
-            Vector difference = currentBladeLoc.get().toVector().subtract(previousBladeLoc.get().toVector());
-            if (difference.lengthSquared() < EPSILON_SQUARED) {
-                stationaryCount[0]++;
-            } else {
-                stationaryCount[0] = 0;
-            }
-            previousBladeLoc.set(currentBladeLoc.get());
-            return stationaryCount[0] > MAX_STATIONARY_ITERATIONS;
-        };
+        final Supplier<Boolean> stationaryCheck = getBooleanSupplier(blade, currentBladeLoc, previousBladeLoc);
 
         returnTask = DisplayUtil.displaySlerpToOffset(
             blade.getThrower(), blade.getDisplay(),
@@ -69,9 +60,25 @@ public class RecallingState extends UmbralStateFacade {
             1.5, 5, 100, 1.5,
             false,
             80,
+            () -> blade.getThrower().isDashing(),
             stationaryCheck,
             () -> blade.request(BladeRequest.STANDBY)
         );
+    }
+
+    private static @NotNull Supplier<Boolean> getBooleanSupplier(UmbralBlade blade, AtomicReference<Location> currentBladeLoc, AtomicReference<Location> previousBladeLoc) {
+        AtomicInteger stationaryCount = new AtomicInteger(0);
+        return () -> {
+            currentBladeLoc.set(blade.getDisplay().getLocation());
+            Vector difference = currentBladeLoc.get().toVector().subtract(previousBladeLoc.get().toVector());
+            if (difference.lengthSquared() < EPSILON_SQUARED) {
+                stationaryCount.incrementAndGet();
+            } else {
+                stationaryCount.set(0);
+            }
+            previousBladeLoc.set(currentBladeLoc.get());
+            return stationaryCount.get() > MAX_STATIONARY_ITERATIONS;
+        };
     }
 
     @Override

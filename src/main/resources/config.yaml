@@ -314,6 +314,7 @@ movement:
   grab_max_range: 3.0
   grab_hold_duration: 40
   dash_flat_item_dash_distance_scaler: 0.5
+  dash_flat_height_upper: 1.0
 
 
 world:

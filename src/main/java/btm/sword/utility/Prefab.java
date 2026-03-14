@@ -238,7 +238,7 @@ public class Prefab {
 
     public static class PotionEffects {
         public static final PotionEffectWrapper DASH_SPEED = new PotionEffectWrapper(PotionEffectType.SPEED, Config.Movement.SPEED_DURATION, Config.Movement.SPEED_AMPLIFIER);
-        public static final PotionEffectWrapper HEAL_CHANNEL_SLOW = new PotionEffectWrapper(PotionEffectType.SLOWNESS, 1, 4); // TODO: config
+        public static final PotionEffectWrapper HEAL_CHANNEL_SLOW = new PotionEffectWrapper(PotionEffectType.SLOWNESS, Config.Combat.HEAL_CHANNEL_SLOW_DURATION, Config.Combat.HEAL_CHANNEL_SLOW_AMPLIFIER);
     }
 
     public static class Text {

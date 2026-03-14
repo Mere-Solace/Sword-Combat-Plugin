@@ -1,5 +1,7 @@
 package btm.sword.system.inventory.item;
 
+import java.util.List;
+
 import org.bukkit.Color;
 import org.bukkit.Material;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -12,13 +14,14 @@ import btm.sword.config.Config;
 import btm.sword.config.ConfigManager;
 import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.inventory.menu.EnumSelectionMenu;
+import btm.sword.system.item.ItemStackBuilder;
 import btm.sword.utility.ChatInputCapture;
 import btm.sword.utility.sound.SoundType;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import xyz.xenondevs.invui.item.ItemProvider;
-import xyz.xenondevs.invui.item.builder.ItemBuilder;
+import xyz.xenondevs.invui.item.ItemWrapper;
 import xyz.xenondevs.invui.item.impl.AbstractItem;
 
 /**
@@ -76,66 +79,73 @@ public class ConfigEntryItem extends AbstractItem {
 
         if (type == Boolean.class) {
             boolean val = config.getBoolean(path, defaultBoolean());
-            return new ItemBuilder(val ? Material.LIME_DYE : Material.GRAY_DYE)
-                .setDisplayName("§f" + path)
-                .addLoreLines(
-                    "§7Type: §fBoolean",
-                    "§7Value: " + (val ? "§aON" : "§cOFF"),
-                    "§7Default: §8" + entry.defaultValue,
-                    "§8Click to toggle"
-                );
+            return new ItemWrapper(new ItemStackBuilder(val ? Material.LIME_DYE : Material.GRAY_DYE)
+                .name(Component.text(path, NamedTextColor.WHITE))
+                .lore(List.of(
+                    Component.text("Type: ", NamedTextColor.GRAY).append(Component.text("Boolean", NamedTextColor.WHITE)),
+                    Component.text("Value: ", NamedTextColor.GRAY).append(val
+                        ? Component.text("ON", NamedTextColor.GREEN)
+                        : Component.text("OFF", NamedTextColor.RED)),
+                    Component.text("Default: ", NamedTextColor.GRAY).append(Component.text(String.valueOf(entry.defaultValue), NamedTextColor.DARK_GRAY)),
+                    Component.text("Click to toggle", NamedTextColor.DARK_GRAY)
+                ))
+                .build());
         }
 
         if (type == Integer.class) {
             int val = config.getInt(path, defaultInt());
-            return new ItemBuilder(Material.COMPARATOR)
-                .setDisplayName("§f" + path)
-                .addLoreLines(
-                    "§7Type: §fInteger",
-                    "§7Value: §e" + val,
-                    "§7Default: §8" + entry.defaultValue,
-                    "§8L/R: ±" + INT_STEP + "   Shift ×" + INT_SHIFT_STEP,
-                    "§8Shift+L: type a value"
-                );
+            return new ItemWrapper(new ItemStackBuilder(Material.COMPARATOR)
+                .name(Component.text(path, NamedTextColor.WHITE))
+                .lore(List.of(
+                    Component.text("Type: ", NamedTextColor.GRAY).append(Component.text("Integer", NamedTextColor.WHITE)),
+                    Component.text("Value: ", NamedTextColor.GRAY).append(Component.text(String.valueOf(val), NamedTextColor.YELLOW)),
+                    Component.text("Default: ", NamedTextColor.GRAY).append(Component.text(String.valueOf(entry.defaultValue), NamedTextColor.DARK_GRAY)),
+                    Component.text("L/R: \u00b1" + INT_STEP + "   Shift \u00d7" + INT_SHIFT_STEP, NamedTextColor.DARK_GRAY),
+                    Component.text("Shift+L: type a value", NamedTextColor.DARK_GRAY)
+                ))
+                .build());
         }
 
         if (type == Long.class) {
             long val = config.getLong(path, defaultLong());
-            return new ItemBuilder(Material.CLOCK)
-                .setDisplayName("§f" + path)
-                .addLoreLines(
-                    "§7Type: §fLong",
-                    "§7Value: §e" + val,
-                    "§7Default: §8" + entry.defaultValue,
-                    "§8L/R: ±" + LONG_STEP + "   Shift ×" + LONG_SHIFT_STEP,
-                    "§8Shift+L: type a value"
-                );
+            return new ItemWrapper(new ItemStackBuilder(Material.CLOCK)
+                .name(Component.text(path, NamedTextColor.WHITE))
+                .lore(List.of(
+                    Component.text("Type: ", NamedTextColor.GRAY).append(Component.text("Long", NamedTextColor.WHITE)),
+                    Component.text("Value: ", NamedTextColor.GRAY).append(Component.text(String.valueOf(val), NamedTextColor.YELLOW)),
+                    Component.text("Default: ", NamedTextColor.GRAY).append(Component.text(String.valueOf(entry.defaultValue), NamedTextColor.DARK_GRAY)),
+                    Component.text("L/R: \u00b1" + LONG_STEP + "   Shift \u00d7" + LONG_SHIFT_STEP, NamedTextColor.DARK_GRAY),
+                    Component.text("Shift+L: type a value", NamedTextColor.DARK_GRAY)
+                ))
+                .build());
         }
 
         if (type == Double.class) {
             double val = config.getDouble(path, defaultDouble());
-            return new ItemBuilder(Material.REPEATER)
-                .setDisplayName("§f" + path)
-                .addLoreLines(
-                    "§7Type: §fDouble",
-                    "§7Value: §e" + String.format("%.4f", val),
-                    "§7Default: §8" + entry.defaultValue,
-                    "§8L/R: ±" + DOUBLE_STEP + "   Shift ×" + (int)(DOUBLE_SHIFT_STEP / DOUBLE_STEP),
-                    "§8Shift+L: type a value"
-                );
+            return new ItemWrapper(new ItemStackBuilder(Material.REPEATER)
+                .name(Component.text(path, NamedTextColor.WHITE))
+                .lore(List.of(
+                    Component.text("Type: ", NamedTextColor.GRAY).append(Component.text("Double", NamedTextColor.WHITE)),
+                    Component.text("Value: ", NamedTextColor.GRAY).append(Component.text(String.format("%.4f", val), NamedTextColor.YELLOW)),
+                    Component.text("Default: ", NamedTextColor.GRAY).append(Component.text(String.valueOf(entry.defaultValue), NamedTextColor.DARK_GRAY)),
+                    Component.text("L/R: \u00b1" + DOUBLE_STEP + "   Shift \u00d7" + (int)(DOUBLE_SHIFT_STEP / DOUBLE_STEP), NamedTextColor.DARK_GRAY),
+                    Component.text("Shift+L: type a value", NamedTextColor.DARK_GRAY)
+                ))
+                .build());
         }
 
         if (type == Float.class) {
             float val = (float) config.getDouble(path, defaultFloat());
-            return new ItemBuilder(Material.REPEATER)
-                .setDisplayName("§f" + path)
-                .addLoreLines(
-                    "§7Type: §fFloat",
-                    "§7Value: §e" + String.format("%.4f", val),
-                    "§7Default: §8" + entry.defaultValue,
-                    "§8L/R: ±" + DOUBLE_STEP + "   Shift ×" + (int)(DOUBLE_SHIFT_STEP / DOUBLE_STEP),
-                    "§8Shift+L: type a value"
-                );
+            return new ItemWrapper(new ItemStackBuilder(Material.REPEATER)
+                .name(Component.text(path, NamedTextColor.WHITE))
+                .lore(List.of(
+                    Component.text("Type: ", NamedTextColor.GRAY).append(Component.text("Float", NamedTextColor.WHITE)),
+                    Component.text("Value: ", NamedTextColor.GRAY).append(Component.text(String.format("%.4f", val), NamedTextColor.YELLOW)),
+                    Component.text("Default: ", NamedTextColor.GRAY).append(Component.text(String.valueOf(entry.defaultValue), NamedTextColor.DARK_GRAY)),
+                    Component.text("L/R: \u00b1" + DOUBLE_STEP + "   Shift \u00d7" + (int)(DOUBLE_SHIFT_STEP / DOUBLE_STEP), NamedTextColor.DARK_GRAY),
+                    Component.text("Shift+L: type a value", NamedTextColor.DARK_GRAY)
+                ))
+                .build());
         }
 
         if (type.isEnum()) {
@@ -143,51 +153,61 @@ public class ConfigEntryItem extends AbstractItem {
             String currentName = stored != null ? stored : (entry.defaultValue instanceof Enum<?> e ? e.name() : "?");
             String defName = entry.defaultValue instanceof Enum<?> e ? e.name() : "?";
             Material mat = type == SoundType.class ? Material.NOTE_BLOCK : Material.PAPER;
-            String hint = type == SoundType.class ? "§8Click to browse  (R-click previews)" : "§8Click to browse";
-            return new ItemBuilder(mat)
-                .setDisplayName("§f" + path)
-                .addLoreLines(
-                    "§7Type: §f" + type.getSimpleName(),
-                    "§7Value: §e" + currentName,
-                    "§7Default: §8" + defName,
+            Component hint = type == SoundType.class
+                ? Component.text("Click to browse  (R-click previews)", NamedTextColor.DARK_GRAY)
+                : Component.text("Click to browse", NamedTextColor.DARK_GRAY);
+            return new ItemWrapper(new ItemStackBuilder(mat)
+                .name(Component.text(path, NamedTextColor.WHITE))
+                .lore(List.of(
+                    Component.text("Type: ", NamedTextColor.GRAY).append(Component.text(type.getSimpleName(), NamedTextColor.WHITE)),
+                    Component.text("Value: ", NamedTextColor.GRAY).append(Component.text(currentName, NamedTextColor.YELLOW)),
+                    Component.text("Default: ", NamedTextColor.GRAY).append(Component.text(defName, NamedTextColor.DARK_GRAY)),
                     hint
-                );
+                ))
+                .build());
         }
 
         if (type == Color.class) {
             Color val = Config.loadColor(config, path, defaultBukkitColor());
-            return new ItemBuilder(Material.MAGENTA_DYE)
-                .setDisplayName("§f" + path)
-                .addLoreLines(
-                    "§7Type: §fColor",
-                    "§7Value: §e" + colorToString(val),
-                    "§7Default: §8" + colorToString(defaultBukkitColor()),
-                    "§8Click to edit  (format: §fr, g, b§8)"
-                );
+            return new ItemWrapper(new ItemStackBuilder(Material.MAGENTA_DYE)
+                .name(Component.text(path, NamedTextColor.WHITE))
+                .lore(List.of(
+                    Component.text("Type: ", NamedTextColor.GRAY).append(Component.text("Color", NamedTextColor.WHITE)),
+                    Component.text("Value: ", NamedTextColor.GRAY).append(Component.text(colorToString(val), NamedTextColor.YELLOW)),
+                    Component.text("Default: ", NamedTextColor.GRAY).append(Component.text(colorToString(defaultBukkitColor()), NamedTextColor.DARK_GRAY)),
+                    Component.text("Click to edit  (format: ", NamedTextColor.DARK_GRAY)
+                        .append(Component.text("r, g, b", NamedTextColor.WHITE))
+                        .append(Component.text(")", NamedTextColor.DARK_GRAY))
+                ))
+                .build());
         }
 
         if (type == TextColor.class) {
             TextColor val = Config.loadTextColor(config, path, defaultTextColor());
-            return new ItemBuilder(Material.PAPER)
-                .setDisplayName("§f" + path)
-                .addLoreLines(
-                    "§7Type: §fTextColor",
-                    "§7Value: §e" + textColorToString(val),
-                    "§7Default: §8" + textColorToString(defaultTextColor()),
-                    "§8Click to edit  (format: §fr, g, b§8)"
-                );
+            return new ItemWrapper(new ItemStackBuilder(Material.PAPER)
+                .name(Component.text(path, NamedTextColor.WHITE))
+                .lore(List.of(
+                    Component.text("Type: ", NamedTextColor.GRAY).append(Component.text("TextColor", NamedTextColor.WHITE)),
+                    Component.text("Value: ", NamedTextColor.GRAY).append(Component.text(textColorToString(val), NamedTextColor.YELLOW)),
+                    Component.text("Default: ", NamedTextColor.GRAY).append(Component.text(textColorToString(defaultTextColor()), NamedTextColor.DARK_GRAY)),
+                    Component.text("Click to edit  (format: ", NamedTextColor.DARK_GRAY)
+                        .append(Component.text("r, g, b", NamedTextColor.WHITE))
+                        .append(Component.text(")", NamedTextColor.DARK_GRAY))
+                ))
+                .build());
         }
 
         // Read-only fallback for complex types
         String defStr = entry.defaultValue.toString();
         String defPreview = defStr.length() > 40 ? defStr.substring(0, 37) + "..." : defStr;
-        return new ItemBuilder(Material.KNOWLEDGE_BOOK)
-            .setDisplayName("§7" + path)
-            .addLoreLines(
-                "§7Type: §f" + type.getSimpleName(),
-                "§7Default: §8" + defPreview,
-                "§cRead-only"
-            );
+        return new ItemWrapper(new ItemStackBuilder(Material.KNOWLEDGE_BOOK)
+            .name(Component.text(path, NamedTextColor.GRAY))
+            .lore(List.of(
+                Component.text("Type: ", NamedTextColor.GRAY).append(Component.text(type.getSimpleName(), NamedTextColor.WHITE)),
+                Component.text("Default: ", NamedTextColor.GRAY).append(Component.text(defPreview, NamedTextColor.DARK_GRAY)),
+                Component.text("Read-only", NamedTextColor.RED)
+            ))
+            .build());
     }
 
     @Override
@@ -293,7 +313,7 @@ public class ConfigEntryItem extends AbstractItem {
 
         ChatInputCapture.prompt(player, prompt, input -> {
             if (input.equalsIgnoreCase("cancel")) {
-                swordPlayer.message("§7Cancelled.");
+                swordPlayer.message(Component.text("Cancelled.", NamedTextColor.GRAY));
                 reopenMenu.run();
                 return;
             }
@@ -307,9 +327,13 @@ public class ConfigEntryItem extends AbstractItem {
                 } else {
                     mgr.setValue((Config.ConfigEntry<Float>) entry, Float.parseFloat(input));
                 }
-                swordPlayer.message("§aSet §f" + path + " §a= §e" + input);
+                swordPlayer.message(Component.text("Set ", NamedTextColor.GREEN)
+                    .append(Component.text(path, NamedTextColor.WHITE))
+                    .append(Component.text(" = ", NamedTextColor.GREEN))
+                    .append(Component.text(input, NamedTextColor.YELLOW)));
             } catch (NumberFormatException ex) {
-                swordPlayer.message("§cInvalid number: §f" + input);
+                swordPlayer.message(Component.text("Invalid number: ", NamedTextColor.RED)
+                    .append(Component.text(input, NamedTextColor.WHITE)));
             }
             reopenMenu.run();
         });
@@ -326,7 +350,9 @@ public class ConfigEntryItem extends AbstractItem {
             ? textColorToString(Config.loadTextColor(config, path, defaultTextColor()))
             : colorToString(Config.loadColor(config, path, defaultBukkitColor()));
 
-        Component prompt = Component.text("Enter §fr, g, b §e(0–255) for ", NamedTextColor.YELLOW)
+        Component prompt = Component.text("Enter ", NamedTextColor.YELLOW)
+            .append(Component.text("r, g, b", NamedTextColor.WHITE))
+            .append(Component.text(" (0\u2013255) for ", NamedTextColor.YELLOW))
             .append(Component.text(path, NamedTextColor.WHITE))
             .append(Component.text(" (current: ", NamedTextColor.YELLOW))
             .append(Component.text(current, NamedTextColor.GREEN))
@@ -334,14 +360,17 @@ public class ConfigEntryItem extends AbstractItem {
 
         ChatInputCapture.prompt(player, prompt, input -> {
             if (input.equalsIgnoreCase("cancel")) {
-                swordPlayer.message("§7Cancelled.");
+                swordPlayer.message(Component.text("Cancelled.", NamedTextColor.GRAY));
                 reopenMenu.run();
                 return;
             }
             try {
                 String[] parts = input.split("[,\\s_]+");
                 if (parts.length != 3) {
-                    swordPlayer.message("§cExpected format: §fr, g, b §c— got: §f" + input);
+                    swordPlayer.message(Component.text("Expected format: ", NamedTextColor.RED)
+                        .append(Component.text("r, g, b", NamedTextColor.WHITE))
+                        .append(Component.text(" \u2014 got: ", NamedTextColor.RED))
+                        .append(Component.text(input, NamedTextColor.WHITE)));
                     reopenMenu.run();
                     return;
                 }
@@ -349,7 +378,7 @@ public class ConfigEntryItem extends AbstractItem {
                 int g = Integer.parseInt(parts[1].trim());
                 int b = Integer.parseInt(parts[2].trim());
                 if (r < 0 || r > 255 || g < 0 || g > 255 || b < 0 || b > 255) {
-                    swordPlayer.message("§cEach channel must be 0–255.");
+                    swordPlayer.message(Component.text("Each channel must be 0\u2013255.", NamedTextColor.RED));
                     reopenMenu.run();
                     return;
                 }
@@ -358,9 +387,13 @@ public class ConfigEntryItem extends AbstractItem {
                 } else {
                     mgr.setValue((Config.ConfigEntry<Color>) entry, Color.fromRGB(r, g, b));
                 }
-                swordPlayer.message("§aSet §f" + path + " §a= §er=" + r + " g=" + g + " b=" + b);
+                swordPlayer.message(Component.text("Set ", NamedTextColor.GREEN)
+                    .append(Component.text(path, NamedTextColor.WHITE))
+                    .append(Component.text(" = ", NamedTextColor.GREEN))
+                    .append(Component.text("r=" + r + " g=" + g + " b=" + b, NamedTextColor.YELLOW)));
             } catch (NumberFormatException ex) {
-                swordPlayer.message("§cInvalid number in: §f" + input);
+                swordPlayer.message(Component.text("Invalid number in: ", NamedTextColor.RED)
+                    .append(Component.text(input, NamedTextColor.WHITE)));
             }
             reopenMenu.run();
         });

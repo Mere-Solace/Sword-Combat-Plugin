@@ -46,9 +46,8 @@ public class UmbralStateMachine extends StateMachine<UmbralBlade> {
     /**
      * Registers all FSM transitions. Called once after construction.
      *
-     * @param blade the UmbralBlade instance that owns this state machine
      */
-    public void initTransitions(UmbralBlade blade) {
+    public void initTransitions() {
         // =====================================================================
         // UNIVERSAL — wildcard transitions
         // =====================================================================
@@ -266,6 +265,13 @@ public class UmbralStateMachine extends StateMachine<UmbralBlade> {
 
         addTransition(new Transition<>(
             WaitingState.class,
+            WieldState.class,
+            b -> b.isRequestedAndActive(BladeRequest.WIELD),
+            b -> {}
+        ));
+
+        addTransition(new Transition<>(
+            WaitingState.class,
             LungingState.class,
             b -> b.isRequestedAndActive(BladeRequest.LUNGE),
             b -> {}
@@ -327,6 +333,13 @@ public class UmbralStateMachine extends StateMachine<UmbralBlade> {
             RecallingState.class,
             AttackingHeavyState.class,
             b -> b.isRequestedAndActive(BladeRequest.ATTACK_HEAVY),
+            b -> {}
+        ));
+
+        addTransition(new Transition<>(
+            RecallingState.class,
+            WaitingState.class,
+            b -> b.isRequestedAndActive(BladeRequest.WAITING),
             b -> {}
         ));
 
@@ -456,6 +469,7 @@ public class UmbralStateMachine extends StateMachine<UmbralBlade> {
         if (stateClass == LodgedState.class) return Config.SwordColor.LODGED_GLOW;
         if (stateClass == GrabImpaleState.class) return Config.SwordColor.GRAB_IMPALE_GLOW;
         if (stateClass == RecallingState.class) return Config.SwordColor.RECALL_GLOW;
+        if (stateClass == WaitingState.class) return Config.SwordColor.UMBRAL_GLOW;
         return null;
     }
 }

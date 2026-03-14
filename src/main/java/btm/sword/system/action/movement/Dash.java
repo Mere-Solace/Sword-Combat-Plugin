@@ -91,8 +91,9 @@ public class Dash {
     }
 
     private ItemDisplay findTargetedItem(Location eyeLoc) {
-        if (executor.getItemStackInHand(true).isEmpty() || executor.holdingSoulLink()) {
-            return retrieveTargetedItemDisplayIfInteractive(eyeLoc, executor.self());
+        boolean holdingLink = executor.holdingSoulLink();
+        if (executor.getItemStackInHand(true).isEmpty() || holdingLink) {
+            return retrieveTargetedItemDisplayIfInteractive(eyeLoc, executor.self(), holdingLink);
         }
         return null;
     }
@@ -122,17 +123,32 @@ public class Dash {
         scheduleParticleDisplay(executor);
     }
 
-    private ItemDisplay retrieveTargetedItemDisplayIfInteractive(Location eyeLocation, LivingEntity dashingEntity) {
-        return (ItemDisplay) HitboxUtil.ray(
+    private ItemDisplay retrieveTargetedItemDisplayIfInteractive(Location eyeLocation, LivingEntity dashingEntity, boolean holdingLink) {
+        ItemDisplay itemDisplay = (ItemDisplay) HitboxUtil.ray(
             eyeLocation,
             eyeLocation.getDirection(),
             MAX_STRAIGHT_DASH_DISTANCE.get(),
             Config.Movement.DASH_RAY_HITBOX_RADIUS,
-            entity -> (entity.getType() == EntityType.ITEM_DISPLAY &&
-                !entity.isDead() &&
-                entity instanceof ItemDisplay id &&
-                InteractiveItemArbiter.checkIfInteractive(id)) &&
-                !InteractiveItemArbiter.isImpaling(SwordEntityArbiter.get(dashingEntity), id));
+            entity -> {
+                if (!(entity instanceof ItemDisplay id)) {
+                    return false;
+                }
+
+                boolean interactable = (entity.getType() == EntityType.ITEM_DISPLAY &&
+                    !entity.isDead() &&
+                    InteractiveItemArbiter.checkIfInteractive(id)) &&
+                    !InteractiveItemArbiter.isImpaling(SwordEntityArbiter.get(dashingEntity), id);
+
+                if (!holdingLink) {
+                    return interactable && !InteractiveItemArbiter.isUmbralBlade(id);
+                }
+
+                return interactable;
+            });
+
+        if (itemDisplay != null) Debug.movement("retrieveTargeted.. itemDisplay=" + itemDisplay.getName());
+
+        return itemDisplay;
     }
 
     @SuppressWarnings("all")
@@ -149,8 +165,8 @@ public class Dash {
         // Since dashing to an item in the air is only a forward action,
         // we should only check if the dash is a 'flat dash' if the direction is forward
 
-        if (flatDash && !umbral) {
-            performFlatDashToItemFromGround(length);
+        if (flatDash) {
+            performFlatDashToItemFromGround(itemDisplay, length);
         }
         else {
             executor.setVelocity(executor.dir()
@@ -188,10 +204,12 @@ public class Dash {
         return true;
     }
 
-    private void performFlatDashToItemFromGround(double distanceToItem) {
-        executor.setVelocity(executor.dir()
-            .add(Config.Direction.UP().multiply(Config.Movement.DASH_FLAT_ITEM_DASH_UPWARD_SCALER)));
-
+    private void performFlatDashToItemFromGround(ItemDisplay itemDisplay, double distanceToItem) {
+        double heightDiff = itemDisplay.getLocation().getY() - ex.getLocation().getY();
+        if (heightDiff <= Config.Movement.DASH_FLAT_HEIGHT_UPPER && heightDiff > Config.Movement.DASH_FLAT_HEIGHT_LOWER) {
+            executor.setVelocity(executor.dir()
+                .add(Config.Direction.UP().multiply(Config.Movement.DASH_FLAT_ITEM_DASH_UPWARD_SCALER)));
+        }
         SwordScheduler.runBukkitTaskLater(() ->
             executor.setVelocity(executor.dir().multiply(Math.log(distanceToItem * Config.Movement.DASH_FLAT_ITEM_DASH_DISTANCE_SCALER))),
             100, TimeUnit.MILLISECONDS

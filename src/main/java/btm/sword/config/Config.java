@@ -336,7 +336,7 @@ public class Config {
             Config::loadTextColor
         ); }
 
-        public static Color UMBRAL_GLOW = Color.fromRGB(255, 255, 255);
+        public static Color UMBRAL_GLOW = Color.fromRGB(36, 8, 8);
         static { register("color.umbral_glow",
             UMBRAL_GLOW, Color.class,
             v -> UMBRAL_GLOW = v,
@@ -357,21 +357,21 @@ public class Config {
             Config::loadColor
         ); }
 
-        public static @Nullable Color ATTACK_QUICK_GLOW = Color.fromRGB(0, 220, 255);
+        public static @Nullable Color ATTACK_QUICK_GLOW = Color.fromRGB(181, 121, 27);
         static { register("color.attack_quick_glow",
             ATTACK_QUICK_GLOW, Color.class,
             v -> ATTACK_QUICK_GLOW = v,
             Config::loadColor
         ); }
 
-        public static @Nullable Color LUNGE_GLOW = Color.fromRGB(255, 180, 0);
+        public static @Nullable Color LUNGE_GLOW = Color.fromRGB(255, 0, 0);
         static { register("color.lunge_glow",
             LUNGE_GLOW, Color.class,
             v -> LUNGE_GLOW = v,
             Config::loadColor
         ); }
 
-        public static @Nullable Color LODGED_GLOW = Color.fromRGB(170, 0, 255);
+        public static @Nullable Color LODGED_GLOW = Color.fromRGB(0, 0, 0);
         static { register("color.lodged_glow",
             LODGED_GLOW, Color.class,
             v -> LODGED_GLOW = v,
@@ -385,7 +385,7 @@ public class Config {
             Config::loadColor
         ); }
 
-        public static @Nullable Color RECALL_GLOW = Color.fromRGB(0, 210, 180);
+        public static @Nullable Color RECALL_GLOW = Color.fromRGB(255, 118, 135);
         static { register("color.recall_glow",
             RECALL_GLOW, Color.class,
             v -> RECALL_GLOW = v,
@@ -1220,6 +1220,33 @@ public class Config {
             v -> CHANNEL_DURATION_MS = v,
             (section, path, def) -> section.getLong(path, def)
         ); }
+
+        /** Period in milliseconds between each heal tick during channel. */
+        public static int CHANNEL_HEAL_PERIOD = 50;
+        static { register(
+            "combat.channel_heal_period",
+            CHANNEL_HEAL_PERIOD, Integer.class,
+            v -> CHANNEL_HEAL_PERIOD = v,
+            ConfigurationSection::getInt
+        ); }
+
+        /** Slowness potion duration (ticks) applied during heal channel. */
+        public static int HEAL_CHANNEL_SLOW_DURATION = 1;
+        static { register(
+            "combat.heal_channel_slow_duration",
+            HEAL_CHANNEL_SLOW_DURATION, Integer.class,
+            v -> HEAL_CHANNEL_SLOW_DURATION = v,
+            ConfigurationSection::getInt
+        ); }
+
+        /** Slowness potion amplifier (0-based level) applied during heal channel. */
+        public static int HEAL_CHANNEL_SLOW_AMPLIFIER = 4;
+        static { register(
+            "combat.heal_channel_slow_amplifier",
+            HEAL_CHANNEL_SLOW_AMPLIFIER, Integer.class,
+            v -> HEAL_CHANNEL_SLOW_AMPLIFIER = v,
+            ConfigurationSection::getInt
+        ); }
     }
     //endregion
 
@@ -1422,6 +1449,15 @@ public class Config {
             ITEM_DISPLAY_FOLLOW_BILLBOARD_MODE, Billboard.class,
             v -> ITEM_DISPLAY_FOLLOW_BILLBOARD_MODE = v,
             (s, p, d) -> loadEnum(s, p, d, Billboard.class)
+        ); }
+
+        /** Number of display steps per attack animation. */
+        public static int ATTACK_DISPLAY_STEPS = 10;
+        static { register(
+            "display.attack_display_steps",
+            ATTACK_DISPLAY_STEPS, Integer.class,
+            v -> ATTACK_DISPLAY_STEPS = v,
+            ConfigurationSection::getInt
         ); }
 
         // Particles configuration
@@ -2010,6 +2046,24 @@ public class Config {
             "movement.dash_flat_item_dash_distance_scaler",
             DASH_FLAT_ITEM_DASH_DISTANCE_SCALER, Double.class,
             v -> DASH_FLAT_ITEM_DASH_DISTANCE_SCALER = v,
+            ConfigurationSection::getDouble
+        ); }
+
+        /** Upper height difference threshold for applying upward boost in flat item dash. */
+        public static double DASH_FLAT_HEIGHT_UPPER = 2.0;
+        static { register(
+            "movement.dash_flat_height_upper",
+            DASH_FLAT_HEIGHT_UPPER, Double.class,
+            v -> DASH_FLAT_HEIGHT_UPPER = v,
+            ConfigurationSection::getDouble
+        ); }
+
+        /** Lower height difference threshold for applying upward boost in flat item dash. */
+        public static double DASH_FLAT_HEIGHT_LOWER = -3.0;
+        static { register(
+            "movement.dash_flat_height_lower",
+            DASH_FLAT_HEIGHT_LOWER, Double.class,
+            v -> DASH_FLAT_HEIGHT_LOWER = v,
             ConfigurationSection::getDouble
         ); }
 
@@ -2846,21 +2900,48 @@ public class Config {
         ); }
 
         /** Timeout in milliseconds before Waiting state transitions. */
-        public static long WAITING_TIMEOUT_MS = 8000;
+        public static long WAITING_TIMEOUT_MS = 500000; // 25000 seconds
         static { register(
             "umbral.waiting_timeout_ms",
             WAITING_TIMEOUT_MS, Long.class,
             v -> WAITING_TIMEOUT_MS = v,
-            (section, path, def) -> section.getLong(path, def)
+            ConfigurationSection::getLong
         ); }
 
         /** Maximum distance the blade can be from player while in Waiting state. */
-        public static double WAITING_MAX_DISTANCE = 20.0;
+        public static double WAITING_MAX_DISTANCE = 35.0;
         static { register(
             "umbral.waiting_max_distance",
             WAITING_MAX_DISTANCE, Double.class,
             v -> WAITING_MAX_DISTANCE = v,
             ConfigurationSection::getDouble
+        ); }
+
+        /** Initial delay in milliseconds before the wield-on-grab timer starts. */
+        public static int WIELD_ON_GRAB_DELAY = 0;
+        static { register(
+            "umbral.wield_on_grab_delay",
+            WIELD_ON_GRAB_DELAY, Integer.class,
+            v -> WIELD_ON_GRAB_DELAY = v,
+            ConfigurationSection::getInt
+        ); }
+
+        /** Period in milliseconds between each wield request during grab. */
+        public static int WIELD_ON_GRAB_PERIOD = 50;
+        static { register(
+            "umbral.wield_on_grab_period",
+            WIELD_ON_GRAB_PERIOD, Integer.class,
+            v -> WIELD_ON_GRAB_PERIOD = v,
+            ConfigurationSection::getInt
+        ); }
+
+        /** Maximum number of wield request iterations during grab. */
+        public static int WIELD_ON_GRAB_ITERATIONS = 10;
+        static { register(
+            "umbral.wield_on_grab_iterations",
+            WIELD_ON_GRAB_ITERATIONS, Integer.class,
+            v -> WIELD_ON_GRAB_ITERATIONS = v,
+            ConfigurationSection::getInt
         ); }
     }
     //endregion

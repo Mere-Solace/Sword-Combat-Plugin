@@ -4,6 +4,7 @@ import btm.sword.config.Config;
 import btm.sword.system.entity.umbral.UmbralBlade;
 import btm.sword.system.entity.umbral.input.BladeRequest;
 import btm.sword.system.entity.umbral.statemachine.UmbralStateFacade;
+import btm.sword.utility.Prefab;
 
 /**
  * State where the UmbralBlade hovers at a fixed world position after being parked.
@@ -67,6 +68,8 @@ public class WaitingState extends UmbralStateFacade {
         }
 
         if (blade.getDisplay() == null || !blade.getDisplay().isValid()) return;
+
+        Prefab.Particles.LANDING_STREAM.display(blade.getDisplay().getLocation());
 
         double maxDist = Config.UmbralBlade.WAITING_MAX_DISTANCE;
         double distSq = blade.getThrower().self().getLocation()

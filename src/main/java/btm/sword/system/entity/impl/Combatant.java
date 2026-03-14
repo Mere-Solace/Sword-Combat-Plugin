@@ -48,6 +48,7 @@ public abstract class Combatant extends SwordEntity {
 
     private int airDashesPerformed;
     protected Vector dashDirection;
+    protected boolean dashing;
 
     private boolean isGrabbing = false;
     private SwordEntity grabbedEntity;
@@ -290,7 +291,7 @@ public abstract class Combatant extends SwordEntity {
         return canPerformAction() &&
             umbralBlade != null &&
             umbralBlade.inState(WieldState.class) &&
-            aspects.soulfireCur() > 50 && // TODO config this val.
+            aspects.soulfireCur() > Config.Combat.CHANNEL_SOULFIRE_COST &&
             aspects.shards().belowMax();
     }
 
@@ -322,24 +323,12 @@ public abstract class Combatant extends SwordEntity {
         return canPerformAction() && getAirDashesPerformed() < getCombatProfile().getMaxAirDodges();
     }
 
-    /**
-     * Checks if the combatant can perform a throw action.
-     * Requires action availability, main hand holding an appropriate throwable item,
-     * and off hand holding a shield.
-     *
-     * @return true if throwing is possible, false otherwise
-     */
-    public boolean canThrow() {
-        ItemStack main = getItemStackInHand(true);
-        ItemStack off = getItemStackInHand(false);
-
-        boolean throwable =
-                        !main.getType().equals(Material.CROSSBOW) &&
-                        !main.getType().equals(Material.BOW) &&
-                        !main.getType().isEdible() &&
-                        !main.getType().isAir();
-
-        return canPerformAction() && throwable && off.getType().equals(Material.SHIELD);
+    public void setDashing(int duration) {
+        dashing = true;
+        SwordScheduler.runBukkitTaskLater(
+            () -> dashing = false,
+            duration, TimeUnit.MILLISECONDS
+        );
     }
 
     /**

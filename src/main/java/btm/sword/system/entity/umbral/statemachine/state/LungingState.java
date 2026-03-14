@@ -19,7 +19,6 @@ public class LungingState extends UmbralStateFacade {
         blade.setTimeScalingFactor(Config.UmbralBlade.LUNGE_TIME_SCALING_FACTOR);
         blade.setCtrlPointsForLunge(AttackType.LUNGE1.controlVectors());
         blade.initFlight(Config.UmbralBlade.LUNGE_ON_RELEASE_VELOCITY);
-
     }
 
     @Override

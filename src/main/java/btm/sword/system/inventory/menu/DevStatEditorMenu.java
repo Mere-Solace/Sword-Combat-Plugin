@@ -2,6 +2,7 @@ package btm.sword.system.inventory.menu;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -19,7 +20,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import xyz.xenondevs.invui.gui.Gui;
 import xyz.xenondevs.invui.item.ItemProvider;
-import xyz.xenondevs.invui.item.builder.ItemBuilder;
+import xyz.xenondevs.invui.item.ItemWrapper;
 import xyz.xenondevs.invui.item.impl.AbstractItem;
 import xyz.xenondevs.invui.item.impl.SimpleItem;
 import xyz.xenondevs.invui.window.Window;
@@ -104,28 +105,29 @@ public class DevStatEditorMenu extends Menu {
             @Override
             public ItemProvider getItemProvider() {
                 Material mat = aspectMaterial(aspect.type);
-                ItemBuilder builder = new ItemBuilder(mat)
-                    .setDisplayName("§e" + aspect.type.name());
-
+                List<Component> lore = new ArrayList<>();
                 if (isResource) {
                     Resource r = (Resource) aspect;
-                    builder.addLoreLines(
-                        String.format("§7Base max: §f%.1f", r.getBaseValue()),
-                        String.format("§7Regen period: §f%d ticks", r.getBaseRegenPeriod()),
-                        String.format("§7Regen amount: §f%.2f", r.getBaseRegenAmount()),
-                        "",
-                        "§8L-click: set base max",
-                        "§8R-click: set regen period",
-                        "§8Shift+L: set regen amount"
-                    );
+                    lore.add(Component.text("Base max: ", NamedTextColor.GRAY)
+                        .append(Component.text(String.format("%.1f", r.getBaseValue()), NamedTextColor.WHITE)));
+                    lore.add(Component.text("Regen period: ", NamedTextColor.GRAY)
+                        .append(Component.text(r.getBaseRegenPeriod() + " ticks", NamedTextColor.WHITE)));
+                    lore.add(Component.text("Regen amount: ", NamedTextColor.GRAY)
+                        .append(Component.text(String.format("%.2f", r.getBaseRegenAmount()), NamedTextColor.WHITE)));
+                    lore.add(Component.empty());
+                    lore.add(Component.text("L-click: set base max", NamedTextColor.DARK_GRAY));
+                    lore.add(Component.text("R-click: set regen period", NamedTextColor.DARK_GRAY));
+                    lore.add(Component.text("Shift+L: set regen amount", NamedTextColor.DARK_GRAY));
                 } else {
-                    builder.addLoreLines(
-                        String.format("§7Base value: §f%.1f", aspect.getBaseValue()),
-                        "",
-                        "§8Click: set base value"
-                    );
+                    lore.add(Component.text("Base value: ", NamedTextColor.GRAY)
+                        .append(Component.text(String.format("%.1f", aspect.getBaseValue()), NamedTextColor.WHITE)));
+                    lore.add(Component.empty());
+                    lore.add(Component.text("Click: set base value", NamedTextColor.DARK_GRAY));
                 }
-                return builder;
+                return new ItemWrapper(new ItemStackBuilder(mat)
+                    .name(Component.text(aspect.type.name(), NamedTextColor.YELLOW))
+                    .lore(lore)
+                    .build());
             }
 
             @Override
@@ -136,7 +138,10 @@ public class DevStatEditorMenu extends Menu {
                         promptFloat(p, "base max for " + aspect.type.name(), val -> {
                             r.setBaseValue(val);
                             notifyWindows();
-                            swordPlayer.message("§aSet " + aspect.type.name() + " base max = §e" + val);
+                            swordPlayer.message(Component.text("Set ", NamedTextColor.GREEN)
+                                .append(Component.text(aspect.type.name() + " base max", NamedTextColor.WHITE))
+                                .append(Component.text(" = ", NamedTextColor.GREEN))
+                                .append(Component.text(String.valueOf(val), NamedTextColor.YELLOW)));
                         });
                     } else if (clickType == ClickType.RIGHT) {
                         promptInt(p, "regen period (ticks) for " + aspect.type.name(), val -> {
@@ -144,27 +149,36 @@ public class DevStatEditorMenu extends Menu {
                             r.setBaseRegenPeriod(val);
                             r.startRegenTask();
                             notifyWindows();
-                            swordPlayer.message("§aSet " + aspect.type.name() + " regen period = §e" + val + " ticks");
+                            swordPlayer.message(Component.text("Set ", NamedTextColor.GREEN)
+                                .append(Component.text(aspect.type.name() + " regen period", NamedTextColor.WHITE))
+                                .append(Component.text(" = ", NamedTextColor.GREEN))
+                                .append(Component.text(val + " ticks", NamedTextColor.YELLOW)));
                         });
                     } else if (clickType == ClickType.SHIFT_LEFT) {
                         promptFloat(p, "regen amount for " + aspect.type.name(), val -> {
                             r.setBaseRegenAmount(val);
                             notifyWindows();
-                            swordPlayer.message("§aSet " + aspect.type.name() + " regen amount = §e" + val);
+                            swordPlayer.message(Component.text("Set ", NamedTextColor.GREEN)
+                                .append(Component.text(aspect.type.name() + " regen amount", NamedTextColor.WHITE))
+                                .append(Component.text(" = ", NamedTextColor.GREEN))
+                                .append(Component.text(String.valueOf(val), NamedTextColor.YELLOW)));
                         });
                     }
                 } else {
                     promptFloat(p, "base value for " + aspect.type.name(), val -> {
                         aspect.setBaseValue(val);
                         notifyWindows();
-                        swordPlayer.message("§aSet " + aspect.type.name() + " base value = §e" + val);
+                        swordPlayer.message(Component.text("Set ", NamedTextColor.GREEN)
+                            .append(Component.text(aspect.type.name() + " base value", NamedTextColor.WHITE))
+                            .append(Component.text(" = ", NamedTextColor.GREEN))
+                            .append(Component.text(String.valueOf(val), NamedTextColor.YELLOW)));
                     });
                 }
             }
         };
     }
 
-    private void promptFloat(Player p, String label, java.util.function.Consumer<Float> onValue) {
+    private void promptFloat(Player p, String label, Consumer<Float> onValue) {
         ChatInputCapture.prompt(p,
             Component.text("Enter " + label + ":", NamedTextColor.YELLOW),
             input -> {
@@ -173,14 +187,15 @@ public class DevStatEditorMenu extends Menu {
                     float val = Float.parseFloat(input);
                     onValue.accept(val);
                 } catch (NumberFormatException ignored) {
-                    swordPlayer.message("§cInvalid number: " + input);
+                    swordPlayer.message(Component.text("Invalid number: ", NamedTextColor.RED)
+                        .append(Component.text(input, NamedTextColor.WHITE)));
                 }
                 open();
             }
         );
     }
 
-    private void promptInt(Player p, String label, java.util.function.Consumer<Integer> onValue) {
+    private void promptInt(Player p, String label, Consumer<Integer> onValue) {
         ChatInputCapture.prompt(p,
             Component.text("Enter " + label + ":", NamedTextColor.YELLOW),
             input -> {
@@ -189,7 +204,8 @@ public class DevStatEditorMenu extends Menu {
                     int val = Integer.parseInt(input.trim());
                     onValue.accept(val);
                 } catch (NumberFormatException ignored) {
-                    swordPlayer.message("§cInvalid integer: " + input);
+                    swordPlayer.message(Component.text("Invalid integer: ", NamedTextColor.RED)
+                        .append(Component.text(input, NamedTextColor.WHITE)));
                 }
                 open();
             }

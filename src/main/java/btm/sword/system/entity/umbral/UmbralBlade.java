@@ -5,6 +5,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
+import btm.sword.system.control.PredicateRunnablePair;
+
+import btm.sword.system.entity.umbral.statemachine.state.WieldState;
+
 import org.bukkit.FluidCollisionMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -156,7 +160,7 @@ public class UmbralBlade extends ThrownItem {
         loadBasicAttacks();
 
         this.bladeStateMachine = new UmbralStateMachine(this, new SheathedState());
-        bladeStateMachine.initTransitions(this);
+        bladeStateMachine.initTransitions();
 
         exitImpalementStatePredicate = blade -> !inState(LodgedState.class);
 
@@ -212,48 +216,41 @@ public class UmbralBlade extends ThrownItem {
                 new Quaternionf().rotationY((float) Math.PI / 2).rotateZ(-(float) Math.PI / 1.65f),
                 scale,
                 new Quaternionf());
-        }
-        else if (state == StandbyState.class) {
+        } else if (state == StandbyState.class) {
             return new Transformation(
                 new Vector3f(),
                 new Quaternionf().rotationY(0).rotateZ((float) Math.PI),
                 scale,
                 new Quaternionf());
-        }
-        else if (state == RecallingState.class) {
+        } else if (state == RecallingState.class) {
             return new Transformation(
                 new Vector3f(),
                 new Quaternionf().rotateX((float) -Math.PI/2),
                 scale,
                 new Quaternionf());
-        }
-        else if (state == LungingState.class) {
+        } else if (state == LungingState.class) {
             return new Transformation(
                 new Vector3f(),
                 new Quaternionf().rotateX((float) Math.PI/2),
                 scale,
                 new Quaternionf()
             );
-        }
-        else if (state == GrabImpaleState.class) {
+        } else if (state == GrabImpaleState.class) {
             return new Transformation(
                 new Vector3f(),
                 new Quaternionf().rotateX((float) -Math.PI/2),
                 scale,
                 new Quaternionf()
             );
-        }
-        else if (state == LodgedState.class) {
+        } else if (state == LodgedState.class) {
             return display.getTransformation();
-        }
-        else if (state == AttackingQuickState.class || state == AttackingHeavyState.class) {
+        } else if (state == AttackingQuickState.class || state == AttackingHeavyState.class) {
             return new Transformation(
                 new Vector3f(0, 0, -1),
                 new Quaternionf().rotateX((float) Math.PI/2),
                 scale,
                 new Quaternionf());
-        }
-        else {
+        } else {
             return new Transformation(
                 new Vector3f(),
                 new Quaternionf().rotateZ((float) Math.PI),
@@ -464,27 +461,21 @@ public class UmbralBlade extends ThrownItem {
         }
 
         if (combatant.holdingUmbralItemInMainHand()) {
-            if (inState(LungingState.class) ||
-                inState(AttackingHeavyState.class) ||
-                inState(AttackingQuickState.class)) {
-//                thrower.setVelocity(thrower.self().getVelocity().add(to.clone().multiply(1.5)));
-            }
+            TimeArbiter.runFixedIterationTaskTimer(
+                null,
+                () -> request(BladeRequest.WIELD),
+                Config.UmbralBlade.WIELD_ON_GRAB_DELAY, Config.UmbralBlade.WIELD_ON_GRAB_PERIOD, Config.UmbralBlade.WIELD_ON_GRAB_ITERATIONS,
+                UmbralBlade.class,
+                "onGrab",
+                new PredicateRunnablePair(
+                    () -> inState(WieldState.class),
+                    () -> {}
+                )
+            );
 
-            request(BladeRequest.WIELD);
         }
         else {
-            if (isDashing()) {
-                if (combatant.self().isOnGround()) {
-                    reclaimType = ReclaimType.OVERHEAD_SLAM;
-                    currentComboStep = 0;
-                    request(BladeRequest.ATTACK_QUICK);
-                } else {
-                    reclaimType = ReclaimType.AERIAL_SPIKE;
-                    request(BladeRequest.ATTACK_HEAVY);
-                }
-            } else {
-                request(BladeRequest.STANDBY);
-            }
+            request(BladeRequest.STANDBY);
         }
     }
 

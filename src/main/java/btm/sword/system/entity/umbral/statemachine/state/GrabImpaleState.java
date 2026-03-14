@@ -65,6 +65,7 @@ public class GrabImpaleState extends UmbralStateFacade {
                     thrower.isDead() ||
                     !thrower.getUmbralBlade().inState(GrabImpaleState.class);
             },
+            () -> false,
             () -> attackTask = SwordScheduler.runBukkitTaskLater(() -> attackEnemy(blade),
                 200, TimeUnit.MILLISECONDS)
         );

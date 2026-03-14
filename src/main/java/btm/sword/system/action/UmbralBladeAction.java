@@ -100,8 +100,8 @@ public class UmbralBladeAction extends SwordAction {
         sp.setChannelInterrupted(false);
 
         final AtomicInteger iterationsPassed = new AtomicInteger(0);
-        int healingDuration = 2000; //TODO, config, both
-        int period = 50;
+        int healingDuration = (int) Config.Combat.CHANNEL_DURATION_MS;
+        int period = Config.Combat.CHANNEL_HEAL_PERIOD;
         final int iterationsRequired = healingDuration/period;
         final float soulfirePerIteration = cost/iterationsRequired;
 

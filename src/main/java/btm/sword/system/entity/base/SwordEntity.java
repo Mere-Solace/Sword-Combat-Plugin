@@ -695,6 +695,15 @@ public abstract class SwordEntity {
     }
 
     /**
+     * Sends a chat message component to this entity if it is a player.
+     *
+     * @param message the {@link Component} message to send
+     */
+    public void message(Component message) {
+        self.sendMessage(message);
+    }
+
+    /**
      * Sends a debug message to this entity's chat and to the server console,
      * gated by {@link Config.Debug#LOGGING_VERBOSE_INVENTORY}.
      *
