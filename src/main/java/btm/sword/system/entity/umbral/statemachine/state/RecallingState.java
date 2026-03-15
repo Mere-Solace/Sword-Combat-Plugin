@@ -6,14 +6,13 @@ import java.util.function.Supplier;
 
 import org.bukkit.Location;
 import org.bukkit.util.Vector;
+import org.jetbrains.annotations.NotNull;
 
 import btm.sword.system.control.TimeArbiter;
 import btm.sword.system.entity.umbral.UmbralBlade;
 import btm.sword.system.entity.umbral.input.BladeRequest;
 import btm.sword.system.entity.umbral.statemachine.UmbralStateFacade;
 import btm.sword.utility.display.DisplayUtil;
-
-import org.jetbrains.annotations.NotNull;
 
 /**
  * State where the UmbralBlade is being recalled to the wielder.

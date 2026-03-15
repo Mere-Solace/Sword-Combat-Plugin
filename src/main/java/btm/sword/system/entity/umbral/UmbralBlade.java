@@ -5,10 +5,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-import btm.sword.system.control.PredicateRunnablePair;
-
-import btm.sword.system.entity.umbral.statemachine.state.WieldState;
-
 import org.bukkit.FluidCollisionMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -33,6 +29,7 @@ import btm.sword.system.attack.Attack;
 import btm.sword.system.attack.UmbralBladeAttack;
 import btm.sword.system.attack.style.AttackType;
 import btm.sword.system.attack.style.WeaponAttackStyle;
+import btm.sword.system.control.PredicateRunnablePair;
 import btm.sword.system.control.SwordScheduler;
 import btm.sword.system.control.TimeArbiter;
 import btm.sword.system.entity.base.SwordEntity;
@@ -49,6 +46,7 @@ import btm.sword.system.entity.umbral.statemachine.state.LungingState;
 import btm.sword.system.entity.umbral.statemachine.state.RecallingState;
 import btm.sword.system.entity.umbral.statemachine.state.SheathedState;
 import btm.sword.system.entity.umbral.statemachine.state.StandbyState;
+import btm.sword.system.entity.umbral.statemachine.state.WieldState;
 import btm.sword.system.item.ItemStackBuilder;
 import btm.sword.system.item.KeyRegistry;
 import btm.sword.system.item.SwordItemType;
@@ -467,6 +465,7 @@ public class UmbralBlade extends ThrownItem {
                 Config.UmbralBlade.WIELD_ON_GRAB_DELAY, Config.UmbralBlade.WIELD_ON_GRAB_PERIOD, Config.UmbralBlade.WIELD_ON_GRAB_ITERATIONS,
                 UmbralBlade.class,
                 "onGrab",
+                null,
                 new PredicateRunnablePair(
                     () -> inState(WieldState.class),
                     () -> {}

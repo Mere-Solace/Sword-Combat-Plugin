@@ -250,6 +250,12 @@ public abstract class Combatant extends SwordEntity {
         });
     }
 
+
+    public boolean holdingNothing() {
+        ItemStack inMainHand = getItemStackInHand(true);
+        return inMainHand.isEmpty() || inMainHand.getType().isAir();
+    }
+
     public boolean holdingUmbralItemInMainHand() {
         return isUmbralItem(getItemStackInHand(true));
     }

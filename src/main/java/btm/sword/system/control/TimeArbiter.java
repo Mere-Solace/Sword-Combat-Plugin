@@ -303,6 +303,7 @@ public class TimeArbiter {
                                                         int maxIterations,
                                                         Class<?> callingClass,
                                                         String callingMethod,
+                                                        @Nullable Runnable lastIterationCallback,
                                                         PredicateRunnablePair... conditionalCallbacks) {
         int[] iteration = {0};
         PredicateRunnablePair[] endPredicates = Arrays.copyOf(
@@ -310,7 +311,7 @@ public class TimeArbiter {
             conditionalCallbacks.length + 1
         );
         endPredicates[conditionalCallbacks.length] = new PredicateRunnablePair(
-            () -> iteration[0] > maxIterations, null
+            () -> iteration[0] > maxIterations, lastIterationCallback
         );
 
         return createTask(

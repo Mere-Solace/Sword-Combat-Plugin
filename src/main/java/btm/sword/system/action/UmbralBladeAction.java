@@ -234,7 +234,8 @@ public class UmbralBladeAction extends SwordAction {
                     wielder.getUmbralBlade().onGrab(wielder);
                 },
                 0,50,10,
-                UmbralBladeAction.class, "performBlink"
+                UmbralBladeAction.class, "performBlink",
+                null
             );
         }, 60, TimeUnit.MILLISECONDS);
     }

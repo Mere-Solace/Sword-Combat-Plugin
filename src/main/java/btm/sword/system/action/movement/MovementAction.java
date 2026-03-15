@@ -96,7 +96,8 @@ public class MovementAction extends SwordAction {
             () -> target.setVelocity(new Vector(0, Config.Movement.TOSS_UPWARD_VELOCITY_Y, 0)),
             0, 50,
             Config.Movement.TOSS_UPWARD_PHASE_ITERATIONS,
-            MovementAction.class, "toss"
+            MovementAction.class, "toss",
+            null
         );
 
         TimeArbiter.runFixedIterationTaskTimer(
@@ -104,7 +105,8 @@ public class MovementAction extends SwordAction {
             () -> targetEntity.setVelocity(executor.dir().multiply(force)),
             SwordTimeUnit.ticksToMillis(Config.Movement.TOSS_UPWARD_PHASE_ITERATIONS), 50,
             Config.Movement.TOSS_FORWARD_PHASE_ITERATIONS,
-            MovementAction.class, "toss"
+            MovementAction.class, "toss",
+            null
         );
 
         boolean[] check = {true};
@@ -153,6 +155,7 @@ public class MovementAction extends SwordAction {
             SwordTimeUnit.ticksToMillis(Config.Movement.TOSS_UPWARD_PHASE_ITERATIONS), 50,
             Config.Movement.TOSS_ANIMATION_ITERATIONS,
             MovementAction.class, "toss",
+            null,
             new PredicateRunnablePair(
                 () -> !check[0], null
             )
