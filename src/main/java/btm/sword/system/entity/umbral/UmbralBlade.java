@@ -257,14 +257,6 @@ public class UmbralBlade extends ThrownItem {
         }
     }
 
-    public void registerAsInteractableItem() {
-        InteractiveItemArbiter.put(this);
-    }
-
-    public void unregisterAsInteractableItem() {
-        InteractiveItemArbiter.remove(display, false);
-    }
-
     public void startIdleMovement() {
         if (idleMovementTask != null) {
             idleMovementTask.cancel();

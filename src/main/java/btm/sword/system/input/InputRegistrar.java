@@ -446,6 +446,7 @@ public class InputRegistrar {
                         .action(executor -> UmbralBladeAction.basicAttackWithLink(executor, comboStep))
                         .cooldown(cooldown)
                         .canCast(Combatant::canPerformUmbralLinkAttack)
+                        .requiredSoulfire(() -> 2.5f)
                         .castDuration(attackCastDuration)
                         .displayCooldown(true)
                         .displayDisabled(true)

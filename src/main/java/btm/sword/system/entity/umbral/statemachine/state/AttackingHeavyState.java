@@ -55,37 +55,17 @@ public class AttackingHeavyState extends UmbralStateFacade {
 
     @Override
     public void onEnter(UmbralBlade blade) {
-        if (blade.getReclaimType() == ReclaimType.AERIAL_SPIKE) {
-            reclaimAttack(blade, AttackType.AERIAL_SPIKE);
-        } else {
-            attack(blade, 8);
-        }
+        attack(blade, 8);
     }
 
     @Override
     public void onExit(UmbralBlade blade) {
         blade.setAttackCompleted(false);
-        blade.setReclaimType(ReclaimType.NONE);
     }
 
     @Override
     public void onTick(UmbralBlade blade) {
 
-    }
-
-    private static void reclaimAttack(UmbralBlade blade, AttackType type) {
-        new UmbralBladeAttack(blade.getDisplay(), type,
-            false, false, 0,
-            20, 15, 400,
-            0, 1)
-            .setBlade(blade)
-            .setInitialMovementTicks(5)
-            .setOnEntityHitInstructions(target -> {
-                blade.getThrower().getAspects().soulfire().add(8f);
-                Prefab.Particles.BLEED.display(target.getChestLocation());
-            })
-            .setCallback(blade.getAttackEndCallback(), 200)
-            .execute(blade.getThrower());
     }
 
     private static void attack(UmbralBlade blade, double range) {

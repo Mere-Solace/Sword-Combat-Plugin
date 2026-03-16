@@ -2155,7 +2155,7 @@ public class Config {
             ConfigurationSection::getDouble
         ); }
 
-        public static double DASH_GRAB_DISTANCE_SQUARED = 8.5; // blocks² (sqrt(8.5) ≈ 2.9 blocks)
+        public static double DASH_GRAB_DISTANCE_SQUARED = 4.0;
         static { register(
             "movement.dash_grab_distance_squared",
             DASH_GRAB_DISTANCE_SQUARED, Double.class,

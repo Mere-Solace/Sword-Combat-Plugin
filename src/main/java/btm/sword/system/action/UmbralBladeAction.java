@@ -7,6 +7,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import btm.sword.system.input.InputType;
+
 import org.bukkit.util.Vector;
 
 import btm.sword.config.Config;
@@ -72,11 +74,16 @@ public class UmbralBladeAction extends SwordAction {
         UmbralBlade blade = wielder.getUmbralBlade();
         if (blade == null) return;
 
-        if (wielder.getAspects().soulfireCur() >= 10f && !blade.inState(LodgedState.class)) {
+        if (wielder.getAspects().soulfireCur() >= 2.5f && !blade.inState(LodgedState.class)) { //TODO: Config the 2.5f (cost of basic link attack)
             blade.requestQuickAttack(comboStep);
             return;
         }
 
+        if (comboStep != 1 && wielder instanceof SwordPlayer sp) {
+            sp.resetTree();
+            sp.act(InputType.LEFT);
+            return;
+        }
         throwPunch(wielder, comboStep == 1 || comboStep == 3,-1);
     }
 
@@ -114,7 +121,7 @@ public class UmbralBladeAction extends SwordAction {
                     iterationsPassed.set(0);
                 }
 
-                if (sp.changeSoulfire(-soulfirePerIteration) && sp.getAspects().soulfireCur() != 0) {
+                if (sp.changeSoulfire(-soulfirePerIteration)) {
                     overspend.set(true);
                     // TODO:additional overspend logic?
                     sp.setActivationContext(ActivationContext.NORMAL);

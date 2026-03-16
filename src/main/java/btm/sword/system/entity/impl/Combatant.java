@@ -2,6 +2,8 @@ package btm.sword.system.entity.impl;
 
 import java.util.concurrent.TimeUnit;
 
+import btm.sword.system.entity.umbral.statemachine.state.WaitingState;
+
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.attribute.Attribute;
@@ -302,11 +304,21 @@ public abstract class Combatant extends SwordEntity {
     }
 
     public boolean canPerformWieldAction() {
+        if (umbralBlade.inState(WaitingState.class)) {
+            return inRangeOfUmbralBlade(Config.Movement.DASH_GRAB_DISTANCE_SQUARED);
+        }
+
         return canPerformAction() && (
                 umbralBlade.inState(StandbyState.class) ||
                 umbralBlade.inState(SheathedState.class) ||
                 umbralBlade.inState(WieldState.class)
             );
+    }
+
+    public boolean inRangeOfUmbralBlade(double range) {
+        return  umbralBlade.getDisplay().getLocation().toVector()
+                    .subtract(getLocation().toVector())
+                    .lengthSquared() < range;
     }
 
     public boolean canPerformUmbralAction() {
@@ -315,7 +327,8 @@ public abstract class Combatant extends SwordEntity {
                 umbralBlade.inState(StandbyState.class) ||
                 umbralBlade.inState(RecallingState.class) ||
                 umbralBlade.inState(LodgedState.class) ||
-                umbralBlade.inState(SheathedState.class)
+                umbralBlade.inState(SheathedState.class) ||
+                umbralBlade.inState(WaitingState.class)
             );
     }
 

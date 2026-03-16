@@ -269,7 +269,7 @@ movement:
   dash_upward_boost: 0.05
   dash_ray_hitbox_radius: 0.7
   dash_secant_radius: 0.3
-  dash_grab_distance_squared: 8.5
+  dash_grab_distance_squared: 4.0
   dash_block_check_offset_y: -0.75
   dash_velocity_damping: 0.6
   dash_particle_task_delay: 0
@@ -314,7 +314,8 @@ movement:
   grab_max_range: 3.0
   grab_hold_duration: 40
   dash_flat_item_dash_distance_scaler: 0.5
-  dash_flat_height_upper: 1.0
+  dash_flat_height_upper: 5.0
+  dash_flat_height_lower: -5.0
 
 
 world:

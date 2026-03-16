@@ -3,6 +3,11 @@ package btm.sword.system.action.movement;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
+import btm.sword.system.action.throwing.InteractiveItem;
+import btm.sword.system.entity.umbral.UmbralBlade;
+
+import btm.sword.system.entity.umbral.statemachine.state.WaitingState;
+
 import org.bukkit.FluidCollisionMode;
 import org.bukkit.Particle;
 import org.bukkit.block.data.BlockData;
@@ -32,6 +37,7 @@ public class Dash {
     private boolean onGround;
     private boolean flatDash;
     private ItemDisplay targetedDisplay = null;
+    private UmbralBlade targetedBlade = null;
     private DashType dashType;
     private double dashPower;
     private boolean holdingLink;
@@ -124,11 +130,20 @@ public class Dash {
             executor.dir(),
             MAX_STRAIGHT_DASH_DISTANCE.get(),
             UMBRAL_RAY_WIDTH.get(),
-            entity ->  entity instanceof ItemDisplay id &&
-                    !entity.isDead() &&
-                    InteractiveItemArbiter.checkIfInteractive(id) &&
-                    !InteractiveItemArbiter.isImpaling(executor, id) &&
-                    InteractiveItemArbiter.isUmbralBlade(id)
+            entity ->  {
+                if (!(entity instanceof ItemDisplay id)) return false;
+
+                InteractiveItem targetedItem = InteractiveItemArbiter.get(id);
+
+                if (targetedItem == null) return false;
+
+                if (targetedItem instanceof UmbralBlade umbralBlade) {
+                    targetedBlade = umbralBlade;
+                }
+                else return false;
+
+                return !entity.isDead() && !InteractiveItemArbiter.isImpaling(executor, id);
+            }
         );
 
         if (itemDisplay != null) Debug.movement("Umbral Blade Targeted.. itemDisplay=" + itemDisplay.getName());
@@ -207,7 +222,11 @@ public class Dash {
     private void performFlatDashToItem(double distanceToItem) {
         double heightDiff = targetedDisplay.getLocation().getY() - ex.getLocation().getY();
 
-        if (!holdingLink &&
+        Debug.movement("heightDiff="+heightDiff);
+
+        boolean umbralHeightBoost = !holdingLink || targetedBlade.inState(WaitingState.class);
+
+        if (umbralHeightBoost &&
             heightDiff <= Config.Movement.DASH_FLAT_HEIGHT_UPPER &&
             heightDiff > Config.Movement.DASH_FLAT_HEIGHT_LOWER) {
             executor.setVelocity(executor.dir()
@@ -215,7 +234,7 @@ public class Dash {
         }
         SwordScheduler.runBukkitTaskLater(() ->
                 executor.setVelocity(executor.dir().multiply(Math.log(distanceToItem * Config.Movement.DASH_FLAT_ITEM_DASH_DISTANCE_SCALER))),
-            holdingLink ? 0 : 100, TimeUnit.MILLISECONDS // TODO: Config the 100
+            !umbralHeightBoost ? 0 : 100, TimeUnit.MILLISECONDS // TODO: Config the 100
         );
     }
 

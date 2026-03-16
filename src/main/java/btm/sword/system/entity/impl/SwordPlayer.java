@@ -126,6 +126,9 @@ public class SwordPlayer extends Combatant {
     @Setter
     private boolean blocking;
 
+    private boolean punchingWithLink = false;
+    private boolean commandingWithLink = false;
+
     /** System.currentTimeMillis() deadline for the active parry hit-detection window. */
     @Setter
     private long parryWindowEnd = 0L;
