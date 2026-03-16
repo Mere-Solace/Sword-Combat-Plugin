@@ -21,6 +21,8 @@ This package implements all melee attack execution in Sword: Combat Evolved. Att
 | `AttackProfile` | Interface: `shape()`, `knockbackFunction()`, `normalVector()`. Implemented by both `AttackType` and `GeneratedAttackProfile`. |
 | `AttackShape` | Interface for parametric sweep paths. `resolve(Basis, double)` returns a `Function<Double, Vector>` mapping `t ∈ [0, 1]` to world-space offsets. |
 | `BezierShape` | Implements `AttackShape` using a cubic Bézier curve. Local-space (default) applies `ControlVectors.adjustToBasis` at resolve time; world-space mode skips transformation. |
+| `ArcShape` | Sweeps a circular arc in the attacker's horizontal plane. Parameters: `radius`, `startAngle`, `endAngle` (radians, 0=forward), `height`. Use `endAngle - startAngle = 2π` for a full 360° circle. |
+| `ConeShape` | Sweeps along the rim of a cone aligned to the attacker's forward axis. Parameters: `halfAngle` (polar offset from forward), `range`, `startSweepAngle`, `endSweepAngle`. `ConeShape.symmetric()` fans left/right equally. |
 | `AttackType` | Enum of named attack curves. Each entry owns a `BezierShape` and a knockback function. Also exposes `controlVectors()` for non-attack consumers (e.g., blade lunge). |
 | `WeaponAttackStyle` | Enum mapping weapon item tags to their ground combo chain, aerial moves, and directional dash attacks. Read from item PDC via `KeyRegistry.ATTACK_STYLE_KEY`. |
 
@@ -47,7 +49,8 @@ This package contains the static action classes that are the external entry poin
 
 - Add a new named curve: add an entry to `AttackType` with a `ControlVectors` (automatically wrapped in `BezierShape`).
 - Add a new weapon category: add an entry to `WeaponAttackStyle` with the appropriate chain of `AttackType` references.
-- Add a new shape type (arc, line, polygon, etc.): implement `AttackShape` and return the appropriate path function from `resolve()`.
+- Add a new shape type: implement `AttackShape` and return the appropriate path function from `resolve()`.
+- Sphere/AOE attacks: extend `Attack`, override `generatePathFunction()` (trivial constant path), `collectHitEntities()` (use `HitboxUtil.sphere()`), and `drawAttackEffects()`. No `AttackShape` needed — the hit volume is expressed through the override, not the shape.
 - Custom hit geometry: extend `Attack` and override `collectHitEntities()`.
 - Custom damage: override `hit()` and use a different `HitValuePacket` from `Prefab.Attacks`.
 
