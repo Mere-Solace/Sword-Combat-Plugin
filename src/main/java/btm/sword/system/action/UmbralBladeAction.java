@@ -100,7 +100,7 @@ public class UmbralBladeAction extends SwordAction {
         new Attack(wielder.getItemStackInHand(true), // TODO: Store somewhere
             AttackType.BLADE_RETRIEVAL_CIRCULAR_SLASH,
             false,
-            300, 200, // TODO: Config
+            Config.Combat.CIRCULAR_SLASH_DURATION_MS, Config.Combat.CIRCULAR_SLASH_ITERATIONS,
             0, 1).execute(wielder);
     }
 
@@ -108,7 +108,7 @@ public class UmbralBladeAction extends SwordAction {
         UmbralBlade blade = wielder.getUmbralBlade();
         if (blade == null) return;
 
-        if (wielder.getAspects().soulfireCur() >= 2.5f && !blade.inState(LodgedState.class)) { //TODO: Config the 2.5f (cost of basic link attack)
+        if (wielder.getAspects().soulfireCur() >= (float) Config.Combat.LINK_ATTACK_SOULFIRE_COST && !blade.inState(LodgedState.class)) {
             blade.requestQuickAttack(comboStep);
             return;
         }

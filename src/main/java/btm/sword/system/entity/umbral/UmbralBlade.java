@@ -92,10 +92,9 @@ public class UmbralBlade extends ThrownItem {
     private long lastActionTime = 0;
 
     @Getter
-    private final Vector3f scale = new Vector3f(0.85f, 1.3f, 1f); // TODO: Make Supplier and config the values
+    private final Vector3f scale = new Vector3f(
+        (float) Config.UmbralBlade.SCALE_X, (float) Config.UmbralBlade.SCALE_Y, (float) Config.UmbralBlade.SCALE_Z);
 
-    private static final int idleMovementPeriod = 150; // TODO: Config both
-    private static final float idleMovementAmplitude = 0.25f;
     @Getter
     @Setter
     private TimeArbiter.TaskHandle idleMovementTask;
@@ -124,7 +123,6 @@ public class UmbralBlade extends ThrownItem {
     @Setter
     private DashDirection dashDirection = DashDirection.NONE;
     @Getter
-    @Setter
     private ReclaimType reclaimType = ReclaimType.NONE;
     @Getter
     private final InputBuffer inputBuffer = new InputBuffer();
@@ -280,19 +278,19 @@ public class UmbralBlade extends ThrownItem {
             () -> {
                 TimeArbiter.setDisplayTransformation(display,
                     new Transformation(
-                        new Vector3f(0, (float) Math.cos(step[0]) * idleMovementAmplitude, 0),
+                        new Vector3f(0, (float) (Math.cos(step[0]) * Config.UmbralBlade.IDLE_MOVEMENT_AMPLITUDE), 0),
                         display.getTransformation().getLeftRotation(),
                         scale,
                         new Quaternionf()
                     ),
-                    idleMovementPeriod
+                    Config.UmbralBlade.IDLE_MOVEMENT_PERIOD
                 );
 
                 step[0] += Math.PI/8;
             },
             null,
             null,
-            0, idleMovementPeriod,
+            0, Config.UmbralBlade.IDLE_MOVEMENT_PERIOD,
             UmbralBlade.class, "startIdleMovement"
         );
     }
@@ -474,10 +472,10 @@ public class UmbralBlade extends ThrownItem {
         }
 
         if (inState(WaitingState.class)) { // set reclaim type for 1/4 of a second.
-            setReclaimType(ReclaimType.CIRCULAR_SLASH, 1000); // TODO: Config.
+            setReclaimType(ReclaimType.CIRCULAR_SLASH, Config.UmbralBlade.RECLAIM_WINDOW_MS);
         }
         else if (inState(LodgedState.class)) {
-            setReclaimType(ReclaimType.EVISCERATE);
+            setReclaimType(ReclaimType.EVISCERATE, Config.UmbralBlade.RECLAIM_WINDOW_MS);
         }
 
         if (combatant.holdingUmbralItemInMainHand()) {

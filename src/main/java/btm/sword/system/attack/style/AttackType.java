@@ -162,10 +162,10 @@ public enum AttackType implements AttackProfile {
         Config.Direction.OUT_DOWN()
     )),
 
-        //TODO: Config all
     BLADE_RETRIEVAL_CIRCULAR_SLASH(
-        new ArcShape(3.5, Math.PI/20, 2*Math.PI, 0),
-        e -> attack -> VectorUtil.getVectorTo(e, attack.getAttacker(), 0.5) // TODO: Config
+        new ArcShape(Config.UmbralBlade.CIRCULAR_SLASH_RADIUS, Config.UmbralBlade.CIRCULAR_SLASH_START_ANGLE,
+            Config.UmbralBlade.CIRCULAR_SLASH_END_ANGLE, Config.UmbralBlade.CIRCULAR_SLASH_HEIGHT),
+        e -> attack -> VectorUtil.getVectorTo(e, attack.getAttacker(), Config.UmbralBlade.CIRCULAR_SLASH_KNOCKBACK)
     );
 //endregion
 
