@@ -25,6 +25,7 @@ import btm.sword.system.entity.umbral.statemachine.state.LodgedState;
 import btm.sword.system.entity.umbral.statemachine.state.RecallingState;
 import btm.sword.system.entity.umbral.statemachine.state.SheathedState;
 import btm.sword.system.entity.umbral.statemachine.state.StandbyState;
+import btm.sword.system.entity.umbral.statemachine.state.WaitingState;
 import btm.sword.system.entity.umbral.statemachine.state.WieldState;
 import btm.sword.system.input.ActivationContext;
 import btm.sword.system.item.KeyRegistry;
@@ -48,6 +49,7 @@ public abstract class Combatant extends SwordEntity {
 
     private int airDashesPerformed;
     protected Vector dashDirection;
+    protected boolean dashing;
 
     private boolean isGrabbing = false;
     private SwordEntity grabbedEntity;
@@ -249,6 +251,12 @@ public abstract class Combatant extends SwordEntity {
         });
     }
 
+
+    public boolean holdingNothing() {
+        ItemStack inMainHand = getItemStackInHand(true);
+        return inMainHand.isEmpty() || inMainHand.getType().isAir();
+    }
+
     public boolean holdingUmbralItemInMainHand() {
         return isUmbralItem(getItemStackInHand(true));
     }
@@ -286,12 +294,30 @@ public abstract class Combatant extends SwordEntity {
         return abilityCastTask == null && !isGrabbing && !isGrabbed();
     }
 
+    public boolean canPerformHealAction() {
+        return canPerformAction() &&
+            umbralBlade != null &&
+            umbralBlade.inState(WieldState.class) &&
+            aspects.soulfireCur() > Config.Combat.CHANNEL_SOULFIRE_COST &&
+            aspects.shards().belowMax();
+    }
+
     public boolean canPerformWieldAction() {
+        if (umbralBlade.inState(WaitingState.class)) {
+            return inRangeOfUmbralBlade(Config.Movement.DASH_GRAB_DISTANCE_SQUARED);
+        }
+
         return canPerformAction() && (
                 umbralBlade.inState(StandbyState.class) ||
                 umbralBlade.inState(SheathedState.class) ||
                 umbralBlade.inState(WieldState.class)
             );
+    }
+
+    public boolean inRangeOfUmbralBlade(double range) {
+        return  umbralBlade.getDisplay().getLocation().toVector()
+                    .subtract(getLocation().toVector())
+                    .lengthSquared() < range;
     }
 
     public boolean canPerformUmbralAction() {
@@ -300,7 +326,8 @@ public abstract class Combatant extends SwordEntity {
                 umbralBlade.inState(StandbyState.class) ||
                 umbralBlade.inState(RecallingState.class) ||
                 umbralBlade.inState(LodgedState.class) ||
-                umbralBlade.inState(SheathedState.class)
+                umbralBlade.inState(SheathedState.class) ||
+                umbralBlade.inState(WaitingState.class)
             );
     }
 
@@ -314,28 +341,12 @@ public abstract class Combatant extends SwordEntity {
         return canPerformAction() && getAirDashesPerformed() < getCombatProfile().getMaxAirDodges();
     }
 
-    public boolean canStrafe() {
-        return canPerformAction() && self().isOnGround();
-    }
-
-    /**
-     * Checks if the combatant can perform a throw action.
-     * Requires action availability, main hand holding an appropriate throwable item,
-     * and off hand holding a shield.
-     *
-     * @return true if throwing is possible, false otherwise
-     */
-    public boolean canThrow() {
-        ItemStack main = getItemStackInHand(true);
-        ItemStack off = getItemStackInHand(false);
-
-        boolean throwable =
-                        !main.getType().equals(Material.CROSSBOW) &&
-                        !main.getType().equals(Material.BOW) &&
-                        !main.getType().isEdible() &&
-                        !main.getType().isAir();
-
-        return canPerformAction() && throwable && off.getType().equals(Material.SHIELD);
+    public void setDashing(int duration) {
+        dashing = true;
+        SwordScheduler.runBukkitTaskLater(
+            () -> dashing = false,
+            duration, TimeUnit.MILLISECONDS
+        );
     }
 
     /**

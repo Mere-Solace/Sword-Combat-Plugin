@@ -45,6 +45,7 @@ import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.impl.Combatant;
 import btm.sword.system.entity.impl.SwordPlayer;
+import btm.sword.system.input.ActivationContext;
 import btm.sword.utility.Debug;
 import btm.sword.utility.Prefab;
 import btm.sword.utility.SwordTimeUnit;
@@ -514,7 +515,7 @@ public abstract class SwordEntity {
         // remove returns true only if the value reaches or goes below 0
         if (toughnessBroken) {
             // If Shards == 0 (dead)
-            if (aspects.shards().remove(baseNumShards)) {
+            if (changeShards(-baseNumShards)) {
                 onZeroHealth();
 
                 SwordScheduler.runBukkitTaskLater(() -> {
@@ -562,6 +563,11 @@ public abstract class SwordEntity {
     }
 
     public void hit(Combatant source, HitValuePacket v, Vector knockbackVelocity, Affliction... afflictions) {
+        if (this instanceof SwordPlayer defender &&
+                defender.getActivationContext() == ActivationContext.CHANNELING) {
+            defender.setChannelInterrupted(true);
+        }
+
         if (this instanceof SwordPlayer defender && defender.isBlocking()) {
             BlockAction.BlockResult result = BlockAction.resolveBlock(source, defender, v);
             switch (result) {
@@ -597,6 +603,29 @@ public abstract class SwordEntity {
      */
     public void displayShardLoss() {
         // TODO: later
+    }
+
+    /*
+     * May be negative
+     */
+    public boolean changeShards(int amount) {
+        if (amount < 0) {
+            return aspects.shards().remove(-1 * amount);
+        }
+        else {
+            aspects.shards().add(amount);
+            return false;
+        }
+    }
+
+    public boolean changeSoulfire(float amount) {
+        if (amount < 0) {
+            return aspects.soulfire().remove(-1 * amount);
+        }
+        else {
+            aspects.soulfire().add(amount);
+            return false;
+        }
     }
 
     /**
@@ -662,6 +691,15 @@ public abstract class SwordEntity {
      * @param message the message string to send
      */
     public void message(String message) {
+        self.sendMessage(message);
+    }
+
+    /**
+     * Sends a chat message component to this entity if it is a player.
+     *
+     * @param message the {@link Component} message to send
+     */
+    public void message(Component message) {
         self.sendMessage(message);
     }
 
@@ -894,6 +932,16 @@ public abstract class SwordEntity {
     private void updateBodyDirectionBasis() {
         currentBodyDirectionBasis = VectorUtil.getBasisWithoutPitch(self());
         timeOfLastBodyBasisCalculation = System.currentTimeMillis();
+    }
+
+    public Basis getCurrentEyeDirectionBasis() {
+        updateEyeDirectionBasis();
+        return currentEyeDirectionBasis;
+    }
+
+    public Basis getCurrentBodyDirectionBasis() {
+        updateBodyDirectionBasis();
+        return currentBodyDirectionBasis;
     }
 
     public Vector getChestVector() {

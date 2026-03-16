@@ -26,7 +26,7 @@ import xyz.xenondevs.invui.gui.PagedGui;
 import xyz.xenondevs.invui.gui.structure.Markers;
 import xyz.xenondevs.invui.item.Item;
 import xyz.xenondevs.invui.item.ItemProvider;
-import xyz.xenondevs.invui.item.builder.ItemBuilder;
+import xyz.xenondevs.invui.item.ItemWrapper;
 import xyz.xenondevs.invui.item.impl.AbstractItem;
 import xyz.xenondevs.invui.item.impl.SimpleItem;
 import xyz.xenondevs.invui.window.Window;
@@ -212,15 +212,21 @@ public class EnumSelectionMenu extends Menu {
         return new AbstractItem() {
             @Override
             public ItemProvider getItemProvider() {
-                String displayName = selected ? "§a✔ §f" + value.name() : "§7" + value.name();
-                ItemBuilder builder = new ItemBuilder(mat).setDisplayName(displayName);
-                if (selected) builder.addLoreLines("§a§o(currently selected)");
-                if (isSoundType) {
-                    builder.addLoreLines("§8L-click: select", "§8R-click: preview");
-                } else {
-                    builder.addLoreLines("§8Click to select");
+                Component name = selected
+                    ? Component.text("\u2714 ", NamedTextColor.GREEN).append(Component.text(value.name(), NamedTextColor.WHITE))
+                    : Component.text(value.name(), NamedTextColor.GRAY);
+                List<Component> lore = new java.util.ArrayList<>();
+                if (selected) {
+                    lore.add(Component.text("(currently selected)", NamedTextColor.GREEN)
+                        .decorate(net.kyori.adventure.text.format.TextDecoration.ITALIC));
                 }
-                return builder;
+                if (isSoundType) {
+                    lore.add(Component.text("L-click: select", NamedTextColor.DARK_GRAY));
+                    lore.add(Component.text("R-click: preview", NamedTextColor.DARK_GRAY));
+                } else {
+                    lore.add(Component.text("Click to select", NamedTextColor.DARK_GRAY));
+                }
+                return new ItemWrapper(new ItemStackBuilder(mat).name(name).lore(lore).build());
             }
 
             @Override
@@ -231,7 +237,10 @@ public class EnumSelectionMenu extends Menu {
                     return;
                 }
                 ConfigManager.getInstance().setValue((Config.ConfigEntry) entry, value);
-                swordPlayer.message("§aSet §f" + entry.path + " §a= §e" + value.name());
+                swordPlayer.message(Component.text("Set ", NamedTextColor.GREEN)
+                    .append(Component.text(entry.path, NamedTextColor.WHITE))
+                    .append(Component.text(" = ", NamedTextColor.GREEN))
+                    .append(Component.text(value.name(), NamedTextColor.YELLOW)));
                 reopenParent.run();
             }
         };

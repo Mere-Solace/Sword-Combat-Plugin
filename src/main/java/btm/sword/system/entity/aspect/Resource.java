@@ -149,6 +149,10 @@ public class Resource extends Aspect {
         curValue = percent * effectiveMaxValue();
     }
 
+    public boolean belowMax() {
+        return curValue < effectiveMaxValue();
+    }
+
     /**
      * Adds the specified amount to the resource.
      * @param amount the value to add

@@ -1,5 +1,7 @@
 package btm.sword.utility.display;
 
+import java.util.Collection;
+
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.World;
@@ -154,5 +156,11 @@ public class ParticleWrapper {
 
         else
             world.spawnParticle(particle, location, count, xOffset, yOffset, zOffset, blockData);
+    }
+
+    public static void displayAll(Collection<ParticleWrapper> particles, Location location) {
+        for (ParticleWrapper p : particles) {
+            p.display(location);
+        }
     }
 }

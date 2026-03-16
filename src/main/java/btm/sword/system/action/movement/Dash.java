@@ -4,24 +4,22 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 import org.bukkit.FluidCollisionMode;
-import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.block.data.BlockData;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.EntityType;
 import org.bukkit.entity.ItemDisplay;
 import org.bukkit.entity.LivingEntity;
-import org.bukkit.potion.PotionEffect;
-import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
 
 import btm.sword.config.Config;
+import btm.sword.system.action.throwing.InteractiveItem;
 import btm.sword.system.action.throwing.InteractiveItemArbiter;
+import btm.sword.system.control.PredicateRunnablePair;
 import btm.sword.system.control.SwordScheduler;
 import btm.sword.system.control.TimeArbiter;
-import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.impl.Combatant;
+import btm.sword.system.entity.umbral.UmbralBlade;
+import btm.sword.system.entity.umbral.statemachine.state.WaitingState;
 import btm.sword.utility.Debug;
 import btm.sword.utility.Prefab;
 import btm.sword.utility.display.ParticleWrapper;
@@ -36,9 +34,17 @@ public class Dash {
     private final int direction;
     private boolean onGround;
     private boolean flatDash;
+    private ItemDisplay targetedDisplay = null;
+    private UmbralBlade targetedBlade = null;
+    private DashType dashType;
+    private double dashPower;
+    private boolean holdingLink;
 
     private static final Supplier<Double> MAX_STRAIGHT_DASH_DISTANCE = () -> Config.Movement.DASH_MAX_DISTANCE;
-    double FLAT_DASH_PITCH_THRESHOLD = 0.20;
+    private static final Supplier<Double> NORMAL_ITEM_RAY_WIDTH = () -> Config.Movement.DASH_RAY_HITBOX_RADIUS;
+    private static final Supplier<Double> UMBRAL_RAY_WIDTH = () -> 1.2; // TODO: Config
+
+    double FLAT_DASH_PITCH_THRESHOLD = 0.30; // TODO: Config
 
     public Dash(Combatant executor, int direction) {
         this.executor = executor;
@@ -46,168 +52,239 @@ public class Dash {
         this.direction = direction;
     }
 
+    private enum DashType {
+        FLAT_TO_UMBRAL_BLADE, // onGround, certain pitch and height diff with blade, holding soul link, and targeted umbral blade
+        NORMAL_TO_UMBRAL_BLADE, // some checks don't pass from flat: just straight to blade, no initial upward velocity.
+        FLAT_TO_ITEM, // onGround, certain pitch and height checks are made, not holding anything.
+        NORMAL_TO_ITEM, // some checks from flat don't pass: straight to item
+        FLAT_DASH, // onGround with certain pitch checks: either no item targeted or hands are holding wrong item
+        DASH, // some checks fail for flat.
+        NOTHING // Unset value
+    }
+
     public void execute() {
+        dashType = DashType.NOTHING;
         onGround = EntityUtil.isOnGround(ex);
-        dashStraight();
+        holdingLink = executor.holdingSoulLink();
+        boolean holdingNothing = executor.holdingNothing();
+        checkFlatDash();
+
+        // only apply the upward force if targeting a normal item
+        if (holdingNothing) {
+            targetedDisplay = raycastForNormalItem();
+            if (targetedDisplay != null) {
+                if (flatDash) {
+                    dashType = DashType.FLAT_TO_ITEM;
+                }
+                else {
+                    dashType = DashType.NORMAL_TO_ITEM;
+                }
+            }
+        }
+        else if (holdingLink) {
+            targetedDisplay = raycastForUmbralBlade();
+            if (targetedDisplay != null) {
+                if (flatDash) {
+                    dashType = DashType.FLAT_TO_UMBRAL_BLADE;
+                }
+                else {
+                    dashType = DashType.NORMAL_TO_UMBRAL_BLADE;
+                }
+            }
+        }
+
+        if (dashType == DashType.NOTHING || (targetedDisplay != null && isDashToItemImpeded())) {
+            if (flatDash) {
+                dashType = DashType.FLAT_DASH;
+            }
+            else {
+                dashType = DashType.DASH;
+            }
+        }
+
+        Debug.movement("DashType="+dashType);
+
+        dash();
     }
 
+    public void checkFlatDash() {
+        //          |__  < flat always
+        //          |/   < flat when backwards and not targeting item, otherwise not flat
+        //          |
+        //           \   < flat when forwards and not targeting item, otherwise not flat
 
-    private void umbralDash(Combatant executor, int direction) {
+        boolean belowForwardThreshold = executor.dir().dot(Config.Direction.UP()) < FLAT_DASH_PITCH_THRESHOLD;
+        boolean aboveBackwardThreshold = executor.dir().dot(Config.Direction.UP()) > -FLAT_DASH_PITCH_THRESHOLD * Config.Movement.DASH_DOWNWARD_FLAT_CHECK_MULTIPLIER;
 
-    }
-
-    private void dashStraight() {
-        LivingEntity ex = executor.self();
-        Location eyeLoc = executor.eyeLoc();
-
-        // Set dash direction and apply speed buff
-        executor.setDashDirection(ex.getEyeLocation().getDirection().multiply(direction));
-
-        // Try to find an interactive item to dash-to/ grab
-        ItemDisplay targetedItem = findTargetedItem(eyeLoc);
-
-        // if grounded and looking
         flatDash = onGround && (
-            (direction > 0 && executor.dir().dot(Config.Direction.UP()) < FLAT_DASH_PITCH_THRESHOLD) ||
-                (direction <= 0 && executor.dir().dot(Config.Direction.UP()) > -FLAT_DASH_PITCH_THRESHOLD * Config.Movement.DASH_DOWNWARD_FLAT_CHECK_MULTIPLIER)
+            (direction > 0 && belowForwardThreshold) ||
+                (direction <= 0 && aboveBackwardThreshold)
+        );
+    }
+
+    public ItemDisplay raycastForUmbralBlade() {
+        ItemDisplay itemDisplay = (ItemDisplay) HitboxUtil.ray(
+            executor.eyeLoc(),
+            executor.dir(),
+            MAX_STRAIGHT_DASH_DISTANCE.get(),
+            UMBRAL_RAY_WIDTH.get(),
+            entity ->  {
+                if (!(entity instanceof ItemDisplay id)) return false;
+
+                InteractiveItem targetedItem = InteractiveItemArbiter.get(id);
+
+                if (targetedItem == null) return false;
+
+                if (targetedItem instanceof UmbralBlade umbralBlade) {
+                    targetedBlade = umbralBlade;
+                }
+                else return false;
+
+                return !entity.isDead() && !InteractiveItemArbiter.isImpaling(executor, id);
+            }
         );
 
-        Debug.movement("flatDash=" + flatDash);
+        if (itemDisplay != null) Debug.movement("Umbral Blade Targeted.. itemDisplay=" + itemDisplay.getName());
 
-        // Handle item dash/grab logic separately; if it succeeds, return early
-        if (handleTargetedItemDash(targetedItem)) return;
+        return itemDisplay;
+    }
 
-        // Default straight dash behavior
-        double dashPower = flatDash ? Config.Movement.DASH_BASE_POWER * 2 : Config.Movement.DASH_BASE_POWER;
-        double dashMag = dashPower * direction;
+    public ItemDisplay raycastForNormalItem() {
+        ItemDisplay itemDisplay = (ItemDisplay) HitboxUtil.ray(
+            executor.eyeLoc(),
+            executor.dir(),
+            MAX_STRAIGHT_DASH_DISTANCE.get(),
+            NORMAL_ITEM_RAY_WIDTH.get(),
+            entity ->  entity instanceof ItemDisplay id &&
+                !entity.isDead() &&
+                InteractiveItemArbiter.checkIfInteractive(id) &&
+                !InteractiveItemArbiter.isImpaling(executor, id) &&
+                !InteractiveItemArbiter.isUmbralBlade(id)
+        );
 
-        Vector dir = flatDash ? executor.getFlatDir() : executor.dir();
+        if (itemDisplay != null) Debug.movement("Normal Item Targeted.. itemDisplay=" + itemDisplay.getName());
 
-        performDash(dir, dashMag);
+        return itemDisplay;
+    }
+
+    private void dash() {
+        dashPower = flatDash ? Config.Movement.DASH_BASE_POWER * 2 : Config.Movement.DASH_BASE_POWER; // TODO: Config the 2 here
+
+        dashEffects();
+
+        switch (dashType) {
+            case NOTHING -> {}
+            case DASH, FLAT_DASH -> plainDash(); // can actually go back or forward
+            case FLAT_TO_ITEM, NORMAL_TO_ITEM, FLAT_TO_UMBRAL_BLADE, NORMAL_TO_UMBRAL_BLADE -> dashToItem();
+            // ^^ will always go towards the item targeted, and then jump backwards/forwards depending on input.
+        }
 
         if (!onGround) executor.increaseAirDashesPerformed();
     }
 
-    private void addDashSpeedPotion() {
-        LivingEntity ex = executor.self();
-        PotionEffect speed = new PotionEffect(PotionEffectType.SPEED, Config.Movement.SPEED_DURATION, Config.Movement.SPEED_AMPLIFIER);
-        ex.addPotionEffect(speed);
+    private void plainDash() {
+        executor.setDashDirection(executor.dir().multiply(direction));
+        double dashMag = dashPower * direction;
+        Vector d = flatDash ? executor.getFlatDir() : executor.dir();
+        executor.setVelocity(d.multiply(dashMag).add(Config.Direction.UP().multiply(Config.Movement.DASH_UPWARD_BOOST)));
     }
 
-    private ItemDisplay findTargetedItem(Location eyeLoc) {
-        if (executor.getItemStackInHand(true).isEmpty() || executor.holdingSoulLink()) {
-            return retrieveTargetedItemDisplayIfInteractive(eyeLoc, executor.self());
-        }
-        return null;
+    private Vector calcVectorToItem() {
+        return targetedDisplay.getLocation().toVector().subtract(executor.getChestLocation().toVector());
     }
 
-    private boolean handleTargetedItemDash(Entity targetedItem) {
-        if (targetedItem instanceof ItemDisplay display &&
-            InteractiveItemArbiter.isUmbralBlade(display) &&
-            executor.holdingSoulLink()) {
-            return dashToItem(display, true);
-        }
-
-        boolean shouldDash = !executor.holdingSoulLink();
-
-        if (shouldDash &&
-            targetedItem instanceof ItemDisplay id &&
-            !id.isDead() &&
-            !id.getItemStack().isEmpty()) {
-            return dashToItem(id, false);
-        }
-
-        return false;
+    private Vector calcPostRetrievalVector() {
+        return executor.getFlatDir().multiply(direction * Config.Movement.DASH_FORWARD_MULTIPLIER)
+            .add(Config.Direction.UP().multiply(Config.Movement.DASH_UPWARD_MULTIPLIER));
     }
 
-    private void performDash(Vector direction, double effectivePower) {
-        addDashSpeedPotion();
-        executor.setVelocity(direction.multiply(effectivePower).add(Config.Direction.UP().multiply(Config.Movement.DASH_UPWARD_BOOST)));
-        scheduleParticleDisplay(executor);
-    }
+    private void dashToItem() {
+        Vector toItem = calcVectorToItem();
+        double length = toItem.length();
 
-    private ItemDisplay retrieveTargetedItemDisplayIfInteractive(Location eyeLocation, LivingEntity dashingEntity) {
-        return (ItemDisplay) HitboxUtil.ray(
-            eyeLocation,
-            eyeLocation.getDirection(),
-            MAX_STRAIGHT_DASH_DISTANCE.get(),
-            Config.Movement.DASH_RAY_HITBOX_RADIUS,
-            entity -> (entity.getType() == EntityType.ITEM_DISPLAY &&
-                !entity.isDead() &&
-                entity instanceof ItemDisplay id &&
-                InteractiveItemArbiter.checkIfInteractive(id)) &&
-                !InteractiveItemArbiter.isImpaling(SwordEntityArbiter.get(dashingEntity), id));
-    }
-
-    @SuppressWarnings("all")
-    private boolean dashToItem(ItemDisplay itemDisplay, boolean umbral) {
-        scheduleParticleDisplay(executor);
-
-        if (isDashToItemImpeded(itemDisplay))
-            return false;
-
-        double length = itemDisplay.getLocation().subtract(ex.getEyeLocation()).length();
-
-        // flat dashing was for making dashing strong when the player would be dashing across the ground
-        // to mitigate the effects of friction from the ground.
-        // Since dashing to an item in the air is only a forward action,
-        // we should only check if the dash is a 'flat dash' if the direction is forward
-
-        if (flatDash && !umbral) {
-            performFlatDashToItemFromGround(length);
+        if (flatDash) {
+            performFlatDashToItem(length);
         }
         else {
-            executor.setVelocity(executor.dir()
-                .multiply(Math.log(length/2)));
+            performNormalDashToItem(length);
         }
-        Vector u = executor.getFlatDir().multiply(direction * Config.Movement.DASH_FORWARD_MULTIPLIER)
-            .add(Config.Direction.UP().multiply(Config.Movement.DASH_UPWARD_MULTIPLIER));
 
-        int delay = flatDash ?
-            (int) (Config.Movement.DASH_GRAB_CHECK_DELAY * 1.5) :
-            Config.Movement.DASH_GRAB_CHECK_DELAY;
-
-        SwordScheduler.runBukkitTaskLater(() -> {
-            if (itemDisplay.getLocation().subtract(ex.getEyeLocation()).lengthSquared() < Config.Movement.DASH_GRAB_DISTANCE_SQUARED) {
-                BlockData blockData = ex.getLocation().add(new Vector(0, Config.Movement.DASH_BLOCK_CHECK_OFFSET_Y, 0)).getBlock().getBlockData();
-                new ParticleWrapper(Particle.BLOCK,
-                    Config.Movement.DASH_PARTICLE_COUNT,
-                    Config.Movement.DASH_PARTICLE_SPREAD_X,
-                    Config.Movement.DASH_PARTICLE_SPREAD_Y,
-                    Config.Movement.DASH_PARTICLE_SPREAD_Z,
-                    blockData).display(ex.getLocation());
-                Prefab.Particles.GRAB_ATTEMPT.display(itemDisplay.getLocation());
-                SoundUtil.playSound(ex, SoundType.ENTITY_ENDER_DRAGON_FLAP, Config.Movement.DASH_FLAP_SOUND_VOLUME, Config.Movement.DASH_FLAP_SOUND_PITCH);
-                SoundUtil.playSound(ex, SoundType.ENTITY_PLAYER_ATTACK_SWEEP, Config.Movement.DASH_SWEEP_SOUND_VOLUME, Config.Movement.DASH_SWEEP_SOUND_PITCH);
-                executor.setVelocity(u);
-                InteractiveItemArbiter.onGrab(itemDisplay, executor); // here is where the display is taken care of
-            }
-            else {
-                Vector v = ex.getVelocity();
-                double damping = Config.Movement.DASH_VELOCITY_DAMPING;
-                ex.setVelocity(new Vector(v.getX() * damping, v.getY() * damping, v.getZ() * damping));
-            }
-        }, delay, TimeUnit.MILLISECONDS);
-
-        return true;
+        scheduleCheckForItemPickup();
     }
 
-    private void performFlatDashToItemFromGround(double distanceToItem) {
-        executor.setVelocity(executor.dir()
-            .add(Config.Direction.UP().multiply(Config.Movement.DASH_FLAT_ITEM_DASH_UPWARD_SCALER)));
+    private void performNormalDashToItem(double distanceToItem) {
+        executor.setVelocity(executor.dir().multiply(Math.log(distanceToItem/2))); //  TODO: Config the 1/2
+    }
 
+    // Dash up first, then dash to the item
+    private void performFlatDashToItem(double distanceToItem) {
+        double heightDiff = targetedDisplay.getLocation().getY() - ex.getLocation().getY();
+
+        Debug.movement("heightDiff="+heightDiff);
+
+        boolean umbralHeightBoost = !holdingLink || targetedBlade.inState(WaitingState.class);
+
+        if (umbralHeightBoost &&
+            heightDiff <= Config.Movement.DASH_FLAT_HEIGHT_UPPER &&
+            heightDiff > Config.Movement.DASH_FLAT_HEIGHT_LOWER) {
+            executor.setVelocity(executor.dir()
+                .add(Config.Direction.UP().multiply(Config.Movement.DASH_FLAT_ITEM_DASH_UPWARD_SCALER)));
+        }
         SwordScheduler.runBukkitTaskLater(() ->
-            executor.setVelocity(executor.dir().multiply(Math.log(distanceToItem * Config.Movement.DASH_FLAT_ITEM_DASH_DISTANCE_SCALER))),
-            100, TimeUnit.MILLISECONDS
+                executor.setVelocity(executor.dir().multiply(Math.log(distanceToItem * Config.Movement.DASH_FLAT_ITEM_DASH_DISTANCE_SCALER))),
+            !umbralHeightBoost ? 0 : 100, TimeUnit.MILLISECONDS // TODO: Config the 100
         );
     }
 
-    @SuppressWarnings("all")
-    private boolean isDashToItemImpeded(ItemDisplay itemDisplay) {
+    private void scheduleCheckForItemPickup() {
+        int period = 50; // TODO: Config
+        TimeArbiter.runFixedIterationTaskTimer(
+            null, null,
+            0, period, 1500/period, // TODO: Config
+            Dash.class, "scheduleCheckForItemPickup",
+            this::failureToReach,
+            new PredicateRunnablePair(
+                () -> calcVectorToItem().lengthSquared() < Config.Movement.DASH_GRAB_DISTANCE_SQUARED,
+                this::onItemRetrieval
+            )
+        );
+    }
 
+    private void onItemRetrieval() {
+        BlockData blockData = ex.getLocation().add(new Vector(0, Config.Movement.DASH_BLOCK_CHECK_OFFSET_Y, 0)).getBlock().getBlockData();
+        new ParticleWrapper(Particle.BLOCK, // TODO: Prefab the whole particle wrapper
+            Config.Movement.DASH_PARTICLE_COUNT,
+            Config.Movement.DASH_PARTICLE_SPREAD_X,
+            Config.Movement.DASH_PARTICLE_SPREAD_Y,
+            Config.Movement.DASH_PARTICLE_SPREAD_Z,
+            blockData).display(ex.getLocation());
+        Prefab.Particles.GRAB_ATTEMPT.display(targetedDisplay.getLocation());
+        SoundUtil.playSound(ex, SoundType.ENTITY_ENDER_DRAGON_FLAP, Config.Movement.DASH_FLAP_SOUND_VOLUME, Config.Movement.DASH_FLAP_SOUND_PITCH);
+        SoundUtil.playSound(ex, SoundType.ENTITY_PLAYER_ATTACK_SWEEP, Config.Movement.DASH_SWEEP_SOUND_VOLUME, Config.Movement.DASH_SWEEP_SOUND_PITCH);
+        executor.setVelocity(calcPostRetrievalVector());
+        InteractiveItemArbiter.onGrab(targetedDisplay, executor); // here is where the display is taken care of
+    }
+
+    private void failureToReach() {
+        Vector v = ex.getVelocity();
+        double damping = Config.Movement.DASH_VELOCITY_DAMPING;
+        ex.setVelocity(new Vector(v.getX() * damping, v.getY() * damping, v.getZ() * damping));
+    }
+
+    private void dashEffects() {
+        addDashSpeedPotion();
+        scheduleParticleDisplay(executor);
+    }
+
+    private void addDashSpeedPotion() {
+        Prefab.PotionEffects.DASH_SPEED.apply(executor);
+    }
+
+    @SuppressWarnings("all")
+    private boolean isDashToItemImpeded() {
         RayTraceResult impedanceCheck = ex.getWorld().rayTraceBlocks(
             ex.getLocation().add(new Vector(0, Config.Movement.DASH_IMPEDANCE_CHECK_OFFSET_Y, 0)),
-            itemDisplay.getLocation().subtract(ex.getLocation()).toVector().normalize(),
+            targetedDisplay.getLocation().subtract(ex.getLocation()).toVector().normalize(),
             MAX_STRAIGHT_DASH_DISTANCE.get() / 2,
             FluidCollisionMode.NEVER,
             true,
@@ -233,7 +310,7 @@ public class Dash {
             },
             Config.Movement.DASH_VELOCITY_TASK_DELAY, Config.Movement.DASH_VELOCITY_TASK_PERIOD,
             MAX_ITERATIONS,
-            MovementAction.class, "dashStraight"
+            MovementAction.class, "dashStraight", null
         );
     }
 }

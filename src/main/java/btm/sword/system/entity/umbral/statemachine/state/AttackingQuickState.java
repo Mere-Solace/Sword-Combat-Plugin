@@ -6,7 +6,6 @@ import org.bukkit.Location;
 import org.bukkit.util.Transformation;
 import org.bukkit.util.Vector;
 
-import btm.sword.config.Config;
 import btm.sword.system.action.movement.DashDirection;
 import btm.sword.system.attack.Attack;
 import btm.sword.system.attack.UmbralBladeAttack;
@@ -57,7 +56,9 @@ public class AttackingQuickState extends UmbralStateFacade {
     public void onEnter(UmbralBlade blade) {
         // handling it here cuz special case, doesn't work with tree well
         // TODO: is consuming soulfire at this location good?
+        // TODO: simply make a different input action with different prereqs instead?
         blade.getThrower().consumeSoulfire(blade.getCurrentComboStep() * 2.5f);
+
 
         if (blade.getCurrentComboStep() == 3) {
             Transformation curTr = blade.getDisplay().getTransformation();
@@ -74,15 +75,11 @@ public class AttackingQuickState extends UmbralStateFacade {
 
         attack(blade, 5.0);
 
-        // TODO: #121 - Potentially add per state glow changes or just a method for this
-        blade.getDisplay().setGlowing(true);
-        blade.getDisplay().setGlowColorOverride(Config.SwordColor.UMBRAL_GLOW);
     }
 
     @Override
     public void onExit(UmbralBlade blade) {
         blade.setAttackCompleted(false);
-        blade.getDisplay().setGlowing(false);
     }
 
     @Override

@@ -112,7 +112,8 @@ public class VoidLungeSkill extends ActiveSkill {
                     combatant.getUmbralBlade().onGrab(combatant);
                 },
                 0,50,10,
-                UmbralBladeAction.class, "performBlink"
+                UmbralBladeAction.class, "performBlink",
+                null
             );
         }, 60, TimeUnit.MILLISECONDS);
     }

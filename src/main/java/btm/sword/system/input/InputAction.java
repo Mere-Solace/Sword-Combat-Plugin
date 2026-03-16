@@ -11,6 +11,7 @@ import java.util.function.Supplier;
 import btm.sword.system.action.constraint.ActionConstraint;
 import btm.sword.system.entity.impl.Combatant;
 import btm.sword.system.entity.impl.SwordPlayer;
+import btm.sword.utility.Debug;
 import lombok.Getter;
 
 /**
@@ -116,6 +117,8 @@ public class InputAction {
      * @return whether the action can be performed or not
      */
     public boolean handlePerformAttempt(Combatant executor) {
+        Debug.debug(name + "::Attempted");
+
         long currentTime = System.currentTimeMillis();
         long deltaTime = currentTime - getTimeLastExecuted();
         long cooldown = calcCooldown(executor);

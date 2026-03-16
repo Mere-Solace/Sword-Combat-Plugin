@@ -11,6 +11,7 @@ import org.bukkit.Particle;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 
 import btm.sword.config.Config;
@@ -18,6 +19,7 @@ import btm.sword.system.attack.Attack;
 import btm.sword.system.attack.Blockability;
 import btm.sword.system.attack.HitValuePacket;
 import btm.sword.utility.display.ParticleWrapper;
+import btm.sword.utility.entity.PotionEffectWrapper;
 import btm.sword.utility.sound.SoundType;
 import btm.sword.utility.sound.SoundWrapper;
 import net.kyori.adventure.text.Component;
@@ -232,6 +234,11 @@ public class Prefab {
             () -> 1f,
             () -> 0.05f
         );
+    }
+
+    public static class PotionEffects {
+        public static final PotionEffectWrapper DASH_SPEED = new PotionEffectWrapper(PotionEffectType.SPEED, Config.Movement.SPEED_DURATION, Config.Movement.SPEED_AMPLIFIER);
+        public static final PotionEffectWrapper HEAL_CHANNEL_SLOW = new PotionEffectWrapper(PotionEffectType.SLOWNESS, Config.Combat.HEAL_CHANNEL_SLOW_DURATION, Config.Combat.HEAL_CHANNEL_SLOW_AMPLIFIER);
     }
 
     public static class Text {

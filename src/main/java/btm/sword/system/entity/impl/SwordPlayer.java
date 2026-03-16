@@ -37,6 +37,7 @@ import com.destroystokyo.paper.profile.PlayerProfile;
 
 import btm.sword.config.Config;
 import btm.sword.system.action.BlockAction;
+import btm.sword.system.action.UmbralBladeAction;
 import btm.sword.system.action.throwing.ThrowAction;
 import btm.sword.system.action.throwing.types.DroppedItem;
 import btm.sword.system.control.PredicateRunnablePair;
@@ -107,6 +108,11 @@ public class SwordPlayer extends Combatant {
     @Setter
     private ActivationContext activationContext = ActivationContext.NORMAL;
 
+    /** Set to true by the damage pipeline when a healing channel is interrupted by incoming damage. */
+    @Getter
+    @Setter
+    private boolean channelInterrupted = false;
+
     private boolean performedDropAction;
     @Getter
     @Setter
@@ -119,6 +125,9 @@ public class SwordPlayer extends Combatant {
     private boolean threwItem;
     @Setter
     private boolean blocking;
+
+    private boolean punchingWithLink = false;
+    private boolean commandingWithLink = false;
 
     /** System.currentTimeMillis() deadline for the active parry hit-detection window. */
     @Setter
@@ -138,6 +147,10 @@ public class SwordPlayer extends Combatant {
     private boolean sneaking;
     private long sneakHoldTimeStart;
     private long timeSneakHeld;
+
+    @Getter
+    @Setter
+    private TimeArbiter.TaskHandle healChannelTask;
 
     private int thrownItemIndex;
 
@@ -249,6 +262,22 @@ public class SwordPlayer extends Combatant {
         targetEntityIndicatorTick();
 
         expBarTick();
+
+        boolean noHealChannelTask = healChannelTask == null;
+        boolean sneakingAndHolding = isSneakingAndHoldingRight();
+        boolean canHeal = canPerformHealAction();
+        boolean notMaxShards = aspects.shards().belowMax();
+        boolean holdingBlade = holdingUmbralBlade();
+
+        if (noHealChannelTask &&
+            sneakingAndHolding &&
+            canHeal &&
+            notMaxShards &&
+            holdingBlade) {
+
+            Debug.umbral("BEGIN HEAL CHANNEL");
+            UmbralBladeAction.beginHealChannel(this);
+        }
     }
 
     /**
@@ -333,6 +362,10 @@ public class SwordPlayer extends Combatant {
         );
     }
 
+    public boolean isSneakingAndHoldingRight() {
+        return player.isSneaking() && player.isBlocking();
+    }
+
     /**
      * Processes a player input of {@link InputType}, executing associated {@link InputAction}s
      * based on the input execution tree. Handles interrupting throwing, grabbing, swapping,
@@ -342,6 +375,10 @@ public class SwordPlayer extends Combatant {
      */
     public void act(InputType input) {
         if (ItemClassifier.isBlocked(getItemStackInHand(true))) return;
+
+        if (activationContext.equals(ActivationContext.CHANNELING)) {
+            activationContext = ActivationContext.NORMAL;
+        }
 
         if (throwingState()) {
             if (input != InputType.RIGHT && input != InputType.RIGHT_HOLD) {
@@ -921,15 +958,12 @@ public class SwordPlayer extends Combatant {
         holdingRight = true;
         rightHoldTimeStart = System.currentTimeMillis();
 
-        // TODO: #123 - Handle umbral blade holding
         mainItemStackAtTimeOfHold = getItemStackInHand(true);
         offItemStackAtTimeOfHold = getItemStackInHand(false);
 
         indexOfRightHold = getCurrentInvIndex();
 
         if (!holdingUmbralItemInMainHand()) {
-
-            // TODO: #123 - This is where to implement catches for start clicking different items
 
             if (!mainItemStackAtTimeOfHold.isEmpty() &&
                 !holdingUmbralItemInMainHand()) {

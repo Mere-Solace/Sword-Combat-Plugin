@@ -11,12 +11,16 @@ public class InactiveState extends UmbralStateFacade {
 
     @Override
     public void onEnter(UmbralBlade blade) {
-
+        if (blade.getDisplay() != null) {
+            blade.getDisplay().setViewRange(0f);
+        }
     }
 
     @Override
     public void onExit(UmbralBlade blade) {
-
+        if (blade.getDisplay() != null) {
+            blade.getDisplay().setViewRange(300f);
+        }
     }
 
     @Override

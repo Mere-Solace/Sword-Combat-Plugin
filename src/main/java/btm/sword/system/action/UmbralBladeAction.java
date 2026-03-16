@@ -4,17 +4,25 @@ import static btm.sword.system.action.attack.PunchAction.throwPunch;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.bukkit.util.Vector;
 
+import btm.sword.config.Config;
+import btm.sword.system.action.attack.AttackAction;
+import btm.sword.system.control.PredicateRunnablePair;
 import btm.sword.system.control.SwordScheduler;
 import btm.sword.system.control.TimeArbiter;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.impl.Combatant;
+import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.entity.umbral.UmbralBlade;
 import btm.sword.system.entity.umbral.input.BladeRequest;
 import btm.sword.system.entity.umbral.statemachine.state.LodgedState;
 import btm.sword.system.entity.umbral.statemachine.state.WieldState;
+import btm.sword.system.input.ActivationContext;
+import btm.sword.system.input.InputType;
 import btm.sword.utility.Debug;
 import btm.sword.utility.Prefab;
 import btm.sword.utility.display.DrawUtil;
@@ -62,16 +70,138 @@ public class UmbralBladeAction extends SwordAction {
         blade.request(BladeRequest.ATTACK_HEAVY);
     }
 
+    public static void wieldedUmbralBladeAttack(Combatant wielder, int comboStep) {
+        if (!(wielder instanceof SwordPlayer sp)) return;
+
+        UmbralBlade blade = sp.getUmbralBlade();
+
+        Debug.umbral("performing wielded umbral blade attack. reclaim type="+blade.getReclaimType());
+
+        switch (blade.getReclaimType()) {
+            case NONE -> AttackAction.basicAttack(wielder, comboStep);
+            case CIRCULAR_SLASH -> {
+
+                DrawUtil.circle(List.of(Prefab.Particles.DEBUG_BLOB), wielder.getChestLocation(),
+                    wielder.getCurrentEyeDirectionBasis(),10,8,
+                    0.5, Math.PI/20);
+                blade.setReclaimType(UmbralBlade.ReclaimType.NONE);
+            }
+            case FORWARD_RUSH -> {
+                // TODO: implement forward rush & way to trigger.
+                blade.setReclaimType(UmbralBlade.ReclaimType.NONE);
+            }
+        }
+    }
+
+    public static void circularReclaimSlash() {
+
+    }
+
     public static void basicAttackWithLink(Combatant wielder, int comboStep) {
         UmbralBlade blade = wielder.getUmbralBlade();
         if (blade == null) return;
 
-        if (wielder.getAspects().soulfireCur() >= 10f && !blade.inState(LodgedState.class)) {
+        if (wielder.getAspects().soulfireCur() >= 2.5f && !blade.inState(LodgedState.class)) { //TODO: Config the 2.5f (cost of basic link attack)
             blade.requestQuickAttack(comboStep);
             return;
         }
 
+        if (comboStep != 1 && wielder instanceof SwordPlayer sp) {
+            sp.resetTree();
+            sp.act(InputType.LEFT);
+            return;
+        }
         throwPunch(wielder, comboStep == 1 || comboStep == 3,-1);
+    }
+
+    public static void beginHealChannel(Combatant wielder) {
+        Debug.umbral("heal channeling");
+
+        if (wielder instanceof SwordPlayer sp) {
+            sp.cancelBlockDrainTask();
+            sp.setBlocking(false);
+        }
+
+        UmbralBlade blade = wielder.getUmbralBlade();
+        if (blade == null || !blade.inState(WieldState.class)) return;
+        if (!(wielder instanceof SwordPlayer sp)) return;
+
+        float cost = (float) Config.Combat.CHANNEL_SOULFIRE_COST;
+
+        if (wielder.getAspects().soulfireCur() < cost) return;
+
+        sp.setActivationContext(ActivationContext.CHANNELING);
+        sp.setChannelInterrupted(false);
+
+        final AtomicInteger iterationsPassed = new AtomicInteger(0);
+        int healingDuration = (int) Config.Combat.CHANNEL_DURATION_MS;
+        int period = Config.Combat.CHANNEL_HEAL_PERIOD;
+        final int iterationsRequired = healingDuration/period;
+        final float soulfirePerIteration = cost/iterationsRequired;
+
+        final AtomicBoolean overspend = new AtomicBoolean(false);
+
+        sp.setHealChannelTask(TimeArbiter.runTimeBoundBukkitTaskOnTimer(
+            null,
+            () -> {
+                if (iterationsPassed.incrementAndGet() > iterationsRequired) {
+                    iterationsPassed.set(0);
+                }
+
+                if (sp.changeSoulfire(-soulfirePerIteration)) {
+                    overspend.set(true);
+                    // TODO:additional overspend logic?
+                    sp.setActivationContext(ActivationContext.NORMAL);
+                    return;
+                }
+
+                if (iterationsPassed.get() == iterationsRequired &&
+                    !sp.isChannelInterrupted() &&
+                    sp.getActivationContext().equals(ActivationContext.CHANNELING)) {
+                    Debug.umbral("My lad, you're healing yourself!");
+
+                    sp.changeShards(Config.Combat.CHANNEL_HEAL_AMOUNT);
+                    Prefab.Particles.SOULFIRE_POOF.display(sp.getChestLocation());
+                    Prefab.Sounds.SHADOW_BLINK.playForAllInRadius(sp.self());
+                }
+
+                Prefab.PotionEffects.HEAL_CHANNEL_SLOW.apply(wielder);
+                Prefab.Particles.SMOKE.display(wielder.getLocation());
+            },
+            null,
+            0, period,
+            UmbralBladeAction.class, "channel",
+            new PredicateRunnablePair(
+                () -> sp.isChannelInterrupted() ||
+                    !sp.getActivationContext().equals(ActivationContext.CHANNELING) ||
+                    !sp.isSneakingAndHoldingRight(),
+                () -> {
+                    Debug.umbral(String.format(
+                        "channel break -> interrupt=%s, ctx=%s, sneakRight=%s",
+                        sp.isChannelInterrupted(),
+                        sp.getActivationContext(),
+                        sp.isSneakingAndHoldingRight()
+                    ));
+                    sp.setHealChannelTask(null);
+                    sp.setActivationContext(ActivationContext.NORMAL);
+                }
+            ),
+            new PredicateRunnablePair(
+                overspend::get,
+                () -> {
+                    //TODO: overspend logic?
+                    sp.setHealChannelTask(null);
+                    sp.setActivationContext(ActivationContext.NORMAL);
+                }
+            )
+        ));
+    }
+
+    public static void hoverBlade(Combatant wielder) {
+        UmbralBlade blade = wielder.getUmbralBlade();
+        if (blade == null) return;
+
+        blade.request(BladeRequest.WAITING);
     }
 
     public static void spiralFinisher(Combatant wielder) {
@@ -138,7 +268,8 @@ public class UmbralBladeAction extends SwordAction {
                     wielder.getUmbralBlade().onGrab(wielder);
                 },
                 0,50,10,
-                UmbralBladeAction.class, "performBlink"
+                UmbralBladeAction.class, "performBlink",
+                null
             );
         }, 60, TimeUnit.MILLISECONDS);
     }

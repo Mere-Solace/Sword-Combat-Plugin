@@ -23,12 +23,12 @@ import org.joml.Vector3f;
 
 import btm.sword.config.Config;
 import btm.sword.system.action.movement.DashDirection;
-import btm.sword.system.action.throwing.InteractiveItemArbiter;
 import btm.sword.system.action.throwing.types.ThrownItem;
 import btm.sword.system.attack.Attack;
 import btm.sword.system.attack.UmbralBladeAttack;
 import btm.sword.system.attack.style.AttackType;
 import btm.sword.system.attack.style.WeaponAttackStyle;
+import btm.sword.system.control.PredicateRunnablePair;
 import btm.sword.system.control.SwordScheduler;
 import btm.sword.system.control.TimeArbiter;
 import btm.sword.system.entity.base.SwordEntity;
@@ -45,10 +45,13 @@ import btm.sword.system.entity.umbral.statemachine.state.LungingState;
 import btm.sword.system.entity.umbral.statemachine.state.RecallingState;
 import btm.sword.system.entity.umbral.statemachine.state.SheathedState;
 import btm.sword.system.entity.umbral.statemachine.state.StandbyState;
+import btm.sword.system.entity.umbral.statemachine.state.WaitingState;
+import btm.sword.system.entity.umbral.statemachine.state.WieldState;
 import btm.sword.system.item.ItemStackBuilder;
 import btm.sword.system.item.KeyRegistry;
 import btm.sword.system.item.SwordItemType;
 import btm.sword.system.item.special.SoulLinkItem;
+import btm.sword.utility.Debug;
 import btm.sword.utility.Prefab;
 import btm.sword.utility.display.DisplayUtil;
 import btm.sword.utility.display.DrawUtil;
@@ -67,6 +70,13 @@ import net.kyori.adventure.text.format.TextDecoration;
 @Getter
 @Setter
 public class UmbralBlade extends ThrownItem {
+    /** Type of dash-reclaim attack to perform on the next quick or heavy attack entry. */
+    public enum ReclaimType {
+        NONE,
+        CIRCULAR_SLASH, // in waiting state
+        FORWARD_RUSH // otherwise?
+    }
+
     private UmbralStateMachine bladeStateMachine;
 
     private Function<Combatant, Attack>[] basicAttacks;
@@ -99,6 +109,8 @@ public class UmbralBlade extends ThrownItem {
     private boolean skillFinished;
 
     private DashDirection dashDirection = DashDirection.NONE;
+
+    private ReclaimType reclaimType = ReclaimType.NONE;
 
     private final InputBuffer inputBuffer = new InputBuffer();
 
@@ -145,7 +157,7 @@ public class UmbralBlade extends ThrownItem {
         loadBasicAttacks();
 
         this.bladeStateMachine = new UmbralStateMachine(this, new SheathedState());
-        bladeStateMachine.initTransitions(this);
+        bladeStateMachine.initTransitions();
 
         exitImpalementStatePredicate = blade -> !inState(LodgedState.class);
 
@@ -201,62 +213,47 @@ public class UmbralBlade extends ThrownItem {
                 new Quaternionf().rotationY((float) Math.PI / 2).rotateZ(-(float) Math.PI / 1.65f),
                 scale,
                 new Quaternionf());
-        }
-        else if (state == StandbyState.class) {
+        } else if (state == StandbyState.class) {
             return new Transformation(
                 new Vector3f(),
                 new Quaternionf().rotationY(0).rotateZ((float) Math.PI),
                 scale,
                 new Quaternionf());
-        }
-        else if (state == RecallingState.class) {
+        } else if (state == RecallingState.class) {
             return new Transformation(
                 new Vector3f(),
                 new Quaternionf().rotateX((float) -Math.PI/2),
                 scale,
                 new Quaternionf());
-        }
-        else if (state == LungingState.class) {
+        } else if (state == LungingState.class) {
             return new Transformation(
                 new Vector3f(),
                 new Quaternionf().rotateX((float) Math.PI/2),
                 scale,
                 new Quaternionf()
             );
-        }
-        else if (state == GrabImpaleState.class) {
+        } else if (state == GrabImpaleState.class) {
             return new Transformation(
                 new Vector3f(),
                 new Quaternionf().rotateX((float) -Math.PI/2),
                 scale,
                 new Quaternionf()
             );
-        }
-        else if (state == LodgedState.class) {
+        } else if (state == LodgedState.class) {
             return display.getTransformation();
-        }
-        else if (state == AttackingQuickState.class || state == AttackingHeavyState.class) {
+        } else if (state == AttackingQuickState.class || state == AttackingHeavyState.class) {
             return new Transformation(
                 new Vector3f(0, 0, -1),
                 new Quaternionf().rotateX((float) Math.PI/2),
                 scale,
                 new Quaternionf());
-        }
-        else {
+        } else {
             return new Transformation(
                 new Vector3f(),
                 new Quaternionf().rotateZ((float) Math.PI),
                 scale,
                 new Quaternionf());
         }
-    }
-
-    public void registerAsInteractableItem() {
-        InteractiveItemArbiter.put(this);
-    }
-
-    public void unregisterAsInteractableItem() {
-        InteractiveItemArbiter.remove(display, false);
     }
 
     public void startIdleMovement() {
@@ -446,25 +443,43 @@ public class UmbralBlade extends ThrownItem {
         this.velocityFunction = t -> dir.clone().multiply(0.5);
     }
 
+    public void setReclaimType(ReclaimType type, int durationMilliseconds) {
+        reclaimType = type;
+        SwordScheduler.runBukkitTaskLater(
+            () -> reclaimType = ReclaimType.NONE,
+            durationMilliseconds, TimeUnit.MILLISECONDS
+        );
+    }
+
     public void onGrab(Combatant combatant) {
+        Debug.umbral("onGrab. inState()="+bladeStateMachine.getState().name());
+
         if (!isOwnedBy(combatant)) {
             // TODO: #122 - Add rejection logic for non-thrower grabs
             return;
         }
 
-        if (combatant.holdingUmbralItemInMainHand()) {
-            if (inState(LungingState.class) ||
-                inState(AttackingHeavyState.class) ||
-                inState(AttackingQuickState.class)) {
-//                thrower.setVelocity(thrower.self().getVelocity().add(to.clone().multiply(1.5)));
-            }
+        if (inState(WaitingState.class)) { // set reclaim type for 1/4 of a second.
+            setReclaimType(ReclaimType.CIRCULAR_SLASH, 1000); // TODO: Config.
+        }
 
-            request(BladeRequest.WIELD);
+        if (combatant.holdingUmbralItemInMainHand()) {
+            TimeArbiter.runFixedIterationTaskTimer(
+                null,
+                () -> request(BladeRequest.WIELD),
+                Config.UmbralBlade.WIELD_ON_GRAB_DELAY, Config.UmbralBlade.WIELD_ON_GRAB_PERIOD, Config.UmbralBlade.WIELD_ON_GRAB_ITERATIONS,
+                UmbralBlade.class,
+                "onGrab",
+                null,
+                new PredicateRunnablePair(
+                    () -> inState(WieldState.class),
+                    () -> {}
+                )
+            );
+
         }
         else {
             request(BladeRequest.STANDBY);
-
-            // Do a spinning attack like katarina?
         }
     }
 

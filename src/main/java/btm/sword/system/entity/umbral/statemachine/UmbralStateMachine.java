@@ -1,5 +1,6 @@
 package btm.sword.system.entity.umbral.statemachine;
 
+import org.bukkit.Color;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.util.Vector;
@@ -45,9 +46,8 @@ public class UmbralStateMachine extends StateMachine<UmbralBlade> {
     /**
      * Registers all FSM transitions. Called once after construction.
      *
-     * @param blade the UmbralBlade instance that owns this state machine
      */
-    public void initTransitions(UmbralBlade blade) {
+    public void initTransitions() {
         // =====================================================================
         // UNIVERSAL — wildcard transitions
         // =====================================================================
@@ -181,6 +181,13 @@ public class UmbralStateMachine extends StateMachine<UmbralBlade> {
             b -> {}
         ));
 
+        addTransition(new Transition<>(
+            StandbyState.class,
+            WaitingState.class,
+            b -> b.isRequestedAndActive(BladeRequest.WAITING),
+            b -> {}
+        ));
+
         // =====================================================================
         // FINISHER
         // =====================================================================
@@ -207,14 +214,14 @@ public class UmbralStateMachine extends StateMachine<UmbralBlade> {
         addTransition(new Transition<>(
             AttackingQuickState.class,
             RecallingState.class,
-            b -> b.isAttackCompleted(),
+            UmbralBlade::isAttackCompleted,
             b -> {}
         ));
 
         addTransition(new Transition<>(
             AttackingHeavyState.class,
             RecallingState.class,
-            b -> b.isAttackCompleted(),
+            UmbralBlade::isAttackCompleted,
             b -> {}
         ));
 
@@ -235,7 +242,7 @@ public class UmbralStateMachine extends StateMachine<UmbralBlade> {
         addTransition(new Transition<>(
             GrabImpaleState.class,
             RecallingState.class,
-            b -> b.isFinishedLunging(),
+            UmbralBlade::isFinishedLunging,
             b -> {}
         ));
 
@@ -244,8 +251,43 @@ public class UmbralStateMachine extends StateMachine<UmbralBlade> {
         // =====================================================================
         addTransition(new Transition<>(
             WaitingState.class,
+            RecallingState.class,
+            b -> b.isRequestedAndActive(BladeRequest.RECALL),
+            b -> {}
+        ));
+
+        addTransition(new Transition<>(
+            WaitingState.class,
             StandbyState.class,
-            b -> true,
+            b -> b.isRequestedAndActive(BladeRequest.STANDBY),
+            b -> {}
+        ));
+
+        addTransition(new Transition<>(
+            WaitingState.class,
+            WieldState.class,
+            b -> b.isRequestedAndActive(BladeRequest.WIELD),
+            b -> {}
+        ));
+
+        addTransition(new Transition<>(
+            WaitingState.class,
+            LungingState.class,
+            b -> b.isRequestedAndActive(BladeRequest.LUNGE),
+            b -> {}
+        ));
+
+        addTransition(new Transition<>(
+            WaitingState.class,
+            AttackingQuickState.class,
+            b -> b.isRequestedAndActive(BladeRequest.ATTACK_QUICK),
+            b -> {}
+        ));
+
+        addTransition(new Transition<>(
+            WaitingState.class,
+            AttackingHeavyState.class,
+            b -> b.isRequestedAndActive(BladeRequest.ATTACK_HEAVY),
             b -> {}
         ));
 
@@ -291,6 +333,13 @@ public class UmbralStateMachine extends StateMachine<UmbralBlade> {
             RecallingState.class,
             AttackingHeavyState.class,
             b -> b.isRequestedAndActive(BladeRequest.ATTACK_HEAVY),
+            b -> {}
+        ));
+
+        addTransition(new Transition<>(
+            RecallingState.class,
+            WaitingState.class,
+            b -> b.isRequestedAndActive(BladeRequest.WAITING),
             b -> {}
         ));
 
@@ -353,7 +402,14 @@ public class UmbralStateMachine extends StateMachine<UmbralBlade> {
         addTransition(new Transition<>(
             LungingState.class,
             RecallingState.class,
-            b -> b.isFinishedLunging(),
+            UmbralBlade::isFinishedLunging,
+            b -> {}
+        ));
+
+        addTransition(new Transition<>(
+            LungingState.class,
+            RecallingState.class,
+            b -> b.isRequestedAndActive(BladeRequest.STANDBY),
             b -> {}
         ));
     }
@@ -389,8 +445,31 @@ public class UmbralStateMachine extends StateMachine<UmbralBlade> {
         Debug.system(currentState.getClass().getSimpleName() + " -> " + next.getClass().getSimpleName());
         super.setState(next);
 
+        applyGlowForState(next, context);
+
         @SuppressWarnings("unchecked")
         Class<? extends State<UmbralBlade>> stateClass = (Class<? extends State<UmbralBlade>>) next.getClass();
         context.setDisplayTransformation(stateClass);
+    }
+
+    private static void applyGlowForState(State<UmbralBlade> state, UmbralBlade blade) {
+        if (blade.getDisplay() == null) return;
+        Color color = glowColorForState(state.getClass());
+        blade.getDisplay().setGlowing(color != null);
+        if (color != null) {
+            blade.getDisplay().setGlowColorOverride(color);
+        }
+    }
+
+    private static Color glowColorForState(Class<?> stateClass) {
+        if (stateClass == StandbyState.class) return Config.SwordColor.STANDBY_GLOW;
+        if (stateClass == AttackingQuickState.class) return Config.SwordColor.ATTACK_QUICK_GLOW;
+        if (stateClass == AttackingHeavyState.class) return Config.SwordColor.FEROCIOUS_SWEEP;
+        if (stateClass == LungingState.class) return Config.SwordColor.LUNGE_GLOW;
+        if (stateClass == LodgedState.class) return Config.SwordColor.LODGED_GLOW;
+        if (stateClass == GrabImpaleState.class) return Config.SwordColor.GRAB_IMPALE_GLOW;
+        if (stateClass == RecallingState.class) return Config.SwordColor.RECALL_GLOW;
+        if (stateClass == WaitingState.class) return Config.SwordColor.UMBRAL_GLOW;
+        return null;
     }
 }

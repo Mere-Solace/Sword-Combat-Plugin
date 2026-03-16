@@ -38,6 +38,10 @@ public class InteractiveItemArbiter {
         INTERACTIVE_ITEMS.put(interactiveItem.getDisplay(), interactiveItem);
     }
 
+    public static InteractiveItem get(ItemDisplay itemDisplay) {
+        return INTERACTIVE_ITEMS.get(itemDisplay);
+    }
+
     /**
      * Checks if the given {@link ItemDisplay} is currently interactive (i.e., associated with a {@link ThrownItem}).
      *

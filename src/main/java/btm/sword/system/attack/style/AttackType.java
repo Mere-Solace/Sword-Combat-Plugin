@@ -163,6 +163,21 @@ public enum AttackType implements AttackProfile {
         new Vector(-9,-0.93,5)
     )),
 
+    OVERHEAD_SLAM(ControlVectors.of(
+        new Vector(0, 3.0, -0.5),
+        new Vector(0, -4.0, 0.5),
+        new Vector(0, 2.0, 1.0),
+        new Vector(0, -2.0, 2.0)),
+        attack -> Config.Direction.DOWN().multiply(3)
+    ),
+    AERIAL_SPIKE(ControlVectors.of(
+        new Vector(0, 2.5, -0.5),
+        new Vector(0, -5.0, 1.5),
+        new Vector(0, 1.5, 0.5),
+        new Vector(0, -3.0, 2.5)),
+        attack -> Config.Direction.DOWN().multiply(5)
+    ),
+
     DEFAULT(ControlVectors.of(
         Config.Direction.UP(),
         Config.Direction.DOWN(),

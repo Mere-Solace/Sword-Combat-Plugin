@@ -32,16 +32,12 @@ public class GrabImpaleState extends UmbralStateFacade {
         blade.setFinishedLunging(false);
 
         moveToReadyPosition(blade);
-
-        blade.getDisplay().setGlowing(true);
-        blade.getDisplay().setGlowColorOverride(Config.SwordColor.UMBRAL_GLOW);
     }
 
     @Override
     public void onExit(UmbralBlade blade) {
         lungeActive = false;
         blade.setFinishedLunging(false);
-        blade.getDisplay().setGlowing(false);
         if (slerpTask != null && !slerpTask.isCancelled()) slerpTask.cancel();
         if (attackTask != null) attackTask.cancel(false);
     }
@@ -69,6 +65,7 @@ public class GrabImpaleState extends UmbralStateFacade {
                     thrower.isDead() ||
                     !thrower.getUmbralBlade().inState(GrabImpaleState.class);
             },
+            () -> false,
             () -> attackTask = SwordScheduler.runBukkitTaskLater(() -> attackEnemy(blade),
                 200, TimeUnit.MILLISECONDS)
         );

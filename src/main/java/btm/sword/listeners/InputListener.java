@@ -25,7 +25,6 @@ import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.input.InputType;
 import btm.sword.system.item.ItemClassifier;
-import btm.sword.utility.Debug;
 import btm.sword.utility.entity.InputUtil;
 import io.papermc.paper.event.player.PrePlayerAttackEntityEvent;
 
@@ -106,14 +105,21 @@ public class InputListener implements Listener {
             return;
         }
 
+        // Restore spawn eggs after use so they are never consumed — allows infinite spawning.
+        if ((action == Action.RIGHT_CLICK_AIR || action == Action.RIGHT_CLICK_BLOCK)
+                && item != null && !item.isEmpty() && item.getType().name().endsWith("_SPAWN_EGG")) {
+            ItemStack snapshot = item.clone();
+            SwordScheduler.runBukkitTaskLater(
+                () -> event.getPlayer().getInventory().setItemInMainHand(snapshot),
+                1, TimeUnit.MILLISECONDS);
+        }
+
         SwordScheduler.runBukkitTaskLater(() -> {
             if (swordPlayer.isInInventorySession()) return;
             if (swordPlayer.hasPerformedDropAction()) return;
             if (swordPlayer.isDroppingInInv()) {
-                Debug.inventory("Left click detected because of a drop in inv...");
                 return;
             }
-            Debug.inventory("dropping checks are not quick enough apparently...");
 
             if ((action == Action.LEFT_CLICK_AIR || action == Action.LEFT_CLICK_BLOCK)) {
                 if (swordPlayer.handleItemInteraction(item, InputType.LEFT)) {
@@ -137,6 +143,7 @@ public class InputListener implements Listener {
                 if (swordPlayer.isAtRoot() &&
                     event.hasBlock() &&
                     InputUtil.isInteractible(event.getClickedBlock())) {
+                    // allow blocks like doors and levers to be used
                     return;
                 }
 

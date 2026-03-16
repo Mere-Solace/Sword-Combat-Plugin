@@ -95,7 +95,7 @@ public class DevMenu extends Menu {
             click -> {
                 swordPlayer.getCombatProfile().reloadFromConfig();
                 swordPlayer.getAspects().reloadFromProfile(swordPlayer.getCombatProfile());
-                swordPlayer.message("§aCombat profile reloaded from config.");
+                swordPlayer.message(Component.text("Combat profile reloaded from config.", NamedTextColor.GREEN));
             }
         );
 

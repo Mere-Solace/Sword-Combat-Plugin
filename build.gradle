@@ -19,10 +19,6 @@ repositories {
         url = "https://oss.sonatype.org/content/groups/public/"
     }
     maven {
-        name = "dmulloy2-repo"
-        url = uri("https://repo.dmulloy2.net/repository/public/")
-    }
-    maven {
         name "xenondevsReleases"
         url 'https://repo.xenondevs.xyz/releases'
     }
@@ -34,7 +30,7 @@ dependencies {
     implementation 'xyz.xenondevs.invui:invui:1.47'
     compileOnly 'org.projectlombok:lombok:1.18.34'
     annotationProcessor 'org.projectlombok:lombok:1.18.34'
-    compileOnly 'com.comphenix.protocol:ProtocolLib:5.3.0'
+    compileOnly fileTree(dir: 'libs', include: ['ProtocolLib*.jar'])
 }
 
 tasks {

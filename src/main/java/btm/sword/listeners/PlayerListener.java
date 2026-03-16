@@ -40,6 +40,7 @@ import io.papermc.paper.event.player.PlayerShieldDisableEvent;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 
 
@@ -313,7 +314,8 @@ public class PlayerListener implements Listener {
                         pitch
                 );
                 player.playSound(sound);
-                player.sendMessage("§aPlayed sound: " + soundKey);
+                player.sendMessage(Component.text("Played sound: ", NamedTextColor.GREEN)
+                    .append(Component.text(soundKey, NamedTextColor.WHITE)));
                 event.setCancelled(true);
             }
         }
@@ -332,9 +334,11 @@ public class PlayerListener implements Listener {
                             player.getLocation().add(0, 1, 0),
                             count
                     );
-                    player.sendMessage("§bDisplayed particle: " + particleKey);
+                    player.sendMessage(Component.text("Displayed particle: ", NamedTextColor.AQUA)
+                        .append(Component.text(particleKey, NamedTextColor.WHITE)));
                 } catch (IllegalArgumentException ex) {
-                    player.sendMessage("§cUnknown particle: " + particleKey);
+                    player.sendMessage(Component.text("Unknown particle: ", NamedTextColor.RED)
+                        .append(Component.text(particleKey, NamedTextColor.WHITE)));
                 }
                 event.setCancelled(true);
             }

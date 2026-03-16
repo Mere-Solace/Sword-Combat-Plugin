@@ -120,7 +120,8 @@ public class DisplayUtil {
         double speed, int tpDuration, int period,
         double endDistance, boolean removeOnArrival,
         int timeoutTicks,
-        Supplier<Boolean> condition,
+        Supplier<Boolean> contiueDespiteArrivalCondition,
+        Supplier<Boolean> endCondition,
         Runnable callback) {
 
         AtomicInteger ticks = new AtomicInteger(0);
@@ -153,7 +154,7 @@ public class DisplayUtil {
             DisplayUtil.class, "displaySlerpToOffset (2)",
             new PredicateRunnablePair(
                 () -> entity.isInvalid() || !display.isValid() ||
-                    ticks.getAndIncrement() > timeoutTicks || condition.get(),
+                    ticks.getAndIncrement() > timeoutTicks || endCondition.get(),
                 () -> {
                     if (display.isValid() && removeOnArrival) display.remove();
                     if (callback != null) {
@@ -164,7 +165,8 @@ public class DisplayUtil {
             new PredicateRunnablePair(
                 () -> currentDirectionToTarget.get().isZero() ||
                     currentDirectionToTarget.get().lengthSquared() < endDistance*endDistance ||
-                    ticks.get() > timeoutTicks || condition.get(),
+                    ticks.get() > timeoutTicks || endCondition.get() &&
+                    !(contiueDespiteArrivalCondition.get()), // make this condition very predictable
                 () -> {
                     if (display.isValid() && removeOnArrival) display.remove();
                     if (callback != null) {
@@ -213,6 +215,7 @@ public class DisplayUtil {
                     2,
                     DisplayUtil.class, 214
                 );
+                entity.self().addPassenger(itemDisplay); // important line
 
                 if (iteration.incrementAndGet() % Config.Display.ITEM_DISPLAY_FOLLOW_PARTICLE_INTERVAL == 0)
                     Prefab.Particles.BLEED.display(l);

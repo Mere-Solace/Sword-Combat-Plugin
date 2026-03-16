@@ -16,6 +16,7 @@ public enum BladeRequest {
     FINISHER,
 
     RECALL,
+    WAITING,
 
     ACTIVATE_TO_PREVIOUS,
     DEACTIVATE,

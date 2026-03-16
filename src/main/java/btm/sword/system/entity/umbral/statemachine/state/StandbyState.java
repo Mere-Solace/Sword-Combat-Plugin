@@ -22,9 +22,6 @@ public class StandbyState extends UmbralStateFacade {
         // Instead of putting whenever blade enters a diff state, just deactivate when it should be
         InteractiveItemArbiter.remove(blade.getDisplay(), false);
 
-        blade.getDisplay().setGlowing(true);
-        blade.getDisplay().setGlowColorOverride(Config.SwordColor.UMBRAL_GLOW);
-
         followTask = DisplayUtil.itemDisplayFollowLerp(
             blade.getThrower(), blade.getDisplay(),
             new Vector(0.7, 0.7, -0.5),
@@ -41,7 +38,6 @@ public class StandbyState extends UmbralStateFacade {
     public void onExit(UmbralBlade blade) {
         InteractiveItemArbiter.put(blade);
 
-        blade.getDisplay().setGlowing(false);
         blade.endIdleMovement();
         if (followTask != null)
             followTask.cancel();
