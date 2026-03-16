@@ -67,51 +67,66 @@ import net.kyori.adventure.text.format.TextDecoration;
 
 // while flying and attacking on its own, no soulfire is reaped on attacks
 // while in hand, higher soulfire intake on hit
-@Getter
-@Setter
 public class UmbralBlade extends ThrownItem {
     /** Type of dash-reclaim attack to perform on the next quick or heavy attack entry. */
     public enum ReclaimType {
         NONE,
         CIRCULAR_SLASH, // in waiting state
+        EVISCERATE, // If pulling from Lodged
         FORWARD_RUSH // otherwise?
     }
 
-    private UmbralStateMachine bladeStateMachine;
-
+    private final UmbralStateMachine bladeStateMachine;
+    @Getter
     private Function<Combatant, Attack>[] basicAttacks;
+    @Getter
     private int currentComboStep = -1;
 
-    @Getter(lombok.AccessLevel.NONE)
     private SoulLinkItem link;
+    @Getter
     private ItemStack blade;
-
-    private ItemStack weapon;
-
+    @Getter
+    private final ItemStack weapon;
+    @Getter
+    @Setter
     private long lastActionTime = 0;
-    private Location lastTargetLocation;
 
-    private Vector3f scale = new Vector3f(0.85f, 1.3f, 1f);
+    @Getter
+    private final Vector3f scale = new Vector3f(0.85f, 1.3f, 1f); // TODO: Make Supplier and config the values
 
-    private static final int idleMovementPeriod = 150;
+    private static final int idleMovementPeriod = 150; // TODO: Config both
     private static final float idleMovementAmplitude = 0.25f;
+    @Getter
+    @Setter
     private TimeArbiter.TaskHandle idleMovementTask;
 
+    @Getter
     private final Predicate<UmbralBlade> endHoverPredicate;
+    @Getter
     private final Runnable attackEndCallback;
+    @Getter
+    @Setter
     private boolean attackCompleted = false;
 
+    @Getter
+    @Setter
     private ControlVectors ctrlPointsForLunge;
+    @Getter
+    @Setter
     private boolean finishedLunging = false;
-
-    boolean usingCustomFuncs;
-
+    @Getter
+    @Setter
+    private boolean usingCustomFuncs;
+    @Getter
+    @Setter
     private boolean skillFinished;
-
+    @Getter
+    @Setter
     private DashDirection dashDirection = DashDirection.NONE;
-
+    @Getter
+    @Setter
     private ReclaimType reclaimType = ReclaimType.NONE;
-
+    @Getter
     private final InputBuffer inputBuffer = new InputBuffer();
 
     /**
@@ -461,6 +476,9 @@ public class UmbralBlade extends ThrownItem {
 
         if (inState(WaitingState.class)) { // set reclaim type for 1/4 of a second.
             setReclaimType(ReclaimType.CIRCULAR_SLASH, 1000); // TODO: Config.
+        }
+        else if (inState(LodgedState.class)) {
+            setReclaimType(ReclaimType.EVISCERATE);
         }
 
         if (combatant.holdingUmbralItemInMainHand()) {

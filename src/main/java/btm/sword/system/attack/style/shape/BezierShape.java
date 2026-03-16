@@ -1,9 +1,10 @@
-package btm.sword.system.attack.style;
+package btm.sword.system.attack.style.shape;
 
 import java.util.function.Function;
 
 import org.bukkit.util.Vector;
 
+import btm.sword.system.attack.style.AttackShape;
 import btm.sword.utility.math.Basis;
 import btm.sword.utility.math.BezierUtil;
 import btm.sword.utility.math.ControlVectors;
@@ -21,15 +22,8 @@ import btm.sword.utility.math.ControlVectors;
  *       sweeps targeting a specific entity). Use {@link #worldSpace} to create a world-space shape.</li>
  * </ul>
  */
-public class BezierShape implements AttackShape {
-
-    private final ControlVectors controlVectors;
-    private final boolean isWorldSpace;
-
-    private BezierShape(ControlVectors controlVectors, boolean isWorldSpace) {
-        this.controlVectors = controlVectors;
-        this.isWorldSpace = isWorldSpace;
-    }
+public record BezierShape(ControlVectors controlVectors,
+                          boolean isWorldSpace) implements AttackShape {
 
     /**
      * Creates a local-space Bézier shape.
@@ -67,6 +61,7 @@ public class BezierShape implements AttackShape {
      *
      * @return the control vectors for this shape
      */
+    @Override
     public ControlVectors controlVectors() {
         return controlVectors;
     }

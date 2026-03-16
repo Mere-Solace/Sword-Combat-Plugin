@@ -6,7 +6,8 @@ import org.bukkit.util.Vector;
 
 import btm.sword.system.attack.style.AttackProfile;
 import btm.sword.system.attack.style.AttackShape;
-import btm.sword.system.attack.style.BezierShape;
+import btm.sword.system.attack.style.shape.BezierShape;
+import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.utility.math.ControlVectors;
 
 /**
@@ -20,7 +21,7 @@ import btm.sword.utility.math.ControlVectors;
 public class GeneratedAttackProfile implements AttackProfile {
 
     private final AttackShape shape;
-    private final Function<Attack, Vector> knockBackFunction;
+    private final Function<SwordEntity, Function<Attack, Vector>> knockBackFunction;
 
     /**
      * Creates a new {@code GeneratedAttackProfile} with pre-computed world-space control vectors.
@@ -28,7 +29,7 @@ public class GeneratedAttackProfile implements AttackProfile {
      * @param controlVectors  world-space cubic Bézier control points
      * @param knockBackFunction function that computes knockback direction at hit time
      */
-    public GeneratedAttackProfile(ControlVectors controlVectors, Function<Attack, Vector> knockBackFunction) {
+    public GeneratedAttackProfile(ControlVectors controlVectors, Function<SwordEntity, Function<Attack, Vector>> knockBackFunction) {
         this.shape = BezierShape.worldSpace(controlVectors);
         this.knockBackFunction = knockBackFunction;
     }
@@ -39,7 +40,7 @@ public class GeneratedAttackProfile implements AttackProfile {
     }
 
     @Override
-    public Function<Attack, Vector> knockbackFunction() {
+    public Function<SwordEntity, Function<Attack, Vector>> knockbackFunction() {
         return knockBackFunction;
     }
 

@@ -27,7 +27,7 @@ public class MobSweepAttack extends SweepAttack {
     @Override
     protected void hit() {
         currentTarget.hit(attacker, Prefab.Attacks.defaultMobHit,
-            attackProfile.knockbackFunction().apply(this));
+            attackProfile.knockbackFunction().apply(currentTarget).apply(this));
         Prefab.Particles.TEST_HIT.display(currentTarget.getChestLocation());
     }
 }

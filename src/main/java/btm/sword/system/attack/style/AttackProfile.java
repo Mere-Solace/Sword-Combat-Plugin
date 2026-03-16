@@ -5,6 +5,7 @@ import java.util.function.Function;
 import org.bukkit.util.Vector;
 
 import btm.sword.system.attack.Attack;
+import btm.sword.system.entity.base.SwordEntity;
 
 /**
  * Defines the geometric and kinematic properties of a single attack sweep.
@@ -33,7 +34,7 @@ public interface AttackProfile {
      *
      * @return knockback direction resolver
      */
-    Function<Attack, Vector> knockbackFunction();
+    Function<SwordEntity, Function<Attack, Vector>> knockbackFunction();
 
     /**
      * Returns the optional normal vector for this attack, or {@code null} if not set.

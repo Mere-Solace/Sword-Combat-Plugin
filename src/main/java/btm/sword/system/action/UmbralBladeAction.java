@@ -11,6 +11,8 @@ import org.bukkit.util.Vector;
 
 import btm.sword.config.Config;
 import btm.sword.system.action.attack.AttackAction;
+import btm.sword.system.attack.Attack;
+import btm.sword.system.attack.style.AttackType;
 import btm.sword.system.control.PredicateRunnablePair;
 import btm.sword.system.control.SwordScheduler;
 import btm.sword.system.control.TimeArbiter;
@@ -80,21 +82,26 @@ public class UmbralBladeAction extends SwordAction {
         switch (blade.getReclaimType()) {
             case NONE -> AttackAction.basicAttack(wielder, comboStep);
             case CIRCULAR_SLASH -> {
-
-                DrawUtil.circle(List.of(Prefab.Particles.DEBUG_BLOB), wielder.getChestLocation(),
-                    wielder.getCurrentEyeDirectionBasis(),10,8,
-                    0.5, Math.PI/20);
+                circularReclaimSlash(wielder);
                 blade.setReclaimType(UmbralBlade.ReclaimType.NONE);
+            }
+            case EVISCERATE -> {
+
             }
             case FORWARD_RUSH -> {
                 // TODO: implement forward rush & way to trigger.
                 blade.setReclaimType(UmbralBlade.ReclaimType.NONE);
             }
+            default -> {} // Shouldn't reach
         }
     }
 
-    public static void circularReclaimSlash() {
-
+    public static void circularReclaimSlash(Combatant wielder) {
+        new Attack(wielder.getItemStackInHand(true), // TODO: Store somewhere
+            AttackType.BLADE_RETRIEVAL_CIRCULAR_SLASH,
+            false,
+            300, 200, // TODO: Config
+            0, 1).execute(wielder);
     }
 
     public static void basicAttackWithLink(Combatant wielder, int comboStep) {

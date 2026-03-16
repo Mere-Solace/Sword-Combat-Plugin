@@ -8,6 +8,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
 
 import btm.sword.config.Config;
+import btm.sword.system.entity.base.SwordEntity;
 
 
 /**
@@ -165,5 +166,11 @@ public class VectorUtil {
 
         double cos = Math.max(-1.0, Math.min(1.0, v.dot(u) / (vNorm * uNorm)));
         return Math.acos(cos); // radians
+    }
+
+    public static Vector getVectorTo(SwordEntity from, SwordEntity to, double scalar) {
+        return to.getChestLocation().toVector()
+            .subtract(from.getChestLocation().toVector())
+            .normalize().multiply(scalar);
     }
 }

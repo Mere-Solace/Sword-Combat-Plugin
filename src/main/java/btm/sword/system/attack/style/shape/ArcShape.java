@@ -1,9 +1,11 @@
-package btm.sword.system.attack.style;
+package btm.sword.system.attack.style.shape;
 
 import java.util.function.Function;
 
 import org.bukkit.util.Vector;
 
+import btm.sword.system.attack.style.AttackShape;
+import btm.sword.utility.display.DrawUtil;
 import btm.sword.utility.math.Basis;
 
 /**
@@ -15,17 +17,15 @@ import btm.sword.utility.math.Basis;
  *
  * <p>Angles are measured in radians, where {@code 0} aligns with the attacker's {@code forward}
  * direction and positive angles rotate toward {@code right}. This matches the convention used
- * by {@link btm.sword.utility.display.DrawUtil#circle}.
+ * by {@link DrawUtil#circle}.
  *
  * <p>Use the {@link #of} factory for a standard local-space arc. The {@code rangeMultiplier}
  * passed to {@link #resolve} scales the {@code radius}.
  */
-public class ArcShape implements AttackShape {
-
-    private final double radius;
-    private final double startAngle;
-    private final double endAngle;
-    private final double height;
+public record ArcShape(double radius,
+                       double startAngle,
+                       double endAngle,
+                       double height) implements AttackShape {
 
     /**
      * Creates an {@code ArcShape}.
@@ -50,16 +50,8 @@ public class ArcShape implements AttackShape {
         return new ArcShape(radius, startAngle, endAngle, 0.0);
     }
 
-    private ArcShape(double radius, double startAngle, double endAngle, double height) {
-        this.radius = radius;
-        this.startAngle = startAngle;
-        this.endAngle = endAngle;
-        this.height = height;
-    }
-
     @Override
     public Function<Double, Vector> resolve(Basis basis, double rangeMultiplier) {
-        Vector right = basis.right();
         Vector forward = basis.forward();
         Vector up = basis.up();
 

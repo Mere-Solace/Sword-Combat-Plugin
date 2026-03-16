@@ -36,7 +36,7 @@ import btm.sword.utility.misc.ConsumerToConsumePair;
 import lombok.Getter;
 
 public class Attack extends SwordAction implements Runnable {
-
+    @Getter
     protected Combatant attacker;
     protected ItemStack itemUsedInAttack;
     protected LivingEntity attackingEntity;
@@ -70,7 +70,6 @@ public class Attack extends SwordAction implements Runnable {
 
     protected double interpolationValueRange;
     protected double interpolationStep;
-    protected int msPerIteration;
 
     protected final double rangeMultiplier;
 
@@ -87,6 +86,9 @@ public class Attack extends SwordAction implements Runnable {
     @Getter
     protected Attack nextAttack;
     protected int millisecondDelayBeforeNextAttack;
+
+    // TODO: maybe: have a caller-defined consumer that takes in a time-step and current vector (or just attack)
+    //  and does display/sound stuff? a 'DisplayConsumer' that runs per iteration??
 
     public Attack(ItemStack itemUsedInAttack, AttackProfile profile, boolean orientWithPitch) {
         this.itemUsedInAttack = itemUsedInAttack;
@@ -167,10 +169,6 @@ public class Attack extends SwordAction implements Runnable {
     }
 
     protected void cast() {
-        onRun();
-    }
-
-    private void onRun() {
         attacker.applyAttackCooldown();
         if (attackDurationResolver != null) {
             this.attackMilliseconds = attackDurationResolver.apply(attacker);
@@ -180,7 +178,7 @@ public class Attack extends SwordAction implements Runnable {
 
     @Override
     public void run() {
-        onRun();
+        cast();
     }
 
     void playSwingSoundEffects() {
@@ -285,6 +283,7 @@ public class Attack extends SwordAction implements Runnable {
     }
 
     // TODO: #128 - Make Particle Effects more dynamic. Low prio.
+    //  Maybe we just put particles to display in the AttackType or Attack profile?
     protected void drawAttackEffects() {
         Prefab.Particles.TEST_SWING.display(attackLocation);
     }
@@ -317,7 +316,7 @@ public class Attack extends SwordAction implements Runnable {
 
     protected void hit() {
         currentTarget.hit(attacker, Prefab.Attacks.basicAttack,
-            attackProfile.knockbackFunction().apply(this));
+            attackProfile.knockbackFunction().apply(currentTarget).apply(this));
 
         Prefab.Particles.TEST_HIT.display(currentTarget.getChestLocation());
     }

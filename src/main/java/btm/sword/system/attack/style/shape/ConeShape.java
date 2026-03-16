@@ -1,9 +1,10 @@
-package btm.sword.system.attack.style;
+package btm.sword.system.attack.style.shape;
 
 import java.util.function.Function;
 
 import org.bukkit.util.Vector;
 
+import btm.sword.system.attack.style.AttackShape;
 import btm.sword.utility.math.Basis;
 
 /**
@@ -26,12 +27,8 @@ import btm.sword.utility.math.Basis;
  * {@code right} vector in the plane perpendicular to forward.
  * The {@code rangeMultiplier} passed to {@link #resolve} scales the {@code range}.
  */
-public class ConeShape implements AttackShape {
-
-    private final double halfAngle;
-    private final double range;
-    private final double startSweepAngle;
-    private final double endSweepAngle;
+public record ConeShape(double halfAngle, double range, double startSweepAngle,
+                        double endSweepAngle) implements AttackShape {
 
     /**
      * Creates a {@code ConeShape}.
@@ -53,19 +50,12 @@ public class ConeShape implements AttackShape {
      * <p>The sweep runs from {@code -halfSweep} to {@code +halfSweep} around the forward axis,
      * producing an attack that fans symmetrically left and right.
      *
-     * @param halfAngle  polar angle from the forward axis to the cone surface, in radians
-     * @param range      reach of the cone, in blocks
-     * @param halfSweep  half the total azimuthal sweep, in radians
+     * @param halfAngle polar angle from the forward axis to the cone surface, in radians
+     * @param range     reach of the cone, in blocks
+     * @param halfSweep half the total azimuthal sweep, in radians
      */
     public static ConeShape symmetric(double halfAngle, double range, double halfSweep) {
         return new ConeShape(halfAngle, range, -halfSweep, halfSweep);
-    }
-
-    private ConeShape(double halfAngle, double range, double startSweepAngle, double endSweepAngle) {
-        this.halfAngle = halfAngle;
-        this.range = range;
-        this.startSweepAngle = startSweepAngle;
-        this.endSweepAngle = endSweepAngle;
     }
 
     @Override
