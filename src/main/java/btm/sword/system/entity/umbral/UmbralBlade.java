@@ -23,7 +23,6 @@ import org.joml.Vector3f;
 
 import btm.sword.config.Config;
 import btm.sword.system.action.movement.DashDirection;
-import btm.sword.system.action.throwing.InteractiveItemArbiter;
 import btm.sword.system.action.throwing.types.ThrownItem;
 import btm.sword.system.attack.Attack;
 import btm.sword.system.attack.UmbralBladeAttack;
@@ -46,11 +45,13 @@ import btm.sword.system.entity.umbral.statemachine.state.LungingState;
 import btm.sword.system.entity.umbral.statemachine.state.RecallingState;
 import btm.sword.system.entity.umbral.statemachine.state.SheathedState;
 import btm.sword.system.entity.umbral.statemachine.state.StandbyState;
+import btm.sword.system.entity.umbral.statemachine.state.WaitingState;
 import btm.sword.system.entity.umbral.statemachine.state.WieldState;
 import btm.sword.system.item.ItemStackBuilder;
 import btm.sword.system.item.KeyRegistry;
 import btm.sword.system.item.SwordItemType;
 import btm.sword.system.item.special.SoulLinkItem;
+import btm.sword.utility.Debug;
 import btm.sword.utility.Prefab;
 import btm.sword.utility.display.DisplayUtil;
 import btm.sword.utility.display.DrawUtil;
@@ -72,10 +73,8 @@ public class UmbralBlade extends ThrownItem {
     /** Type of dash-reclaim attack to perform on the next quick or heavy attack entry. */
     public enum ReclaimType {
         NONE,
-        /** Ground dash reclaim — overhead slam downward. */
-        OVERHEAD_SLAM,
-        /** Air dash reclaim — aerial spike downward. */
-        AERIAL_SPIKE
+        CIRCULAR_SLASH, // in waiting state
+        FORWARD_RUSH // otherwise?
     }
 
     private UmbralStateMachine bladeStateMachine;
@@ -444,10 +443,24 @@ public class UmbralBlade extends ThrownItem {
         this.velocityFunction = t -> dir.clone().multiply(0.5);
     }
 
+    public void setReclaimType(ReclaimType type, int durationMilliseconds) {
+        reclaimType = type;
+        SwordScheduler.runBukkitTaskLater(
+            () -> reclaimType = ReclaimType.NONE,
+            durationMilliseconds, TimeUnit.MILLISECONDS
+        );
+    }
+
     public void onGrab(Combatant combatant) {
+        Debug.umbral("onGrab. inState()="+bladeStateMachine.getState().name());
+
         if (!isOwnedBy(combatant)) {
             // TODO: #122 - Add rejection logic for non-thrower grabs
             return;
+        }
+
+        if (inState(WaitingState.class)) { // set reclaim type for 1/4 of a second.
+            setReclaimType(ReclaimType.CIRCULAR_SLASH, 1000); // TODO: Config.
         }
 
         if (combatant.holdingUmbralItemInMainHand()) {

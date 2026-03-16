@@ -7,11 +7,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import btm.sword.system.input.InputType;
-
 import org.bukkit.util.Vector;
 
 import btm.sword.config.Config;
+import btm.sword.system.action.attack.AttackAction;
 import btm.sword.system.control.PredicateRunnablePair;
 import btm.sword.system.control.SwordScheduler;
 import btm.sword.system.control.TimeArbiter;
@@ -23,6 +22,7 @@ import btm.sword.system.entity.umbral.input.BladeRequest;
 import btm.sword.system.entity.umbral.statemachine.state.LodgedState;
 import btm.sword.system.entity.umbral.statemachine.state.WieldState;
 import btm.sword.system.input.ActivationContext;
+import btm.sword.system.input.InputType;
 import btm.sword.utility.Debug;
 import btm.sword.utility.Prefab;
 import btm.sword.utility.display.DrawUtil;
@@ -68,6 +68,33 @@ public class UmbralBladeAction extends SwordAction {
         if (blade == null) return;
 
         blade.request(BladeRequest.ATTACK_HEAVY);
+    }
+
+    public static void wieldedUmbralBladeAttack(Combatant wielder, int comboStep) {
+        if (!(wielder instanceof SwordPlayer sp)) return;
+
+        UmbralBlade blade = sp.getUmbralBlade();
+
+        Debug.umbral("performing wielded umbral blade attack. reclaim type="+blade.getReclaimType());
+
+        switch (blade.getReclaimType()) {
+            case NONE -> AttackAction.basicAttack(wielder, comboStep);
+            case CIRCULAR_SLASH -> {
+
+                DrawUtil.circle(List.of(Prefab.Particles.DEBUG_BLOB), wielder.getChestLocation(),
+                    wielder.getCurrentEyeDirectionBasis(),10,8,
+                    0.5, Math.PI/20);
+                blade.setReclaimType(UmbralBlade.ReclaimType.NONE);
+            }
+            case FORWARD_RUSH -> {
+                // TODO: implement forward rush & way to trigger.
+                blade.setReclaimType(UmbralBlade.ReclaimType.NONE);
+            }
+        }
+    }
+
+    public static void circularReclaimSlash() {
+
     }
 
     public static void basicAttackWithLink(Combatant wielder, int comboStep) {

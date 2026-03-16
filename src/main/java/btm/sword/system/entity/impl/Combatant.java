@@ -2,8 +2,6 @@ package btm.sword.system.entity.impl;
 
 import java.util.concurrent.TimeUnit;
 
-import btm.sword.system.entity.umbral.statemachine.state.WaitingState;
-
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.attribute.Attribute;
@@ -27,6 +25,7 @@ import btm.sword.system.entity.umbral.statemachine.state.LodgedState;
 import btm.sword.system.entity.umbral.statemachine.state.RecallingState;
 import btm.sword.system.entity.umbral.statemachine.state.SheathedState;
 import btm.sword.system.entity.umbral.statemachine.state.StandbyState;
+import btm.sword.system.entity.umbral.statemachine.state.WaitingState;
 import btm.sword.system.entity.umbral.statemachine.state.WieldState;
 import btm.sword.system.input.ActivationContext;
 import btm.sword.system.item.KeyRegistry;

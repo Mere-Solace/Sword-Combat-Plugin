@@ -5,6 +5,8 @@ import java.util.List;
 import org.bukkit.Location;
 import org.bukkit.util.Vector;
 
+import btm.sword.utility.math.Basis;
+
 public class DrawUtil {
     /**
      * Creates a linear sequence of particles (or effects) between two locations using the secant method.
@@ -46,8 +48,33 @@ public class DrawUtil {
         Location cur = origin.clone();
         for (double i = 0; i <= length; i += width) {
             cur.add(step);
-            for (ParticleWrapper p : particles) {
-                p.display(cur);
+            ParticleWrapper.displayAll(particles, cur);
+        }
+    }
+
+    // TODO: can this be optimized?
+    /**
+     * @param particles ParticleWrappers to be displayed
+     * @param origin center of circle
+     * @param basis basis to use for orientation of circle
+     * @param outerRadius ~
+     * @param innerRadius ~
+     * @param spacingRadial distance between particles (from the inner to outer radius)
+     * @param spacingArc distance between particles (in radians) around circle
+     */
+    public static void circle(List<ParticleWrapper> particles, Location origin, Basis basis, double outerRadius, double innerRadius, double spacingRadial, double spacingArc) {
+        Vector up = basis.up();
+        Vector forward = basis.forward();
+        Vector rotator;
+
+        int radialIterations = Math.max(1, (int) ((outerRadius - innerRadius) / spacingRadial));
+
+        double theta = 0;
+        while (theta < 2 * Math.PI) {
+            theta += spacingArc;
+            rotator = forward.clone().rotateAroundAxis(up, theta);
+            for (int i = radialIterations; i > 0; i--) {
+                ParticleWrapper.displayAll(particles, origin.clone().add(rotator.clone().multiply(innerRadius + (i*spacingRadial))));
             }
         }
     }

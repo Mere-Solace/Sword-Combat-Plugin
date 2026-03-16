@@ -441,6 +441,17 @@ public class InputRegistrar {
             new InputExecutionTree.InputNodeBuilder(root,
                 Collections.nCopies(step, InputType.LEFT)
             ).action(new LinkedList<>(List.of(
+                    new InputExecutionTree.ActionContextPair(
+                        () -> InputAction.builder()
+                            .action(executor -> UmbralBladeAction.wieldedUmbralBladeAttack(executor, comboStep))
+                            .cooldown(cooldown)
+                            .canCast(Combatant::canPerformAction)
+                            .castDuration(attackCastDuration)
+                            .displayCooldown(true)
+                            .displayDisabled(true)
+                            .resetIfCannotPerform(false)
+                            .build(),
+                        SwordPlayer::umbralBladeState),
                 new InputExecutionTree.ActionContextPair(
                     () -> InputAction.builder()
                         .action(executor -> UmbralBladeAction.basicAttackWithLink(executor, comboStep))

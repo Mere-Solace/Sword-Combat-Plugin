@@ -934,6 +934,16 @@ public abstract class SwordEntity {
         timeOfLastBodyBasisCalculation = System.currentTimeMillis();
     }
 
+    public Basis getCurrentEyeDirectionBasis() {
+        updateEyeDirectionBasis();
+        return currentEyeDirectionBasis;
+    }
+
+    public Basis getCurrentBodyDirectionBasis() {
+        updateBodyDirectionBasis();
+        return currentBodyDirectionBasis;
+    }
+
     public Vector getChestVector() {
         return chestVector.clone();
     }

@@ -12,7 +12,6 @@ import btm.sword.system.attack.UmbralBladeAttack;
 import btm.sword.system.attack.style.AttackType;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.umbral.UmbralBlade;
-import btm.sword.system.entity.umbral.UmbralBlade.ReclaimType;
 import btm.sword.system.entity.umbral.statemachine.UmbralStateFacade;
 import btm.sword.utility.Prefab;
 import btm.sword.utility.display.DrawUtil;
