@@ -31,8 +31,6 @@ import btm.sword.utility.Prefab;
 import btm.sword.utility.display.ParticleWrapper;
 import btm.sword.utility.entity.HitboxUtil;
 import btm.sword.utility.math.Basis;
-import btm.sword.utility.math.BezierUtil;
-import btm.sword.utility.math.ControlVectors;
 import btm.sword.utility.math.VectorUtil;
 import btm.sword.utility.misc.ConsumerToConsumePair;
 import lombok.Getter;
@@ -45,7 +43,6 @@ public class Attack extends SwordAction implements Runnable {
     protected final AttackProfile attackProfile;
     protected final boolean orientWithPitch;
 
-    protected final ControlVectors controlVectors;
     protected Function<Double, Vector> weaponPathFunction;
 
     protected Vector curRight;
@@ -53,7 +50,7 @@ public class Attack extends SwordAction implements Runnable {
     protected Vector curForward; // Reserved for future forward knockback calculations
 
     protected Location origin;
-    protected Location attackLocation; // current bezier vec + origin
+    protected Location attackLocation; // current path vec + origin
 
     protected Vector cur;
     protected Vector prev;
@@ -93,7 +90,6 @@ public class Attack extends SwordAction implements Runnable {
 
     public Attack(ItemStack itemUsedInAttack, AttackProfile profile, boolean orientWithPitch) {
         this.itemUsedInAttack = itemUsedInAttack;
-        this.controlVectors = profile.controlVectors();
         this.attackProfile = profile;
         this.orientWithPitch = orientWithPitch;
 
@@ -207,7 +203,7 @@ public class Attack extends SwordAction implements Runnable {
         interpolationStep = interpolationValueRange / attackIterations;
         int msPerIteration = Math.max(1, attackMilliseconds / attackIterations);
 
-        generateBezierFunction();
+        generatePathFunction();
         determineOrigin();
         prev = weaponPathFunction.apply(attackStartValue - interpolationStep);
         startupLogic();
@@ -355,8 +351,12 @@ public class Attack extends SwordAction implements Runnable {
         }
     }
 
-    // static function oriented with the players current basis to be used when the attack is executed.
-    void generateBezierFunction() {
+    /**
+     * Captures the attacker's current {@link Basis} and resolves the profile's
+     * {@link btm.sword.system.attack.style.AttackShape} into the weapon path function.
+     * Called once at attack start before the iteration loop begins.
+     */
+    void generatePathFunction() {
         Basis basis = orientWithPitch ?
                 VectorUtil.getBasis(
                     origin == null ? attackingEntity.getEyeLocation() : origin,
@@ -366,10 +366,7 @@ public class Attack extends SwordAction implements Runnable {
         curUp = basis.up();
         curForward = basis.forward();
 
-        ControlVectors adjusted = attackProfile instanceof GeneratedAttackProfile ?
-            controlVectors :
-            controlVectors.adjustToBasis(basis, rangeMultiplier);
-        weaponPathFunction = BezierUtil.cubicBezier3D(adjusted);
+        weaponPathFunction = attackProfile.shape().resolve(basis, rangeMultiplier);
     }
 
     public Vector getCur() {

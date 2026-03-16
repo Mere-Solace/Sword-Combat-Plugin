@@ -185,7 +185,7 @@ public enum AttackType implements AttackProfile {
         Config.Direction.OUT_DOWN()
     ));
 
-    private final ControlVectors controlVectors;
+    private final AttackShape shape;
     private final Function<Attack, Vector> knockbackFunction;
     private final Vector normalVector;
 
@@ -198,15 +198,47 @@ public enum AttackType implements AttackProfile {
     }
 
     AttackType(ControlVectors ctrlVectors, Function<Attack, Vector> knockback, @Nullable Vector normalVector) {
-        this.controlVectors = ctrlVectors;
+        this(BezierShape.of(ctrlVectors), knockback, normalVector);
+    }
+
+    AttackType(AttackShape shape, Function<Attack, Vector> knockback) {
+        this(shape, knockback, null);
+    }
+
+    AttackType(AttackShape shape, Function<Attack, Vector> knockback, @Nullable Vector normalVector) {
+        this.shape = shape;
         this.knockbackFunction = knockback;
         this.normalVector = normalVector;
     }
 
-    public ControlVectors controlVectors() {
-        return controlVectors;
+    /**
+     * Returns the {@link AttackShape} backing this attack type's sweep path.
+     *
+     * @return the shape for this attack type
+     */
+    @Override
+    public AttackShape shape() {
+        return shape;
     }
 
+    /**
+     * Returns the raw {@link ControlVectors} for this attack type.
+     *
+     * <p>Intended for non-attack consumers that need the Bézier control points directly
+     * (e.g., blade lunge movement). Only valid for entries backed by a {@link BezierShape}.
+     *
+     * @return the local-space control vectors for this attack type
+     * @throws UnsupportedOperationException if this entry's shape is not a {@link BezierShape}
+     */
+    public ControlVectors controlVectors() {
+        if (!(shape instanceof BezierShape bezierShape)) {
+            throw new UnsupportedOperationException(
+                name() + " is not backed by a BezierShape — controlVectors() is unavailable");
+        }
+        return bezierShape.controlVectors();
+    }
+
+    @Override
     public Function<Attack, Vector> knockbackFunction() {
         return knockbackFunction;
     }
