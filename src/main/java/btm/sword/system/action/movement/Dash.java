@@ -42,9 +42,9 @@ public class Dash {
 
     private static final Supplier<Double> MAX_STRAIGHT_DASH_DISTANCE = () -> Config.Movement.DASH_MAX_DISTANCE;
     private static final Supplier<Double> NORMAL_ITEM_RAY_WIDTH = () -> Config.Movement.DASH_RAY_HITBOX_RADIUS;
-    private static final Supplier<Double> UMBRAL_RAY_WIDTH = () -> 1.2; // TODO: Config
+    private static final Supplier<Double> UMBRAL_RAY_WIDTH = () -> Config.Movement.DASH_UMBRAL_RAY_HITBOX_RADIUS;
 
-    double FLAT_DASH_PITCH_THRESHOLD = 0.30; // TODO: Config
+    double FLAT_DASH_PITCH_THRESHOLD = Config.Movement.FLAT_DASH_PITCH_THRESHOLD;
 
     public Dash(Combatant executor, int direction) {
         this.executor = executor;
@@ -168,7 +168,7 @@ public class Dash {
     }
 
     private void dash() {
-        dashPower = flatDash ? Config.Movement.DASH_BASE_POWER * 2 : Config.Movement.DASH_BASE_POWER; // TODO: Config the 2 here
+        dashPower = flatDash ? Config.Movement.DASH_BASE_POWER * Config.Movement.FLAT_DASH_POWER_MULTIPLIER : Config.Movement.DASH_BASE_POWER;
 
         dashEffects();
 
@@ -213,7 +213,7 @@ public class Dash {
     }
 
     private void performNormalDashToItem(double distanceToItem) {
-        executor.setVelocity(executor.dir().multiply(Math.log(distanceToItem/2))); //  TODO: Config the 1/2
+        executor.setVelocity(executor.dir().multiply(Math.log(distanceToItem / Config.Movement.DASH_NORMAL_ITEM_DISTANCE_DIVISOR)));
     }
 
     // Dash up first, then dash to the item
@@ -232,15 +232,15 @@ public class Dash {
         }
         SwordScheduler.runBukkitTaskLater(() ->
                 executor.setVelocity(executor.dir().multiply(Math.log(distanceToItem * Config.Movement.DASH_FLAT_ITEM_DASH_DISTANCE_SCALER))),
-            !umbralHeightBoost ? 0 : 100, TimeUnit.MILLISECONDS // TODO: Config the 100
+            !umbralHeightBoost ? 0 : Config.Movement.FLAT_DASH_HEIGHT_BOOST_DELAY_MS, TimeUnit.MILLISECONDS
         );
     }
 
     private void scheduleCheckForItemPickup() {
-        int period = 50; // TODO: Config
+        int period = Config.Movement.DASH_ITEM_CHECK_PERIOD_MS;
         TimeArbiter.runFixedIterationTaskTimer(
             null, null,
-            0, period, 1500/period, // TODO: Config
+            0, period, Config.Movement.DASH_ITEM_CHECK_DURATION_MS / period,
             Dash.class, "scheduleCheckForItemPickup",
             this::failureToReach,
             new PredicateRunnablePair(

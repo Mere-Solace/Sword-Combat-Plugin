@@ -1274,6 +1274,33 @@ public class Config {
             v -> LINK_ATTACK_SOULFIRE_COST = v,
             ConfigurationSection::getDouble
         ); }
+
+        /** Number of steps in basic combo. */
+        public static int BASIC_COMBO_STEPS = 3;
+        static { register(
+            "combat.basic-combo-steps",
+            BASIC_COMBO_STEPS, Integer.class,
+            v -> BASIC_COMBO_STEPS = v,
+            ConfigurationSection::getInt
+        ); }
+
+        /** Particle count for ground hit effects. */
+        public static int GROUND_HIT_PARTICLE_COUNT = 5;
+        static { register(
+            "combat.ground-hit-particle-count",
+            GROUND_HIT_PARTICLE_COUNT, Integer.class,
+            v -> GROUND_HIT_PARTICLE_COUNT = v,
+            ConfigurationSection::getInt
+        ); }
+
+        /** Particle offset for ground hit effects. */
+        public static double GROUND_HIT_PARTICLE_OFFSET = 0.5;
+        static { register(
+            "combat.ground-hit-particle-offset",
+            GROUND_HIT_PARTICLE_OFFSET, Double.class,
+            v -> GROUND_HIT_PARTICLE_OFFSET = v,
+            ConfigurationSection::getDouble
+        ); }
     }
     //endregion
 
@@ -2490,6 +2517,69 @@ public class Config {
             GRAB_HOLD_DURATION, Integer.class,
             v -> GRAB_HOLD_DURATION = v,
             ConfigurationSection::getInt); }
+
+        /** Umbral dash ray width for targeting. */
+        public static double DASH_UMBRAL_RAY_HITBOX_RADIUS = 1.2;
+        static { register(
+            "movement.dash_umbral_ray_hitbox_radius",
+            DASH_UMBRAL_RAY_HITBOX_RADIUS, Double.class,
+            v -> DASH_UMBRAL_RAY_HITBOX_RADIUS = v,
+            ConfigurationSection::getDouble
+        ); }
+
+        /** Pitch threshold for flat dash detection. */
+        public static double FLAT_DASH_PITCH_THRESHOLD = 0.30;
+        static { register(
+            "movement.flat_dash_pitch_threshold",
+            FLAT_DASH_PITCH_THRESHOLD, Double.class,
+            v -> FLAT_DASH_PITCH_THRESHOLD = v,
+            ConfigurationSection::getDouble
+        ); }
+
+        /** Power multiplier for flat dash. */
+        public static double FLAT_DASH_POWER_MULTIPLIER = 2.0;
+        static { register(
+            "movement.flat_dash_power_multiplier",
+            FLAT_DASH_POWER_MULTIPLIER, Double.class,
+            v -> FLAT_DASH_POWER_MULTIPLIER = v,
+            ConfigurationSection::getDouble
+        ); }
+
+        /** Distance divisor for normal dash to item. */
+        public static double DASH_NORMAL_ITEM_DISTANCE_DIVISOR = 2.0;
+        static { register(
+            "movement.dash_normal_item_distance_divisor",
+            DASH_NORMAL_ITEM_DISTANCE_DIVISOR, Double.class,
+            v -> DASH_NORMAL_ITEM_DISTANCE_DIVISOR = v,
+            ConfigurationSection::getDouble
+        ); }
+
+        /** Delay for flat dash height boost in milliseconds. */
+        public static int FLAT_DASH_HEIGHT_BOOST_DELAY_MS = 100;
+        static { register(
+            "movement.flat_dash_height_boost_delay_ms",
+            FLAT_DASH_HEIGHT_BOOST_DELAY_MS, Integer.class,
+            v -> FLAT_DASH_HEIGHT_BOOST_DELAY_MS = v,
+            ConfigurationSection::getInt
+        ); }
+
+        /** Period for dash item check in milliseconds. */
+        public static int DASH_ITEM_CHECK_PERIOD_MS = 50;
+        static { register(
+            "movement.dash_item_check_period_ms",
+            DASH_ITEM_CHECK_PERIOD_MS, Integer.class,
+            v -> DASH_ITEM_CHECK_PERIOD_MS = v,
+            ConfigurationSection::getInt
+        ); }
+
+        /** Duration for dash item check in milliseconds. */
+        public static int DASH_ITEM_CHECK_DURATION_MS = 1500;
+        static { register(
+            "movement.dash_item_check_duration_ms",
+            DASH_ITEM_CHECK_DURATION_MS, Integer.class,
+            v -> DASH_ITEM_CHECK_DURATION_MS = v,
+            ConfigurationSection::getInt
+        ); }
     }
     //endregion
 

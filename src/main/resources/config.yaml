@@ -145,6 +145,10 @@ combat:
 
   link_attack_soulfire_cost: 2.5
 
+  basic_combo_steps: 3
+  ground_hit_particle_count: 5
+  ground_hit_particle_offset: 0.5
+
 
 timing:
   
@@ -321,6 +325,14 @@ movement:
   dash_flat_item_dash_distance_scaler: 0.5
   dash_flat_height_upper: 5.0
   dash_flat_height_lower: -5.0
+
+  dash_umbral_ray_hitbox_radius: 1.2
+  flat_dash_pitch_threshold: 0.30
+  flat_dash_power_multiplier: 2.0
+  dash_normal_item_distance_divisor: 2.0
+  flat_dash_height_boost_delay_ms: 100
+  dash_item_check_period_ms: 50
+  dash_item_check_duration_ms: 1500
 
 
 world:

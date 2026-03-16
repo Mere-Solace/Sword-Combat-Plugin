@@ -337,7 +337,9 @@ public class Attack extends SwordAction implements Runnable {
         RayTraceResult result = attackingEntity.getWorld().rayTraceBlocks(attackLocation, direction, 0.3);
         if (result != null) {
             // enter ground particles
-            new ParticleWrapper(Particle.BLOCK, 5, 0.5, 0.5, 0.5, //TODO: config or naw
+            new ParticleWrapper(Particle.BLOCK, Config.Combat.GROUND_HIT_PARTICLE_COUNT,
+                    Config.Combat.GROUND_HIT_PARTICLE_OFFSET, Config.Combat.GROUND_HIT_PARTICLE_OFFSET,
+                    Config.Combat.GROUND_HIT_PARTICLE_OFFSET,
                     Objects.requireNonNull(result.getHitBlock()).getBlockData()).display(attackLocation);
             Prefab.Particles.COLLIDE.display(attackLocation);
 

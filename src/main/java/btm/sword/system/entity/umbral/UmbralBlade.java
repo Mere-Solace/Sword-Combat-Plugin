@@ -123,6 +123,7 @@ public class UmbralBlade extends ThrownItem {
     @Setter
     private DashDirection dashDirection = DashDirection.NONE;
     @Getter
+    @Setter
     private ReclaimType reclaimType = ReclaimType.NONE;
     @Getter
     private final InputBuffer inputBuffer = new InputBuffer();
