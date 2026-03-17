@@ -200,7 +200,7 @@ public class ConfigEntryItem extends AbstractItem {
 
         if (type == Vector.class) {
             Vector val = Config.loadVector(config, path, defaultVector());
-            return new ItemWrapper(new ItemStackBuilder(Material.END_ROD)
+            return new ItemWrapper(new ItemStackBuilder(Material.SPECTRAL_ARROW)
                 .name(Component.text(path, NamedTextColor.WHITE))
                 .lore(List.of(
                     Component.text("Type: ", NamedTextColor.GRAY).append(Component.text("Vector", NamedTextColor.WHITE)),

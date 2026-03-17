@@ -42,7 +42,7 @@ public class ConfigMenu extends Menu {
     /** Material assigned to each config section button — keyed by first YAML path segment. */
     private static final Map<String, Material> SECTION_MATERIALS;
     static {
-        SECTION_MATERIALS = new LinkedHashMap<>();
+        SECTION_MATERIALS = new LinkedHashMap<>(); // TODO: Config these Materials! (And add the unregistered ones)
         SECTION_MATERIALS.put("umbralblade",       Material.HEAVY_CORE);
         SECTION_MATERIALS.put("hostile",       Material.REDSTONE);
         SECTION_MATERIALS.put("grab",     Material.RABBIT_FOOT);
