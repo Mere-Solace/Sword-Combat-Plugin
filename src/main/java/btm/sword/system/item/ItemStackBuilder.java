@@ -12,6 +12,7 @@ import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.inventory.meta.components.CustomModelDataComponent;
 import org.bukkit.persistence.PersistentDataType;
 
+import btm.sword.system.action.throwing.ImpactType;
 import btm.sword.system.attack.style.WeaponAttackStyle;
 import net.kyori.adventure.text.Component;
 
@@ -137,6 +138,10 @@ public class ItemStackBuilder {
 
     public ItemStackBuilder tagAttackStyle(WeaponAttackStyle type) {
         return tag(KeyRegistry.ATTACK_STYLE_KEY, PersistentDataType.STRING, type.string());
+    }
+
+    public ItemStackBuilder tagImpactType(ImpactType type) {
+        return tag(KeyRegistry.IMPACT_TYPE_KEY, PersistentDataType.STRING, type.string());
     }
 
     /**

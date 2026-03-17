@@ -25,6 +25,7 @@ import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 import btm.sword.config.Config;
+import btm.sword.system.action.throwing.ImpactType;
 import btm.sword.system.action.throwing.ThrowAction;
 import btm.sword.system.action.throwing.impale.Impalement;
 import btm.sword.system.control.PredicateRunnablePair;
@@ -241,11 +242,9 @@ public class ThrownItem extends VisualProjectile {
     public void onHit() {
         if (hitEntity == null) return;
 
-        String name = display.getItemStack().getType().toString();
         handleItemDamageAndCheckIfBroken();
 
-        // TODO: #127 - Better checks for weapon; can tag with impactType = 'impale'
-        if (name.endsWith("_SWORD") || name.endsWith("AXE")) {
+        if (ImpactType.fromItem(display.getItemStack()) == ImpactType.IMPALE) {
             startImpalementTask(hitEntity);
         } else {
             nonImpalingImpact(hitEntity);
@@ -384,7 +383,7 @@ public class ThrownItem extends VisualProjectile {
      * @param target the struck entity
      */
     protected void nonImpalingImpact(SwordEntity target) {
-        target.hit(thrower, Prefab.Attacks.thrownWeapon,
+        target.hit(thrower, Prefab.Attacks.THROWN_WEAPON,
             velocity.clone().multiply(Config.Combat.THROWN_DAMAGE_OTHER_KNOCKBACK_MULTIPLIER));
 
         target.world().createExplosion(target.getChestLocation(),
@@ -411,7 +410,7 @@ public class ThrownItem extends VisualProjectile {
         if (display.isValid()) {
             impale(target.self());
         }
-        target.hit(thrower, Prefab.Attacks.thrownWeapon, kb);
+        target.hit(thrower, Prefab.Attacks.THROWN_WEAPON, kb);
     }
 
     /**

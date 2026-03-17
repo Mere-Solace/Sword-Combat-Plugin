@@ -5,6 +5,7 @@ import java.util.List;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 
+import btm.sword.system.action.throwing.ImpactType;
 import btm.sword.system.attack.style.WeaponAttackStyle;
 import btm.sword.system.item.ItemStackBuilder;
 import btm.sword.system.item.SwordItemType;
@@ -22,6 +23,7 @@ public class ItemLibrary {
             Component.text().content("Assiduity").color(TextColor.color(160,160,160)).build()))
         .tagSwordItem(SwordItemType.BROAD_SWORD)
         .tagAttackStyle(WeaponAttackStyle.SLASH)
+        .tagImpactType(ImpactType.IMPALE)
         .toughnessDamageAdder(5)
         .unbreakable(false)
         .setDamageValues(200, 1)

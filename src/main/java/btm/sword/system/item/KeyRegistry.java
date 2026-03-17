@@ -107,6 +107,13 @@ public final class KeyRegistry {
     public static final NamespacedKey MAX_USES_KEY = key(MAX_USES);
 
 
+    /** Persistent data key for the impact behaviour when a thrown item hits an entity ({@code impale} or {@code knockback}). */
+    public static final String IMPACT_TYPE = "impact_type";
+
+    /** Cached {@link NamespacedKey} for {@link #IMPACT_TYPE}. */
+    public static final NamespacedKey IMPACT_TYPE_KEY = key(IMPACT_TYPE);
+
+
     /** Persistent data key for the throw style of a thrown item. */
     public static final String THROW_STYLE = "throw_style";
 
