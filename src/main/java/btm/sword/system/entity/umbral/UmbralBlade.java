@@ -67,51 +67,65 @@ import net.kyori.adventure.text.format.TextDecoration;
 
 // while flying and attacking on its own, no soulfire is reaped on attacks
 // while in hand, higher soulfire intake on hit
-@Getter
-@Setter
 public class UmbralBlade extends ThrownItem {
     /** Type of dash-reclaim attack to perform on the next quick or heavy attack entry. */
     public enum ReclaimType {
         NONE,
         CIRCULAR_SLASH, // in waiting state
+        EVISCERATE, // If pulling from Lodged
         FORWARD_RUSH // otherwise?
     }
 
-    private UmbralStateMachine bladeStateMachine;
-
+    private final UmbralStateMachine bladeStateMachine;
+    @Getter
     private Function<Combatant, Attack>[] basicAttacks;
+    @Getter
     private int currentComboStep = -1;
 
-    @Getter(lombok.AccessLevel.NONE)
     private SoulLinkItem link;
+    @Getter
     private ItemStack blade;
-
-    private ItemStack weapon;
-
+    @Getter
+    private final ItemStack weapon;
+    @Getter
+    @Setter
     private long lastActionTime = 0;
-    private Location lastTargetLocation;
 
-    private Vector3f scale = new Vector3f(0.85f, 1.3f, 1f);
+    @Getter
+    private final Vector3f scale = new Vector3f(
+        (float) Config.UmbralBlade.SCALE_X, (float) Config.UmbralBlade.SCALE_Y, (float) Config.UmbralBlade.SCALE_Z);
 
-    private static final int idleMovementPeriod = 150;
-    private static final float idleMovementAmplitude = 0.25f;
+    @Getter
+    @Setter
     private TimeArbiter.TaskHandle idleMovementTask;
 
+    @Getter
     private final Predicate<UmbralBlade> endHoverPredicate;
+    @Getter
     private final Runnable attackEndCallback;
+    @Getter
+    @Setter
     private boolean attackCompleted = false;
 
+    @Getter
+    @Setter
     private ControlVectors ctrlPointsForLunge;
+    @Getter
+    @Setter
     private boolean finishedLunging = false;
-
-    boolean usingCustomFuncs;
-
+    @Getter
+    @Setter
+    private boolean usingCustomFuncs;
+    @Getter
+    @Setter
     private boolean skillFinished;
-
+    @Getter
+    @Setter
     private DashDirection dashDirection = DashDirection.NONE;
-
+    @Getter
+    @Setter
     private ReclaimType reclaimType = ReclaimType.NONE;
-
+    @Getter
     private final InputBuffer inputBuffer = new InputBuffer();
 
     /**
@@ -194,13 +208,13 @@ public class UmbralBlade extends ThrownItem {
             bladeStateMachine.tick();
     }
 
-    // TODO: #121 - Make a method for calculating correct orientation of blade for edge to align with plane of swing on attack
-    // TODO: #121 - Make transitions smooth and slow with arcs and such and interpolation
+    // TODO: #240 - Make a method for calculating correct orientation of blade for edge to align with plane of swing on attack
+    // TODO: #240 - Make transitions smooth and slow with arcs and such and interpolation
     public void setDisplayTransformation(Class<? extends State<UmbralBlade>> state) {
         if (display == null) return;
 
         SwordScheduler.runBukkitTaskLater(() -> {
-            DisplayUtil.setInterpolationValues(display, 0, 2); // TODO: #119 - Make duration dynamic if needed
+            DisplayUtil.setInterpolationValues(display, 0, 2); // TODO: #240 - Make duration dynamic if needed
             display.setTransformation(getStateDisplayTransformation(state));
             }, 50, TimeUnit.MILLISECONDS
         );
@@ -265,19 +279,19 @@ public class UmbralBlade extends ThrownItem {
             () -> {
                 TimeArbiter.setDisplayTransformation(display,
                     new Transformation(
-                        new Vector3f(0, (float) Math.cos(step[0]) * idleMovementAmplitude, 0),
+                        new Vector3f(0, (float) (Math.cos(step[0]) * Config.UmbralBlade.IDLE_MOVEMENT_AMPLITUDE), 0),
                         display.getTransformation().getLeftRotation(),
                         scale,
                         new Quaternionf()
                     ),
-                    idleMovementPeriod
+                    Config.UmbralBlade.IDLE_MOVEMENT_PERIOD
                 );
 
                 step[0] += Math.PI/8;
             },
             null,
             null,
-            0, idleMovementPeriod,
+            0, Config.UmbralBlade.IDLE_MOVEMENT_PERIOD,
             UmbralBlade.class, "startIdleMovement"
         );
     }
@@ -288,7 +302,7 @@ public class UmbralBlade extends ThrownItem {
         }
     }
 
-    // TODO: #121 - Make item Display changes look less jerky
+    // TODO: #240 - Make item Display changes look less jerky
 
     @Override
     public void groundedCheck() {
@@ -314,7 +328,6 @@ public class UmbralBlade extends ThrownItem {
     @SuppressWarnings("unchecked")
     private void loadBasicAttacks() {
         basicAttacks = new Function[]{
-            // TODO: #120 - Fix how display step and attack steps work, confusing and incorrect rn
             combatant -> new UmbralBladeAttack(display, AttackType.WIDE_UMBRAL_SLASH1_WINDUP,
                 true, true, 1,
                 10, 30, 500,
@@ -455,12 +468,15 @@ public class UmbralBlade extends ThrownItem {
         Debug.umbral("onGrab. inState()="+bladeStateMachine.getState().name());
 
         if (!isOwnedBy(combatant)) {
-            // TODO: #122 - Add rejection logic for non-thrower grabs
+            // TODO: #241 - Add rejection logic for non-thrower grabs
             return;
         }
 
         if (inState(WaitingState.class)) { // set reclaim type for 1/4 of a second.
-            setReclaimType(ReclaimType.CIRCULAR_SLASH, 1000); // TODO: Config.
+            setReclaimType(ReclaimType.CIRCULAR_SLASH, Config.UmbralBlade.RECLAIM_WINDOW_MS);
+        }
+        else if (inState(LodgedState.class)) {
+            setReclaimType(ReclaimType.EVISCERATE, Config.UmbralBlade.RECLAIM_WINDOW_MS);
         }
 
         if (combatant.holdingUmbralItemInMainHand()) {

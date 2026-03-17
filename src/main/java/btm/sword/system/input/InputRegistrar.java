@@ -429,10 +429,10 @@ public class InputRegistrar {
             Config.Combat.ATTACKS_CAST_TIMING_MAX_DURATION,
             Config.Combat.ATTACKS_CAST_TIMING_REDUCTION_RATE);
 
-        for (int step = 1; step <= 3; step++) {// TODO: make '3' dynamic or config it.
+        for (int step = 1; step <= Config.Combat.BASIC_COMBO_STEPS; step++) {
             final int comboStep = step;
             boolean isFirst = step == 1;
-            boolean isLast = step == 3;
+            boolean isLast = step == Config.Combat.BASIC_COMBO_STEPS;
 
             Function<Combatant, Integer> cooldown = isFirst
                 ? Combatant::getDurationOfLastAttack

@@ -318,7 +318,7 @@ public class UmbralStateMachine extends StateMachine<UmbralBlade> {
         addTransition(new Transition<>(
             RecallingState.class,
             LungingState.class,
-            b -> b.isRequestedAndActive(BladeRequest.LUNGE), // TODO: #122 - Test this transition
+            b -> b.isRequestedAndActive(BladeRequest.LUNGE), // TODO: #241 - Test this transition
             b -> {}
         ));
 

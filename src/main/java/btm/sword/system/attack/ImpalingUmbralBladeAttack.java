@@ -16,7 +16,7 @@ import btm.sword.utility.entity.HitboxUtil;
 // Can have an attack that just rips through everything at some point.
 public class ImpalingUmbralBladeAttack extends UmbralBladeAttack {
 
-    // TODO: #122 - Might just handle this with the throwing mechanics of the Thrown Item class that Umbral Blade inherits from
+    // TODO: #241 - Might just handle this with the throwing mechanics of the Thrown Item class that Umbral Blade inherits from
 
     public ImpalingUmbralBladeAttack(ItemDisplay weaponDisplay, AttackProfile profile, boolean orientWithPitch, boolean displayOnly, int tpDuration, int displaySteps, int attackStepsPerDisplayStep, int attackMilliseconds, double attackStartValue, double attackEndValue) {
         super(weaponDisplay, profile, orientWithPitch, displayOnly, tpDuration, displaySteps, attackStepsPerDisplayStep, attackMilliseconds, attackStartValue, attackEndValue);

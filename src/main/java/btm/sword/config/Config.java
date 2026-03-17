@@ -1247,6 +1247,60 @@ public class Config {
             v -> HEAL_CHANNEL_SLOW_AMPLIFIER = v,
             ConfigurationSection::getInt
         ); }
+
+        /** Duration in milliseconds for the circular reclaim slash attack. */
+        public static int CIRCULAR_SLASH_DURATION_MS = 300;
+        static { register(
+            "combat.circular-slash-duration-ms",
+            CIRCULAR_SLASH_DURATION_MS, Integer.class,
+            v -> CIRCULAR_SLASH_DURATION_MS = v,
+            ConfigurationSection::getInt
+        ); }
+
+        /** Number of iterations for the circular reclaim slash attack. */
+        public static int CIRCULAR_SLASH_ITERATIONS = 200;
+        static { register(
+            "combat.circular-slash-iterations",
+            CIRCULAR_SLASH_ITERATIONS, Integer.class,
+            v -> CIRCULAR_SLASH_ITERATIONS = v,
+            ConfigurationSection::getInt
+        ); }
+
+        /** Soulfire cost for triggering a basic link attack. */
+        public static double LINK_ATTACK_SOULFIRE_COST = 2.5;
+        static { register(
+            "combat.link-attack-soulfire-cost",
+            LINK_ATTACK_SOULFIRE_COST, Double.class,
+            v -> LINK_ATTACK_SOULFIRE_COST = v,
+            ConfigurationSection::getDouble
+        ); }
+
+        /** Number of steps in basic combo. */
+        public static int BASIC_COMBO_STEPS = 3;
+        static { register(
+            "combat.basic-combo-steps",
+            BASIC_COMBO_STEPS, Integer.class,
+            v -> BASIC_COMBO_STEPS = v,
+            ConfigurationSection::getInt
+        ); }
+
+        /** Particle count for ground hit effects. */
+        public static int GROUND_HIT_PARTICLE_COUNT = 5;
+        static { register(
+            "combat.ground-hit-particle-count",
+            GROUND_HIT_PARTICLE_COUNT, Integer.class,
+            v -> GROUND_HIT_PARTICLE_COUNT = v,
+            ConfigurationSection::getInt
+        ); }
+
+        /** Particle offset for ground hit effects. */
+        public static double GROUND_HIT_PARTICLE_OFFSET = 0.5;
+        static { register(
+            "combat.ground-hit-particle-offset",
+            GROUND_HIT_PARTICLE_OFFSET, Double.class,
+            v -> GROUND_HIT_PARTICLE_OFFSET = v,
+            ConfigurationSection::getDouble
+        ); }
     }
     //endregion
 
@@ -2463,6 +2517,69 @@ public class Config {
             GRAB_HOLD_DURATION, Integer.class,
             v -> GRAB_HOLD_DURATION = v,
             ConfigurationSection::getInt); }
+
+        /** Umbral dash ray width for targeting. */
+        public static double DASH_UMBRAL_RAY_HITBOX_RADIUS = 1.2;
+        static { register(
+            "movement.dash_umbral_ray_hitbox_radius",
+            DASH_UMBRAL_RAY_HITBOX_RADIUS, Double.class,
+            v -> DASH_UMBRAL_RAY_HITBOX_RADIUS = v,
+            ConfigurationSection::getDouble
+        ); }
+
+        /** Pitch threshold for flat dash detection. */
+        public static double FLAT_DASH_PITCH_THRESHOLD = 0.30;
+        static { register(
+            "movement.flat_dash_pitch_threshold",
+            FLAT_DASH_PITCH_THRESHOLD, Double.class,
+            v -> FLAT_DASH_PITCH_THRESHOLD = v,
+            ConfigurationSection::getDouble
+        ); }
+
+        /** Power multiplier for flat dash. */
+        public static double FLAT_DASH_POWER_MULTIPLIER = 2.0;
+        static { register(
+            "movement.flat_dash_power_multiplier",
+            FLAT_DASH_POWER_MULTIPLIER, Double.class,
+            v -> FLAT_DASH_POWER_MULTIPLIER = v,
+            ConfigurationSection::getDouble
+        ); }
+
+        /** Distance divisor for normal dash to item. */
+        public static double DASH_NORMAL_ITEM_DISTANCE_DIVISOR = 2.0;
+        static { register(
+            "movement.dash_normal_item_distance_divisor",
+            DASH_NORMAL_ITEM_DISTANCE_DIVISOR, Double.class,
+            v -> DASH_NORMAL_ITEM_DISTANCE_DIVISOR = v,
+            ConfigurationSection::getDouble
+        ); }
+
+        /** Delay for flat dash height boost in milliseconds. */
+        public static int FLAT_DASH_HEIGHT_BOOST_DELAY_MS = 100;
+        static { register(
+            "movement.flat_dash_height_boost_delay_ms",
+            FLAT_DASH_HEIGHT_BOOST_DELAY_MS, Integer.class,
+            v -> FLAT_DASH_HEIGHT_BOOST_DELAY_MS = v,
+            ConfigurationSection::getInt
+        ); }
+
+        /** Period for dash item check in milliseconds. */
+        public static int DASH_ITEM_CHECK_PERIOD_MS = 50;
+        static { register(
+            "movement.dash_item_check_period_ms",
+            DASH_ITEM_CHECK_PERIOD_MS, Integer.class,
+            v -> DASH_ITEM_CHECK_PERIOD_MS = v,
+            ConfigurationSection::getInt
+        ); }
+
+        /** Duration for dash item check in milliseconds. */
+        public static int DASH_ITEM_CHECK_DURATION_MS = 1500;
+        static { register(
+            "movement.dash_item_check_duration_ms",
+            DASH_ITEM_CHECK_DURATION_MS, Integer.class,
+            v -> DASH_ITEM_CHECK_DURATION_MS = v,
+            ConfigurationSection::getInt
+        ); }
     }
     //endregion
 
@@ -2942,6 +3059,105 @@ public class Config {
             WIELD_ON_GRAB_ITERATIONS, Integer.class,
             v -> WIELD_ON_GRAB_ITERATIONS = v,
             ConfigurationSection::getInt
+        ); }
+
+        /** Duration in milliseconds during which a reclaim attack can be triggered after catching the blade. */
+        public static int RECLAIM_WINDOW_MS = 1000;
+        static { register(
+            "umbral-blade.reclaim-window-ms",
+            RECLAIM_WINDOW_MS, Integer.class,
+            v -> RECLAIM_WINDOW_MS = v,
+            ConfigurationSection::getInt
+        ); }
+
+        /** Period in milliseconds of the idle hover oscillation. */
+        public static int IDLE_MOVEMENT_PERIOD = 150;
+        static { register(
+            "umbral-blade.idle-movement-period",
+            IDLE_MOVEMENT_PERIOD, Integer.class,
+            v -> IDLE_MOVEMENT_PERIOD = v,
+            ConfigurationSection::getInt
+        ); }
+
+        /** Amplitude of the idle hover oscillation. */
+        public static double IDLE_MOVEMENT_AMPLITUDE = 0.25;
+        static { register(
+            "umbral-blade.idle-movement-amplitude",
+            IDLE_MOVEMENT_AMPLITUDE, Double.class,
+            v -> IDLE_MOVEMENT_AMPLITUDE = v,
+            ConfigurationSection::getDouble
+        ); }
+
+        /** X scale of the blade ItemDisplay entity. */
+        public static double SCALE_X = 0.85;
+        static { register(
+            "umbral-blade.scale-x",
+            SCALE_X, Double.class,
+            v -> SCALE_X = v,
+            ConfigurationSection::getDouble
+        ); }
+
+        /** Y scale of the blade ItemDisplay entity. */
+        public static double SCALE_Y = 1.3;
+        static { register(
+            "umbral-blade.scale-y",
+            SCALE_Y, Double.class,
+            v -> SCALE_Y = v,
+            ConfigurationSection::getDouble
+        ); }
+
+        /** Z scale of the blade ItemDisplay entity. */
+        public static double SCALE_Z = 1.0;
+        static { register(
+            "umbral-blade.scale-z",
+            SCALE_Z, Double.class,
+            v -> SCALE_Z = v,
+            ConfigurationSection::getDouble
+        ); }
+
+        /** Radius of the ArcShape for BLADE_RETRIEVAL_CIRCULAR_SLASH. */
+        public static double CIRCULAR_SLASH_RADIUS = 3.5;
+        static { register(
+            "umbral-blade.circular-slash-radius",
+            CIRCULAR_SLASH_RADIUS, Double.class,
+            v -> CIRCULAR_SLASH_RADIUS = v,
+            ConfigurationSection::getDouble
+        ); }
+
+        /** Start angle in radians for the circular slash arc. */
+        public static double CIRCULAR_SLASH_START_ANGLE = 0.157; // Math.PI/20
+        static { register(
+            "umbral-blade.circular-slash-start-angle",
+            CIRCULAR_SLASH_START_ANGLE, Double.class,
+            v -> CIRCULAR_SLASH_START_ANGLE = v,
+            ConfigurationSection::getDouble
+        ); }
+
+        /** End angle in radians for the circular slash arc (full 360° sweep). */
+        public static double CIRCULAR_SLASH_END_ANGLE = 6.283; // 2*Math.PI
+        static { register(
+            "umbral-blade.circular-slash-end-angle",
+            CIRCULAR_SLASH_END_ANGLE, Double.class,
+            v -> CIRCULAR_SLASH_END_ANGLE = v,
+            ConfigurationSection::getDouble
+        ); }
+
+        /** Vertical offset of the circular slash arc from the attack origin. */
+        public static double CIRCULAR_SLASH_HEIGHT = 0.0;
+        static { register(
+            "umbral-blade.circular-slash-height",
+            CIRCULAR_SLASH_HEIGHT, Double.class,
+            v -> CIRCULAR_SLASH_HEIGHT = v,
+            ConfigurationSection::getDouble
+        ); }
+
+        /** Knockback multiplier applied in the BLADE_RETRIEVAL_CIRCULAR_SLASH knockback function. */
+        public static double CIRCULAR_SLASH_KNOCKBACK = 0.5;
+        static { register(
+            "umbral-blade.circular-slash-knockback",
+            CIRCULAR_SLASH_KNOCKBACK, Double.class,
+            v -> CIRCULAR_SLASH_KNOCKBACK = v,
+            ConfigurationSection::getDouble
         ); }
     }
     //endregion

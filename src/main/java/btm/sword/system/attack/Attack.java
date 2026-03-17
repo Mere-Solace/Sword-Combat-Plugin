@@ -31,21 +31,18 @@ import btm.sword.utility.Prefab;
 import btm.sword.utility.display.ParticleWrapper;
 import btm.sword.utility.entity.HitboxUtil;
 import btm.sword.utility.math.Basis;
-import btm.sword.utility.math.BezierUtil;
-import btm.sword.utility.math.ControlVectors;
 import btm.sword.utility.math.VectorUtil;
 import btm.sword.utility.misc.ConsumerToConsumePair;
 import lombok.Getter;
 
 public class Attack extends SwordAction implements Runnable {
-
+    @Getter
     protected Combatant attacker;
     protected ItemStack itemUsedInAttack;
     protected LivingEntity attackingEntity;
     protected final AttackProfile attackProfile;
     protected final boolean orientWithPitch;
 
-    protected final ControlVectors controlVectors;
     protected Function<Double, Vector> weaponPathFunction;
 
     protected Vector curRight;
@@ -53,7 +50,7 @@ public class Attack extends SwordAction implements Runnable {
     protected Vector curForward; // Reserved for future forward knockback calculations
 
     protected Location origin;
-    protected Location attackLocation; // current bezier vec + origin
+    protected Location attackLocation; // current path vec + origin
 
     protected Vector cur;
     protected Vector prev;
@@ -73,7 +70,6 @@ public class Attack extends SwordAction implements Runnable {
 
     protected double interpolationValueRange;
     protected double interpolationStep;
-    protected int msPerIteration;
 
     protected final double rangeMultiplier;
 
@@ -91,9 +87,11 @@ public class Attack extends SwordAction implements Runnable {
     protected Attack nextAttack;
     protected int millisecondDelayBeforeNextAttack;
 
+    // TODO: maybe: have a caller-defined consumer that takes in a time-step and current vector (or just attack)
+    //  and does display/sound stuff? a 'DisplayConsumer' that runs per iteration??
+
     public Attack(ItemStack itemUsedInAttack, AttackProfile profile, boolean orientWithPitch) {
         this.itemUsedInAttack = itemUsedInAttack;
-        this.controlVectors = profile.controlVectors();
         this.attackProfile = profile;
         this.orientWithPitch = orientWithPitch;
 
@@ -171,10 +169,6 @@ public class Attack extends SwordAction implements Runnable {
     }
 
     protected void cast() {
-        onRun();
-    }
-
-    private void onRun() {
         attacker.applyAttackCooldown();
         if (attackDurationResolver != null) {
             this.attackMilliseconds = attackDurationResolver.apply(attacker);
@@ -184,7 +178,7 @@ public class Attack extends SwordAction implements Runnable {
 
     @Override
     public void run() {
-        onRun();
+        cast();
     }
 
     void playSwingSoundEffects() {
@@ -207,7 +201,7 @@ public class Attack extends SwordAction implements Runnable {
         interpolationStep = interpolationValueRange / attackIterations;
         int msPerIteration = Math.max(1, attackMilliseconds / attackIterations);
 
-        generateBezierFunction();
+        generatePathFunction();
         determineOrigin();
         prev = weaponPathFunction.apply(attackStartValue - interpolationStep);
         startupLogic();
@@ -289,6 +283,7 @@ public class Attack extends SwordAction implements Runnable {
     }
 
     // TODO: #128 - Make Particle Effects more dynamic. Low prio.
+    //  Maybe we just put particles to display in the AttackType or Attack profile?
     protected void drawAttackEffects() {
         Prefab.Particles.TEST_SWING.display(attackLocation);
     }
@@ -321,7 +316,7 @@ public class Attack extends SwordAction implements Runnable {
 
     protected void hit() {
         currentTarget.hit(attacker, Prefab.Attacks.basicAttack,
-            attackProfile.knockbackFunction().apply(this));
+            attackProfile.knockbackFunction().apply(currentTarget).apply(this));
 
         Prefab.Particles.TEST_HIT.display(currentTarget.getChestLocation());
     }
@@ -342,7 +337,9 @@ public class Attack extends SwordAction implements Runnable {
         RayTraceResult result = attackingEntity.getWorld().rayTraceBlocks(attackLocation, direction, 0.3);
         if (result != null) {
             // enter ground particles
-            new ParticleWrapper(Particle.BLOCK, 5, 0.5, 0.5, 0.5, //TODO: config or naw
+            new ParticleWrapper(Particle.BLOCK, Config.Combat.GROUND_HIT_PARTICLE_COUNT,
+                    Config.Combat.GROUND_HIT_PARTICLE_OFFSET, Config.Combat.GROUND_HIT_PARTICLE_OFFSET,
+                    Config.Combat.GROUND_HIT_PARTICLE_OFFSET,
                     Objects.requireNonNull(result.getHitBlock()).getBlockData()).display(attackLocation);
             Prefab.Particles.COLLIDE.display(attackLocation);
 
@@ -355,8 +352,12 @@ public class Attack extends SwordAction implements Runnable {
         }
     }
 
-    // static function oriented with the players current basis to be used when the attack is executed.
-    void generateBezierFunction() {
+    /**
+     * Captures the attacker's current {@link Basis} and resolves the profile's
+     * {@link btm.sword.system.attack.style.AttackShape} into the weapon path function.
+     * Called once at attack start before the iteration loop begins.
+     */
+    void generatePathFunction() {
         Basis basis = orientWithPitch ?
                 VectorUtil.getBasis(
                     origin == null ? attackingEntity.getEyeLocation() : origin,
@@ -366,10 +367,7 @@ public class Attack extends SwordAction implements Runnable {
         curUp = basis.up();
         curForward = basis.forward();
 
-        ControlVectors adjusted = attackProfile instanceof GeneratedAttackProfile ?
-            controlVectors :
-            controlVectors.adjustToBasis(basis, rangeMultiplier);
-        weaponPathFunction = BezierUtil.cubicBezier3D(adjusted);
+        weaponPathFunction = attackProfile.shape().resolve(basis, rangeMultiplier);
     }
 
     public Vector getCur() {

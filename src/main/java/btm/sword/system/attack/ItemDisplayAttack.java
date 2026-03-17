@@ -112,7 +112,7 @@ public class ItemDisplayAttack extends Attack {
     @Override
     protected void hit() {
         currentTarget.hit(attacker, Prefab.Attacks.umbralItemDisplayAttack,
-            attackProfile.knockbackFunction().apply(this));
+            attackProfile.knockbackFunction().apply(currentTarget).apply(this));
 
         Prefab.Particles.TEST_HIT.display(currentTarget.getChestLocation());
     }

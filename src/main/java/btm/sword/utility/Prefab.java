@@ -3,14 +3,10 @@ package btm.sword.utility;
 
 import java.util.List;
 import java.util.function.Function;
-import java.util.function.Predicate;
 
 import org.bukkit.Color;
 import org.bukkit.Material;
 import org.bukkit.Particle;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.EntityType;
-import org.bukkit.entity.LivingEntity;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 
@@ -18,6 +14,7 @@ import btm.sword.config.Config;
 import btm.sword.system.attack.Attack;
 import btm.sword.system.attack.Blockability;
 import btm.sword.system.attack.HitValuePacket;
+import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.utility.display.ParticleWrapper;
 import btm.sword.utility.entity.PotionEffectWrapper;
 import btm.sword.utility.sound.SoundType;
@@ -78,26 +75,9 @@ public class Prefab {
         public static final ParticleWrapper TOUGH_RECHARGE_2 = new ParticleWrapper(Particle.SOUL_FIRE_FLAME, 40, 0.5, 0.5, 0.5, 0.75);
     }
 
-    public static class Value {
-        public static final int MILLISECONDS_PER_TICK = 50; // 1000/20 = 50
-    }
-
     public static class Instructions {
-        public static final Function<Attack, Vector> DEFAULT_KNOCKBACK =
-            a -> a.getTo().add(a.getForwardVector());
-
-        /**
-         * 1st in list: target to be checked
-         * </p>
-         * 2nd in list: self/entity to be excluded
-         */
-        public static final Predicate<List<Entity>> DEFAULT_HITBOX_FILTER = // TODO: #125 - Make more of these and use them
-            checkAndSelf ->
-                checkAndSelf.size() == 2 &&
-                (checkAndSelf.getFirst() instanceof LivingEntity target) &&
-                !target.getUniqueId().equals(checkAndSelf.getLast().getUniqueId()) &&
-                target.isValid() &&
-                target.getType() != EntityType.ARMOR_STAND;
+        public static final Function<SwordEntity, Function<Attack, Vector>> DEFAULT_KNOCKBACK =
+            e -> a -> a.getTo().add(a.getForwardVector());
     }
 
     // using Suppliers so that this basic record-like class (AttackHitValue) can use the values from the config.

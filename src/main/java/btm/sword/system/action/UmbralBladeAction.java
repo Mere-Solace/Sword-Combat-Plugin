@@ -11,6 +11,8 @@ import org.bukkit.util.Vector;
 
 import btm.sword.config.Config;
 import btm.sword.system.action.attack.AttackAction;
+import btm.sword.system.attack.Attack;
+import btm.sword.system.attack.style.AttackType;
 import btm.sword.system.control.PredicateRunnablePair;
 import btm.sword.system.control.SwordScheduler;
 import btm.sword.system.control.TimeArbiter;
@@ -80,28 +82,33 @@ public class UmbralBladeAction extends SwordAction {
         switch (blade.getReclaimType()) {
             case NONE -> AttackAction.basicAttack(wielder, comboStep);
             case CIRCULAR_SLASH -> {
-
-                DrawUtil.circle(List.of(Prefab.Particles.DEBUG_BLOB), wielder.getChestLocation(),
-                    wielder.getCurrentEyeDirectionBasis(),10,8,
-                    0.5, Math.PI/20);
+                circularReclaimSlash(wielder);
                 blade.setReclaimType(UmbralBlade.ReclaimType.NONE);
+            }
+            case EVISCERATE -> {
+
             }
             case FORWARD_RUSH -> {
                 // TODO: implement forward rush & way to trigger.
                 blade.setReclaimType(UmbralBlade.ReclaimType.NONE);
             }
+            default -> {} // Shouldn't reach
         }
     }
 
-    public static void circularReclaimSlash() {
-
+    public static void circularReclaimSlash(Combatant wielder) {
+        new Attack(wielder.getItemStackInHand(true), // TODO: Store somewhere
+            AttackType.BLADE_RETRIEVAL_CIRCULAR_SLASH,
+            false,
+            Config.Combat.CIRCULAR_SLASH_DURATION_MS, Config.Combat.CIRCULAR_SLASH_ITERATIONS,
+            0, 1).execute(wielder);
     }
 
     public static void basicAttackWithLink(Combatant wielder, int comboStep) {
         UmbralBlade blade = wielder.getUmbralBlade();
         if (blade == null) return;
 
-        if (wielder.getAspects().soulfireCur() >= 2.5f && !blade.inState(LodgedState.class)) { //TODO: Config the 2.5f (cost of basic link attack)
+        if (wielder.getAspects().soulfireCur() >= (float) Config.Combat.LINK_ATTACK_SOULFIRE_COST && !blade.inState(LodgedState.class)) {
             blade.requestQuickAttack(comboStep);
             return;
         }

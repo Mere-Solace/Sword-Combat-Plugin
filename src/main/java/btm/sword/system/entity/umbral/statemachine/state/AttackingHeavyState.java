@@ -121,7 +121,7 @@ public class AttackingHeavyState extends UmbralStateFacade {
             .subtract(attackOrigin.toVector());
 
         ControlVectors ctrl = new ControlVectors(start, end, c1, c2);
-        GeneratedAttackProfile profile = new GeneratedAttackProfile(ctrl, Attack::getTo);
+        GeneratedAttackProfile profile = new GeneratedAttackProfile(ctrl, e -> Attack::getTo);
 
         int duration = 20 * (int) Math.log(Math.max(1, dist * dist));
 
