@@ -15,151 +15,156 @@ import btm.sword.utility.Prefab;
 import btm.sword.utility.math.ControlVectors;
 import btm.sword.utility.math.VectorUtil;
 
-// TODO: consider - add base range multiplier as well
+/**
+ * Named attack curve presets backed by cubic Bézier control points.
+ *
+ * <p>Each entry's control-point vectors are read from {@link Config.AttackCurves} via
+ * {@link ControlVectors} suppliers, so live config changes (e.g., {@code /sword reload})
+ * take effect on the next attack without a server restart.
+ */
 public enum AttackType implements AttackProfile {
 //region Initializations
-    // TODO: #242 - Make control vectors config-driven; support Supplier<Vector> in ControlVectors
-    UMBRAL_SLASH1(ControlVectors.of(
-        new Vector(-2,0,0),
-        new Vector(2,0,-1),
-        new Vector(-1.5,0,2),
-        new Vector(1.5,0,3)),
+    UMBRAL_SLASH1(new ControlVectors(
+        () -> Config.AttackCurves.UMBRAL_SLASH1_START,
+        () -> Config.AttackCurves.UMBRAL_SLASH1_END,
+        () -> Config.AttackCurves.UMBRAL_SLASH1_C1,
+        () -> Config.AttackCurves.UMBRAL_SLASH1_C2),
         e -> Attack::getRightVector
     ),
-    UMBRAL_SLASH1_WINDUP(ControlVectors.of(
-        new Vector(-1.5,0.17,1),
-        new Vector(-2.1,-0.33,-0.5),
-        new Vector(-2,0.17,0.5),
-        new Vector(-2,-0.08,0))
+    UMBRAL_SLASH1_WINDUP(new ControlVectors(
+        () -> Config.AttackCurves.UMBRAL_SLASH1_WINDUP_START,
+        () -> Config.AttackCurves.UMBRAL_SLASH1_WINDUP_END,
+        () -> Config.AttackCurves.UMBRAL_SLASH1_WINDUP_C1,
+        () -> Config.AttackCurves.UMBRAL_SLASH1_WINDUP_C2)
     ),
 
-    WIDE_UMBRAL_SLASH1(ControlVectors.of(
-        new Vector(-5.7615,0,2.171),
-        new Vector(5.845,0,-0.334),
-        new Vector(-2.505,0,3.34),
-        new Vector(2.505,0,5.01)),
+    WIDE_UMBRAL_SLASH1(new ControlVectors(
+        () -> Config.AttackCurves.WIDE_UMBRAL_SLASH1_START,
+        () -> Config.AttackCurves.WIDE_UMBRAL_SLASH1_END,
+        () -> Config.AttackCurves.WIDE_UMBRAL_SLASH1_C1,
+        () -> Config.AttackCurves.WIDE_UMBRAL_SLASH1_C2),
         e -> Attack::getRightVector
     ),
-    WIDE_UMBRAL_SLASH1_WINDUP(ControlVectors.of(
-        new Vector(-1.66,0.17,-0.5),
-        new Vector(-5,0.27,0.83),
-        new Vector(-2.5,1.03,1.7),
-        new Vector(-3.77,0.51,2.26))
+    WIDE_UMBRAL_SLASH1_WINDUP(new ControlVectors(
+        () -> Config.AttackCurves.WIDE_UMBRAL_SLASH1_WINDUP_START,
+        () -> Config.AttackCurves.WIDE_UMBRAL_SLASH1_WINDUP_END,
+        () -> Config.AttackCurves.WIDE_UMBRAL_SLASH1_WINDUP_C1,
+        () -> Config.AttackCurves.WIDE_UMBRAL_SLASH1_WINDUP_C2)
     ),
 
-    WIDE_UMBRAL_SLASH2(ControlVectors.of(
-        new Vector(4.008,-1.002,-1.169),
-        new Vector(-3.841,1.67,4.008),
-        new Vector(1.67,0,2.839),
-        new Vector(-1.336,0,5.01)),
+    WIDE_UMBRAL_SLASH2(new ControlVectors(
+        () -> Config.AttackCurves.WIDE_UMBRAL_SLASH2_START,
+        () -> Config.AttackCurves.WIDE_UMBRAL_SLASH2_END,
+        () -> Config.AttackCurves.WIDE_UMBRAL_SLASH2_C1,
+        () -> Config.AttackCurves.WIDE_UMBRAL_SLASH2_C2),
         e -> attack -> attack.getRightVector().multiply(-1).add(attack.getForwardVector().multiply(0.3))
     ),
-    WIDE_UMBRAL_SLASH2_WINDUP(ControlVectors.of(
-        new Vector(5.344,-0.2171,-1.002),
-        new Vector(4.509,-1.503,-2.338),
-        new Vector(4.7261,0,-0.501),
-        new Vector(3.674,-0.4008,-1.5698))
+    WIDE_UMBRAL_SLASH2_WINDUP(new ControlVectors(
+        () -> Config.AttackCurves.WIDE_UMBRAL_SLASH2_WINDUP_START,
+        () -> Config.AttackCurves.WIDE_UMBRAL_SLASH2_WINDUP_END,
+        () -> Config.AttackCurves.WIDE_UMBRAL_SLASH2_WINDUP_C1,
+        () -> Config.AttackCurves.WIDE_UMBRAL_SLASH2_WINDUP_C2)
     ),
 
-    WIDE_UMBRAL_SLASH3(ControlVectors.of(
-        new Vector(0,5.177,-0.334),
-        new Vector(0,-3.674,1.336),
-        new Vector(0,1.7368,1.67),
-        new Vector(0,-0.167,2.9058)),
+    WIDE_UMBRAL_SLASH3(new ControlVectors(
+        () -> Config.AttackCurves.WIDE_UMBRAL_SLASH3_START,
+        () -> Config.AttackCurves.WIDE_UMBRAL_SLASH3_END,
+        () -> Config.AttackCurves.WIDE_UMBRAL_SLASH3_C1,
+        () -> Config.AttackCurves.WIDE_UMBRAL_SLASH3_C2),
         e -> attack -> attack.getForwardVector().add(Config.Direction.UP().multiply(-2))
     ),
-    WIDE_UMBRAL_SLASH3_WINDUP(ControlVectors.of(
-        new Vector(-3.34,2.0708,3.34),
-        new Vector(0.334,4.0915,0),
-        new Vector(1.67,0,1.67),
-        new Vector(-1.336,0,3.841))
+    WIDE_UMBRAL_SLASH3_WINDUP(new ControlVectors(
+        () -> Config.AttackCurves.WIDE_UMBRAL_SLASH3_WINDUP_START,
+        () -> Config.AttackCurves.WIDE_UMBRAL_SLASH3_WINDUP_END,
+        () -> Config.AttackCurves.WIDE_UMBRAL_SLASH3_WINDUP_C1,
+        () -> Config.AttackCurves.WIDE_UMBRAL_SLASH3_WINDUP_C2)
     ),
 
-    SLASH1(ControlVectors.of(
-        new Vector(-2.06, -1.26, -0.5),
-        new Vector(3.26, 0.79, -0.4),
-        new Vector(-2.3, -0.16,3),
-        new Vector(1.9, 0.21, 5)),
+    SLASH1(new ControlVectors(
+        () -> Config.AttackCurves.SLASH1_START,
+        () -> Config.AttackCurves.SLASH1_END,
+        () -> Config.AttackCurves.SLASH1_C1,
+        () -> Config.AttackCurves.SLASH1_C2),
         e -> attack -> attack.getRightVector().multiply(-0.5).add(attack.getForwardVector().multiply(0.1))
     ),
-    SLASH2(ControlVectors.of(
-        new Vector(2.6,-1.3,-1.2),
-        new Vector(-3,0.9,1.3),
-        new Vector(1.6,-0.7,7),
-        new Vector(-2.6,1.05,1.85)),
+    SLASH2(new ControlVectors(
+        () -> Config.AttackCurves.SLASH2_START,
+        () -> Config.AttackCurves.SLASH2_END,
+        () -> Config.AttackCurves.SLASH2_C1,
+        () -> Config.AttackCurves.SLASH2_C2),
         e -> attack -> attack.getRightVector().multiply(0.5).add(attack.getForwardVector().multiply(0.1))
     ),
-    SLASH3(ControlVectors.of(
-        new Vector(1.2,2.8,-1.5),
-        new Vector(-1.1,-2.2,-0.9),
-        new Vector(1,1.96,4.3),
-        new Vector(-1.1,-1.77,5)),
+    SLASH3(new ControlVectors(
+        () -> Config.AttackCurves.SLASH3_START,
+        () -> Config.AttackCurves.SLASH3_END,
+        () -> Config.AttackCurves.SLASH3_C1,
+        () -> Config.AttackCurves.SLASH3_C2),
         e -> attack -> attack.getTo().add(attack.getForwardVector().multiply(0.5))
     ),
 
-    UP_SMASH(ControlVectors.of(
-        new Vector(0.66,-1.53,-0.5),
-        new Vector(-0.4,0.67,-0.9),
-        new Vector(0.56,-0.89,2.1),
-        new Vector(-0.4,1.37,1.65)),
+    UP_SMASH(new ControlVectors(
+        () -> Config.AttackCurves.UP_SMASH_START,
+        () -> Config.AttackCurves.UP_SMASH_END,
+        () -> Config.AttackCurves.UP_SMASH_C1,
+        () -> Config.AttackCurves.UP_SMASH_C2),
         e -> attack -> Config.Direction.UP().multiply(5)
     ),
 
-    LUNGE1(ControlVectors.of(
-        new Vector(0.37,0,2),
-        new Vector(0,0,20),
-        new Vector(1.1,0,3.1),
-        new Vector(0,0,2.46)),
+    LUNGE1(new ControlVectors(
+        () -> Config.AttackCurves.LUNGE1_START,
+        () -> Config.AttackCurves.LUNGE1_END,
+        () -> Config.AttackCurves.LUNGE1_C1,
+        () -> Config.AttackCurves.LUNGE1_C2),
         e -> attack -> new Vector()
     ),
 
-    F_DASH_ATTACK(ControlVectors.of(
-        new Vector(-1.95,-0.76,0.9),
-        new Vector(1.2,1.1,7.3),
-        new Vector(-1.6,-0.57,2.7),
-        new Vector(-0.93,0,4.9)),
+    F_DASH_ATTACK(new ControlVectors(
+        () -> Config.AttackCurves.F_DASH_ATTACK_START,
+        () -> Config.AttackCurves.F_DASH_ATTACK_END,
+        () -> Config.AttackCurves.F_DASH_ATTACK_C1,
+        () -> Config.AttackCurves.F_DASH_ATTACK_C2),
         e -> attack -> new Vector()
     ),
-    B_DASH_ATTACK(ControlVectors.of(
-        new Vector(0.696,2.2388,1.74),
-        new Vector(-0.8932,-3.2016,0.116),
-        new Vector(0.3132,0.4176,2.204),
-        new Vector(-0.58,-1.74,1.3572)),
+    B_DASH_ATTACK(new ControlVectors(
+        () -> Config.AttackCurves.B_DASH_ATTACK_START,
+        () -> Config.AttackCurves.B_DASH_ATTACK_END,
+        () -> Config.AttackCurves.B_DASH_ATTACK_C1,
+        () -> Config.AttackCurves.B_DASH_ATTACK_C2),
         e -> Attack::getForwardVector
     ),
-    R_STRAFE_ATTACK(ControlVectors.of(
-        new Vector(-1.503,-0.4008,0.668),
-        new Vector(4.676,0.334,1.169),
-        new Vector(0.167,0,1.4362),
-        new Vector(2.2211,0,1.7702)),
+    R_STRAFE_ATTACK(new ControlVectors(
+        () -> Config.AttackCurves.R_STRAFE_ATTACK_START,
+        () -> Config.AttackCurves.R_STRAFE_ATTACK_END,
+        () -> Config.AttackCurves.R_STRAFE_ATTACK_C1,
+        () -> Config.AttackCurves.R_STRAFE_ATTACK_C2),
         e -> Attack::getRightVector
     ),
-    L_STRAFE_ATTACK(ControlVectors.of(
-        new Vector(1.503,-0.4008,0.668),
-        new Vector(-4.676,0.334,1.169),
-        new Vector(-0.167,0,1.4362),
-        new Vector(-2.2211,0,1.7702)),
+    L_STRAFE_ATTACK(new ControlVectors(
+        () -> Config.AttackCurves.L_STRAFE_ATTACK_START,
+        () -> Config.AttackCurves.L_STRAFE_ATTACK_END,
+        () -> Config.AttackCurves.L_STRAFE_ATTACK_C1,
+        () -> Config.AttackCurves.L_STRAFE_ATTACK_C2),
         e -> attack -> attack.getRightVector().multiply(-1)
     ),
 
-    D_AIR(ControlVectors.of(
-        new Vector(-0.35, 2.53, 0.56),
-        new Vector(0, -3.42, -0.581),
-        new Vector(0.329, -0.165, 4.97),
-        new Vector(-0.07, -6.15, 0.98)
-    )),
-    N_AIR(ControlVectors.of(
-        new Vector(1.0961, 1.742, -1.13),
-        new Vector(0, -1.987, -0.791),
-        new Vector(-0.2825, 0.951, 9.153),
-        new Vector(-0.7458, -5.151, -1.808)
-    )),
+    D_AIR(new ControlVectors(
+        () -> Config.AttackCurves.D_AIR_START,
+        () -> Config.AttackCurves.D_AIR_END,
+        () -> Config.AttackCurves.D_AIR_C1,
+        () -> Config.AttackCurves.D_AIR_C2)
+    ),
+    N_AIR(new ControlVectors(
+        () -> Config.AttackCurves.N_AIR_START,
+        () -> Config.AttackCurves.N_AIR_END,
+        () -> Config.AttackCurves.N_AIR_C1,
+        () -> Config.AttackCurves.N_AIR_C2)
+    ),
 
-    DEFAULT(ControlVectors.of(
-        Config.Direction.UP(),
-        Config.Direction.DOWN(),
-        Config.Direction.OUT_UP(),
-        Config.Direction.OUT_DOWN()
+    DEFAULT(new ControlVectors(
+        Config.Direction::UP,
+        Config.Direction::DOWN,
+        Config.Direction::OUT_UP,
+        Config.Direction::OUT_DOWN
     )),
 
     BLADE_RETRIEVAL_CIRCULAR_SLASH(
