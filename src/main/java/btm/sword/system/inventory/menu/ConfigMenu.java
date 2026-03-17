@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -39,25 +40,28 @@ import xyz.xenondevs.invui.window.Window;
  */
 public class ConfigMenu extends Menu {
 
-    /** Material assigned to each config section button — keyed by first YAML path segment. */
-    private static final Map<String, Material> SECTION_MATERIALS;
+    /** Section-icon suppliers — each reads the live {@link Config.Menu} field so hot-reload is reflected. */
+    private static final Map<String, Supplier<Material>> SECTION_MATERIALS = new LinkedHashMap<>();
     static {
-        SECTION_MATERIALS = new LinkedHashMap<>(); // TODO: Config these Materials! (And add the unregistered ones)
-        SECTION_MATERIALS.put("umbralblade",       Material.HEAVY_CORE);
-        SECTION_MATERIALS.put("hostile",       Material.REDSTONE);
-        SECTION_MATERIALS.put("grab",     Material.RABBIT_FOOT);
-        SECTION_MATERIALS.put("debug",      Material.ENDER_EYE);
-        SECTION_MATERIALS.put("world",      Material.WATER_BUCKET);
-        SECTION_MATERIALS.put("movement",     Material.FEATHER);
-        SECTION_MATERIALS.put("entity",   Material.YELLOW_DYE);
-        SECTION_MATERIALS.put("audio",       Material.NAUTILUS_SHELL);
-        SECTION_MATERIALS.put("detection",      Material.SPYGLASS);
-        SECTION_MATERIALS.put("display",    Material.CYAN_DYE);
-        SECTION_MATERIALS.put("timing",       Material.CLOCK);
-        SECTION_MATERIALS.put("combat",       Material.STONE_SWORD);
-        SECTION_MATERIALS.put("physics",        Material.COMPARATOR);
-        SECTION_MATERIALS.put("angle",     Material.REPEATER);
-        SECTION_MATERIALS.put("color", Material.ORANGE_DYE);
+        SECTION_MATERIALS.put("umbral",        () -> Config.Menu.UMBRAL_ICON);
+        SECTION_MATERIALS.put("umbral-blade",   () -> Config.Menu.UMBRAL_BLADE_ICON);
+        SECTION_MATERIALS.put("hostile",       () -> Config.Menu.HOSTILE_ICON);
+        SECTION_MATERIALS.put("grab",          () -> Config.Menu.GRAB_ICON);
+        SECTION_MATERIALS.put("debug",         () -> Config.Menu.DEBUG_ICON);
+        SECTION_MATERIALS.put("world",         () -> Config.Menu.WORLD_ICON);
+        SECTION_MATERIALS.put("movement",      () -> Config.Menu.MOVEMENT_ICON);
+        SECTION_MATERIALS.put("entity",        () -> Config.Menu.ENTITY_ICON);
+        SECTION_MATERIALS.put("audio",         () -> Config.Menu.AUDIO_ICON);
+        SECTION_MATERIALS.put("detection",     () -> Config.Menu.DETECTION_ICON);
+        SECTION_MATERIALS.put("display",       () -> Config.Menu.DISPLAY_ICON);
+        SECTION_MATERIALS.put("timing",        () -> Config.Menu.TIMING_ICON);
+        SECTION_MATERIALS.put("combat",        () -> Config.Menu.COMBAT_ICON);
+        SECTION_MATERIALS.put("physics",       () -> Config.Menu.PHYSICS_ICON);
+        SECTION_MATERIALS.put("angle",         () -> Config.Menu.ANGLE_ICON);
+        SECTION_MATERIALS.put("angles",        () -> Config.Menu.ANGLES_ICON);
+        SECTION_MATERIALS.put("color",         () -> Config.Menu.COLOR_ICON);
+        SECTION_MATERIALS.put("attack_curves", () -> Config.Menu.ATTACK_CURVES_ICON);
+        SECTION_MATERIALS.put("materials",     () -> Config.Menu.MATERIALS_ICON);
     }
 
     public ConfigMenu(SwordPlayer player) {
@@ -82,7 +86,8 @@ public class ConfigMenu extends Menu {
         for (Map.Entry<String, List<Config.ConfigEntry<?>>> e : sections.entrySet()) {
             String section = e.getKey();
             List<Config.ConfigEntry<?>> entries = e.getValue();
-            Material mat = SECTION_MATERIALS.getOrDefault(section.toLowerCase(), Material.PAPER);
+            Supplier<Material> iconSupplier = SECTION_MATERIALS.getOrDefault(section.toLowerCase(), () -> Material.PAPER);
+            Material mat = iconSupplier.get();
 
             sectionItems.add(new SimpleItem(
                 new ItemStackBuilder(mat)
@@ -123,7 +128,7 @@ public class ConfigMenu extends Menu {
         PagedGui<Item> gui = PagedGui.items()
             .setStructure(
                 "# # # S # X # # #",
-                "# # # # # # # # #",
+                "x x x x x x x x x",
                 "x x x x x x x x x",
                 "x x x x x x x x x",
                 "B # # < . > # # #")

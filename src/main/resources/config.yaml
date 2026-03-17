@@ -74,10 +74,7 @@ combat:
   attacks_range_multipliers_basic_3: 1.4
   attacks_range_multipliers_neutral_air: 1.3
   attacks_range_multipliers_down_air: 1.2
-
-  heavy_attack_min_sweep_distance: 5.0
-  heavy_attack_secant_step: 0.25
-
+  
   sweep_attack_x_scale: 0.25
   sweep_attack_y_scale: 1
   sweep_attack_z_scale: 0.25
@@ -383,3 +380,9 @@ umbral:
 materials:
   material_storage_item: BUNDLE
   currency_storage_item: NETHERITE_INGOT
+menu:
+  section_icons:
+    combat: BLAZE_POWDER
+    display: GLOW_ITEM_FRAME
+    entity: PANDA_SPAWN_EGG
+    umbralblade: HEAVY_CORE

@@ -281,7 +281,6 @@ public class Prefab {
         Material.ACACIA_DOOR,
         Material.ACACIA_FENCE,
         Material.ACACIA_FENCE_GATE,
-        Material.ACACIA_HANGING_SIGN,
         Material.ACACIA_LEAVES,
         Material.ACACIA_LOG,
         Material.ACACIA_PLANKS,
