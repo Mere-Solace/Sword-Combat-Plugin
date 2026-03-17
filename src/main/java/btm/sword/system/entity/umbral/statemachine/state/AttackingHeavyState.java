@@ -5,6 +5,7 @@ import java.util.List;
 import org.bukkit.Location;
 import org.bukkit.util.Vector;
 
+import btm.sword.config.Config;
 import btm.sword.system.attack.Attack;
 import btm.sword.system.attack.GeneratedAttackProfile;
 import btm.sword.system.attack.UmbralBladeAttack;
@@ -78,12 +79,12 @@ public class AttackingHeavyState extends UmbralStateFacade {
         Basis attackFrame;
         double dist;
 
-        double minSweepDistance = 5.0;
+        double minSweepDistance = Config.Combat.HEAVY_ATTACK_MIN_SWEEP_DISTANCE;
         int direction;
 
         if (target == null || target.isInvalid()) {
             targetedLocation = blade.getThrower().getChestLocation().add(blade.getThrower().dir().multiply(range));
-            DrawUtil.secant(List.of(Prefab.Particles.TEST_SPARKLE), attackOrigin, targetedLocation, 0.25);
+            DrawUtil.secant(List.of(Prefab.Particles.TEST_SPARKLE), attackOrigin, targetedLocation, Config.Combat.HEAVY_ATTACK_SECANT_STEP);
         } else {
             DrawUtil.secant(List.of(Prefab.Particles.TEST_SPARKLE), blade.getDisplay().getLocation(), target.getChestLocation(), 0.5);
             targetedLocation = target.getChestLocation();

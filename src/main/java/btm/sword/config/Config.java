@@ -727,6 +727,21 @@ public class Config {
                 ConfigurationSection::getDouble
         ); }
 
+        /** Minimum sweep distance for heavy attack paths. */
+        public static double HEAVY_ATTACK_MIN_SWEEP_DISTANCE = 5.0;
+        static { register("combat.heavy_attack_min_sweep_distance",
+                HEAVY_ATTACK_MIN_SWEEP_DISTANCE, Double.class,
+                v -> HEAVY_ATTACK_MIN_SWEEP_DISTANCE = v,
+                ConfigurationSection::getDouble
+        ); }
+
+        /** Step distance for heavy attack secant particle path. */
+        public static double HEAVY_ATTACK_SECANT_STEP = 0.25;
+        static { register("combat.heavy_attack_secant_step",
+                HEAVY_ATTACK_SECANT_STEP, Double.class,
+                v -> HEAVY_ATTACK_SECANT_STEP = v,
+                ConfigurationSection::getDouble
+        ); }
 
         public static float SWEEP_ATTACK_X_SCALE = 0.5f;
         static { register(

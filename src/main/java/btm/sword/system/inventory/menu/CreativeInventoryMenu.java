@@ -86,6 +86,7 @@ public class CreativeInventoryMenu extends Menu {
                 "x x x x x x x x x",
                 "x x x x x x x x x",
                 "x x x x x x x x x",
+                "x x x x x x x x x",
                 "B # # < . > # # #")
             .addIngredient('#', BORDER)
             .addIngredient('x', Markers.CONTENT_LIST_SLOT_HORIZONTAL)
