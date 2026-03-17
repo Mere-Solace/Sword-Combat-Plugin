@@ -5,8 +5,10 @@ import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.bukkit.Material;
+import org.bukkit.Registry;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.ClickType;
@@ -17,6 +19,7 @@ import btm.sword.config.ConfigManager;
 import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.inventory.item.ForwardItem;
 import btm.sword.system.inventory.item.PreviousItem;
+import btm.sword.utility.ChatInputCapture;
 import btm.sword.system.item.ItemStackBuilder;
 import btm.sword.utility.sound.SoundType;
 import btm.sword.utility.sound.SoundUtil;
@@ -47,21 +50,24 @@ public class EnumSelectionMenu extends Menu {
     private final Runnable reopenParent;
     /** Non-null only when showing a filtered sub-list of SoundType values. */
     private final String soundPrefix;
+    /** Non-null when a name filter is active. */
+    private final String filter;
 
     /**
      * Opens the top-level browser for the entry's enum type. For {@link SoundType}
      * this shows prefix categories; for all other enums it shows a flat value list.
      */
     public EnumSelectionMenu(SwordPlayer player, Config.ConfigEntry<?> entry, Runnable reopenParent) {
-        this(player, entry, reopenParent, null);
+        this(player, entry, reopenParent, null, null);
     }
 
     private EnumSelectionMenu(SwordPlayer player, Config.ConfigEntry<?> entry,
-                               Runnable reopenParent, String soundPrefix) {
+                               Runnable reopenParent, String soundPrefix, String filter) {
         super(player);
         this.entry = entry;
         this.reopenParent = reopenParent;
         this.soundPrefix = soundPrefix;
+        this.filter = filter;
     }
 
     @Override
@@ -87,8 +93,14 @@ public class EnumSelectionMenu extends Menu {
             byPrefix.computeIfAbsent(prefix, k -> new ArrayList<>()).add(st);
         }
 
+        Map<String, List<SoundType>> displayPrefixes = filter == null ? byPrefix
+            : byPrefix.entrySet().stream()
+                .filter(e -> e.getKey().toLowerCase().contains(filter))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue,
+                    (a, b) -> a, LinkedHashMap::new));
+
         List<Item> prefixItems = new ArrayList<>();
-        for (Map.Entry<String, List<SoundType>> e : byPrefix.entrySet()) {
+        for (Map.Entry<String, List<SoundType>> e : displayPrefixes.entrySet()) {
             String prefix = e.getKey();
             List<SoundType> sounds = e.getValue();
             Material mat = soundPrefixMaterial(prefix);
@@ -98,7 +110,7 @@ public class EnumSelectionMenu extends Menu {
                     .name(Component.text(prefix, NamedTextColor.GOLD))
                     .lore(List.of(Component.text(sounds.size() + " sounds", NamedTextColor.GRAY)))
                     .build(),
-                click -> new EnumSelectionMenu(swordPlayer, entry, reopenParent, prefix).open()
+                click -> new EnumSelectionMenu(swordPlayer, entry, reopenParent, prefix, null).open()
             ));
         }
 
@@ -109,9 +121,35 @@ public class EnumSelectionMenu extends Menu {
             click -> reopenParent.run()
         );
 
+        SimpleItem search = new SimpleItem(
+            new ItemStackBuilder(filter != null ? Material.FILLED_MAP : Material.MAP)
+                .name(filter != null
+                    ? Component.text("Filter: " + filter, NamedTextColor.YELLOW)
+                    : Component.text("Search", NamedTextColor.GRAY))
+                .lore(filter != null
+                    ? List.of(Component.text("Shift-click to clear", NamedTextColor.DARK_GRAY))
+                    : List.of(Component.text("Click to filter by name", NamedTextColor.DARK_GRAY)))
+                .build(),
+            click -> {
+                if (click.getClickType().isShiftClick() && filter != null) {
+                    new EnumSelectionMenu(swordPlayer, entry, reopenParent, null, null).open();
+                    return;
+                }
+                ChatInputCapture.prompt(swordPlayer.player(),
+                    Component.text("Filter categories (keyword or 'cancel'):", NamedTextColor.YELLOW),
+                    input -> {
+                        if (input.equalsIgnoreCase("cancel")) {
+                            new EnumSelectionMenu(swordPlayer, entry, reopenParent, null, null).open();
+                        } else {
+                            new EnumSelectionMenu(swordPlayer, entry, reopenParent, null, input.toLowerCase()).open();
+                        }
+                    });
+            }
+        );
+
         PagedGui<Item> gui = PagedGui.items()
             .setStructure(
-                "# # # # # # # # #",
+                "# # # # Q # # # #",
                 "x x x x x x x x x",
                 "x x x x x x x x x",
                 "x x x x x x x x x",
@@ -119,15 +157,20 @@ public class EnumSelectionMenu extends Menu {
                 "B # # < . > # # #")
             .addIngredient('#', BORDER)
             .addIngredient('x', Markers.CONTENT_LIST_SLOT_HORIZONTAL)
+            .addIngredient('Q', search)
             .addIngredient('B', back)
             .addIngredient('<', new PreviousItem())
             .addIngredient('>', new ForwardItem())
             .setContent(prefixItems)
             .build();
 
+        String title = filter != null
+            ? entry.path + "  |  SoundType  [" + filter + "]  (" + displayPrefixes.size() + "/" + byPrefix.size() + ")"
+            : entry.path + "  |  SoundType — " + byPrefix.size() + " categories";
+
         Window.single()
             .setViewer(player)
-            .setTitle(entry.path + "  |  SoundType — " + byPrefix.size() + " categories")
+            .setTitle(title)
             .setGui(gui)
             .build()
             .open();
@@ -148,12 +191,16 @@ public class EnumSelectionMenu extends Menu {
         String currentName = stored != null ? stored.toUpperCase()
             : (entry.defaultValue instanceof Enum<?> e ? e.name() : "");
 
-        // Filter constants when a sound prefix is active
-        Object[] allConstants = type.getEnumConstants();
-        List<Object> constants = soundPrefix == null ? Arrays.asList(allConstants)
-            : Arrays.stream(allConstants)
-                .filter(c -> prefixOf(((Enum<?>) c).name()).equals(soundPrefix))
-                .toList();
+        // Filter constants: by sound prefix, then by item validity for Material, then by search filter.
+        // For Material, use Registry.MATERIAL to exclude legacy (LEGACY_*) entries.
+        List<Object> allNonLegacy = type == Material.class
+            ? new ArrayList<>(Registry.MATERIAL.stream().toList())
+            : Arrays.asList(type.getEnumConstants());
+        List<Object> constants = allNonLegacy.stream()
+            .filter(c -> soundPrefix == null || prefixOf(((Enum<?>) c).name()).equals(soundPrefix))
+            .filter(c -> type != Material.class || (((Material) c).isItem() && !((Material) c).isAir()))
+            .filter(c -> filter == null || ((Enum<?>) c).name().toLowerCase().contains(filter))
+            .toList();
 
         List<Item> items = new ArrayList<>(constants.size());
         for (Object constant : constants) {
@@ -174,13 +221,46 @@ public class EnumSelectionMenu extends Menu {
             click -> goBack.run()
         );
 
-        String title = soundPrefix != null
-            ? entry.path + "  |  " + soundPrefix + " (" + constants.size() + ")"
-            : entry.path + "  |  " + type.getSimpleName() + " (" + constants.size() + ")";
+        SimpleItem search = new SimpleItem(
+            new ItemStackBuilder(filter != null ? Material.FILLED_MAP : Material.MAP)
+                .name(filter != null
+                    ? Component.text("Filter: " + filter, NamedTextColor.YELLOW)
+                    : Component.text("Search", NamedTextColor.GRAY))
+                .lore(filter != null
+                    ? List.of(Component.text("Shift-click to clear", NamedTextColor.DARK_GRAY))
+                    : List.of(Component.text("Click to filter by name", NamedTextColor.DARK_GRAY)))
+                .build(),
+            click -> {
+                if (click.getClickType().isShiftClick() && filter != null) {
+                    new EnumSelectionMenu(swordPlayer, entry, reopenParent, soundPrefix, null).open();
+                    return;
+                }
+                ChatInputCapture.prompt(swordPlayer.player(),
+                    Component.text("Filter values (keyword or 'cancel'):", NamedTextColor.YELLOW),
+                    input -> {
+                        if (input.equalsIgnoreCase("cancel")) {
+                            new EnumSelectionMenu(swordPlayer, entry, reopenParent, soundPrefix, null).open();
+                        } else {
+                            new EnumSelectionMenu(swordPlayer, entry, reopenParent, soundPrefix, input.toLowerCase()).open();
+                        }
+                    });
+            }
+        );
+
+        int totalInScope = (int) allNonLegacy.stream()
+            .filter(c -> soundPrefix == null || prefixOf(((Enum<?>) c).name()).equals(soundPrefix))
+            .filter(c -> type != Material.class || (((Material) c).isItem() && !((Material) c).isAir()))
+            .count();
+        String title = filter != null
+            ? entry.path + "  |  " + (soundPrefix != null ? soundPrefix : type.getSimpleName())
+                + "  [" + filter + "]  (" + constants.size() + "/" + totalInScope + ")"
+            : soundPrefix != null
+                ? entry.path + "  |  " + soundPrefix + " (" + constants.size() + ")"
+                : entry.path + "  |  " + type.getSimpleName() + " (" + constants.size() + ")";
 
         PagedGui<Item> gui = PagedGui.items()
             .setStructure(
-                "# # # # # # # # #",
+                "# # # # Q # # # #",
                 "x x x x x x x x x",
                 "x x x x x x x x x",
                 "x x x x x x x x x",
@@ -188,6 +268,7 @@ public class EnumSelectionMenu extends Menu {
                 "B # # < . > # # #")
             .addIngredient('#', BORDER)
             .addIngredient('x', Markers.CONTENT_LIST_SLOT_HORIZONTAL)
+            .addIngredient('Q', search)
             .addIngredient('B', back)
             .addIngredient('<', new PreviousItem())
             .addIngredient('>', new ForwardItem())
@@ -281,7 +362,7 @@ public class EnumSelectionMenu extends Menu {
      * {@link #soundTypeMaterial(SoundType)} for prefix-aware matching; everything else uses paper.
      */
     private static Material resolveItemMaterial(Enum<?> value) {
-        if (value instanceof Material m) return m;
+        if (value instanceof Material m) return m.isItem() && !m.isAir() ? m : Material.PAPER;
         if (value instanceof SoundType st) return soundTypeMaterial(st);
         return Material.PAPER;
     }

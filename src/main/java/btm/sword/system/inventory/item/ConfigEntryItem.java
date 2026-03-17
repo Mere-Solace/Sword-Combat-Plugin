@@ -54,6 +54,9 @@ public class ConfigEntryItem extends AbstractItem {
     private static final long LONG_STEP = 1L;
     private static final long LONG_SHIFT_STEP = 10L;
 
+    private static final Component REVERT_HINT =
+        Component.text("Shift-right-click: reset to default", NamedTextColor.DARK_GRAY);
+
     private final Config.ConfigEntry<?> entry;
     private final SwordPlayer swordPlayer;
     private final Runnable reopenMenu;
@@ -88,7 +91,8 @@ public class ConfigEntryItem extends AbstractItem {
                         ? Component.text("ON", NamedTextColor.GREEN)
                         : Component.text("OFF", NamedTextColor.RED)),
                     Component.text("Default: ", NamedTextColor.GRAY).append(Component.text(String.valueOf(entry.defaultValue), NamedTextColor.DARK_GRAY)),
-                    Component.text("Click to toggle", NamedTextColor.DARK_GRAY)
+                    Component.text("Click to toggle", NamedTextColor.DARK_GRAY),
+                    REVERT_HINT
                 ))
                 .build());
         }
@@ -102,7 +106,8 @@ public class ConfigEntryItem extends AbstractItem {
                     Component.text("Value: ", NamedTextColor.GRAY).append(Component.text(String.valueOf(val), NamedTextColor.YELLOW)),
                     Component.text("Default: ", NamedTextColor.GRAY).append(Component.text(String.valueOf(entry.defaultValue), NamedTextColor.DARK_GRAY)),
                     Component.text("L/R: \u00b1" + INT_STEP + "   Shift \u00d7" + INT_SHIFT_STEP, NamedTextColor.DARK_GRAY),
-                    Component.text("Shift+L: type a value", NamedTextColor.DARK_GRAY)
+                    Component.text("Shift+L: type a value", NamedTextColor.DARK_GRAY),
+                    REVERT_HINT
                 ))
                 .build());
         }
@@ -116,7 +121,8 @@ public class ConfigEntryItem extends AbstractItem {
                     Component.text("Value: ", NamedTextColor.GRAY).append(Component.text(String.valueOf(val), NamedTextColor.YELLOW)),
                     Component.text("Default: ", NamedTextColor.GRAY).append(Component.text(String.valueOf(entry.defaultValue), NamedTextColor.DARK_GRAY)),
                     Component.text("L/R: \u00b1" + LONG_STEP + "   Shift \u00d7" + LONG_SHIFT_STEP, NamedTextColor.DARK_GRAY),
-                    Component.text("Shift+L: type a value", NamedTextColor.DARK_GRAY)
+                    Component.text("Shift+L: type a value", NamedTextColor.DARK_GRAY),
+                    REVERT_HINT
                 ))
                 .build());
         }
@@ -130,7 +136,8 @@ public class ConfigEntryItem extends AbstractItem {
                     Component.text("Value: ", NamedTextColor.GRAY).append(Component.text(String.format("%.4f", val), NamedTextColor.YELLOW)),
                     Component.text("Default: ", NamedTextColor.GRAY).append(Component.text(String.valueOf(entry.defaultValue), NamedTextColor.DARK_GRAY)),
                     Component.text("L/R: \u00b1" + DOUBLE_STEP + "   Shift \u00d7" + (int)(DOUBLE_SHIFT_STEP / DOUBLE_STEP), NamedTextColor.DARK_GRAY),
-                    Component.text("Shift+L: type a value", NamedTextColor.DARK_GRAY)
+                    Component.text("Shift+L: type a value", NamedTextColor.DARK_GRAY),
+                    REVERT_HINT
                 ))
                 .build());
         }
@@ -144,7 +151,8 @@ public class ConfigEntryItem extends AbstractItem {
                     Component.text("Value: ", NamedTextColor.GRAY).append(Component.text(String.format("%.4f", val), NamedTextColor.YELLOW)),
                     Component.text("Default: ", NamedTextColor.GRAY).append(Component.text(String.valueOf(entry.defaultValue), NamedTextColor.DARK_GRAY)),
                     Component.text("L/R: \u00b1" + DOUBLE_STEP + "   Shift \u00d7" + (int)(DOUBLE_SHIFT_STEP / DOUBLE_STEP), NamedTextColor.DARK_GRAY),
-                    Component.text("Shift+L: type a value", NamedTextColor.DARK_GRAY)
+                    Component.text("Shift+L: type a value", NamedTextColor.DARK_GRAY),
+                    REVERT_HINT
                 ))
                 .build());
         }
@@ -163,7 +171,8 @@ public class ConfigEntryItem extends AbstractItem {
                     Component.text("Type: ", NamedTextColor.GRAY).append(Component.text(type.getSimpleName(), NamedTextColor.WHITE)),
                     Component.text("Value: ", NamedTextColor.GRAY).append(Component.text(currentName, NamedTextColor.YELLOW)),
                     Component.text("Default: ", NamedTextColor.GRAY).append(Component.text(defName, NamedTextColor.DARK_GRAY)),
-                    hint
+                    hint,
+                    REVERT_HINT
                 ))
                 .build());
         }
@@ -178,7 +187,8 @@ public class ConfigEntryItem extends AbstractItem {
                     Component.text("Default: ", NamedTextColor.GRAY).append(Component.text(colorToString(defaultBukkitColor()), NamedTextColor.DARK_GRAY)),
                     Component.text("Click to edit  (format: ", NamedTextColor.DARK_GRAY)
                         .append(Component.text("r, g, b", NamedTextColor.WHITE))
-                        .append(Component.text(")", NamedTextColor.DARK_GRAY))
+                        .append(Component.text(")", NamedTextColor.DARK_GRAY)),
+                    REVERT_HINT
                 ))
                 .build());
         }
@@ -193,7 +203,8 @@ public class ConfigEntryItem extends AbstractItem {
                     Component.text("Default: ", NamedTextColor.GRAY).append(Component.text(textColorToString(defaultTextColor()), NamedTextColor.DARK_GRAY)),
                     Component.text("Click to edit  (format: ", NamedTextColor.DARK_GRAY)
                         .append(Component.text("r, g, b", NamedTextColor.WHITE))
-                        .append(Component.text(")", NamedTextColor.DARK_GRAY))
+                        .append(Component.text(")", NamedTextColor.DARK_GRAY)),
+                    REVERT_HINT
                 ))
                 .build());
         }
@@ -208,7 +219,8 @@ public class ConfigEntryItem extends AbstractItem {
                     Component.text("Default: ", NamedTextColor.GRAY).append(Component.text(vectorToString(defaultVector()), NamedTextColor.DARK_GRAY)),
                     Component.text("Click to edit  (format: ", NamedTextColor.DARK_GRAY)
                         .append(Component.text("x y z", NamedTextColor.WHITE))
-                        .append(Component.text(")", NamedTextColor.DARK_GRAY))
+                        .append(Component.text(")", NamedTextColor.DARK_GRAY)),
+                    REVERT_HINT
                 ))
                 .build());
         }
@@ -229,11 +241,17 @@ public class ConfigEntryItem extends AbstractItem {
     @Override
     @SuppressWarnings("unchecked")
     public void handleClick(@NotNull ClickType clickType, @NotNull Player player, @NotNull InventoryClickEvent event) {
+//        event.setCancelled(true);
         ConfigManager mgr = ConfigManager.getInstance();
         FileConfiguration config = mgr.getConfig();
         Class<?> type = entry.type;
         String path = entry.path;
         boolean decrease = clickType == ClickType.LEFT;
+
+        if (clickType == ClickType.SHIFT_RIGHT) {
+            revertToDefault(mgr);
+            return;
+        }
 
         if (type == Boolean.class) {
             boolean current = config.getBoolean(path, defaultBoolean());
@@ -473,6 +491,16 @@ public class ConfigEntryItem extends AbstractItem {
     // -------------------------------------------------------------------------
     //  Helpers
     // -------------------------------------------------------------------------
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private void revertToDefault(ConfigManager mgr) {
+        mgr.setValue((Config.ConfigEntry) entry, entry.defaultValue);
+        notifyWindows();
+        swordPlayer.message(Component.text("Reset ", NamedTextColor.YELLOW)
+            .append(Component.text(entry.path, NamedTextColor.WHITE))
+            .append(Component.text(" to default: ", NamedTextColor.YELLOW))
+            .append(Component.text(String.valueOf(entry.defaultValue), NamedTextColor.GRAY)));
+    }
 
     private static boolean isNumeric(Class<?> type) {
         return type == Integer.class || type == Long.class || type == Double.class || type == Float.class;

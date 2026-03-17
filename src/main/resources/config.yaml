@@ -216,7 +216,7 @@ audio:
   punch_attempt_vol: 1.5
   punch_attempt_pitch: 0.5
   
-  punch_connect: BLOCK_ENDER_CHEST_OPEN
+  punch_connect: BLOCK_NETHERRACK_PLACE
   punch_connect_vol: 1.5
   punch_connect_pitch: 1.0
   pre_attack_sound: ENTITY_DOLPHIN_JUMP
@@ -378,11 +378,11 @@ umbral:
   time_scaling_factor: 9
   on_release: 3
 materials:
-  material_storage_item: BUNDLE
-  currency_storage_item: NETHERITE_INGOT
+  material_storage_item: SADDLE
+  currency_storage_item: AXOLOTL_BUCKET
 menu:
   section_icons:
     combat: BLAZE_POWDER
     display: GLOW_ITEM_FRAME
     entity: PANDA_SPAWN_EGG
-    umbralblade: HEAVY_CORE
+    umbralblade: STONE_SWORD

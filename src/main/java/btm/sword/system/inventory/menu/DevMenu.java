@@ -135,11 +135,12 @@ public class DevMenu extends Menu {
         Gui gui = Gui.normal()
             .setStructure(
                 "# # # # # # # # #",
-                "J . R I # D H E F",
-                ". . . . # . B C L",
-                "K W S . # . . . .",
+                "J . R I | D H E F",
+                ". . . . | . B C L",
+                "K W S . | . . . .",
                 "# # # < . > # # #")
             .addIngredient('#', BORDER)
+            .addIngredient('|', WALL)
             .addIngredient('A', verboseDebug)
             .addIngredient('B', verboseCombat)
             .addIngredient('C', verboseMovement)

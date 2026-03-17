@@ -18,6 +18,12 @@ public abstract class Menu {
             .build()
     );
 
+    protected static final SimpleItem WALL = new SimpleItem(
+        new ItemStackBuilder(Material.LIGHT_BLUE_STAINED_GLASS_PANE)
+            .name(Component.text("|||", Config.SwordColor.TEXT_COOL_DARK))
+            .build()
+    );
+
     public Menu(SwordPlayer player) {
         this.swordPlayer = player;
     }

@@ -1,11 +1,13 @@
 package btm.sword.system.inventory.menu;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 
 import btm.sword.config.Config;
+import btm.sword.utility.ChatInputCapture;
 import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.inventory.item.ConfigEntryItem;
 import btm.sword.system.inventory.item.ForwardItem;
@@ -32,6 +34,7 @@ public class ConfigSectionMenu extends Menu {
 
     private final String section;
     private final List<Config.ConfigEntry<?>> entries;
+    private final String filter;
 
     /**
      * Constructs a section menu for the given config section.
@@ -41,16 +44,26 @@ public class ConfigSectionMenu extends Menu {
      * @param entries the config entries belonging to this section
      */
     public ConfigSectionMenu(SwordPlayer player, String section, List<Config.ConfigEntry<?>> entries) {
+        this(player, section, entries, null);
+    }
+
+    private ConfigSectionMenu(SwordPlayer player, String section, List<Config.ConfigEntry<?>> entries, String filter) {
         super(player);
         this.section = section;
         this.entries = entries;
+        this.filter = filter;
     }
 
     @Override
     public void open() {
         Player player = swordPlayer.player();
 
-        List<Item> entryItems = entries.stream()
+        List<Config.ConfigEntry<?>> displayed = filter == null ? entries
+            : entries.stream()
+                .filter(e -> e.path.toLowerCase().contains(filter))
+                .collect(Collectors.toList());
+
+        List<Item> entryItems = displayed.stream()
             .map(entry -> (Item) new ConfigEntryItem(entry, swordPlayer, this::open))
             .toList();
 
@@ -61,9 +74,35 @@ public class ConfigSectionMenu extends Menu {
             click -> new ConfigMenu(swordPlayer).open()
         );
 
+        SimpleItem search = new SimpleItem(
+            new ItemStackBuilder(filter != null ? Material.FILLED_MAP : Material.MAP)
+                .name(filter != null
+                    ? Component.text("Filter: " + filter, NamedTextColor.YELLOW)
+                    : Component.text("Search Entries", NamedTextColor.GRAY))
+                .lore(filter != null
+                    ? List.of(Component.text("Shift-click to clear", NamedTextColor.DARK_GRAY))
+                    : List.of(Component.text("Click to filter by path", NamedTextColor.DARK_GRAY)))
+                .build(),
+            click -> {
+                if (click.getClickType().isShiftClick() && filter != null) {
+                    new ConfigSectionMenu(swordPlayer, section, entries).open();
+                    return;
+                }
+                ChatInputCapture.prompt(swordPlayer.player(),
+                    Component.text("Filter entries (keyword or 'cancel'):", NamedTextColor.YELLOW),
+                    input -> {
+                        if (input.equalsIgnoreCase("cancel")) {
+                            new ConfigSectionMenu(swordPlayer, section, entries, null).open();
+                        } else {
+                            new ConfigSectionMenu(swordPlayer, section, entries, input.toLowerCase()).open();
+                        }
+                    });
+            }
+        );
+
         PagedGui<Item> gui = PagedGui.items()
             .setStructure(
-                "# # # # # # # # #",
+                "# # # # Q # # # #",
                 "x x x x x x x x x",
                 "x x x x x x x x x",
                 "x x x x x x x x x",
@@ -71,13 +110,16 @@ public class ConfigSectionMenu extends Menu {
                 "B # # < . > # # #")
             .addIngredient('#', BORDER)
             .addIngredient('x', Markers.CONTENT_LIST_SLOT_HORIZONTAL)
+            .addIngredient('Q', search)
             .addIngredient('B', back)
             .addIngredient('<', new PreviousItem())
             .addIngredient('>', new ForwardItem())
             .setContent(entryItems)
             .build();
 
-        String title = capitalize(section) + " Config  (" + entries.size() + " entries)";
+        String title = filter != null
+            ? capitalize(section) + "  [" + filter + "]  (" + displayed.size() + "/" + entries.size() + ")"
+            : capitalize(section) + " Config  (" + entries.size() + " entries)";
         Window window = Window.single()
             .setViewer(player)
             .setTitle(title)

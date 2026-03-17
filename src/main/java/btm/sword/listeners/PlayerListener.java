@@ -19,6 +19,7 @@ import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.event.inventory.InventoryEvent;
 import org.bukkit.event.inventory.InventoryOpenEvent;
+import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.player.PlayerGameModeChangeEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
@@ -245,6 +246,11 @@ public class PlayerListener implements Listener {
                 if (current == null || current.isEmpty() || NonMovableItem.isNonMovable(current)) {
                     event.setCancelled(true);
                     break;
+                }
+
+                if (sp.player().getOpenInventory().getTopInventory().getType() != InventoryType.CRAFTING) {
+                    event.setCancelled(true);
+                    return;
                 }
 
                 sp.spawnInventoryDrop(current);

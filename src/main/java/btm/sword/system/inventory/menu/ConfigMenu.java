@@ -5,12 +5,14 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 
 import btm.sword.config.Config;
 import btm.sword.config.ConfigManager;
+import btm.sword.utility.ChatInputCapture;
 import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.inventory.item.ForwardItem;
 import btm.sword.system.inventory.item.PreviousItem;
@@ -84,17 +86,17 @@ public class ConfigMenu extends Menu {
         // Build one section button per group
         List<Item> sectionItems = new ArrayList<>();
         for (Map.Entry<String, List<Config.ConfigEntry<?>>> e : sections.entrySet()) {
-            String section = e.getKey();
+            String sectionKey = e.getKey();
             List<Config.ConfigEntry<?>> entries = e.getValue();
-            Supplier<Material> iconSupplier = SECTION_MATERIALS.getOrDefault(section.toLowerCase(), () -> Material.PAPER);
+            Supplier<Material> iconSupplier = SECTION_MATERIALS.getOrDefault(sectionKey.toLowerCase(), () -> Material.PAPER);
             Material mat = iconSupplier.get();
 
             sectionItems.add(new SimpleItem(
                 new ItemStackBuilder(mat)
-                    .name(Component.text(capitalize(section), NamedTextColor.GOLD, TextDecoration.BOLD))
+                    .name(Component.text(capitalize(sectionKey), NamedTextColor.GOLD, TextDecoration.BOLD))
                     .lore(List.of(Component.text(entries.size() + " entries", NamedTextColor.GRAY)))
                     .build(),
-                click -> new ConfigSectionMenu(swordPlayer, section, entries).open()
+                click -> new ConfigSectionMenu(swordPlayer, sectionKey, entries).open()
             ));
         }
 
@@ -125,15 +127,36 @@ public class ConfigMenu extends Menu {
             click -> new DevMenu(swordPlayer).open()
         );
 
+        SimpleItem search = new SimpleItem(
+            new ItemStackBuilder(Material.MAP)
+                .name(Component.text("Search All Entries", NamedTextColor.GRAY))
+                .lore(List.of(Component.text("Click to search across all sections", NamedTextColor.DARK_GRAY)))
+                .build(),
+            click -> ChatInputCapture.prompt(swordPlayer.player(),
+                Component.text("Search config entries (keyword or 'cancel'):", NamedTextColor.YELLOW),
+                input -> {
+                    if (input.equalsIgnoreCase("cancel")) {
+                        new ConfigMenu(swordPlayer).open();
+                        return;
+                    }
+                    String term = input.toLowerCase();
+                    List<Config.ConfigEntry<?>> matches = Config.ENTRIES.stream()
+                        .filter(e -> e.path.toLowerCase().contains(term))
+                        .collect(Collectors.toList());
+                    new ConfigSectionMenu(swordPlayer, "search: " + term, matches).open();
+                })
+        );
+
         PagedGui<Item> gui = PagedGui.items()
             .setStructure(
-                "# # # S # X # # #",
+                "# # # S Q X # # #",
                 "x x x x x x x x x",
                 "x x x x x x x x x",
                 "x x x x x x x x x",
                 "B # # < . > # # #")
             .addIngredient('#', BORDER)
             .addIngredient('x', Markers.CONTENT_LIST_SLOT_HORIZONTAL)
+            .addIngredient('Q', search)
             .addIngredient('S', saveServer)
             .addIngredient('X', saveProject)
             .addIngredient('B', back)
