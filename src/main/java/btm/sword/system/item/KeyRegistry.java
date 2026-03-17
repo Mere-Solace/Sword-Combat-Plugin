@@ -77,6 +77,16 @@ public final class KeyRegistry {
     public static final NamespacedKey MAIN_MENU_BUTTON_KEY = key(MAIN_MENU_BUTTON);
 
 
+    /**
+     * Persistent data key for inventory storage-category shortcut buttons.
+     * Value is the {@link btm.sword.system.item.StorageCategory} name string.
+     */
+    public static final String STORAGE_BUTTON = "storage_button";
+
+    /** Cached {@link NamespacedKey} for {@link #STORAGE_BUTTON}. */
+    public static final NamespacedKey STORAGE_BUTTON_KEY = key(STORAGE_BUTTON);
+
+
     public static final String ITEM_TYPE = "item_type";
 
     public static final NamespacedKey ITEM_TYPE_KEY = key(ITEM_TYPE);

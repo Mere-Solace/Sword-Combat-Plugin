@@ -144,6 +144,10 @@ public class ItemStackBuilder {
         return tag(KeyRegistry.IMPACT_TYPE_KEY, PersistentDataType.STRING, type.string());
     }
 
+    public ItemStackBuilder tagStorageButton(StorageCategory category) {
+        return tag(KeyRegistry.STORAGE_BUTTON_KEY, PersistentDataType.STRING, category.string());
+    }
+
     /**
      * Sets the base damage value (double) for this item via persistent data.
      *

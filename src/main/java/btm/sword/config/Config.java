@@ -7,6 +7,7 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import org.bukkit.Color;
+import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Display.Billboard;
 import org.bukkit.entity.EntityType;
@@ -204,6 +205,15 @@ public class Config {
         } catch (IllegalArgumentException e) {
             return defaultValue;
         }
+    }
+
+    /**
+     * Loader for {@link Material} config values. Reads a material name string and resolves it
+     * to the matching {@link Material} enum constant, falling back to {@code defaultValue} on
+     * missing path, null, or unrecognised name.
+     */
+    public static Material loadMaterial(ConfigurationSection section, String path, Material defaultValue) {
+        return loadEnum(section, path, defaultValue, Material.class);
     }
 
     public static AttackType loadAttackType(ConfigurationSection section, String path, AttackType defaultValue) {
@@ -3159,6 +3169,39 @@ public class Config {
             v -> CIRCULAR_SLASH_KNOCKBACK = v,
             ConfigurationSection::getDouble
         ); }
+    }
+    //endregion
+
+    // ==============================================================================
+    //region MATERIALS - Item material overrides for inventory buttons and UI
+    // ==============================================================================
+    /**
+     * Material overrides for inventory UI buttons and storage shortcut items.
+     */
+    public static class Materials {
+        /** Material used for the Currency Storage shortcut button in the player's inventory. */
+        public static Material CURRENCY_STORAGE_ITEM = Material.NETHERITE_INGOT;
+        static { register(
+            "materials.currency_storage_item",
+            CURRENCY_STORAGE_ITEM, Material.class,
+            v -> CURRENCY_STORAGE_ITEM = v,
+            Config::loadMaterial); }
+
+        /** Material used for the Material Storage shortcut button in the player's inventory. */
+        public static Material MATERIAL_STORAGE_ITEM = Material.DUNE_ARMOR_TRIM_SMITHING_TEMPLATE;
+        static { register(
+            "materials.material_storage_item",
+            MATERIAL_STORAGE_ITEM, Material.class,
+            v -> MATERIAL_STORAGE_ITEM = v,
+            Config::loadMaterial); }
+
+        /** Material used for the Quest Storage shortcut button in the player's inventory. */
+        public static Material QUEST_STORAGE_ITEM = Material.WRITABLE_BOOK;
+        static { register(
+            "materials.quest_storage_item",
+            QUEST_STORAGE_ITEM, Material.class,
+            v -> QUEST_STORAGE_ITEM = v,
+            Config::loadMaterial); }
     }
     //endregion
 }

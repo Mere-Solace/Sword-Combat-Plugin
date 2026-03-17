@@ -59,6 +59,7 @@ import btm.sword.system.item.ItemClass;
 import btm.sword.system.item.ItemClassifier;
 import btm.sword.system.item.ItemStackBuilder;
 import btm.sword.system.item.KeyRegistry;
+import btm.sword.system.item.StorageCategory;
 import btm.sword.system.item.SwordItemType;
 import btm.sword.system.item.special.NonMovableItem;
 import btm.sword.system.item.special.SlotAnchoredItem;
@@ -91,10 +92,29 @@ public class SwordPlayer extends Combatant {
     private final String username;
     private final ItemStack playerHead;
 
+    /** Total number of material storage slots across all pages. */
+    public static final int MATERIAL_SLOTS_TOTAL = 96;
+
     private final PlayerMenuManager playerMenuManager;
     private final SlotAnchoredItem menuButton;
+    private SlotAnchoredItem currencyStorageButton;
+    private SlotAnchoredItem materialStorageButton;
+    private SlotAnchoredItem questStorageButton;
     private final SlotAnchoredItem shieldItem;
     private final SlotAnchoredItem chestplateItem;
+
+    @Getter private int steelCredits = 100;
+    @Getter private int materialSlotsUsed = 0;
+
+    private final Supplier<List<Component>> currencyLore =
+        () -> List.of(Component.text(steelCredits + " Steel Credits")
+            .color(Config.SwordColor.TEXT_COOL)
+            .decoration(TextDecoration.ITALIC, false));
+
+    private final Supplier<List<Component>> materialLore =
+        () -> List.of(Component.text(materialSlotsUsed + " / " + MATERIAL_SLOTS_TOTAL + " slots")
+            .color(Config.SwordColor.TEXT_COOL)
+            .decoration(TextDecoration.ITALIC, false));
 
     private final int maxNumDummies = 3;
     private int curNumDummies = 0;
@@ -205,6 +225,10 @@ public class SwordPlayer extends Combatant {
             8,
             KeyRegistry.MAIN_MENU_BUTTON_KEY
         );
+
+        currencyStorageButton = buildStorageButton(StorageCategory.CURRENCY, currencyLore);
+        materialStorageButton = buildStorageButton(StorageCategory.MATERIAL, materialLore);
+        questStorageButton    = buildStorageButton(StorageCategory.QUEST, List::of);
 
         shieldItem = new SlotAnchoredItem(
             new ItemStackBuilder(Material.SHIELD).build(),
@@ -475,6 +499,43 @@ public class SwordPlayer extends Combatant {
         prevFormVal = curFormVal;
     }
 
+    private SlotAnchoredItem buildStorageButton(StorageCategory category, Supplier<List<Component>> lore) {
+        return new SlotAnchoredItem(
+            new ItemStackBuilder(category.material())
+                .hideAll()
+                .name(category.displayName())
+                .lore(lore.get())
+                .tagStorageButton(category)
+                .tag(KeyRegistry.ITEM_CLASS_KEY, PersistentDataType.STRING, ItemClass.BLOCKED.name())
+                .build(),
+            category.slot(),
+            KeyRegistry.STORAGE_BUTTON_KEY
+        );
+    }
+
+    private void refreshStorageLore(SlotAnchoredItem button, Supplier<List<Component>> lore) {
+        ItemStack item = player.getInventory().getItem(button.getTargetSlot());
+        if (item != null && !item.isEmpty()) {
+            item.lore(lore.get());
+        }
+    }
+
+    /**
+     * Rebuilds all anchored inventory buttons (menu button and storage shortcuts)
+     * and forces them back into their slots. Call this after config hot-reloads to
+     * pick up material or colour changes immediately.
+     */
+    public void reloadInventoryButtons() {
+        currencyStorageButton = buildStorageButton(StorageCategory.CURRENCY, currencyLore);
+        materialStorageButton = buildStorageButton(StorageCategory.MATERIAL, materialLore);
+        questStorageButton    = buildStorageButton(StorageCategory.QUEST, List::of);
+
+        menuButton.restore(player);
+        currencyStorageButton.restore(player);
+        materialStorageButton.restore(player);
+        questStorageButton.restore(player);
+    }
+
     private void inventoryUpkeep() {
         if (!shieldItem.isSatisfied(player)) {
             shieldItem.restore(player);
@@ -486,6 +547,20 @@ public class SwordPlayer extends Combatant {
 
         if (!menuButton.isSatisfied(player)) {
             menuButton.restore(player);
+        }
+
+        if (!currencyStorageButton.isSatisfied(player)) {
+            currencyStorageButton.restore(player);
+        }
+        refreshStorageLore(currencyStorageButton, currencyLore);
+
+        if (!materialStorageButton.isSatisfied(player)) {
+            materialStorageButton.restore(player);
+        }
+        refreshStorageLore(materialStorageButton, materialLore);
+
+        if (!questStorageButton.isSatisfied(player)) {
+            questStorageButton.restore(player);
         }
 
         if (getUmbralBlade() != null && !getUmbralBlade().getLinkAnchor().isSatisfied(player)) {
@@ -516,6 +591,11 @@ public class SwordPlayer extends Combatant {
             return true;
         }
 
+        StorageCategory category = StorageCategory.fromItem(itemStack);
+        if (category != null) {
+            return true;
+        }
+
         return false;
     }
 
@@ -541,6 +621,12 @@ public class SwordPlayer extends Combatant {
         if (KeyRegistry.hasKey(clicked, KeyRegistry.MAIN_MENU_BUTTON_KEY) ||
             KeyRegistry.hasKey(onCursor, KeyRegistry.MAIN_MENU_BUTTON_KEY)) {
             InventoryMenuManager.openMenu(MainMenu.class, this);
+            return true;
+        }
+
+        // Clicking a storage-category button consumes the event (placeholder — no menu yet)
+        if (KeyRegistry.hasKey(clicked, KeyRegistry.STORAGE_BUTTON_KEY) ||
+            KeyRegistry.hasKey(onCursor, KeyRegistry.STORAGE_BUTTON_KEY)) {
             return true;
         }
 

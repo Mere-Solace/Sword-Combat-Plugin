@@ -122,12 +122,22 @@ public class DevMenu extends Menu {
             click -> new CreativeInventoryMenu(swordPlayer).open()
         );
 
+        SimpleItem reloadInventoryButtons = new SimpleItem(
+            new ItemStackBuilder(Material.CLOCK)
+                .name(Component.text("Reload Inventory Buttons", NamedTextColor.AQUA, TextDecoration.BOLD))
+                .build(),
+            click -> {
+                swordPlayer.reloadInventoryButtons();
+                swordPlayer.message(Component.text("Inventory buttons reloaded.", NamedTextColor.GREEN));
+            }
+        );
+
         Gui gui = Gui.normal()
             .setStructure(
                 "# # # # # # # # #",
-                "A B C D H E F . J",
-                "L . . . . . . . I",
-                ". . . . . . W S K",
+                "J . R I # D H E F",
+                ". . . . # . B C L",
+                "K W S . # . . . .",
                 "# # # < . > # # #")
             .addIngredient('#', BORDER)
             .addIngredient('A', verboseDebug)
@@ -141,6 +151,7 @@ public class DevMenu extends Menu {
             .addIngredient('I', reloadProfile)
             .addIngredient('J', configEditor)
             .addIngredient('L', blockPlacing)
+            .addIngredient('R', reloadInventoryButtons)
             .addIngredient('W', woodenAxe)
             .addIngredient('S', witherSkeletonEgg)
             .addIngredient('K', creativeInventory)
