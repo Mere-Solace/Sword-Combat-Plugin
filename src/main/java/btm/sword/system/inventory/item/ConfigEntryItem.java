@@ -8,6 +8,7 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 
 import btm.sword.config.Config;
@@ -197,6 +198,21 @@ public class ConfigEntryItem extends AbstractItem {
                 .build());
         }
 
+        if (type == Vector.class) {
+            Vector val = Config.loadVector(config, path, defaultVector());
+            return new ItemWrapper(new ItemStackBuilder(Material.END_ROD)
+                .name(Component.text(path, NamedTextColor.WHITE))
+                .lore(List.of(
+                    Component.text("Type: ", NamedTextColor.GRAY).append(Component.text("Vector", NamedTextColor.WHITE)),
+                    Component.text("Value: ", NamedTextColor.GRAY).append(Component.text(vectorToString(val), NamedTextColor.YELLOW)),
+                    Component.text("Default: ", NamedTextColor.GRAY).append(Component.text(vectorToString(defaultVector()), NamedTextColor.DARK_GRAY)),
+                    Component.text("Click to edit  (format: ", NamedTextColor.DARK_GRAY)
+                        .append(Component.text("x y z", NamedTextColor.WHITE))
+                        .append(Component.text(")", NamedTextColor.DARK_GRAY))
+                ))
+                .build());
+        }
+
         // Read-only fallback for complex types
         String defStr = entry.defaultValue.toString();
         String defPreview = defStr.length() > 40 ? defStr.substring(0, 37) + "..." : defStr;
@@ -240,6 +256,11 @@ public class ConfigEntryItem extends AbstractItem {
 
         if (type == TextColor.class) {
             promptColorInput(player, mgr, config, true);
+            return;
+        }
+
+        if (type == Vector.class) {
+            promptVectorInput(player, mgr, config);
             return;
         }
 
@@ -400,11 +421,65 @@ public class ConfigEntryItem extends AbstractItem {
     }
 
     // -------------------------------------------------------------------------
+    //  Typed-input via chat — vectors
+    // -------------------------------------------------------------------------
+
+    @SuppressWarnings("unchecked")
+    private void promptVectorInput(Player player, ConfigManager mgr, FileConfiguration config) {
+        String path = entry.path;
+        Vector current = Config.loadVector(config, path, defaultVector());
+
+        Component prompt = Component.text("Enter ", NamedTextColor.YELLOW)
+            .append(Component.text("x y z", NamedTextColor.WHITE))
+            .append(Component.text(" for ", NamedTextColor.YELLOW))
+            .append(Component.text(path, NamedTextColor.WHITE))
+            .append(Component.text(" (current: ", NamedTextColor.YELLOW))
+            .append(Component.text(vectorToString(current), NamedTextColor.GREEN))
+            .append(Component.text("):", NamedTextColor.YELLOW));
+
+        ChatInputCapture.prompt(player, prompt, input -> {
+            if (input.equalsIgnoreCase("cancel")) {
+                swordPlayer.message(Component.text("Cancelled.", NamedTextColor.GRAY));
+                reopenMenu.run();
+                return;
+            }
+            try {
+                String[] parts = input.split("[,\\s]+");
+                if (parts.length != 3) {
+                    swordPlayer.message(Component.text("Expected format: ", NamedTextColor.RED)
+                        .append(Component.text("x y z", NamedTextColor.WHITE))
+                        .append(Component.text(" \u2014 got: ", NamedTextColor.RED))
+                        .append(Component.text(input, NamedTextColor.WHITE)));
+                    reopenMenu.run();
+                    return;
+                }
+                double x = Double.parseDouble(parts[0].trim());
+                double y = Double.parseDouble(parts[1].trim());
+                double z = Double.parseDouble(parts[2].trim());
+                Vector next = new Vector(x, y, z);
+                mgr.setValue((Config.ConfigEntry<Vector>) entry, next);
+                swordPlayer.message(Component.text("Set ", NamedTextColor.GREEN)
+                    .append(Component.text(path, NamedTextColor.WHITE))
+                    .append(Component.text(" = ", NamedTextColor.GREEN))
+                    .append(Component.text(vectorToString(next), NamedTextColor.YELLOW)));
+            } catch (NumberFormatException ex) {
+                swordPlayer.message(Component.text("Invalid number in: ", NamedTextColor.RED)
+                    .append(Component.text(input, NamedTextColor.WHITE)));
+            }
+            reopenMenu.run();
+        });
+    }
+
+    // -------------------------------------------------------------------------
     //  Helpers
     // -------------------------------------------------------------------------
 
     private static boolean isNumeric(Class<?> type) {
         return type == Integer.class || type == Long.class || type == Double.class || type == Float.class;
+    }
+
+    private static String vectorToString(Vector v) {
+        return String.format("%.4f %.4f %.4f", v.getX(), v.getY(), v.getZ());
     }
 
     private static String colorToString(Color c) {
@@ -441,6 +516,10 @@ public class ConfigEntryItem extends AbstractItem {
 
     private float defaultFloat() {
         return entry.defaultValue instanceof Float f ? f : 0.0f;
+    }
+
+    private Vector defaultVector() {
+        return entry.defaultValue instanceof Vector v ? v : new Vector();
     }
 
     private Color defaultBukkitColor() {

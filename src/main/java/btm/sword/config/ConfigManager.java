@@ -195,6 +195,12 @@ public final class ConfigManager {
         } else if (value instanceof TextColor tc) {
             // Adventure TextColor has no YAML serializer; store as hex string matching loadTextColor()
             config.set(entry.path, String.format("#%06X", tc.value()));
+        } else if (value instanceof org.bukkit.util.Vector v) {
+            // Vector has no flat YAML representation; store as {x,y,z} section matching loadVector()
+            org.bukkit.configuration.ConfigurationSection sec = config.createSection(entry.path);
+            sec.set("x", v.getX());
+            sec.set("y", v.getY());
+            sec.set("z", v.getZ());
         } else {
             config.set(entry.path, value);
         }
