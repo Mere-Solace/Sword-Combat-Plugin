@@ -5,6 +5,7 @@ import java.util.concurrent.TimeUnit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.player.PlayerItemConsumeEvent;
 import org.bukkit.inventory.EquipmentSlot;
@@ -14,6 +15,13 @@ import btm.sword.config.Config;
 import btm.sword.system.control.SwordScheduler;
 
 public class WorldListener implements Listener {
+
+    @EventHandler
+    public void onBlockBreak(BlockBreakEvent event) {
+        if (!Config.World.BLOCK_INTERACTION_ALLOW_BLOCK_PLACING) {
+            event.setCancelled(true);
+        }
+    }
 
     @EventHandler
     public void onBlockPlace(BlockPlaceEvent event) {

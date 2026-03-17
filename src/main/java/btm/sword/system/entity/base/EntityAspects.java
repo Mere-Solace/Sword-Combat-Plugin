@@ -263,6 +263,11 @@ public class EntityAspects {
     public float soulfireCur() { return soulfire.cur(); }
     public float formCur() { return form.cur(); }
 
+    /**
+     * Returns a plain-text summary of the current resource values for debugging.
+     *
+     * @return multi-line string listing current shards, toughness, soulfire, and form
+     */
     public String curResources() {
         return "Shards: " + shardsCur() +
                 "\nToughness: " + toughnessCur() +
@@ -298,6 +303,11 @@ public class EntityAspects {
         }
     }
 
+    /**
+     * Cancels all active regeneration tasks for every resource (shards, toughness, soulfire, form).
+     * Also cancels any pending restart task. Called during {@link btm.sword.system.entity.base.SwordEntity#onDeath()}
+     * to prevent regen from continuing after death.
+     */
     public void stopAllResourceTasks() {
         if (restartTask != null && !restartTask.isCancelled()) restartTask.cancel();
         shards().stopRegenTask();
@@ -307,6 +317,15 @@ public class EntityAspects {
     }
 
 
+    /**
+     * Restarts the regeneration task for the specified resource type after a tick-based delay.
+     * Used to pause regeneration after a hit and resume it later.
+     *
+     * @param type  the resource to restart; must be one of the four resource types
+     *              ({@link AspectType#SHARDS}, {@link AspectType#TOUGHNESS},
+     *              {@link AspectType#SOULFIRE}, {@link AspectType#FORM})
+     * @param ticks delay in ticks before the regen task is restarted
+     */
     public void restartResourceProcessAfterDelay(AspectType type, int ticks) {
         Resource r;
         switch (type) {
@@ -320,6 +339,12 @@ public class EntityAspects {
 
         r.restartRegenTaskLater(ticks);
     }
+    /**
+     * Builds a formatted list of {@link net.kyori.adventure.text.Component} lines suitable for display
+     * in a tooltip or HUD, containing current values for all resources and aspects.
+     *
+     * @return ordered list of Adventure text components, one line per stat
+     */
     public List<Component> toComponentList() {
         List<Component> lines = new ArrayList<>();
 

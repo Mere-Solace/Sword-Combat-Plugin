@@ -304,6 +304,9 @@ public abstract class SwordEntity {
         setStatusActive(true);
     }
 
+    /**
+     * Deactivates and removes the floating status {@link org.bukkit.entity.TextDisplay} from this entity.
+     */
     public void endStatusDisplay() {
         setStatusActive(false);
         removeStatusDisplay();
@@ -347,6 +350,10 @@ public abstract class SwordEntity {
         }.runTaskTimer(Sword.getInstance(), 1L, 2L);
     }
 
+    /**
+     * Called shortly after this entity is registered in {@link btm.sword.system.entity.SwordEntityArbiter}.
+     * Schedules the initial status display spawn.
+     */
     public void onRegister() {
         SwordScheduler.runBukkitTaskLater(this::restartStatusDisplay, 100, TimeUnit.MILLISECONDS);
     }
@@ -372,6 +379,10 @@ public abstract class SwordEntity {
         if (!(self instanceof Player)) destroyed = true;
     }
 
+    /**
+     * Called when this entity's shard count reaches zero.
+     * Sets the {@link #dead} flag. Override in subclasses to trigger additional death effects.
+     */
     public void onZeroHealth() {
         dead = true;
     }
@@ -385,34 +396,79 @@ public abstract class SwordEntity {
         return self;
     }
 
+    /**
+     * Returns {@code true} if the given {@link LivingEntity} has the same UUID as this entity.
+     *
+     * @param entity the entity to compare against
+     * @return {@code true} if the UUIDs match
+     */
     public boolean isSelf(LivingEntity entity) {
         return self().getUniqueId().equals(entity.getUniqueId());
     }
 
+    /**
+     * Returns the {@link World} the underlying entity currently occupies.
+     *
+     * @return the entity's current world
+     */
     public World world() {
         return self.getWorld();
     }
 
+    /**
+     * Returns the normalized direction vector of this entity's eye location.
+     *
+     * @return the eye-look direction as a {@link Vector}
+     */
     public Vector dir() {
         return eyeLoc().getDirection();
     }
 
+    /**
+     * Returns the eye-level {@link Location} of this entity.
+     *
+     * @return the entity's eye location
+     */
     public Location eyeLoc() {
         return self.getEyeLocation();
     }
 
+    /**
+     * Returns a location at {@code distance} blocks in the entity's eye-look direction from the eye location.
+     *
+     * @param distance distance in blocks
+     * @return the offset location
+     */
     public Location locFromEyeDir(double distance) {
         return eyeLoc().add(dir().multiply(distance));
     }
 
+    /**
+     * Returns a location at {@code distance} blocks in the entity's horizontal body direction from the eye location.
+     * Unlike {@link #locFromEyeDir(double)}, pitch is ignored so the result stays at eye height.
+     *
+     * @param distance distance in blocks
+     * @return the horizontally offset location
+     */
     public Location locFromFlatDir(double distance) {
         return eyeLoc().add(getFlatBodyDir().multiply(distance));
     }
 
+    /**
+     * Returns the Bukkit {@link EntityType} of the underlying entity.
+     *
+     * @return the entity type
+     */
     public EntityType type() {
         return self.getType();
     }
 
+    /**
+     * Returns {@code true} if the underlying Bukkit entity is no longer valid
+     * (e.g., removed from the world).
+     *
+     * @return {@code true} if invalid
+     */
     public boolean isInvalid() {
         return !self().isValid();
     }
@@ -562,6 +618,19 @@ public abstract class SwordEntity {
         return false;
     }
 
+    /**
+     * Applies a hit to this entity using a pre-packaged {@link HitValuePacket}.
+     * <p>
+     * Handles blocking/parrying for {@link SwordPlayer} defenders before delegating
+     * to the full {@link #hit(Combatant, float, long, int, float, float, Vector, Affliction...)} overload.
+     * Channel-interrupted state is set on the defender if they are channelling at the moment of impact.
+     * </p>
+     *
+     * @param source            the {@link Combatant} dealing the hit
+     * @param v                 the packaged hit values
+     * @param knockbackVelocity velocity to apply as knockback
+     * @param afflictions       optional afflictions to apply
+     */
     public void hit(Combatant source, HitValuePacket v, Vector knockbackVelocity, Affliction... afflictions) {
         if (this instanceof SwordPlayer defender &&
                 defender.getActivationContext() == ActivationContext.CHANNELING) {
@@ -605,8 +674,12 @@ public abstract class SwordEntity {
         // TODO: later
     }
 
-    /*
-     * May be negative
+    /**
+     * Adjusts this entity's shard count by the given amount.
+     * Negative values remove shards; positive values add them.
+     *
+     * @param amount shard delta (may be negative)
+     * @return {@code true} if shards reached or fell below zero (entity is dead)
      */
     public boolean changeShards(int amount) {
         if (amount < 0) {
@@ -618,6 +691,13 @@ public abstract class SwordEntity {
         }
     }
 
+    /**
+     * Adjusts this entity's soulfire by the given amount.
+     * Negative values remove soulfire; positive values add it.
+     *
+     * @param amount soulfire delta (may be negative)
+     * @return {@code true} if soulfire reached or fell below zero
+     */
     public boolean changeSoulfire(float amount) {
         if (amount < 0) {
             return aspects.soulfire().remove(-1 * amount);
@@ -824,6 +904,14 @@ public abstract class SwordEntity {
         setItemStackInHand(new ItemStack(itemType), main);
     }
 
+    /**
+     * Sets the item at the specified inventory slot index.
+     * For players, sets the item in the player's inventory at the given slot.
+     * For non-players, {@code index == 0} maps to main hand; otherwise off hand.
+     *
+     * @param index the inventory slot index
+     * @param item  the item to place
+     */
     public void setItemInInventory(int index, ItemStack item) {
         if (self() instanceof Player p) {
             p.getInventory().setItem(index, item);
@@ -877,6 +965,13 @@ public abstract class SwordEntity {
         TimeArbiter.setVelocity(self, velocity);
     }
 
+    /**
+     * Returns the first {@link SwordEntity} hit by a ray cast from the entity's eye in its look direction
+     * up to {@code range} blocks away, excluding the entity itself.
+     *
+     * @param range maximum ray length in blocks
+     * @return the targeted {@link SwordEntity}, or {@code null} if nothing is in range
+     */
     public SwordEntity getTargetedEntity(double range) {
         LivingEntity target = (LivingEntity) HitboxUtil.ray(
                 eyeLoc(), dir(), range, 1,
@@ -885,6 +980,13 @@ public abstract class SwordEntity {
         return target == null ? null : SwordEntityArbiter.getOrAdd(target);
     }
 
+    /**
+     * Returns the right vector of this entity's current directional basis.
+     *
+     * @param withPitch if {@code true}, uses the eye-direction basis (includes pitch);
+     *                  if {@code false}, uses the body-direction basis (yaw only)
+     * @return the right basis vector
+     */
     public Vector rightBasisVector(boolean withPitch) {
         if (withPitch) {
             calcEyeDirBasis();
@@ -894,6 +996,13 @@ public abstract class SwordEntity {
         return currentBodyDirectionBasis.right();
     }
 
+    /**
+     * Returns the up vector of this entity's current directional basis.
+     *
+     * @param withPitch if {@code true}, uses the eye-direction basis (includes pitch);
+     *                  if {@code false}, uses the body-direction basis (yaw only)
+     * @return the up basis vector
+     */
     public Vector upBasisVector(boolean withPitch) {
         if (withPitch) {
             calcEyeDirBasis();
@@ -903,6 +1012,13 @@ public abstract class SwordEntity {
         return currentBodyDirectionBasis.up();
     }
 
+    /**
+     * Returns the forward vector of this entity's current directional basis.
+     *
+     * @param withPitch if {@code true}, uses the eye-direction basis (includes pitch);
+     *                  if {@code false}, uses the body-direction basis (yaw only)
+     * @return the forward basis vector
+     */
     public Vector forwardBasisVector(boolean withPitch) {
         if (withPitch) {
             calcEyeDirBasis();
@@ -934,24 +1050,49 @@ public abstract class SwordEntity {
         timeOfLastBodyBasisCalculation = System.currentTimeMillis();
     }
 
+    /**
+     * Returns the most up-to-date eye-direction {@link Basis}, recalculating it from the current eye location.
+     *
+     * @return the refreshed eye-direction basis
+     */
     public Basis getCurrentEyeDirectionBasis() {
         updateEyeDirectionBasis();
         return currentEyeDirectionBasis;
     }
 
+    /**
+     * Returns the most up-to-date body-direction (yaw-only) {@link Basis}, recalculating it immediately.
+     *
+     * @return the refreshed body-direction basis
+     */
     public Basis getCurrentBodyDirectionBasis() {
         updateBodyDirectionBasis();
         return currentBodyDirectionBasis;
     }
 
+    /**
+     * Returns a clone of the chest offset vector (relative to the entity's feet).
+     *
+     * @return cloned chest offset {@link Vector}
+     */
     public Vector getChestVector() {
         return chestVector.clone();
     }
 
+    /**
+     * Returns the current feet-level {@link Location} of this entity.
+     *
+     * @return the entity's current location
+     */
     public Location getLocation() {
         return self().getLocation();
     }
 
+    /**
+     * Teleports this entity to the specified {@link Location} via {@link btm.sword.system.control.EntityController}.
+     *
+     * @param location the target location
+     */
     public void teleport(Location location) {
         EntityController.teleport(self, location);
     }

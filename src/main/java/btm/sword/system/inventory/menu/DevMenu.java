@@ -126,8 +126,8 @@ public class DevMenu extends Menu {
             .setStructure(
                 "# # # # # # # # #",
                 "A B C D H E F . J",
-                ". . . . . . . . I",
-                "W S L . . . . . K",
+                "L . . . . . . . I",
+                ". . . . . . W S K",
                 "# # # < . > # # #")
             .addIngredient('#', BORDER)
             .addIngredient('A', verboseDebug)

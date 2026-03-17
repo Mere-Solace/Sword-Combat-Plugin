@@ -35,6 +35,30 @@ import btm.sword.utility.math.VectorUtil;
 import btm.sword.utility.misc.ConsumerToConsumePair;
 import lombok.Getter;
 
+/**
+ * Base class for all weapon sweep attacks.
+ * <p>
+ * An {@code Attack} drives a time-sliced iteration loop that steps a parametric
+ * {@link Function}&lt;Double, Vector&gt; (the weapon path function) from
+ * {@code attackStartValue} to {@code attackEndValue} across {@code attackIterations}
+ * steps spaced {@code attackMilliseconds / attackIterations} ms apart.  Each step
+ * computes the current Bezier point, performs hit detection via
+ * {@link btm.sword.utility.entity.HitboxUtil#secant}, and draws particle effects.
+ * </p>
+ * <p>
+ * The path function is generated once in {@link #generatePathFunction()} by capturing
+ * the attacker's {@link Basis} at the moment {@link #startAttack()} is called.
+ * Mid-swing rotation of the attacker does not affect the curve.
+ * </p>
+ * <p>
+ * Attacks can be chained with {@link #setNextAttack(Attack, int)}.  The origin can be
+ * fixed across a chain with {@link #setOriginOfAll(org.bukkit.Location)}.
+ * </p>
+ *
+ * @see btm.sword.system.attack.style.AttackProfile
+ * @see btm.sword.system.attack.HitValuePacket
+ * @see btm.sword.utility.entity.HitboxUtil
+ */
 public class Attack extends SwordAction implements Runnable {
     @Getter
     protected Combatant attacker;
@@ -90,6 +114,14 @@ public class Attack extends SwordAction implements Runnable {
     // TODO: maybe: have a caller-defined consumer that takes in a time-step and current vector (or just attack)
     //  and does display/sound stuff? a 'DisplayConsumer' that runs per iteration??
 
+    /**
+     * Constructs an {@code Attack} with timing values taken from the current config.
+     *
+     * @param itemUsedInAttack the item held during the attack (used for display and future item queries)
+     * @param profile          the {@link AttackProfile} defining the sweep curve and knockback
+     * @param orientWithPitch  if {@code true}, the attack basis includes the attacker's pitch;
+     *                         if {@code false}, only yaw is used (horizontal sweep)
+     */
     public Attack(ItemStack itemUsedInAttack, AttackProfile profile, boolean orientWithPitch) {
         this.itemUsedInAttack = itemUsedInAttack;
         this.attackProfile = profile;
@@ -107,6 +139,17 @@ public class Attack extends SwordAction implements Runnable {
         this.rangeMultiplier = Config.Combat.ATTACK_CLASS_MODIFIERS_RANGE_MULTIPLIER;
     }
 
+    /**
+     * Constructs an {@code Attack} with explicit timing overrides.
+     *
+     * @param itemUsedInAttack  the item held during the attack
+     * @param profile           the {@link AttackProfile} defining the sweep curve and knockback
+     * @param orientWithPitch   if {@code true}, basis includes pitch; if {@code false}, yaw only
+     * @param attackMilliseconds total duration of the attack animation in milliseconds
+     * @param attackIterations  number of discrete hit-detection steps across the sweep
+     * @param attackStartValue  parametric start value fed into the path function (typically 0.0)
+     * @param attackEndValue    parametric end value fed into the path function (typically 1.0)
+     */
     public Attack(ItemStack itemUsedInAttack, AttackProfile profile, boolean orientWithPitch,
                   int attackMilliseconds, int attackIterations, double attackStartValue, double attackEndValue) {
         this(itemUsedInAttack, profile, orientWithPitch);
@@ -116,23 +159,52 @@ public class Attack extends SwordAction implements Runnable {
         this.attackEndValue = attackEndValue;
     }
 
+    /**
+     * Chains another {@link Attack} to execute automatically after this one completes.
+     *
+     * @param nextAttack                      the attack to execute after this one
+     * @param millisecondDelayBeforeNextAttack delay in milliseconds between this attack ending and the next starting
+     * @return this attack, for initialization chaining
+     */
     public Attack setNextAttack(Attack nextAttack, int millisecondDelayBeforeNextAttack) {
         this.nextAttack = nextAttack;
         this.millisecondDelayBeforeNextAttack = millisecondDelayBeforeNextAttack;
         return this; // for initialization chaining
     }
 
+    /**
+     * Registers a callback to run after the attack completes, with an optional delay.
+     *
+     * @param callback                 the runnable to invoke after completion
+     * @param msBeforeCallbackSchedule delay in milliseconds before the callback is scheduled
+     * @return this attack, for chaining
+     */
     public Attack setCallback(Runnable callback, int msBeforeCallbackSchedule) {
         this.callback = callback;
         this.msBeforeCallbackSchedule = msBeforeCallbackSchedule;
         return this;
     }
 
+    /**
+     * Sets instructions to run on every entity hit during this attack.
+     * Each {@link btm.sword.utility.misc.ConsumerToConsumePair} encapsulates a paired
+     * consume action that fires when the sweep connects.
+     *
+     * @param onAttackConnectInstructions varargs of connect-time instructions
+     * @return this attack, for chaining
+     */
     public Attack setAttackConnectInstructions(ConsumerToConsumePair<?>... onAttackConnectInstructions) {
         this.onAttackConnectInstructions = onAttackConnectInstructions;
         return this;
     }
 
+    /**
+     * Sets a per-entity callback invoked each time a distinct entity is struck during the sweep.
+     * Called after the standard {@link #hit()} logic for that entity.
+     *
+     * @param onEntityHitInstructions consumer receiving the struck {@link SwordEntity}
+     * @return this attack, for chaining
+     */
     public Attack setOnEntityHitInstructions(Consumer<SwordEntity> onEntityHitInstructions) {
         this.onEntityHitInstructions = onEntityHitInstructions;
         return this;
@@ -151,10 +223,21 @@ public class Attack extends SwordAction implements Runnable {
         return this;
     }
 
+    /**
+     * Returns {@code true} if a chained {@link Attack} will execute after this one completes.
+     *
+     * @return {@code true} if a next attack is configured
+     */
     public boolean nextAttackExists() {
         return nextAttack != null;
     }
 
+    /**
+     * Begins execution of this attack for the given {@link Combatant}.
+     * Sets up the attacker reference and entity filter, then calls {@link #cast()}.
+     *
+     * @param attacker the combatant performing the attack
+     */
     public void execute(Combatant attacker) {
         this.attacker = attacker;
 
@@ -262,6 +345,13 @@ public class Attack extends SwordAction implements Runnable {
         }
     }
 
+    /**
+     * Fixes the attack origin for this attack and all chained attacks to the given location.
+     * Useful for anchoring a combo to the position where it started.
+     *
+     * @param origin the fixed world-space origin to propagate through the chain
+     * @return this attack, for chaining
+     */
     public Attack setOriginOfAll(Location origin) {
         this.origin = origin;
         Attack cur = getNextAttack();
@@ -277,6 +367,13 @@ public class Attack extends SwordAction implements Runnable {
             origin = attackingEntity.getLocation().add(attacker.getChestVector());
     }
 
+    /**
+     * Overrides the origin for this attack only.
+     * If {@code null}, the origin is determined from the attacker's chest position at swing start.
+     *
+     * @param origin the world-space origin to use, or {@code null} to use the attacker's position
+     * @return this attack, for chaining
+     */
     public Attack setOrigin(@Nullable Location origin) {
         this.origin = origin;
         return this;

@@ -137,6 +137,14 @@ public abstract class Combatant extends SwordEntity {
         handleUmbralBladeTick();
     }
 
+    /**
+     * Drives the per-tick lifecycle of this combatant's {@link UmbralBlade}.
+     * <p>
+     * If the blade has not been created yet and a creation attempt is not already in-flight,
+     * calls {@link #setupUmbralBlade()} to begin the deferred spawn. Once the blade exists,
+     * delegates to {@link UmbralBlade#onTick()}.
+     * </p>
+     */
     public void handleUmbralBladeTick() {
         if (!self().isValid()) return;
 
@@ -149,6 +157,12 @@ public abstract class Combatant extends SwordEntity {
         umbralBlade.onTick();
     }
 
+    /**
+     * Schedules creation of the {@link UmbralBlade} for this combatant after a 200 ms delay.
+     * The delay avoids spawning the display entity on the first server tick.
+     * Override in subclasses to alter blade setup behaviour (e.g., {@link btm.sword.system.entity.impl.Hostile}
+     * immediately deactivates the blade to suppress the visual).
+     */
     public void setupUmbralBlade() {
         setStartingBlade(true);
         Combatant pass = this;
@@ -161,11 +175,21 @@ public abstract class Combatant extends SwordEntity {
         );
     }
 
+    /**
+     * Disposes the active {@link UmbralBlade}, removing its display entity and releasing all resources.
+     * Does nothing if the blade has not been created.
+     */
     public void endUmbralBlade() {
         if (umbralBlade == null) return;
         umbralBlade.dispose();
     }
 
+    /**
+     * Forwards a {@link BladeRequest} to this combatant's {@link UmbralBlade},
+     * queuing it in the blade's input buffer for the next FSM tick.
+     *
+     * @param request the blade request to enqueue
+     */
     public void requestUmbralBladeState(BladeRequest request) {
         umbralBlade.request(request);
     }
@@ -179,6 +203,12 @@ public abstract class Combatant extends SwordEntity {
         this.abilityCastTask = abilityCastTask;
     }
 
+    /**
+     * Deducts the specified amount of soulfire from this combatant and restarts the
+     * soulfire regeneration task after the base regen delay.
+     *
+     * @param requiredSoulfire the amount of soulfire to consume
+     */
     public void consumeSoulfire(float requiredSoulfire) {
         Debug.combat("soulfire cur=" + String.format("%.1f", aspects.soulfireCur())
             + " cost=" + String.format("%.1f", requiredSoulfire));
@@ -252,30 +282,65 @@ public abstract class Combatant extends SwordEntity {
     }
 
 
+    /**
+     * Returns {@code true} if this combatant's main hand is empty or contains only air.
+     *
+     * @return {@code true} if main hand is empty
+     */
     public boolean holdingNothing() {
         ItemStack inMainHand = getItemStackInHand(true);
         return inMainHand.isEmpty() || inMainHand.getType().isAir();
     }
 
+    /**
+     * Returns {@code true} if the item in the main hand is tagged as an Umbral item
+     * (either the {@link btm.sword.system.item.KeyRegistry#SOUL_LINK_KEY} or
+     * {@link btm.sword.system.item.KeyRegistry#UMBRAL_BLADE_KEY}).
+     *
+     * @return {@code true} if holding an umbral-tagged item
+     */
     public boolean holdingUmbralItemInMainHand() {
         return isUmbralItem(getItemStackInHand(true));
     }
 
+    /**
+     * Returns {@code true} if the item in the main hand is tagged as the main menu button.
+     *
+     * @return {@code true} if the main-menu item is held
+     */
     public boolean holdingMenuItemInMainHand() {
         return KeyRegistry.hasKey(getItemStackInHand(true), KeyRegistry.MAIN_MENU_BUTTON_KEY);
     }
 
+    /**
+     * Returns {@code true} if the given {@link ItemStack} carries an Umbral item tag
+     * (soul-link or umbral-blade key).
+     *
+     * @param item the item to inspect
+     * @return {@code true} if the item is an umbral-tagged item
+     */
     public boolean isUmbralItem(ItemStack item) {
         return !item.isEmpty() &&
             (KeyRegistry.hasKey(item, KeyRegistry.SOUL_LINK_KEY) ||
                 KeyRegistry.hasKey(item, KeyRegistry.UMBRAL_BLADE_KEY));
     }
 
+    /**
+     * Returns {@code true} if the item in the main hand is tagged as the physical
+     * {@link UmbralBlade} item (not the soul-link tether item).
+     *
+     * @return {@code true} if holding the umbral blade item
+     */
     public boolean holdingUmbralBlade() {
         ItemStack itemStack = getItemStackInHand(true);
         return !itemStack.isEmpty() && KeyRegistry.hasKey(itemStack, KeyRegistry.UMBRAL_BLADE_KEY);
     }
 
+    /**
+     * Returns {@code true} if the item in the main hand is tagged as the soul-link tether item.
+     *
+     * @return {@code true} if holding the soul-link item
+     */
     public boolean holdingSoulLink() {
         ItemStack itemStack = getItemStackInHand(true);
         return !itemStack.isEmpty() && KeyRegistry.hasKey(itemStack, KeyRegistry.SOUL_LINK_KEY);
@@ -294,6 +359,13 @@ public abstract class Combatant extends SwordEntity {
         return abilityCastTask == null && !isGrabbing && !isGrabbed();
     }
 
+    /**
+     * Returns {@code true} if this combatant can perform a channel-heal action.
+     * Requires the base {@link #canPerformAction()} check to pass, the blade to be
+     * in the wield state, sufficient soulfire, and at least one missing shard.
+     *
+     * @return {@code true} if a heal can be initiated
+     */
     public boolean canPerformHealAction() {
         return canPerformAction() &&
             umbralBlade != null &&
@@ -302,6 +374,13 @@ public abstract class Combatant extends SwordEntity {
             aspects.shards().belowMax();
     }
 
+    /**
+     * Returns {@code true} if this combatant can perform a wield action.
+     * While in {@link WaitingState}, checks that the blade is within grab range instead.
+     * Otherwise, requires the base action check and the blade to be in standby, sheathed, or wield state.
+     *
+     * @return {@code true} if a wield action can be initiated
+     */
     public boolean canPerformWieldAction() {
         if (umbralBlade.inState(WaitingState.class)) {
             return inRangeOfUmbralBlade(Config.Movement.DASH_GRAB_DISTANCE_SQUARED);
@@ -314,12 +393,25 @@ public abstract class Combatant extends SwordEntity {
             );
     }
 
+    /**
+     * Returns {@code true} if the umbral blade's display entity is within the specified squared distance.
+     *
+     * @param range the maximum allowed squared distance
+     * @return {@code true} if the blade is within range
+     */
     public boolean inRangeOfUmbralBlade(double range) {
         return  umbralBlade.getDisplay().getLocation().toVector()
                     .subtract(getLocation().toVector())
                     .lengthSquared() < range;
     }
 
+    /**
+     * Returns {@code true} if this combatant can perform an umbral throw or recall action.
+     * Requires the base action check and the blade to be in standby, recalling, lodged, sheathed,
+     * or waiting state.
+     *
+     * @return {@code true} if an umbral action can be initiated
+     */
     public boolean canPerformUmbralAction() {
         return canPerformAction() &&
             (
@@ -341,6 +433,11 @@ public abstract class Combatant extends SwordEntity {
         return canPerformAction() && getAirDashesPerformed() < getCombatProfile().getMaxAirDodges();
     }
 
+    /**
+     * Marks this combatant as dashing and schedules the flag to be cleared after {@code duration} ms.
+     *
+     * @param duration how long the dashing state lasts, in milliseconds
+     */
     public void setDashing(int duration) {
         dashing = true;
         SwordScheduler.runBukkitTaskLater(
@@ -406,19 +503,23 @@ public abstract class Combatant extends SwordEntity {
      * Calculates and applies the standard attack cooldown based on FINESSE.
      * Sets both {@code timeOfLastAttack} and {@code durationOfLastAttack} so the
      * input tree's cooldown check ({@code getDurationOfLastAttack}) works correctly.
-     *
-     * @return the computed cooldown duration in milliseconds
      */
-    public int applyAttackCooldown() {
+    public void applyAttackCooldown() {
         setTimeOfLastAttack(System.currentTimeMillis());
         int cooldown = (int) calcValueReductive(AspectType.FINESSE,
             Config.Combat.ATTACKS_CAST_TIMING_MIN_DURATION,
             Config.Combat.ATTACKS_CAST_TIMING_MAX_DURATION,
             Config.Combat.ATTACKS_CAST_TIMING_REDUCTION_RATE);
         setDurationOfLastAttack((int) (cooldown * Config.Combat.ATTACKS_COOLDOWN_MULT));
-        return cooldown;
     }
 
+    /**
+     * Returns {@code true} if this combatant can perform an umbral link attack
+     * (a combo that requires the blade to be tethered or recalled).
+     * Requires the base action check and the blade to be in recalling, standby, sheathed, or lodged state.
+     *
+     * @return {@code true} if an umbral link attack can be initiated
+     */
     public boolean canPerformUmbralLinkAttack() {
         return canPerformAction() &&
             (getUmbralBlade().inState(RecallingState.class) ||
@@ -427,6 +528,12 @@ public abstract class Combatant extends SwordEntity {
                 getUmbralBlade().inState(LodgedState.class));
     }
 
+    /**
+     * Returns {@code true} if this combatant can perform a shadow blink teleport.
+     * Requires the base action check and the blade to be in the lodged state.
+     *
+     * @return {@code true} if a shadow blink can be performed
+     */
     public boolean canPerformShadowBlink() {
         return canPerformAction() &&
             (getUmbralBlade().inState(LodgedState.class));

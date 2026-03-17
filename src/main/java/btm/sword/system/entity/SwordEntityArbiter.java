@@ -160,10 +160,22 @@ public class SwordEntityArbiter {
         }
     }
 
+    /**
+     * Converts a collection of Bukkit {@link LivingEntity} instances into their {@link SwordEntity} wrappers,
+     * registering any that have not been registered yet.
+     *
+     * @param entities the entities to convert
+     * @return an immutable list of the corresponding {@link SwordEntity} wrappers
+     */
     public static Collection<SwordEntity> convertAllToSwordEntities(Collection<LivingEntity> entities) {
         return entities.stream().map(SwordEntityArbiter::getOrAdd).toList();
     }
 
+    /**
+     * Removes all visual display entities (umbral blades, status displays, indicator displays)
+     * from every currently online {@link SwordPlayer}.
+     * Called during plugin shutdown to clean up orphaned display entities.
+     */
     public static void removeAllDisplays() {
         for (SwordEntity player : onlineSwordPlayers.values()) {
             ((SwordPlayer) player).endUmbralBlade();
@@ -172,6 +184,11 @@ public class SwordEntityArbiter {
         }
     }
 
+    /**
+     * Schedules a deferred scan (2 ticks) of all loaded world entities and registers each
+     * {@link LivingEntity} that is not yet tracked. Called on plugin startup so entities
+     * that existed before the plugin loaded are picked up.
+     */
     public static void registerAllExistingEntities() {
         Bukkit.getScheduler().runTaskLater(Sword.getInstance(),
             bukkitTask -> {
@@ -185,6 +202,12 @@ public class SwordEntityArbiter {
         );
     }
 
+    /**
+     * Applies one or more {@link Consumer} actions to every registered NPC and online player.
+     * Logs how many entities and players were affected.
+     *
+     * @param actions varargs of consumers to run on each {@link SwordEntity}
+     */
     @SafeVarargs
     public static void applyToAllRegisteredEntities(Consumer<SwordEntity>... actions) {
         int entitiesAffected = 0;
