@@ -18,7 +18,7 @@ import btm.sword.utility.math.VectorUtil;
 // TODO: consider - add base range multiplier as well
 public enum AttackType implements AttackProfile {
 //region Initializations
-    // TODO: Config ALLLL of these values? And then make Control Vectors Accept Suppliers?!
+    // TODO: #242 - Make control vectors config-driven; support Supplier<Vector> in ControlVectors
     UMBRAL_SLASH1(ControlVectors.of(
         new Vector(-2,0,0),
         new Vector(2,0,-1),
