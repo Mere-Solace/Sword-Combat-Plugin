@@ -276,7 +276,7 @@ public abstract class Combatant extends SwordEntity {
         ActionCaster.cast(this, 75, () -> {
             Location hitLoc = target.getLocation().add(0, target.getEyeHeight() * 0.5, 0);
             Prefab.Particles.PUNCH_CONNECT.display(hitLoc);
-            grabbedEntity.hit(this, Prefab.Attacks.grabHit,
+            grabbedEntity.hit(this, Prefab.Attacks.GRAB_HIT,
                 target.getEyeLocation().subtract(eyeLoc()).toVector());
         });
     }

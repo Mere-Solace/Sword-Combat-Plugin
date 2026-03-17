@@ -111,7 +111,7 @@ public class ItemDisplayAttack extends Attack {
     // TODO: pass in an instance of HitValues
     @Override
     protected void hit() {
-        currentTarget.hit(attacker, Prefab.Attacks.umbralItemDisplayAttack,
+        currentTarget.hit(attacker, Prefab.Attacks.UMBRAL_ITEM_DISPLAY_ATTACK,
             attackProfile.knockbackFunction().apply(currentTarget).apply(this));
 
         Prefab.Particles.TEST_HIT.display(currentTarget.getChestLocation());

@@ -91,10 +91,8 @@ public class EntityListener implements Listener {
             Vector kb = loc != null ? loc.getDirection() : new Vector();
             aggressor = SwordEntityArbiter.get((LivingEntity) damageSource.getCausingEntity());
             if (aggressor instanceof Combatant c) {
-
-                // TODO: #136 shield mechanics
                 if (hurt != null)
-                    hurt.hit(c, Prefab.Attacks.defaultMobHit, kb);
+                    hurt.hit(c, Prefab.Attacks.DEFAULT_MOB_HIT, kb);
             }
         }
 

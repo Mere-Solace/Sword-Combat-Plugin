@@ -9,7 +9,7 @@ import btm.sword.utility.Prefab;
  * A sweep attack used by hostile mobs.
  *
  * <p>Extends {@link SweepAttack} and overrides {@link #hit()} to apply
- * {@link btm.sword.utility.Prefab.Attacks#defaultMobHit} instead of the default player hit packet.
+ * {@link btm.sword.utility.Prefab.Attacks#DEFAULT_MOB_HIT} instead of the default player hit packet.
  */
 public class MobSweepAttack extends SweepAttack {
 
@@ -26,7 +26,7 @@ public class MobSweepAttack extends SweepAttack {
 
     @Override
     protected void hit() {
-        currentTarget.hit(attacker, Prefab.Attacks.defaultMobHit,
+        currentTarget.hit(attacker, Prefab.Attacks.DEFAULT_MOB_HIT,
             attackProfile.knockbackFunction().apply(currentTarget).apply(this));
         Prefab.Particles.TEST_HIT.display(currentTarget.getChestLocation());
     }

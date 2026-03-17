@@ -82,7 +82,7 @@ public class Prefab {
 
     // using Suppliers so that this basic record-like class (AttackHitValue) can use the values from the config.
     public static class Attacks {
-        public static final HitValuePacket defaultMobHit = new HitValuePacket(
+        public static final HitValuePacket DEFAULT_MOB_HIT = new HitValuePacket(
             () -> Config.Combat.HIT_DEFAULT_MOB_REAPED_SOULFIRE,
             () -> Config.Combat.HIT_DEFAULT_MOB_INVULN_TICKS,
             () -> Config.Combat.HIT_DEFAULT_MOB_SHARD_DAMAGE,
@@ -90,7 +90,7 @@ public class Prefab {
             () -> Config.Combat.HIT_DEFAULT_MOB_SOULFIRE_LOSS
         );
 
-        public static final HitValuePacket basicAttack = new HitValuePacket(
+        public static final HitValuePacket BASIC_ATTACK = new HitValuePacket(
             () -> 5f,
             () -> Config.Combat.ATTACK_CLASS_HIT_INVULN_TICKS,
             () -> Config.Combat.ATTACK_CLASS_HIT_SHARDS,
@@ -98,7 +98,7 @@ public class Prefab {
             () -> Config.Combat.ATTACK_CLASS_HIT_SOULFIRE
         );
 
-        public static final HitValuePacket grabHit = new HitValuePacket(
+        public static final HitValuePacket GRAB_HIT = new HitValuePacket(
             () -> Config.Combat.HIT_GRAB_REAPED_SOULFIRE,
             () -> Config.Combat.HIT_GRAB_INVULN_TICKS,
             () -> Config.Combat.HIT_GRAB_SHARD_DAMAGE,
@@ -106,7 +106,7 @@ public class Prefab {
             () -> Config.Combat.HIT_GRAB_SOULFIRE_LOSS
         );
 
-        public static final HitValuePacket thrownWeapon = new HitValuePacket(
+        public static final HitValuePacket THROWN_WEAPON = new HitValuePacket(
             () -> 0f,
             () -> Config.Combat.THROWN_DAMAGE_SWORD_AXE_INVULNERABILITY_TICKS,
             () -> Config.Combat.THROWN_DAMAGE_SWORD_AXE_BASE_SHARDS,
@@ -114,7 +114,7 @@ public class Prefab {
             () -> Config.Combat.THROWN_DAMAGE_SWORD_AXE_SOULFIRE_REDUCTION
         );
 
-        public static final HitValuePacket umbralItemDisplayAttack = new HitValuePacket(
+        public static final HitValuePacket UMBRAL_ITEM_DISPLAY_ATTACK = new HitValuePacket(
             () -> Config.Combat.HIT_UMBRAL_DISPLAY_REAPED_SOULFIRE,
             () -> Config.Combat.HIT_UMBRAL_DISPLAY_INVULN_TICKS,
             () -> Config.Combat.HIT_UMBRAL_DISPLAY_SHARD_DAMAGE,
@@ -122,7 +122,7 @@ public class Prefab {
             () -> Config.Combat.HIT_UMBRAL_DISPLAY_SOULFIRE_LOSS
         );
 
-        public static final HitValuePacket punch = new HitValuePacket(
+        public static final HitValuePacket PUNCH = new HitValuePacket(
             () -> Config.Combat.HIT_PUNCH_REAPED_SOULFIRE,
             () -> Config.Combat.HIT_PUNCH_INVULN_TICKS,
             () -> Config.Combat.HIT_PUNCH_SHARD_DAMAGE,
@@ -135,7 +135,7 @@ public class Prefab {
          * SHIELD_PASSING: reduces damage by {@link Config.Combat#SHIELD_PASSING_BYPASS_POWER}
          * even against a blocking defender — these attacks pierce the guard.
          */
-        public static final HitValuePacket umbralImpale = new HitValuePacket(
+        public static final HitValuePacket UMBRAL_IMPALE = new HitValuePacket(
             () -> 0f,
             () -> Config.Combat.THROWN_DAMAGE_SWORD_AXE_INVULNERABILITY_TICKS,
             () -> Config.Combat.THROWN_DAMAGE_SWORD_AXE_BASE_SHARDS,

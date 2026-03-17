@@ -412,7 +412,7 @@ public class Attack extends SwordAction implements Runnable {
     }
 
     protected void hit() {
-        currentTarget.hit(attacker, Prefab.Attacks.basicAttack,
+        currentTarget.hit(attacker, Prefab.Attacks.BASIC_ATTACK,
             attackProfile.knockbackFunction().apply(currentTarget).apply(this));
 
         Prefab.Particles.TEST_HIT.display(currentTarget.getChestLocation());

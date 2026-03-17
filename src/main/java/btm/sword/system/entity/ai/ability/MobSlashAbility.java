@@ -15,7 +15,7 @@ import btm.sword.system.entity.impl.Hostile;
  *
  * <p>Randomly selects one of {@link AttackType#SLASH1}, {@link AttackType#SLASH2}, or
  * {@link AttackType#SLASH3} and executes a {@link MobSweepAttack} using
- * {@link btm.sword.utility.Prefab.Attacks#defaultMobHit}.
+ * {@link btm.sword.utility.Prefab.Attacks#DEFAULT_MOB_HIT}.
  * The mob approaches the target during the wind-up (category: {@link AbilityCategory#MELEE}).
  */
 public class MobSlashAbility implements MobAbility {

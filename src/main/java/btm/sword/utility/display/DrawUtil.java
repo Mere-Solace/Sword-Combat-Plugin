@@ -52,7 +52,6 @@ public class DrawUtil {
         }
     }
 
-    // TODO: can this be optimized?
     /**
      * @param particles ParticleWrappers to be displayed
      * @param origin center of circle

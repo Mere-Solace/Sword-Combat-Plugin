@@ -41,7 +41,7 @@ public class PunchAction extends SwordAction {
                 Prefab.Particles.PUNCH_CONNECT.display(hitLoc);
                 Prefab.Sounds.PUNCH_CONNECT.playForAllInRadius(executor.self());
                 // subtract current velocity for more realistic juggling, rather than just bouncing em in the air forever
-                swordHit.hit(executor, Prefab.Attacks.punch,
+                swordHit.hit(executor, Prefab.Attacks.PUNCH,
                     executor.dir().multiply(0.5).add(swordHit.self().getVelocity().multiply(0.5)));
             }
         }
