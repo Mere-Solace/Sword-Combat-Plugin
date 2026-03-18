@@ -1,114 +1,53 @@
 package btm.sword.system.scene;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
+
+import com.comphenix.protocol.PacketType;
+import com.comphenix.protocol.ProtocolLibrary;
+import com.comphenix.protocol.ProtocolManager;
+import com.comphenix.protocol.events.PacketContainer;
 
 import btm.sword.Sword;
 
 /**
- * Thin NMS reflection wrapper for sending camera-control packets to players.
+ * ProtocolLib wrapper for sending {@code ClientboundSetCameraPacket} to players.
  * <p>
- * Provides access to {@code ClientboundSetCameraPacket} without requiring compile-time
- * NMS dependencies. All reflection is performed once on first use and cached; the
- * {@link #isAvailable()} flag is set to {@code false} if initialisation fails so
- * callers can degrade gracefully.
+ * Reassigns a player's client camera to any entity by sending
+ * {@link PacketType.Play.Server#CAMERA}. The player remains in their original game mode
+ * — no spectator mode is required.
  * </p>
  *
- * <h2>Packet</h2>
- * {@code ClientboundSetCameraPacket(int cameraId)} — reassigns the client camera to any
- * entity by its numeric ID. Sending the player's own entity ID restores the default
- * first-person view. The target entity must already be tracked client-side.
+ * <h2>Packet structure</h2>
+ * {@code ClientboundSetCameraPacket} contains a single integer field (index 0):
+ * the numeric entity ID of the entity the client should attach the camera to.
+ * Sending the player's own entity ID restores the default first-person view.
  *
- * <h2>Thread safety</h2>
- * {@link #ensureInitialized()} is {@code synchronized}; all packet sends must be called
- * from the main server thread (as with all Bukkit entity operations).
+ * <h2>Prerequisite</h2>
+ * The target entity must be spawned and tracked client-side before the packet is sent.
+ * A 1-tick delay after entity spawn is sufficient to ensure this.
  */
 public class PacketAdapter {
 
-    private static volatile boolean initialized = false;
-    private static volatile boolean available = false;
-
-    private static Constructor<?> cameraPacketCtor;
-    private static Method getHandleMethod;
-    private static Field connectionField;
-    private static Method sendMethod;
-
     private PacketAdapter() {}
 
-    private static synchronized void ensureInitialized() {
-        if (initialized) return;
-        initialized = true;
-        try {
-            // ClientboundSetCameraPacket(int cameraId) — Paper 1.21.x record constructor
-            Class<?> packetClass = Class.forName(
-                "net.minecraft.network.protocol.game.ClientboundSetCameraPacket");
-            cameraPacketCtor = packetClass.getDeclaredConstructor(int.class);
-            cameraPacketCtor.setAccessible(true);
-
-            // CraftPlayer.getHandle() → ServerPlayer
-            Class<?> craftPlayerClass = Class.forName("org.bukkit.craftbukkit.entity.CraftPlayer");
-            getHandleMethod = craftPlayerClass.getMethod("getHandle");
-
-            // ServerPlayer.connection → ServerGamePacketListenerImpl (public field)
-            Class<?> serverPlayerClass = Class.forName("net.minecraft.server.level.ServerPlayer");
-            connectionField = serverPlayerClass.getField("connection");
-
-            // send(Packet<?>) — declared on ServerCommonPacketListenerImpl, inherited publicly
-            Class<?> packetInterface = Class.forName("net.minecraft.network.protocol.Packet");
-            sendMethod = connectionField.getType().getMethod("send", packetInterface);
-
-            available = true;
-            Sword.getInstance().getLogger().info("[PacketAdapter] Initialized — packet camera available.");
-        } catch (Exception e) {
-            Sword.getInstance().getLogger().warning(
-                "[PacketAdapter] Initialization failed (" + e.getClass().getSimpleName()
-                    + ": " + e.getMessage() + "). Camera will fall back to spectator mode.");
-        }
-    }
-
     /**
-     * Returns {@code true} if reflection initialisation succeeded and packet sending
-     * is available. If {@code false}, callers should fall back to spectator-mode camera.
+     * Returns {@code true} if ProtocolLib is loaded and its {@link ProtocolManager}
+     * is available. If {@code false}, callers should fall back to spectator-mode targeting.
      *
-     * @return {@code true} when the adapter is ready to send packets
+     * @return {@code true} when ProtocolLib is ready to send packets
      */
     public static boolean isAvailable() {
-        ensureInitialized();
-        return available;
-    }
-
-    /**
-     * Sends {@code ClientboundSetCameraPacket} to {@code player}, attaching their
-     * client camera to the entity with the given ID.
-     * <p>
-     * The target entity must be spawned and tracked client-side before this is called
-     * (a 1-tick delay after entity spawn is usually sufficient).
-     * </p>
-     *
-     * @param player   the player whose camera to redirect
-     * @param entityId the numeric entity ID to attach the camera to
-     */
-    public static void setCameraTarget(Player player, int entityId) {
-        ensureInitialized();
-        if (!available) return;
         try {
-            Object packet = cameraPacketCtor.newInstance(entityId);
-            Object nmsPlayer = getHandleMethod.invoke(player);
-            Object conn = connectionField.get(nmsPlayer);
-            sendMethod.invoke(conn, packet);
+            return ProtocolLibrary.getProtocolManager() != null;
         } catch (Exception e) {
-            Sword.getInstance().getLogger().severe(
-                "[PacketAdapter] setCameraTarget failed: " + e.getMessage());
+            return false;
         }
     }
 
     /**
-     * Sends {@code ClientboundSetCameraPacket} to {@code player}, attaching their
-     * client camera to the given Bukkit entity.
+     * Attaches the player's camera to the given entity by sending
+     * {@code ClientboundSetCameraPacket} ({@link PacketType.Play.Server#CAMERA}).
      *
      * @param player the player whose camera to redirect
      * @param entity the entity to use as the new camera viewpoint
@@ -118,8 +57,26 @@ public class PacketAdapter {
     }
 
     /**
-     * Resets the player's camera back to their own first-person view by sending
-     * a camera packet targeting the player themselves.
+     * Attaches the player's camera to the entity with the given numeric ID.
+     *
+     * @param player   the player whose camera to redirect
+     * @param entityId the entity ID to attach the camera to
+     */
+    public static void setCameraTarget(Player player, int entityId) {
+        try {
+            ProtocolManager manager = ProtocolLibrary.getProtocolManager();
+            PacketContainer packet = new PacketContainer(PacketType.Play.Server.CAMERA);
+            packet.getIntegers().write(0, entityId);
+            manager.sendServerPacket(player, packet);
+        } catch (Exception e) {
+            Sword.getInstance().getLogger().severe(
+                "[PacketAdapter] Failed to send CAMERA packet: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Resets the player's camera to their own first-person view by sending
+     * {@code ClientboundSetCameraPacket} targeting the player themselves.
      *
      * @param player the player whose camera to restore
      */

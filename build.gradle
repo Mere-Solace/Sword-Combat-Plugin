@@ -30,7 +30,7 @@ dependencies {
     implementation 'xyz.xenondevs.invui:invui:1.47'
     compileOnly 'org.projectlombok:lombok:1.18.34'
     annotationProcessor 'org.projectlombok:lombok:1.18.34'
-    compileOnly fileTree(dir: 'libs', include: ['ProtocolLib*.jar'])
+    compileOnly 'net.dmulloy2:ProtocolLib:5.4.0'
 }
 
 tasks {
