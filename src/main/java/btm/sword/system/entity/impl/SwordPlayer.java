@@ -179,6 +179,10 @@ public class SwordPlayer extends Combatant {
     @Setter
     private boolean inInventorySession;
 
+    @Getter
+    @Setter
+    private btm.sword.system.scene.CameraController activeCameraController;
+
     private BukkitTask targetIndicatorTask;
     private SwordEntity targetedEntity;
     private TextDisplay targetIndicator;
@@ -311,6 +315,13 @@ public class SwordPlayer extends Combatant {
     @Override
     public void onSpawn() {
         super.onSpawn();
+        if (Config.Scene.SCENE_ENABLED) {
+            if (Config.Scene.SCENE_ON_EVERY_JOIN
+                    || !btm.sword.system.scene.SceneManager.hasSeenScene(player)) {
+                SwordScheduler.runConsumerNextTick(
+                    sp -> btm.sword.system.scene.SceneManager.startMainMenuScene(sp), this);
+            }
+        }
     }
 
     /**

@@ -2,6 +2,9 @@ package btm.sword.system.entity.impl;
 
 import java.util.concurrent.TimeUnit;
 
+import btm.sword.system.control.PredicateRunnablePair;
+import btm.sword.system.control.TimeArbiter;
+
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.attribute.Attribute;
@@ -191,7 +194,17 @@ public abstract class Combatant extends SwordEntity {
      * @param request the blade request to enqueue
      */
     public void requestUmbralBladeState(BladeRequest request) {
-        umbralBlade.request(request);
+        TimeArbiter.runFixedIterationTaskTimer(
+            null,
+            null,
+            0,25,160,
+            Combatant.class, "requestUmbralBladeState",
+            null,
+            new PredicateRunnablePair(
+                () -> umbralBlade != null,
+                () -> umbralBlade.request(request)
+            )
+        );
     }
 
     /**

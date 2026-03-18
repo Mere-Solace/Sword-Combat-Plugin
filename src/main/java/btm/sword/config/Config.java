@@ -3618,4 +3618,97 @@ public class Config {
             v -> MATERIALS_ICON = v, Config::loadMaterial); }
     }
     //endregion
+
+    // ==============================================================================
+    //region Scene Configuration
+    // ==============================================================================
+    /**
+     * Scene configuration: main menu cinematic, camera drift, and music.
+     */
+    public static class Scene {
+
+        /** Whether the main menu scene is active at all. */
+        public static boolean SCENE_ENABLED = true;
+        static { register("scene.scene_enabled", SCENE_ENABLED, Boolean.class,
+            v -> SCENE_ENABLED = v, ConfigurationSection::getBoolean); }
+
+        /** If true, the scene plays on every spawn/respawn. If false, only once per session. */
+        public static boolean SCENE_ON_EVERY_JOIN = false;
+        static { register("scene.scene_on_every_join", SCENE_ON_EVERY_JOIN, Boolean.class,
+            v -> SCENE_ON_EVERY_JOIN = v, ConfigurationSection::getBoolean); }
+
+        // --- Camera anchor (GentleDriftCameraController) ---
+
+        /** World-space anchor point for the gentle-drift main menu camera. */
+        public static org.bukkit.util.Vector CAMERA_ANCHOR = new org.bukkit.util.Vector(-162, 161, -1306);
+        static { register("scene.camera_anchor", CAMERA_ANCHOR, org.bukkit.util.Vector.class,
+            v -> CAMERA_ANCHOR = v, Config::loadVector); }
+
+        // --- Drift parameters ---
+
+        /** Sinusoidal bob speed in radians per tick (default ≈ very slow). */
+        public static double DRIFT_SPEED = 0.02;
+        static { register("scene.drift_speed", DRIFT_SPEED, Double.class,
+            v -> DRIFT_SPEED = v, ConfigurationSection::getDouble); }
+
+        /** Sinusoidal bob amplitude in blocks. */
+        public static double DRIFT_AMPLITUDE = 0.3;
+        static { register("scene.drift_amplitude", DRIFT_AMPLITUDE, Double.class,
+            v -> DRIFT_AMPLITUDE = v, ConfigurationSection::getDouble); }
+
+        /** Yaw drift rate in degrees per tick. */
+        public static double YAW_DRIFT_RATE = 0.01;
+        static { register("scene.yaw_drift_rate", YAW_DRIFT_RATE, Double.class,
+            v -> YAW_DRIFT_RATE = v, ConfigurationSection::getDouble); }
+
+        // --- Bezier path (BezierCameraController / cutscenes) ---
+
+        /** Start control point for the Bézier camera path. */
+        public static org.bukkit.util.Vector CAMERA_PATH_START = new org.bukkit.util.Vector(0, 64, 0);
+        static { register("scene.camera_path_start", CAMERA_PATH_START, org.bukkit.util.Vector.class,
+            v -> CAMERA_PATH_START = v, Config::loadVector); }
+
+        /** First interior control point for the Bézier camera path. */
+        public static org.bukkit.util.Vector CAMERA_PATH_C1 = new org.bukkit.util.Vector(20, 72, 0);
+        static { register("scene.camera_path_c1", CAMERA_PATH_C1, org.bukkit.util.Vector.class,
+            v -> CAMERA_PATH_C1 = v, Config::loadVector); }
+
+        /** Second interior control point for the Bézier camera path. */
+        public static org.bukkit.util.Vector CAMERA_PATH_C2 = new org.bukkit.util.Vector(30, 68, 20);
+        static { register("scene.camera_path_c2", CAMERA_PATH_C2, org.bukkit.util.Vector.class,
+            v -> CAMERA_PATH_C2 = v, Config::loadVector); }
+
+        /** End control point for the Bézier camera path. */
+        public static org.bukkit.util.Vector CAMERA_PATH_END = new org.bukkit.util.Vector(40, 64, 30);
+        static { register("scene.camera_path_end", CAMERA_PATH_END, org.bukkit.util.Vector.class,
+            v -> CAMERA_PATH_END = v, Config::loadVector); }
+
+        /** Number of 50 ms ticks for a full Bézier path traversal. */
+        public static int CAMERA_DURATION_TICKS = 400;
+        static { register("scene.camera_duration_ticks", CAMERA_DURATION_TICKS, Integer.class,
+            v -> CAMERA_DURATION_TICKS = v, ConfigurationSection::getInt); }
+
+        // --- Music ---
+
+        /** Sound to loop during the main menu scene. */
+        public static btm.sword.utility.sound.SoundType MENU_MUSIC = btm.sword.utility.sound.SoundType.MUSIC_MENU;
+        static { register("scene.menu_music", MENU_MUSIC, btm.sword.utility.sound.SoundType.class,
+            v -> MENU_MUSIC = v, Config::loadSoundType); }
+
+        /** Music playback volume. */
+        public static float MENU_MUSIC_VOLUME = 1.0f;
+        static { register("scene.menu_music_volume", MENU_MUSIC_VOLUME, Float.class,
+            v -> MENU_MUSIC_VOLUME = v, Config::loadFloat); }
+
+        /** Music playback pitch. */
+        public static float MENU_MUSIC_PITCH = 1.0f;
+        static { register("scene.menu_music_pitch", MENU_MUSIC_PITCH, Float.class,
+            v -> MENU_MUSIC_PITCH = v, Config::loadFloat); }
+
+        /** Duration of the menu music track in ticks (used as the loop period). */
+        public static int MENU_MUSIC_DURATION_TICKS = 200;
+        static { register("scene.menu_music_duration_ticks", MENU_MUSIC_DURATION_TICKS, Integer.class,
+            v -> MENU_MUSIC_DURATION_TICKS = v, ConfigurationSection::getInt); }
+    }
+    //endregion
 }

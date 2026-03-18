@@ -25,6 +25,7 @@ import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.input.InputType;
 import btm.sword.system.item.ItemClassifier;
+import btm.sword.system.scene.SceneManager;
 import btm.sword.utility.entity.InputUtil;
 import io.papermc.paper.event.player.PrePlayerAttackEntityEvent;
 
@@ -241,6 +242,10 @@ public class InputListener implements Listener {
         SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer());
 
         if (event.isSneaking()) {
+            if (SceneManager.isInScene(event.getPlayer())) {
+                SceneManager.onShiftInput(swordPlayer);
+                return;
+            }
             ItemStack item = swordPlayer.getItemStackInHand(true);
             if (swordPlayer.handleItemInteraction(item, InputType.SHIFT)) return;
             swordPlayer.act(InputType.SHIFT);

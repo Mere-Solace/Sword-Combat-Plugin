@@ -7,12 +7,12 @@ import org.bukkit.Material;
 import org.bukkit.entity.Player;
 
 import btm.sword.config.Config;
-import btm.sword.utility.ChatInputCapture;
 import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.inventory.item.ConfigEntryItem;
 import btm.sword.system.inventory.item.ForwardItem;
 import btm.sword.system.inventory.item.PreviousItem;
 import btm.sword.system.item.ItemStackBuilder;
+import btm.sword.utility.ChatInputCapture;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import xyz.xenondevs.invui.gui.PagedGui;

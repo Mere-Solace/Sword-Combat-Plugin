@@ -386,3 +386,5 @@ menu:
     display: GLOW_ITEM_FRAME
     entity: PANDA_SPAWN_EGG
     umbralblade: STONE_SWORD
+scene:
+  scene_on_every_join: true
