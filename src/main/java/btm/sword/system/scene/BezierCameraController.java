@@ -12,16 +12,22 @@ import btm.sword.system.control.TimeArbiter;
 /**
  * Camera controller that drives the camera along a {@link CameraPath} (cubic Bézier curve).
  * <p>
- * Intended for cutscenes and loading transitions. On start, the player is placed in
- * SPECTATOR mode targeting an invisible {@link ArmorStand} that travels along the curve
- * from {@code t = 0} to {@code t = 1} over {@code durationTicks} frames.
+ * Intended for cutscenes and loading transitions. On start, an invisible
+ * {@link ArmorStand} is spawned at the path origin and the player's camera is
+ * attached to it via {@link CameraService} ({@code ClientboundSetCameraPacket}).
+ * The player remains in their original game mode — no spectator mode is used.
+ * </p>
+ * <p>
+ * If {@link CameraService#isAvailable()} returns {@code false} (reflection failed),
+ * the controller falls back to spectator-mode targeting.
  * </p>
  *
  * <h2>Lifecycle</h2>
  * <ol>
- *   <li>{@link #onStart()} — saves player state, spawns ArmorStand at path origin, enters spectator.</li>
- *   <li>{@link #onTick()} — advances {@code t} by {@code 1 / durationTicks} each 50 ms frame; teleports stand.</li>
- *   <li>{@link #onStop()} — cancels tick task, removes stand, restores game mode and location.</li>
+ *   <li>{@link #onStart()} — spawns ArmorStand, attaches camera via packet (1-tick delay),
+ *       starts tick loop.</li>
+ *   <li>{@link #onTick()} — advances {@code t} by {@code 1 / durationTicks}; teleports stand.</li>
+ *   <li>{@link #onStop()} — cancels tick task, detaches camera, removes stand.</li>
  * </ol>
  */
 public class BezierCameraController extends CameraController {
@@ -34,6 +40,7 @@ public class BezierCameraController extends CameraController {
     private GameMode savedGameMode;
     private Location savedLocation;
     private ArmorStand armorStand;
+    private CameraSession cameraSession;
     private TimeArbiter.TaskHandle tickTask;
 
     /**
@@ -50,8 +57,6 @@ public class BezierCameraController extends CameraController {
     @Override
     protected void onStart() {
         playerRef = owner.player();
-        savedLocation = playerRef.getLocation().clone();
-        savedGameMode = playerRef.getGameMode();
 
         World world = playerRef.getWorld();
         Location startLoc = path.evaluate(0.0, world);
@@ -64,8 +69,17 @@ public class BezierCameraController extends CameraController {
         armorStand.setInvulnerable(true);
         armorStand.setSilent(true);
 
-        playerRef.setGameMode(GameMode.SPECTATOR);
-        playerRef.setSpectatorTarget(armorStand);
+        if (CameraService.isAvailable()) {
+            // Delay 1 tick so the entity is tracked client-side before the packet fires.
+            ArmorStand stand = armorStand;
+            btm.sword.system.control.SwordScheduler.runConsumerNextTick(
+                p -> cameraSession = CameraService.attach(p, stand), playerRef);
+        } else {
+            savedGameMode = playerRef.getGameMode();
+            savedLocation = playerRef.getLocation().clone();
+            playerRef.setGameMode(GameMode.SPECTATOR);
+            playerRef.setSpectatorTarget(armorStand);
+        }
 
         tickTask = TimeArbiter.runTimeIndependentBukkitTaskOnTimer(
             this::onTick, null,
@@ -93,14 +107,17 @@ public class BezierCameraController extends CameraController {
             tickTask.cancel();
             tickTask = null;
         }
+        if (cameraSession != null) {
+            cameraSession.detach();
+            cameraSession = null;
+        } else if (playerRef != null && savedGameMode != null) {
+            playerRef.setSpectatorTarget(null);
+            playerRef.setGameMode(savedGameMode);
+            if (savedLocation != null) playerRef.teleport(savedLocation);
+        }
         if (armorStand != null) {
             armorStand.remove();
             armorStand = null;
-        }
-        if (playerRef != null) {
-            playerRef.setSpectatorTarget(null);
-            playerRef.setGameMode(savedGameMode);
-            playerRef.teleport(savedLocation);
         }
     }
 }
