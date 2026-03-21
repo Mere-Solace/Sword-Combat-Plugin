@@ -196,6 +196,9 @@ public class SwordPlayer extends Combatant {
     /**
      * True while the creative dev mode (clear inventory, wooden axe) is active.
      * Suppresses all item upkeep except the menu button (maintained at slot 17).
+     * -- GETTER --
+     *  Returns
+     *  if the player is currently in creative dev mode.
      */
     private boolean inCreativeDevMode = false;
 
@@ -372,6 +375,9 @@ public class SwordPlayer extends Combatant {
      * Called when the player leaves the game.
      */
     public void onLeave() {
+        if (activeCameraController != null) {
+            activeCameraController.stop();
+        }
         if (getUmbralBlade() != null) {
             getUmbralBlade().dispose();
         }
@@ -759,15 +765,6 @@ public class SwordPlayer extends Combatant {
     }
 
     /**
-     * Returns {@code true} if the player is currently in creative dev mode.
-     *
-     * @return whether creative dev mode is active
-     */
-    public boolean isInCreativeDevMode() {
-        return inCreativeDevMode;
-    }
-
-    /**
      * Rebuilds {@link #managedItems} from the current set of anchored item fields.
      * Must be called after construction and after {@link #reloadInventoryButtons()}.
      */
@@ -803,7 +800,10 @@ public class SwordPlayer extends Combatant {
 
         for (SlotAnchoredItem item : managedItems) {
             if (item.isUpkeepEnabled() && !item.isSatisfied(player)) {
-                item.restore(player);
+                if (KeyRegistry.hasKey(item.getItemStack(), KeyRegistry.MAIN_MENU_BUTTON_KEY) ||
+                Debug.SPECIAL_ITEM_CHECKS_ENABLED) {
+                    item.restore(player);
+                }
             }
         }
 
@@ -839,11 +839,7 @@ public class SwordPlayer extends Combatant {
         }
 
         StorageCategory category = StorageCategory.fromItem(itemStack);
-        if (category != null) {
-            return true;
-        }
-
-        return false;
+        return category != null;
     }
 
     /**
@@ -875,9 +871,9 @@ public class SwordPlayer extends Combatant {
         // Left-clicking an interactible (non-NON_MOVABLE) slot fires the scene-exit stub.
         // When special item checks are disabled, all overlay restrictions are bypassed.
         if (inSceneOverlay && Debug.SPECIAL_ITEM_CHECKS_ENABLED) {
-            if (clickType == ClickType.LEFT && clicked != null && !clicked.getType().isAir()
-                    && !KeyRegistry.hasKey(clicked, KeyRegistry.NON_MOVABLE_KEY)
-                    && e.getClickedInventory() == player.getInventory()) {
+            if (clickType == ClickType.LEFT && !clicked.getType().isAir() &&
+                !KeyRegistry.hasKey(clicked, KeyRegistry.NON_MOVABLE_KEY) &&
+                e.getClickedInventory() == player.getInventory()) {
                 onSceneOverlayClickExit();
             }
             return true;
@@ -913,12 +909,8 @@ public class SwordPlayer extends Combatant {
         }
 
         // Block all Q / Ctrl+Q drops from inventory — players cannot drop items via inventory
-        if (action == InventoryAction.DROP_ONE_SLOT || action == InventoryAction.DROP_ALL_SLOT
-                || action == InventoryAction.DROP_ONE_CURSOR || action == InventoryAction.DROP_ALL_CURSOR) {
-            return true;
-        }
-
-        return false;
+        return action == InventoryAction.DROP_ONE_SLOT || action == InventoryAction.DROP_ALL_SLOT
+            || action == InventoryAction.DROP_ONE_CURSOR || action == InventoryAction.DROP_ALL_CURSOR;
     }
 
     /**

@@ -177,10 +177,14 @@ public class SwordEntityArbiter {
      * Called during plugin shutdown to clean up orphaned display entities.
      */
     public static void removeAllDisplays() {
-        for (SwordEntity player : onlineSwordPlayers.values()) {
-            ((SwordPlayer) player).endUmbralBlade();
-            player.endStatusDisplay();
-            ((SwordPlayer) player).endIndicatorDisplay();
+        for (SwordEntity entity : onlineSwordPlayers.values()) {
+            SwordPlayer sp = (SwordPlayer) entity;
+            if (sp.getActiveCameraController() != null) {
+                sp.getActiveCameraController().stop();
+            }
+            sp.endUmbralBlade();
+            sp.endStatusDisplay();
+            sp.endIndicatorDisplay();
         }
     }
 

@@ -147,7 +147,6 @@ public class DEUAnimationController extends CameraController {
 
         MovementListener.lockedPlayers.remove(player.getUniqueId());
 
-
         if (anchorSession != null) {
             anchorSession.detach();
             anchorSession = null;
@@ -157,17 +156,20 @@ public class DEUAnimationController extends CameraController {
             anchorEntity = null;
         }
 
-        if (attachCamera) {
-            DisplayAnimator.stopCameraView(player);
+        if (player.isOnline()) {
+            if (attachCamera) {
+                DisplayAnimator.stopCameraView(player);
+            }
+            if (animator != null) {
+                animator.stop(player, packetGroup);
+            }
+            if (packetGroup != null) {
+                packetGroup.hideFromPlayer(player);
+            }
         }
 
-        if (animator != null) {
-            animator.stop(player, packetGroup);
-            animator = null;
-        }
-
+        animator = null;
         if (packetGroup != null) {
-            packetGroup.hideFromPlayer(player);
             packetGroup.unregister();
             packetGroup = null;
         }
