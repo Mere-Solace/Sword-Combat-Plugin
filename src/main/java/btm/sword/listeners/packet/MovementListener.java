@@ -26,14 +26,25 @@ public class MovementListener implements com.comphenix.protocol.events.PacketLis
     public void onPacketReceiving(PacketEvent event) {
         Player player = event.getPlayer();
 
+        // TODO: Fix this block:
+        //[Sword] Unhandled exception occurred in onPacketReceiving(PacketEvent) for Sword
+        //com.comphenix.protocol.reflect.FieldAccessException: Field index 0 is out of bounds for length 0
+        //        at ProtocolLib.jar/com.comphenix.protocol.reflect.FieldAccessException.fromFormat(FieldAccessException.java:49) ~[ProtocolLib.jar:?]
+        //        at ProtocolLib.jar/com.comphenix.protocol.reflect.StructureModifier.read(StructureModifier.java:247) ~[ProtocolLib.jar:?]
+        //        at Sword-1.0-SNAPSHOT.jar/btm.sword.listeners.packet.MovementListener.onPacketReceiving(MovementListener.java:34) ~[Sword-1.0-SNAPSHOT.jar:?]
         // Prevent "Cannot interact with self" server kick.
         // During DEU camera animations the client's camera is attached to a virtual entity
         // looking back at the player's model. A right-click sends USE_ENTITY targeting the
         // player's own entity ID, which triggers a vanilla disconnect. Cancel it silently.
         if (event.getPacketType() == PacketType.Play.Client.USE_ENTITY) {
-            Integer targetId = (Integer) event.getPacket().getModifier().withType(Integer.class).read(0);
-            if (targetId != null && targetId == player.getEntityId()) {
-                event.setCancelled(true);
+            try {
+                Integer targetId = (Integer) event.getPacket().getModifier().withType(Integer.class).read(0);   // <=== * HERE *
+                if (targetId != null && targetId == player.getEntityId()) {
+                    event.setCancelled(true);
+                }
+            }
+            catch (Exception e) {
+//                e.getCause();
             }
             return;
         }

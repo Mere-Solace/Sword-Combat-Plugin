@@ -14,6 +14,7 @@ import org.jetbrains.annotations.NotNull;
 import btm.sword.config.Config;
 import btm.sword.config.ConfigManager;
 import btm.sword.system.entity.impl.SwordPlayer;
+import btm.sword.system.inventory.menu.AnimationPickerMenu;
 import btm.sword.system.inventory.menu.EnumSelectionMenu;
 import btm.sword.system.item.ItemStackBuilder;
 import btm.sword.utility.ChatInputCapture;
@@ -225,6 +226,20 @@ public class ConfigEntryItem extends AbstractItem {
                 .build());
         }
 
+        if (type == String.class) {
+            String val = config.getString(path, (String) entry.defaultValue);
+            return new ItemWrapper(new ItemStackBuilder(Material.RECOVERY_COMPASS)
+                .name(Component.text(path, NamedTextColor.WHITE))
+                .lore(List.of(
+                    Component.text("Type: ", NamedTextColor.GRAY).append(Component.text("String", NamedTextColor.WHITE)),
+                    Component.text("Value: ", NamedTextColor.GRAY).append(Component.text(val != null ? val : "null", NamedTextColor.YELLOW)),
+                    Component.text("Default: ", NamedTextColor.GRAY).append(Component.text(String.valueOf(entry.defaultValue), NamedTextColor.DARK_GRAY)),
+                    Component.text("Click to pick", NamedTextColor.DARK_GRAY),
+                    REVERT_HINT
+                ))
+                .build());
+        }
+
         // Read-only fallback for complex types
         String defStr = entry.defaultValue.toString();
         String defPreview = defStr.length() > 40 ? defStr.substring(0, 37) + "..." : defStr;
@@ -263,6 +278,12 @@ public class ConfigEntryItem extends AbstractItem {
         // Enum types: any click → browse + select menu
         if (type.isEnum()) {
             new EnumSelectionMenu(swordPlayer, entry, reopenMenu).open();
+            return;
+        }
+
+        // String types: left-click → animation picker
+        if (type == String.class && clickType == ClickType.LEFT) {
+            new AnimationPickerMenu(swordPlayer, (Config.ConfigEntry<String>) entry, reopenMenu).open();
             return;
         }
 

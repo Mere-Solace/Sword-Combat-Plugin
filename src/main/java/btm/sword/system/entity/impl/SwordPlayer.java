@@ -10,6 +10,7 @@ import java.util.function.Supplier;
 import javax.annotation.Nullable;
 
 import org.bukkit.Color;
+import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Display;
@@ -45,6 +46,7 @@ import btm.sword.system.control.SwordScheduler;
 import btm.sword.system.control.TimeArbiter;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.base.SwordEntity;
+import btm.sword.system.entity.umbral.input.BladeRequest;
 import btm.sword.system.input.ActivationContext;
 import btm.sword.system.input.InputAction;
 import btm.sword.system.input.InputActionExecutor;
@@ -179,6 +181,40 @@ public class SwordPlayer extends Combatant {
     @Setter
     private boolean inInventorySession;
 
+    /** True while the scene overlay (glass-pane fill + invisibility) is active. Suppresses inventory upkeep. */
+    private boolean inSceneOverlay = false;
+
+    /** Snapshot of inventory slots 0–35 taken when the scene overlay is entered; restored on exit. */
+    private ItemStack[] savedInventory = null;
+
+    /** Snapshot of chestplate slot (38) taken when the scene overlay is entered; restored on exit. */
+    private ItemStack savedSceneChestplate = null;
+
+    /** Snapshot of offhand slot (40) taken when the scene overlay is entered; restored on exit. */
+    private ItemStack savedOffhand = null;
+
+    /**
+     * True while the creative dev mode (clear inventory, wooden axe) is active.
+     * Suppresses all item upkeep except the menu button (maintained at slot 17).
+     */
+    private boolean inCreativeDevMode = false;
+
+    /**
+     * All {@link SlotAnchoredItem}s owned by this player that participate in periodic upkeep.
+     * Rebuilt via {@link #updateManagedItems()} whenever the set of items changes.
+     * Call {@link #setAllAnchoredItemUpkeep(boolean)} to toggle upkeep for all items at once.
+     */
+    private List<SlotAnchoredItem> managedItems;
+
+    /** Snapshot of inventory slots 0–35 taken when creative dev mode is entered; restored on exit. */
+    private ItemStack[] savedCreativeDevInventory = null;
+
+    /** Snapshot of chestplate slot (38) taken when creative dev mode is entered; restored on exit. */
+    private ItemStack savedCreativeDevChestplate = null;
+
+    /** Snapshot of offhand slot (40) taken when creative dev mode is entered; restored on exit. */
+    private ItemStack savedCreativeDevOffhand = null;
+
     @Getter
     @Setter
     private btm.sword.system.scene.CameraController activeCameraController;
@@ -245,6 +281,8 @@ public class SwordPlayer extends Combatant {
             38,
             Material.NETHERITE_CHESTPLATE
         );
+
+        updateManagedItems();
 
         inputExecutionTree = new InputExecutionTree(this);
         inputBuffer = new InputBuffer();
@@ -539,38 +577,226 @@ public class SwordPlayer extends Combatant {
         materialStorageButton = buildStorageButton(StorageCategory.MATERIAL, materialLore);
         questStorageButton    = buildStorageButton(StorageCategory.QUEST, List::of);
 
+        updateManagedItems();
+
         menuButton.restore(player);
         currencyStorageButton.restore(player);
         materialStorageButton.restore(player);
         questStorageButton.restore(player);
     }
 
+    /**
+     * Enters the scene overlay: saves the player's inventory (slots 0–35), fills all slots with
+     * blue stained glass panes (keeping the menu button in slot 8), hides the player from others,
+     * and deactivates the umbral blade. Also suppresses {@link #inventoryUpkeep()} until exited.
+     * <p>
+     * Call from a {@link btm.sword.system.scene.CameraController}'s {@code onStart()} hook.
+     * Pair every call with {@link #exitSceneOverlay()}.
+     * </p>
+     */
+    public void enterSceneOverlay() {
+        if (inSceneOverlay) return;
+
+        // Save hotbar + main inventory (0–35), chestplate (38), and offhand (40)
+        savedInventory = new ItemStack[36];
+        for (int i = 0; i < 36; i++) {
+            savedInventory[i] = player.getInventory().getItem(i);
+        }
+        savedSceneChestplate = player.getInventory().getItem(38);
+        savedOffhand = player.getInventory().getItem(40);
+
+        setAllAnchoredItemUpkeep(false);
+
+        // Clear hotbar (0–8); glass panes in main inventory (9–35) with menu button in center (22)
+        ItemStack glass = new ItemStackBuilder(Material.BLUE_STAINED_GLASS_PANE)
+            .name(Component.empty())
+            .hideAll()
+            .tag(KeyRegistry.NON_MOVABLE_KEY, PersistentDataType.BOOLEAN, true)
+            .build();
+        for (int i = 0; i < 9; i++) {
+            player.getInventory().setItem(i, null);
+        }
+        for (int i = 9; i < 36; i++) {
+            if (i == 22) {
+                player.getInventory().setItem(22, menuButton.getItemStack());
+            } else {
+                player.getInventory().setItem(i, glass);
+            }
+        }
+
+        // Clear sword (offhand shield) and chestplate armor slot
+        player.getInventory().setItem(38, null);
+        player.getInventory().setItem(40, null);
+
+        player.setInvisible(true);
+
+        if (getUmbralBlade() != null) {
+            getUmbralBlade().request(BladeRequest.DEACTIVATE);
+        }
+
+        inSceneOverlay = true;
+    }
+
+    /**
+     * Exits the scene overlay: restores saved inventory contents (slots 0–35 and offhand),
+     * makes the player visible again, and re-enables {@link #inventoryUpkeep()}.
+     * <p>
+     * Call from a {@link btm.sword.system.scene.CameraController}'s {@code onStop()} hook.
+     * </p>
+     */
+    public void exitSceneOverlay() {
+        if (!inSceneOverlay) return;
+        inSceneOverlay = false;
+
+        setAllAnchoredItemUpkeep(true);
+
+        for (int i = 0; i < 36; i++) {
+            player.getInventory().setItem(i, savedInventory != null ? savedInventory[i] : null);
+        }
+        savedInventory = null;
+
+        player.getInventory().setItem(38, savedSceneChestplate);
+        savedSceneChestplate = null;
+
+        player.getInventory().setItem(40, savedOffhand);
+        savedOffhand = null;
+
+        player.setInvisible(false);
+    }
+
+    /**
+     * Called when the player left-clicks a glass pane slot while the scene overlay is active.
+     * Stops the active camera controller to exit the scene.
+     * <p>
+     * Override point for future scene-specific exit behaviour (e.g. fade-out, return animation).
+     * </p>
+     */
+    public void onSceneOverlayClickExit() {
+        if (activeCameraController != null) {
+            activeCameraController.stop();
+        }
+    }
+
+    /**
+     * Enters creative dev mode: saves the player's inventory (slots 0–35, chestplate, offhand),
+     * clears all slots including armor, places the main menu button at slot 17 (one row above
+     * the hotbar), puts a wooden axe in slot 0, disables special item checks, and enables block
+     * placing. While active, {@link #inventoryUpkeep()} only maintains the menu button at slot 17.
+     */
+    public void enterCreativeDevMode() {
+        if (inCreativeDevMode) return;
+
+        player.setGameMode(GameMode.CREATIVE);
+        setActivationContext(ActivationContext.BUILDING);
+
+        savedCreativeDevInventory = new ItemStack[36];
+        for (int i = 0; i < 36; i++) {
+            savedCreativeDevInventory[i] = player.getInventory().getItem(i);
+        }
+        savedCreativeDevChestplate = player.getInventory().getItem(38);
+        savedCreativeDevOffhand = player.getInventory().getItem(40);
+
+        for (int i = 0; i < 36; i++) {
+            player.getInventory().setItem(i, null);
+        }
+        player.getInventory().setItem(38, null);
+        player.getInventory().setItem(40, null);
+
+        // Place menu button one row above the hotbar (slot 17) to free up the hotbar
+        player.getInventory().setItem(17, menuButton.getItemStack());
+        player.getInventory().setItem(0, new ItemStack(Material.WOODEN_AXE));
+
+        setAllAnchoredItemUpkeep(false);
+        Debug.SPECIAL_ITEM_CHECKS_ENABLED = false;
+        Config.World.BLOCK_INTERACTION_ALLOW_BLOCK_PLACING = true;
+
+        inCreativeDevMode = true;
+    }
+
+    /**
+     * Exits creative dev mode: restores the saved inventory (slots 0–35, chestplate, offhand),
+     * re-enables special item checks, disables block placing, and reloads inventory buttons
+     * (restoring all anchored items to their normal slots).
+     */
+    public void exitCreativeDevMode() {
+        if (!inCreativeDevMode) return;
+
+        player.setGameMode(GameMode.SURVIVAL);
+        setActivationContext(ActivationContext.NORMAL);
+
+        inCreativeDevMode = false;
+
+        for (int i = 0; i < 36; i++) {
+            player.getInventory().setItem(i, savedCreativeDevInventory != null ? savedCreativeDevInventory[i] : null);
+        }
+        savedCreativeDevInventory = null;
+
+        player.getInventory().setItem(38, savedCreativeDevChestplate);
+        savedCreativeDevChestplate = null;
+
+        player.getInventory().setItem(40, savedCreativeDevOffhand);
+        savedCreativeDevOffhand = null;
+
+        setAllAnchoredItemUpkeep(true);
+        Debug.SPECIAL_ITEM_CHECKS_ENABLED = true;
+        Config.World.BLOCK_INTERACTION_ALLOW_BLOCK_PLACING = false;
+
+        reloadInventoryButtons();
+        shieldItem.restore(player);
+        chestplateItem.restore(player);
+    }
+
+    /**
+     * Returns {@code true} if the player is currently in creative dev mode.
+     *
+     * @return whether creative dev mode is active
+     */
+    public boolean isInCreativeDevMode() {
+        return inCreativeDevMode;
+    }
+
+    /**
+     * Rebuilds {@link #managedItems} from the current set of anchored item fields.
+     * Must be called after construction and after {@link #reloadInventoryButtons()}.
+     */
+    private void updateManagedItems() {
+        managedItems = List.of(
+            shieldItem, chestplateItem, menuButton,
+            currencyStorageButton, materialStorageButton, questStorageButton
+        );
+    }
+
+    /**
+     * Enables or disables periodic upkeep for every item in {@link #managedItems}.
+     * Use this as the single call-site when entering or exiting any mode that should
+     * suppress automatic item replacement (cutscenes, creative dev mode, etc.).
+     *
+     * @param enabled {@code true} to re-enable replacement; {@code false} to suppress it
+     */
+    public void setAllAnchoredItemUpkeep(boolean enabled) {
+        managedItems.forEach(item -> item.setUpkeepEnabled(enabled));
+    }
+
     private void inventoryUpkeep() {
-        if (!shieldItem.isSatisfied(player)) {
-            shieldItem.restore(player);
+        if (inSceneOverlay) return;
+
+        if (inCreativeDevMode) {
+            // In creative dev mode, only maintain the menu button at slot 17 (above the hotbar)
+            ItemStack at17 = player.getInventory().getItem(17);
+            if (at17 == null || !KeyRegistry.hasKey(at17, KeyRegistry.MAIN_MENU_BUTTON_KEY)) {
+                player.getInventory().setItem(17, menuButton.getItemStack());
+            }
+            return;
         }
 
-        if (!chestplateItem.isSatisfied(player)) {
-            chestplateItem.restore(player);
+        for (SlotAnchoredItem item : managedItems) {
+            if (item.isUpkeepEnabled() && !item.isSatisfied(player)) {
+                item.restore(player);
+            }
         }
 
-        if (!menuButton.isSatisfied(player)) {
-            menuButton.restore(player);
-        }
-
-        if (!currencyStorageButton.isSatisfied(player)) {
-            currencyStorageButton.restore(player);
-        }
-        refreshStorageLore(currencyStorageButton, currencyLore);
-
-        if (!materialStorageButton.isSatisfied(player)) {
-            materialStorageButton.restore(player);
-        }
-        refreshStorageLore(materialStorageButton, materialLore);
-
-        if (!questStorageButton.isSatisfied(player)) {
-            questStorageButton.restore(player);
-        }
+        if (currencyStorageButton.isUpkeepEnabled()) refreshStorageLore(currencyStorageButton, currencyLore);
+        if (materialStorageButton.isUpkeepEnabled()) refreshStorageLore(materialStorageButton, materialLore);
 
         if (getUmbralBlade() != null && !getUmbralBlade().getLinkAnchor().isSatisfied(player)) {
             getUmbralBlade().getLinkAnchor().restore(player);
@@ -630,6 +856,15 @@ public class SwordPlayer extends Combatant {
         if (KeyRegistry.hasKey(clicked, KeyRegistry.MAIN_MENU_BUTTON_KEY) ||
             KeyRegistry.hasKey(onCursor, KeyRegistry.MAIN_MENU_BUTTON_KEY)) {
             InventoryMenuManager.openMenu(MainMenu.class, this);
+            return true;
+        }
+
+        // Scene overlay is active — cancel all inventory interactions except the menu button above.
+        // Left-clicking any slot fires the scene-exit stub.
+        if (inSceneOverlay) {
+            if (clickType == ClickType.LEFT && clicked != null && !clicked.getType().isAir()) {
+                onSceneOverlayClickExit();
+            }
             return true;
         }
 

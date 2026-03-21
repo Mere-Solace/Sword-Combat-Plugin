@@ -109,6 +109,7 @@ public class DEUAnimationController extends CameraController {
         }
 
         packetGroup.showToPlayer(player, GroupSpawnedEvent.SpawnReason.CUSTOM);
+        cachedOwner.enterSceneOverlay();
 
         DisplayAnimator.AnimationType animType = loop
             ? DisplayAnimator.AnimationType.LOOP
@@ -171,6 +172,7 @@ public class DEUAnimationController extends CameraController {
             packetGroup = null;
         }
 
+        cachedOwner.exitSceneOverlay();
         cachedOwner.setActivationContext(ActivationContext.NORMAL);
         cachedOwner = null;
     }

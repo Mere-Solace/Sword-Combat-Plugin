@@ -81,6 +81,7 @@ public class StaticSceneController extends CameraController {
         }
 
         MovementListener.lockedPlayers.add(player.getUniqueId());
+        cachedOwner.enterSceneOverlay();
 
         World world = cameraLocation.getWorld();
         cameraEntity = (ItemDisplay) world.spawnEntity(cameraLocation, EntityType.ITEM_DISPLAY);
@@ -123,6 +124,7 @@ public class StaticSceneController extends CameraController {
         if (cameraSession != null) { cameraSession.detach();  cameraSession = null; }
         if (cameraEntity != null)  { cameraEntity.remove();   cameraEntity  = null; }
 
+        cachedOwner.exitSceneOverlay();
         cachedOwner.setActivationContext(ActivationContext.NORMAL);
         cachedOwner = null;
     }

@@ -377,6 +377,12 @@ public class InputExecutionTree {
          */
         private boolean dynamic = false;
         private Consumer<SwordPlayer> internalAction;
+        /**
+         * Optional node-level visibility gate. When non-null and returning {@code false},
+         * the node is treated as hidden regardless of its action context predicates.
+         * Set via {@link InputNodeBuilder#visibleIf}; apply to leaf nodes only.
+         */
+        private Predicate<SwordPlayer> visibleIf;
         private int timeoutTicks;
         private final LinkedHashMap<InputType, InputNode> children = new LinkedHashMap<>();
         private boolean sameItemRequired;
@@ -557,7 +563,18 @@ public class InputExecutionTree {
          * @param player the player to evaluate
          * @return true if no accessible path exists through this node, false otherwise
          */
+        /**
+         * Sets the node-level visibility predicate. When the predicate returns {@code false}
+         * the node is hidden and not navigable, regardless of its action context predicates.
+         *
+         * @param visibleIf predicate returning {@code true} when this node should be visible
+         */
+        public void setVisibleIf(Predicate<SwordPlayer> visibleIf) {
+            this.visibleIf = visibleIf;
+        }
+
         public boolean hiddenFor(SwordPlayer player) {
+            if (visibleIf != null && !visibleIf.test(player)) return true;
             if (actions == null || actions.isEmpty()) {
                 if (children.isEmpty()) return true;
                 for (InputNode child : children.values()) {
@@ -586,6 +603,7 @@ public class InputExecutionTree {
         private Boolean cancellable = null;
         private Boolean display = null;
         private Boolean dynamic = null;
+        private Predicate<SwordPlayer> visibleIf = null;
 
         public InputNodeBuilder(InputNode root, List<InputType> inputSequence) {
             this.root = root;
@@ -624,6 +642,19 @@ public class InputExecutionTree {
 
         public InputNodeBuilder display(boolean display) {
             this.display = display;
+            return this;
+        }
+
+        /**
+         * Attaches a node-level visibility predicate to the terminal node.
+         * When the predicate returns {@code false}, the node is hidden in the HUD and not
+         * navigable. Apply to leaf nodes only — see {@link InputNode#hiddenFor(SwordPlayer)}.
+         *
+         * @param predicate returns {@code true} when this node should be visible/navigable
+         * @return this builder
+         */
+        public InputNodeBuilder visibleIf(Predicate<SwordPlayer> predicate) {
+            this.visibleIf = predicate;
             return this;
         }
 
@@ -687,6 +718,9 @@ public class InputExecutionTree {
                 }
                 if (dynamic != null) {
                     dummy.setDynamic(dynamic);
+                }
+                if (visibleIf != null) {
+                    dummy.setVisibleIf(visibleIf);
                 }
             }
         }

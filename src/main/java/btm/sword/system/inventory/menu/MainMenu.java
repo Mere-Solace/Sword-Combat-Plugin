@@ -166,7 +166,7 @@ public class MainMenu extends Menu {
             .addIngredient('<', generatePreviousButtonOrDefault())
             .addIngredient('>', generateForwardPreviousButtonOrDefault());
 
-        if (player.isOp()) {
+        if (true || player.isOp()) { // TODO: revert later
             builder.addIngredient('V', new SimpleItem(
                 new ItemStackBuilder(Material.DEBUG_STICK)
                     .name(Component.text("Dev Menu", Config.SwordColor.TEXT_COOL, TextDecoration.BOLD))

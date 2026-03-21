@@ -217,8 +217,13 @@ public class PlayerListener implements Listener {
      */
     @EventHandler
     public void inventoryInteractEvent(InventoryClickEvent event) {
-        SwordPlayer sp = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getViewers().getFirst());
-
+        SwordPlayer sp;
+        try {
+            sp = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getViewers().getFirst());
+        } catch (Exception e) {
+            e.fillInStackTrace();
+            return;
+        }
         Debug.sendInventoryClickDebugMessage(event);
 
         if (sp.handleInventoryInput(event)) {

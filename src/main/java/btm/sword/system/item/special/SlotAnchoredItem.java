@@ -2,6 +2,10 @@ package btm.sword.system.item.special;
 
 import java.util.function.Predicate;
 
+import lombok.Getter;
+
+import lombok.Setter;
+
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
@@ -24,9 +28,25 @@ import btm.sword.system.item.KeyRegistry;
  */
 public class SlotAnchoredItem extends NonMovableItem {
     /** Inventory slot index this item must always occupy. */
+    @Getter
     private final int targetSlot;
 
     private final Predicate<ItemStack> satisfactionCheck;
+
+    /**
+     * Controls whether {@link btm.sword.system.entity.impl.SwordPlayer}'s periodic upkeep should
+     * attempt to restore this item. Set to {@code false} to suppress automatic replacement
+     * (e.g., during cutscenes or creative dev mode) without removing the item from its slot.
+     * -- SETTER --
+     *  Sets whether periodic upkeep should restore this item.
+     *  Does not affect explicit calls to
+     * .
+     * -- GETTER --
+     *  Returns whether periodic upkeep should restore this item.
+     */
+    @Getter
+    @Setter
+    private boolean upkeepEnabled = true;
 
     /**
      * Constructs a {@code SlotAnchoredItem} that is satisfied when the target slot
@@ -59,15 +79,6 @@ public class SlotAnchoredItem extends NonMovableItem {
     }
 
     /**
-     * Returns the target inventory slot index.
-     *
-     * @return the slot this item must always occupy
-     */
-    public int getTargetSlot() {
-        return targetSlot;
-    }
-
-    /**
      * Returns {@code true} if {@link #targetSlot} currently holds an item that passes
      * the satisfaction check supplied at construction. Subclasses may override this
      * to accept alternative items (e.g., the Soul Link / Umbral Blade shared anchor).
@@ -82,6 +93,7 @@ public class SlotAnchoredItem extends NonMovableItem {
 
     /**
      * Places {@link #itemStack} into {@link #targetSlot}, restoring the anchored item.
+     * This is an unconditional write — it does not check {@link #upkeepEnabled}.
      * <p>
      * Call {@link #isSatisfied(Player)} before invoking this to avoid an unnecessary
      * overwrite when the correct item is already present.

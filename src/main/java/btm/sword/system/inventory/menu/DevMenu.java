@@ -2,14 +2,16 @@ package btm.sword.system.inventory.menu;
 
 import java.util.List;
 
-import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
+import btm.sword.config.Config;
 import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.item.ItemStackBuilder;
-import btm.sword.system.scene.StaticSceneController;
+import btm.sword.system.scene.DEUAnimationController;
+import btm.sword.system.scene.animation.AnimationDef;
+import btm.sword.system.scene.animation.AnimationRegistry;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -68,6 +70,31 @@ public class DevMenu extends Menu {
         SimpleItem woodenAxe = giveItem(Material.WOODEN_AXE, "Wooden Axe");
         SimpleItem witherSkeletonEgg = giveItem(Material.WITHER_SKELETON_SPAWN_EGG, "Wither Skeleton Spawn Egg");
 
+        SimpleItem creativeMode;
+        if (swordPlayer.isInCreativeDevMode()) {
+            creativeMode = new SimpleItem(
+                new ItemStackBuilder(Material.GRASS_BLOCK)
+                    .name(Component.text("Return to Survival", NamedTextColor.GREEN, TextDecoration.BOLD))
+                    .lore(List.of(Component.text("Restore inventory and re-enable special items", NamedTextColor.DARK_GRAY)))
+                    .build(),
+                click -> {
+                    swordPlayer.exitCreativeDevMode();
+                    new DevMenu(swordPlayer).open();
+                }
+            );
+        } else {
+            creativeMode = new SimpleItem(
+                new ItemStackBuilder(Material.DIAMOND_PICKAXE)
+                    .name(Component.text("Enter Creative Mode", NamedTextColor.AQUA, TextDecoration.BOLD))
+                    .lore(List.of(Component.text("Save inventory, disable special items, enable block placing", NamedTextColor.DARK_GRAY)))
+                    .build(),
+                click -> {
+                    swordPlayer.enterCreativeDevMode();
+                    new DevMenu(swordPlayer).open();
+                }
+            );
+        }
+
         SimpleItem creativeInventory = new SimpleItem(
             new ItemStackBuilder(Material.CHEST)
                 .name(Component.text("Creative Inventory", NamedTextColor.YELLOW, TextDecoration.BOLD))
@@ -88,16 +115,16 @@ public class DevMenu extends Menu {
         SimpleItem staticScene = new SimpleItem(
             new ItemStackBuilder(Material.SPYGLASS)
                 .name(Component.text("Static Scene Test", NamedTextColor.LIGHT_PURPLE, TextDecoration.BOLD))
-                .lore(List.of(Component.text("Fix camera behind you, freeze input", NamedTextColor.DARK_GRAY)))
+                .lore(List.of(Component.text("Play: " + Config.Animation.STATIC_MENU_ANIMATION_KEY, NamedTextColor.DARK_GRAY)))
                 .build(),
             click -> {
-                Player p = click.getPlayer();
-                Location playerLoc = p.getLocation();
-                Location camLoc = playerLoc.clone()
-                    .subtract(playerLoc.getDirection().multiply(3))
-                    .add(0, 1, 0);
-                camLoc.setDirection(playerLoc.toVector().subtract(camLoc.toVector()));
-                new StaticSceneController(camLoc).start(swordPlayer);
+                String animKey = Config.Animation.STATIC_MENU_ANIMATION_KEY;
+                AnimationDef def = AnimationRegistry.get(animKey).orElse(null);
+                if (def == null) {
+                    swordPlayer.message(Component.text("Animation not found: " + animKey, NamedTextColor.RED));
+                    return;
+                }
+                new DEUAnimationController(def, true, true).start(swordPlayer);
             }
         );
 
@@ -114,7 +141,7 @@ public class DevMenu extends Menu {
                 "# # # # # # # # #",
                 "# J N S . . . C #",
                 "# . . . . . . E #",
-                "# R I . T . . W #",
+                "# R I . T . M W #",
                 "# # # < . > # # #")
             .addIngredient('#', BORDER)
             .addIngredient('T', toggles)
@@ -126,6 +153,7 @@ public class DevMenu extends Menu {
             .addIngredient('W', woodenAxe)
             .addIngredient('E', witherSkeletonEgg)
             .addIngredient('I', reloadProfile)
+            .addIngredient('M', creativeMode)
             .addIngredient('<', generatePreviousButtonOrDefault())
             .addIngredient('>', generateForwardPreviousButtonOrDefault())
             .build();

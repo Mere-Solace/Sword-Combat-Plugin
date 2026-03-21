@@ -79,6 +79,7 @@ public class InputRegistrar {
             .timeoutTicks(20)
             .cancellable(true)
             .display(true)
+            .visibleIf(ActivationContext.onlyIn(ActivationContext.NORMAL))
             .build();
 
         new InputExecutionTree.InputNodeBuilder(root, List.of(
@@ -100,6 +101,7 @@ public class InputRegistrar {
             .sameItemRequired(true)
             .cancellable(true)
             .display(true)
+            .visibleIf(ActivationContext.onlyIn(ActivationContext.NORMAL))
             .build();
 
         // Block: RIGHT begins blocking (if shield in offhand). The node timeout is the parry window —
@@ -123,6 +125,7 @@ public class InputRegistrar {
             .timeoutTicks(SwordTimeUnit.millisToTicks(Config.Combat.PARRY_AVAILABLE_MS))
             .cancellable(true)
             .display(true)
+            .visibleIf(ActivationContext.onlyIn(ActivationContext.NORMAL))
             .build();
 
         // Parry: RIGHT → SWAP while the trie is still at the RIGHT node (within timeout).
@@ -145,6 +148,7 @@ public class InputRegistrar {
             )))
             .cancellable(true)
             .display(true)
+            .visibleIf(ActivationContext.onlyIn(ActivationContext.NORMAL))
             .build();
 
         // basic attack combo chain (L, LL, LLL) — umbral variants registered first for priority
@@ -183,6 +187,7 @@ public class InputRegistrar {
             .sameItemRequired(true)
             .cancellable(true)
             .display(true)
+            .visibleIf(ActivationContext.onlyIn(ActivationContext.NORMAL))
             .build();
 
         // throw
@@ -243,6 +248,7 @@ public class InputRegistrar {
             .sameItemRequired(true)
             .cancellable(true)
             .display(true)
+            .visibleIf(ActivationContext.onlyIn(ActivationContext.NORMAL))
             .build();
 
         new InputExecutionTree.InputNodeBuilder(root, List.of(
@@ -258,6 +264,7 @@ public class InputRegistrar {
             .sameItemRequired(true)
             .cancellable(true)
             .display(true)
+            .visibleIf(ActivationContext.onlyIn(ActivationContext.NORMAL))
             .build();
 
         new InputExecutionTree.InputNodeBuilder(root, List.of(
@@ -273,6 +280,7 @@ public class InputRegistrar {
             .sameItemRequired(true)
             .cancellable(true)
             .display(true)
+            .visibleIf(ActivationContext.onlyIn(ActivationContext.NORMAL))
             .build();
 
         // umbral blade toggling and wielding
@@ -294,6 +302,7 @@ public class InputRegistrar {
             .sameItemRequired(true)
             .cancellable(true)
             .display(true)
+            .visibleIf(ActivationContext.onlyIn(ActivationContext.NORMAL))
             .build();
 
         new InputExecutionTree.InputNodeBuilder(root, List.of(
@@ -314,6 +323,7 @@ public class InputRegistrar {
             .sameItemRequired(true)
             .cancellable(true)
             .display(true)
+            .visibleIf(ActivationContext.onlyIn(ActivationContext.NORMAL))
             .build();
 
         // hover blade at world position (DROP + SWAP while holding soul link)
@@ -337,6 +347,7 @@ public class InputRegistrar {
             .sameItemRequired(true)
             .cancellable(true)
             .display(true)
+            .visibleIf(ActivationContext.onlyIn(ActivationContext.NORMAL))
             .build();
 
         // heavy sweeps (umbral attacks)
@@ -360,6 +371,7 @@ public class InputRegistrar {
             .sameItemRequired(true)
             .cancellable(true)
             .display(true)
+            .visibleIf(ActivationContext.onlyIn(ActivationContext.NORMAL))
             .build();
 
         new InputExecutionTree.InputNodeBuilder(root, List.of(
@@ -383,6 +395,7 @@ public class InputRegistrar {
             .sameItemRequired(true)
             .cancellable(true)
             .display(true)
+            .visibleIf(ActivationContext.onlyIn(ActivationContext.NORMAL))
             .build();
 
         new InputExecutionTree.InputNodeBuilder(root, List.of(
@@ -407,6 +420,7 @@ public class InputRegistrar {
             .sameItemRequired(true)
             .cancellable(true)
             .display(true)
+            .visibleIf(ActivationContext.onlyIn(ActivationContext.NORMAL))
             .build();
 
         // Active Skill slots (ACTIVE_1 and ACTIVE_2)
@@ -481,6 +495,7 @@ public class InputRegistrar {
                 .sameItemRequired(true)
                 .cancellable(true)
                 .display(true)
+                .visibleIf(ActivationContext.onlyIn(ActivationContext.NORMAL))
                 .build();
         }
     }
@@ -531,6 +546,7 @@ public class InputRegistrar {
             .timeoutTicks(3)
             .cancellable(true)
             .display(true)
+            .visibleIf(ActivationContext.onlyIn(ActivationContext.NORMAL))
             .build();
     }
 
@@ -556,6 +572,7 @@ public class InputRegistrar {
             .sameItemRequired(true)
             .cancellable(true)
             .display(true)
+            .visibleIf(ActivationContext.onlyIn(ActivationContext.NORMAL))
             .build();
 
         // Hold variant
@@ -570,6 +587,7 @@ public class InputRegistrar {
             .sameItemRequired(true)
             .cancellable(true)
             .display(true)
+            .visibleIf(ActivationContext.onlyIn(ActivationContext.NORMAL))
             .build();
     }
 }

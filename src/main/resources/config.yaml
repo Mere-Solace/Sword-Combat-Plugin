@@ -331,7 +331,6 @@ debug:
   
   logging_verbose_combat: false
   logging_verbose_movement: false
-  logging_verbose_listener: false
   
   logging_verbose_config: false
   
@@ -381,72 +380,14 @@ umbral:
 materials:
   material_storage_item: BAMBOO_CHEST_RAFT
   currency_storage_item: NETHERITE_INGOT
-particles:
-  bleed_type: BLOCK
-  bleed_count: 25
-  bleed_speed: -1.0
-  thrown_item_impale_type: TRIAL_SPAWNER_DETECTION
-  thrown_item_impale_count: 4
-  thrown_item_impale_speed: 0.0
-  thrown_item_marker_type: TRIAL_SPAWNER_DETECTION
-  thrown_item_marker_count: 3
-  thrown_item_marker_speed: 0.0
-  landing_stream_type: TRIAL_SPAWNER_DETECTION_OMINOUS
-  landing_stream_count: 5
-  landing_stream_speed: 0.0
-  collide_type: CRIT
-  collide_count: 1
-  collide_speed: 0.5
-  grab_cloud_type: POOF
-  grab_cloud_count: 20
-  grab_cloud_speed: 0.1
-  grab_attempt_type: SONIC_BOOM
-  grab_attempt_count: 2
-  grab_attempt_speed: -1.0
-  punch_type: SMALL_GUST
-  punch_count: 1
-  punch_speed: 0.0
-  punch_connect_type: GUST
-  punch_connect_count: 1
-  punch_connect_speed: 0.0
-  umbral_blade_poof_type: LARGE_SMOKE
-  umbral_blade_poof_count: 50
-  umbral_blade_poof_speed: 0.001
-  soulfire_poof_type: SMOKE
-  soulfire_poof_count: 3
-  soulfire_poof_speed: 0.0001
-  smoke_type: SMOKE
-  smoke_count: 1
-  smoke_speed: 0.0
-  umbral_flame_type: DUST_COLOR_TRANSITION
-  umbral_flame_count: 3
-  throw_trail_type: CRIT
-  throw_trail_count: 1
-  throw_trail_speed: 0.0
-  item_throw_break_type: ENCHANTED_HIT
-  item_throw_break_count: 150
-  item_throw_break_speed: -1.0
-  tough_break_type: ENCHANTED_HIT
-  tough_break_count: 70
-  tough_break_speed: 0.0
-  tough_recharge_1_type: ENCHANT
-  tough_recharge_1_count: 100
-  tough_recharge_1_speed: 0.1
-  tough_recharge_2_type: SOUL_FIRE_FLAME
-  tough_recharge_2_count: 40
-  tough_recharge_2_speed: 0.75
 menu:
   section_icons:
     combat: BLAZE_POWDER
     display: GLOW_ITEM_FRAME
     entity: PANDA_SPAWN_EGG
     umbralblade: STONE_SWORD
-    particles: FIREWORK_STAR
-
-
-animation:
-  conversion_step_timeout_seconds: 120
-
-
 scene:
   scene_on_every_join: true
+animation:
+  static_menu_animation_key: gentle_v2_default
+  conversion_step_timeout_seconds: 360

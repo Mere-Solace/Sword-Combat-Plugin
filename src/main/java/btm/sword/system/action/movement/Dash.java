@@ -252,7 +252,7 @@ public class Dash {
 
     private void onItemRetrieval() {
         BlockData blockData = ex.getLocation().add(new Vector(0, Config.Movement.DASH_BLOCK_CHECK_OFFSET_Y, 0)).getBlock().getBlockData();
-        new ParticleWrapper(() -> Particle.BLOCK, // TODO: Prefab the whole particle wrapper
+        new ParticleWrapper(() -> Particle.BLOCK,
             () -> Config.Movement.DASH_PARTICLE_COUNT,
             () -> Config.Movement.DASH_PARTICLE_SPREAD_X,
             () -> Config.Movement.DASH_PARTICLE_SPREAD_Y,
