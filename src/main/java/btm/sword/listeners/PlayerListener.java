@@ -2,8 +2,6 @@ package btm.sword.listeners;
 
 import java.util.Objects;
 
-import btm.sword.system.entity.umbral.UmbralBlade;
-
 import org.bukkit.GameMode;
 import org.bukkit.Material;
 import org.bukkit.Particle;
@@ -34,6 +32,7 @@ import btm.sword.config.Config;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.impl.SwordPlayer;
+import btm.sword.system.entity.umbral.UmbralBlade;
 import btm.sword.system.entity.umbral.input.BladeRequest;
 import btm.sword.system.item.special.NonMovableItem;
 import btm.sword.utility.ChatInputCapture;
