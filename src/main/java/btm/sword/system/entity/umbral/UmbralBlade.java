@@ -523,7 +523,9 @@ public class UmbralBlade extends ThrownItem {
     @Override
     protected void onGrounded() {
         if (stuckBlock != null) {
-            this.blockDustPillarParticle = new ParticleWrapper(Particle.DUST_PILLAR, 50, 1, 1, 1, stuckBlock.getBlockData());
+            this.blockDustPillarParticle = new ParticleWrapper(
+                () -> Particle.DUST_PILLAR, () -> 50, () -> 1.0, () -> 1.0, () -> 1.0)
+                .withBlockData(() -> stuckBlock.getBlockData());
             blockDustPillarParticle.display(cur);
         }
         request(BladeRequest.RECALL);

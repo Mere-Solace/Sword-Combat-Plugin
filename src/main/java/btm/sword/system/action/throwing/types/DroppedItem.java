@@ -168,7 +168,8 @@ public class DroppedItem extends SimulatedDisplay {
     private void settledStick() {
         stuck = true;
 
-        new ParticleWrapper(Particle.BLOCK, 50, 1, 1, 1, hitBlockData).display(pos);
+        new ParticleWrapper(() -> Particle.BLOCK, () -> 50, () -> 1.0, () -> 1.0, () -> 1.0)
+            .withBlockData(() -> hitBlockData).display(pos);
 
         TimeArbiter.runTimeIndependentBukkitTaskOnTimer(
           null,

@@ -158,8 +158,8 @@ public class VisualProjectile extends SimulatedDisplay {
      */
     protected void afterSpawn() {
         blockTrail = display.getItemStack().getType().isBlock()
-            ? new ParticleWrapper(Particle.BLOCK, 5, 0.25, 0.25, 0.25,
-                display.getItemStack().getType().createBlockData())
+            ? new ParticleWrapper(() -> Particle.BLOCK, () -> 5, () -> 0.25, () -> 0.25, () -> 0.25)
+                .withBlockData(() -> display.getItemStack().getType().createBlockData())
             : null;
 
         xDisplayOffset = Config.Physics.THROWN_ITEMS_DISPLAY_OFFSET_X;
@@ -315,7 +315,8 @@ public class VisualProjectile extends SimulatedDisplay {
      */
     protected void onGrounded() {
         if (stuckBlock != null) {
-            new ParticleWrapper(Particle.BLOCK, 50, 1, 1, 1, stuckBlock.getBlockData()).display(cur);
+            new ParticleWrapper(() -> Particle.BLOCK, () -> 50, () -> 1.0, () -> 1.0, () -> 1.0)
+                .withBlockData(() -> stuckBlock.getBlockData()).display(cur);
         }
 
         Vector step = velocity.clone().normalize().multiply(0.1);

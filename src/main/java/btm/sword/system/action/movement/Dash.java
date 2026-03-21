@@ -25,8 +25,8 @@ import btm.sword.utility.Prefab;
 import btm.sword.utility.display.ParticleWrapper;
 import btm.sword.utility.entity.EntityUtil;
 import btm.sword.utility.entity.HitboxUtil;
-import btm.sword.utility.sound.SoundType;
 import btm.sword.utility.sound.SoundUtil;
+import btm.sword.utility.sound.SwordSoundType;
 
 public class Dash {
     private final Combatant executor;
@@ -252,15 +252,15 @@ public class Dash {
 
     private void onItemRetrieval() {
         BlockData blockData = ex.getLocation().add(new Vector(0, Config.Movement.DASH_BLOCK_CHECK_OFFSET_Y, 0)).getBlock().getBlockData();
-        new ParticleWrapper(Particle.BLOCK, // TODO: Prefab the whole particle wrapper
-            Config.Movement.DASH_PARTICLE_COUNT,
-            Config.Movement.DASH_PARTICLE_SPREAD_X,
-            Config.Movement.DASH_PARTICLE_SPREAD_Y,
-            Config.Movement.DASH_PARTICLE_SPREAD_Z,
-            blockData).display(ex.getLocation());
+        new ParticleWrapper(() -> Particle.BLOCK, // TODO: Prefab the whole particle wrapper
+            () -> Config.Movement.DASH_PARTICLE_COUNT,
+            () -> Config.Movement.DASH_PARTICLE_SPREAD_X,
+            () -> Config.Movement.DASH_PARTICLE_SPREAD_Y,
+            () -> Config.Movement.DASH_PARTICLE_SPREAD_Z)
+            .withBlockData(() -> blockData).display(ex.getLocation());
         Prefab.Particles.GRAB_ATTEMPT.display(targetedDisplay.getLocation());
-        SoundUtil.playSound(ex, SoundType.ENTITY_ENDER_DRAGON_FLAP, Config.Movement.DASH_FLAP_SOUND_VOLUME, Config.Movement.DASH_FLAP_SOUND_PITCH);
-        SoundUtil.playSound(ex, SoundType.ENTITY_PLAYER_ATTACK_SWEEP, Config.Movement.DASH_SWEEP_SOUND_VOLUME, Config.Movement.DASH_SWEEP_SOUND_PITCH);
+        SoundUtil.playSound(ex, SwordSoundType.ENTITY_ENDER_DRAGON_FLAP, Config.Movement.DASH_FLAP_SOUND_VOLUME, Config.Movement.DASH_FLAP_SOUND_PITCH);
+        SoundUtil.playSound(ex, SwordSoundType.ENTITY_PLAYER_ATTACK_SWEEP, Config.Movement.DASH_SWEEP_SOUND_VOLUME, Config.Movement.DASH_SWEEP_SOUND_PITCH);
         executor.setVelocity(calcPostRetrievalVector());
         InteractiveItemArbiter.onGrab(targetedDisplay, executor); // here is where the display is taken care of
     }
@@ -301,10 +301,10 @@ public class Dash {
         TimeArbiter.runFixedIterationTaskTimer(
             null,
             () -> {
-                new ParticleWrapper(Particle.CLOUD, MAX_ITERATIONS + 1 - iteration[0], 0.25, 0.25, 0.25, 0)
-                    .display(executor.getLocation());
-                new ParticleWrapper(Particle.SMOKE, 3 * (MAX_ITERATIONS + 1 - iteration[0]), 0.3, 0.3, 0.3, 0)
-                    .display(executor.getLocation());
+                new ParticleWrapper(() -> Particle.CLOUD, () -> MAX_ITERATIONS + 1 - iteration[0], () -> 0.25, () -> 0.25, () -> 0.25)
+                    .withSpeed(() -> 0.0).display(executor.getLocation());
+                new ParticleWrapper(() -> Particle.SMOKE, () -> 3 * (MAX_ITERATIONS + 1 - iteration[0]), () -> 0.3, () -> 0.3, () -> 0.3)
+                    .withSpeed(() -> 0.0).display(executor.getLocation());
 
                 iteration[0]++;
             },

@@ -84,16 +84,16 @@ public class SoulfireManager {
                 }
 
                 // Display scaled particles with SOUL_FIRE_FLAME & SMOKE combination
-                new ParticleWrapper(Particle.SMOKE, (int) scaleFactor,
-                    0.025, 0.025, 0.025, 0.0001)
+                new ParticleWrapper(() -> Particle.SMOKE, () -> (int) scaleFactor,
+                    () -> 0.025, () -> 0.025, () -> 0.025).withSpeed(() -> 0.0001)
                     .display(currentLoc[0]);
                 Prefab.Particles.UMBRAL_FLAME.display(currentLoc[0]);
 
                 iterationsElapsed[0]++;
             },
             () -> {
-                new ParticleWrapper(Particle.SMOKE, (int) scaleFactor,
-                    0.025, 0.025, 0.025, 0.0001)
+                new ParticleWrapper(() -> Particle.SMOKE, () -> (int) scaleFactor,
+                    () -> 0.025, () -> 0.025, () -> 0.025).withSpeed(() -> 0.0001)
                     .display(currentLoc[0]);
                 Prefab.Particles.UMBRAL_FLAME.display(currentLoc[0]);
             },
