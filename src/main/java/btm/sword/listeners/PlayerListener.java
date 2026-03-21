@@ -132,7 +132,10 @@ public class PlayerListener implements Listener {
     public void onItemPickup(EntityPickupItemEvent event) {
         SwordEntity e = SwordEntityArbiter.getOrAdd(event.getEntity());
 
-        if (!e.isAbleToPickup()) event.setCancelled(true);
+        if (!e.isAbleToPickup()) {
+            event.setCancelled(true);
+            return;
+        }
 
         if (e.isMainHandEmpty()) {
             event.getItem().remove();
@@ -373,6 +376,10 @@ public class PlayerListener implements Listener {
     @EventHandler
     public void gameChangeEvent(PlayerGameModeChangeEvent event) {
         SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer());
+
+        // Remove each time game mode is changed to prevent state change issues...
+        // TODO: Find a better way?
+        swordPlayer.getUmbralBlade().getDisplay().remove();
 
         if (event.getNewGameMode().equals(GameMode.SPECTATOR)) {
             swordPlayer.requestUmbralBladeState(BladeRequest.DEACTIVATE);

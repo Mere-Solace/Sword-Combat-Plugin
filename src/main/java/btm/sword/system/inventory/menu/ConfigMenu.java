@@ -97,6 +97,8 @@ public class ConfigMenu extends Menu {
                 new ItemStackBuilder(mat)
                     .name(Component.text(capitalize(sectionKey), NamedTextColor.GOLD, TextDecoration.BOLD))
                     .lore(List.of(Component.text(entries.size() + " entries", NamedTextColor.GRAY)))
+                    .stripAttributeModifiers()
+                    .hideAll()
                     .build(),
                 click -> new ConfigSectionMenu(swordPlayer, sectionKey, entries).open()
             ));

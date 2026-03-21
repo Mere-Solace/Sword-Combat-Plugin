@@ -212,18 +212,7 @@ public class Hostile extends Combatant {
      */
     @Override
     public void setupUmbralBlade() {
-//        super.setupUmbralBlade();
-//        // Schedule slightly after the 200 ms blade creation to ensure the blade exists
-//        SwordScheduler.runBukkitTaskLater(() -> {
-//            UmbralBlade blade = getUmbralBlade();
-//            if (blade == null) return;
-//            blade.request(BladeRequest.DEACTIVATE);
-//            // Suppress the visual display entity so no sword appears on the mob
-//            if (blade.getDisplay() != null && blade.getDisplay().isValid()) {
-//                self().removePassenger(blade.getDisplay());
-//                blade.getDisplay().setItemStack(new ItemStack(Material.AIR));
-//            }
-//        }, 250, TimeUnit.MILLISECONDS);
+        deactivateUmbralBlade();
     }
 
     /**

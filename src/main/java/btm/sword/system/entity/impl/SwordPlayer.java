@@ -277,7 +277,10 @@ public class SwordPlayer extends Combatant {
         );
 
         chestplateItem = new SlotAnchoredItem(
-            new ItemStackBuilder(Material.NETHERITE_CHESTPLATE).build(),
+            new ItemStackBuilder(Material.NETHERITE_CHESTPLATE)
+                .hideAll()
+                .stripAttributeModifiers()
+                .build(),
             38,
             Material.NETHERITE_CHESTPLATE
         );
@@ -597,36 +600,40 @@ public class SwordPlayer extends Combatant {
     public void enterSceneOverlay() {
         if (inSceneOverlay) return;
 
-        // Save hotbar + main inventory (0–35), chestplate (38), and offhand (40)
-        savedInventory = new ItemStack[36];
-        for (int i = 0; i < 36; i++) {
-            savedInventory[i] = player.getInventory().getItem(i);
-        }
-        savedSceneChestplate = player.getInventory().getItem(38);
-        savedOffhand = player.getInventory().getItem(40);
+        if (Debug.SPECIAL_ITEM_CHECKS_ENABLED) {
+            setAllAnchoredItemUpkeep(false);
 
-        setAllAnchoredItemUpkeep(false);
-
-        // Clear hotbar (0–8); glass panes in main inventory (9–35) with menu button in center (22)
-        ItemStack glass = new ItemStackBuilder(Material.BLUE_STAINED_GLASS_PANE)
-            .name(Component.empty())
-            .hideAll()
-            .tag(KeyRegistry.NON_MOVABLE_KEY, PersistentDataType.BOOLEAN, true)
-            .build();
-        for (int i = 0; i < 9; i++) {
-            player.getInventory().setItem(i, null);
-        }
-        for (int i = 9; i < 36; i++) {
-            if (i == 22) {
-                player.getInventory().setItem(22, menuButton.getItemStack());
-            } else {
-                player.getInventory().setItem(i, glass);
+            // Save hotbar + main inventory (0–35), chestplate (38), and offhand (40)
+            savedInventory = new ItemStack[36];
+            for (int i = 0; i < 36; i++) {
+                savedInventory[i] = player.getInventory().getItem(i);
             }
-        }
+            savedSceneChestplate = player.getInventory().getItem(38);
+            savedOffhand = player.getInventory().getItem(40);
 
-        // Clear sword (offhand shield) and chestplate armor slot
-        player.getInventory().setItem(38, null);
-        player.getInventory().setItem(40, null);
+            // Clear hotbar (0–8); glass panes in main inventory (9–35) with menu button in center (22)
+            ItemStack glass = new ItemStackBuilder(MainMenu.WALL.getItemProvider().get().getType())
+                .name(MainMenu.WALL.getItemProvider().get().displayName())
+                .hideAll()
+                .tag(KeyRegistry.NON_MOVABLE_KEY, PersistentDataType.BOOLEAN, true)
+                .build();
+            for (int i = 0; i < 9; i++) {
+                player.getInventory().setItem(i, null); // TODO: Find out why sometimes the soul link stays in the inventory...
+            }
+            for (int i = 9; i < 36; i++) {
+                if (i == 22) {
+                    player.getInventory().setItem(22, menuButton.getItemStack());
+                } else {
+                    player.getInventory().setItem(i, glass);
+                }
+            }
+
+            // Clear sword (offhand shield) and chestplate armor slot
+            player.getInventory().setItem(38, null);
+            player.getInventory().setItem(40, null);
+
+            ableToPickup = false;
+        }
 
         player.setInvisible(true);
 
@@ -647,19 +654,22 @@ public class SwordPlayer extends Combatant {
     public void exitSceneOverlay() {
         if (!inSceneOverlay) return;
         inSceneOverlay = false;
+        ableToPickup = true;
 
-        setAllAnchoredItemUpkeep(true);
+        if (savedInventory != null) {
+            setAllAnchoredItemUpkeep(true);
 
-        for (int i = 0; i < 36; i++) {
-            player.getInventory().setItem(i, savedInventory != null ? savedInventory[i] : null);
+            for (int i = 0; i < 36; i++) {
+                player.getInventory().setItem(i, savedInventory[i]);
+            }
+            savedInventory = null;
+
+            player.getInventory().setItem(38, savedSceneChestplate);
+            savedSceneChestplate = null;
+
+            player.getInventory().setItem(40, savedOffhand);
+            savedOffhand = null;
         }
-        savedInventory = null;
-
-        player.getInventory().setItem(38, savedSceneChestplate);
-        savedSceneChestplate = null;
-
-        player.getInventory().setItem(40, savedOffhand);
-        savedOffhand = null;
 
         player.setInvisible(false);
     }
@@ -688,6 +698,7 @@ public class SwordPlayer extends Combatant {
 
         player.setGameMode(GameMode.CREATIVE);
         setActivationContext(ActivationContext.BUILDING);
+//        SwordScheduler.runBukkitTaskLater(() -> ) // TODO: Deactivate Umbral Blade
 
         savedCreativeDevInventory = new ItemStack[36];
         for (int i = 0; i < 36; i++) {
@@ -860,9 +871,12 @@ public class SwordPlayer extends Combatant {
         }
 
         // Scene overlay is active — cancel all inventory interactions except the menu button above.
-        // Left-clicking any slot fires the scene-exit stub.
-        if (inSceneOverlay) {
-            if (clickType == ClickType.LEFT && clicked != null && !clicked.getType().isAir()) {
+        // Left-clicking an interactible (non-NON_MOVABLE) slot fires the scene-exit stub.
+        // When special item checks are disabled, all overlay restrictions are bypassed.
+        if (inSceneOverlay && Debug.SPECIAL_ITEM_CHECKS_ENABLED) {
+            if (clickType == ClickType.LEFT && clicked != null && !clicked.getType().isAir()
+                    && !KeyRegistry.hasKey(clicked, KeyRegistry.NON_MOVABLE_KEY)
+                    && e.getClickedInventory() == player.getInventory()) {
                 onSceneOverlayClickExit();
             }
             return true;

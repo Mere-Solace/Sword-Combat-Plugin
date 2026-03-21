@@ -171,6 +171,63 @@ public class AnimationRegistry {
     }
 
     /**
+     * Scans {@code plugins/DisplayEntityUtils/animations/} for all {@code .deanim} files and
+     * registers any that are not already in the registry. The group tag is inferred by finding
+     * the longest-matching {@code .deg} basename in {@code savedentities/} that is a prefix of
+     * the animation tag; falls back to the animation tag itself when no match exists.
+     *
+     * <p>Stale entries (whose {@code .deg} or {@code .deanim} files no longer exist) are culled
+     * first so the registry stays in sync with what is actually on disk.</p>
+     *
+     * @return the number of newly registered animations
+     */
+    public static int syncFromLocalStorage() {
+        cullStaleEntries();
+
+        File animDir = new File(DEU_BASE, "animations");
+        File savedEntities = new File(DEU_BASE, "savedentities");
+
+        if (!animDir.exists() || !animDir.isDirectory()) return 0;
+
+        File[] deanimFiles = animDir.listFiles((dir, name) -> name.endsWith(".deanim"));
+        if (deanimFiles == null || deanimFiles.length == 0) return 0;
+
+        List<String> groupTags = new ArrayList<>();
+        if (savedEntities.exists() && savedEntities.isDirectory()) {
+            File[] degs = savedEntities.listFiles((dir, name) -> name.endsWith(".deg"));
+            if (degs != null) {
+                for (File deg : degs) {
+                    groupTags.add(deg.getName().replace(".deg", ""));
+                }
+            }
+        }
+
+        int added = 0;
+        for (File deanim : deanimFiles) {
+            String animTag = deanim.getName().replace(".deanim", "");
+            if (registry.containsKey(animTag)) continue;
+
+            String inferredGroup = animTag;
+            int best = 0;
+            for (String group : groupTags) {
+                if (animTag.startsWith(group) && group.length() > best) {
+                    best = group.length();
+                    inferredGroup = group;
+                }
+            }
+
+            registry.put(animTag, new AnimationDef(animTag, inferredGroup, animTag, false));
+            added++;
+        }
+
+        if (added > 0) {
+            saveToDisk();
+            Sword.getInstance().getLogger().info("[AnimationRegistry] Synced " + added + " new animation(s) from DEU local storage.");
+        }
+        return added;
+    }
+
+    /**
      * Returns the base names (without {@code .zip}) of all BDE datapacks that have not yet
      * been converted — i.e. those in {@code bdenginedatapacks/} with no matching {@code .deanim}
      * file in {@code plugins/DisplayEntityUtils/animations/}.

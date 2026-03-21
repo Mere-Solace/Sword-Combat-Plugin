@@ -2,16 +2,14 @@ package btm.sword.system.item.special;
 
 import java.util.function.Predicate;
 
-import lombok.Getter;
-
-import lombok.Setter;
-
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 import btm.sword.system.item.KeyRegistry;
+import lombok.Getter;
+import lombok.Setter;
 
 /**
  * A {@link NonMovableItem} that is bound to a specific inventory slot.

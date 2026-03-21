@@ -18,13 +18,13 @@ import xyz.xenondevs.invui.item.impl.SimpleItem;
 public abstract class Menu {
     protected final SwordPlayer swordPlayer;
 
-    protected static final SimpleItem BORDER = new SimpleItem(
+    public static final SimpleItem BORDER = new SimpleItem(
         new ItemStackBuilder(Material.BLACK_STAINED_GLASS_PANE)
             .name(Component.text("|[]|", Config.SwordColor.TEXT_COOL_DARK))
             .build()
     );
 
-    protected static final SimpleItem WALL = new SimpleItem(
+    public static final SimpleItem WALL = new SimpleItem(
         new ItemStackBuilder(Material.LIGHT_BLUE_STAINED_GLASS_PANE)
             .name(Component.text("|||", Config.SwordColor.TEXT_COOL_DARK))
             .build()

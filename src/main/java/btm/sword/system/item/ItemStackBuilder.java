@@ -14,6 +14,7 @@ import org.bukkit.persistence.PersistentDataType;
 
 import btm.sword.system.action.throwing.ImpactType;
 import btm.sword.system.attack.style.WeaponAttackStyle;
+import io.papermc.paper.datacomponent.DataComponentTypes;
 import net.kyori.adventure.text.Component;
 
 /**
@@ -41,6 +42,7 @@ import net.kyori.adventure.text.Component;
 public class ItemStackBuilder {
     private final ItemStack item;
     private ItemMeta meta;
+    private boolean stripAttributeModifiers = false;
 
     public static ItemStackBuilder of(Material material) {
         return new ItemStackBuilder(material);
@@ -179,6 +181,21 @@ public class ItemStackBuilder {
     }
 
     /**
+     * Strips all vanilla attribute modifiers (attack damage, attack speed, armor, etc.) from the item
+     * by clearing the {@code ATTRIBUTE_MODIFIERS} data component on build.
+     * <p>
+     * Prefer this over {@link ItemFlag#HIDE_ATTRIBUTES} — that flag only hides the tooltip line,
+     * while this actually removes the modifiers so they cannot affect gameplay.
+     * </p>
+     *
+     * @return this builder, for chaining
+     */
+    public ItemStackBuilder stripAttributeModifiers() {
+        this.stripAttributeModifiers = true;
+        return this;
+    }
+
+    /**
      * Hides all item flags (makes the item display cleaner by hiding enchants, attributes, etc.).
      *
      * @return this builder, for chaining
@@ -204,6 +221,9 @@ public class ItemStackBuilder {
      */
     public ItemStack build() {
         item.setItemMeta(meta);
+        if (stripAttributeModifiers) {
+            item.unsetData(DataComponentTypes.ATTRIBUTE_MODIFIERS);
+        }
         return item;
     }
 }

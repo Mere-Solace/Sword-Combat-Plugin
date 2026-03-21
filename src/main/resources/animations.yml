@@ -6,7 +6,7 @@ animations:
   player:
     anims:
       player_default:
-        loop: false
+        loop: true
   slash_test:
     anims:
       slash_test_default:

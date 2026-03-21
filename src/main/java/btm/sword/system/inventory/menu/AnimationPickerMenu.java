@@ -61,6 +61,8 @@ public class AnimationPickerMenu extends Menu {
         Player player = swordPlayer.player();
         String currentKey = ConfigManager.getInstance().getConfig().getString(entry.path, (String) entry.defaultValue);
 
+        AnimationRegistry.syncFromLocalStorage();
+
         List<Item> animItems = new ArrayList<>();
         for (AnimationDef def : AnimationRegistry.all()) {
             boolean selected = def.key().equals(currentKey);

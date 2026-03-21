@@ -1,12 +1,17 @@
 package btm.sword.system.inventory;
 
 import java.util.LinkedList;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import org.bukkit.Material;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
+import btm.sword.system.control.SwordScheduler;
 import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.inventory.menu.Menu;
+import btm.sword.system.item.KeyRegistry;
 
 public class PlayerMenuManager {
     private final SwordPlayer swordPlayer;
@@ -19,8 +24,29 @@ public class PlayerMenuManager {
     }
 
     private void performOpen(Menu menu) {
-        swordPlayer.player().setItemOnCursor(new ItemStack(Material.AIR));
+        Player player = swordPlayer.player();
+
+        // #221: Return any held cursor item to inventory rather than destroying it.
+        // If the inventory is full, the item is dropped in the world instead.
+        ItemStack cursor = player.getItemOnCursor();
+        if (!cursor.isEmpty()) {
+            Map<Integer, ItemStack> leftover = player.getInventory().addItem(cursor.clone());
+            leftover.values().forEach(swordPlayer::spawnInventoryDrop);
+            player.setItemOnCursor(new ItemStack(Material.AIR));
+        }
+
         menu.open();
+
+        // Deferred cursor fix: opening an InvUI window during InventoryClickEvent handling can
+        // desync the client cursor state, causing the clicked item (e.g. the menu button) to
+        // reappear on the cursor after the window opens. Non-movable items should never be on
+        // cursor, so clear them on the next tick to correct the desync.
+        SwordScheduler.runBukkitTaskLater(() -> {
+            ItemStack afterCursor = player.getItemOnCursor();
+            if (!afterCursor.isEmpty() && KeyRegistry.hasKey(afterCursor, KeyRegistry.NON_MOVABLE_KEY)) {
+                player.setItemOnCursor(new ItemStack(Material.AIR));
+            }
+        }, 50, TimeUnit.MILLISECONDS);
     }
 
     private <T extends Menu> void addAndOpenMenu(Class<T> menuClass) {
