@@ -2,9 +2,6 @@ package btm.sword.system.entity.impl;
 
 import java.util.concurrent.TimeUnit;
 
-import btm.sword.system.control.PredicateRunnablePair;
-import btm.sword.system.control.TimeArbiter;
-
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.attribute.Attribute;
@@ -18,7 +15,9 @@ import btm.sword.config.Config;
 import btm.sword.system.action.ActionCaster;
 import btm.sword.system.action.movement.MovementAction;
 import btm.sword.system.action.throwing.types.ThrownItem;
+import btm.sword.system.control.PredicateRunnablePair;
 import btm.sword.system.control.SwordScheduler;
+import btm.sword.system.control.TimeArbiter;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.base.CombatProfile;
 import btm.sword.system.entity.base.SwordEntity;

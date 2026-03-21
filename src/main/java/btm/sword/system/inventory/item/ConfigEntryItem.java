@@ -17,7 +17,7 @@ import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.inventory.menu.EnumSelectionMenu;
 import btm.sword.system.item.ItemStackBuilder;
 import btm.sword.utility.ChatInputCapture;
-import btm.sword.utility.sound.SoundType;
+import btm.sword.utility.sound.SwordSoundType;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
@@ -161,8 +161,8 @@ public class ConfigEntryItem extends AbstractItem {
             String stored = config.getString(entry.path);
             String currentName = stored != null ? stored : (entry.defaultValue instanceof Enum<?> e ? e.name() : "?");
             String defName = entry.defaultValue instanceof Enum<?> e ? e.name() : "?";
-            Material mat = type == SoundType.class ? Material.NOTE_BLOCK : Material.PAPER;
-            Component hint = type == SoundType.class
+            Material mat = type == SwordSoundType.class ? Material.NOTE_BLOCK : Material.PAPER;
+            Component hint = type == SwordSoundType.class
                 ? Component.text("Click to browse  (R-click previews)", NamedTextColor.DARK_GRAY)
                 : Component.text("Click to browse", NamedTextColor.DARK_GRAY);
             return new ItemWrapper(new ItemStackBuilder(mat)

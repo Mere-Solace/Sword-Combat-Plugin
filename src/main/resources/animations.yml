@@ -1,0 +1,33 @@
+animations:
+  creep_test:
+    anims:
+      creep_test_default:
+        loop: true
+  player:
+    anims:
+      player_default:
+        loop: false
+  slash_test:
+    anims:
+      slash_test_default:
+        loop: true
+  gentle_stillness:
+    anims:
+      gentle_stillness_default:
+        loop: true
+  forward_gentle:
+    anims:
+      forward_gentle_default:
+        loop: true
+  mountain_loading_drift:
+    anims:
+      mountain_loading_drift_default:
+        loop: true
+  gentle_mountain:
+    anims:
+      gentle_mountain_default:
+        loop: true
+  gentle_v2:
+    anims:
+      gentle_v2_default:
+        loop: true

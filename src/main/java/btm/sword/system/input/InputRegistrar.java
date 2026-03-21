@@ -25,6 +25,7 @@ import btm.sword.system.entity.impl.Combatant;
 import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.utility.SwordTimeUnit;
 
+
 /**
  * Registers all input sequences into an {@link InputExecutionTree}.
  * <p>

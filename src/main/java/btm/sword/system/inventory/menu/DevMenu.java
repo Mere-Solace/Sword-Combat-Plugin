@@ -112,9 +112,9 @@ public class DevMenu extends Menu {
         Gui gui = Gui.normal()
             .setStructure(
                 "# # # # # # # # #",
-                "# T R J N I # # #",
-                "# S C W E # # # #",
-                "# # # # # # # # #",
+                "# J N S . . . C #",
+                "# . . . . . . E #",
+                "# R I . T . . W #",
                 "# # # < . > # # #")
             .addIngredient('#', BORDER)
             .addIngredient('T', toggles)

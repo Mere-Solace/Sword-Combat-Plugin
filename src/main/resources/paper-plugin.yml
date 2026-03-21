@@ -9,6 +9,9 @@ dependencies:
     ProtocolLib:
       load: BEFORE
       required: true
+    DisplayEntityUtils:
+      load: BEFORE
+      required: true
 
 permissions:
   sword.use:

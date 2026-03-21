@@ -37,5 +37,11 @@ public enum ActivationContext {
      * Player is channeling a healing ability. Most inputs are suppressed;
      * taking damage sets an interrupt flag to cancel the channel.
      */
-    CHANNELING
+    CHANNELING,
+
+    /**
+     * Player is in a camera-driven cutscene or animation.
+     * All combat and movement inputs are blocked; only scene-exit inputs are accepted.
+     */
+    CUTSCENE
 }

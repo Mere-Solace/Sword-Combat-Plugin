@@ -34,7 +34,6 @@ import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.entity.umbral.input.BladeRequest;
 import btm.sword.system.item.special.NonMovableItem;
-import btm.sword.system.scene.SceneManager;
 import btm.sword.utility.ChatInputCapture;
 import btm.sword.utility.Debug;
 import io.papermc.paper.event.player.AsyncChatEvent;
@@ -374,9 +373,6 @@ public class PlayerListener implements Listener {
             swordPlayer.requestUmbralBladeState(BladeRequest.DEACTIVATE);
         }
         else if (Objects.equals(event.getPlayer().getGameMode(), GameMode.SPECTATOR)) {
-            if (SceneManager.isInScene(event.getPlayer())) {
-                SceneManager.stopScene(swordPlayer);
-            }
             swordPlayer.requestUmbralBladeState(BladeRequest.ACTIVATE_TO_PREVIOUS);
         }
     }

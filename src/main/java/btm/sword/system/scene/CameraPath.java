@@ -20,17 +20,14 @@ import btm.sword.utility.math.ControlVectors;
  * a {@link Location} on the curve with yaw/pitch oriented along the tangent direction.
  * </p>
  */
-public class CameraPath {
-
-    private final ControlVectors control;
+public record CameraPath(ControlVectors control) {
 
     /**
      * Constructs a camera path from the given Bézier control vectors.
      *
      * @param control the four world-space control points defining the cubic Bézier curve
      */
-    public CameraPath(ControlVectors control) {
-        this.control = control;
+    public CameraPath {
     }
 
     /**

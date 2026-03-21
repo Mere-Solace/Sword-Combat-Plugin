@@ -442,5 +442,11 @@ menu:
     entity: PANDA_SPAWN_EGG
     umbralblade: STONE_SWORD
     particles: FIREWORK_STAR
+
+
+animation:
+  conversion_step_timeout_seconds: 120
+
+
 scene:
   scene_on_every_join: true

@@ -154,8 +154,8 @@ public class MainMenu extends Menu {
                 "# . . . P . . . #",
                 ". . . . D Q . . .",
                 ". . . . . . . . .",
-                "# T . . H . M V #",
-                "# # # < . > # # #")
+                "# T . . H . M . #",
+                "# # # < V > # # #")
             .addIngredient('#', BORDER)
             .addIngredient('Q', queueForCTF)
             .addIngredient('H', playerInfo)

@@ -3809,7 +3809,15 @@ public class Config {
      * in the config browser.
      */
     public static class Animation {
-        // TODO: Add animation paths for different animations for customizability
+
+        /** Timeout in seconds for each step of DEU animation conversion. */
+        public static int ANIMATION_CONVERSION_STEP_TIMEOUT_SECONDS = 120;
+
+        static {
+            register("animation.conversion_step_timeout_seconds", 120, Integer.class,
+                v -> ANIMATION_CONVERSION_STEP_TIMEOUT_SECONDS = v,
+                ConfigurationSection::getInt);
+        }
     }
     //endregion
 }

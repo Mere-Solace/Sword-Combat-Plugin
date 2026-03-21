@@ -315,13 +315,6 @@ public class SwordPlayer extends Combatant {
     @Override
     public void onSpawn() {
         super.onSpawn();
-        if (Config.Scene.SCENE_ENABLED) {
-            if (Config.Scene.SCENE_ON_EVERY_JOIN
-                    || !btm.sword.system.scene.SceneManager.hasSeenScene(player)) {
-                SwordScheduler.runConsumerNextTick(
-                    sp -> btm.sword.system.scene.SceneManager.startMainMenuScene(sp), this);
-            }
-        }
     }
 
     /**
@@ -410,6 +403,11 @@ public class SwordPlayer extends Combatant {
      */
     public void act(InputType input) {
         if (ItemClassifier.isBlocked(getItemStackInHand(true))) return;
+
+        if (activationContext == ActivationContext.CUTSCENE) {
+            btm.sword.system.scene.animation.CutsceneInputHandler.handle(this, input);
+            return;
+        }
 
         if (activationContext.equals(ActivationContext.CHANNELING)) {
             activationContext = ActivationContext.NORMAL;

@@ -53,8 +53,8 @@ import btm.sword.utility.entity.EntityUtil;
 import btm.sword.utility.entity.HitboxUtil;
 import btm.sword.utility.math.Basis;
 import btm.sword.utility.math.VectorUtil;
-import btm.sword.utility.sound.SoundType;
 import btm.sword.utility.sound.SoundUtil;
+import btm.sword.utility.sound.SwordSoundType;
 import lombok.Getter;
 import lombok.Setter;
 import net.kyori.adventure.text.Component;
@@ -552,7 +552,7 @@ public abstract class SwordEntity {
         self.damage(0.01);
 
         Prefab.Particles.TEST_HIT.display(getChestLocation());
-        SoundUtil.playSound(source.self(), SoundType.ENTITY_PLAYER_ATTACK_STRONG,
+        SoundUtil.playSound(source.self(), SwordSoundType.ENTITY_PLAYER_ATTACK_STRONG,
             Config.Audio.ENTITY_HIT_CONNECT_VOLUME, Config.Audio.ENTITY_HIT_CONNECT_PITCH);
 
         self.setVelocity(knockbackVelocity);

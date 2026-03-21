@@ -93,10 +93,10 @@ public class TogglesMenu extends Menu {
         Gui gui = Gui.normal()
             .setStructure(
                 "# # # # # # # # #",
-                "# A B C D E # # #",
-                "# F G H I J # # #",
-                "# # # # # # # # #",
-                "# # # < # # # # #")
+                "# A B C D E . . #",
+                "# F G H I J . . #",
+                "# . . . . . . . #",
+                "< # # # # # # # #")
             .addIngredient('#', BORDER)
             .addIngredient('A', verboseDebug)
             .addIngredient('B', verboseCombat)

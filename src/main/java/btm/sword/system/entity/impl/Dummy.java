@@ -13,8 +13,8 @@ import btm.sword.system.entity.aspect.value.ResourceValue;
 import btm.sword.system.entity.base.CombatProfile;
 import btm.sword.system.entity.base.SoulfireManager;
 import btm.sword.utility.Prefab;
-import btm.sword.utility.sound.SoundType;
 import btm.sword.utility.sound.SoundUtil;
+import btm.sword.utility.sound.SwordSoundType;
 import lombok.Setter;
 
 
@@ -78,7 +78,7 @@ public class Dummy extends Passive {
         self.damage(0.01);
 
         Prefab.Particles.TEST_HIT.display(getChestLocation());
-        SoundUtil.playSound(source.self(), SoundType.ENTITY_PLAYER_ATTACK_STRONG,
+        SoundUtil.playSound(source.self(), SwordSoundType.ENTITY_PLAYER_ATTACK_STRONG,
             Config.Audio.ENTITY_HIT_CONNECT_VOLUME, Config.Audio.ENTITY_HIT_CONNECT_PITCH);
 
 //        self.setVelocity(knockbackVelocity);

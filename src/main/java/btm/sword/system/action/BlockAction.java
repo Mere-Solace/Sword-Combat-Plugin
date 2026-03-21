@@ -9,8 +9,8 @@ import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.impl.Combatant;
 import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.utility.Prefab;
-import btm.sword.utility.sound.SoundType;
 import btm.sword.utility.sound.SoundUtil;
+import btm.sword.utility.sound.SwordSoundType;
 
 /**
  * Handles block and parry resolution for defending {@link SwordPlayer} combatants.
@@ -140,7 +140,7 @@ public final class BlockAction {
      */
     private static void applyBlockSuccess(SwordPlayer defender) {
         defender.getAspects().soulfire().remove(Config.Combat.BLOCK_SOULFIRE_COST_ON_HIT);
-        SoundUtil.playSound(defender.self(), SoundType.ITEM_SHIELD_BLOCK,
+        SoundUtil.playSound(defender.self(), SwordSoundType.ITEM_SHIELD_BLOCK,
             1.0f, 0.9f);
 
         if (defender.getAspects().soulfire().cur() <= 0) {
@@ -157,7 +157,7 @@ public final class BlockAction {
      */
     private static void applyParrySuccess(SwordPlayer defender, Combatant attacker) {
         defender.getAspects().soulfire().add(Config.Combat.PARRY_SOULFIRE_GAIN);
-        SoundUtil.playSound(defender.self(), SoundType.ITEM_SHIELD_BLOCK,
+        SoundUtil.playSound(defender.self(), SwordSoundType.ITEM_SHIELD_BLOCK,
             1.5f, 2.0f);
         ActionCaster.cast(attacker, Config.Combat.PARRY_STAGGER_MS, () -> {});
     }

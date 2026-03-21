@@ -22,6 +22,7 @@ repositories {
         name "xenondevsReleases"
         url 'https://repo.xenondevs.xyz/releases'
     }
+    maven { url 'https://jitpack.io' }
 }
 
 dependencies {
@@ -31,6 +32,7 @@ dependencies {
     compileOnly 'org.projectlombok:lombok:1.18.34'
     annotationProcessor 'org.projectlombok:lombok:1.18.34'
     compileOnly 'net.dmulloy2:ProtocolLib:5.4.0'
+    compileOnly 'com.github.PZDonny.DisplayEntityUtils:api:3.4.3'
 }
 
 tasks {
@@ -65,11 +67,11 @@ eula=true
                 serverPropsFile.withInputStream { props.load(it) }
             }
 
-            // Set resource pack configuration
+            // Set resource pack configuration // RESOURCE PACK CONFIG COPY PASTE NEW LINK
             props.setProperty('resource-pack', 'https://www.dropbox.com/scl/fi/xl8c0zu4fvrqwf1q6m018/gun4.zip?rlkey=8kxveifnxj0sq8cgdhs54x2eb&e=1&st=6rjfts8v&dl=1')
             props.setProperty('resource-pack-id', '')
             props.setProperty('resource-pack-prompt', '{"text":"Recommended for cool things to happen."}')
-            props.setProperty('resource-pack-sha1', '8b4957f9c59d5e1e6804921150af9646c6c6a295')
+            props.setProperty('resource-pack-sha1', '8b4957f9c59d5e1e6804921150af9646c6c6a295') // ALSO COPY NEW SHA1
 
             serverPropsFile.withOutputStream { props.store(it, 'Auto-configured by Gradle runServer task') }
             logger.lifecycle("Resource pack configured for development server")

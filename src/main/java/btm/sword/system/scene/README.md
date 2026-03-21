@@ -1,170 +1,201 @@
 # Scene System
 
-The `btm.sword.system.scene` package implements the main-menu camera scene and the
-infrastructure for any future cutscene or cinematic transition.
+The `btm.sword.system.scene` package implements the camera and cutscene infrastructure.
+The `animation` sub-package adds DEU/BDEngine animation playback on top of the camera stack.
 
 ---
 
-## Overview
+## Package Layout
 
-When a player first joins the server they are placed into a **scene**: a controlled
-camera experience with ambient music and HUD decorations. The system is split across
-three distinct layers of responsibility:
+```
+scene/
+├── CameraController.java          — abstract base; lifecycle and single-owner enforcement
+├── CameraSystem.java              — thin static utility (ownership queries, safe stop)
+├── CameraService.java             — packet attach/detach (delegates to PacketAdapter)
+├── CameraSession.java             — per-attachment handle; single-use
+├── PacketAdapter.java             — ProtocolLib wrapper for ClientboundSetCameraPacket
+├── BezierCameraController.java    — drives camera along a CameraPath (Bézier curve)
+├── CameraPath.java                — cubic Bézier world-space trajectory record
+├── DEUAnimationController.java    — plays a DEU/BDE animation as a cutscene
+└── animation/
+    ├── AnimationDef.java          — immutable descriptor loaded from animations.yml
+    ├── AnimationRegistry.java     — static registry; load, reload, setLoop
+    └── CutsceneInputHandler.java  — routes inputs while ActivationContext.CUTSCENE is active
+```
+
+---
+
+## Camera Stack
+
+The packet camera stack has four layers, each with a single responsibility:
 
 | Layer | Class | Responsibility |
 |---|---|---|
-| Camera ownership | `CameraController` / `CameraSystem` | Exactly one controller drives a player's camera at any time |
-| Camera motion | `BezierCameraController`, `GentleDriftCameraController` | Concrete motion strategies |
-| Scene orchestration | `SceneManager` | Music loop + scene-viewer tracking |
+| Ownership lifecycle | `CameraController` / `CameraSystem` | Exactly one controller per player at a time |
+| Concrete motion | `BezierCameraController`, `DEUAnimationController` | Drive the camera for a specific use case |
+| Packet attach/detach | `CameraService` / `CameraSession` | Send `ClientboundSetCameraPacket`; return a handle |
+| NMS wrapper | `PacketAdapter` | ProtocolLib call; reset by targeting player's own entity ID |
+
+Packet camera does **not** require spectator mode. The player's game mode is preserved.
+`BezierCameraController` falls back to spectator-mode targeting only when
+`CameraService.isAvailable()` returns `false` (ProtocolLib not loaded).
 
 ---
 
-## Camera Controller Lifecycle
+## `CameraController` Lifecycle
 
-`CameraController` is an abstract base class. Its three lifecycle hooks are:
+`CameraController` is the abstract base for all controllers. Its three hooks are:
 
-1. **`onStart()`** — called once when the controller becomes active. Spawn entities,
-   save player state, begin the tick loop.
-2. **`onTick()`** — called every 50 ms (one server tick) while active. Advance camera
-   position, update HUD.
-3. **`onStop()`** — called once on teardown. Cancel tick tasks, despawn entities, restore
-   player state.
+1. **`onStart()`** — called once when the controller becomes active. Spawn entities, attach camera, start tick loops.
+2. **`onTick()`** — called every 50 ms while active. Advance camera, update state.
+3. **`onStop()`** — called once on teardown. Cancel tasks, detach camera, clean up entities.
 
 ### Single-Owner Enforcement
 
-`SwordPlayer` holds exactly one `activeCameraController` reference. The enforcement
-happens inside `CameraController.start(SwordPlayer)`:
+`start(SwordPlayer)` is `final`. The sequence is:
 
 ```
 player has existing controller?
   → log warning
-  → call existing.stop()      ← forcibly evicts prior controller
+  → call existing.stop()
 → set owner
 → set player.activeCameraController = this
 → call onStart()
 ```
 
-`stop()` clears `player.activeCameraController` **before** calling `onStop()`, so
-re-entrant stop calls (e.g. from a tick cleanup path) are safe. Subclasses must cache
-the `Player` reference during `onStart()` because `owner` is nulled before `onStop()`
-runs.
+`stop()` clears `player.activeCameraController` **before** calling `onStop()`, making
+re-entrant stop calls safe. Subclasses must cache the player reference in `onStart()`
+because `owner` is nulled before `onStop()` runs.
 
 ---
 
 ## Controller Subtypes
 
-### `GentleDriftCameraController` — Main Menu
+### `BezierCameraController`
 
-Used for the main-menu idle scene. The camera sits at a fixed world anchor point
-(`Config.Scene.CAMERA_ANCHOR`) and applies:
+Drives the camera along a `CameraPath` (cubic Bézier curve in world space) over a
+configurable number of ticks.
 
-- **Sinusoidal Y-offset**: `sin(tick × DRIFT_SPEED) × DRIFT_AMPLITUDE` — a gentle
-  vertical bob.
-- **Slow yaw drift**: `tick × YAW_DRIFT_RATE` — the camera slowly pans across the
-  scene.
+- Spawns an invisible `ArmorStand` at the path start position.
+- Attaches the player's camera to the stand via `CameraService` (1-tick delay for
+  client-side entity tracking).
+- Each tick advances `t` by `1 / durationTicks` and teleports the stand to
+  `path.evaluate(t, world)`.
+- When `t >= 1.0`, calls `stop()` on itself — the controller self-terminates.
 
-An invisible `ArmorStand` is placed at the drifted position each tick; the player is
-put into `SPECTATOR` mode targeting it. This is the mechanism by which the player's
-viewpoint follows the stand.
+Intended for scripted cinematic transitions where the path is authored ahead of time.
 
-`HudDisplayGroup` is spawned in `onStart()`, repositioned in `onTick()` to track the
-anchor, and removed in `onStop()`.
+### `DEUAnimationController`
 
-### `BezierCameraController` — Cutscenes
+Plays a DEU/BDEngine animation as a cutscene for its owner player.
 
-Used for scripted transitions. The camera travels along a `CameraPath` (cubic Bézier
-curve in world space) from `t = 0` to `t = 1` over a configurable number of ticks.
+- On start: loads the DEU `DisplayEntityGroup` by `groupTag`, creates a
+  `PacketDisplayEntityGroup` at the player's location, shows it only to that player,
+  and starts a `DisplayAnimator`.
+- If `attachCamera` is `true`: also calls `DisplayAnimator.playCamera` so the player's
+  viewpoint follows the animation's embedded camera track.
+- Sets `ActivationContext.CUTSCENE` on the player, blocking all combat inputs.
+- `onTick()` is a no-op — DEU manages its own animation loop internally.
+- On stop: stops animator, hides and unregisters the packet group, restores
+  `ActivationContext.NORMAL`.
 
-- An `ArmorStand` is spawned at the curve's start position; the player spectates it.
-- Each tick advances `t` by `1 / durationTicks` and teleports the stand to the new
-  curve position.
-- When `t ≥ 1.0`, the controller calls `stop()` on itself — the scene ends automatically.
+```java
+AnimationDef def = AnimationRegistry.get("main_menu").orElseThrow();
+new DEUAnimationController(def, /* attachCamera */ true, /* loop */ true).start(player);
+```
 
 ---
 
 ## `CameraPath`
 
-`CameraPath` wraps a `ControlVectors` and evaluates the cubic Bézier curve at any
-`t ∈ [0, 1]`. The returned `Location` has its direction set to the curve's tangent
-(computed via central finite difference). `ControlVectors` suppliers read from
-`Config.Scene`, so hot-reloaded values are picked up without restarting.
+`CameraPath` is a record wrapping a `ControlVectors`. `evaluate(t, world)` returns a
+`Location` on the cubic Bézier curve with yaw/pitch aligned to the tangent (central
+finite difference). Used by `BezierCameraController` to drive the ArmorStand position.
 
 ---
 
-## `HudDisplayGroup` Lifecycle
+## `CameraSystem`
 
-Managed exclusively by `GentleDriftCameraController`.
+Thin static utility. No state of its own — all camera ownership lives on `SwordPlayer`.
 
-| Event | Action |
+| Method | Purpose |
 |---|---|
-| `onStart()` | `hudGroup.spawn(anchor)` — title, subtitle, and two decorative `ItemDisplay` entities created |
-| `onTick()` | `hudGroup.tick(anchor, tick)` — all entities teleported to anchor-relative offsets; decorative items orbit |
-| `onStop()` | `hudGroup.remove()` — all entities despawned, references cleared |
-
-HUD content (title text, subtitle, sword items) is currently hard-coded. Future work
-can expose it through `Config.Scene`.
+| `hasActiveController(SwordPlayer)` | Ownership query |
+| `stopController(SwordPlayer)` | Safe stop with null-guard |
 
 ---
 
-## `CameraSystem` vs `SceneManager`
+## Animation Sub-Package
 
-These two classes intentionally separate concerns:
+### `AnimationDef`
 
-**`CameraSystem`** is a thin static utility. It has no state of its own — all camera
-ownership lives on `SwordPlayer.activeCameraController`. It provides:
-- `hasActiveController(SwordPlayer)` — ownership query.
-- `stopController(SwordPlayer)` — safe stop with null-guard.
+Immutable record: `key`, `groupTag`, `animTag`, `defaultLoop`. Loaded from `animations.yml`.
+`key` is the logical identifier used throughout Sword code. `groupTag` and `animTag` are
+the DEU tags identifying the data on disk.
 
-**`SceneManager`** is the higher-level orchestrator. It owns:
-- `sceneViewers` — the set of players currently in any scene (used by input listeners
-  to gate player actions).
-- `seenThisSession` — per-session flag so the main menu only auto-plays on first join.
-- `musicLoops` — one `TimeArbiter.TaskHandle` per player; the music track replays on a
-  period derived from `Config.Scene.MENU_MUSIC_DURATION_TICKS`.
+### `AnimationRegistry`
 
-Entry point: `SceneManager.startMainMenuScene(SwordPlayer)` constructs a
-`GentleDriftCameraController`, starts it, and starts the music loop.
-Exit point: `SceneManager.stopScene(SwordPlayer)` stops music, stops the camera
-controller, and removes the viewer flag.
+Static registry initialized once via `AnimationRegistry.initialize(plugin)` in `Sword.onEnable()`.
 
----
+| Method | Behavior |
+|---|---|
+| `get(key)` | Returns `Optional<AnimationDef>` |
+| `all()` | Returns unmodifiable collection of all defs |
+| `setLoop(key, loop)` | Updates in-memory def and persists to `animations.yml` immediately |
+| `isLooping(key)` | Reads the current loop flag for a key |
+| `reload()` | Re-parses `animations.yml`; safe to call at any time |
 
-## `AvatarDisplay` (stub)
+On each `reload()`, the registry scans `plugins/DisplayEntityUtils/bdenginedatapacks/`
+for `.zip` files that have no corresponding `.deg` file in the `groups/` directory and
+logs conversion instructions for each unconverted pack.
 
-`AvatarDisplay` is a placeholder for a player mannequin that would be visible to the
-player during the main-menu scene. Because SPECTATOR mode makes the player invisible
-to themselves, a mannequin built from `ItemDisplay` entities is required to show the
-player's equipped gear.
+### `CutsceneInputHandler`
 
-**Tracked under TODO #233-avatar.** Requirements when implemented:
-- `HEAD`: `ItemDisplay` with a player skull (`SkullMeta` set to the owning player's
-  texture UUID).
-- `CHEST` / `LEGS` / `FEET`: `ItemDisplay` entities mirroring the player's equipment
-  slots.
-- Transformation matrices applied to each part to approximate a standing pose.
-- Fixed showcase position in the scene; `GentleDriftCameraController` oriented to face
-  the mannequin.
+Called from `SwordPlayer.act(InputType)` before the normal trie traversal when
+`ActivationContext.CUTSCENE` is active.
+
+| Input | Effect |
+|---|---|
+| `SHIFT` / `SHIFT_TAP` | Calls `CameraSystem.stopController(player)`; restores `ActivationContext.NORMAL` |
+| All others | Silently suppressed |
 
 ---
 
-## Hook Points
+## `animations.yml` Format
 
-| Trigger | Location | Effect |
-|---|---|---|
-| Player first join | `SwordPlayer.onSpawn()` | `SceneManager.startMainMenuScene()` if `!hasSeenScene()` |
-| Shift press | `InputListener.onSneakEvent()` | `SceneManager.onShiftInput()` → `stopScene()` |
-| Forced spectator / game mode change | `PlayerListener.gameChangeEvent()` | `CameraSystem.stopController()` to clean up if scene was interrupted |
+```yaml
+animations:
+  main_menu:
+    group: "main_menu_group"
+    anim:  "main_menu_anim"
+    loop:  true
+  slash_test_default:
+    group: "slash_test"
+    anim:  "slash_default"
+    loop:  false
+```
+
+Keys under `animations:` become the logical keys used in `AnimationRegistry.get()` and
+`Config.Animation` string entries.
+
+---
+
+## Activation Context Integration
+
+`ActivationContext.CUTSCENE` is set by `DEUAnimationController.onStart()` and cleared
+in `onStop()`. While active, `CutsceneInputHandler` intercepts all inputs before the
+trie, so no combat actions or abilities fire during a cutscene. Shift exits immediately.
 
 ---
 
 ## Extension Points
 
-- **New controller types**: Extend `CameraController`, implement the three hooks. Call
-  `controller.start(player)` to activate — single-owner enforcement is automatic.
-- **New `CameraPath` shapes**: Construct a `CameraPath` with a different `ControlVectors`.
-  The path evaluates any cubic Bézier; non-Bézier shapes would require a new path class
-  implementing the same `evaluate(t, world)` contract.
-- **New scene types**: Add a static method to `SceneManager` (e.g. `startVictoryScene`)
-  following the same pattern as `startMainMenuScene`.
-- **Config-driven HUD**: Replace hard-coded strings and offsets in `HudDisplayGroup`
-  with `Config.Scene` entries.
+- **New controller types**: Extend `CameraController`, implement the three hooks, call
+  `controller.start(player)`. Single-owner enforcement is automatic.
+- **New Bézier paths**: Construct a `CameraPath` with a different `ControlVectors` and
+  pass it to `BezierCameraController`.
+- **New animations**: Add entries to `animations.yml` (or `Config.Animation` string
+  constants pointing to keys), then reference via `AnimationRegistry.get(key)` and
+  pass the def to `DEUAnimationController`.
+- **Input handling during cutscenes**: Extend `CutsceneInputHandler.handle()` to map
+  additional `InputType` values to dialogue or chapter-skip actions.

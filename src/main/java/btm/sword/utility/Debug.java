@@ -31,6 +31,7 @@ import btm.sword.utility.math.VectorUtil;
  *   <li>{@link #system}   – State machine, scheduling({@code VERBOSE_SYSTEM})</li>
  *   <li>{@link #umbral}   – UmbralBlade specific     ({@code VERBOSE_UMBRAL})</li>
  *   <li>{@link #hostile}  – Hostile entity behaviour ({@code VERBOSE_HOSTILE})</li>
+ *   <li>{@link #listener}– Bukkit/Packet listener events ({@code VERBOSE_LISTENER})</li>
  * </ul>
  */
 public class Debug {
@@ -84,6 +85,11 @@ public class Debug {
     /** Hostile-entity debug. Gated by {@link Config.Debug#LOGGING_VERBOSE_HOSTILE}. */
     public static void hostile(String message) {
         emit(Config.Debug.LOGGING_VERBOSE_HOSTILE, "Hostile", message);
+    }
+
+    /** Bukkit/Packet listener debug. Gated by {@link Config.Debug#LOGGING_VERBOSE_LISTENER}. */
+    public static void listener(String message) {
+        emit(Config.Debug.LOGGING_VERBOSE_LISTENER, "Listener", message);
     }
 
     // =========================================================================

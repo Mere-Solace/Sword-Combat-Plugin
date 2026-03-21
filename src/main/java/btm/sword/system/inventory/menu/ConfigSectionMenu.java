@@ -1,7 +1,6 @@
 package btm.sword.system.inventory.menu;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -61,7 +60,7 @@ public class ConfigSectionMenu extends Menu {
         List<Config.ConfigEntry<?>> displayed = filter == null ? entries
             : entries.stream()
                 .filter(e -> e.path.toLowerCase().contains(filter))
-                .collect(Collectors.toList());
+                .toList();
 
         List<Item> entryItems = displayed.stream()
             .map(entry -> (Item) new ConfigEntryItem(entry, swordPlayer, this::open))

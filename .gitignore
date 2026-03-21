@@ -6,6 +6,8 @@ notes.txt
 *.ipr
 *.iws
 
+bdestorage/
+
 # IntelliJ
 out/
 # mpeltonen/sbt-idea plugin
