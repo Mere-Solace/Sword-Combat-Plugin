@@ -205,7 +205,7 @@ audio:
   throw_volume: 0.35
   throw_pitch: 0.4
   
-  attack_sound: ITEM_TRIDENT_THROW
+  attack_sound: EVENT_RAID_HORN
   attack_volume: 0.6
   attack_pitch: 0.7
   
@@ -378,11 +378,16 @@ umbral:
   time_scaling_factor: 9
   on_release: 3
 materials:
-  material_storage_item: SADDLE
-  currency_storage_item: AXOLOTL_BUCKET
+  material_storage_item: BAMBOO_CHEST_RAFT
+  currency_storage_item: NETHERITE_INGOT
 menu:
   section_icons:
     combat: BLAZE_POWDER
     display: GLOW_ITEM_FRAME
     entity: PANDA_SPAWN_EGG
     umbralblade: STONE_SWORD
+scene:
+  scene_on_every_join: true
+animation:
+  static_menu_animation_key: gentle_v2_default
+  conversion_step_timeout_seconds: 360

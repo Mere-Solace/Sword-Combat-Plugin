@@ -136,11 +136,21 @@ public class MainMenu extends Menu {
             new ItemStackBuilder(Material.BARRIER)
                 .hideAll()
                 .name(Component.text("Item Trash", Config.SwordColor.TEXT_COOL, TextDecoration.BOLD))
-                .lore(List.of(Component.text("Click with an item to destroy it.", Config.SwordColor.TEXT_ITEM_BASE)))
+                .lore(List.of(
+                    Component.text("Click with an item to destroy it.", Config.SwordColor.TEXT_ITEM_BASE),
+                    Component.text("Shift + Left Click to clear your entire inventory.", Config.SwordColor.TEXT_ITEM_BASE)
+                ))
                 .build(),
             click -> {
-                if (click.getClickType() == ClickType.DOUBLE_CLICK) {
-
+                if (click.getClickType() == ClickType.SHIFT_LEFT) {
+                    Player p = click.getPlayer();
+                    for (int i = 0; i < 36; i++) {
+                        ItemStack item = p.getInventory().getItem(i);
+                        if (item != null && !item.isEmpty() && !NonMovableItem.isNonMovable(item)) {
+                            p.getInventory().setItem(i, null);
+                        }
+                    }
+                    return;
                 }
                 ItemStack cursor = click.getPlayer().getItemOnCursor();
                 if (cursor.isEmpty() || NonMovableItem.isNonMovable(cursor)) return;
@@ -154,8 +164,8 @@ public class MainMenu extends Menu {
                 "# . . . P . . . #",
                 ". . . . D Q . . .",
                 ". . . . . . . . .",
-                "# T . . H . M V #",
-                "# # # < . > # # #")
+                "# T . . H . M . #",
+                "# # # < V > # # #")
             .addIngredient('#', BORDER)
             .addIngredient('Q', queueForCTF)
             .addIngredient('H', playerInfo)
@@ -166,7 +176,7 @@ public class MainMenu extends Menu {
             .addIngredient('<', generatePreviousButtonOrDefault())
             .addIngredient('>', generateForwardPreviousButtonOrDefault());
 
-        if (player.isOp()) {
+        if (true || player.isOp()) { // TODO: revert later
             builder.addIngredient('V', new SimpleItem(
                 new ItemStackBuilder(Material.DEBUG_STICK)
                     .name(Component.text("Dev Menu", Config.SwordColor.TEXT_COOL, TextDecoration.BOLD))

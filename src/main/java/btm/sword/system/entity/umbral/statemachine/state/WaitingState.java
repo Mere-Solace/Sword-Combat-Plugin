@@ -47,13 +47,13 @@ public class WaitingState extends UmbralStateFacade {
 
     @Override
     public void onEnter(UmbralBlade blade) {
-//        blade.startIdleMovement();
+        blade.startIdleMovement();
         entryTime = System.currentTimeMillis();
     }
 
     @Override
     public void onExit(UmbralBlade blade) {
-//        blade.endIdleMovement();
+        blade.endIdleMovement();
     }
 
     @Override

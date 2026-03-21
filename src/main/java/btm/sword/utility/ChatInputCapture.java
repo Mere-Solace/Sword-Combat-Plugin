@@ -11,8 +11,8 @@ import org.bukkit.entity.Player;
 import btm.sword.Sword;
 import io.papermc.paper.event.player.AsyncChatEvent;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.format.NamedTextColor;
-import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 
 /**
  * Utility for capturing a single chat message from a player as typed input.
@@ -84,7 +84,8 @@ public final class ChatInputCapture {
         Consumer<String> callback = PENDING.remove(event.getPlayer().getUniqueId());
         if (callback == null) return false;
         event.setCancelled(true);
-        String text = PlainTextComponentSerializer.plainText().serialize(event.message()).trim();
+        Component msg = event.message();
+        String text = (msg instanceof TextComponent tc ? tc.content() : msg.toString()).trim();
         Bukkit.getScheduler().runTask(Sword.getInstance(), () -> callback.accept(text));
         return true;
     }

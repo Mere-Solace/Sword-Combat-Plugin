@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 
 import org.bukkit.Color;
 import org.bukkit.Material;
+import org.bukkit.Particle;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Display.Billboard;
 import org.bukkit.entity.EntityType;
@@ -18,7 +19,7 @@ import btm.sword.system.action.attack.AttackAction;
 import btm.sword.system.action.movement.MovementAction;
 import btm.sword.system.action.throwing.types.ThrownItem;
 import btm.sword.system.attack.style.AttackType;
-import btm.sword.utility.sound.SoundType;
+import btm.sword.utility.sound.SwordSoundType;
 import net.kyori.adventure.text.format.TextColor;
 
 /**
@@ -213,12 +214,12 @@ public class Config {
     /**
      * Loader for SoundType enum values.
      */
-    public static SoundType loadSoundType(ConfigurationSection section, String path, SoundType defaultValue) {
+    public static SwordSoundType loadSoundType(ConfigurationSection section, String path, SwordSoundType defaultValue) {
         if (!section.contains(path)) return defaultValue;
         String value = section.getString(path);
         if (value == null) return defaultValue;
         try {
-            return SoundType.valueOf(value.toUpperCase());
+            return SwordSoundType.valueOf(value.toUpperCase());
         } catch (IllegalArgumentException e) {
             return defaultValue;
         }
@@ -231,6 +232,13 @@ public class Config {
      */
     public static Material loadMaterial(ConfigurationSection section, String path, Material defaultValue) {
         return loadEnum(section, path, defaultValue, Material.class);
+    }
+
+    /**
+     * Loader for {@link Particle} config values.
+     */
+    public static Particle loadParticle(ConfigurationSection section, String path, Particle defaultValue) {
+        return loadEnum(section, path, defaultValue, Particle.class);
     }
 
     public static AttackType loadAttackType(ConfigurationSection section, String path, AttackType defaultValue) {
@@ -1709,10 +1717,10 @@ public class Config {
             Config::loadFloat
         ); }
 
-        public static SoundType BLOCK_BROKEN_SOUND = SoundType.ITEM_SHIELD_BREAK;
+        public static SwordSoundType BLOCK_BROKEN_SOUND = SwordSoundType.ITEM_SHIELD_BREAK;
         static { register(
             "audio.block_broken_sound",
-            BLOCK_BROKEN_SOUND, SoundType.class,
+            BLOCK_BROKEN_SOUND, SwordSoundType.class,
             v -> BLOCK_BROKEN_SOUND = v,
             Config::loadSoundType
         ); }
@@ -1733,10 +1741,10 @@ public class Config {
             Config::loadFloat
         ); }
 
-        public static SoundType PARRY_ATTEMPT_SOUND = SoundType.RANDOM_BANE_SLASH;
+        public static SwordSoundType PARRY_ATTEMPT_SOUND = SwordSoundType.RANDOM_BANE_SLASH;
         static { register(
             "audio.parry_attempt_sound",
-            PARRY_ATTEMPT_SOUND, SoundType.class,
+            PARRY_ATTEMPT_SOUND, SwordSoundType.class,
             v -> PARRY_ATTEMPT_SOUND = v,
             Config::loadSoundType
         ); }
@@ -1757,10 +1765,10 @@ public class Config {
             Config::loadFloat
         ); }
 
-        public static SoundType PRE_ATTACK_SOUND = SoundType.ENTITY_EVOKER_FANGS_ATTACK;
+        public static SwordSoundType PRE_ATTACK_SOUND = SwordSoundType.ENTITY_EVOKER_FANGS_ATTACK;
         static { register(
             "audio.pre_attack_sound",
-            PRE_ATTACK_SOUND, SoundType.class,
+            PRE_ATTACK_SOUND, SwordSoundType.class,
             v -> PRE_ATTACK_SOUND = v,
             Config::loadSoundType
         ); }
@@ -1783,10 +1791,10 @@ public class Config {
 
 
         // Throw sound configuration
-        public static SoundType THROW_SOUND = SoundType.ENTITY_ENDER_DRAGON_FLAP;
+        public static SwordSoundType THROW_SOUND = SwordSoundType.ENTITY_ENDER_DRAGON_FLAP;
         static { register(
             "audio.throw_sound",
-            THROW_SOUND, SoundType.class,
+            THROW_SOUND, SwordSoundType.class,
             v -> THROW_SOUND = v,
             Config::loadSoundType
         ); }
@@ -1808,10 +1816,10 @@ public class Config {
         ); }
 
         // Attack sound configuration
-        public static SoundType ATTACK_SOUND = SoundType.ITEM_TRIDENT_THROW;
+        public static SwordSoundType ATTACK_SOUND = SwordSoundType.ITEM_TRIDENT_THROW;
         static { register(
             "audio.attack_sound",
-            ATTACK_SOUND, SoundType.class,
+            ATTACK_SOUND, SwordSoundType.class,
             v -> ATTACK_SOUND = v,
             Config::loadSoundType
         ); }
@@ -1848,10 +1856,10 @@ public class Config {
             Config::loadFloat
         ); }
 
-        public static SoundType PUNCH_ATTEMPT = SoundType.ENTITY_PLAYER_ATTACK_SWEEP;
+        public static SwordSoundType PUNCH_ATTEMPT = SwordSoundType.ENTITY_PLAYER_ATTACK_SWEEP;
         static { register(
             "audio.punch_attempt",
-            PUNCH_ATTEMPT, SoundType.class,
+            PUNCH_ATTEMPT, SwordSoundType.class,
             v -> PUNCH_ATTEMPT = v,
             Config::loadSoundType
         ); }
@@ -1872,10 +1880,10 @@ public class Config {
             Config::loadFloat
         ); }
 
-        public static SoundType PUNCH_CONNECT = SoundType.ENTITY_PLAYER_ATTACK_KNOCKBACK;
+        public static SwordSoundType PUNCH_CONNECT = SwordSoundType.ENTITY_PLAYER_ATTACK_KNOCKBACK;
         static { register(
             "audio.punch_connect",
-            PUNCH_CONNECT, SoundType.class,
+            PUNCH_CONNECT, SwordSoundType.class,
             v -> PUNCH_CONNECT = v,
             Config::loadSoundType
         ); }
@@ -2753,6 +2761,13 @@ public class Config {
             v -> LOGGING_VERBOSE_HOSTILE = v,
             ConfigurationSection::getBoolean); }
 
+        public static boolean LOGGING_VERBOSE_LISTENER = false;
+        static { register(
+            "debug.logging_verbose_listener",
+            LOGGING_VERBOSE_LISTENER, Boolean.class,
+            v -> LOGGING_VERBOSE_LISTENER = v,
+            ConfigurationSection::getBoolean); }
+
         // Visualization configuration
         public static boolean VISUALIZATION_SHOW_HITBOXES = false;
         static { register(
@@ -3521,6 +3536,163 @@ public class Config {
     /**
      * Menu configuration section for ConfigMenu section button icons.
      */
+    // ==============================================================================
+    //region Particle Configuration
+    // ==============================================================================
+    /**
+     * Per-effect particle configuration for gameplay particle effects.
+     * <p>
+     * Each effect exposes a {@link Particle} type, an integer count, and a speed.
+     * Speed of {@code -1.0} is the sentinel value meaning no speed is passed to the
+     * spawn call (uses the Bukkit overload without a speed parameter).
+     * </p>
+     */
+    public static class Particles {
+
+        /** Bleed hit effect. */
+        public static Particle BLEED_TYPE = Particle.BLOCK;
+        static { register("particles.bleed_type", BLEED_TYPE, Particle.class, v -> BLEED_TYPE = v, Config::loadParticle); }
+        public static int BLEED_COUNT = 25;
+        static { register("particles.bleed_count", BLEED_COUNT, Integer.class, v -> BLEED_COUNT = v, ConfigurationSection::getInt); }
+        public static double BLEED_SPEED = -1.0;
+        static { register("particles.bleed_speed", BLEED_SPEED, Double.class, v -> BLEED_SPEED = v, ConfigurationSection::getDouble); }
+
+        /** Thrown-item impale effect (lodged in entity). */
+        public static Particle THROWN_ITEM_IMPALE_TYPE = Particle.TRIAL_SPAWNER_DETECTION;
+        static { register("particles.thrown_item_impale_type", THROWN_ITEM_IMPALE_TYPE, Particle.class, v -> THROWN_ITEM_IMPALE_TYPE = v, Config::loadParticle); }
+        public static int THROWN_ITEM_IMPALE_COUNT = 4;
+        static { register("particles.thrown_item_impale_count", THROWN_ITEM_IMPALE_COUNT, Integer.class, v -> THROWN_ITEM_IMPALE_COUNT = v, ConfigurationSection::getInt); }
+        public static double THROWN_ITEM_IMPALE_SPEED = 0.0;
+        static { register("particles.thrown_item_impale_speed", THROWN_ITEM_IMPALE_SPEED, Double.class, v -> THROWN_ITEM_IMPALE_SPEED = v, ConfigurationSection::getDouble); }
+
+        /** Thrown-item landing-prediction marker. */
+        public static Particle THROWN_ITEM_MARKER_TYPE = Particle.TRIAL_SPAWNER_DETECTION;
+        static { register("particles.thrown_item_marker_type", THROWN_ITEM_MARKER_TYPE, Particle.class, v -> THROWN_ITEM_MARKER_TYPE = v, Config::loadParticle); }
+        public static int THROWN_ITEM_MARKER_COUNT = 3;
+        static { register("particles.thrown_item_marker_count", THROWN_ITEM_MARKER_COUNT, Integer.class, v -> THROWN_ITEM_MARKER_COUNT = v, ConfigurationSection::getInt); }
+        public static double THROWN_ITEM_MARKER_SPEED = 0.0;
+        static { register("particles.thrown_item_marker_speed", THROWN_ITEM_MARKER_SPEED, Double.class, v -> THROWN_ITEM_MARKER_SPEED = v, ConfigurationSection::getDouble); }
+
+        /** Landing-prediction upward stream. */
+        public static Particle LANDING_STREAM_TYPE = Particle.TRIAL_SPAWNER_DETECTION_OMINOUS;
+        static { register("particles.landing_stream_type", LANDING_STREAM_TYPE, Particle.class, v -> LANDING_STREAM_TYPE = v, Config::loadParticle); }
+        public static int LANDING_STREAM_COUNT = 5;
+        static { register("particles.landing_stream_count", LANDING_STREAM_COUNT, Integer.class, v -> LANDING_STREAM_COUNT = v, ConfigurationSection::getInt); }
+        public static double LANDING_STREAM_SPEED = 0.0;
+        static { register("particles.landing_stream_speed", LANDING_STREAM_SPEED, Double.class, v -> LANDING_STREAM_SPEED = v, ConfigurationSection::getDouble); }
+
+        /** Collision spark on attack sweep impact. */
+        public static Particle COLLIDE_TYPE = Particle.CRIT;
+        static { register("particles.collide_type", COLLIDE_TYPE, Particle.class, v -> COLLIDE_TYPE = v, Config::loadParticle); }
+        public static int COLLIDE_COUNT = 1;
+        static { register("particles.collide_count", COLLIDE_COUNT, Integer.class, v -> COLLIDE_COUNT = v, ConfigurationSection::getInt); }
+        public static double COLLIDE_SPEED = 0.5;
+        static { register("particles.collide_speed", COLLIDE_SPEED, Double.class, v -> COLLIDE_SPEED = v, ConfigurationSection::getDouble); }
+
+        /** Grab cloud burst on successful grab. */
+        public static Particle GRAB_CLOUD_TYPE = Particle.POOF;
+        static { register("particles.grab_cloud_type", GRAB_CLOUD_TYPE, Particle.class, v -> GRAB_CLOUD_TYPE = v, Config::loadParticle); }
+        public static int GRAB_CLOUD_COUNT = 20;
+        static { register("particles.grab_cloud_count", GRAB_CLOUD_COUNT, Integer.class, v -> GRAB_CLOUD_COUNT = v, ConfigurationSection::getInt); }
+        public static double GRAB_CLOUD_SPEED = 0.1;
+        static { register("particles.grab_cloud_speed", GRAB_CLOUD_SPEED, Double.class, v -> GRAB_CLOUD_SPEED = v, ConfigurationSection::getDouble); }
+
+        /** Grab attempt indicator (shows grab hitbox). */
+        public static Particle GRAB_ATTEMPT_TYPE = Particle.SONIC_BOOM;
+        static { register("particles.grab_attempt_type", GRAB_ATTEMPT_TYPE, Particle.class, v -> GRAB_ATTEMPT_TYPE = v, Config::loadParticle); }
+        public static int GRAB_ATTEMPT_COUNT = 2;
+        static { register("particles.grab_attempt_count", GRAB_ATTEMPT_COUNT, Integer.class, v -> GRAB_ATTEMPT_COUNT = v, ConfigurationSection::getInt); }
+        public static double GRAB_ATTEMPT_SPEED = -1.0;
+        static { register("particles.grab_attempt_speed", GRAB_ATTEMPT_SPEED, Double.class, v -> GRAB_ATTEMPT_SPEED = v, ConfigurationSection::getDouble); }
+
+        /** Punch impact effect. */
+        public static Particle PUNCH_TYPE = Particle.SMALL_GUST;
+        static { register("particles.punch_type", PUNCH_TYPE, Particle.class, v -> PUNCH_TYPE = v, Config::loadParticle); }
+        public static int PUNCH_COUNT = 1;
+        static { register("particles.punch_count", PUNCH_COUNT, Integer.class, v -> PUNCH_COUNT = v, ConfigurationSection::getInt); }
+        public static double PUNCH_SPEED = 0.0;
+        static { register("particles.punch_speed", PUNCH_SPEED, Double.class, v -> PUNCH_SPEED = v, ConfigurationSection::getDouble); }
+
+        /** Punch connect (hit confirmation) effect. */
+        public static Particle PUNCH_CONNECT_TYPE = Particle.GUST;
+        static { register("particles.punch_connect_type", PUNCH_CONNECT_TYPE, Particle.class, v -> PUNCH_CONNECT_TYPE = v, Config::loadParticle); }
+        public static int PUNCH_CONNECT_COUNT = 1;
+        static { register("particles.punch_connect_count", PUNCH_CONNECT_COUNT, Integer.class, v -> PUNCH_CONNECT_COUNT = v, ConfigurationSection::getInt); }
+        public static double PUNCH_CONNECT_SPEED = 0.0;
+        static { register("particles.punch_connect_speed", PUNCH_CONNECT_SPEED, Double.class, v -> PUNCH_CONNECT_SPEED = v, ConfigurationSection::getDouble); }
+
+        /** Umbral blade poof on summon/dismiss. */
+        public static Particle UMBRAL_BLADE_POOF_TYPE = Particle.LARGE_SMOKE;
+        static { register("particles.umbral_blade_poof_type", UMBRAL_BLADE_POOF_TYPE, Particle.class, v -> UMBRAL_BLADE_POOF_TYPE = v, Config::loadParticle); }
+        public static int UMBRAL_BLADE_POOF_COUNT = 50;
+        static { register("particles.umbral_blade_poof_count", UMBRAL_BLADE_POOF_COUNT, Integer.class, v -> UMBRAL_BLADE_POOF_COUNT = v, ConfigurationSection::getInt); }
+        public static double UMBRAL_BLADE_POOF_SPEED = 0.001;
+        static { register("particles.umbral_blade_poof_speed", UMBRAL_BLADE_POOF_SPEED, Double.class, v -> UMBRAL_BLADE_POOF_SPEED = v, ConfigurationSection::getDouble); }
+
+        /** Soulfire draining/expending poof. */
+        public static Particle SOULFIRE_POOF_TYPE = Particle.SMOKE;
+        static { register("particles.soulfire_poof_type", SOULFIRE_POOF_TYPE, Particle.class, v -> SOULFIRE_POOF_TYPE = v, Config::loadParticle); }
+        public static int SOULFIRE_POOF_COUNT = 3;
+        static { register("particles.soulfire_poof_count", SOULFIRE_POOF_COUNT, Integer.class, v -> SOULFIRE_POOF_COUNT = v, ConfigurationSection::getInt); }
+        public static double SOULFIRE_POOF_SPEED = 0.0001;
+        static { register("particles.soulfire_poof_speed", SOULFIRE_POOF_SPEED, Double.class, v -> SOULFIRE_POOF_SPEED = v, ConfigurationSection::getDouble); }
+
+        /** General ambient smoke effect. */
+        public static Particle SMOKE_TYPE = Particle.SMOKE;
+        static { register("particles.smoke_type", SMOKE_TYPE, Particle.class, v -> SMOKE_TYPE = v, Config::loadParticle); }
+        public static int SMOKE_COUNT = 1;
+        static { register("particles.smoke_count", SMOKE_COUNT, Integer.class, v -> SMOKE_COUNT = v, ConfigurationSection::getInt); }
+        public static double SMOKE_SPEED = 0.0;
+        static { register("particles.smoke_speed", SMOKE_SPEED, Double.class, v -> SMOKE_SPEED = v, ConfigurationSection::getDouble); }
+
+        /** Umbral Flame trail (dust transition colors are fixed). */
+        public static Particle UMBRAL_FLAME_TYPE = Particle.DUST_COLOR_TRANSITION;
+        static { register("particles.umbral_flame_type", UMBRAL_FLAME_TYPE, Particle.class, v -> UMBRAL_FLAME_TYPE = v, Config::loadParticle); }
+        public static int UMBRAL_FLAME_COUNT = 3;
+        static { register("particles.umbral_flame_count", UMBRAL_FLAME_COUNT, Integer.class, v -> UMBRAL_FLAME_COUNT = v, ConfigurationSection::getInt); }
+
+        /** Thrown-item in-flight trail. */
+        public static Particle THROW_TRAIL_TYPE = Particle.CRIT;
+        static { register("particles.throw_trail_type", THROW_TRAIL_TYPE, Particle.class, v -> THROW_TRAIL_TYPE = v, Config::loadParticle); }
+        public static int THROW_TRAIL_COUNT = 1;
+        static { register("particles.throw_trail_count", THROW_TRAIL_COUNT, Integer.class, v -> THROW_TRAIL_COUNT = v, ConfigurationSection::getInt); }
+        public static double THROW_TRAIL_SPEED = 0.0;
+        static { register("particles.throw_trail_speed", THROW_TRAIL_SPEED, Double.class, v -> THROW_TRAIL_SPEED = v, ConfigurationSection::getDouble); }
+
+        /** Item throw break burst on impact. */
+        public static Particle ITEM_THROW_BREAK_TYPE = Particle.ENCHANTED_HIT;
+        static { register("particles.item_throw_break_type", ITEM_THROW_BREAK_TYPE, Particle.class, v -> ITEM_THROW_BREAK_TYPE = v, Config::loadParticle); }
+        public static int ITEM_THROW_BREAK_COUNT = 150;
+        static { register("particles.item_throw_break_count", ITEM_THROW_BREAK_COUNT, Integer.class, v -> ITEM_THROW_BREAK_COUNT = v, ConfigurationSection::getInt); }
+        public static double ITEM_THROW_BREAK_SPEED = -1.0;
+        static { register("particles.item_throw_break_speed", ITEM_THROW_BREAK_SPEED, Double.class, v -> ITEM_THROW_BREAK_SPEED = v, ConfigurationSection::getDouble); }
+
+        /** Toughness bar break burst. */
+        public static Particle TOUGH_BREAK_TYPE = Particle.ENCHANTED_HIT;
+        static { register("particles.tough_break_type", TOUGH_BREAK_TYPE, Particle.class, v -> TOUGH_BREAK_TYPE = v, Config::loadParticle); }
+        public static int TOUGH_BREAK_COUNT = 70;
+        static { register("particles.tough_break_count", TOUGH_BREAK_COUNT, Integer.class, v -> TOUGH_BREAK_COUNT = v, ConfigurationSection::getInt); }
+        public static double TOUGH_BREAK_SPEED = 0.0;
+        static { register("particles.tough_break_speed", TOUGH_BREAK_SPEED, Double.class, v -> TOUGH_BREAK_SPEED = v, ConfigurationSection::getDouble); }
+
+        /** Toughness recharge sparkle (enchant). */
+        public static Particle TOUGH_RECHARGE_1_TYPE = Particle.ENCHANT;
+        static { register("particles.tough_recharge_1_type", TOUGH_RECHARGE_1_TYPE, Particle.class, v -> TOUGH_RECHARGE_1_TYPE = v, Config::loadParticle); }
+        public static int TOUGH_RECHARGE_1_COUNT = 100;
+        static { register("particles.tough_recharge_1_count", TOUGH_RECHARGE_1_COUNT, Integer.class, v -> TOUGH_RECHARGE_1_COUNT = v, ConfigurationSection::getInt); }
+        public static double TOUGH_RECHARGE_1_SPEED = 0.1;
+        static { register("particles.tough_recharge_1_speed", TOUGH_RECHARGE_1_SPEED, Double.class, v -> TOUGH_RECHARGE_1_SPEED = v, ConfigurationSection::getDouble); }
+
+        /** Toughness recharge secondary (soul flame). */
+        public static Particle TOUGH_RECHARGE_2_TYPE = Particle.SOUL_FIRE_FLAME;
+        static { register("particles.tough_recharge_2_type", TOUGH_RECHARGE_2_TYPE, Particle.class, v -> TOUGH_RECHARGE_2_TYPE = v, Config::loadParticle); }
+        public static int TOUGH_RECHARGE_2_COUNT = 40;
+        static { register("particles.tough_recharge_2_count", TOUGH_RECHARGE_2_COUNT, Integer.class, v -> TOUGH_RECHARGE_2_COUNT = v, ConfigurationSection::getInt); }
+        public static double TOUGH_RECHARGE_2_SPEED = 0.75;
+        static { register("particles.tough_recharge_2_speed", TOUGH_RECHARGE_2_SPEED, Double.class, v -> TOUGH_RECHARGE_2_SPEED = v, ConfigurationSection::getDouble); }
+    }
+    //endregion
+
     public static class Menu {
         /** Material icon for the Umbral section button. */
         public static Material UMBRAL_ICON = Material.HEAVY_CORE;
@@ -3616,6 +3788,53 @@ public class Config {
         public static Material MATERIALS_ICON = Material.CHEST;
         static { register("menu.section_icons.materials", MATERIALS_ICON, Material.class,
             v -> MATERIALS_ICON = v, Config::loadMaterial); }
+
+        /** Material icon for the Particles section button. */
+        public static Material PARTICLES_ICON = Material.FIREWORK_STAR;
+        static { register("menu.section_icons.particles", PARTICLES_ICON, Material.class,
+            v -> PARTICLES_ICON = v, Config::loadMaterial); }
+
+        public static Material SECTION_ICON = Material.RECOVERY_COMPASS;
+        static { register("animation.section_icon", SECTION_ICON, Material.class,
+            v -> SECTION_ICON = v, Config::loadMaterial); }
+    }
+    //endregion
+
+    // ==============================================================================
+    //region Animation Configuration
+    // ==============================================================================
+    /**
+     * Animation configuration. Each named string entry maps a logical slot (e.g. {@code "main_menu"})
+     * to an animation key registered in {@code animations.yml}. The icon controls the section button
+     * in the config browser.
+     */
+    public static class Animation {
+
+        /** Timeout in seconds for each step of DEU animation conversion. */
+        public static int ANIMATION_CONVERSION_STEP_TIMEOUT_SECONDS = 120;
+
+        /**
+         * Animation key for the static menu scene.
+         * <p>
+         * Must be the <b>anim key</b> — the sub-entry key under {@code anims:} in
+         * {@code animations.yml} (e.g. {@code "gentle_v2_default"}), NOT the group/section key
+         * ({@code "gentle_v2"}). {@link btm.sword.system.scene.animation.AnimationRegistry#get}
+         * looks up by this key; the resulting AnimationDef then supplies both
+         * {@code groupTag} and {@code animTag} to the DEU controller.
+         * </p>
+         */
+        public static String STATIC_MENU_ANIMATION_KEY = "gentle_v2_default";
+
+        static {
+            register("animation.conversion_step_timeout_seconds",
+                ANIMATION_CONVERSION_STEP_TIMEOUT_SECONDS, Integer.class,
+                v -> ANIMATION_CONVERSION_STEP_TIMEOUT_SECONDS = v,
+                ConfigurationSection::getInt);
+            register("animation.static_menu_animation_key",
+                STATIC_MENU_ANIMATION_KEY, String.class,
+                v -> STATIC_MENU_ANIMATION_KEY = v,
+                ConfigurationSection::getString);
+        }
     }
     //endregion
 }

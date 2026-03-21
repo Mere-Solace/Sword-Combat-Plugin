@@ -15,7 +15,9 @@ import btm.sword.config.Config;
 import btm.sword.system.action.ActionCaster;
 import btm.sword.system.action.movement.MovementAction;
 import btm.sword.system.action.throwing.types.ThrownItem;
+import btm.sword.system.control.PredicateRunnablePair;
 import btm.sword.system.control.SwordScheduler;
+import btm.sword.system.control.TimeArbiter;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.base.CombatProfile;
 import btm.sword.system.entity.base.SwordEntity;
@@ -57,6 +59,7 @@ public abstract class Combatant extends SwordEntity {
 
     private UmbralBlade umbralBlade;
     private boolean startingBlade;
+    private boolean bladeEnabled = true;
 
     private ThrownItem thrownItem;
     private ItemStack offHandItemStackDuringThrow;
@@ -140,13 +143,14 @@ public abstract class Combatant extends SwordEntity {
     /**
      * Drives the per-tick lifecycle of this combatant's {@link UmbralBlade}.
      * <p>
+     * Skipped entirely when the blade has been deactivated via {@link #deactivateUmbralBlade()}.
      * If the blade has not been created yet and a creation attempt is not already in-flight,
      * calls {@link #setupUmbralBlade()} to begin the deferred spawn. Once the blade exists,
      * delegates to {@link UmbralBlade#onTick()}.
      * </p>
      */
     public void handleUmbralBladeTick() {
-        if (!self().isValid()) return;
+        if (!self().isValid() || !bladeEnabled) return;
 
         if (umbralBlade == null && !isStartingBlade()) {
             setupUmbralBlade();
@@ -165,23 +169,53 @@ public abstract class Combatant extends SwordEntity {
      */
     public void setupUmbralBlade() {
         setStartingBlade(true);
-        Combatant pass = this;
         SwordScheduler.runBukkitTaskLater(() -> {
-            if (umbralBlade != null) return;
+            if (!bladeEnabled || !self().isValid() || umbralBlade != null) {
+                setStartingBlade(false);
+                return;
+            }
             message("Starting Umbral Blade");
-            umbralBlade = new UmbralBlade(pass, ItemStack.of(Material.STONE_SWORD));
+            umbralBlade = new UmbralBlade(this, ItemStack.of(Material.STONE_SWORD));
             setStartingBlade(false);
             }, 200, TimeUnit.MILLISECONDS
         );
     }
 
     /**
-     * Disposes the active {@link UmbralBlade}, removing its display entity and releasing all resources.
-     * Does nothing if the blade has not been created.
+     * Permanently deactivates this combatant's {@link UmbralBlade}: disposes and removes the
+     * display entity from the world, and prevents {@link #handleUmbralBladeTick()} from
+     * spawning a new one. Call {@link #activateUmbralBlade()} to re-enable spawning.
+     */
+    public void deactivateUmbralBlade() {
+        bladeEnabled = false;
+        startingBlade = false;
+        if (umbralBlade != null) {
+            umbralBlade.dispose();
+            umbralBlade = null;
+        }
+    }
+
+    /**
+     * Re-enables blade spawning after a {@link #deactivateUmbralBlade()} call.
+     * The blade will be created on the next {@link #handleUmbralBladeTick()} via
+     * the normal deferred-spawn path.
+     */
+    public void activateUmbralBlade() {
+        bladeEnabled = true;
+    }
+
+    /**
+     * Disposes the active {@link UmbralBlade}, removing its display entity and releasing all
+     * resources. Does nothing if the blade has not been created.
+     * <p>
+     * Unlike {@link #deactivateUmbralBlade()}, this does not prevent the blade from being
+     * respawned on the next tick — use that method when permanent suppression is needed.
+     * </p>
      */
     public void endUmbralBlade() {
         if (umbralBlade == null) return;
         umbralBlade.dispose();
+        umbralBlade = null;
     }
 
     /**
@@ -191,7 +225,17 @@ public abstract class Combatant extends SwordEntity {
      * @param request the blade request to enqueue
      */
     public void requestUmbralBladeState(BladeRequest request) {
-        umbralBlade.request(request);
+        TimeArbiter.runFixedIterationTaskTimer(
+            null,
+            null,
+            0,25,160,
+            Combatant.class, "requestUmbralBladeState",
+            null,
+            new PredicateRunnablePair(
+                () -> umbralBlade != null,
+                () -> umbralBlade.request(request)
+            )
+        );
     }
 
     /**

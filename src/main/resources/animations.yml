@@ -1,0 +1,17 @@
+animations:
+  creep_test:
+    anims:
+      creep_test_default:
+        loop: true
+  player:
+    anims:
+      player_default:
+        loop: true
+  slash_test:
+    anims:
+      slash_test_default:
+        loop: true
+  gentle_v2:
+    anims:
+      gentle_v2_default:
+        loop: true

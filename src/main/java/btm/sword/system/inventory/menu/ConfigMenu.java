@@ -12,11 +12,11 @@ import org.bukkit.entity.Player;
 
 import btm.sword.config.Config;
 import btm.sword.config.ConfigManager;
-import btm.sword.utility.ChatInputCapture;
 import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.inventory.item.ForwardItem;
 import btm.sword.system.inventory.item.PreviousItem;
 import btm.sword.system.item.ItemStackBuilder;
+import btm.sword.utility.ChatInputCapture;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -64,6 +64,8 @@ public class ConfigMenu extends Menu {
         SECTION_MATERIALS.put("color",         () -> Config.Menu.COLOR_ICON);
         SECTION_MATERIALS.put("attack_curves", () -> Config.Menu.ATTACK_CURVES_ICON);
         SECTION_MATERIALS.put("materials",     () -> Config.Menu.MATERIALS_ICON);
+        SECTION_MATERIALS.put("particles",     () -> Config.Menu.PARTICLES_ICON);
+        SECTION_MATERIALS.put("animation",     () -> Config.Menu.SECTION_ICON);
     }
 
     public ConfigMenu(SwordPlayer player) {
@@ -95,6 +97,8 @@ public class ConfigMenu extends Menu {
                 new ItemStackBuilder(mat)
                     .name(Component.text(capitalize(sectionKey), NamedTextColor.GOLD, TextDecoration.BOLD))
                     .lore(List.of(Component.text(entries.size() + " entries", NamedTextColor.GRAY)))
+                    .stripAttributeModifiers()
+                    .hideAll()
                     .build(),
                 click -> new ConfigSectionMenu(swordPlayer, sectionKey, entries).open()
             ));

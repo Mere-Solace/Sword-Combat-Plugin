@@ -1,7 +1,6 @@
 package btm.sword.system.inventory.menu;
 
-import java.util.function.BooleanSupplier;
-import java.util.function.Consumer;
+import java.util.List;
 
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -10,28 +9,30 @@ import org.bukkit.inventory.ItemStack;
 import btm.sword.config.Config;
 import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.item.ItemStackBuilder;
-import btm.sword.utility.Debug;
+import btm.sword.system.scene.DEUAnimationController;
+import btm.sword.system.scene.animation.AnimationDef;
+import btm.sword.system.scene.animation.AnimationRegistry;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import xyz.xenondevs.invui.gui.Gui;
-import xyz.xenondevs.invui.item.Click;
 import xyz.xenondevs.invui.item.impl.SimpleItem;
 import xyz.xenondevs.invui.window.Window;
 
 /**
- * In-game developer menu providing runtime toggles for debug flags and
- * diagnostic utilities. Accessible from the {@link MainMenu} for op players.
+ * In-game developer menu providing access to diagnostic utilities, dev tools, and the
+ * {@link TogglesMenu} for runtime boolean flags. Accessible from the {@link MainMenu} for op players.
  * <p>
- * Toggles take effect immediately without a server restart. They are not
- * persisted — all flags reset to their defaults on server restart.
+ * All changes take effect immediately without a server restart and are not persisted across restarts.
  * </p>
- *
- * <p>Row 1 (verbose flags): Debug, Combat, Movement, Inventory, System, Umbral, Hostile</p>
- * <p>Row 2 (utilities): Special Item Checks, Reload Profile, Config Editor</p>
  */
 public class DevMenu extends Menu {
 
+    /**
+     * Creates a new DevMenu for the given player.
+     *
+     * @param player the player opening this menu
+     */
     public DevMenu(SwordPlayer player) {
         super(player);
     }
@@ -40,52 +41,12 @@ public class DevMenu extends Menu {
     public void open() {
         Player player = swordPlayer.player();
 
-        SimpleItem verboseDebug = toggle(
-            "Debug (general)",
-            () -> Config.Debug.LOGGING_VERBOSE_DEBUG,
-            () -> Config.Debug.LOGGING_VERBOSE_DEBUG = !Config.Debug.LOGGING_VERBOSE_DEBUG
-        );
-
-        SimpleItem verboseCombat = toggle(
-            "Combat",
-            () -> Config.Debug.LOGGING_VERBOSE_COMBAT,
-            () -> Config.Debug.LOGGING_VERBOSE_COMBAT = !Config.Debug.LOGGING_VERBOSE_COMBAT
-        );
-
-        SimpleItem verboseMovement = toggle(
-            "Movement",
-            () -> Config.Debug.LOGGING_VERBOSE_MOVEMENT,
-            () -> Config.Debug.LOGGING_VERBOSE_MOVEMENT = !Config.Debug.LOGGING_VERBOSE_MOVEMENT
-        );
-
-        SimpleItem verboseInventory = toggle(
-            "Inventory",
-            () -> Config.Debug.LOGGING_VERBOSE_INVENTORY,
-            () -> Config.Debug.LOGGING_VERBOSE_INVENTORY = !Config.Debug.LOGGING_VERBOSE_INVENTORY
-        );
-
-        SimpleItem verboseSystem = toggle(
-            "System (FSM / tasks)",
-            () -> Config.Debug.LOGGING_VERBOSE_SYSTEM,
-            () -> Config.Debug.LOGGING_VERBOSE_SYSTEM = !Config.Debug.LOGGING_VERBOSE_SYSTEM
-        );
-
-        SimpleItem verboseUmbral = toggle(
-            "Umbral",
-            () -> Config.Debug.LOGGING_VERBOSE_UMBRAL,
-            () -> Config.Debug.LOGGING_VERBOSE_UMBRAL = !Config.Debug.LOGGING_VERBOSE_UMBRAL
-        );
-
-        SimpleItem verboseHostile = toggle(
-            "Hostile",
-            () -> Config.Debug.LOGGING_VERBOSE_HOSTILE,
-            () -> Config.Debug.LOGGING_VERBOSE_HOSTILE = !Config.Debug.LOGGING_VERBOSE_HOSTILE
-        );
-
-        SimpleItem specialItemChecks = toggle(
-            "Special item checks",
-            () -> Debug.SPECIAL_ITEM_CHECKS_ENABLED,
-            () -> Debug.SPECIAL_ITEM_CHECKS_ENABLED = !Debug.SPECIAL_ITEM_CHECKS_ENABLED
+        SimpleItem toggles = new SimpleItem(
+            new ItemStackBuilder(Material.LEVER)
+                .name(Component.text("Toggles", NamedTextColor.YELLOW, TextDecoration.BOLD))
+                .lore(List.of(Component.text("Debug flags and world toggles", NamedTextColor.DARK_GRAY)))
+                .build(),
+            click -> new TogglesMenu(swordPlayer).open()
         );
 
         SimpleItem reloadProfile = new SimpleItem(
@@ -106,14 +67,33 @@ public class DevMenu extends Menu {
             click -> new ConfigMenu(swordPlayer).open()
         );
 
-        SimpleItem blockPlacing = toggle(
-            "Block placing",
-            () -> Config.World.BLOCK_INTERACTION_ALLOW_BLOCK_PLACING,
-            () -> Config.World.BLOCK_INTERACTION_ALLOW_BLOCK_PLACING = !Config.World.BLOCK_INTERACTION_ALLOW_BLOCK_PLACING
-        );
-
         SimpleItem woodenAxe = giveItem(Material.WOODEN_AXE, "Wooden Axe");
         SimpleItem witherSkeletonEgg = giveItem(Material.WITHER_SKELETON_SPAWN_EGG, "Wither Skeleton Spawn Egg");
+
+        SimpleItem creativeMode;
+        if (swordPlayer.isInCreativeDevMode()) {
+            creativeMode = new SimpleItem(
+                new ItemStackBuilder(Material.GRASS_BLOCK)
+                    .name(Component.text("Return to Survival", NamedTextColor.GREEN, TextDecoration.BOLD))
+                    .lore(List.of(Component.text("Restore inventory and re-enable special items", NamedTextColor.DARK_GRAY)))
+                    .build(),
+                click -> {
+                    swordPlayer.exitCreativeDevMode();
+                    new DevMenu(swordPlayer).open();
+                }
+            );
+        } else {
+            creativeMode = new SimpleItem(
+                new ItemStackBuilder(Material.DIAMOND_PICKAXE)
+                    .name(Component.text("Enter Creative Mode", NamedTextColor.AQUA, TextDecoration.BOLD))
+                    .lore(List.of(Component.text("Save inventory, disable special items, enable block placing", NamedTextColor.DARK_GRAY)))
+                    .build(),
+                click -> {
+                    swordPlayer.enterCreativeDevMode();
+                    new DevMenu(swordPlayer).open();
+                }
+            );
+        }
 
         SimpleItem creativeInventory = new SimpleItem(
             new ItemStackBuilder(Material.CHEST)
@@ -132,30 +112,48 @@ public class DevMenu extends Menu {
             }
         );
 
+        SimpleItem staticScene = new SimpleItem(
+            new ItemStackBuilder(Material.SPYGLASS)
+                .name(Component.text("Static Scene Test", NamedTextColor.LIGHT_PURPLE, TextDecoration.BOLD))
+                .lore(List.of(Component.text("Play: " + Config.Animation.STATIC_MENU_ANIMATION_KEY, NamedTextColor.DARK_GRAY)))
+                .build(),
+            click -> {
+                String animKey = Config.Animation.STATIC_MENU_ANIMATION_KEY;
+                AnimationDef def = AnimationRegistry.get(animKey).orElse(null);
+                if (def == null) {
+                    swordPlayer.message(Component.text("Animation not found: " + animKey, NamedTextColor.RED));
+                    return;
+                }
+                new DEUAnimationController(def, true, true).start(swordPlayer);
+            }
+        );
+
+        SimpleItem deuTools = new SimpleItem(
+            new ItemStackBuilder(Material.ITEM_FRAME)
+                .name(Component.text("DisplayEntityUtils", NamedTextColor.LIGHT_PURPLE, TextDecoration.BOLD))
+                .lore(List.of(Component.text("Animations, groups, despawn tools", NamedTextColor.DARK_GRAY)))
+                .build(),
+            click -> new DEUBDEMenu(swordPlayer).open()
+        );
+
         Gui gui = Gui.normal()
             .setStructure(
                 "# # # # # # # # #",
-                "J . R I | D H E F",
-                ". . . . | . B C L",
-                "K W S . | . . . .",
+                "# J N S . . . C #",
+                "# . . . . . . E #",
+                "# R I . T . M W #",
                 "# # # < . > # # #")
             .addIngredient('#', BORDER)
-            .addIngredient('|', WALL)
-            .addIngredient('A', verboseDebug)
-            .addIngredient('B', verboseCombat)
-            .addIngredient('C', verboseMovement)
-            .addIngredient('D', verboseInventory)
-            .addIngredient('E', verboseSystem)
-            .addIngredient('F', verboseUmbral)
-            .addIngredient('G', verboseHostile)
-            .addIngredient('H', specialItemChecks)
-            .addIngredient('I', reloadProfile)
-            .addIngredient('J', configEditor)
-            .addIngredient('L', blockPlacing)
+            .addIngredient('T', toggles)
             .addIngredient('R', reloadInventoryButtons)
+            .addIngredient('J', configEditor)
+            .addIngredient('N', deuTools)
+            .addIngredient('S', staticScene)
+            .addIngredient('C', creativeInventory)
             .addIngredient('W', woodenAxe)
-            .addIngredient('S', witherSkeletonEgg)
-            .addIngredient('K', creativeInventory)
+            .addIngredient('E', witherSkeletonEgg)
+            .addIngredient('I', reloadProfile)
+            .addIngredient('M', creativeMode)
             .addIngredient('<', generatePreviousButtonOrDefault())
             .addIngredient('>', generateForwardPreviousButtonOrDefault())
             .build();
@@ -183,40 +181,5 @@ public class DevMenu extends Menu {
                 .build(),
             click -> click.getPlayer().getInventory().addItem(new ItemStack(material))
         );
-    }
-
-    /**
-     * Builds a toggle {@link SimpleItem} that flips a boolean flag on click and
-     * reopens this menu to reflect the updated state.
-     *
-     * @param label  display label shown in the item name
-     * @param getter reads the current flag value
-     * @param toggle flips the flag
-     * @return a {@link SimpleItem} representing the toggle button
-     */
-    private SimpleItem toggle(String label, BooleanSupplier getter, Runnable toggle) {
-        Consumer<Click> onClick = click -> {
-            toggle.run();
-            this.open();
-        };
-
-        if (getter.getAsBoolean()) {
-            return new SimpleItem(
-                new ItemStackBuilder(Material.LIME_DYE)
-                    .name(Component.text(label + ": ", NamedTextColor.GRAY)
-                        .append(Component.text("ON", NamedTextColor.GREEN, TextDecoration.BOLD)))
-                    .build(),
-                onClick
-            );
-        }
-        else {
-            return new SimpleItem(
-                new ItemStackBuilder(Material.GRAY_DYE)
-                    .name(Component.text(label + ": ", NamedTextColor.GRAY)
-                        .append(Component.text("OFF", NamedTextColor.RED, TextDecoration.BOLD)))
-                    .build(),
-                onClick
-            );
-        }
     }
 }

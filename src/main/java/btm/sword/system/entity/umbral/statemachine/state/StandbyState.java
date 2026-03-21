@@ -43,7 +43,7 @@ public class StandbyState extends UmbralStateFacade {
             followTask.cancel();
     }
 
-    // TODO: #240 - Move idle movement into this onTick method
+    // TODO: #240 - Move idle movement into this onTick method ?
     @Override
     public void onTick(UmbralBlade blade) {
         // Idle movement handled by BukkitRunnable; tick may monitor attack triggers

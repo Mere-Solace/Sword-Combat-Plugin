@@ -27,7 +27,7 @@ import btm.sword.utility.display.ParticleWrapper;
  * @param pitchSupplier  Supplier to get the pitch from Config
  */
 public record SoundWrapper(
-    Supplier<SoundType> soundSupplier,
+    Supplier<SwordSoundType> soundSupplier,
     Supplier<Float> volumeSupplier,
     Supplier<Float> pitchSupplier) {
 
@@ -49,7 +49,7 @@ public record SoundWrapper(
      * Plays the sound effect at the specified entity's location.
      * <p>
      * Fetches sound properties (type, volume, pitch) from the configuration system
-     * at call time, then delegates to {@link SoundUtil#playSound(LivingEntity, SoundType, float, float)}.
+     * at call time, then delegates to {@link SoundUtil#playSound(LivingEntity, SwordSoundType, float, float)}.
      * </p>
      *
      * @param entity the entity to play the sound at

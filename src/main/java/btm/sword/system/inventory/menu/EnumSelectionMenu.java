@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.bukkit.Material;
+import org.bukkit.Particle;
 import org.bukkit.Registry;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
@@ -19,10 +20,10 @@ import btm.sword.config.ConfigManager;
 import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.inventory.item.ForwardItem;
 import btm.sword.system.inventory.item.PreviousItem;
-import btm.sword.utility.ChatInputCapture;
 import btm.sword.system.item.ItemStackBuilder;
-import btm.sword.utility.sound.SoundType;
+import btm.sword.utility.ChatInputCapture;
 import btm.sword.utility.sound.SoundUtil;
+import btm.sword.utility.sound.SwordSoundType;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import xyz.xenondevs.invui.gui.PagedGui;
@@ -40,7 +41,7 @@ import xyz.xenondevs.invui.window.Window;
  * All constants of the entry's enum type are shown as individual items.
  * The currently selected value is highlighted with a green checkmark prefix.
  * Left-click selects a value and returns to the parent menu. For
- * {@link SoundType} entries the browser first shows a prefix category page
+ * {@link SwordSoundType} entries the browser first shows a prefix category page
  * (AMBIENT, BLOCK, ENTITY, …); right-clicking a sound item previews it.
  * </p>
  */
@@ -54,7 +55,7 @@ public class EnumSelectionMenu extends Menu {
     private final String filter;
 
     /**
-     * Opens the top-level browser for the entry's enum type. For {@link SoundType}
+     * Opens the top-level browser for the entry's enum type. For {@link SwordSoundType}
      * this shows prefix categories; for all other enums it shows a flat value list.
      */
     public EnumSelectionMenu(SwordPlayer player, Config.ConfigEntry<?> entry, Runnable reopenParent) {
@@ -72,7 +73,7 @@ public class EnumSelectionMenu extends Menu {
 
     @Override
     public void open() {
-        if (entry.type == SoundType.class && soundPrefix == null) {
+        if (entry.type == SwordSoundType.class && soundPrefix == null) {
             openSoundPrefixBrowser();
         } else {
             openValueList();
@@ -87,22 +88,22 @@ public class EnumSelectionMenu extends Menu {
         Player player = swordPlayer.player();
 
         // Group SoundType constants by their first underscore-delimited segment
-        Map<String, List<SoundType>> byPrefix = new LinkedHashMap<>();
-        for (SoundType st : SoundType.values()) {
+        Map<String, List<SwordSoundType>> byPrefix = new LinkedHashMap<>();
+        for (SwordSoundType st : SwordSoundType.values()) {
             String prefix = prefixOf(st.name());
             byPrefix.computeIfAbsent(prefix, k -> new ArrayList<>()).add(st);
         }
 
-        Map<String, List<SoundType>> displayPrefixes = filter == null ? byPrefix
+        Map<String, List<SwordSoundType>> displayPrefixes = filter == null ? byPrefix
             : byPrefix.entrySet().stream()
                 .filter(e -> e.getKey().toLowerCase().contains(filter))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue,
                     (a, b) -> a, LinkedHashMap::new));
 
         List<Item> prefixItems = new ArrayList<>();
-        for (Map.Entry<String, List<SoundType>> e : displayPrefixes.entrySet()) {
+        for (Map.Entry<String, List<SwordSoundType>> e : displayPrefixes.entrySet()) {
             String prefix = e.getKey();
-            List<SoundType> sounds = e.getValue();
+            List<SwordSoundType> sounds = e.getValue();
             Material mat = soundPrefixMaterial(prefix);
 
             prefixItems.add(new SimpleItem(
@@ -184,7 +185,7 @@ public class EnumSelectionMenu extends Menu {
         Player player = swordPlayer.player();
         FileConfiguration config = ConfigManager.getInstance().getConfig();
         Class<?> type = entry.type;
-        boolean isSoundType = type == SoundType.class;
+        boolean isSoundType = type == SwordSoundType.class;
 
         // Determine currently stored value name for selection highlight
         String stored = config.getString(entry.path);
@@ -314,7 +315,7 @@ public class EnumSelectionMenu extends Menu {
             @SuppressWarnings({"unchecked", "rawtypes"})
             public void handleClick(ClickType clickType, Player p, InventoryClickEvent event) {
                 if (isSoundType && clickType == ClickType.RIGHT) {
-                    SoundUtil.playSound(p, (SoundType) value, 1.0f, 1.0f);
+                    SoundUtil.playSound(p, (SwordSoundType) value, 1.0f, 1.0f);
                     return;
                 }
                 ConfigManager.getInstance().setValue((Config.ConfigEntry) entry, value);
@@ -358,21 +359,51 @@ public class EnumSelectionMenu extends Menu {
 
     /**
      * Picks the display material for a given enum constant.
-     * {@link Material} constants use themselves; {@link SoundType} dispatches to
-     * {@link #soundTypeMaterial(SoundType)} for prefix-aware matching; everything else uses paper.
+     * {@link Material} constants use themselves; {@link SwordSoundType} dispatches to
+     * {@link #soundTypeMaterial(SwordSoundType)} for prefix-aware matching; {@link Particle}
+     * constants use {@link #particleMaterial(Particle)} for keyword-based matching;
+     * everything else uses paper.
      */
     private static Material resolveItemMaterial(Enum<?> value) {
         if (value instanceof Material m) return m.isItem() && !m.isAir() ? m : Material.PAPER;
-        if (value instanceof SoundType st) return soundTypeMaterial(st);
+        if (value instanceof SwordSoundType st) return soundTypeMaterial(st);
+        if (value instanceof Particle p) return particleMaterial(p);
         return Material.PAPER;
     }
 
     /**
-     * Resolves a display {@link Material} for a {@link SoundType} constant by inspecting
+     * Maps a {@link Particle} constant to a representative display {@link Material} by
+     * inspecting its name for common keywords.
+     */
+    private static Material particleMaterial(Particle particle) {
+        String name = particle.name();
+        if (name.contains("FLAME") || name.contains("FIRE")) return Material.FLINT_AND_STEEL;
+        if (name.contains("SMOKE") || name.contains("CLOUD") || name.contains("POOF")) return Material.COAL;
+        if (name.contains("CRIT") || name.contains("ENCHANTED_HIT")) return Material.DIAMOND_SWORD;
+        if (name.contains("ENCHANT")) return Material.ENCHANTED_BOOK;
+        if (name.contains("BLOCK") || name.contains("DUST_PILLAR")) return Material.STONE;
+        if (name.contains("DUST") || name.contains("REDSTONE")) return Material.REDSTONE;
+        if (name.contains("DRIP") || name.contains("FALLING")) return Material.WATER_BUCKET;
+        if (name.contains("LAVA")) return Material.LAVA_BUCKET;
+        if (name.contains("SOUL")) return Material.SOUL_SAND;
+        if (name.contains("GUST") || name.contains("WIND")) return Material.FEATHER;
+        if (name.contains("PORTAL")) return Material.ENDER_EYE;
+        if (name.contains("HEART")) return Material.PINK_DYE;
+        if (name.contains("VILLAGER")) return Material.EMERALD;
+        if (name.contains("TRIAL")) return Material.TRIAL_KEY;
+        if (name.contains("SONIC")) return Material.SCULK_SENSOR;
+        if (name.contains("ELECTRIC") || name.contains("SPARK")) return Material.LIGHTNING_ROD;
+        if (name.contains("SPORE")) return Material.SPORE_BLOSSOM;
+        if (name.contains("CHERRY")) return Material.CHERRY_LEAVES;
+        return Material.FIREWORK_STAR;
+    }
+
+    /**
+     * Resolves a display {@link Material} for a {@link SwordSoundType} constant by inspecting
      * its name prefix. BLOCK_ sounds attempt to match a block material, ENTITY_ sounds
      * attempt a spawn egg, AMBIENT_ sounds map to biome-representative blocks.
      */
-    private static Material soundTypeMaterial(SoundType st) {
+    private static Material soundTypeMaterial(SwordSoundType st) {
         String name = st.name();
         if (name.startsWith("BLOCK_")) return blockSoundMaterial(name);
         if (name.startsWith("ENTITY_")) return entitySoundMaterial(name);

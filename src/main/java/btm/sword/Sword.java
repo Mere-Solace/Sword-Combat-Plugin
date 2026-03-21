@@ -7,6 +7,9 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
 
+import com.comphenix.protocol.ProtocolLibrary;
+import com.comphenix.protocol.ProtocolManager;
+
 import btm.sword.commands.SwordCommands;
 import btm.sword.config.ConfigManager;
 import btm.sword.listeners.EntityListener;
@@ -14,11 +17,13 @@ import btm.sword.listeners.InputListener;
 import btm.sword.listeners.PlayerListener;
 import btm.sword.listeners.SystemListener;
 import btm.sword.listeners.WorldListener;
+import btm.sword.listeners.packet.MovementListener;
 import btm.sword.system.action.throwing.InteractiveItemArbiter;
 import btm.sword.system.action.throwing.ProjectileManager;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.inventory.InventoryMenuManager;
 import btm.sword.system.playerdata.PlayerDataManager;
+import btm.sword.system.scene.animation.AnimationRegistry;
 import io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import lombok.Getter;
@@ -29,6 +34,8 @@ public final class Sword extends JavaPlugin {
     private static Sword instance;
     @Getter
     private static ScheduledExecutorService scheduler;
+    @Getter
+    private static ProtocolManager protocolManager;
 
     @Override
     public void onEnable() {
@@ -48,6 +55,9 @@ public final class Sword extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new WorldListener(), this);
         getServer().getPluginManager().registerEvents(new SystemListener(), this);
 
+        protocolManager = ProtocolLibrary.getProtocolManager();
+        protocolManager.addPacketListener(new MovementListener());
+
         // Register commands using Paper's Brigadier lifecycle system
         LifecycleEventManager<@NotNull Plugin> manager = this.getLifecycleManager();
         manager.registerEventHandler(LifecycleEvents.COMMANDS, event -> {
@@ -61,6 +71,8 @@ public final class Sword extends JavaPlugin {
         ProjectileManager.startTicking();
 
         InventoryMenuManager.registerAll();
+
+        AnimationRegistry.initialize(this);
 
         PlayerDataManager.initialize();
 

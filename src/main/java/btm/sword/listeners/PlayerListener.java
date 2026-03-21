@@ -32,6 +32,7 @@ import btm.sword.config.Config;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.impl.SwordPlayer;
+import btm.sword.system.entity.umbral.UmbralBlade;
 import btm.sword.system.entity.umbral.input.BladeRequest;
 import btm.sword.system.item.special.NonMovableItem;
 import btm.sword.utility.ChatInputCapture;
@@ -132,7 +133,10 @@ public class PlayerListener implements Listener {
     public void onItemPickup(EntityPickupItemEvent event) {
         SwordEntity e = SwordEntityArbiter.getOrAdd(event.getEntity());
 
-        if (!e.isAbleToPickup()) event.setCancelled(true);
+        if (!e.isAbleToPickup()) {
+            event.setCancelled(true);
+            return;
+        }
 
         if (e.isMainHandEmpty()) {
             event.getItem().remove();
@@ -217,8 +221,13 @@ public class PlayerListener implements Listener {
      */
     @EventHandler
     public void inventoryInteractEvent(InventoryClickEvent event) {
-        SwordPlayer sp = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getViewers().getFirst());
-
+        SwordPlayer sp;
+        try {
+            sp = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getViewers().getFirst());
+        } catch (Exception e) {
+            e.fillInStackTrace();
+            return;
+        }
         Debug.sendInventoryClickDebugMessage(event);
 
         if (sp.handleInventoryInput(event)) {
@@ -368,6 +377,12 @@ public class PlayerListener implements Listener {
     @EventHandler
     public void gameChangeEvent(PlayerGameModeChangeEvent event) {
         SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer());
+
+        // TODO: #233 - Find a better way to handle display entity orphaning on game mode change
+        UmbralBlade blade = swordPlayer.getUmbralBlade();
+        if (blade != null && blade.getDisplay() != null && blade.getDisplay().isValid()) {
+            blade.getDisplay().remove();
+        }
 
         if (event.getNewGameMode().equals(GameMode.SPECTATOR)) {
             swordPlayer.requestUmbralBladeState(BladeRequest.DEACTIVATE);

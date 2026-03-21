@@ -8,9 +8,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
 import btm.sword.system.entity.impl.SwordPlayer;
+import btm.sword.system.inventory.menu.AnimationBrowserMenu;
 import btm.sword.system.inventory.menu.CharacterMenu;
 import btm.sword.system.inventory.menu.ConfigMenu;
 import btm.sword.system.inventory.menu.CreativeInventoryMenu;
+import btm.sword.system.inventory.menu.DEUBDEMenu;
+import btm.sword.system.inventory.menu.DeuGroupBrowserMenu;
 import btm.sword.system.inventory.menu.DevMenu;
 import btm.sword.system.inventory.menu.DevStatEditorMenu;
 import btm.sword.system.inventory.menu.MainMenu;
@@ -32,6 +35,9 @@ public class InventoryMenuManager {
         register(DevStatEditorMenu.class, DevStatEditorMenu::new);
         register(ConfigMenu.class, ConfigMenu::new);
         register(CreativeInventoryMenu.class, CreativeInventoryMenu::new);
+        register(AnimationBrowserMenu.class, AnimationBrowserMenu::new);
+        register(DEUBDEMenu.class, DEUBDEMenu::new);
+        register(DeuGroupBrowserMenu.class, DeuGroupBrowserMenu::new);
         // SkillSelectionMenu is constructed with a slot index and is opened directly
     }
 

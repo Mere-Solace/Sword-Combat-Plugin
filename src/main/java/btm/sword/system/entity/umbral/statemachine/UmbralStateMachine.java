@@ -1,8 +1,13 @@
 package btm.sword.system.entity.umbral.statemachine;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Consumer;
+
 import org.bukkit.Color;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
 
 import btm.sword.config.Config;
@@ -24,6 +29,7 @@ import btm.sword.system.entity.umbral.statemachine.state.SheathedState;
 import btm.sword.system.entity.umbral.statemachine.state.StandbyState;
 import btm.sword.system.entity.umbral.statemachine.state.WaitingState;
 import btm.sword.system.entity.umbral.statemachine.state.WieldState;
+import btm.sword.system.item.KeyRegistry;
 import btm.sword.utility.Debug;
 import btm.sword.utility.Prefab;
 import btm.sword.utility.math.VectorUtil;
@@ -39,8 +45,24 @@ public class UmbralStateMachine extends StateMachine<UmbralBlade> {
     @Setter
     private boolean deactivated;
 
+    private final List<Consumer<UmbralBlade>> recoveryConditions = new ArrayList<>();
+    private int recoveryTick = 0;
+    private static final int RECOVERY_CHECK_INTERVAL = 20;
+
     public UmbralStateMachine(UmbralBlade context, State<UmbralBlade> initialState) {
         super(context, initialState);
+    }
+
+    /**
+     * Registers a recovery condition that is evaluated every {@value RECOVERY_CHECK_INTERVAL} ticks
+     * (approximately once per second). Each condition receives the {@link UmbralBlade} and should
+     * check an invariant — if violated, it is responsible for applying the corrective action directly.
+     * Conditions only run when no FSM transition fired on the current tick.
+     *
+     * @param condition the check-and-fix consumer to register
+     */
+    public void addRecoveryCondition(Consumer<UmbralBlade> condition) {
+        recoveryConditions.add(condition);
     }
 
     /**
@@ -412,6 +434,39 @@ public class UmbralStateMachine extends StateMachine<UmbralBlade> {
             b -> b.isRequestedAndActive(BladeRequest.STANDBY),
             b -> {}
         ));
+
+        // =====================================================================
+        // RECOVERY CONDITIONS — checked every ~1 second when no transition fires
+        // =====================================================================
+
+        // Slot-0 form: WieldState expects the blade item; all other active states expect the link.
+        // Inactive and RecoverState are excluded — they don't own slot 0.
+        addRecoveryCondition(blade -> {
+            if (currentState instanceof InactiveState || currentState instanceof RecoverState) return;
+            ItemStack slot0 = blade.getThrower().getItemStackInHand(true);
+
+            if (currentState instanceof WieldState) {
+                if (slot0 == null || !KeyRegistry.hasKey(slot0, KeyRegistry.UMBRAL_BLADE_KEY)) {
+                    blade.getThrower().setItemInInventory(0, blade.getBlade());
+                }
+            } else {
+                if (slot0 == null || !KeyRegistry.hasKey(slot0, KeyRegistry.SOUL_LINK_KEY)) {
+                    blade.getThrower().setItemInInventory(0, blade.getLink());
+                }
+            }
+        });
+
+        // Display viewRange form: Wield and Inactive hide the display; all other active states show it.
+        addRecoveryCondition(blade -> {
+            if (blade.getDisplay() == null) return;
+            boolean shouldBeHidden = currentState instanceof WieldState || currentState instanceof InactiveState;
+            float currentRange = blade.getDisplay().getViewRange();
+            if (shouldBeHidden && currentRange != 0f) {
+                blade.getDisplay().setViewRange(0f);
+            } else if (!shouldBeHidden && !(currentState instanceof RecoverState) && currentRange == 0f) {
+                blade.getDisplay().setViewRange(300f);
+            }
+        });
     }
 
     @Override
@@ -436,6 +491,13 @@ public class UmbralStateMachine extends StateMachine<UmbralBlade> {
                 }
                 return;
             }
+        }
+
+        // No transition fired this tick — run periodic form/recovery checks.
+        // Skipped entirely when special item checks are disabled (e.g. creative dev mode).
+        if (Debug.SPECIAL_ITEM_CHECKS_ENABLED && ++recoveryTick >= RECOVERY_CHECK_INTERVAL) {
+            recoveryTick = 0;
+            recoveryConditions.forEach(c -> c.accept(context));
         }
     }
 

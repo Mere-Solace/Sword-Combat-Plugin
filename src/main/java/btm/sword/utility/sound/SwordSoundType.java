@@ -5,7 +5,7 @@ import org.jetbrains.annotations.NotNull;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.sound.Sound;
 
-public enum SoundType implements Sound.Type {
+public enum SwordSoundType implements Sound.Type {
     //#region Custom Sounds:
     RANDOM_BANE_SLASH("random.baneslash"),
     RANDOM_CLASH("random.clash"),
@@ -1204,7 +1204,7 @@ public enum SoundType implements Sound.Type {
 
     private final Key key;
 
-    SoundType(String keyString) {
+    SwordSoundType(String keyString) {
         this.key = Key.key(keyString);
     }
 

@@ -7,7 +7,7 @@ import btm.sword.config.Config;
 import net.kyori.adventure.sound.Sound;
 
 public class SoundUtil {
-    public static void playSound(LivingEntity target, SoundType type, float volume, float pitch) {
+    public static void playSound(LivingEntity target, SwordSoundType type, float volume, float pitch) {
         if (!Config.Audio.SOUNDS_ENABLED) return;
 
         try {
