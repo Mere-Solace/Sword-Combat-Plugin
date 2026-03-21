@@ -7,8 +7,6 @@ import java.util.function.Consumer;
 import org.bukkit.Color;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
-import org.bukkit.entity.Player;
-import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
 
@@ -445,15 +443,7 @@ public class UmbralStateMachine extends StateMachine<UmbralBlade> {
         // Inactive and RecoverState are excluded — they don't own slot 0.
         addRecoveryCondition(blade -> {
             if (currentState instanceof InactiveState || currentState instanceof RecoverState) return;
-            ItemStack slot0;
-            if (blade.getThrower().self() instanceof Player p) {
-                slot0 = p.getInventory().getItem(0);
-            }
-            else {
-                EntityEquipment equipment = blade.getThrower().self().getEquipment();
-                if (equipment == null) return;
-                slot0 = equipment.getItemInMainHand();
-            }
+            ItemStack slot0 = blade.getThrower().getItemStackInHand(true);
 
             if (currentState instanceof WieldState) {
                 if (slot0 == null || !KeyRegistry.hasKey(slot0, KeyRegistry.UMBRAL_BLADE_KEY)) {

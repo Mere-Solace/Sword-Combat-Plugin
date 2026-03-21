@@ -612,8 +612,9 @@ public class SwordPlayer extends Combatant {
             savedOffhand = player.getInventory().getItem(40);
 
             // Clear hotbar (0–8); glass panes in main inventory (9–35) with menu button in center (22)
-            ItemStack glass = new ItemStackBuilder(MainMenu.WALL.getItemProvider().get().getType())
-                .name(MainMenu.WALL.getItemProvider().get().displayName())
+            ItemStack wallItem = MainMenu.WALL.getItemProvider().get();
+            ItemStack glass = new ItemStackBuilder(wallItem.getType())
+                .name(wallItem.displayName())
                 .hideAll()
                 .tag(KeyRegistry.NON_MOVABLE_KEY, PersistentDataType.BOOLEAN, true)
                 .build();

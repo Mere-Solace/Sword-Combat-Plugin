@@ -377,9 +377,11 @@ public class PlayerListener implements Listener {
     public void gameChangeEvent(PlayerGameModeChangeEvent event) {
         SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer());
 
-        // Remove each time game mode is changed to prevent state change issues...
-        // TODO: Find a better way?
-        swordPlayer.getUmbralBlade().getDisplay().remove();
+        // TODO: #233 - Find a better way to handle display entity orphaning on game mode change
+        UmbralBlade blade = swordPlayer.getUmbralBlade();
+        if (blade != null && blade.getDisplay() != null && blade.getDisplay().isValid()) {
+            blade.getDisplay().remove();
+        }
 
         if (event.getNewGameMode().equals(GameMode.SPECTATOR)) {
             swordPlayer.requestUmbralBladeState(BladeRequest.DEACTIVATE);
