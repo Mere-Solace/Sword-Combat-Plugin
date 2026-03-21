@@ -388,6 +388,13 @@ menu:
     umbralblade: STONE_SWORD
 scene:
   scene_on_every_join: true
+  safe_anchor_world: world
+  safe_anchor_x: 0.0
+  safe_anchor_y: 500.0
+  safe_anchor_z: 0.0
+  camera_distance: 3.0
+  camera_height: 1.0
+  fake_player_distance: 10.0
 animation:
   static_menu_animation_key: gentle_v2_default
   conversion_step_timeout_seconds: 360
