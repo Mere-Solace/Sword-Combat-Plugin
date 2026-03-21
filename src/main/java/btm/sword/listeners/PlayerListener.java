@@ -25,6 +25,7 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.persistence.PersistentDataType;
 import org.intellij.lang.annotations.Subst;
 
 import btm.sword.Sword;
@@ -34,7 +35,10 @@ import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.entity.umbral.UmbralBlade;
 import btm.sword.system.entity.umbral.input.BladeRequest;
+import btm.sword.system.item.KeyRegistry;
+import btm.sword.system.item.material.MaterialType;
 import btm.sword.system.item.special.NonMovableItem;
+import btm.sword.system.playerdata.PlayerStorage;
 import btm.sword.utility.ChatInputCapture;
 import btm.sword.utility.Debug;
 import io.papermc.paper.event.player.AsyncChatEvent;
@@ -136,6 +140,49 @@ public class PlayerListener implements Listener {
         if (!e.isAbleToPickup()) {
             event.setCancelled(true);
             return;
+        }
+
+        // Auto-pickup routing for tagged economy items (players only).
+        if (e instanceof SwordPlayer sp) {
+            ItemStack picked = event.getItem().getItemStack();
+            PlayerStorage storage = sp.getPlayerStorage();
+
+            MaterialType materialType = MaterialType.fromItem(picked);
+            if (materialType != null && storage.isAutoPickupMaterials()) {
+                int available = SwordPlayer.MATERIAL_SLOTS_TOTAL - storage.getTotalMaterialSlots();
+                int toStore = Math.min(picked.getAmount(), available);
+                if (toStore > 0) {
+                    storage.addMaterial(materialType, toStore);
+                    sp.player().sendActionBar(
+                        Component.text("[+", NamedTextColor.GREEN)
+                            .append(Component.text(toStore, Config.SwordColor.TEXT_COOL))
+                            .append(Component.text(" ", NamedTextColor.GREEN))
+                            .append(materialType.displayName())
+                            .append(Component.text("] → Material Pouch", NamedTextColor.GREEN))
+                    );
+                    if (toStore >= picked.getAmount()) {
+                        event.setCancelled(true);
+                        event.getItem().remove();
+                    } else {
+                        picked.setAmount(picked.getAmount() - toStore);
+                    }
+                    return;
+                }
+            }
+
+            Integer creditValue = KeyRegistry.getKeyField(picked, KeyRegistry.CREDIT_ITEM_KEY, PersistentDataType.INTEGER);
+            if (creditValue != null && storage.isAutoPickupCredits()) {
+                int total = creditValue * picked.getAmount();
+                storage.addCredits(total);
+                sp.player().sendActionBar(
+                    Component.text("[+", NamedTextColor.GREEN)
+                        .append(Component.text(total + " ✦", Config.SwordColor.TEXT_COOL))
+                        .append(Component.text("] → Currency Pouch", NamedTextColor.GREEN))
+                );
+                event.setCancelled(true);
+                event.getItem().remove();
+                return;
+            }
         }
 
         if (e.isMainHandEmpty()) {

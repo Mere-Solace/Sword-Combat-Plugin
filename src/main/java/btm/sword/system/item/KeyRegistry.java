@@ -148,6 +148,28 @@ public final class KeyRegistry {
     /** Cached {@link NamespacedKey} for {@link #MODEL_ID}. */
     public static final NamespacedKey MODEL_ID_KEY = key(MODEL_ID);
 
+
+    /**
+     * Persistent data key marking an {@link org.bukkit.inventory.ItemStack} as a
+     * {@link btm.sword.system.item.material.MaterialType} world item.
+     * Value is the {@link btm.sword.system.item.material.MaterialType#id()} string.
+     */
+    public static final String MATERIAL_TYPE = "material_type";
+
+    /** Cached {@link NamespacedKey} for {@link #MATERIAL_TYPE}. */
+    public static final NamespacedKey MATERIAL_TYPE_KEY = key(MATERIAL_TYPE);
+
+
+    /**
+     * Persistent data key marking an {@link org.bukkit.inventory.ItemStack} as a
+     * physical steel-credit coin item for world pickup.
+     * Value is the integer face-value of the coin stack.
+     */
+    public static final String CREDIT_ITEM = "credit_item";
+
+    /** Cached {@link NamespacedKey} for {@link #CREDIT_ITEM}. */
+    public static final NamespacedKey CREDIT_ITEM_KEY = key(CREDIT_ITEM);
+
     // ------------------------------
     //  Utility Methods
     // ------------------------------

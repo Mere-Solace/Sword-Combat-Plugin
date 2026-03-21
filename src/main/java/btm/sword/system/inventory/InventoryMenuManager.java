@@ -9,14 +9,17 @@ import java.util.function.Function;
 
 import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.inventory.menu.AnimationBrowserMenu;
+import btm.sword.system.inventory.menu.ArtifactPouchMenu;
 import btm.sword.system.inventory.menu.CharacterMenu;
 import btm.sword.system.inventory.menu.ConfigMenu;
 import btm.sword.system.inventory.menu.CreativeInventoryMenu;
+import btm.sword.system.inventory.menu.CurrencyMenu;
 import btm.sword.system.inventory.menu.DEUBDEMenu;
 import btm.sword.system.inventory.menu.DeuGroupBrowserMenu;
 import btm.sword.system.inventory.menu.DevMenu;
 import btm.sword.system.inventory.menu.DevStatEditorMenu;
 import btm.sword.system.inventory.menu.MainMenu;
+import btm.sword.system.inventory.menu.MaterialPouchMenu;
 import btm.sword.system.inventory.menu.Menu;
 import btm.sword.system.inventory.menu.MovesetMenu;
 
@@ -38,6 +41,9 @@ public class InventoryMenuManager {
         register(AnimationBrowserMenu.class, AnimationBrowserMenu::new);
         register(DEUBDEMenu.class, DEUBDEMenu::new);
         register(DeuGroupBrowserMenu.class, DeuGroupBrowserMenu::new);
+        register(MaterialPouchMenu.class, MaterialPouchMenu::new);
+        register(CurrencyMenu.class, CurrencyMenu::new);
+        register(ArtifactPouchMenu.class, ArtifactPouchMenu::new);
         // SkillSelectionMenu is constructed with a slot index and is opened directly
     }
 
