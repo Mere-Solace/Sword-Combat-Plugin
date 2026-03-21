@@ -13,6 +13,7 @@ import org.bukkit.entity.Player;
 import btm.sword.config.Config;
 import btm.sword.config.ConfigManager;
 import btm.sword.system.entity.impl.SwordPlayer;
+import btm.sword.system.inventory.InventoryMenuManager;
 import btm.sword.system.inventory.item.ForwardItem;
 import btm.sword.system.inventory.item.PreviousItem;
 import btm.sword.system.item.ItemStackBuilder;
@@ -64,6 +65,8 @@ public class ConfigMenu extends Menu {
         SECTION_MATERIALS.put("color",         () -> Config.Menu.COLOR_ICON);
         SECTION_MATERIALS.put("attack_curves", () -> Config.Menu.ATTACK_CURVES_ICON);
         SECTION_MATERIALS.put("materials",     () -> Config.Menu.MATERIALS_ICON);
+        SECTION_MATERIALS.put("particles",     () -> Config.Menu.PARTICLES_ICON);
+        SECTION_MATERIALS.put("animation",     () -> Config.Menu.SECTION_ICON);
     }
 
     public ConfigMenu(SwordPlayer player) {
@@ -91,13 +94,26 @@ public class ConfigMenu extends Menu {
             Supplier<Material> iconSupplier = SECTION_MATERIALS.getOrDefault(sectionKey.toLowerCase(), () -> Material.PAPER);
             Material mat = iconSupplier.get();
 
-            sectionItems.add(new SimpleItem(
-                new ItemStackBuilder(mat)
-                    .name(Component.text(capitalize(sectionKey), NamedTextColor.GOLD, TextDecoration.BOLD))
-                    .lore(List.of(Component.text(entries.size() + " entries", NamedTextColor.GRAY)))
-                    .build(),
-                click -> new ConfigSectionMenu(swordPlayer, sectionKey, entries).open()
-            ));
+            if ("animation".equals(sectionKey)) {
+                sectionItems.add(new SimpleItem(
+                    new ItemStackBuilder(mat)
+                        .name(Component.text(capitalize(sectionKey), NamedTextColor.GOLD, TextDecoration.BOLD))
+                        .lore(List.of(
+                            Component.text(entries.size() + " entries", NamedTextColor.GRAY),
+                            Component.text("Click to browse animations", NamedTextColor.DARK_GRAY)
+                        ))
+                        .build(),
+                    click -> InventoryMenuManager.openMenu(AnimationBrowserMenu.class, swordPlayer)
+                ));
+            } else {
+                sectionItems.add(new SimpleItem(
+                    new ItemStackBuilder(mat)
+                        .name(Component.text(capitalize(sectionKey), NamedTextColor.GOLD, TextDecoration.BOLD))
+                        .lore(List.of(Component.text(entries.size() + " entries", NamedTextColor.GRAY)))
+                        .build(),
+                    click -> new ConfigSectionMenu(swordPlayer, sectionKey, entries).open()
+                ));
+            }
         }
 
         SimpleItem saveServer = new SimpleItem(
