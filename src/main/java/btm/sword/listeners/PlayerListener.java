@@ -2,6 +2,8 @@ package btm.sword.listeners;
 
 import java.util.Objects;
 
+import btm.sword.system.entity.umbral.UmbralBlade;
+
 import org.bukkit.GameMode;
 import org.bukkit.Material;
 import org.bukkit.Particle;
