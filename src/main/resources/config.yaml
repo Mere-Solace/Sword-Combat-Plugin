@@ -388,22 +388,28 @@ menu:
     umbralblade: STONE_SWORD
 scene:
   scene_on_every_join: true
-  safe_anchor_world: world
-  safe_anchor_x: 0.0
-  safe_anchor_y: 500.0
-  safe_anchor_z: 0.0
-  camera_distance: 3.0
-  camera_height: 1.0
-  fake_player_distance: 10.0
 animation:
   static_menu_animation_key: gentle_v2_default
   conversion_step_timeout_seconds: 360
 menu_grid:
+  origin_x: 41.0
+  origin_y: 255.0
+  origin_z: -835.0
+  spacing_x: 20.0
+  spacing_z: 21.0
+  rows: 11
+  cols: 11
+join_sequence:
   world: world
-  origin_x: 0.0
-  origin_y: 200.0
-  origin_z: 0.0
-  rows: 5
-  cols: 10
-  spacing_x: 5.0
-  spacing_z: 5.0
+  spawnpoint_x: -132.0
+  spawnpoint_y: 215.0
+  spawnpoint_z: -783.0
+  spawnpoint_yaw: 0.0
+  opening_x: -186.0
+  opening_y: 256.0
+  opening_z: -1058.0
+  opening_yaw: 0.0
+  opening_animation_key: slash_test_default
+  phase1_duration_ms: 5000
+  phase2_duration_ms: 2000
+  phase3_duration_ms: 5000

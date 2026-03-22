@@ -4,8 +4,10 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -14,6 +16,7 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.util.Vector;
 
+import btm.sword.config.Config;
 import btm.sword.system.control.SwordScheduler;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.impl.SwordPlayer;
@@ -118,30 +121,51 @@ public final class ServerJoinArbiter implements Listener {
     /**
      * Routes the player based on their join-sequence completion flag.
      * <ul>
-     *   <li>{@code joinSequenceCompleted == false} → initial join sequence</li>
-     *   <li>{@code joinSequenceCompleted == true}  → main menu character scene</li>
+     *   <li>{@code joinSequenceCompleted == false} → {@link InitialJoinCutscene}</li>
+     *   <li>{@code joinSequenceCompleted == true}  → spawnpoint → main menu scene</li>
      * </ul>
      */
     private static void routePlayer(SwordPlayer sp) {
         PlayerData data = PlayerDataManager.getPlayerData(sp.player().getUniqueId());
         if (data == null || !data.isJoinSequenceCompleted()) {
-            enterInitialJoinSequence(sp);
+            InitialJoinCutscene.play(sp);
+        } else {
+            enterMainMenuScene(sp);
+        }
+    }
+
+    /**
+     * Teleports a returning player to the configured spawnpoint and opens the main menu
+     * character scene at that position.
+     *
+     * @param sp the returning player
+     */
+    private static void enterMainMenuScene(SwordPlayer sp) {
+        Location spawnpoint = spawnpointLocation();
+        if (spawnpoint != null) {
+            SceneManager.enterStaticMenuScene(sp, spawnpoint);
         } else {
             SceneManager.enterStaticMenuScene(sp);
         }
     }
 
     /**
-     * Entry point for first-time (or incomplete) join sequences.
-     * <p>
-     * Currently falls through to the main menu scene as a placeholder. Replace with
-     * the initial cutscene controller once it is built (see issue #253).
-     * </p>
-     *
-     * @param sp the player to route
+     * Builds the returning-player spawnpoint {@link Location} from config.
+     * Returns {@code null} if the configured world cannot be resolved.
      */
-    private static void enterInitialJoinSequence(SwordPlayer sp) {
-        // TODO: #253 - Replace with initial join cutscene once it is implemented
-        SceneManager.enterStaticMenuScene(sp);
+    private static Location spawnpointLocation() {
+        World world = Bukkit.getWorld(Config.JoinSequence.WORLD);
+        if (world == null && !Bukkit.getWorlds().isEmpty()) {
+            world = Bukkit.getWorlds().get(0);
+        }
+        if (world == null) return null;
+        return new Location(
+            world,
+            Config.JoinSequence.SPAWNPOINT_X,
+            Config.JoinSequence.SPAWNPOINT_Y,
+            Config.JoinSequence.SPAWNPOINT_Z,
+            Config.JoinSequence.SPAWNPOINT_YAW,
+            0.0f
+        );
     }
 }
