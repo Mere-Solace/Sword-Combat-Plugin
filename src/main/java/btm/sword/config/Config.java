@@ -3042,6 +3042,60 @@ public class Config {
             v -> MOB_THROW_ARC_HEIGHT = v,
             ConfigurationSection::getDouble
         ); }
+
+        /** DEU group tag for the Hostile display rig. Empty string disables the rig. */
+        public static String DISPLAY_GROUP = "witha";
+        static { register(
+            "hostile.display_group",
+            "witha", String.class,
+            v -> DISPLAY_GROUP = v,
+            ConfigurationSection::getString
+        ); }
+
+        /** Y offset applied to the display rig's ride position relative to the mob's passenger seat. */
+        public static double DISPLAY_RIDE_OFFSET_Y = 0.0;
+        static { register(
+            "hostile.display_ride_offset_y",
+            0.0, Double.class,
+            v -> DISPLAY_RIDE_OFFSET_Y = v,
+            ConfigurationSection::getDouble
+        ); }
+
+        /** Animation tag for the idle loop. Empty string skips registering this state. */
+        public static String DISPLAY_ANIM_IDLE = "idle";
+        static { register(
+            "hostile.display_anim_idle",
+            "idle", String.class,
+            v -> DISPLAY_ANIM_IDLE = v,
+            ConfigurationSection::getString
+        ); }
+
+        /** Animation tag for the walk loop. */
+        public static String DISPLAY_ANIM_WALK = "walk";
+        static { register(
+            "hostile.display_anim_walk",
+            "walk", String.class,
+            v -> DISPLAY_ANIM_WALK = v,
+            ConfigurationSection::getString
+        ); }
+
+        /** Animation tag for the falling loop. */
+        public static String DISPLAY_ANIM_FALL = "fall";
+        static { register(
+            "hostile.display_anim_fall",
+            "fall", String.class,
+            v -> DISPLAY_ANIM_FALL = v,
+            ConfigurationSection::getString
+        ); }
+
+        /** Animation tag for the melee attack (plays once, locked until complete). */
+        public static String DISPLAY_ANIM_MELEE = "melee";
+        static { register(
+            "hostile.display_anim_melee",
+            "melee", String.class,
+            v -> DISPLAY_ANIM_MELEE = v,
+            ConfigurationSection::getString
+        ); }
     }
     //endregion
 
@@ -4018,6 +4072,12 @@ public class Config {
         /** Distance in blocks between slot centres along Z. */
         public static double SPACING_Z = 5.0;
 
+        /**
+         * Milliseconds to hold the player in their dark-room staging slot before starting
+         * the join sequence. Allows the client to finish loading chunks and terrain.
+         */
+        public static int LOADING_WAIT_MS = 1500;
+
         static {
             register("menu_grid.world", WORLD, String.class,
                 v -> WORLD = v, ConfigurationSection::getString);
@@ -4035,6 +4095,8 @@ public class Config {
                 v -> SPACING_X = v, ConfigurationSection::getDouble);
             register("menu_grid.spacing_z", SPACING_Z, Double.class,
                 v -> SPACING_Z = v, ConfigurationSection::getDouble);
+            register("menu_grid.loading_wait_ms", LOADING_WAIT_MS, Integer.class,
+                v -> LOADING_WAIT_MS = v, ConfigurationSection::getInt);
         }
     }
     //endregion

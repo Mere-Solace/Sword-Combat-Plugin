@@ -370,6 +370,12 @@ hostile:
   pre_attack_ticks: 24
   retreat_ticks: 40
   flee_health_fraction: 0.2
+  display_group: "witha"
+  display_ride_offset_y: 0.0
+  display_anim_idle: "idle"
+  display_anim_walk: "walk"
+  display_anim_fall: "fall"
+  display_anim_melee: "melee"
 
 
 umbral:
@@ -399,17 +405,7 @@ menu_grid:
   spacing_z: 21.0
   rows: 11
   cols: 11
+  loading_wait_ms: 1500
 join_sequence:
-  world: world
-  spawnpoint_x: -132.0
-  spawnpoint_y: 215.0
-  spawnpoint_z: -783.0
-  spawnpoint_yaw: 0.0
-  opening_x: -186.0
-  opening_y: 256.0
-  opening_z: -1058.0
-  opening_yaw: 0.0
-  opening_animation_key: slash_test_default
-  phase1_duration_ms: 5000
-  phase2_duration_ms: 2000
-  phase3_duration_ms: 5000
+  opening_x: -186.5
+  opening_z: -1058.5

@@ -32,11 +32,12 @@ import btm.sword.system.scene.SceneManager;
  * <ol>
  *   <li><b>Register</b> — player is registered with {@link SwordEntityArbiter} and
  *       {@link PlayerDataManager}.</li>
- *   <li><b>Stage</b> (deferred 100 ms) — claim a {@link MenuSlotGrid} slot, teleport the
- *       player there, set them invisible and zero their velocity. This hides the player
- *       body in an off-screen staging area while the scene loads.</li>
- *   <li><b>Route</b> (deferred 100 ms after staging) — check the player's
- *       {@link PlayerData#isJoinSequenceCompleted()} flag and send them to either:
+ *   <li><b>Stage</b> (deferred 1 tick) — claim a {@link MenuSlotGrid} dark-room slot,
+ *       teleport the player there, set them invisible and zero their velocity. The player
+ *       waits here while the client loads chunks and terrain.</li>
+ *   <li><b>Route</b> (deferred {@link Config.MenuGrid#LOADING_WAIT_MS} after staging) —
+ *       check the player's {@link PlayerData#isJoinSequenceCompleted()} flag and send them
+ *       to either:
  *       <ul>
  *         <li>the initial join sequence (first-time players), or</li>
  *         <li>the main menu / character selection scene (returning players).</li>
@@ -50,11 +51,8 @@ import btm.sword.system.scene.SceneManager;
  */
 public final class ServerJoinArbiter implements Listener {
 
-    /** Time (ms) after join before staging the player on a grid slot. */
-    private static final int STAGE_DELAY_MS = 100;
-
-    /** Additional time (ms) after staging before routing to a scene or cutscene. */
-    private static final int ROUTE_DELAY_MS = 100;
+    /** Time (ms) after join before staging the player in their dark-room slot. */
+    private static final int STAGE_DELAY_MS = 50;
 
     /**
      * Registers the player with core systems, then defers the staging + routing sequence.
@@ -98,8 +96,9 @@ public final class ServerJoinArbiter implements Listener {
     // =========================================================================
 
     /**
-     * Teleports the player to their assigned grid slot, makes them invisible, and
-     * zeroes their velocity; then schedules the routing step.
+     * Teleports the player into their assigned dark-room staging slot, makes them invisible,
+     * and zeroes their velocity. Then waits {@link Config.MenuGrid#LOADING_WAIT_MS} for the
+     * client to finish loading before routing to the join sequence.
      */
     private static void stagePlayer(Player player, UUID uuid) {
         Optional<Location> slot = MenuSlotGrid.acquireSlot(uuid);
@@ -115,7 +114,7 @@ public final class ServerJoinArbiter implements Listener {
             if (!player.isOnline()) return;
             SwordPlayer sp = (SwordPlayer) SwordEntityArbiter.getOrAdd(player);
             routePlayer(sp);
-        }, ROUTE_DELAY_MS, TimeUnit.MILLISECONDS);
+        }, Config.MenuGrid.LOADING_WAIT_MS, TimeUnit.MILLISECONDS);
     }
 
     /**
