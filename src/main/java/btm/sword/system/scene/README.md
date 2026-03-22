@@ -16,6 +16,10 @@ scene/
 ├── PacketAdapter.java             — ProtocolLib wrapper for ClientboundSetCameraPacket
 ├── BezierCameraController.java    — drives camera along a CameraPath (Bézier curve)
 ├── CameraPath.java                — cubic Bézier world-space trajectory record
+├── StaticSceneController.java     — fixed-camera controller: locks movement + input
+├── MenuSceneController.java       — extends StaticSceneController; adds NPC + teleport lifecycle
+├── FakePlayerManager.java         — packet-based fake player NPC (real skin + armor, owner-only)
+├── SceneManager.java              — public API: enterStaticMenuScene / exitStaticMenuScene
 ├── DEUAnimationController.java    — plays a DEU/BDE animation as a cutscene
 └── animation/
     ├── AnimationDef.java          — immutable descriptor loaded from animations.yml
@@ -185,6 +189,69 @@ Keys under `animations:` become the logical keys used in `AnimationRegistry.get(
 `ActivationContext.CUTSCENE` is set by `DEUAnimationController.onStart()` and cleared
 in `onStop()`. While active, `CutsceneInputHandler` intercepts all inputs before the
 trie, so no combat actions or abilities fire during a cutscene. Shift exits immediately.
+
+---
+
+---
+
+## Static Menu Scene Pipeline
+
+The static menu scene places the player in a character-preview camera that looks at a
+fake player NPC representing their own character.
+
+### `FakePlayerManager`
+
+Spawns and despawns a packet-only fake player entity visible to a single owner player.
+No Bukkit entity is created — all communication is via ProtocolLib packets.
+
+**Packet sequence (spawn):**
+1. `PLAYER_INFO` (ADD_PLAYER + UPDATE_LISTED) — registers the GameProfile (with real skin texture)
+2. `SPAWN_ENTITY` — places the entity at the display position
+3. `ENTITY_HEAD_ROTATION` — sets head yaw
+4. `ENTITY_EQUIPMENT` — sends all six equipment slots with the player's current armor
+5. Deferred `PLAYER_INFO_REMOVE` — removes the NPC from the player's tab list
+
+The NPC UUID is derived from the real player's UUID (XOR on most-significant bits) to
+avoid collisions. Entity IDs use a negative decrementing counter.
+
+**Public API:**
+| Method | Effect |
+|---|---|
+| `spawnFakePlayer(SwordPlayer, Location)` | Spawn NPC at location with current skin/armor |
+| `despawnFakePlayer(SwordPlayer)` | Send ENTITY_DESTROY + PLAYER_INFO_REMOVE |
+| `updateEquipment(SwordPlayer)` | Resend ENTITY_EQUIPMENT with current armor |
+| `despawnAll()` | Plugin-disable cleanup for all active NPCs |
+
+### `MenuSceneController`
+
+Package-private subclass of `StaticSceneController`. Adds:
+- In `onStop()`: despawns the NPC via `FakePlayerManager` and teleports the real player
+  back to their pre-scene location.
+- Caches the player reference in `onStart()` (required because `owner` is nulled before
+  `onStop()` is called — see `CameraController` lifecycle).
+
+### `SceneManager`
+
+Thin static coordinator. No state.
+
+**Pipeline (enter):**
+1. Snapshot current player location (return anchor).
+2. Teleport real player to `Config.Scene.SAFE_ANCHOR` (off-screen).
+3. `FakePlayerManager.spawnFakePlayer(player, displayPosition)`.
+4. Compute camera location: `distance` blocks in front of NPC, `height` blocks up, facing NPC.
+5. `new MenuSceneController(cameraLoc, returnLoc).start(player)`.
+
+**Pipeline (exit):**
+SHIFT fires `CutsceneInputHandler` → `CameraSystem.stopController` → `MenuSceneController.onStop`
+→ NPC despawn + teleport back. Or call `SceneManager.exitStaticMenuScene(player)` explicitly.
+
+**Config keys** (`Config.Scene`):
+| Key | Default | Description |
+|---|---|---|
+| `scene.safe_anchor_world` | `world` | World name for the safe anchor |
+| `scene.safe_anchor_x/y/z` | `0 / 500 / 0` | Off-screen coordinates |
+| `scene.camera_distance` | `3.0` | Blocks in front of NPC to place camera |
+| `scene.camera_height` | `1.0` | Blocks above NPC feet for camera |
 
 ---
 

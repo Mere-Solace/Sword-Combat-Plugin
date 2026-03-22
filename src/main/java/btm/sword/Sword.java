@@ -23,6 +23,7 @@ import btm.sword.system.action.throwing.ProjectileManager;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.inventory.InventoryMenuManager;
 import btm.sword.system.playerdata.PlayerDataManager;
+import btm.sword.system.scene.FakePlayerManager;
 import btm.sword.system.scene.animation.AnimationRegistry;
 import io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
@@ -86,6 +87,9 @@ public final class Sword extends JavaPlugin {
 
         // Clean up all active thrown item displays
         InteractiveItemArbiter.cleanupAll();
+
+        // Remove any lingering packet-based fake player NPCs
+        FakePlayerManager.despawnAll();
 
         // TODO: #129 - Uncomment when persistent data is ready
         // PlayerDataManager.shutdown();

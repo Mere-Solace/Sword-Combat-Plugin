@@ -2,6 +2,7 @@ package btm.sword.system.inventory.menu;
 
 import java.util.List;
 
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -10,6 +11,7 @@ import btm.sword.config.Config;
 import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.item.ItemStackBuilder;
 import btm.sword.system.scene.DEUAnimationController;
+import btm.sword.system.scene.SceneManager;
 import btm.sword.system.scene.animation.AnimationDef;
 import btm.sword.system.scene.animation.AnimationRegistry;
 import net.kyori.adventure.text.Component;
@@ -128,6 +130,24 @@ public class DevMenu extends Menu {
             }
         );
 
+        double fakePlayerDist = Config.Scene.FAKE_PLAYER_DISTANCE;
+        String animKeyLabel = Config.Animation.STATIC_MENU_ANIMATION_KEY;
+        SimpleItem fakePlayerScene = new SimpleItem(
+            new ItemStackBuilder(Material.PLAYER_HEAD)
+                .name(Component.text("Fake Player Scene Test", NamedTextColor.LIGHT_PURPLE, TextDecoration.BOLD))
+                .lore(List.of(
+                    Component.text("Spawn NPC " + fakePlayerDist + " blocks ahead, fixed camera", NamedTextColor.DARK_GRAY),
+                    Component.text("Animation: " + animKeyLabel, NamedTextColor.DARK_GRAY)
+                ))
+                .build(),
+            click -> {
+                Location playerLoc = swordPlayer.player().getLocation();
+                Location displayPosition = playerLoc.clone()
+                    .add(playerLoc.getDirection().multiply(Config.Scene.FAKE_PLAYER_DISTANCE));
+                SceneManager.enterStaticMenuScene(swordPlayer, displayPosition);
+            }
+        );
+
         SimpleItem deuTools = new SimpleItem(
             new ItemStackBuilder(Material.ITEM_FRAME)
                 .name(Component.text("DisplayEntityUtils", NamedTextColor.LIGHT_PURPLE, TextDecoration.BOLD))
@@ -147,7 +167,7 @@ public class DevMenu extends Menu {
         Gui gui = Gui.normal()
             .setStructure(
                 "# # # # # # # # #",
-                "# J N S . . L C #",
+                "# J N S F L . C #",
                 "# . . . . . . E #",
                 "# R I . T . M W #",
                 "# # # < . > # # #")
@@ -157,6 +177,7 @@ public class DevMenu extends Menu {
             .addIngredient('J', configEditor)
             .addIngredient('N', deuTools)
             .addIngredient('S', staticScene)
+            .addIngredient('F', fakePlayerScene)
             .addIngredient('L', itemLibrary)
             .addIngredient('C', creativeInventory)
             .addIngredient('W', woodenAxe)
