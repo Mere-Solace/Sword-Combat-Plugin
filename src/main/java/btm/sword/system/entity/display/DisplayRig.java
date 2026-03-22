@@ -2,6 +2,7 @@ package btm.sword.system.entity.display;
 
 import java.util.List;
 
+import org.bukkit.entity.Display;
 import org.bukkit.entity.Mob;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.Nullable;
@@ -60,10 +61,18 @@ public class DisplayRig {
 
         SpawnedDisplayEntityGroup group = def.spawn(mob.getLocation(), GroupSpawnedEvent.SpawnReason.CUSTOM);
         group.rideEntity(mob);
-        group.setRideOffset(new Vector(0, Config.Hostile.DISPLAY_RIDE_OFFSET_Y, 0));
+        // Offset the rig downward by the mob's height so the rig sits at ground level,
+        // with DISPLAY_RIDE_OFFSET_Y as a fine-tuning knob on top of that.
+        group.setRideOffset(new Vector(0, -mob.getHeight() + Config.Hostile.DISPLAY_RIDE_OFFSET_Y, 0));
+
+        // Apply teleport duration to every display part for smooth client-side movement.
+        for (Display display : group.getPartEntities(Display.class)) {
+            display.setTeleportDuration(Config.Hostile.DISPLAY_TELEPORT_DURATION);
+        }
 
         GroupFollowProperties yawFollow = GroupFollowProperties.builder(FollowType.YAW)
             .setId("hostile_yaw")
+            .setTeleportationDuration(Config.Hostile.DISPLAY_TELEPORT_DURATION)
             .build();
         group.followEntityDirection(mob, yawFollow);
 

@@ -3117,6 +3117,19 @@ public class Config {
             v -> DISPLAY_ANIM_MELEE = v,
             ConfigurationSection::getString
         ); }
+
+        /**
+         * Teleport-duration applied to every display entity in the rig (in ticks).
+         * Higher values give smoother movement at the cost of slightly delayed response.
+         * 3 is a good starting point; set to 0 to disable smoothing.
+         */
+        public static int DISPLAY_TELEPORT_DURATION = 3;
+        static { register(
+            "hostile.display_teleport_duration",
+            3, Integer.class,
+            v -> DISPLAY_TELEPORT_DURATION = v,
+            ConfigurationSection::getInt
+        ); }
     }
     //endregion
 

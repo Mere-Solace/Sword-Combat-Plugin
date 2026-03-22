@@ -6,7 +6,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
-import org.bukkit.util.Vector;
 
 import btm.sword.config.Config;
 import btm.sword.system.control.SwordScheduler;
@@ -55,7 +54,7 @@ public final class InitialJoinCutscene {
             return;
         }
 
-        player.teleport(openingLoc.clone().add(new Vector(0.5, 0, 0.5)));
+        player.teleport(openingLoc);
 
         AnimationDef def = resolveAnimation(sp);
 
@@ -86,6 +85,7 @@ public final class InitialJoinCutscene {
             if (!player.isOnline()) return;
             CameraSystem.stopController(sp);
             complete(sp);
+            player.teleport(openingLoc);
         });
     }
 
@@ -143,7 +143,7 @@ public final class InitialJoinCutscene {
     static Location openingLocation() {
         World world = Bukkit.getWorld(Config.JoinSequence.WORLD);
         if (world == null && !Bukkit.getWorlds().isEmpty()) {
-            world = Bukkit.getWorlds().get(0);
+            world = Bukkit.getWorlds().getFirst();
         }
         if (world == null) return null;
         return new Location(

@@ -1,7 +1,10 @@
 package btm.sword.system.entity.ai.ability;
 
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
+import org.bukkit.Material;
+import org.bukkit.Particle;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
 
@@ -15,9 +18,16 @@ import btm.sword.system.entity.impl.Hostile;
 /**
  * A ranged throwing ability for hostile mobs.
  *
- * <p>Launches the mob's off-hand item as a projectile with a parabolic arc toward the
+ * <p>Launches the mob's main-hand item as a projectile with a parabolic arc toward the
  * current target. The arc height and cooldown are controlled via {@link Config.Hostile}.
- * Ability category: {@link AbilityCategory#RANGED}.
+ *
+ * <p>If the mob has nothing in its main hand, it performs a dirt-scoop animation:
+ * looks down, punches the ground, picks up a dirt block, and throws it instead.
+ *
+ * <p>When the thrown item lands, the mob's {@code lodgedThrowItem} is set so the
+ * {@link btm.sword.system.entity.ai.state.RetrieveWeaponState} can drive retrieval.
+ *
+ * <p>Ability category: {@link AbilityCategory#RANGED}.
  */
 public class MobThrowAbility implements MobAbility {
 
@@ -31,10 +41,19 @@ public class MobThrowAbility implements MobAbility {
         return AbilityCategory.RANGED;
     }
 
+    /**
+     * Returns {@code true} if the ability is off cooldown and passes the
+     * {@link Config.Hostile#MOB_THROW_WEIGHT} probability roll, making throws rarer
+     * than melee when both abilities are available.
+     *
+     * @param h the hostile mob
+     * @return {@code true} if the throw can be selected this pre-attack phase
+     */
     @Override
     public boolean canUse(Hostile h) {
         Integer cooldown = h.getAbilityCooldowns().get(name());
-        return cooldown == null || cooldown <= 0;
+        if (cooldown != null && cooldown > 0) return false;
+        return ThreadLocalRandom.current().nextDouble() < Config.Hostile.MOB_THROW_WEIGHT;
     }
 
     @Override
@@ -48,27 +67,26 @@ public class MobThrowAbility implements MobAbility {
 
         MobGoalArbiter.GOALS.addGoal(h.mob(), 1, new LookAtTargetGoal(h.mob(), h));
 
-        // Bug 1 fix: use the explicit item so ThrowAction uses it instead of inferring from hand
-        ItemStack projectile = h.getItemStackInHand(true);
-        if (projectile == null || projectile.isEmpty()) return;
-
         Vector toTarget = h.getCurrentTarget().self().getLocation()
             .subtract(h.self().getLocation())
             .toVector();
 
         double distance = toTarget.length();
         if (distance < 0.001) return;
-
         toTarget.normalize();
-//        // Add vertical arc so the projectile curves up and lands on the target
-//        toTarget.setY(toTarget.getY() + Config.Hostile.MOB_THROW_ARC_HEIGHT * distance / 8.0);
 
-        // Bug 1 fix: pass the explicit off-hand item so ThrowAction uses it instead of main-hand
+        ItemStack projectile = h.getItemStackInHand(true);
+        if (projectile == null || projectile.isEmpty()) {
+            executeDirtThrow(h, toTarget);
+            return;
+        }
+
         ThrowAction.throwReady(h, projectile);
 
-        // Bug 2 fix: apply the arc direction to the ThrownItem before it is released
         if (h.getThrownItem() != null) {
             h.getThrownItem().setLaunchDirection(toTarget);
+            // #224: when the weapon lands, flag it for retrieval
+            h.getThrownItem().setOnGroundCallback(() -> h.setLodgedThrowItem(h.getThrownItem()));
         }
 
         SwordScheduler.runBukkitTaskLater(
@@ -76,6 +94,54 @@ public class MobThrowAbility implements MobAbility {
             400,
             TimeUnit.MILLISECONDS
         );
+    }
+
+    /**
+     * Fallback throw sequence for when the mob has no item in its main hand.
+     *
+     * <p>The mob looks down, punches the ground (block-break particles), then after a short
+     * delay stands up, takes a dirt block, and throws it at the current target.
+     *
+     * @param h        the hostile mob performing the sequence
+     * @param toTarget pre-normalized direction vector toward the current target
+     */
+    private void executeDirtThrow(Hostile h, Vector toTarget) {
+        // Prevent re-entry during the animation window
+        h.setAttemptingThrow(true);
+
+        float yaw = h.mob().getLocation().getYaw();
+        h.mob().setRotation(yaw, 70f);
+
+        h.self().getWorld().spawnParticle(
+            Particle.BLOCK,
+            h.self().getLocation().add(0, 0.2, 0),
+            30, 0.3, 0.1, 0.3, 0,
+            Material.DIRT.createBlockData()
+        );
+
+        SwordScheduler.runBukkitTaskLater(() -> {
+            if (!h.self().isValid() || h.getCurrentTarget() == null
+                    || !h.getCurrentTarget().self().isValid()) {
+                h.setAttemptingThrow(false);
+                return;
+            }
+
+            h.mob().setRotation(yaw, 0f);
+            ItemStack dirt = new ItemStack(Material.DIRT);
+            h.setItemStackInHand(dirt, true);
+
+            ThrowAction.throwReady(h, dirt);
+
+            if (h.getThrownItem() != null) {
+                h.getThrownItem().setLaunchDirection(toTarget);
+            }
+
+            SwordScheduler.runBukkitTaskLater(
+                () -> ThrowAction.throwItem(h),
+                400,
+                TimeUnit.MILLISECONDS
+            );
+        }, 300, TimeUnit.MILLISECONDS);
     }
 
     @Override

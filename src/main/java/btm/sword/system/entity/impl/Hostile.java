@@ -12,6 +12,7 @@ import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
@@ -147,9 +148,19 @@ public class Hostile extends Combatant {
 
         EntityEquipment equipment = associatedEntity.getEquipment();
         if (equipment != null) {
-            equipment.setItemInMainHand(itemInRightHand);
-            equipment.setItemInOffHand(itemInLeftHand);
-            equipment.setChestplate(new ItemStack(Material.NETHERITE_CHESTPLATE));
+            if (associatedEntity.getType() == EntityType.PILLAGER) {
+                // Zombie is driven by the display rig — strip all vanilla gear so nothing shows.
+                equipment.setItemInMainHand(ItemStack.of(Material.AIR));
+                equipment.setItemInOffHand(ItemStack.of(Material.AIR));
+                equipment.setHelmet(ItemStack.of(Material.AIR));
+                equipment.setChestplate(ItemStack.of(Material.AIR));
+                equipment.setLeggings(ItemStack.of(Material.AIR));
+                equipment.setBoots(ItemStack.of(Material.AIR));
+            } else {
+                equipment.setItemInMainHand(itemInRightHand);
+                equipment.setItemInOffHand(itemInLeftHand);
+                equipment.setChestplate(new ItemStack(Material.NETHERITE_CHESTPLATE));
+            }
         }
     }
 
@@ -176,10 +187,20 @@ public class Hostile extends Combatant {
         // Defer display rig spawn by one tick — spawning display entities synchronously during
         // EntityAddToWorldEvent causes a Paper chunk-system error because the host chunk is
         // still mid-update when this event fires.
-        SwordScheduler.runBukkitTaskLater(
-            () -> { if (mob.isValid()) displayRig = DisplayRig.spawn(mob, Config.Hostile.DISPLAY_GROUP); },
-            50, TimeUnit.MILLISECONDS
-        );
+        if (mob.getType() == EntityType.ZOMBIE) {
+            // Defer display rig spawn by one tick — spawning display entities synchronously during
+            // EntityAddToWorldEvent causes a Paper chunk-system error because the host chunk is
+            // still mid-update when this event fires.
+            SwordScheduler.runBukkitTaskLater(
+                () -> {
+                    if (mob.isValid()) {
+                        mob.setInvisible(true);
+                        displayRig = DisplayRig.spawn(mob, Config.Hostile.DISPLAY_GROUP);
+                    }
+                },
+                50, TimeUnit.MILLISECONDS
+            );
+        }
     }
 
     @Override

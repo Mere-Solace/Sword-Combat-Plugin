@@ -10,8 +10,10 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 
 import org.bukkit.Location;
 import org.bukkit.entity.EntityType;
@@ -153,6 +155,358 @@ public final class FakePlayerManager {
         ProtocolManager manager = ProtocolLibrary.getProtocolManager();
         Player player = viewer.player();
         sendEquipment(manager, player, data.entityId(), player.getEquipment());
+    }
+
+    /**
+     * Returns whether an active fake player NPC exists for the given viewer.
+     *
+     * @param viewer the player to check
+     * @return {@code true} if a fake player is currently spawned for this viewer
+     */
+    public static boolean isActive(SwordPlayer viewer) {
+        return ACTIVE.containsKey(viewer.player().getUniqueId());
+    }
+
+    /**
+     * Moves the fake player NPC by the given relative delta.
+     * Maximum supported delta per axis is approximately ±8 blocks
+     * (short fixed-point limit at 4096 units/block).
+     * For larger displacements use {@link #teleportFake} instead.
+     *
+     * @param viewer    the player whose NPC to move
+     * @param dx        X delta in blocks
+     * @param dy        Y delta in blocks
+     * @param dz        Z delta in blocks
+     * @param onGround  whether the entity is touching the ground
+     * @return {@code true} if the packet was sent without error
+     */
+    public static boolean moveRelative(SwordPlayer viewer, double dx, double dy, double dz, boolean onGround) {
+        FakePlayerData data = ACTIVE.get(viewer.player().getUniqueId());
+        if (data == null) return false;
+        if (Math.abs(dx) > 7.9 || Math.abs(dy) > 7.9 || Math.abs(dz) > 7.9) {
+            Sword.getInstance().getLogger().warning(
+                "[FakePlayerManager] moveRelative delta exceeds ±8 block limit; use teleportFake for large displacements");
+        }
+        try {
+            sendMoveRelative(ProtocolLibrary.getProtocolManager(), data.player(), data.entityId(), dx, dy, dz, onGround);
+            return true;
+        } catch (Exception e) {
+            Sword.getInstance().getLogger().log(Level.SEVERE,
+                "[FakePlayerManager] Failed to send REL_ENTITY_MOVE for " + viewer.player().getName(), e);
+            return false;
+        }
+    }
+
+    /**
+     * Teleports the fake player NPC to an absolute world position.
+     * Unlike {@link #moveRelative}, there is no distance limit;
+     * the client snaps immediately with no lerp interpolation.
+     *
+     * @param viewer   the player whose NPC to teleport
+     * @param location the destination (yaw/pitch are applied)
+     * @return {@code true} if the packet was sent without error
+     */
+    public static boolean teleportFake(SwordPlayer viewer, Location location) {
+        FakePlayerData data = ACTIVE.get(viewer.player().getUniqueId());
+        if (data == null) return false;
+        try {
+            sendTeleport(ProtocolLibrary.getProtocolManager(), data.player(), data.entityId(), location);
+            return true;
+        } catch (Exception e) {
+            Sword.getInstance().getLogger().log(Level.SEVERE,
+                "[FakePlayerManager] Failed to send ENTITY_TELEPORT for " + viewer.player().getName(), e);
+            return false;
+        }
+    }
+
+    /**
+     * Rotates the fake player NPC to face the given yaw/pitch.
+     * Sends both {@code ENTITY_LOOK} (body rotation) and {@code ENTITY_HEAD_ROTATION}
+     * (head yaw) so the head and body stay aligned.
+     *
+     * @param viewer   the player whose NPC to rotate
+     * @param yaw      yaw angle in degrees (0 = south, 90 = west, 180/−180 = north, −90 = east)
+     * @param pitch    pitch angle in degrees (−90 = looking straight up, 90 = straight down)
+     * @param onGround whether the entity is touching the ground
+     * @return {@code true} if both packets were sent without error
+     */
+    public static boolean rotateFake(SwordPlayer viewer, float yaw, float pitch, boolean onGround) {
+        FakePlayerData data = ACTIVE.get(viewer.player().getUniqueId());
+        if (data == null) return false;
+        try {
+            sendRotate(ProtocolLibrary.getProtocolManager(), data.player(), data.entityId(), yaw, pitch, onGround);
+            return true;
+        } catch (Exception e) {
+            Sword.getInstance().getLogger().log(Level.SEVERE,
+                "[FakePlayerManager] Failed to send ENTITY_LOOK/ENTITY_HEAD_ROTATION for " + viewer.player().getName(), e);
+            return false;
+        }
+    }
+
+    /**
+     * Plays a one-shot animation on the fake player NPC via {@code ClientboundAnimatePacket}.
+     *
+     * @param viewer    the player whose NPC to animate
+     * @param animation the animation to play
+     * @return {@code true} if the packet was sent without error
+     */
+    public static boolean animateFake(SwordPlayer viewer, FakeAnimation animation) {
+        FakePlayerData data = ACTIVE.get(viewer.player().getUniqueId());
+        if (data == null) return false;
+        try {
+            sendAnimation(ProtocolLibrary.getProtocolManager(), data.player(), data.entityId(), animation.getId());
+            return true;
+        } catch (Exception e) {
+            Sword.getInstance().getLogger().log(Level.SEVERE,
+                "[FakePlayerManager] Failed to send ANIMATION (" + animation.name() + ") for " + viewer.player().getName(), e);
+            return false;
+        }
+    }
+
+    /**
+     * Sends a velocity impulse to the fake player NPC.
+     * The client receives this as a visual impulse only; the server does not simulate
+     * ongoing physics. Follow up with position packets (e.g. {@link #moveRelative})
+     * to drive the actual trajectory each tick.
+     *
+     * <p>Units: 1/8000 of a block per tick. A value of {@code 1.0} represents 8000 units
+     * (the maximum short range). Typical jump velocity is approximately {@code 0.42}.</p>
+     *
+     * @param viewer the player whose NPC to impulse
+     * @param vx     X velocity in blocks/tick
+     * @param vy     Y velocity in blocks/tick (positive = up)
+     * @param vz     Z velocity in blocks/tick
+     * @return {@code true} if the packet was sent without error
+     */
+    public static boolean velocityFake(SwordPlayer viewer, double vx, double vy, double vz) {
+        FakePlayerData data = ACTIVE.get(viewer.player().getUniqueId());
+        if (data == null) return false;
+        try {
+            sendVelocity(ProtocolLibrary.getProtocolManager(), data.player(), data.entityId(), vx, vy, vz);
+            return true;
+        } catch (Exception e) {
+            Sword.getInstance().getLogger().log(Level.SEVERE,
+                "[FakePlayerManager] Failed to send ENTITY_VELOCITY for " + viewer.player().getName(), e);
+            return false;
+        }
+    }
+
+    // =========================================================================
+    // ProtocolLib helpers — movement, rotation, animation, velocity
+    // (private; throw on failure so public wrappers own the catch/log)
+    // =========================================================================
+
+    private static void sendMoveRelative(ProtocolManager manager, Player player, int entityId,
+            double dx, double dy, double dz, boolean onGround) throws Exception {
+        PacketContainer packet = manager.createPacket(PacketType.Play.Server.REL_ENTITY_MOVE);
+        packet.getIntegers().write(0, entityId);
+        packet.getShorts().write(0, (short) Math.round(dx * 4096));
+        packet.getShorts().write(1, (short) Math.round(dy * 4096));
+        packet.getShorts().write(2, (short) Math.round(dz * 4096));
+        packet.getBooleans().write(0, onGround);
+        manager.sendServerPacket(player, packet);
+    }
+
+    /**
+     * Builds {@code ClientboundTeleportEntityPacket} via NMS reflection.
+     * <p>
+     * In Paper 1.21.8, {@code ClientboundTeleportEntityPacket} stores position/rotation
+     * inside a {@code PositionMoveRotation} record, so ProtocolLib's {@code getIntegers()}
+     * and {@code getDoubles()} modifiers return empty — the same class-layout issue seen
+     * with player-info and entity-data packets. We bypass the ProtocolLib modifier entirely.
+     * </p>
+     * <p>
+     * NMS path: {@code ClientboundTeleportEntityPacket(int id, PositionMoveRotation change,
+     * Set<Relative> relatives, boolean onGround)}.
+     * An empty {@code relatives} set means all coordinates are absolute (not relative deltas).
+     * </p>
+     */
+    private static void sendTeleport(ProtocolManager manager, Player player, int entityId,
+            Location location) throws Exception {
+        // Vec3(x, y, z) — position
+        Class<?> vec3Class = Class.forName("net.minecraft.world.phys.Vec3");
+        Constructor<?> vec3Ctor = vec3Class.getDeclaredConstructor(double.class, double.class, double.class);
+        Object position = vec3Ctor.newInstance(location.getX(), location.getY(), location.getZ());
+        Object zeroDelta = vec3Ctor.newInstance(0.0, 0.0, 0.0);
+
+        // PositionMoveRotation(Vec3 position, Vec3 delta, float yRot, float xRot)
+        // yRot = yaw, xRot = pitch (NMS naming convention)
+        Class<?> pmrClass = Class.forName("net.minecraft.world.entity.PositionMoveRotation");
+        Constructor<?> pmrCtor = pmrClass.getDeclaredConstructor(vec3Class, vec3Class, float.class, float.class);
+        pmrCtor.setAccessible(true);
+        Object pmr = pmrCtor.newInstance(position, zeroDelta, location.getYaw(), location.getPitch());
+
+        // ClientboundTeleportEntityPacket(int id, PositionMoveRotation change, Set<Relative> relatives, boolean onGround)
+        // Empty relatives set = all axes are absolute
+        Class<?> packetClass = Class.forName(
+            "net.minecraft.network.protocol.game.ClientboundTeleportEntityPacket");
+        Constructor<?> packetCtor = packetClass.getDeclaredConstructor(int.class, pmrClass, Set.class, boolean.class);
+        packetCtor.setAccessible(true);
+        Object nmsPacket = packetCtor.newInstance(entityId, pmr, Set.of(), false);
+
+        manager.sendServerPacket(player, PacketContainer.fromPacket(nmsPacket));
+    }
+
+    private static void sendRotate(ProtocolManager manager, Player player, int entityId,
+            float yaw, float pitch, boolean onGround) throws Exception {
+        // Body rotation
+        PacketContainer lookPacket = manager.createPacket(PacketType.Play.Server.ENTITY_LOOK);
+        lookPacket.getIntegers().write(0, entityId);
+        lookPacket.getBytes().write(0, angleToByte(yaw));
+        lookPacket.getBytes().write(1, angleToByte(pitch));
+        lookPacket.getBooleans().write(0, onGround);
+        manager.sendServerPacket(player, lookPacket);
+        // Head yaw — must match body yaw or the head twists independently of the body
+        PacketContainer headPacket = manager.createPacket(PacketType.Play.Server.ENTITY_HEAD_ROTATION);
+        headPacket.getIntegers().write(0, entityId);
+        headPacket.getBytes().write(0, angleToByte(yaw));
+        manager.sendServerPacket(player, headPacket);
+    }
+
+    private static void sendAnimation(ProtocolManager manager, Player player, int entityId,
+            int animationId) throws Exception {
+        PacketContainer packet = manager.createPacket(PacketType.Play.Server.ANIMATION);
+        packet.getIntegers().write(0, entityId);
+        packet.getIntegers().write(1, animationId);
+        manager.sendServerPacket(player, packet);
+    }
+
+    /**
+     * Builds {@code ClientboundSetEntityMotionPacket} via NMS reflection.
+     * <p>
+     * In Paper 1.21.8, {@code ClientboundSetEntityMotionPacket} stores velocity components
+     * as fields derived from a {@code Vec3}, so ProtocolLib's {@code getIntegers()} and
+     * {@code getShorts()} modifiers return empty. We bypass ProtocolLib's modifier entirely.
+     * </p>
+     * <p>
+     * NMS path: {@code ClientboundSetEntityMotionPacket(int id, Vec3 velocity)}.
+     * The constructor clamps each axis to ±3.9 blocks/tick and converts to the wire
+     * format (multiply by 8000, cast to int).
+     * </p>
+     */
+    private static void sendVelocity(ProtocolManager manager, Player player, int entityId,
+            double vx, double vy, double vz) throws Exception {
+        // Vec3(x, y, z) — velocity in blocks/tick
+        Class<?> vec3Class = Class.forName("net.minecraft.world.phys.Vec3");
+        Constructor<?> vec3Ctor = vec3Class.getDeclaredConstructor(double.class, double.class, double.class);
+        Object velocityVec = vec3Ctor.newInstance(vx, vy, vz);
+
+        // ClientboundSetEntityMotionPacket(int id, Vec3 velocity)
+        Class<?> packetClass = Class.forName(
+            "net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket");
+        Constructor<?> packetCtor = packetClass.getDeclaredConstructor(int.class, vec3Class);
+        packetCtor.setAccessible(true);
+        Object nmsPacket = packetCtor.newInstance(entityId, velocityVec);
+
+        manager.sendServerPacket(player, PacketContainer.fromPacket(nmsPacket));
+    }
+
+    /**
+     * Sets the {@code LIVING_ENTITY_FLAGS} metadata byte (index 8) on the fake player,
+     * controlling item-use pose, active hand selection, and riptide spin state.
+     *
+     * <p><b>Shield requirement for blocking:</b> setting {@code handActive = true} only renders
+     * the blocking animation if the active hand's equipped item is a shield. Equip one first via
+     * {@link #setEquipmentSlot(SwordPlayer, EnumWrappers.ItemSlot, ItemStack)} before calling
+     * this method.</p>
+     *
+     * <p>Flag semantics:</p>
+     * <ul>
+     *   <li><b>handActive</b> ({@code 0x01}) — marks the entity as actively using an item.
+     *       When the held item is a shield this produces the blocking stance; with other items
+     *       it raises the selected hand into the use-item pose.</li>
+     *   <li><b>offhand</b> ({@code 0x02}) — selects which hand the active flag applies to.
+     *       {@code false} = main hand, {@code true} = offhand. Only meaningful when
+     *       {@code handActive} is {@code true}.</li>
+     *   <li><b>riptide</b> ({@code 0x04}) — plays the trident riptide arm-raise and spin pose.
+     *       Independent of the other two flags; can be set alone without {@code handActive}.</li>
+     * </ul>
+     *
+     * <p>Pass all {@code false} to clear any active pose and return the NPC to idle stance.</p>
+     *
+     * <p>Implemented via {@code ClientboundSetEntityDataPacket} with a single
+     * {@code SynchedEntityData$DataValue} at index 8, using the NMS {@code BYTE} serializer —
+     * the same reflection strategy used by {@link #spawnFakePlayer} for skin parts.</p>
+     *
+     * @param viewer     the player whose NPC to update
+     * @param handActive {@code true} to enter item-use / blocking stance
+     * @param offhand    {@code true} to apply the active flag to the offhand instead of the main hand
+     * @param riptide    {@code true} to play the riptide trident raise/spin pose
+     * @return {@code true} if the metadata packet was sent without error
+     */
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    public static boolean setEntityFlags(SwordPlayer viewer, boolean handActive, boolean offhand, boolean riptide) {
+        FakePlayerData data = ACTIVE.get(viewer.player().getUniqueId());
+        if (data == null) return false;
+        byte flags = (byte) ((handActive ? 0x01 : 0) | (offhand ? 0x02 : 0) | (riptide ? 0x04 : 0));
+        try {
+            sendEntityFlags(data.player(), data.entityId(), flags);
+            return true;
+        } catch (Exception e) {
+            Sword.getInstance().getLogger().log(Level.SEVERE,
+                "[FakePlayerManager] Failed to send ENTITY_DATA (living entity flags) for "
+                    + viewer.player().getName(), e);
+            return false;
+        }
+    }
+
+    /**
+     * Sends a single-slot {@code ENTITY_EQUIPMENT} packet to update one equipment slot on the
+     * fake player NPC. Use this to equip items (e.g. a shield before calling
+     * {@link #setEntityFlags}) without replacing the full equipment set.
+     *
+     * <p>Does nothing if no NPC is active for the viewer.</p>
+     *
+     * @param viewer the player whose NPC to update
+     * @param slot   the equipment slot to update (MAINHAND, OFFHAND, HEAD, CHEST, LEGS, FEET)
+     * @param item   the item to place in the slot; {@code null} is treated as air
+     * @return {@code true} if the packet was sent without error
+     */
+    public static boolean setEquipmentSlot(SwordPlayer viewer, EnumWrappers.ItemSlot slot, ItemStack item) {
+        FakePlayerData data = ACTIVE.get(viewer.player().getUniqueId());
+        if (data == null) return false;
+        try {
+            ProtocolManager manager = ProtocolLibrary.getProtocolManager();
+            PacketContainer packet = manager.createPacket(PacketType.Play.Server.ENTITY_EQUIPMENT);
+            packet.getIntegers().write(0, data.entityId());
+            packet.getSlotStackPairLists().write(0,
+                Collections.singletonList(new Pair<>(slot, orAir(item))));
+            manager.sendServerPacket(data.player(), packet);
+            return true;
+        } catch (Exception e) {
+            Sword.getInstance().getLogger().log(Level.SEVERE,
+                "[FakePlayerManager] Failed to send ENTITY_EQUIPMENT (single slot) for "
+                    + viewer.player().getName(), e);
+            return false;
+        }
+    }
+
+    /**
+     * Builds and sends {@code ClientboundSetEntityDataPacket} with the {@code LIVING_ENTITY_FLAGS}
+     * byte at metadata index 8. Throws on any reflection or send failure so the public wrapper
+     * can log with a full stack trace.
+     */
+    private static void sendEntityFlags(Player player, int entityId, byte flags) throws Exception {
+        Class<?> serializersClass = Class.forName("net.minecraft.network.syncher.EntityDataSerializers");
+        Class<?> serializerClass = Class.forName("net.minecraft.network.syncher.EntityDataSerializer");
+        Field byteField = serializersClass.getDeclaredField("BYTE");
+        byteField.setAccessible(true);
+        Object byteSerializer = byteField.get(null);
+
+        // SynchedEntityData$DataValue(index, serializer, value)
+        Class<?> dataValueClass = Class.forName("net.minecraft.network.syncher.SynchedEntityData$DataValue");
+        Constructor<?> dataValueCtor = dataValueClass.getDeclaredConstructor(int.class, serializerClass, Object.class);
+        dataValueCtor.setAccessible(true);
+        Object dataValue = dataValueCtor.newInstance(8, byteSerializer, flags);
+
+        Class<?> packetClass = Class.forName(
+            "net.minecraft.network.protocol.game.ClientboundSetEntityDataPacket");
+        Constructor<?> packetCtor = packetClass.getDeclaredConstructor(int.class, List.class);
+        packetCtor.setAccessible(true);
+        Object nmsPacket = packetCtor.newInstance(entityId, List.of(dataValue));
+
+        ProtocolLibrary.getProtocolManager()
+            .sendServerPacket(player, PacketContainer.fromPacket(nmsPacket));
     }
 
     /**

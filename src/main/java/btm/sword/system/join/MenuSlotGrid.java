@@ -9,7 +9,6 @@ import java.util.stream.IntStream;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
-import org.bukkit.Material;
 import org.bukkit.World;
 
 import btm.sword.config.Config;
@@ -113,18 +112,21 @@ public final class MenuSlotGrid {
      * </p>
      */
     public static void placeAllBlocks() {
-        World world = resolveWorld();
-        if (world == null) return;
+        // TODO: will it be better to build them on world load?
+        //  I've already built some manually
 
-        int rows = Config.MenuGrid.ROWS;
-        int cols = Config.MenuGrid.COLS;
-        for (int i = 0; i < rows; i++) {
-            for (int j = 0; j < cols; j++) {
-                Location floor = slotCenter(new int[]{i, j});
-                if (floor == null) return;
-                floor.clone().add(0, -1, 0).getBlock().setType(Material.BLACK_CONCRETE);
-            }
-        }
+//        World world = resolveWorld();
+//        if (world == null) return;
+//
+//        int rows = Config.MenuGrid.ROWS;
+//        int cols = Config.MenuGrid.COLS;
+//        for (int i = 0; i < rows; i++) {
+//            for (int j = 0; j < cols; j++) {
+//                Location floor = slotCenter(new int[]{i, j});
+//                if (floor == null) return;
+//                floor.clone().add(0, -1, 0).getBlock().setType(Material.BLACK_CONCRETE);
+//            }
+//        }
     }
 
     // =========================================================================
@@ -158,7 +160,7 @@ public final class MenuSlotGrid {
     private static World resolveWorld() {
         World world = Bukkit.getWorld(Config.MenuGrid.WORLD);
         if (world == null && !Bukkit.getWorlds().isEmpty()) {
-            world = Bukkit.getWorlds().get(0);
+            world = Bukkit.getWorlds().getFirst();
         }
         return world;
     }

@@ -15,3 +15,7 @@ animations:
     anims:
       gentle_v2_default:
         loop: true
+  witha:
+    anims:
+      witha_default:
+        loop: true

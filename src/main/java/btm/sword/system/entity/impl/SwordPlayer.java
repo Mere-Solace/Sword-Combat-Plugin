@@ -725,6 +725,8 @@ public class SwordPlayer extends Combatant {
         // Place menu button one row above the hotbar (slot 17) to free up the hotbar
         player.getInventory().setItem(17, menuButton.getItemStack());
         player.getInventory().setItem(0, new ItemStack(Material.WOODEN_AXE));
+        player.getInventory().setItem(1, new ItemStack(Material.FIREWORK_ROCKET));
+        player.getInventory().setItem(38, new ItemStack(Material.ELYTRA));
 
         setAllAnchoredItemUpkeep(false);
         Debug.SPECIAL_ITEM_CHECKS_ENABLED = false;

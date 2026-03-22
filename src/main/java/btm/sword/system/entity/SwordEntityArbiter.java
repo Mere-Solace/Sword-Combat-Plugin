@@ -135,7 +135,7 @@ public class SwordEntityArbiter {
         switch (entity.getType()) {
             case ZOMBIE, SKELETON, WITHER_SKELETON, ENDERMAN, WARDEN, RAVAGER, CAVE_SPIDER, PILLAGER, ZOMBIFIED_PIGLIN,
                  HOGLIN, HUSK, SHULKER, SILVERFISH, SLIME, SPIDER, ENDER_DRAGON, EVOKER, ELDER_GUARDIAN, ENDERMITE,
-                 BLAZE, MAGMA_CUBE, PHANTOM -> {
+                 BLAZE, MAGMA_CUBE, PHANTOM, WITCH, ILLUSIONER -> {
                 return new Hostile(entity, new CombatProfile());
             }
             case ARMOR_STAND -> {
