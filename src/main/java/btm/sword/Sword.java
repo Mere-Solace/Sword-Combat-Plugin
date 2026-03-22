@@ -100,8 +100,7 @@ public final class Sword extends JavaPlugin {
         // Release all staging grid slots
         MenuSlotGrid.releaseAll();
 
-        // TODO: #129 - Uncomment when persistent data is ready
-        // PlayerDataManager.shutdown();
+        PlayerDataManager.shutdown();
 
         getLogger().info("~ Sword: Combat Evolved has been disabled ~");
     }

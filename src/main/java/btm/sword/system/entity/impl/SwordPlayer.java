@@ -108,8 +108,8 @@ public class SwordPlayer extends Combatant {
     private final SlotAnchoredItem shieldItem;
     private final SlotAnchoredItem chestplateItem;
 
-    /** Session-scoped storage for materials, credits, and auto-pickup preferences. */
-    private final PlayerStorage playerStorage = new PlayerStorage();
+    /** Economy storage for materials, credits, and auto-pickup preferences. Loaded from and saved to the database. */
+    private PlayerStorage playerStorage;
 
     private final Supplier<List<Component>> currencyLore =
         () -> List.of(Component.text(playerStorage.getSteelCredits() + " Steel Credits")
@@ -244,6 +244,7 @@ public class SwordPlayer extends Combatant {
      */
     public SwordPlayer(LivingEntity associatedEntity, PlayerData data) {
         super(associatedEntity, data.getCombatProfile());
+        playerStorage = data.getPlayerStorage();
         player = (Player) self;
         profile = player.getPlayerProfile();
         username = profile.getName();

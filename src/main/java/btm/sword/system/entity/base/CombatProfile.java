@@ -85,9 +85,11 @@ public class CombatProfile {
      * The maximum number of consecutive air-dodges the entity can perform
      * before landing. Reset in {@link btm.sword.system.entity.impl.Combatant#resetAirDashesPerformed()}.
      */
+    @lombok.Setter
     private int maxAirDodges;
 
-    private final PlayerSkillContainer playerSkillContainer;
+    @lombok.Setter
+    private PlayerSkillContainer playerSkillContainer;
 
     /**
      * Constructs a new {@code CombatProfile} with the default {@link SwordClassType#SWORD_THROWER}

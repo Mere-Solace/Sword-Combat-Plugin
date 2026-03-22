@@ -33,6 +33,38 @@ public class PlayerStorage {
     @Getter
     private boolean autoPickupCredits = false;
 
+    /** Constructs a fresh {@code PlayerStorage} with default values (used for first-time players). */
+    public PlayerStorage() {}
+
+    /**
+     * Constructs a {@code PlayerStorage} pre-populated from persisted data.
+     * Used by the database layer to restore a player's saved economy state.
+     *
+     * @param steelCredits          the player's saved credit balance
+     * @param autoPickupMaterials   saved auto-pickup-materials toggle
+     * @param autoPickupCredits     saved auto-pickup-credits toggle
+     * @param materialCounts        map of saved material counts
+     */
+    public PlayerStorage(int steelCredits, boolean autoPickupMaterials, boolean autoPickupCredits,
+            Map<MaterialType, Integer> materialCounts) {
+        this.steelCredits = steelCredits;
+        this.autoPickupMaterials = autoPickupMaterials;
+        this.autoPickupCredits = autoPickupCredits;
+        this.materialCounts.putAll(materialCounts);
+    }
+
+    // ── Snapshot ───────────────────────────────────────────────────────────────
+
+    /**
+     * Returns an unmodifiable snapshot of all material counts.
+     * Used by the persistence layer to save material data without exposing the mutable map.
+     *
+     * @return a read-only view of material type to count
+     */
+    public java.util.Map<MaterialType, Integer> getMaterialCountsSnapshot() {
+        return java.util.Collections.unmodifiableMap(materialCounts);
+    }
+
     // ── Materials ──────────────────────────────────────────────────────────────
 
     /**
