@@ -15,6 +15,7 @@ import btm.sword.system.entity.ai.state.IdleState;
 import btm.sword.system.entity.ai.state.OnGuardState;
 import btm.sword.system.entity.ai.state.PreAttackState;
 import btm.sword.system.entity.ai.state.RetreatState;
+import btm.sword.system.entity.ai.state.RetrieveWeaponState;
 import btm.sword.system.entity.ai.state.SurroundState;
 import btm.sword.system.entity.impl.Hostile;
 import btm.sword.utility.statemachine.State;
@@ -76,7 +77,22 @@ public class HostileStateMachine extends StateMachine<Hostile> {
             }
         ));
 
-        // 2. ANY → IdleState: current target switched to creative or spectator mid-combat
+        // 2. ANY → RetrieveWeaponState: mob's thrown weapon has landed and needs retrieval
+        addTransition(new Transition<>(
+            HostileAIFacade.class,
+            RetrieveWeaponState.class,
+            h -> {
+                if (h.getAiStateMachine().getState() instanceof RetrieveWeaponState) return false;
+                if (h.getAiStateMachine().getState() instanceof FleeState) return false;
+                if (h.isAttemptingThrow()) return false;
+                return h.getLodgedThrowItem() != null
+                    && h.getLodgedThrowItem().getDisplay() != null
+                    && h.getLodgedThrowItem().getDisplay().isValid();
+            },
+            h -> {}
+        ));
+
+        // 3. ANY → IdleState: current target switched to creative or spectator mid-combat
         addTransition(new Transition<>(
             HostileAIFacade.class,
             IdleState.class,
@@ -314,6 +330,37 @@ public class HostileStateMachine extends StateMachine<Hostile> {
                 return nearby.isEmpty();
             },
             h -> {}
+        ));
+
+        // 15. RetrieveWeaponState → ApproachState: weapon retrieved, target still in aggro range
+        addTransition(new Transition<>(
+            RetrieveWeaponState.class,
+            ApproachState.class,
+            h -> {
+                if (h.getLodgedThrowItem() != null) return false;
+                if (h.getCurrentTarget() == null || !h.getCurrentTarget().self().isValid()) return false;
+                return h.self().getLocation()
+                    .distanceSquared(h.getCurrentTarget().self().getLocation()) <= Config.Hostile.AGGRO_RANGE_SQUARED;
+            },
+            h -> {}
+        ));
+
+        // 16. RetrieveWeaponState → IdleState: weapon retrieved (or expired), target gone or out of range
+        addTransition(new Transition<>(
+            RetrieveWeaponState.class,
+            IdleState.class,
+            h -> {
+                if (h.getLodgedThrowItem() != null) return false;
+                if (h.getCurrentTarget() == null || !h.getCurrentTarget().self().isValid()) return true;
+                return h.self().getLocation()
+                    .distanceSquared(h.getCurrentTarget().self().getLocation()) > Config.Hostile.AGGRO_RANGE_SQUARED;
+            },
+            h -> {
+                h.setCurrentTarget(null);
+                if (h.getAggroTarget() != null && !h.getAggroTarget().self().isValid()) {
+                    h.setAggroTarget(null);
+                }
+            }
         ));
     }
 }

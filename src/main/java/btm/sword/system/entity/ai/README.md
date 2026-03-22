@@ -2,7 +2,7 @@
 
 ## Overview
 
-This package implements a finite state machine (FSM) driven AI for `Hostile` entities. It governs every phase of enemy behaviour — idle patrol, player detection, approach, group coordination, attack wind-up, attack execution, three post-attack branches, and low-health flight — through nine concrete states wired together with nineteen transitions.
+This package implements a finite state machine (FSM) driven AI for `Hostile` entities. It governs every phase of enemy behaviour — idle patrol, player detection, approach, group coordination, attack wind-up, attack execution, three post-attack branches, weapon retrieval, and low-health flight — through ten concrete states wired together with twenty-three transitions.
 
 The design mirrors the `UmbralBlade` FSM found in `system/entity/umbral/statemachine/`. `HostileAIFacade` plays the same role as `UmbralStateFacade`: a common abstract base that enables wildcard transitions (transitions whose `from` type matches any concrete state in the machine). The generic `StateMachine<T>` / `State<T>` / `Transition<T>` infrastructure in `utility/statemachine/` is shared between both machines without modification.
 
@@ -64,6 +64,17 @@ The design mirrors the `UmbralBlade` FSM found in `system/entity/umbral/statemac
                                      in aggro range]+----> IDLE
 
   ANY STATE --[target switches to creative/spectator]--> IDLE
+
+  ANY STATE --[lodgedThrowItem != null && !attemptingThrow]--> +-----------------+
+                                                               | RETRIEVE_WEAPON |
+                                                               +-----------------+
+                                                                        |
+                                                [lodgedThrowItem null]  |
+                                                         +--------------+--------------+
+                                                         |                             |
+                                                  [target in range]           [target gone/out of range]
+                                                         v                             v
+                                                    APPROACH                         IDLE
 ```
 
 Transitions `SURROUND → APPROACH` (ally count drops) and the `RETREAT` sub-graph (orphaned but retained)
@@ -95,6 +106,9 @@ are omitted from the ASCII art for readability; see the transition table below.
 | 18 | `RetreatState` | `ApproachState` | `retreatTimer <= 0` AND target still in aggro range | None |
 | 19 | `RetreatState` | `IdleState` | `retreatTimer <= 0` AND target left aggro range or invalid | Clear `currentTarget`; clear `aggroTarget` only if target dead/invalid |
 | 20 | `FleeState` | `IdleState` | No `Player` entity within aggro radius | None |
+| 21 | ANY (`HostileAIFacade`) | `RetrieveWeaponState` | Not already in `RetrieveWeaponState`/`FleeState`, not `isAttemptingThrow()`, AND `lodgedThrowItem` is non-null with valid display | None |
+| 22 | `RetrieveWeaponState` | `ApproachState` | `lodgedThrowItem == null` AND target still in aggro range | None |
+| 23 | `RetrieveWeaponState` | `IdleState` | `lodgedThrowItem == null` AND target lost or left aggro range | Clear `currentTarget`; clear `aggroTarget` only if target dead/invalid |
 
 ---
 
@@ -165,6 +179,18 @@ After landing an attack the mob backs off before re-engaging. On entry the mob's
 
 > **Note:** `RetreatState` is no longer reachable from `AttackState` — all post-attack branches now lead to `OnGuardState`, `AttackReadyState`, or `AttackState` (combo). `RetreatState` and its transitions are retained for potential future use.
 
+### `RetrieveWeaponState`
+
+Triggered any time a mob's thrown weapon grounds in the world (the `ThrownItem.onGroundCallback` sets `Hostile.lodgedThrowItem`). On entry, `RetrieveWeaponGoal` (MOVE, priority 1) pathfinds toward the item display at 120% speed; `LookAtTargetGoal` (LOOK, priority 2) is added if a `currentTarget` is set so the mob still faces its opponent while closing in.
+
+Each tick checks `distanceSquared(display) <= MOB_RETRIEVE_PICKUP_RANGE_SQUARED`. When the mob closes to within pickup range:
+1. The `ThrownItem` display is removed from `InteractiveItemArbiter` (without disposal) and marked `retrieved = true`.
+2. The item stack is restored to the mob's main hand via `setItemStackInHand(weapon, true)`.
+3. A `GRAB_CLOUD` particle effect is played at the display location.
+4. The display entity is disposed and `lodgedThrowItem` is cleared.
+
+Clearing `lodgedThrowItem` triggers transition #22 (→ `ApproachState`) if the target is still in aggro range, or transition #23 (→ `IdleState`) if the target has left. If the display expires before the mob arrives (timed out or disposed externally), `lodgedThrowItem` is cleared in `onTick` and the same exit transitions fire.
+
 ### `FleeState`
 
 The mob's health has dropped below `FLEE_HEALTH_FRACTION` of its maximum. `currentTarget` is cleared on transition entry. `Mob.setAware(true)` is called so the mob can move freely. Every 20 ticks the nearest `Player` within aggro range is located and a flee direction is computed as the vector pointing away from that player; the mob pathfinds 16 blocks along that vector at 150% speed. The direction is recalculated on a cadence rather than every tick to reduce the cost of `World.getNearbyPlayers()`. Transition #20 checks for the complete absence of players in aggro range and returns to `IdleState`.
@@ -188,7 +214,7 @@ The mob's health has dropped below `FLEE_HEALTH_FRACTION` of its maximum. `curre
 | Class | Category | Description |
 |-------|----------|-------------|
 | `MobSlashAbility` | `MELEE` | Randomly selects `SLASH1`/`SLASH2`/`SLASH3` and runs a `MobSweepAttack` with `defaultMobHit` |
-| `MobThrowAbility` | `RANGED` | Launches the mob's off-hand item as a `DroppedItem` with a parabolic arc toward the target |
+| `MobThrowAbility` | `RANGED` | Launches the mob's main-hand item toward the target. `canUse()` gates selection by both cooldown and a `MOB_THROW_WEIGHT` probability roll (default 0.3). If the hand is empty, performs a dirt-scoop animation (look down → break particles → give dirt) before throwing. When the item lands, sets `Hostile.lodgedThrowItem` to trigger retrieval via `RetrieveWeaponState`. |
 
 **Selection flow in `PreAttackState.onEnter`:**
 1. `selectAbility()` filters `possibleAbilities` by `canUse()` and picks one at random; stores it in `pendingAbility`.

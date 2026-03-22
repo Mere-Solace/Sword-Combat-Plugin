@@ -144,3 +144,5 @@ runs/
 jdk-*/
 
 .sdkmanrc
+
+bb/

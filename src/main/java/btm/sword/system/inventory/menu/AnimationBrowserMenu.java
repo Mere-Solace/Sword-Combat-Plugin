@@ -27,6 +27,7 @@ import btm.sword.system.inventory.item.PreviousItem;
 import btm.sword.system.item.ItemStackBuilder;
 import btm.sword.system.scene.CameraSystem;
 import btm.sword.system.scene.DEUAnimationController;
+import btm.sword.system.scene.WorldAnimationController;
 import btm.sword.system.scene.animation.AnimationDef;
 import btm.sword.system.scene.animation.AnimationRegistry;
 import net.kyori.adventure.text.Component;
@@ -90,7 +91,7 @@ public class AnimationBrowserMenu extends Menu {
                     } else if (type == ClickType.SHIFT_RIGHT) {
                         new DEUAnimationController(def, true, AnimationRegistry.isLooping(def.key())).start(swordPlayer);
                     } else if (type == ClickType.LEFT || type == ClickType.SHIFT_LEFT) {
-                        new DEUAnimationController(def, false, AnimationRegistry.isLooping(def.key())).start(swordPlayer);
+                        new WorldAnimationController(def, AnimationRegistry.isLooping(def.key())).start(swordPlayer);
                     }
                 }
             ));
@@ -302,7 +303,7 @@ public class AnimationBrowserMenu extends Menu {
                         ? Component.text("ON", NamedTextColor.GREEN, TextDecoration.BOLD)
                         : Component.text("OFF", NamedTextColor.RED)),
                 Component.empty(),
-                Component.text("Left-click        » play (no camera)", NamedTextColor.DARK_GRAY),
+                Component.text("Left-click        » play in world", NamedTextColor.DARK_GRAY),
                 Component.text("Right-click       » toggle loop", NamedTextColor.DARK_GRAY),
                 Component.text("Shift+Right-click » play + camera", NamedTextColor.DARK_GRAY)
             ))

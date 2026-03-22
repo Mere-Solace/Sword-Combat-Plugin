@@ -156,6 +156,22 @@ public class DevMenu extends Menu {
             click -> new DEUBDEMenu(swordPlayer).open()
         );
 
+        SimpleItem packetTests = new SimpleItem(
+            new ItemStackBuilder(Material.COMMAND_BLOCK)
+                .name(Component.text("Packet Tests", NamedTextColor.LIGHT_PURPLE, TextDecoration.BOLD))
+                .lore(List.of(Component.text("Fake player packet test harness", NamedTextColor.DARK_GRAY)))
+                .build(),
+            click -> new PacketTestMenu(swordPlayer).open()
+        );
+
+        SimpleItem joinCutscene = new SimpleItem(
+            new ItemStackBuilder(Material.LIGHTNING_ROD)
+                .name(Component.text("Initial Join Cutscene", NamedTextColor.LIGHT_PURPLE, TextDecoration.BOLD))
+                .lore(List.of(Component.text("Play the first-time join sequence", NamedTextColor.DARK_GRAY)))
+                .build(),
+            click -> btm.sword.system.join.InitialJoinCutscene.play(swordPlayer)
+        );
+
         SimpleItem itemLibrary = new SimpleItem(
             new ItemStackBuilder(Material.BOOKSHELF)
                 .name(Component.text("Item Library", NamedTextColor.GOLD, TextDecoration.BOLD))
@@ -167,18 +183,20 @@ public class DevMenu extends Menu {
         Gui gui = Gui.normal()
             .setStructure(
                 "# # # # # # # # #",
-                "# J N S F L . C #",
-                "# . . . . . . E #",
+                "# J N S F . L C #",
+                "# P X . . . . E #",
                 "# R I . T . M W #",
                 "# # # < . > # # #")
             .addIngredient('#', BORDER)
             .addIngredient('T', toggles)
+            .addIngredient('P', packetTests)
             .addIngredient('R', reloadInventoryButtons)
             .addIngredient('J', configEditor)
             .addIngredient('N', deuTools)
             .addIngredient('S', staticScene)
             .addIngredient('F', fakePlayerScene)
             .addIngredient('L', itemLibrary)
+            .addIngredient('X', joinCutscene)
             .addIngredient('C', creativeInventory)
             .addIngredient('W', woodenAxe)
             .addIngredient('E', witherSkeletonEgg)

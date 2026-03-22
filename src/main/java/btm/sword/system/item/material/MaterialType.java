@@ -28,7 +28,7 @@ public enum MaterialType {
     METAL_SCRAP(
         "metal_scrap",
         "Metal Scrap",
-        Material.ANCIENT_DEBRIS,
+        Material.NETHERITE_SCRAP,
         List.of(
             Component.text("A fragment of ancient alloy.", Config.SwordColor.TEXT_ITEM_BASE)
                 .decoration(TextDecoration.ITALIC, false),

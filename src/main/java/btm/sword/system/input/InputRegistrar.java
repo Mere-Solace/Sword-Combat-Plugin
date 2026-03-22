@@ -114,7 +114,12 @@ public class InputRegistrar {
             new InputExecutionTree.ActionContextPair(
                 () -> InputAction.builder()
                     .name("Block")
-                    .action(c -> BlockAction.startBlock((SwordPlayer) c))
+                    .action(c -> {
+                        // TODO: Revert after testing
+//                        PacketDisplayEntityGroup group = PacketDisplayEntityGroup.getGroup() // TODO:
+
+                        BlockAction.startBlock((SwordPlayer) c);
+                    })
                     .cooldown(executor -> 0)
                     .canCast(c -> true)
                     .displayDisabled(false)
@@ -528,6 +533,7 @@ public class InputRegistrar {
             .timeoutTicks(7)
             .cancellable(true)
             .display(true)
+            .visibleIf(ActivationContext.onlyIn(ActivationContext.NORMAL))
             .build();
 
         new InputExecutionTree.InputNodeBuilder(root, List.of(key, key, InputType.LEFT))

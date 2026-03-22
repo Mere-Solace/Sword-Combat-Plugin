@@ -3042,6 +3042,94 @@ public class Config {
             v -> MOB_THROW_ARC_HEIGHT = v,
             ConfigurationSection::getDouble
         ); }
+
+        /**
+         * Probability (0.0–1.0) that the throw ability passes the {@code canUse} check when
+         * off cooldown. Lower values make throws rarer relative to melee.
+         */
+        public static double MOB_THROW_WEIGHT = 0.3;
+        static { register(
+            "hostile.mob_throw_weight",
+            0.3, Double.class,
+            v -> MOB_THROW_WEIGHT = v,
+            ConfigurationSection::getDouble
+        ); }
+
+        /** Pickup radius squared for weapon retrieval (loaded from raw distance and squared on assignment). */
+        public static double MOB_RETRIEVE_PICKUP_RANGE_SQUARED = 4.0;
+        static { register(
+            "hostile.mob_retrieve_pickup_range",
+            2.0, Double.class,
+            v -> MOB_RETRIEVE_PICKUP_RANGE_SQUARED = v * v,
+            ConfigurationSection::getDouble
+        ); }
+
+        /** DEU group tag for the Hostile display rig. Empty string disables the rig. */
+        public static String DISPLAY_GROUP = "witha";
+        static { register(
+            "hostile.display_group",
+            "witha", String.class,
+            v -> DISPLAY_GROUP = v,
+            ConfigurationSection::getString
+        ); }
+
+        /** Y offset applied to the display rig's ride position relative to the mob's passenger seat. */
+        public static double DISPLAY_RIDE_OFFSET_Y = 0.0;
+        static { register(
+            "hostile.display_ride_offset_y",
+            0.0, Double.class,
+            v -> DISPLAY_RIDE_OFFSET_Y = v,
+            ConfigurationSection::getDouble
+        ); }
+
+        /** Animation tag for the idle loop. Empty string skips registering this state. */
+        public static String DISPLAY_ANIM_IDLE = "idle";
+        static { register(
+            "hostile.display_anim_idle",
+            "idle", String.class,
+            v -> DISPLAY_ANIM_IDLE = v,
+            ConfigurationSection::getString
+        ); }
+
+        /** Animation tag for the walk loop. */
+        public static String DISPLAY_ANIM_WALK = "walk";
+        static { register(
+            "hostile.display_anim_walk",
+            "walk", String.class,
+            v -> DISPLAY_ANIM_WALK = v,
+            ConfigurationSection::getString
+        ); }
+
+        /** Animation tag for the falling loop. */
+        public static String DISPLAY_ANIM_FALL = "fall";
+        static { register(
+            "hostile.display_anim_fall",
+            "fall", String.class,
+            v -> DISPLAY_ANIM_FALL = v,
+            ConfigurationSection::getString
+        ); }
+
+        /** Animation tag for the melee attack (plays once, locked until complete). */
+        public static String DISPLAY_ANIM_MELEE = "melee";
+        static { register(
+            "hostile.display_anim_melee",
+            "melee", String.class,
+            v -> DISPLAY_ANIM_MELEE = v,
+            ConfigurationSection::getString
+        ); }
+
+        /**
+         * Teleport-duration applied to every display entity in the rig (in ticks).
+         * Higher values give smoother movement at the cost of slightly delayed response.
+         * 3 is a good starting point; set to 0 to disable smoothing.
+         */
+        public static int DISPLAY_TELEPORT_DURATION = 3;
+        static { register(
+            "hostile.display_teleport_duration",
+            3, Integer.class,
+            v -> DISPLAY_TELEPORT_DURATION = v,
+            ConfigurationSection::getInt
+        ); }
     }
     //endregion
 
@@ -3890,6 +3978,159 @@ public class Config {
                 v -> CAMERA_HEIGHT = v, ConfigurationSection::getDouble);
             register("scene.fake_player_distance", FAKE_PLAYER_DISTANCE, Double.class,
                 v -> FAKE_PLAYER_DISTANCE = v, ConfigurationSection::getDouble);
+        }
+    }
+    //endregion
+
+    // ==============================================================================
+    //region Join Sequence Configuration
+    // ==============================================================================
+    /**
+     * Configuration for the server join routing pipeline.
+     * <p>
+     * Two world locations are used:
+     * </p>
+     * <ul>
+     *   <li><b>Spawnpoint</b> — where returning players (join sequence complete) are placed
+     *       before the main menu character scene opens.</li>
+     *   <li><b>Opening</b> — where first-time players are teleported for the intro cutscene.</li>
+     * </ul>
+     */
+    public static class JoinSequence {
+
+        /** World for both the spawnpoint and the opening animation location. */
+        public static String WORLD = "world";
+
+        /** X coordinate of the returning-player spawnpoint. */
+        public static double SPAWNPOINT_X = -132.0;
+
+        /** Y coordinate of the returning-player spawnpoint. */
+        public static double SPAWNPOINT_Y = 215.0;
+
+        /** Z coordinate of the returning-player spawnpoint. */
+        public static double SPAWNPOINT_Z = -783.0;
+
+        /** Yaw of the returning-player spawnpoint (degrees). */
+        public static float SPAWNPOINT_YAW = 0.0f;
+
+        /** X coordinate of the intro cutscene location. */
+        public static double OPENING_X = -186.0;
+
+        /** Y coordinate of the intro cutscene location. */
+        public static double OPENING_Y = 256.0;
+
+        /** Z coordinate of the intro cutscene location. */
+        public static double OPENING_Z = -1058.0;
+
+        /** Yaw of the opening cutscene location (degrees, controls NPC + camera facing). */
+        public static float OPENING_YAW = 0.0f;
+
+        /** Animation key used for the intro cutscene (must match an entry in animations.yml). */
+        public static String OPENING_ANIMATION_KEY = "slash_test_default";
+
+        /** Duration (ms) of the first animation phase before the lightning strike. */
+        public static int PHASE1_DURATION_MS = 5000;
+
+        /** Duration (ms) of the second animation phase after the lightning strike. */
+        public static int PHASE2_DURATION_MS = 2000;
+
+        /** Duration (ms) of the fake-player static camera phase. */
+        public static int PHASE3_DURATION_MS = 5000;
+
+        static {
+            register("join_sequence.world", WORLD, String.class,
+                v -> WORLD = v, ConfigurationSection::getString);
+            register("join_sequence.spawnpoint_x", SPAWNPOINT_X, Double.class,
+                v -> SPAWNPOINT_X = v, ConfigurationSection::getDouble);
+            register("join_sequence.spawnpoint_y", SPAWNPOINT_Y, Double.class,
+                v -> SPAWNPOINT_Y = v, ConfigurationSection::getDouble);
+            register("join_sequence.spawnpoint_z", SPAWNPOINT_Z, Double.class,
+                v -> SPAWNPOINT_Z = v, ConfigurationSection::getDouble);
+            register("join_sequence.spawnpoint_yaw", (double) SPAWNPOINT_YAW, Double.class,
+                v -> SPAWNPOINT_YAW = v.floatValue(), ConfigurationSection::getDouble);
+            register("join_sequence.opening_x", OPENING_X, Double.class,
+                v -> OPENING_X = v, ConfigurationSection::getDouble);
+            register("join_sequence.opening_y", OPENING_Y, Double.class,
+                v -> OPENING_Y = v, ConfigurationSection::getDouble);
+            register("join_sequence.opening_z", OPENING_Z, Double.class,
+                v -> OPENING_Z = v, ConfigurationSection::getDouble);
+            register("join_sequence.opening_yaw", (double) OPENING_YAW, Double.class,
+                v -> OPENING_YAW = v.floatValue(), ConfigurationSection::getDouble);
+            register("join_sequence.opening_animation_key", OPENING_ANIMATION_KEY, String.class,
+                v -> OPENING_ANIMATION_KEY = v, ConfigurationSection::getString);
+            register("join_sequence.phase1_duration_ms", PHASE1_DURATION_MS, Integer.class,
+                v -> PHASE1_DURATION_MS = v, ConfigurationSection::getInt);
+            register("join_sequence.phase2_duration_ms", PHASE2_DURATION_MS, Integer.class,
+                v -> PHASE2_DURATION_MS = v, ConfigurationSection::getInt);
+            register("join_sequence.phase3_duration_ms", PHASE3_DURATION_MS, Integer.class,
+                v -> PHASE3_DURATION_MS = v, ConfigurationSection::getInt);
+        }
+    }
+    //endregion
+
+    // ==============================================================================
+    //region Menu Grid Configuration
+    // ==============================================================================
+    /**
+     * Configuration for the server-join staging grid.
+     * <p>
+     * The grid is a matrix of off-screen platform slots. Each player occupies one slot
+     * from join until they enter gameplay. The grid is placed at the configured origin and
+     * grows along X (rows) and Z (columns) with the given spacing.
+     * {@link btm.sword.system.join.MenuSlotGrid} reads these values and manages occupancy.
+     * </p>
+     */
+    public static class MenuGrid {
+
+        /** World name for the staging grid. Falls back to the default world if not found. */
+        public static String WORLD = "world";
+
+        /** X coordinate of slot (0, 0) — grid grows in the positive-X direction. */
+        public static double ORIGIN_X = 0.0;
+
+        /** Y level of the grid platform surface (player stands at ORIGIN_Y). */
+        public static double ORIGIN_Y = 200.0;
+
+        /** Z coordinate of slot (0, 0) — grid grows in the positive-Z direction. */
+        public static double ORIGIN_Z = 0.0;
+
+        /** Number of rows (along X). */
+        public static int ROWS = 5;
+
+        /** Number of columns (along Z). */
+        public static int COLS = 10;
+
+        /** Distance in blocks between slot centres along X. */
+        public static double SPACING_X = 5.0;
+
+        /** Distance in blocks between slot centres along Z. */
+        public static double SPACING_Z = 5.0;
+
+        /**
+         * Milliseconds to hold the player in their dark-room staging slot before starting
+         * the join sequence. Allows the client to finish loading chunks and terrain.
+         */
+        public static int LOADING_WAIT_MS = 1500;
+
+        static {
+            register("menu_grid.world", WORLD, String.class,
+                v -> WORLD = v, ConfigurationSection::getString);
+            register("menu_grid.origin_x", ORIGIN_X, Double.class,
+                v -> ORIGIN_X = v, ConfigurationSection::getDouble);
+            register("menu_grid.origin_y", ORIGIN_Y, Double.class,
+                v -> ORIGIN_Y = v, ConfigurationSection::getDouble);
+            register("menu_grid.origin_z", ORIGIN_Z, Double.class,
+                v -> ORIGIN_Z = v, ConfigurationSection::getDouble);
+            register("menu_grid.rows", ROWS, Integer.class,
+                v -> ROWS = v, ConfigurationSection::getInt);
+            register("menu_grid.cols", COLS, Integer.class,
+                v -> COLS = v, ConfigurationSection::getInt);
+            register("menu_grid.spacing_x", SPACING_X, Double.class,
+                v -> SPACING_X = v, ConfigurationSection::getDouble);
+            register("menu_grid.spacing_z", SPACING_Z, Double.class,
+                v -> SPACING_Z = v, ConfigurationSection::getDouble);
+            register("menu_grid.loading_wait_ms", LOADING_WAIT_MS, Integer.class,
+                v -> LOADING_WAIT_MS = v, ConfigurationSection::getInt);
         }
     }
     //endregion

@@ -9,7 +9,9 @@ import com.destroystokyo.paper.entity.ai.GoalType;
 import btm.sword.system.entity.ai.HostileAIFacade;
 import btm.sword.system.entity.ai.MobGoalArbiter;
 import btm.sword.system.entity.ai.goal.LookAtTargetGoal;
+import btm.sword.system.entity.display.DisplayRig;
 import btm.sword.system.entity.impl.Hostile;
+import net.donnypz.displayentityutils.utils.DisplayEntities.machine.MachineState;
 
 /**
  * Attack AI state for Hostile entities.
@@ -54,6 +56,11 @@ public class AttackState extends HostileAIFacade {
 
         h.setAttackDone(true);
         h.setAttackPostRoll(ThreadLocalRandom.current().nextInt(3));
+
+        DisplayRig rig = h.getDisplayRig();
+        if (rig != null) {
+            rig.setState(MachineState.StateType.MELEE);
+        }
     }
 
     @Override
