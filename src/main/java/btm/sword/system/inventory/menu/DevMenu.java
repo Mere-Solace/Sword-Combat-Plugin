@@ -147,7 +147,7 @@ public class DevMenu extends Menu {
         Gui gui = Gui.normal()
             .setStructure(
                 "# # # # # # # # #",
-                "# J N S L . . C #",
+                "# J N S . . L C #",
                 "# . . . . . . E #",
                 "# R I . T . M W #",
                 "# # # < . > # # #")
