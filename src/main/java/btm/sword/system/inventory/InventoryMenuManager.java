@@ -18,6 +18,7 @@ import btm.sword.system.inventory.menu.DEUBDEMenu;
 import btm.sword.system.inventory.menu.DeuGroupBrowserMenu;
 import btm.sword.system.inventory.menu.DevMenu;
 import btm.sword.system.inventory.menu.DevStatEditorMenu;
+import btm.sword.system.inventory.menu.ItemLibraryMenu;
 import btm.sword.system.inventory.menu.MainMenu;
 import btm.sword.system.inventory.menu.MaterialPouchMenu;
 import btm.sword.system.inventory.menu.Menu;
@@ -44,6 +45,7 @@ public class InventoryMenuManager {
         register(MaterialPouchMenu.class, MaterialPouchMenu::new);
         register(CurrencyMenu.class, CurrencyMenu::new);
         register(ArtifactPouchMenu.class, ArtifactPouchMenu::new);
+        register(ItemLibraryMenu.class, ItemLibraryMenu::new);
         // SkillSelectionMenu is constructed with a slot index and is opened directly
     }
 

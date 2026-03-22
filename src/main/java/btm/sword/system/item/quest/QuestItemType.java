@@ -1,5 +1,8 @@
 package btm.sword.system.item.quest;
 
+import org.bukkit.Material;
+import org.bukkit.inventory.ItemStack;
+
 /**
  * Enum defining all quest/artifact item types in the Sword item economy.
  * <p>
@@ -25,6 +28,16 @@ public enum QuestItemType {
     /** @return the string id used to identify this quest item type. */
     public String id() {
         return id;
+    }
+
+    /**
+     * Builds an {@link ItemStack} representing this quest item type.
+     * Placeholder implementation — will be overridden per constant as content is added.
+     *
+     * @return an ItemStack for this quest item type
+     */
+    public ItemStack buildItemStack() {
+        return new ItemStack(Material.AIR);
     }
 
     /**

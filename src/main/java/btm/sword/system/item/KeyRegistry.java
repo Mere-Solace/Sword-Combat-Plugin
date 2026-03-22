@@ -170,6 +170,13 @@ public final class KeyRegistry {
     /** Cached {@link NamespacedKey} for {@link #CREDIT_ITEM}. */
     public static final NamespacedKey CREDIT_ITEM_KEY = key(CREDIT_ITEM);
 
+
+    /** Persistent data key identifying a {@link btm.sword.system.item.weapon.WeaponType} by its id string. */
+    public static final String WEAPON_TYPE = "weapon_type";
+
+    /** Cached {@link NamespacedKey} for {@link #WEAPON_TYPE}. */
+    public static final NamespacedKey WEAPON_TYPE_KEY = key(WEAPON_TYPE);
+
     // ------------------------------
     //  Utility Methods
     // ------------------------------
