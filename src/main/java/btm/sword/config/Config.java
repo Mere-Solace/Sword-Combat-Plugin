@@ -3043,6 +3043,27 @@ public class Config {
             ConfigurationSection::getDouble
         ); }
 
+        /**
+         * Probability (0.0–1.0) that the throw ability passes the {@code canUse} check when
+         * off cooldown. Lower values make throws rarer relative to melee.
+         */
+        public static double MOB_THROW_WEIGHT = 0.3;
+        static { register(
+            "hostile.mob_throw_weight",
+            0.3, Double.class,
+            v -> MOB_THROW_WEIGHT = v,
+            ConfigurationSection::getDouble
+        ); }
+
+        /** Pickup radius squared for weapon retrieval (loaded from raw distance and squared on assignment). */
+        public static double MOB_RETRIEVE_PICKUP_RANGE_SQUARED = 4.0;
+        static { register(
+            "hostile.mob_retrieve_pickup_range",
+            2.0, Double.class,
+            v -> MOB_RETRIEVE_PICKUP_RANGE_SQUARED = v * v,
+            ConfigurationSection::getDouble
+        ); }
+
         /** DEU group tag for the Hostile display rig. Empty string disables the rig. */
         public static String DISPLAY_GROUP = "witha";
         static { register(

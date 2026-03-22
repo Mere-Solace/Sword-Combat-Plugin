@@ -209,15 +209,32 @@ public class UmbralBlade extends ThrownItem {
     }
 
     // TODO: #240 - Make a method for calculating correct orientation of blade for edge to align with plane of swing on attack
-    // TODO: #240 - Make transitions smooth and slow with arcs and such and interpolation
     public void setDisplayTransformation(Class<? extends State<UmbralBlade>> state) {
         if (display == null) return;
 
+        int duration = getInterpolationDurationForState(state);
         SwordScheduler.runBukkitTaskLater(() -> {
-            DisplayUtil.setInterpolationValues(display, 0, 2); // TODO: #240 - Make duration dynamic if needed
+            DisplayUtil.setInterpolationValues(display, 0, duration);
             display.setTransformation(getStateDisplayTransformation(state));
             }, 50, TimeUnit.MILLISECONDS
         );
+    }
+
+    /**
+     * Returns the interpolation duration in ticks to use when transitioning the blade display
+     * into the given state. Fast action states use short durations; idle/equipped states use longer
+     * durations for smoother visual transitions.
+     *
+     * @param state the target state class
+     * @return interpolation duration in ticks
+     */
+    private int getInterpolationDurationForState(Class<? extends State<UmbralBlade>> state) {
+        if (state == LungingState.class || state == GrabImpaleState.class) return 2;
+        if (state == AttackingQuickState.class || state == AttackingHeavyState.class) return 2;
+        if (state == RecallingState.class) return 3;
+        if (state == SheathedState.class || state == WieldState.class) return 5;
+        if (state == StandbyState.class || state == WaitingState.class) return 8;
+        return 4;
     }
 
     public Transformation getStateDisplayTransformation(Class<? extends State<UmbralBlade>> state) {
@@ -301,8 +318,6 @@ public class UmbralBlade extends ThrownItem {
             idleMovementTask.cancel();
         }
     }
-
-    // TODO: #240 - Make item Display changes look less jerky
 
     @Override
     public void groundedCheck() {

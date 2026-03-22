@@ -19,6 +19,7 @@ import btm.sword.system.control.SwordScheduler;
 import btm.sword.system.control.TimeArbiter;
 import btm.sword.system.entity.impl.Combatant;
 import btm.sword.system.entity.umbral.UmbralBlade;
+import btm.sword.system.entity.umbral.statemachine.state.LodgedState;
 import btm.sword.system.entity.umbral.statemachine.state.WaitingState;
 import btm.sword.utility.Debug;
 import btm.sword.utility.Prefab;
@@ -222,7 +223,7 @@ public class Dash {
 
         Debug.movement("heightDiff="+heightDiff);
 
-        boolean umbralHeightBoost = !holdingLink || targetedBlade.inState(WaitingState.class);
+        boolean umbralHeightBoost = !holdingLink || targetedBlade.inState(WaitingState.class) || targetedBlade.inState(LodgedState.class);
 
         if (umbralHeightBoost &&
             heightDiff <= Config.Movement.DASH_FLAT_HEIGHT_UPPER &&

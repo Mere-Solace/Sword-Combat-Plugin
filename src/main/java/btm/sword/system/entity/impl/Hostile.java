@@ -6,6 +6,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.TimeUnit;
 
 import org.bukkit.GameMode;
 import org.bukkit.Location;
@@ -21,7 +22,10 @@ import org.bukkit.util.Vector;
 import com.destroystokyo.paper.entity.Pathfinder;
 import com.destroystokyo.paper.entity.ai.GoalType;
 
+import btm.sword.config.Config;
 import btm.sword.system.action.throwing.types.DroppedItem;
+import btm.sword.system.action.throwing.types.ThrownItem;
+import btm.sword.system.control.SwordScheduler;
 import btm.sword.system.entity.ai.HostileStateMachine;
 import btm.sword.system.entity.ai.MobGoalArbiter;
 import btm.sword.system.entity.ai.WanderProfile;
@@ -33,6 +37,7 @@ import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.aspect.Resource;
 import btm.sword.system.entity.base.CombatProfile;
 import btm.sword.system.entity.base.SwordEntity;
+import btm.sword.system.entity.display.DisplayRig;
 import btm.sword.system.item.weapon.WeaponType;
 import btm.sword.utility.Debug;
 import lombok.Getter;
@@ -60,6 +65,13 @@ public class Hostile extends Combatant {
     /** The ability selected at the start of PreAttackState; executed on AttackState entry. */
     private MobAbility pendingAbility;
 
+    /**
+     * The thrown item that has landed in the world and is waiting to be retrieved.
+     * Set by {@link btm.sword.system.entity.ai.ability.MobThrowAbility} when the item grounds;
+     * cleared by {@link btm.sword.system.entity.ai.state.RetrieveWeaponState} on pickup or expiry.
+     */
+    private ThrownItem lodgedThrowItem;
+
     /** Per-ability cooldown counters (ticks remaining). Decremented each tick; removed at 0. */
     private final Map<String, Integer> abilityCooldowns;
 
@@ -68,6 +80,9 @@ public class Hostile extends Combatant {
 
     // AI state machine
     private HostileStateMachine aiStateMachine;
+
+    /** Visual display rig; {@code null} when the group tag is unset or the group is not found. */
+    @Getter private DisplayRig displayRig;
     private WanderProfile wanderProfile = WanderProfile.ROAMER;
     private SwordEntity currentTarget;
     private SwordEntity nearestScannedTarget;
@@ -158,10 +173,21 @@ public class Hostile extends Combatant {
         ((Resource) aspects.getAspect(AspectType.SHARDS)).stopRegenTask(); // prevent regen of shards
         MobGoalArbiter.GOALS.removeAllGoals(mob); // clear all vanilla goals before starting custom AI
         aiStateMachine = new HostileStateMachine(this, new IdleState());
+        // Defer display rig spawn by one tick — spawning display entities synchronously during
+        // EntityAddToWorldEvent causes a Paper chunk-system error because the host chunk is
+        // still mid-update when this event fires.
+        SwordScheduler.runBukkitTaskLater(
+            () -> { if (mob.isValid()) displayRig = DisplayRig.spawn(mob, Config.Hostile.DISPLAY_GROUP); },
+            50, TimeUnit.MILLISECONDS
+        );
     }
 
     @Override
     public void onDeath() {
+        if (displayRig != null) {
+            displayRig.despawn();
+            displayRig = null;
+        }
         aiStateMachine = null;
         super.onDeath();
     }

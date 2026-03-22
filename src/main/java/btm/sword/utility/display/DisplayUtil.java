@@ -198,7 +198,6 @@ public class DisplayUtil {
         Vector offset = Config.Direction.UP().multiply(heightOffset);
 
         itemDisplay.setBillboard(Config.Display.ITEM_DISPLAY_FOLLOW_BILLBOARD_MODE);
-        entity.self().addPassenger(itemDisplay);
 
         AtomicInteger iteration = new AtomicInteger(0);
         return TimeArbiter.runTimeBoundBukkitTaskOnTimer(
@@ -215,7 +214,6 @@ public class DisplayUtil {
                     2,
                     DisplayUtil.class, 214
                 );
-                entity.self().addPassenger(itemDisplay); // important line
 
                 if (iteration.incrementAndGet() % Config.Display.ITEM_DISPLAY_FOLLOW_PARTICLE_INTERVAL == 0)
                     Prefab.Particles.BLEED.display(l);
