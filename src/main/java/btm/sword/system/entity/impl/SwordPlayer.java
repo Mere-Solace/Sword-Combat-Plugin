@@ -56,7 +56,10 @@ import btm.sword.system.input.InputRegistrar;
 import btm.sword.system.input.InputType;
 import btm.sword.system.inventory.InventoryMenuManager;
 import btm.sword.system.inventory.PlayerMenuManager;
+import btm.sword.system.inventory.menu.ArtifactPouchMenu;
+import btm.sword.system.inventory.menu.CurrencyMenu;
 import btm.sword.system.inventory.menu.MainMenu;
+import btm.sword.system.inventory.menu.MaterialPouchMenu;
 import btm.sword.system.item.ItemClass;
 import btm.sword.system.item.ItemClassifier;
 import btm.sword.system.item.ItemStackBuilder;
@@ -66,6 +69,7 @@ import btm.sword.system.item.SwordItemType;
 import btm.sword.system.item.special.NonMovableItem;
 import btm.sword.system.item.special.SlotAnchoredItem;
 import btm.sword.system.playerdata.PlayerData;
+import btm.sword.system.playerdata.PlayerStorage;
 import btm.sword.utility.Debug;
 import btm.sword.utility.Prefab;
 import btm.sword.utility.SwordTimeUnit;
@@ -94,7 +98,7 @@ public class SwordPlayer extends Combatant {
     private final String username;
     private final ItemStack playerHead;
 
-    /** Total number of material storage slots across all pages. */
+    /** Maximum number of individual material items that can be stored across all types. */
     public static final int MATERIAL_SLOTS_TOTAL = 96;
 
     private final PlayerMenuManager playerMenuManager;
@@ -105,16 +109,16 @@ public class SwordPlayer extends Combatant {
     private final SlotAnchoredItem shieldItem;
     private final SlotAnchoredItem chestplateItem;
 
-    @Getter private int steelCredits = 100;
-    @Getter private int materialSlotsUsed = 0;
+    /** Session-scoped storage for materials, credits, and auto-pickup preferences. */
+    private final PlayerStorage playerStorage = new PlayerStorage();
 
     private final Supplier<List<Component>> currencyLore =
-        () -> List.of(Component.text(steelCredits + " Steel Credits")
+        () -> List.of(Component.text(playerStorage.getSteelCredits() + " Steel Credits")
             .color(Config.SwordColor.TEXT_COOL)
             .decoration(TextDecoration.ITALIC, false));
 
     private final Supplier<List<Component>> materialLore =
-        () -> List.of(Component.text(materialSlotsUsed + " / " + MATERIAL_SLOTS_TOTAL + " slots")
+        () -> List.of(Component.text(playerStorage.getTotalMaterialSlots() + " / " + MATERIAL_SLOTS_TOTAL + " slots")
             .color(Config.SwordColor.TEXT_COOL)
             .decoration(TextDecoration.ITALIC, false));
 
@@ -839,7 +843,47 @@ public class SwordPlayer extends Combatant {
         }
 
         StorageCategory category = StorageCategory.fromItem(itemStack);
-        return category != null;
+        if (category != null) {
+            openMenuForCategory(category);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Opens the menu associated with the given {@link StorageCategory}.
+     * Shared by {@link #handleItemInteraction} and {@link #tryOpenMenuForItem}.
+     *
+     * @param category the storage category whose menu to open
+     */
+    private void openMenuForCategory(StorageCategory category) {
+        switch (category) {
+            case MATERIAL -> InventoryMenuManager.openMenu(MaterialPouchMenu.class, this);
+            case CURRENCY -> InventoryMenuManager.openMenu(CurrencyMenu.class, this);
+            case QUEST    -> InventoryMenuManager.openMenu(ArtifactPouchMenu.class, this);
+        }
+    }
+
+    /**
+     * If {@code item} is a Sword UI button (main menu or any storage shortcut), opens its
+     * corresponding menu and returns {@code true}. Returns {@code false} otherwise.
+     *
+     * <p>Intended for inventory-click context where there is no SHIFT carve-out.
+     * The main-menu SHIFT suppression is handled separately in {@link #handleItemInteraction}.</p>
+     *
+     * @param item the item to inspect; may be null
+     * @return {@code true} if a menu was opened
+     */
+    private boolean tryOpenMenuForItem(ItemStack item) {
+        if (item == null || item.isEmpty()) return false;
+        if (KeyRegistry.hasKey(item, KeyRegistry.MAIN_MENU_BUTTON_KEY)) {
+            InventoryMenuManager.openMenu(MainMenu.class, this);
+            return true;
+        }
+        StorageCategory category = StorageCategory.fromItem(item);
+        if (category == null) return false;
+        openMenuForCategory(category);
+        return true;
     }
 
     /**
@@ -859,11 +903,9 @@ public class SwordPlayer extends Combatant {
             return false;
         }
 
-        // Clicking the main menu button inside the inventory opens the menu
-        // Check this first to prevent the even from getting eaten by other checks
-        if (KeyRegistry.hasKey(clicked, KeyRegistry.MAIN_MENU_BUTTON_KEY) ||
-            KeyRegistry.hasKey(onCursor, KeyRegistry.MAIN_MENU_BUTTON_KEY)) {
-            InventoryMenuManager.openMenu(MainMenu.class, this);
+        // Any Sword UI button (main menu or storage shortcuts) opens its menu.
+        // Checked before the scene overlay guard — UI buttons are always accessible.
+        if (tryOpenMenuForItem(clicked) || tryOpenMenuForItem(onCursor)) {
             return true;
         }
 
@@ -879,11 +921,6 @@ public class SwordPlayer extends Combatant {
             return true;
         }
 
-        // Clicking a storage-category button consumes the event (placeholder — no menu yet)
-        if (KeyRegistry.hasKey(clicked, KeyRegistry.STORAGE_BUTTON_KEY) ||
-            KeyRegistry.hasKey(onCursor, KeyRegistry.STORAGE_BUTTON_KEY)) {
-            return true;
-        }
 
         // Protect non-movable items on cursor from being placed into any slot
         if (NonMovableItem.isNonMovable(onCursor)) {

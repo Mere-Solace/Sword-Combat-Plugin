@@ -156,10 +156,18 @@ public class DevMenu extends Menu {
             click -> new DEUBDEMenu(swordPlayer).open()
         );
 
+        SimpleItem itemLibrary = new SimpleItem(
+            new ItemStackBuilder(Material.BOOKSHELF)
+                .name(Component.text("Item Library", NamedTextColor.GOLD, TextDecoration.BOLD))
+                .lore(List.of(Component.text("Browse all registered game items", NamedTextColor.DARK_GRAY)))
+                .build(),
+            click -> new ItemLibraryMenu(swordPlayer).open()
+        );
+
         Gui gui = Gui.normal()
             .setStructure(
                 "# # # # # # # # #",
-                "# J N S F . . C #",
+                "# J N S F L . C #",
                 "# . . . . . . E #",
                 "# R I . T . M W #",
                 "# # # < . > # # #")
@@ -170,6 +178,7 @@ public class DevMenu extends Menu {
             .addIngredient('N', deuTools)
             .addIngredient('S', staticScene)
             .addIngredient('F', fakePlayerScene)
+            .addIngredient('L', itemLibrary)
             .addIngredient('C', creativeInventory)
             .addIngredient('W', woodenAxe)
             .addIngredient('E', witherSkeletonEgg)

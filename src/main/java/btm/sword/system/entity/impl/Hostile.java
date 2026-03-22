@@ -33,7 +33,7 @@ import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.aspect.Resource;
 import btm.sword.system.entity.base.CombatProfile;
 import btm.sword.system.entity.base.SwordEntity;
-import btm.sword.system.item.prefab.ItemLibrary;
+import btm.sword.system.item.weapon.WeaponType;
 import btm.sword.utility.Debug;
 import lombok.Getter;
 import lombok.Setter;
@@ -108,7 +108,7 @@ public class Hostile extends Combatant {
     private int attackReadyTimer;
 
     ItemStack itemInLeftHand = new ItemStack(Material.SHIELD);
-    ItemStack itemInRightHand = new ItemStack(ItemLibrary.sword);
+    ItemStack itemInRightHand = WeaponType.FALCHION.buildItemStack();
 
     /**
      * Constructs a new Hostile wrapping the given {@link LivingEntity}.
