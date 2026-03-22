@@ -46,7 +46,6 @@ import btm.sword.system.control.SwordScheduler;
 import btm.sword.system.control.TimeArbiter;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.base.SwordEntity;
-import btm.sword.system.entity.umbral.input.BladeRequest;
 import btm.sword.system.input.ActivationContext;
 import btm.sword.system.input.InputAction;
 import btm.sword.system.input.InputActionExecutor;
@@ -648,9 +647,7 @@ public class SwordPlayer extends Combatant {
 
         player.setInvisible(true);
 
-        if (getUmbralBlade() != null) {
-            getUmbralBlade().request(BladeRequest.DEACTIVATE);
-        }
+        deactivateUmbralBlade();
 
         inSceneOverlay = true;
     }
@@ -683,6 +680,7 @@ public class SwordPlayer extends Combatant {
         }
 
         player.setInvisible(false);
+        activateUmbralBlade();
     }
 
     /**
