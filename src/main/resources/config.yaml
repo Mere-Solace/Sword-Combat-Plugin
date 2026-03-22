@@ -398,3 +398,12 @@ scene:
 animation:
   static_menu_animation_key: gentle_v2_default
   conversion_step_timeout_seconds: 360
+menu_grid:
+  world: world
+  origin_x: 0.0
+  origin_y: 200.0
+  origin_z: 0.0
+  rows: 5
+  cols: 10
+  spacing_x: 5.0
+  spacing_z: 5.0

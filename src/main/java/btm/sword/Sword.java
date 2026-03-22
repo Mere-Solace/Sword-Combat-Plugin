@@ -22,6 +22,8 @@ import btm.sword.system.action.throwing.InteractiveItemArbiter;
 import btm.sword.system.action.throwing.ProjectileManager;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.inventory.InventoryMenuManager;
+import btm.sword.system.join.MenuSlotGrid;
+import btm.sword.system.join.ServerJoinArbiter;
 import btm.sword.system.playerdata.PlayerDataManager;
 import btm.sword.system.scene.FakePlayerManager;
 import btm.sword.system.scene.animation.AnimationRegistry;
@@ -52,6 +54,7 @@ public final class Sword extends JavaPlugin {
 
         getServer().getPluginManager().registerEvents(new InputListener(), this);
         getServer().getPluginManager().registerEvents(new PlayerListener(), this);
+        getServer().getPluginManager().registerEvents(new ServerJoinArbiter(), this);
         getServer().getPluginManager().registerEvents(new EntityListener(), this);
         getServer().getPluginManager().registerEvents(new WorldListener(), this);
         getServer().getPluginManager().registerEvents(new SystemListener(), this);
@@ -77,6 +80,9 @@ public final class Sword extends JavaPlugin {
 
         PlayerDataManager.initialize();
 
+        // Place the staging grid platforms (worlds are loaded before onEnable on Paper)
+        MenuSlotGrid.placeAllBlocks();
+
         getLogger().info("~ Sword: Combat Evolved has been enabled ~");
     }
 
@@ -90,6 +96,9 @@ public final class Sword extends JavaPlugin {
 
         // Remove any lingering packet-based fake player NPCs
         FakePlayerManager.despawnAll();
+
+        // Release all staging grid slots
+        MenuSlotGrid.releaseAll();
 
         // TODO: #129 - Uncomment when persistent data is ready
         // PlayerDataManager.shutdown();

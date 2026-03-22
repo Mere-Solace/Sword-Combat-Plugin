@@ -21,8 +21,6 @@ import org.bukkit.event.inventory.InventoryEvent;
 import org.bukkit.event.inventory.InventoryOpenEvent;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.player.PlayerGameModeChangeEvent;
-import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
@@ -59,41 +57,6 @@ import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
  * </p>
  */
 public class PlayerListener implements Listener {
-    /**
-     * Handles when a player joins the server.
-     * <p>
-     * Registers the player with the {@link SwordEntityArbiter} to create
-     * their {@link SwordPlayer} instance and sends a greeting message.
-     * </p>
-     *
-     * @param event the {@link PlayerJoinEvent} triggered when a player joins the server
-     */
-    @EventHandler
-    public void onPlayerJoin(PlayerJoinEvent event) {
-        Player p = event.getPlayer();
-//        SwordEntityArbiter.register(p);
-        p.sendMessage("Hello!");
-    }
-
-    /**
-     * Handles when a player leaves the server.
-     * <p>
-     * Ensures that any {@link SwordPlayer} instance is properly cleaned up,
-     * invoking {@link SwordPlayer#onLeave()} before removal from the {@link SwordEntityArbiter}.
-     * Logs the departure in the server console.
-     * </p>
-     *
-     * @param event the {@link PlayerQuitEvent} triggered when a player quits the server
-     */
-    @EventHandler
-    public void onPlayerLeave(PlayerQuitEvent event) {
-        if (SwordEntityArbiter.get(event.getPlayer()) instanceof SwordPlayer sp) {
-            sp.onLeave();
-            SwordEntityArbiter.remove(sp.self());
-            Sword.getInstance().getLogger().info(event.getPlayer().getName() + " has left the server ;(");
-        }
-    }
-
     /**
      * Handles player death events.
      * <p>
