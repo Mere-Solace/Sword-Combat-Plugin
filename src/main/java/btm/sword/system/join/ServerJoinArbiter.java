@@ -82,13 +82,19 @@ public final class ServerJoinArbiter implements Listener {
     @EventHandler(priority = EventPriority.NORMAL)
     public void onPlayerQuit(PlayerQuitEvent event) {
         Player player = event.getPlayer();
-        MenuSlotGrid.releaseSlot(player.getUniqueId());
+        UUID uuid = player.getUniqueId();
+
+        MenuSlotGrid.releaseSlot(uuid);
 
         if (SwordEntityArbiter.get(player) instanceof SwordPlayer sp) {
             CameraSystem.stopController(sp);
             sp.onLeave();
             SwordEntityArbiter.remove(player);
         }
+
+        // Persist this player's data before evicting from cache
+        PlayerDataManager.saveAsync(uuid);
+        PlayerDataManager.evict(uuid);
     }
 
     // =========================================================================

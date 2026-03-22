@@ -122,4 +122,16 @@ public final class PlayerSkillContainer {
     public Map<SkillSlot, SkillId> equippedView() {
         return Map.copyOf(equipped);
     }
+
+    /**
+     * Returns all unlocked skill IDs across every skill type as a flat list.
+     * Used by the persistence layer to save the player's available skill pool.
+     *
+     * @return an unmodifiable flat list of all available (unlocked) skill IDs
+     */
+    public List<SkillId> allAvailableSkillIds() {
+        return availableSkillsMap.values().stream()
+            .flatMap(Set::stream)
+            .toList();
+    }
 }
