@@ -21,6 +21,8 @@ import btm.sword.system.entity.impl.Dummy;
 import btm.sword.system.entity.impl.Hostile;
 import btm.sword.system.entity.impl.Passive;
 import btm.sword.system.entity.impl.SwordPlayer;
+import btm.sword.system.entity.mob.MobTypeDefinition;
+import btm.sword.system.entity.mob.MobTypeRegistry;
 import btm.sword.system.playerdata.PlayerDataManager;
 
 /**
@@ -136,7 +138,10 @@ public class SwordEntityArbiter {
             case ZOMBIE, SKELETON, WITHER_SKELETON, ENDERMAN, WARDEN, RAVAGER, CAVE_SPIDER, PILLAGER, ZOMBIFIED_PIGLIN,
                  HOGLIN, HUSK, SHULKER, SILVERFISH, SLIME, SPIDER, ENDER_DRAGON, EVOKER, ELDER_GUARDIAN, ENDERMITE,
                  BLAZE, MAGMA_CUBE, PHANTOM, WITCH, ILLUSIONER -> {
-                return new Hostile(entity, new CombatProfile());
+                CombatProfile profile = new CombatProfile();
+                MobTypeDefinition mobType = MobTypeRegistry.getByEntityType(entity.getType());
+                if (mobType != null) mobType.applyTo(profile);
+                return new Hostile(entity, profile);
             }
             case ARMOR_STAND -> {
                 if (entity instanceof ArmorStand stand) {

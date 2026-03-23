@@ -23,6 +23,7 @@ import btm.sword.system.action.throwing.ProjectileManager;
 import btm.sword.system.display.BossBarManager;
 import btm.sword.system.display.ScoreboardManager;
 import btm.sword.system.entity.SwordEntityArbiter;
+import btm.sword.system.entity.mob.MobTypeRegistry;
 import btm.sword.system.inventory.InventoryMenuManager;
 import btm.sword.system.join.MenuSlotGrid;
 import btm.sword.system.join.ServerJoinArbiter;
@@ -79,6 +80,7 @@ public final class Sword extends JavaPlugin {
         InventoryMenuManager.registerAll();
 
         AnimationRegistry.initialize(this);
+        MobTypeRegistry.initialize(this);
 
         PlayerDataManager.initialize();
 

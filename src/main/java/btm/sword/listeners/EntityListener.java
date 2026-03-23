@@ -4,6 +4,7 @@ package btm.sword.listeners;
 import org.bukkit.Location;
 import org.bukkit.damage.DamageSource;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.ItemDisplay;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -16,8 +17,11 @@ import com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent;
 
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.base.SwordEntity;
+import btm.sword.system.entity.display.DisplayRig;
 import btm.sword.system.entity.impl.Combatant;
+import btm.sword.system.entity.impl.Hostile;
 import btm.sword.utility.Prefab;
+import net.donnypz.displayentityutils.events.AnimationCompleteEvent;
 
 public class EntityListener implements Listener {
     /**
@@ -42,6 +46,15 @@ public class EntityListener implements Listener {
             if (swordEntity != null) {
                 swordEntity.resetResources();
                 swordEntity.onSpawn();
+            }
+        }
+        // Tag any near-zero-scale item display so DisplayRig can find it as a weapon slot.
+        if (entity instanceof ItemDisplay itemDisplay) {
+            org.joml.Vector3f scale = itemDisplay.getTransformation().getScale();
+            if (Math.abs(scale.x) < DisplayRig.WEAPON_SLOT_SCALE_THRESHOLD
+                    && Math.abs(scale.y) < DisplayRig.WEAPON_SLOT_SCALE_THRESHOLD
+                    && Math.abs(scale.z) < DisplayRig.WEAPON_SLOT_SCALE_THRESHOLD) {
+                itemDisplay.addScoreboardTag(DisplayRig.WEAPON_SLOT_TAG);
             }
         }
     }
@@ -99,6 +112,26 @@ public class EntityListener implements Listener {
         if(event.getEntity() instanceof LivingEntity && event.getDamage() < 7474040) {
             event.setDamage(0.01);
             ((LivingEntity) event.getEntity()).heal(100);
+        }
+    }
+
+    /**
+     * Detects when a DEU animation finishes on a hostile mob's display rig.
+     * If the mob is in its death animation, deal lethal damage to trigger the actual kill.
+     *
+     * @param event the {@link AnimationCompleteEvent} fired by DEU when an animation ends
+     */
+    @EventHandler
+    public void onAnimationComplete(AnimationCompleteEvent event) {
+        Entity vehicle = event.getGroup().getVehicle();
+        if (!(vehicle instanceof LivingEntity livingEntity)) return;
+        SwordEntity swordEntity = SwordEntityArbiter.get(livingEntity);
+        if (!(swordEntity instanceof Hostile hostile)) return;
+        if (!hostile.isInDeathAnimation()) return;
+        String tag = event.getAnimation().getAnimationTag();
+        DisplayRig rig = hostile.getDisplayRig();
+        if (rig != null && tag != null && tag.equals(rig.dieAnimTag())) {
+            livingEntity.damage(74077740);
         }
     }
 

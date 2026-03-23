@@ -1,0 +1,29 @@
+# Mob type definitions for Sword: Combat Evolved
+# Each top-level key is the mob type ID used by MobTypeRegistry.
+#
+# Fields:
+#   entity_type   - vanilla Minecraft EntityType name (required)
+#   display:
+#     group             - DEU group tag to spawn as the visual display rig
+#     animation_prefix  - prefix used to build all animation tags (prefix_idle, prefix_walk,
+#                         prefix_fall, prefix_attack, prefix_die). Defaults to group name.
+#     animation_lengths - duration in ticks for each animation slot (used as fallback kill timer)
+#       idle, walk, fall, attack, die
+#   stats         - optional per-stat overrides on top of global CombatProfile defaults
+#                   keys are AspectType names (lowercase): shards, toughness, soulfire, form,
+#                   might, resolve, finesse, prowess, armor, fortitude, celerity, willpower
+#   abilities     - list of ability IDs (reserved for future ability system integration)
+
+pillager:
+  entity_type: PILLAGER
+  display:
+    group: "witha"
+    animation_prefix: "witha"
+    animation_lengths:
+      idle: 40
+      walk: 20
+      fall: 10
+      attack: 30
+      die: 60
+  stats: {}
+  abilities: []

@@ -23,7 +23,6 @@ import org.bukkit.util.Vector;
 import com.destroystokyo.paper.entity.Pathfinder;
 import com.destroystokyo.paper.entity.ai.GoalType;
 
-import btm.sword.config.Config;
 import btm.sword.system.action.throwing.types.DroppedItem;
 import btm.sword.system.action.throwing.types.ThrownItem;
 import btm.sword.system.control.SwordScheduler;
@@ -39,6 +38,8 @@ import btm.sword.system.entity.aspect.Resource;
 import btm.sword.system.entity.base.CombatProfile;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.display.DisplayRig;
+import btm.sword.system.entity.mob.MobTypeDefinition;
+import btm.sword.system.entity.mob.MobTypeRegistry;
 import btm.sword.system.item.weapon.WeaponType;
 import btm.sword.utility.Debug;
 import lombok.Getter;
@@ -84,6 +85,9 @@ public class Hostile extends Combatant {
 
     /** Visual display rig; {@code null} when the group tag is unset or the group is not found. */
     @Getter private DisplayRig displayRig;
+
+    /** {@code true} while the death animation is playing — defers the Bukkit kill. */
+    @Getter private boolean inDeathAnimation;
     private WanderProfile wanderProfile = WanderProfile.ROAMER;
     private SwordEntity currentTarget;
     private SwordEntity nearestScannedTarget;
@@ -187,15 +191,14 @@ public class Hostile extends Combatant {
         // Defer display rig spawn by one tick — spawning display entities synchronously during
         // EntityAddToWorldEvent causes a Paper chunk-system error because the host chunk is
         // still mid-update when this event fires.
-        if (mob.getType() == EntityType.ZOMBIE) {
-            // Defer display rig spawn by one tick — spawning display entities synchronously during
-            // EntityAddToWorldEvent causes a Paper chunk-system error because the host chunk is
-            // still mid-update when this event fires.
+        MobTypeDefinition mobType = MobTypeRegistry.getByEntityType(mob.getType());
+        if (mobType != null && mobType.displayGroup() != null) {
+            final MobTypeDefinition type = mobType;
             SwordScheduler.runBukkitTaskLater(
                 () -> {
                     if (mob.isValid()) {
                         mob.setInvisible(true);
-                        displayRig = DisplayRig.spawn(mob, Config.Hostile.DISPLAY_GROUP);
+                        displayRig = DisplayRig.spawn(mob, type.displayGroup(), type.animationSlots());
                     }
                 },
                 50, TimeUnit.MILLISECONDS
@@ -228,7 +231,34 @@ public class Hostile extends Combatant {
                 stuck.register();
             }
         }
+
+        // Disable AI immediately regardless of death animation.
+        mob.setAware(false);
+        aiStateMachine = null;
+        statusActive = false;
+        endStatusDisplay();
+
+        if (displayRig != null && displayRig.hasDieAnimation()) {
+            inDeathAnimation = true;
+            displayRig.triggerDeath();
+            // Fallback kill — fires if AnimationCompleteEvent never arrives.
+            // Uses the configured die animation length; falls back to 5 seconds if unset.
+            MobTypeDefinition mobType = MobTypeRegistry.getByEntityType(mob.getType());
+            int dieTicks = (mobType != null) ? mobType.animationSlots().die().durationTicks() : 0;
+            int fallbackMs = dieTicks > 0 ? dieTicks * btm.sword.utility.SwordTimeUnit.MILLISECONDS_PER_TICK : 5000;
+            SwordScheduler.runBukkitTaskLater(() -> {
+                if (!mob.isDead()) {
+                    mob.damage(74077740);
+                }
+            }, fallbackMs, TimeUnit.MILLISECONDS);
+        }
+
         super.onZeroHealth();
+    }
+
+    @Override
+    protected boolean shouldDeferDeath() {
+        return inDeathAnimation;
     }
 
     @Override

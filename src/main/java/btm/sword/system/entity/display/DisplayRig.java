@@ -3,12 +3,15 @@ package btm.sword.system.entity.display;
 import java.util.List;
 
 import org.bukkit.entity.Display;
+import org.bukkit.entity.ItemDisplay;
 import org.bukkit.entity.Mob;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.Nullable;
 
 import btm.sword.Sword;
 import btm.sword.config.Config;
+import btm.sword.system.entity.mob.AnimationSlots;
 import net.donnypz.displayentityutils.events.GroupSpawnedEvent;
 import net.donnypz.displayentityutils.managers.DisplayGroupManager;
 import net.donnypz.displayentityutils.managers.LoadMethod;
@@ -26,31 +29,50 @@ import net.donnypz.displayentityutils.utils.controller.GroupFollowProperties;
  * Wraps a {@link SpawnedDisplayEntityGroup} and a {@link DisplayStateMachine}.
  * The machine automatically transitions between IDLE, WALK, and FALLING states based
  * on the mob's movement. The MELEE state is triggered manually by the AI FSM
- * (see {@link btm.sword.system.entity.ai.state.AttackState}).
+ * (see {@link btm.sword.system.entity.ai.state.AttackState}). The DEATH state, when
+ * present, is triggered by {@link #triggerDeath()} and plays once before the mob is killed.
  * </p>
  *
- * <p>To spawn a rig for a mob, call {@link #spawn(Mob, String)} with the mob and
- * the DEU group tag. Call {@link #despawn()} when the mob dies to clean up entities.</p>
+ * <p>Call {@link #spawn(Mob, String, AnimationSlots)} to create a rig.
+ * Call {@link #despawn()} when the mob dies to clean up entities.</p>
  */
 public class DisplayRig {
 
+    /**
+     * Scoreboard tag added to any {@link ItemDisplay} whose scale is below this threshold
+     * on all axes at spawn time. Used to identify the weapon-slot display entity inside
+     * a DEU group so external code can control what item it shows.
+     */
+    public static final String WEAPON_SLOT_TAG = "sword_weapon_slot";
+
+    /**
+     * Scale threshold below which an {@link ItemDisplay} is treated as a weapon slot.
+     * Set the display entity's scale to near-zero (e.g. {@code 0.001}) in your DEU group
+     * to mark it for capture.
+     */
+    public static final float WEAPON_SLOT_SCALE_THRESHOLD = 0.05f;
+
     private final SpawnedDisplayEntityGroup group;
     private final DisplayStateMachine stateMachine;
+    /** Non-empty when a die animation was registered; used by the animation-complete listener. */
+    private final String dieAnimTag;
 
-    private DisplayRig(SpawnedDisplayEntityGroup group, DisplayStateMachine stateMachine) {
+    private DisplayRig(SpawnedDisplayEntityGroup group, DisplayStateMachine stateMachine, String dieAnimTag) {
         this.group = group;
         this.stateMachine = stateMachine;
+        this.dieAnimTag = dieAnimTag;
     }
 
     /**
-     * Spawns a display rig for the given mob using the named DEU group tag.
-     * Returns {@code null} if the group cannot be found in DEU's local storage.
+     * Spawns a display rig for the given mob using the named DEU group tag and per-type
+     * animation slots.
      *
      * @param mob      the mob to attach the rig to
      * @param groupTag the DEU group tag to spawn
-     * @return the new rig, or {@code null} on failure
+     * @param slots    the animation slot tags to register on the state machine
+     * @return the new rig, or {@code null} if the group cannot be found in DEU's local storage
      */
-    public static @Nullable DisplayRig spawn(Mob mob, String groupTag) {
+    public static @Nullable DisplayRig spawn(Mob mob, String groupTag, AnimationSlots slots) {
         DisplayEntityGroup def = DisplayGroupManager.getGroup(LoadMethod.LOCAL, groupTag);
         if (def == null) {
             Sword.getInstance().getLogger().warning(
@@ -77,24 +99,89 @@ public class DisplayRig {
         group.followEntityDirection(mob, yawFollow);
 
         DisplayStateMachine stateMachine = new DisplayStateMachine(mob.getUniqueId() + "_rig");
-        addState(stateMachine, MachineState.StateType.IDLE, Config.Hostile.DISPLAY_ANIM_IDLE, false);
-        addState(stateMachine, MachineState.StateType.WALK, Config.Hostile.DISPLAY_ANIM_WALK, false);
-        addState(stateMachine, MachineState.StateType.FALLING, Config.Hostile.DISPLAY_ANIM_FALL, false);
-        addState(stateMachine, MachineState.StateType.MELEE, Config.Hostile.DISPLAY_ANIM_MELEE, true);
+        addState(stateMachine, MachineState.StateType.IDLE,    slots.idle().tag(),   false);
+        addState(stateMachine, MachineState.StateType.WALK,    slots.walk().tag(),   false);
+        addState(stateMachine, MachineState.StateType.FALLING, slots.fall().tag(),   false);
+        addState(stateMachine, MachineState.StateType.MELEE,   slots.attack().tag(), true);
+        addState(stateMachine, MachineState.StateType.DEATH,   slots.die().tag(),    true);
         stateMachine.addGroup(group);
 
-        return new DisplayRig(group, stateMachine);
+        return new DisplayRig(group, stateMachine, slots.die().tag() != null ? slots.die().tag() : "");
     }
 
     /**
      * Manually overrides the current animation state.
-     * States registered with {@code transitionLock = true} (e.g. MELEE) hold until
+     * States registered with {@code transitionLock = true} (e.g. MELEE, DEATH) hold until
      * the animation completes, then the machine resumes automatic transitions.
      *
      * @param type the state to transition to
      */
     public void setState(MachineState.StateType type) {
         stateMachine.setState(type, group);
+    }
+
+    /**
+     * Triggers the DEATH animation if one was registered. After the animation completes,
+     * DEU fires {@link net.donnypz.displayentityutils.events.AnimationCompleteEvent}.
+     * If no die animation was registered this is a no-op.
+     */
+    public void triggerDeath() {
+        if (!dieAnimTag.isEmpty()) {
+            stateMachine.setState(MachineState.StateType.DEATH, group);
+        }
+    }
+
+    /**
+     * Returns {@code true} if a die animation was registered for this rig.
+     *
+     * @return whether a DEATH state exists on the state machine
+     */
+    public boolean hasDieAnimation() {
+        return !dieAnimTag.isEmpty();
+    }
+
+    /**
+     * Returns the DEU animation tag registered for the DEATH state,
+     * or an empty string if none was registered.
+     *
+     * @return the die animation tag
+     */
+    public String dieAnimTag() {
+        return dieAnimTag;
+    }
+
+    /**
+     * Returns the underlying {@link SpawnedDisplayEntityGroup}.
+     *
+     * @return the spawned group
+     */
+    public SpawnedDisplayEntityGroup group() {
+        return group;
+    }
+
+    /**
+     * Returns the weapon-slot {@link ItemDisplay} inside this rig — the part entity whose
+     * scale was near-zero at spawn time and was tagged with {@link #WEAPON_SLOT_TAG} by
+     * {@link btm.sword.listeners.EntityListener}.
+     *
+     * @return the tagged item display, or {@code null} if none was found in the group
+     */
+    public @Nullable ItemDisplay getWeaponSlot() {
+        for (ItemDisplay display : group.getPartEntities(ItemDisplay.class)) {
+            if (display.getScoreboardTags().contains(WEAPON_SLOT_TAG)) return display;
+        }
+        return null;
+    }
+
+    /**
+     * Sets the item shown by the weapon-slot display entity.
+     * Does nothing if this rig has no weapon slot.
+     *
+     * @param item the item to display; {@code null} or air clears the slot
+     */
+    public void setWeaponSlotItem(@Nullable ItemStack item) {
+        ItemDisplay slot = getWeaponSlot();
+        if (slot != null) slot.setItemStack(item);
     }
 
     /**
