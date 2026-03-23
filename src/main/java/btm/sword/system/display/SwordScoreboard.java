@@ -9,6 +9,7 @@ import org.bukkit.scoreboard.RenderType;
 import org.bukkit.scoreboard.Score;
 import org.bukkit.scoreboard.Scoreboard;
 
+import io.papermc.paper.scoreboard.numbers.NumberFormat;
 import net.kyori.adventure.text.Component;
 
 /**
@@ -52,6 +53,7 @@ public final class SwordScoreboard {
         this.scoreboard = Bukkit.getScoreboardManager().getNewScoreboard();
         this.objective = scoreboard.registerNewObjective("sword_hud", Criteria.DUMMY, title, RenderType.INTEGER);
         this.objective.setDisplaySlot(DisplaySlot.SIDEBAR);
+        this.objective.numberFormat(NumberFormat.blank());
         this.visible = false;
     }
 
