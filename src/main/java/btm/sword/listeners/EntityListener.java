@@ -2,6 +2,7 @@ package btm.sword.listeners;
 
 
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.damage.DamageSource;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.ItemDisplay;
@@ -10,6 +11,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityPickupItemEvent;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
 
 import com.destroystokyo.paper.event.entity.EntityAddToWorldEvent;
@@ -48,12 +50,12 @@ public class EntityListener implements Listener {
                 swordEntity.onSpawn();
             }
         }
-        // Tag any near-zero-scale item display so DisplayRig can find it as a weapon slot.
+        // Tag any LIGHTNING_ROD item display as a weapon slot for DisplayRig.
+        // Place a LIGHTNING_ROD item on the desired display entity part in your DEU group
+        // to mark it as the weapon slot; the runtime item is then set via setWeaponSlotItem().
         if (entity instanceof ItemDisplay itemDisplay) {
-            org.joml.Vector3f scale = itemDisplay.getTransformation().getScale();
-            if (Math.abs(scale.x) < DisplayRig.WEAPON_SLOT_SCALE_THRESHOLD
-                    && Math.abs(scale.y) < DisplayRig.WEAPON_SLOT_SCALE_THRESHOLD
-                    && Math.abs(scale.z) < DisplayRig.WEAPON_SLOT_SCALE_THRESHOLD) {
+            ItemStack displayed = itemDisplay.getItemStack();
+            if (displayed != null && displayed.getType() == Material.LIGHTNING_ROD) {
                 itemDisplay.addScoreboardTag(DisplayRig.WEAPON_SLOT_TAG);
             }
         }

@@ -39,18 +39,12 @@ import net.donnypz.displayentityutils.utils.controller.GroupFollowProperties;
 public class DisplayRig {
 
     /**
-     * Scoreboard tag added to any {@link ItemDisplay} whose scale is below this threshold
-     * on all axes at spawn time. Used to identify the weapon-slot display entity inside
-     * a DEU group so external code can control what item it shows.
+     * Scoreboard tag added by {@link btm.sword.listeners.EntityListener} to any
+     * {@link ItemDisplay} that holds a {@link org.bukkit.Material#LIGHTNING_ROD} item at spawn.
+     * Place a LIGHTNING_ROD on the desired display entity part in your DEU group to designate
+     * it as the weapon slot; the runtime item is then swapped via {@link #setWeaponSlotItem}.
      */
     public static final String WEAPON_SLOT_TAG = "sword_weapon_slot";
-
-    /**
-     * Scale threshold below which an {@link ItemDisplay} is treated as a weapon slot.
-     * Set the display entity's scale to near-zero (e.g. {@code 0.001}) in your DEU group
-     * to mark it for capture.
-     */
-    public static final float WEAPON_SLOT_SCALE_THRESHOLD = 0.05f;
 
     private final SpawnedDisplayEntityGroup group;
     private final DisplayStateMachine stateMachine;

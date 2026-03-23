@@ -49,6 +49,7 @@ public class RetrieveWeaponState extends HostileAIFacade {
         ItemDisplay display = lodged.getDisplay();
         if (display == null || !display.isValid()) {
             h.setLodgedThrowItem(null);
+            h.onWeaponRetrieved();
             return;
         }
 
@@ -83,5 +84,6 @@ public class RetrieveWeaponState extends HostileAIFacade {
 
         lodged.dispose();
         h.setLodgedThrowItem(null);
+        h.onWeaponRetrieved();
     }
 }

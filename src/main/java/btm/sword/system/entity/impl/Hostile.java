@@ -12,12 +12,13 @@ import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Entity;
-import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 
 import com.destroystokyo.paper.entity.Pathfinder;
@@ -86,6 +87,13 @@ public class Hostile extends Combatant {
     /** Visual display rig; {@code null} when the group tag is unset or the group is not found. */
     @Getter private DisplayRig displayRig;
 
+    /**
+     * {@code true} when this mob's visuals are driven by a DEU display rig rather than vanilla
+     * equipment rendering. Vanilla gear is stripped on construction; items are shown via the rig's
+     * weapon slot display entity instead.
+     */
+    @Getter private boolean usesDisplayRig;
+
     /** {@code true} while the death animation is playing — defers the Bukkit kill. */
     @Getter private boolean inDeathAnimation;
     private WanderProfile wanderProfile = WanderProfile.ROAMER;
@@ -150,16 +158,26 @@ public class Hostile extends Combatant {
         possibleAbilities.add(new MobSlashAbility());
         possibleAbilities.add(new MobThrowAbility());
 
+        MobTypeDefinition mobTypeDef = MobTypeRegistry.getByEntityType(associatedEntity.getType());
+        usesDisplayRig = mobTypeDef != null && mobTypeDef.displayGroup() != null;
+
         EntityEquipment equipment = associatedEntity.getEquipment();
         if (equipment != null) {
-            if (associatedEntity.getType() == EntityType.PILLAGER) {
-                // Zombie is driven by the display rig — strip all vanilla gear so nothing shows.
+            if (usesDisplayRig) {
+                // Rig drives visuals — strip all vanilla gear so nothing bleeds through.
                 equipment.setItemInMainHand(ItemStack.of(Material.AIR));
                 equipment.setItemInOffHand(ItemStack.of(Material.AIR));
                 equipment.setHelmet(ItemStack.of(Material.AIR));
                 equipment.setChestplate(ItemStack.of(Material.AIR));
                 equipment.setLeggings(ItemStack.of(Material.AIR));
                 equipment.setBoots(ItemStack.of(Material.AIR));
+
+                self.clearActivePotionEffects();
+                self.addPotionEffect(new PotionEffect(
+                    PotionEffectType.SLOWNESS,
+                    PotionEffect.INFINITE_DURATION,
+                    2,
+                    false, false));
             } else {
                 equipment.setItemInMainHand(itemInRightHand);
                 equipment.setItemInOffHand(itemInLeftHand);
@@ -199,6 +217,9 @@ public class Hostile extends Combatant {
                     if (mob.isValid()) {
                         mob.setInvisible(true);
                         displayRig = DisplayRig.spawn(mob, type.displayGroup(), type.animationSlots());
+                        if (displayRig != null) {
+                            displayRig.setWeaponSlotItem(itemInRightHand);
+                        }
                     }
                 },
                 50, TimeUnit.MILLISECONDS
@@ -346,6 +367,35 @@ public class Hostile extends Combatant {
                 entry.setValue(remaining);
             }
         }
+    }
+
+    /**
+     * Returns the item this mob can throw.
+     * <p>
+     * For display-rig mobs the logical item is tracked in {@link #itemInRightHand} because
+     * vanilla equipment is stripped to AIR; for normal mobs, returns whatever is in the
+     * vanilla main hand via {@link #getItemStackInHand(boolean)}.
+     *
+     * @return the throwable item, or the current main-hand item for non-rig mobs
+     */
+    public ItemStack getThrowableItem() {
+        return usesDisplayRig ? itemInRightHand : getItemStackInHand(true);
+    }
+
+    /**
+     * Clears the weapon-slot display when this mob has thrown its main-hand item.
+     * No-op if no display rig is present.
+     */
+    public void onWeaponThrown() {
+        if (displayRig != null) displayRig.setWeaponSlotItem(null);
+    }
+
+    /**
+     * Restores the weapon-slot display when this mob retrieves its thrown item.
+     * No-op if no display rig is present.
+     */
+    public void onWeaponRetrieved() {
+        if (displayRig != null) displayRig.setWeaponSlotItem(itemInRightHand);
     }
 
     public Location getOrigin() {
