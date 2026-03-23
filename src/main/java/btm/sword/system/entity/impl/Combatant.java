@@ -414,7 +414,7 @@ public abstract class Combatant extends SwordEntity {
         return canPerformAction() &&
             umbralBlade != null &&
             umbralBlade.inState(WieldState.class) &&
-            aspects.soulfireCur() > Config.Combat.CHANNEL_SOULFIRE_COST &&
+            aspects.soulfireCur() >= Config.Combat.CHANNEL_SOULFIRE_COST &&
             aspects.shards().belowMax();
     }
 

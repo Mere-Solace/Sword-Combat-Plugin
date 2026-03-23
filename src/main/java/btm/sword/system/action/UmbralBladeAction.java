@@ -16,6 +16,8 @@ import btm.sword.system.attack.style.AttackType;
 import btm.sword.system.control.PredicateRunnablePair;
 import btm.sword.system.control.SwordScheduler;
 import btm.sword.system.control.TimeArbiter;
+import btm.sword.system.display.BossBarManager;
+import btm.sword.system.display.SwordBossBar;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.impl.Combatant;
 import btm.sword.system.entity.impl.SwordPlayer;
@@ -29,6 +31,9 @@ import btm.sword.utility.Debug;
 import btm.sword.utility.Prefab;
 import btm.sword.utility.display.DrawUtil;
 import btm.sword.utility.math.Basis;
+import net.kyori.adventure.bossbar.BossBar;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 
 public class UmbralBladeAction extends SwordAction {
     public static void wield(Combatant wielder) {
@@ -143,33 +148,48 @@ public class UmbralBladeAction extends SwordAction {
         final AtomicInteger iterationsPassed = new AtomicInteger(0);
         int healingDuration = (int) Config.Combat.CHANNEL_DURATION_MS;
         int period = Config.Combat.CHANNEL_HEAL_PERIOD;
-        final int iterationsRequired = healingDuration/period;
-        final float soulfirePerIteration = cost/iterationsRequired;
+        final int iterationsRequired = healingDuration / period;
+        final float soulfirePerIteration = cost / iterationsRequired;
 
         final AtomicBoolean overspend = new AtomicBoolean(false);
+        final AtomicBoolean healComplete = new AtomicBoolean(false);
+
+        SwordBossBar channelBar = BossBarManager.create(
+            Component.text("Healing", NamedTextColor.GREEN),
+            0f,
+            BossBar.Color.GREEN
+        );
+        channelBar.addViewer(sp.getPlayer());
+
+        Runnable cleanupChannel = () -> {
+            sp.setHealChannelTask(null);
+            sp.setActivationContext(ActivationContext.NORMAL);
+            channelBar.remove();
+        };
 
         sp.setHealChannelTask(TimeArbiter.runTimeBoundBukkitTaskOnTimer(
             null,
             () -> {
-                if (iterationsPassed.incrementAndGet() > iterationsRequired) {
-                    iterationsPassed.set(0);
-                }
+                iterationsPassed.incrementAndGet();
 
                 if (sp.changeSoulfire(-soulfirePerIteration)) {
                     overspend.set(true);
-                    // TODO:additional overspend logic?
                     sp.setActivationContext(ActivationContext.NORMAL);
                     return;
                 }
 
-                if (iterationsPassed.get() == iterationsRequired &&
-                    !sp.isChannelInterrupted() &&
-                    sp.getActivationContext().equals(ActivationContext.CHANNELING)) {
+                channelBar.setProgress((float) iterationsPassed.get() / iterationsRequired);
+
+                if (iterationsPassed.get() >= iterationsRequired
+                    && !sp.isChannelInterrupted()
+                    && sp.getActivationContext().equals(ActivationContext.CHANNELING)) {
                     Debug.umbral("My lad, you're healing yourself!");
 
                     sp.changeShards(Config.Combat.CHANNEL_HEAL_AMOUNT);
                     Prefab.Particles.SOULFIRE_POOF.display(sp.getChestLocation());
                     Prefab.Sounds.SHADOW_BLINK.playForAllInRadius(sp.self());
+                    healComplete.set(true);
+                    return;
                 }
 
                 Prefab.PotionEffects.HEAL_CHANNEL_SLOW.apply(wielder);
@@ -179,9 +199,9 @@ public class UmbralBladeAction extends SwordAction {
             0, period,
             UmbralBladeAction.class, "channel",
             new PredicateRunnablePair(
-                () -> sp.isChannelInterrupted() ||
-                    !sp.getActivationContext().equals(ActivationContext.CHANNELING) ||
-                    !sp.isSneakingAndHoldingRight(),
+                () -> sp.isChannelInterrupted()
+                    || !sp.getActivationContext().equals(ActivationContext.CHANNELING)
+                    || !sp.isSneakingAndHoldingRight(),
                 () -> {
                     Debug.umbral(String.format(
                         "channel break -> interrupt=%s, ctx=%s, sneakRight=%s",
@@ -189,17 +209,16 @@ public class UmbralBladeAction extends SwordAction {
                         sp.getActivationContext(),
                         sp.isSneakingAndHoldingRight()
                     ));
-                    sp.setHealChannelTask(null);
-                    sp.setActivationContext(ActivationContext.NORMAL);
+                    cleanupChannel.run();
                 }
             ),
             new PredicateRunnablePair(
                 overspend::get,
-                () -> {
-                    //TODO: overspend logic?
-                    sp.setHealChannelTask(null);
-                    sp.setActivationContext(ActivationContext.NORMAL);
-                }
+                cleanupChannel
+            ),
+            new PredicateRunnablePair(
+                healComplete::get,
+                cleanupChannel
             )
         ));
     }
