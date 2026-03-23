@@ -68,6 +68,13 @@ public class DisplayRig {
     /** Non-empty when a die animation was registered; used by the animation-complete listener. */
     private final String dieAnimTag;
 
+    /**
+     * Set to {@code true} by {@link #lockOnDeath()} once the death sequence begins.
+     * Any subsequent {@link #setState} calls are silently dropped so the DEATH
+     * animation cannot be interrupted or replaced.
+     */
+    private boolean isDying;
+
     /** The tiny LIGHTNING_ROD anchor within the DEU group that marks the main-hand weapon slot. */
     private final @Nullable ItemDisplay weaponAnchor;
 
@@ -183,10 +190,12 @@ public class DisplayRig {
 
     /**
      * Manually overrides the current animation state.
+     * No-op if the rig is locked in the death animation ({@link #lockOnDeath()} was called).
      *
      * @param type the state to transition to
      */
     public void setState(MachineState.StateType type) {
+        if (isDying) return;
         stateMachine.setState(type, group);
     }
 
@@ -198,6 +207,24 @@ public class DisplayRig {
         if (!dieAnimTag.isEmpty()) {
             stateMachine.setState(MachineState.StateType.DEATH, group);
         }
+    }
+
+    /**
+     * Freezes the rig in place and locks all subsequent animation state changes.
+     *
+     * <p>Called when the mob enters its death sequence. After this:</p>
+     * <ul>
+     *   <li>The group stops riding the mob — its server-side position is frozen
+     *       at the point of death regardless of mob movement or gravity.</li>
+     *   <li>The yaw follow is cancelled.</li>
+     *   <li>{@link #setState} becomes a permanent no-op, preventing the state
+     *       machine from transitioning away from DEATH.</li>
+     * </ul>
+     */
+    public void lockOnDeath() {
+        isDying = true;
+        group.dismount();
+        group.stopFollowingEntity();
     }
 
     /** Returns {@code true} if a die animation was registered for this rig. */

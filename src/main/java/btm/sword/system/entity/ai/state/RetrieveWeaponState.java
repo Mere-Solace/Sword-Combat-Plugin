@@ -78,7 +78,7 @@ public class RetrieveWeaponState extends HostileAIFacade {
         lodged.setRetrieved(true);
 
         if (lodged.getItemStack() != null && !lodged.getItemStack().isEmpty()) {
-            h.setItemStackInHand(lodged.getItemStack(), true);
+            h.receiveRetrievedWeapon(lodged.getItemStack());
             Prefab.Particles.GRAB_CLOUD.display(display.getLocation());
         }
 

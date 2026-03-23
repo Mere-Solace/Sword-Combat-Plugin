@@ -20,6 +20,7 @@ import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.impl.Dummy;
 import btm.sword.system.entity.impl.Hostile;
 import btm.sword.system.entity.impl.Passive;
+import btm.sword.system.entity.impl.RigHostile;
 import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.entity.mob.MobTypeDefinition;
 import btm.sword.system.entity.mob.MobTypeRegistry;
@@ -141,6 +142,10 @@ public class SwordEntityArbiter {
                 CombatProfile profile = new CombatProfile();
                 MobTypeDefinition mobType = MobTypeRegistry.getByEntityType(entity.getType());
                 if (mobType != null) mobType.applyTo(profile);
+                // Use RigHostile for mobs whose visuals are driven by a DEU display rig.
+                if (mobType != null && mobType.displayGroup() != null) {
+                    return new RigHostile(entity, profile);
+                }
                 return new Hostile(entity, profile);
             }
             case ARMOR_STAND -> {

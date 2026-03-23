@@ -383,6 +383,17 @@ public class Hostile extends Combatant {
     }
 
     /**
+     * Called by {@link btm.sword.system.entity.ai.state.RetrieveWeaponState} when the mob
+     * reclaims its thrown weapon. The default behaviour equips the item to the mob's vanilla
+     * main hand. Display-rig subclasses override this to update only the rig weapon slot.
+     *
+     * @param item the recovered item stack
+     */
+    public void receiveRetrievedWeapon(ItemStack item) {
+        setItemStackInHand(item, true);
+    }
+
+    /**
      * Clears the weapon-slot display when this mob has thrown its main-hand item.
      * No-op if no display rig is present.
      */
