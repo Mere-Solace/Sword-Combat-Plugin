@@ -18,7 +18,6 @@ import btm.sword.Sword;
 import btm.sword.config.Config;
 import btm.sword.system.control.TimeArbiter;
 import btm.sword.system.entity.mob.AnimationSlots;
-import btm.sword.utility.display.DisplayUtil;
 import net.donnypz.displayentityutils.events.GroupSpawnedEvent;
 import net.donnypz.displayentityutils.managers.DisplayGroupManager;
 import net.donnypz.displayentityutils.managers.LoadMethod;
@@ -157,8 +156,12 @@ public class DisplayRig {
 
     /**
      * Shows the given item at the mob's main-hand weapon slot by spawning an
-     * {@link ItemDisplay} that follows the mob using the transform from
-     * {@link WeaponDisplayRegistry}. Clears any previously displayed item.
+     * {@link ItemDisplay} that mirrors the weapon-anchor bone's transform each tick.
+     *
+     * <p>DEU writes the anchor's animated {@link Transformation} server-side on every
+     * animation frame. Each tick our follow task reads that transform and applies it
+     * (combined with the per-material user adjustments) to the weapon display so it
+     * tracks the bone's position <em>and</em> orientation through every animation state.</p>
      *
      * <p>Passing {@code null} or an air stack hides the weapon display.</p>
      *
@@ -170,18 +173,54 @@ public class DisplayRig {
         if (weaponAnchor == null) return;
         if (item == null || item.getType().isAir()) return;
 
-        WeaponDisplayTransform t = WeaponDisplayRegistry.get(item.getType());
+        final WeaponDisplayTransform t = WeaponDisplayRegistry.get(item.getType());
 
         weaponDisplay = (ItemDisplay) mob.getWorld().spawnEntity(
             weaponAnchor.getLocation(), EntityType.ITEM_DISPLAY
         );
         weaponDisplay.setItemStack(item);
-        applyTransform(weaponDisplay, t);
 
-        weaponFollowTask = DisplayUtil.itemDisplayFollowMob(
-            mob, weaponDisplay,
-            t.offsetRight(), t.offsetUp(), t.offsetForward(),
-            Config.Hostile.DISPLAY_TELEPORT_DURATION, 2
+        // Precompute static parts of the user adjustment (these don't change per tick).
+        final Quaternionf userRot = new Quaternionf().rotateXYZ(
+            (float) Math.toRadians(t.rotX()),
+            (float) Math.toRadians(t.rotY()),
+            (float) Math.toRadians(t.rotZ())
+        );
+        final Vector3f userOffset = new Vector3f(t.offsetRight(), t.offsetUp(), t.offsetForward());
+        final float scale = t.scale();
+        final ItemDisplay display = weaponDisplay;
+        final ItemDisplay anchor = weaponAnchor;
+
+        // Each tick: read the anchor's current animated transform (set by DEU) and mirror
+        // it onto our weapon display, then teleport to match the anchor's server-side position.
+        weaponFollowTask = TimeArbiter.runTimeBoundBukkitTaskOnTimer(
+            () -> {
+                if (!anchor.isValid() || !display.isValid()) return;
+
+                Transformation anchorT = anchor.getTransformation();
+
+                // Bone rotation (from DEU animation) composed with user's additional rotation.
+                Quaternionf finalRot = anchorT.getLeftRotation().mul(userRot, new Quaternionf());
+
+                // Bone translation + user's local offset.
+                Vector3f finalTrans = anchorT.getTranslation().add(userOffset, new Vector3f());
+
+                display.setTransformation(new Transformation(
+                    finalTrans,
+                    finalRot,
+                    new Vector3f(scale, scale, scale),
+                    new Quaternionf()
+                ));
+
+                // Sync server-side position so the display follows the mob as it moves.
+                TimeArbiter.teleportDisplay(
+                    display, anchor.getLocation(), null,
+                    Config.Hostile.DISPLAY_TELEPORT_DURATION,
+                    DisplayRig.class, 0
+                );
+            },
+            null, null, 0, 1,
+            DisplayRig.class, "weaponSlotSync"
         );
     }
 
@@ -271,24 +310,6 @@ public class DisplayRig {
             weaponDisplay.remove();
             weaponDisplay = null;
         }
-    }
-
-    /**
-     * Applies a {@link WeaponDisplayTransform}'s rotation and scale to an {@link ItemDisplay}
-     * via its {@link Transformation}. Offset is handled separately by the follow task.
-     */
-    private static void applyTransform(ItemDisplay display, WeaponDisplayTransform t) {
-        Quaternionf rot = new Quaternionf().rotateXYZ(
-            (float) Math.toRadians(t.rotX()),
-            (float) Math.toRadians(t.rotY()),
-            (float) Math.toRadians(t.rotZ())
-        );
-        display.setTransformation(new Transformation(
-            new Vector3f(0, 0, 0),
-            rot,
-            new Vector3f(t.scale(), t.scale(), t.scale()),
-            new Quaternionf()
-        ));
     }
 
     private static void addState(

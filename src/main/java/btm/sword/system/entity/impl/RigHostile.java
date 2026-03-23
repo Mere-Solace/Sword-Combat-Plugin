@@ -1,12 +1,13 @@
 package btm.sword.system.entity.impl;
 
+import java.util.concurrent.TimeUnit;
+
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
 
+import btm.sword.system.control.SwordScheduler;
 import btm.sword.system.entity.base.CombatProfile;
-
-
 
 /**
  * A {@link Hostile} whose visuals are entirely driven by a DEU display rig.
@@ -16,10 +17,10 @@ import btm.sword.system.entity.base.CombatProfile;
  *   <li><b>Weapon retrieval</b>: {@link #receiveRetrievedWeapon} updates the
  *       logical {@code itemInRightHand} field and the rig weapon-slot display but does
  *       <em>not</em> write to the mob's vanilla equipment slot (which is permanently AIR).</li>
- *   <li><b>Death sequence</b>: {@link #onZeroHealth()} additionally freezes the mob's
- *       velocity, locks the rig's server-side position via {@link btm.sword.system.entity.display.DisplayRig#lockOnDeath()},
- *       and prevents any further animation state transitions so the DEATH animation
- *       plays to completion without interruption.</li>
+ *   <li><b>Death sequence</b>: {@link #onZeroHealth()} schedules a 5-tick delayed freeze
+ *       so knockback resolves first, then zeroes velocity, disables gravity, and calls
+ *       {@link btm.sword.system.entity.display.DisplayRig#lockOnDeath()} to freeze the
+ *       rig at the point of death and prevent animation state transitions.</li>
  * </ul>
  */
 public class RigHostile extends Hostile {
@@ -48,29 +49,33 @@ public class RigHostile extends Hostile {
     }
 
     /**
-     * Extends {@link Hostile#onZeroHealth()} with display-rig death behaviour:
+     * Extends {@link Hostile#onZeroHealth()} with display-rig death behaviour.
+     *
+     * <p>Immediately delegates to super (which disables AI and triggers the death animation),
+     * then schedules a 5-tick delayed task that:</p>
      * <ol>
-     *   <li>Zeroes the mob's server-side velocity and disables gravity so the
-     *       body does not drift during the death animation.</li>
-     *   <li>Calls {@link btm.sword.system.entity.display.DisplayRig#lockOnDeath()} to
-     *       dismount the rig from the mob and cancel the yaw follow, freezing the
-     *       rig's server-side position at the point of death.</li>
-     *   <li>Locks the state machine so no transition can interrupt the DEATH
-     *       animation after it starts.</li>
+     *   <li>Zeroes velocity and disables gravity — mob body stays at the knockback-resolved
+     *       position for the remainder of the death animation.</li>
+     *   <li>Calls {@link btm.sword.system.entity.display.DisplayRig#lockOnDeath()} —
+     *       dismounts the rig from the mob, cancels the yaw follow, and prevents any
+     *       further animation state transitions.</li>
      * </ol>
+     * <p>The 5-tick delay allows physics to apply one final knockback impulse before
+     * the entity is frozen in place.</p>
      */
     @Override
     public void onZeroHealth() {
-        // Freeze the mob body in place so it does not fall or drift.
-        mob().setVelocity(new Vector(0, 0, 0));
-        mob().setGravity(false);
-
-        // Lock the display rig position and prevent further state transitions.
-        if (getDisplayRig() != null) {
-            getDisplayRig().lockOnDeath();
-        }
-
-        // Run common Hostile death logic (AI disable, animation trigger, fallback timer).
+        // Trigger AI disable + death animation immediately.
         super.onZeroHealth();
+
+        // After 5 ticks, freeze position so knockback has time to apply.
+        SwordScheduler.runBukkitTaskLater(() -> {
+            if (!mob().isValid()) return;
+            mob().setVelocity(new Vector(0, 0, 0));
+            mob().setGravity(false);
+            if (getDisplayRig() != null) {
+                getDisplayRig().lockOnDeath();
+            }
+        }, 5 * 50, TimeUnit.MILLISECONDS);
     }
 }
