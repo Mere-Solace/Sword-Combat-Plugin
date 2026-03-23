@@ -2,6 +2,7 @@ package btm.sword.system.display;
 
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
+import org.bukkit.scoreboard.Criteria;
 import org.bukkit.scoreboard.DisplaySlot;
 import org.bukkit.scoreboard.Objective;
 import org.bukkit.scoreboard.RenderType;
@@ -49,7 +50,7 @@ public final class SwordScoreboard {
     SwordScoreboard(Player player, Component title) {
         this.player = player;
         this.scoreboard = Bukkit.getScoreboardManager().getNewScoreboard();
-        this.objective = scoreboard.registerNewObjective("sword_hud", "dummy", title, RenderType.INTEGER);
+        this.objective = scoreboard.registerNewObjective("sword_hud", Criteria.DUMMY, title, RenderType.INTEGER);
         this.objective.setDisplaySlot(DisplaySlot.SIDEBAR);
         this.visible = false;
     }
