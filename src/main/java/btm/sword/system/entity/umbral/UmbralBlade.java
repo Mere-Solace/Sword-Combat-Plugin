@@ -8,6 +8,7 @@ import java.util.function.Predicate;
 import org.bukkit.FluidCollisionMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.Particle;
 import org.bukkit.entity.Display;
 import org.bukkit.entity.EntityType;
@@ -33,6 +34,7 @@ import btm.sword.system.control.SwordScheduler;
 import btm.sword.system.control.TimeArbiter;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.impl.Combatant;
+import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.entity.umbral.input.BladeRequest;
 import btm.sword.system.entity.umbral.input.InputBuffer;
 import btm.sword.system.entity.umbral.statemachine.UmbralStateMachine;
@@ -129,6 +131,15 @@ public class UmbralBlade extends ThrownItem {
     private final InputBuffer inputBuffer = new InputBuffer();
 
     /**
+     * Tracks whether the blade item (true) or the link item (false) should occupy slot 0.
+     * Set by state transitions — independent of actual inventory contents so player
+     * manipulation cannot desync it.
+     */
+    @Getter
+    @Setter
+    private boolean bladeWielded = false;
+
+    /**
      * Returns the Soul Link {@link ItemStack} for use as an inventory item.
      * Use {@link #getLinkAnchor()} when slot-restoration logic is needed.
      *
@@ -145,6 +156,42 @@ public class UmbralBlade extends ThrownItem {
      */
     public SoulLinkItem getLinkAnchor() {
         return link;
+    }
+
+    /**
+     * Returns the correct {@link ItemStack} for slot 0 based on the internal
+     * {@link #bladeWielded} flag — the blade when active, the link otherwise.
+     *
+     * @return the ItemStack that should currently occupy slot 0
+     */
+    public ItemStack getExpectedSlotItem() {
+        return bladeWielded ? blade : getLink();
+    }
+
+    /**
+     * Scans the player's inventory and removes any blade or link items found outside slot 0.
+     * Ensures slot 0 contains the correct item based on {@link #bladeWielded}.
+     */
+    public void purgeStrayItems() {
+        if (!(thrower instanceof SwordPlayer sp)) return;
+        org.bukkit.inventory.PlayerInventory inv = sp.getPlayer().getInventory();
+
+        for (int i = 1; i < inv.getSize(); i++) {
+            ItemStack item = inv.getItem(i);
+            if (item == null || item.isEmpty()) continue;
+            if (KeyRegistry.hasKey(item, KeyRegistry.UMBRAL_BLADE_KEY)
+                || KeyRegistry.hasKey(item, KeyRegistry.SOUL_LINK_KEY)) {
+                inv.setItem(i, null);
+            }
+        }
+
+        // Ensure slot 0 has the correct item
+        ItemStack slot0 = inv.getItem(0);
+        ItemStack expected = getExpectedSlotItem();
+        NamespacedKey expectedKey = bladeWielded ? KeyRegistry.UMBRAL_BLADE_KEY : KeyRegistry.SOUL_LINK_KEY;
+        if (slot0 == null || slot0.isEmpty() || !KeyRegistry.hasKey(slot0, expectedKey)) {
+            inv.setItem(0, expected);
+        }
     }
 
     public UmbralBlade(Combatant thrower, ItemStack weapon) {
@@ -419,6 +466,8 @@ public class UmbralBlade extends ThrownItem {
             .lore(Prefab.Text.UMBRAL_BLADE_LORE)
             .unbreakable(true)
             .tag(KeyRegistry.UMBRAL_BLADE_KEY, PersistentDataType.STRING, thrower.getUniqueId().toString())
+            .tag(KeyRegistry.SPECIAL_ITEM_KEY, PersistentDataType.BOOLEAN, true)
+            .tag(KeyRegistry.NON_MOVABLE_KEY, PersistentDataType.BOOLEAN, true)
             .tagSwordItem(SwordItemType.UMBRAL_BLADE)
             .tagAttackStyle(WeaponAttackStyle.SLASH)
             .build();

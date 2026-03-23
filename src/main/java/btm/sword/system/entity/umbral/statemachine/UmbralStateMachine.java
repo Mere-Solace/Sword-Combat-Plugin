@@ -7,7 +7,6 @@ import java.util.function.Consumer;
 import org.bukkit.Color;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
-import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
 
 import btm.sword.config.Config;
@@ -29,7 +28,6 @@ import btm.sword.system.entity.umbral.statemachine.state.SheathedState;
 import btm.sword.system.entity.umbral.statemachine.state.StandbyState;
 import btm.sword.system.entity.umbral.statemachine.state.WaitingState;
 import btm.sword.system.entity.umbral.statemachine.state.WieldState;
-import btm.sword.system.item.KeyRegistry;
 import btm.sword.utility.Debug;
 import btm.sword.utility.Prefab;
 import btm.sword.utility.math.VectorUtil;
@@ -439,21 +437,12 @@ public class UmbralStateMachine extends StateMachine<UmbralBlade> {
         // RECOVERY CONDITIONS — checked every ~1 second when no transition fires
         // =====================================================================
 
-        // Slot-0 form: WieldState expects the blade item; all other active states expect the link.
-        // Inactive and RecoverState are excluded — they don't own slot 0.
+        // Slot-0 form and stray-item purge: uses the internal bladeWielded flag
+        // (set by WieldState enter/exit) rather than querying FSM state, so inventory
+        // manipulation cannot desync it. Removes any blade/link duplicates from wrong slots.
         addRecoveryCondition(blade -> {
             if (currentState instanceof InactiveState || currentState instanceof RecoverState) return;
-            ItemStack slot0 = blade.getThrower().getItemStackInHand(true);
-
-            if (currentState instanceof WieldState) {
-                if (slot0 == null || !KeyRegistry.hasKey(slot0, KeyRegistry.UMBRAL_BLADE_KEY)) {
-                    blade.getThrower().setItemInInventory(0, blade.getBlade());
-                }
-            } else {
-                if (slot0 == null || !KeyRegistry.hasKey(slot0, KeyRegistry.SOUL_LINK_KEY)) {
-                    blade.getThrower().setItemInInventory(0, blade.getLink());
-                }
-            }
+            blade.purgeStrayItems();
         });
 
         // Display viewRange form: Wield and Inactive hide the display; all other active states show it.
