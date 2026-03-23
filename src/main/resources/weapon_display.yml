@@ -1,0 +1,12 @@
+# Per-material weapon display transforms for display-rig mob weapon slots.
+#
+# Each entry maps a Bukkit Material name to a transform applied to the
+# ItemDisplay that follows the mob's main hand.
+#
+# offset_right:   lateral offset in the mob's right direction (positive = mob's right side)
+# offset_up:      vertical offset (positive = up)
+# offset_forward: offset in the mob's forward direction (positive = in front of mob)
+# rot_x/y/z:     local rotation of the displayed item in degrees
+# scale:          uniform scale of the displayed item
+#
+materials: {}
