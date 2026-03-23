@@ -20,6 +20,8 @@ import btm.sword.listeners.WorldListener;
 import btm.sword.listeners.packet.MovementListener;
 import btm.sword.system.action.throwing.InteractiveItemArbiter;
 import btm.sword.system.action.throwing.ProjectileManager;
+import btm.sword.system.display.BossBarManager;
+import btm.sword.system.display.ScoreboardManager;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.inventory.InventoryMenuManager;
 import btm.sword.system.join.MenuSlotGrid;
@@ -88,6 +90,10 @@ public final class Sword extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        // Clean up all active scoreboards and boss bars
+        ScoreboardManager.removeAll();
+        BossBarManager.removeAll();
+
         // Clean up all entity displays (sheathed weapons, status displays)
         SwordEntityArbiter.removeAllDisplays();
 

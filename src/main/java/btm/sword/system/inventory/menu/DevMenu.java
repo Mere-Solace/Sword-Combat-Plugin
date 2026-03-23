@@ -1,6 +1,8 @@
 package btm.sword.system.inventory.menu;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -8,12 +10,18 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 import btm.sword.config.Config;
+import btm.sword.system.control.SwordScheduler;
+import btm.sword.system.display.BossBarManager;
+import btm.sword.system.display.ScoreboardManager;
+import btm.sword.system.display.SwordBossBar;
+import btm.sword.system.display.SwordScoreboard;
 import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.item.ItemStackBuilder;
 import btm.sword.system.scene.DEUAnimationController;
 import btm.sword.system.scene.SceneManager;
 import btm.sword.system.scene.animation.AnimationDef;
 import btm.sword.system.scene.animation.AnimationRegistry;
+import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -180,11 +188,71 @@ public class DevMenu extends Menu {
             click -> new ItemLibraryMenu(swordPlayer).open()
         );
 
+        SimpleItem bossBarTest = new SimpleItem(
+            new ItemStackBuilder(Material.ORANGE_BANNER)
+                .name(Component.text("Boss Bar Fill Test", NamedTextColor.GOLD, TextDecoration.BOLD))
+                .lore(List.of(Component.text("Spawns a bar that fills over 5 seconds", NamedTextColor.DARK_GRAY)))
+                .build(),
+            click -> {
+                SwordBossBar bar = BossBarManager.create(
+                    Component.text("Charging...", NamedTextColor.YELLOW),
+                    0f,
+                    BossBar.Color.YELLOW,
+                    BossBar.Overlay.NOTCHED_10
+                );
+                bar.addViewer(player);
+                int steps = 20;
+                int intervalMs = 250;
+                for (int i = 1; i <= steps; i++) {
+                    final float progress = (float) i / steps;
+                    SwordScheduler.runBukkitTaskLater(() -> bar.setProgress(progress), i * intervalMs, TimeUnit.MILLISECONDS);
+                }
+                SwordScheduler.runBukkitTaskLater(() -> {
+                    bar.setTitle(Component.text("Charged!", NamedTextColor.GREEN));
+                    bar.setColor(BossBar.Color.GREEN);
+                }, steps * intervalMs, TimeUnit.MILLISECONDS);
+                SwordScheduler.runBukkitTaskLater(bar::remove, steps * intervalMs + 1000, TimeUnit.MILLISECONDS);
+            }
+        );
+
+        boolean hasScoreboard = ScoreboardManager.get(player).isPresent();
+        SimpleItem scoreboardTest = new SimpleItem(
+            new ItemStackBuilder(hasScoreboard ? Material.LIME_BANNER : Material.WHITE_BANNER)
+                .name(Component.text("Scoreboard Test", NamedTextColor.GREEN, TextDecoration.BOLD))
+                .lore(List.of(Component.text(
+                    hasScoreboard ? "Click to remove the test scoreboard" : "Click to show a test scoreboard",
+                    NamedTextColor.DARK_GRAY
+                )))
+                .build(),
+            click -> {
+                Optional<SwordScoreboard> existing = ScoreboardManager.get(player);
+                if (existing.isPresent()) {
+                    ScoreboardManager.remove(player);
+                    swordPlayer.message(Component.text("Scoreboard removed.", NamedTextColor.YELLOW));
+                } else {
+                    SwordScoreboard board = ScoreboardManager.create(
+                        player,
+                        Component.text("✦ Sword Test", NamedTextColor.GOLD, TextDecoration.BOLD)
+                    );
+                    board.setLine(1, Component.text("HP", NamedTextColor.RED)
+                        .append(Component.text(": 100", NamedTextColor.WHITE)));
+                    board.setLine(2, Component.empty());
+                    board.setLine(3, Component.text("Soulfire", NamedTextColor.AQUA)
+                        .append(Component.text(": 75", NamedTextColor.WHITE)));
+                    board.setLine(4, Component.empty());
+                    board.setLine(5, Component.text("Toughness", NamedTextColor.GRAY)
+                        .append(Component.text(": 50", NamedTextColor.WHITE)));
+                    board.show();
+                    swordPlayer.message(Component.text("Scoreboard shown. Click again to remove.", NamedTextColor.GREEN));
+                }
+            }
+        );
+
         Gui gui = Gui.normal()
             .setStructure(
                 "# # # # # # # # #",
                 "# J N S F . L C #",
-                "# P X . . . . E #",
+                "# P X B K . . E #",
                 "# R I . T . M W #",
                 "# # # < . > # # #")
             .addIngredient('#', BORDER)
@@ -197,6 +265,8 @@ public class DevMenu extends Menu {
             .addIngredient('F', fakePlayerScene)
             .addIngredient('L', itemLibrary)
             .addIngredient('X', joinCutscene)
+            .addIngredient('B', bossBarTest)
+            .addIngredient('K', scoreboardTest)
             .addIngredient('C', creativeInventory)
             .addIngredient('W', woodenAxe)
             .addIngredient('E', witherSkeletonEgg)

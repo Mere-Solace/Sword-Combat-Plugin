@@ -18,6 +18,8 @@ import org.bukkit.util.Vector;
 
 import btm.sword.config.Config;
 import btm.sword.system.control.SwordScheduler;
+import btm.sword.system.display.BossBarManager;
+import btm.sword.system.display.ScoreboardManager;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.playerdata.PlayerData;
@@ -84,6 +86,10 @@ public final class ServerJoinArbiter implements Listener {
         UUID uuid = player.getUniqueId();
 
         MenuSlotGrid.releaseSlot(uuid);
+
+        // Remove player from any active scoreboards and boss bars
+        ScoreboardManager.onPlayerQuit(player);
+        BossBarManager.onPlayerQuit(player);
 
         if (SwordEntityArbiter.get(player) instanceof SwordPlayer sp) {
             CameraSystem.stopController(sp);
