@@ -23,7 +23,6 @@ import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.playerdata.PlayerData;
 import btm.sword.system.playerdata.PlayerDataManager;
 import btm.sword.system.scene.CameraSystem;
-import btm.sword.system.scene.SceneManager;
 
 /**
  * Manages the full server-join lifecycle for each player.
@@ -140,18 +139,20 @@ public final class ServerJoinArbiter implements Listener {
     }
 
     /**
-     * Teleports a returning player to the configured spawnpoint and opens the main menu
-     * character scene at that position.
+     * Teleports a returning player to the configured spawnpoint and readies them for gameplay.
+     *
+     * <p>The player arrives from the dark-room staging slot in an invisible state. This method
+     * restores visibility, sets normal activation context, and places them at the spawnpoint.
+     * The full world-space main menu will replace this in the future.</p>
      *
      * @param sp the returning player
      */
     private static void enterMainMenuScene(SwordPlayer sp) {
         Location spawnpoint = spawnpointLocation();
         if (spawnpoint != null) {
-            SceneManager.enterStaticMenuScene(sp, spawnpoint);
-        } else {
-            SceneManager.enterStaticMenuScene(sp);
+            sp.player().teleport(spawnpoint);
         }
+        sp.player().setInvisible(false);
     }
 
     /**
