@@ -188,6 +188,17 @@ public class DevMenu extends Menu {
             click -> new ItemLibraryMenu(swordPlayer).open()
         );
 
+        SimpleItem weaponDisplay = new SimpleItem(
+            new ItemStackBuilder(Material.BLAZE_ROD)
+                .name(Component.text("Weapon Display", NamedTextColor.GOLD, TextDecoration.BOLD))
+                .lore(List.of(
+                    Component.text("Tweak per-material weapon slot transforms", NamedTextColor.DARK_GRAY),
+                    Component.text("Hold the item you want to configure", NamedTextColor.DARK_GRAY)
+                ))
+                .build(),
+            click -> new WeaponDisplayEditorMenu(swordPlayer).open()
+        );
+
         SimpleItem bossBarTest = new SimpleItem(
             new ItemStackBuilder(Material.ORANGE_BANNER)
                 .name(Component.text("Boss Bar Fill Test", NamedTextColor.GOLD, TextDecoration.BOLD))
@@ -252,7 +263,7 @@ public class DevMenu extends Menu {
             .setStructure(
                 "# # # # # # # # #",
                 "# J N S F . L C #",
-                "# P X B K . . E #",
+                "# P X B K . H E #",
                 "# R I . T . M W #",
                 "# # # < . > # # #")
             .addIngredient('#', BORDER)
@@ -272,6 +283,7 @@ public class DevMenu extends Menu {
             .addIngredient('E', witherSkeletonEgg)
             .addIngredient('I', reloadProfile)
             .addIngredient('M', creativeMode)
+            .addIngredient('H', weaponDisplay)
             .addIngredient('<', generatePreviousButtonOrDefault())
             .addIngredient('>', generateForwardPreviousButtonOrDefault())
             .build();

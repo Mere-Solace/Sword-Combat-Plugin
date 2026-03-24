@@ -162,8 +162,8 @@ public class InputRegistrar {
 
         // lunge (umbral link DROP + RIGHT) — registered FIRST, takes priority over throw when holding soul link
         new InputExecutionTree.InputNodeBuilder(root, List.of(
-            InputType.DROP,
-            InputType.RIGHT
+            InputType.RIGHT,
+            InputType.DROP
         )).action(new LinkedList<>(List.of(
             new InputExecutionTree.ActionContextPair(
                 () -> InputAction.builder()
@@ -197,8 +197,8 @@ public class InputRegistrar {
 
         // throw
         new InputExecutionTree.InputNodeBuilder(root, List.of(
-            InputType.DROP,
             InputType.RIGHT,
+            InputType.DROP,
             InputType.RIGHT_HOLD
         )).action(new LinkedList<>(List.of(
             new InputExecutionTree.ActionContextPair(

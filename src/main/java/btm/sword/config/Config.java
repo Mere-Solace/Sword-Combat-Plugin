@@ -2768,6 +2768,14 @@ public class Config {
             v -> LOGGING_VERBOSE_LISTENER = v,
             ConfigurationSection::getBoolean); }
 
+        /** Log detailed animation state changes and transitions. */
+        public static boolean LOGGING_VERBOSE_ANIMATION = false;
+        static { register(
+            "debug.logging_verbose_animation",
+            LOGGING_VERBOSE_ANIMATION, Boolean.class,
+            v -> LOGGING_VERBOSE_ANIMATION = v,
+            ConfigurationSection::getBoolean); }
+
         // Visualization configuration
         public static boolean VISUALIZATION_SHOW_HITBOXES = false;
         static { register(

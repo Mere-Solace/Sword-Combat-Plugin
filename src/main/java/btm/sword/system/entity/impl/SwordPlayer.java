@@ -1467,6 +1467,9 @@ public class SwordPlayer extends Combatant {
      * @param index the inventory slot index
      */
     public void setItemAtIndex(ItemStack item, int index) {
+        if (index < 0 || index > 42) {
+            return;
+        }
         player.getInventory().setItem(index, item);
     }
 

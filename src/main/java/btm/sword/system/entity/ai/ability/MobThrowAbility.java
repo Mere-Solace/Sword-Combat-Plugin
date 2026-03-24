@@ -75,13 +75,14 @@ public class MobThrowAbility implements MobAbility {
         if (distance < 0.001) return;
         toTarget.normalize();
 
-        ItemStack projectile = h.getItemStackInHand(true);
+        ItemStack projectile = h.getThrowableItem();
         if (projectile == null || projectile.isEmpty()) {
             executeDirtThrow(h, toTarget);
             return;
         }
 
         ThrowAction.throwReady(h, projectile);
+        h.onWeaponThrown();
 
         if (h.getThrownItem() != null) {
             h.getThrownItem().setLaunchDirection(toTarget);

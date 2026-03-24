@@ -15,7 +15,9 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import btm.sword.config.ConfigManager;
 import btm.sword.system.control.TimeArbiter;
 import btm.sword.system.entity.SwordEntityArbiter;
+import btm.sword.system.entity.display.WeaponDisplayRegistry;
 import btm.sword.system.entity.impl.SwordPlayer;
+import btm.sword.system.entity.mob.MobTypeRegistry;
 import btm.sword.system.item.material.MaterialType;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
@@ -117,6 +119,8 @@ public final class SwordCommands {
         sender.sendMessage(Component.text("Reloading Sword: Combat Evolved configuration...", NamedTextColor.YELLOW));
 
         try {
+            MobTypeRegistry.reload();
+            WeaponDisplayRegistry.reload();
             boolean success = ConfigManager.getInstance().reload();
 
             if (success) {

@@ -49,6 +49,7 @@ public class RetrieveWeaponState extends HostileAIFacade {
         ItemDisplay display = lodged.getDisplay();
         if (display == null || !display.isValid()) {
             h.setLodgedThrowItem(null);
+            h.onWeaponRetrieved();
             return;
         }
 
@@ -77,11 +78,12 @@ public class RetrieveWeaponState extends HostileAIFacade {
         lodged.setRetrieved(true);
 
         if (lodged.getItemStack() != null && !lodged.getItemStack().isEmpty()) {
-            h.setItemStackInHand(lodged.getItemStack(), true);
+            h.receiveRetrievedWeapon(lodged.getItemStack());
             Prefab.Particles.GRAB_CLOUD.display(display.getLocation());
         }
 
         lodged.dispose();
         h.setLodgedThrowItem(null);
+        h.onWeaponRetrieved();
     }
 }

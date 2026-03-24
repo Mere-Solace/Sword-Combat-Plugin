@@ -23,6 +23,7 @@ import btm.sword.system.inventory.menu.MainMenu;
 import btm.sword.system.inventory.menu.MaterialPouchMenu;
 import btm.sword.system.inventory.menu.Menu;
 import btm.sword.system.inventory.menu.MovesetMenu;
+import btm.sword.system.inventory.menu.WeaponDisplayEditorMenu;
 
 public class InventoryMenuManager {
     private static final Map<Class<? extends Menu>, Function<SwordPlayer, ? extends Menu>> MENU_REGISTRY = new ConcurrentHashMap<>();
@@ -46,6 +47,7 @@ public class InventoryMenuManager {
         register(CurrencyMenu.class, CurrencyMenu::new);
         register(ArtifactPouchMenu.class, ArtifactPouchMenu::new);
         register(ItemLibraryMenu.class, ItemLibraryMenu::new);
+        register(WeaponDisplayEditorMenu.class, WeaponDisplayEditorMenu::new);
         // SkillSelectionMenu is constructed with a slot index and is opened directly
     }
 

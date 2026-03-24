@@ -2,13 +2,16 @@ package btm.sword.listeners;
 
 
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.damage.DamageSource;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.ItemDisplay;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityPickupItemEvent;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
 
 import com.destroystokyo.paper.event.entity.EntityAddToWorldEvent;
@@ -16,8 +19,11 @@ import com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent;
 
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.base.SwordEntity;
+import btm.sword.system.entity.display.DisplayRig;
 import btm.sword.system.entity.impl.Combatant;
+import btm.sword.system.entity.impl.Hostile;
 import btm.sword.utility.Prefab;
+import net.donnypz.displayentityutils.events.AnimationCompleteEvent;
 
 public class EntityListener implements Listener {
     /**
@@ -42,6 +48,15 @@ public class EntityListener implements Listener {
             if (swordEntity != null) {
                 swordEntity.resetResources();
                 swordEntity.onSpawn();
+            }
+        }
+        // Tag any LIGHTNING_ROD item display as a weapon slot for DisplayRig.
+        // Place a LIGHTNING_ROD item on the desired display entity part in your DEU group
+        // to mark it as the weapon slot; the runtime item is then set via setWeaponSlotItem().
+        if (entity instanceof ItemDisplay itemDisplay) {
+            ItemStack displayed = itemDisplay.getItemStack();
+            if (displayed.getType() == Material.LIGHTNING_ROD) {
+                itemDisplay.addScoreboardTag(DisplayRig.WEAPON_SLOT_TAG);
             }
         }
     }
@@ -99,6 +114,26 @@ public class EntityListener implements Listener {
         if(event.getEntity() instanceof LivingEntity && event.getDamage() < 7474040) {
             event.setDamage(0.01);
             ((LivingEntity) event.getEntity()).heal(100);
+        }
+    }
+
+    /**
+     * Detects when a DEU animation finishes on a hostile mob's display rig.
+     * If the mob is in its death animation, deal lethal damage to trigger the actual kill.
+     *
+     * @param event the {@link AnimationCompleteEvent} fired by DEU when an animation ends
+     */
+    @EventHandler
+    public void onAnimationComplete(AnimationCompleteEvent event) {
+        Entity vehicle = event.getGroup().getVehicle();
+        if (!(vehicle instanceof LivingEntity livingEntity)) return;
+        SwordEntity swordEntity = SwordEntityArbiter.get(livingEntity);
+        if (!(swordEntity instanceof Hostile hostile)) return;
+        if (!hostile.isInDeathAnimation()) return;
+        String tag = event.getAnimation().getAnimationTag();
+        DisplayRig rig = hostile.getDisplayRig();
+        if (rig != null && tag != null && tag.equals(rig.dieAnimTag())) {
+            livingEntity.damage(74077740);
         }
     }
 

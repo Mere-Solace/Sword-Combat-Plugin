@@ -8,7 +8,9 @@ import java.util.function.Supplier;
 
 import org.bukkit.Location;
 import org.bukkit.entity.Display;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.ItemDisplay;
+import org.bukkit.entity.Mob;
 import org.bukkit.util.Vector;
 
 import btm.sword.config.Config;
@@ -16,7 +18,6 @@ import btm.sword.system.control.PredicateRunnablePair;
 import btm.sword.system.control.SwordScheduler;
 import btm.sword.system.control.TimeArbiter;
 import btm.sword.system.entity.base.SwordEntity;
-import btm.sword.utility.Debug;
 import btm.sword.utility.Prefab;
 
 /**
@@ -49,69 +50,6 @@ public class DisplayUtil {
     public static void setInterpolationValues(Display display, int delay, int duration) {
         display.setInterpolationDelay(delay);
         display.setInterpolationDuration(duration);
-    }
-
-    public static TimeArbiter.TaskHandle displaySlerpToOffset(
-        SwordEntity entity, ItemDisplay display, Vector offset,
-        double speed, int tpDuration, int period,
-        double endDistance, boolean removeOnArrival,
-        int maxIterations,
-        Runnable callback) {
-
-        AtomicInteger iterations = new AtomicInteger(0);
-        AtomicReference<Vector> currentDirectionToTarget = new AtomicReference<>();
-        return TimeArbiter.runTimeBoundBukkitTaskOnTimer(
-            () -> {
-                try {
-                    Location curTarget = entity.self().getLocation().add(
-                        entity.rightBasisVector(false).multiply(offset.getX()).add(
-                            entity.upBasisVector(false).multiply(offset.getY()).add(
-                                entity.forwardBasisVector(false).multiply(offset.getZ())
-                            )
-                        ));
-                    currentDirectionToTarget.set(curTarget.toVector().subtract(display.getLocation().toVector()));
-                } catch (RuntimeException ignored) { }
-            },
-            () -> {
-                Vector scaledDiff = currentDirectionToTarget.get().clone().normalize().multiply(speed);
-                Location update = display.getLocation().add(scaledDiff);
-                TimeArbiter.teleportDisplay(
-                    display,
-                    update, update.toVector().subtract(display.getLocation().toVector()),
-                    tpDuration,
-                    DisplayUtil.class, 82
-                );
-            },
-            null,
-            0, period,
-            DisplayUtil.class, "displaySlerpToOffset",
-            new PredicateRunnablePair(
-                // ticks is incremented here, not explicitly during a runnable.
-                () -> iterations.getAndIncrement() > maxIterations || entity.isInvalid() || !display.isValid(),
-                () -> {
-
-                    Debug.system("display invalid, tick=" + iterations.get());
-
-                    if (display.isValid() && removeOnArrival) display.remove();
-                    if (callback != null) {
-                        SwordScheduler.runBukkitTask(callback);
-                    }
-                }
-            ),
-            new PredicateRunnablePair(
-                () -> currentDirectionToTarget.get().isZero() ||
-                    currentDirectionToTarget.get().lengthSquared() < endDistance * endDistance,
-                () -> {
-
-                    Debug.system("display arrived, tick=" + iterations.get());
-
-                    if (display.isValid() && removeOnArrival) display.remove();
-                    if (callback != null) {
-                        SwordScheduler.runBukkitTask(callback);
-                    }
-                }
-            )
-        );
     }
 
     // returns a task for use in detecting when finished
@@ -262,6 +200,67 @@ public class DisplayUtil {
             null,
             0, period,
             DisplayUtil.class, "itemDisplayFollow (2)"
+        );
+    }
+
+    /**
+     * Makes an {@link ItemDisplay} track a {@link Mob}'s position each tick with a
+     * yaw-relative offset. The offset axes are relative to the mob's facing:
+     * {@code offsetRight} is the mob's lateral right, {@code offsetUp} is world up,
+     * and {@code offsetForward} is the mob's forward direction.
+     *
+     * @param mob           the mob to follow
+     * @param display       the display entity to teleport
+     * @param offsetRight   right-axis offset (mob's local right)
+     * @param offsetUp      vertical offset
+     * @param offsetForward forward-axis offset (mob's local forward)
+     * @param tpDuration    teleport interpolation duration in ticks
+     * @param period        update interval in ticks
+     * @return a task handle that can be cancelled to stop following
+     */
+    public static TimeArbiter.TaskHandle itemDisplayFollowMob(
+            Mob mob, ItemDisplay display,
+            float offsetRight, float offsetUp, float offsetForward,
+            int tpDuration, int period) {
+        return TimeArbiter.runTimeBoundBukkitTaskOnTimer(
+            () -> {
+                if (!mob.isValid() || !display.isValid()) return;
+                Location loc = mob.getLocation();
+                double yawRad = Math.toRadians(loc.getYaw());
+                // Forward direction in Minecraft: (-sin yaw, 0, cos yaw)
+                double fwdX = -Math.sin(yawRad);
+                double fwdZ = Math.cos(yawRad);
+                // Right direction: 90° clockwise from forward
+                double rightX = Math.cos(yawRad);
+                double rightZ = Math.sin(yawRad);
+                double worldX = offsetRight * rightX + offsetForward * fwdX;
+                double worldZ = offsetRight * rightZ + offsetForward * fwdZ;
+                Location target = loc.clone().add(worldX, offsetUp, worldZ);
+                TimeArbiter.teleportDisplay(display, target, new Vector(fwdX, 0, fwdZ), tpDuration, DisplayUtil.class, 0);
+            },
+            null, null, 0, period,
+            DisplayUtil.class, "itemDisplayFollowMob"
+        );
+    }
+
+    public static TimeArbiter.TaskHandle itemDisplayFollowDirect(
+        Entity entity, ItemDisplay display, int tpDuration, int period) {
+
+        return TimeArbiter.runTimeBoundBukkitTaskOnTimer(
+            () -> {
+                Location updated = entity.getLocation();
+
+                TimeArbiter.teleportDisplay(
+                    display,
+                    updated, updated.getDirection(),
+                    tpDuration,
+                    DisplayUtil.class, 257
+                );
+            },
+            null,
+            null,
+            0, period,
+            DisplayUtil.class, "itemDisplayFollowDirect"
         );
     }
 }

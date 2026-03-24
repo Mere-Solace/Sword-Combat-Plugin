@@ -516,6 +516,10 @@ public abstract class SwordEntity {
         return afflictions.get(afflictionClass);
     }
 
+    protected boolean shouldDeferDeath() {
+        return false;
+    }
+
     /**
      * Applies a hit to this entity from a given source {@link Combatant}, triggering resource damage,
      * invulnerability, knockback, afflictions, and toughness breaking effects.
@@ -574,11 +578,13 @@ public abstract class SwordEntity {
             if (changeShards(-baseNumShards)) {
                 onZeroHealth();
 
-                SwordScheduler.runBukkitTaskLater(() -> {
-                    self.damage(74077740, source.self());
-                    if (!self.isDead())
-                        self.setHealth(0); },
-                    SwordTimeUnit.MILLISECONDS_PER_TICK * 2, TimeUnit.MILLISECONDS);
+                if (!shouldDeferDeath()) {
+                    SwordScheduler.runBukkitTaskLater(() -> {
+                        self.damage(74077740, source.self());
+                        if (!self.isDead())
+                            self.setHealth(0); },
+                        SwordTimeUnit.MILLISECONDS_PER_TICK * 2, TimeUnit.MILLISECONDS);
+                }
                 return;
             }
             shardsLostDuringToughnessBreak += baseNumShards;

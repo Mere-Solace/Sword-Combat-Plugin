@@ -17,12 +17,17 @@ import btm.sword.listeners.InputListener;
 import btm.sword.listeners.PlayerListener;
 import btm.sword.listeners.SystemListener;
 import btm.sword.listeners.WorldListener;
+import btm.sword.listeners.packet.EntityPacketListener;
 import btm.sword.listeners.packet.MovementListener;
 import btm.sword.system.action.throwing.InteractiveItemArbiter;
 import btm.sword.system.action.throwing.ProjectileManager;
 import btm.sword.system.display.BossBarManager;
 import btm.sword.system.display.ScoreboardManager;
 import btm.sword.system.entity.SwordEntityArbiter;
+import btm.sword.system.entity.display.DEUAnimationHook;
+import btm.sword.system.entity.display.WeaponAnchorPacketHook;
+import btm.sword.system.entity.display.WeaponDisplayRegistry;
+import btm.sword.system.entity.mob.MobTypeRegistry;
 import btm.sword.system.inventory.InventoryMenuManager;
 import btm.sword.system.join.MenuSlotGrid;
 import btm.sword.system.join.ServerJoinArbiter;
@@ -58,11 +63,14 @@ public final class Sword extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new PlayerListener(), this);
         getServer().getPluginManager().registerEvents(new ServerJoinArbiter(), this);
         getServer().getPluginManager().registerEvents(new EntityListener(), this);
+        getServer().getPluginManager().registerEvents(new DEUAnimationHook(), this);
+        WeaponAnchorPacketHook.register();
         getServer().getPluginManager().registerEvents(new WorldListener(), this);
         getServer().getPluginManager().registerEvents(new SystemListener(), this);
 
         protocolManager = ProtocolLibrary.getProtocolManager();
         protocolManager.addPacketListener(new MovementListener());
+        protocolManager.addPacketListener(new EntityPacketListener());
 
         // Register commands using Paper's Brigadier lifecycle system
         LifecycleEventManager<@NotNull Plugin> manager = this.getLifecycleManager();
@@ -79,6 +87,8 @@ public final class Sword extends JavaPlugin {
         InventoryMenuManager.registerAll();
 
         AnimationRegistry.initialize(this);
+        MobTypeRegistry.initialize(this);
+        WeaponDisplayRegistry.initialize(this);
 
         PlayerDataManager.initialize();
 

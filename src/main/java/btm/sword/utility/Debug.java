@@ -92,6 +92,11 @@ public class Debug {
         emit(Config.Debug.LOGGING_VERBOSE_LISTENER, "Listener", message);
     }
 
+    /** DEU animation hook / weapon-slot display debug. Gated by {@link Config.Debug#LOGGING_VERBOSE_ANIMATION}. */
+    public static void animation(String message) {
+        emit(Config.Debug.LOGGING_VERBOSE_ANIMATION, "Animation", message);
+    }
+
     // =========================================================================
     // Visual helpers
     // =========================================================================

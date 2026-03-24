@@ -12,18 +12,18 @@ import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Entity;
-import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 
 import com.destroystokyo.paper.entity.Pathfinder;
 import com.destroystokyo.paper.entity.ai.GoalType;
 
-import btm.sword.config.Config;
 import btm.sword.system.action.throwing.types.DroppedItem;
 import btm.sword.system.action.throwing.types.ThrownItem;
 import btm.sword.system.control.SwordScheduler;
@@ -39,6 +39,8 @@ import btm.sword.system.entity.aspect.Resource;
 import btm.sword.system.entity.base.CombatProfile;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.display.DisplayRig;
+import btm.sword.system.entity.mob.MobTypeDefinition;
+import btm.sword.system.entity.mob.MobTypeRegistry;
 import btm.sword.system.item.weapon.WeaponType;
 import btm.sword.utility.Debug;
 import lombok.Getter;
@@ -84,6 +86,16 @@ public class Hostile extends Combatant {
 
     /** Visual display rig; {@code null} when the group tag is unset or the group is not found. */
     @Getter private DisplayRig displayRig;
+
+    /**
+     * {@code true} when this mob's visuals are driven by a DEU display rig rather than vanilla
+     * equipment rendering. Vanilla gear is stripped on construction; items are shown via the rig's
+     * weapon slot display entity instead.
+     */
+    @Getter private boolean usesDisplayRig;
+
+    /** {@code true} while the death animation is playing — defers the Bukkit kill. */
+    @Getter private boolean inDeathAnimation;
     private WanderProfile wanderProfile = WanderProfile.ROAMER;
     private SwordEntity currentTarget;
     private SwordEntity nearestScannedTarget;
@@ -146,16 +158,26 @@ public class Hostile extends Combatant {
         possibleAbilities.add(new MobSlashAbility());
         possibleAbilities.add(new MobThrowAbility());
 
+        MobTypeDefinition mobTypeDef = MobTypeRegistry.getByEntityType(associatedEntity.getType());
+        usesDisplayRig = mobTypeDef != null && mobTypeDef.displayGroup() != null;
+
         EntityEquipment equipment = associatedEntity.getEquipment();
         if (equipment != null) {
-            if (associatedEntity.getType() == EntityType.PILLAGER) {
-                // Zombie is driven by the display rig — strip all vanilla gear so nothing shows.
+            if (usesDisplayRig) {
+                // Rig drives visuals — strip all vanilla gear so nothing bleeds through.
                 equipment.setItemInMainHand(ItemStack.of(Material.AIR));
                 equipment.setItemInOffHand(ItemStack.of(Material.AIR));
                 equipment.setHelmet(ItemStack.of(Material.AIR));
                 equipment.setChestplate(ItemStack.of(Material.AIR));
                 equipment.setLeggings(ItemStack.of(Material.AIR));
                 equipment.setBoots(ItemStack.of(Material.AIR));
+
+                self.clearActivePotionEffects();
+                self.addPotionEffect(new PotionEffect(
+                    PotionEffectType.SLOWNESS,
+                    PotionEffect.INFINITE_DURATION,
+                    2,
+                    false, false));
             } else {
                 equipment.setItemInMainHand(itemInRightHand);
                 equipment.setItemInOffHand(itemInLeftHand);
@@ -187,15 +209,17 @@ public class Hostile extends Combatant {
         // Defer display rig spawn by one tick — spawning display entities synchronously during
         // EntityAddToWorldEvent causes a Paper chunk-system error because the host chunk is
         // still mid-update when this event fires.
-        if (mob.getType() == EntityType.ZOMBIE) {
-            // Defer display rig spawn by one tick — spawning display entities synchronously during
-            // EntityAddToWorldEvent causes a Paper chunk-system error because the host chunk is
-            // still mid-update when this event fires.
+        MobTypeDefinition mobType = MobTypeRegistry.getByEntityType(mob.getType());
+        if (mobType != null && mobType.displayGroup() != null) {
+            final MobTypeDefinition type = mobType;
             SwordScheduler.runBukkitTaskLater(
                 () -> {
                     if (mob.isValid()) {
                         mob.setInvisible(true);
-                        displayRig = DisplayRig.spawn(mob, Config.Hostile.DISPLAY_GROUP);
+                        displayRig = DisplayRig.spawn(mob, type.displayGroup(), type.animationSlots());
+                        if (displayRig != null) {
+                            displayRig.setWeaponSlotItem(itemInRightHand);
+                        }
                     }
                 },
                 50, TimeUnit.MILLISECONDS
@@ -228,7 +252,34 @@ public class Hostile extends Combatant {
                 stuck.register();
             }
         }
+
+        // Disable AI immediately regardless of death animation.
+        mob.setAware(false);
+        aiStateMachine = null;
+        statusActive = false;
+        endStatusDisplay();
+
+        if (displayRig != null && displayRig.hasDieAnimation()) {
+            inDeathAnimation = true;
+            displayRig.triggerDeath();
+            // Fallback kill — fires if AnimationCompleteEvent never arrives.
+            // Uses the configured die animation length; falls back to 5 seconds if unset.
+            MobTypeDefinition mobType = MobTypeRegistry.getByEntityType(mob.getType());
+            int dieTicks = (mobType != null) ? mobType.animationSlots().die().durationTicks() : 0;
+            int fallbackMs = dieTicks > 0 ? dieTicks * btm.sword.utility.SwordTimeUnit.MILLISECONDS_PER_TICK : 5000;
+            SwordScheduler.runBukkitTaskLater(() -> {
+                if (!mob.isDead()) {
+                    mob.damage(74077740);
+                }
+            }, fallbackMs, TimeUnit.MILLISECONDS);
+        }
+
         super.onZeroHealth();
+    }
+
+    @Override
+    protected boolean shouldDeferDeath() {
+        return inDeathAnimation;
     }
 
     @Override
@@ -316,6 +367,46 @@ public class Hostile extends Combatant {
                 entry.setValue(remaining);
             }
         }
+    }
+
+    /**
+     * Returns the item this mob can throw.
+     * <p>
+     * For display-rig mobs the logical item is tracked in {@link #itemInRightHand} because
+     * vanilla equipment is stripped to AIR; for normal mobs, returns whatever is in the
+     * vanilla main hand via {@link #getItemStackInHand(boolean)}.
+     *
+     * @return the throwable item, or the current main-hand item for non-rig mobs
+     */
+    public ItemStack getThrowableItem() {
+        return usesDisplayRig ? itemInRightHand : getItemStackInHand(true);
+    }
+
+    /**
+     * Called by {@link btm.sword.system.entity.ai.state.RetrieveWeaponState} when the mob
+     * reclaims its thrown weapon. The default behaviour equips the item to the mob's vanilla
+     * main hand. Display-rig subclasses override this to update only the rig weapon slot.
+     *
+     * @param item the recovered item stack
+     */
+    public void receiveRetrievedWeapon(ItemStack item) {
+        setItemStackInHand(item, true);
+    }
+
+    /**
+     * Clears the weapon-slot display when this mob has thrown its main-hand item.
+     * No-op if no display rig is present.
+     */
+    public void onWeaponThrown() {
+        if (displayRig != null) displayRig.setWeaponSlotItem(null);
+    }
+
+    /**
+     * Restores the weapon-slot display when this mob retrieves its thrown item.
+     * No-op if no display rig is present.
+     */
+    public void onWeaponRetrieved() {
+        if (displayRig != null) displayRig.setWeaponSlotItem(itemInRightHand);
     }
 
     public Location getOrigin() {

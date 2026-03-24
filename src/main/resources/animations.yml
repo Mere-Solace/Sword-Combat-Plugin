@@ -17,5 +17,7 @@ animations:
         loop: true
   witha:
     anims:
-      witha_default:
-        loop: true
+      witha_die:
+        loop: false
+      witha_walk:
+        loop: false
