@@ -55,7 +55,7 @@ public class EntityListener implements Listener {
         // to mark it as the weapon slot; the runtime item is then set via setWeaponSlotItem().
         if (entity instanceof ItemDisplay itemDisplay) {
             ItemStack displayed = itemDisplay.getItemStack();
-            if (displayed != null && displayed.getType() == Material.LIGHTNING_ROD) {
+            if (displayed.getType() == Material.LIGHTNING_ROD) {
                 itemDisplay.addScoreboardTag(DisplayRig.WEAPON_SLOT_TAG);
             }
         }

@@ -25,7 +25,7 @@ public class UtilityAction extends SwordAction {
                     SwordEntityArbiter.getOrAdd(livingEntity).hit(
                         executor, 100,
                         0, 7777777, 7777777,
-                        1, l.getDirection().multiply(100));
+                        1, l.getDirection().multiply(0.1));
                 } catch (NullPointerException e) {
                     // some nonsense occurred
                 }

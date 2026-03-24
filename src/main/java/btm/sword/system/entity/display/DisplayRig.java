@@ -4,12 +4,10 @@ import java.util.List;
 
 import org.bukkit.Material;
 import org.bukkit.entity.Display;
-import org.bukkit.entity.EntityType;
 import org.bukkit.entity.ItemDisplay;
 import org.bukkit.entity.Mob;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Transformation;
-import org.bukkit.util.Vector;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
@@ -24,6 +22,7 @@ import net.donnypz.displayentityutils.managers.LoadMethod;
 import net.donnypz.displayentityutils.utils.DisplayEntities.DisplayAnimator;
 import net.donnypz.displayentityutils.utils.DisplayEntities.DisplayEntityGroup;
 import net.donnypz.displayentityutils.utils.DisplayEntities.SpawnedDisplayEntityGroup;
+import net.donnypz.displayentityutils.utils.DisplayEntities.SpawnedDisplayEntityPart;
 import net.donnypz.displayentityutils.utils.DisplayEntities.machine.DisplayStateMachine;
 import net.donnypz.displayentityutils.utils.DisplayEntities.machine.MachineState;
 import net.donnypz.displayentityutils.utils.FollowType;
@@ -55,12 +54,6 @@ public class DisplayRig {
      */
     public static final String WEAPON_SLOT_TAG = "sword_weapon_slot";
 
-    /**
-     * Scale threshold below which all three axes of an {@link ItemDisplay} must fall
-     * for it to be treated as a weapon-slot anchor.
-     */
-    public static final float WEAPON_SLOT_SCALE_THRESHOLD = 0.05f;
-
     private final Mob mob;
     private final SpawnedDisplayEntityGroup group;
     private final DisplayStateMachine stateMachine;
@@ -77,10 +70,26 @@ public class DisplayRig {
     /** The tiny LIGHTNING_ROD anchor within the DEU group that marks the main-hand weapon slot. */
     private final @Nullable ItemDisplay weaponAnchor;
 
-    /** The live item display entity that follows the mob's hand and shows the held item. */
-    private @Nullable ItemDisplay weaponDisplay;
-    /** Task handle for the mob-follow loop; non-null while a weapon is being shown. */
-    private @Nullable TimeArbiter.TaskHandle weaponFollowTask;
+    /**
+     * The DEU part wrapper for the weapon anchor, used to call DEU's own transform setters
+     * (which ultimately delegate to the Bukkit Display API but keep the call within DEU's model).
+     */
+    private final @Nullable SpawnedDisplayEntityPart weaponAnchorPart;
+
+    /**
+     * The anchor's original transformation captured at spawn, used to restore the invisible
+     * near-zero-scale state when the weapon slot is cleared.
+     */
+    private final @Nullable Transformation weaponAnchorOriginalTransform;
+
+    /** Periodic refresh task; non-null while a weapon is actively shown. */
+    private @Nullable TimeArbiter.TaskHandle weaponRefreshTask;
+
+    /**
+     * The item currently shown in the weapon slot, or {@code null} when hidden.
+     * Used by {@link #reapplyWeaponTransform()} to re-apply after DEU state transitions.
+     */
+    private @Nullable ItemStack currentWeaponItem;
 
     private DisplayRig(Mob mob, SpawnedDisplayEntityGroup group, DisplayStateMachine stateMachine,
             String dieAnimTag, @Nullable ItemDisplay weaponAnchor) {
@@ -89,6 +98,10 @@ public class DisplayRig {
         this.stateMachine = stateMachine;
         this.dieAnimTag = dieAnimTag;
         this.weaponAnchor = weaponAnchor;
+        this.weaponAnchorPart = weaponAnchor != null
+            ? SpawnedDisplayEntityPart.getPart(weaponAnchor) : null;
+        this.weaponAnchorOriginalTransform = weaponAnchor != null
+            ? weaponAnchor.getTransformation() : null;
     }
 
     /**
@@ -113,7 +126,6 @@ public class DisplayRig {
         if (group == null) return null;
 
         group.rideEntity(mob);
-        group.setRideOffset(new Vector(0, -mob.getHeight() + Config.Hostile.DISPLAY_RIDE_OFFSET_Y, 0));
 
         for (Display display : group.getPartEntities(Display.class)) {
             display.setTeleportDuration(Config.Hostile.DISPLAY_TELEPORT_DURATION);
@@ -137,90 +149,95 @@ public class DisplayRig {
         ItemDisplay weaponAnchor = null;
         for (ItemDisplay id : group.getPartEntities(ItemDisplay.class)) {
             ItemStack item = id.getItemStack();
-            if (item == null || item.getType() != Material.LIGHTNING_ROD) continue;
-            org.joml.Vector3f scale = id.getTransformation().getScale();
-            if (scale.x < WEAPON_SLOT_SCALE_THRESHOLD
-                    && scale.y < WEAPON_SLOT_SCALE_THRESHOLD
-                    && scale.z < WEAPON_SLOT_SCALE_THRESHOLD) {
-                weaponAnchor = id;
-                break;
-            }
+            if (item.getType() != Material.LIGHTNING_ROD) continue;
+            weaponAnchor = id;
+            break;
         }
 
+
         String dieTag = slots.die().tag() != null ? slots.die().tag() : "";
-        return new DisplayRig(mob, group, stateMachine, dieTag, weaponAnchor);
+        DisplayRig rig = new DisplayRig(mob, group, stateMachine, dieTag, weaponAnchor);
+        DEUAnimationHook.track(group, rig);
+        return rig;
     }
 
     // -----------------------------------------------------------------------
     // Weapon slot
 
     /**
-     * Shows the given item at the mob's main-hand weapon slot by spawning an
-     * {@link ItemDisplay} that mirrors the weapon-anchor bone's transform each tick.
+     * Shows the given item at the mob's main-hand weapon slot, or hides the slot.
      *
-     * <p>DEU writes the anchor's animated {@link Transformation} server-side on every
-     * animation frame. Each tick our follow task reads that transform and applies it
-     * (combined with the per-material user adjustments) to the weapon display so it
-     * tracks the bone's position <em>and</em> orientation through every animation state.</p>
+     * <p>This method drives two distinct hook states:</p>
+     * <ul>
+     *   <li><b>Armed</b> ({@code item} is a real weapon): registers a {@link WeaponAnchorPacketHook}
+     *       override that forces the weapon item, scale, and rotation offset on every outgoing
+     *       metadata packet for the anchor. A 5-tick refresh loop triggers periodic Bukkit-side
+     *       metadata flushes so DEU state-machine resets are overridden promptly.</li>
+     *   <li><b>Hidden</b> ({@code item} is {@code null} or AIR): registers the hook with
+     *       {@code AIR} and near-zero scale so DEU's own reset packets (which would restore the
+     *       LIGHTNING_ROD marker) are still intercepted and suppressed.</li>
+     * </ul>
      *
-     * <p>Passing {@code null} or an air stack hides the weapon display.</p>
-     *
-     * @param item the item to display, or {@code null} to clear
+     * @param item the item to display, or {@code null} to hide the slot
      */
     public void setWeaponSlotItem(@Nullable ItemStack item) {
-        clearWeaponDisplay();
+        // Tear down previous state before registering the new one.
+        stopWeaponRefreshTask();
+        if (weaponAnchor != null) WeaponAnchorPacketHook.clear(weaponAnchor);
 
-        if (weaponAnchor == null) return;
-        if (item == null || item.getType().isAir()) return;
+        if (weaponAnchor == null || !weaponAnchor.isValid()) return;
 
+        final Vector3f baseTrans = weaponAnchorOriginalTransform != null
+            ? new Vector3f(weaponAnchorOriginalTransform.getTranslation())
+            : new Vector3f();
+
+        if (item == null || item.getType() == Material.AIR) {
+            // Hidden state: keep the hook active so DEU's item-reset packets are suppressed.
+            currentWeaponItem = null;
+            WeaponAnchorPacketHook.override(
+                weaponAnchor, new ItemStack(Material.AIR), 0.001f, new Quaternionf(), new Vector3f());
+            weaponAnchor.setGlowing(false);
+            weaponAnchor.setInterpolationDelay(0);
+            weaponAnchor.setInterpolationDuration(0);
+            weaponAnchor.setTransformation(new Transformation(
+                baseTrans, new Quaternionf(), new Vector3f(0.001f, 0.001f, 0.001f), new Quaternionf()
+            ));
+            weaponAnchor.setItemStack(new ItemStack(Material.AIR));
+            return;
+        }
+
+        // Armed state.
+        currentWeaponItem = item;
         final WeaponDisplayTransform t = WeaponDisplayRegistry.get(item.getType());
-
-        weaponDisplay = (ItemDisplay) mob.getWorld().spawnEntity(
-            weaponAnchor.getLocation(), EntityType.ITEM_DISPLAY
-        );
-        weaponDisplay.setItemStack(item);
-
-        // Precompute static parts of the user adjustment (these don't change per tick).
-        final Quaternionf userRot = new Quaternionf().rotateXYZ(
+        final Quaternionf rotOffset = new Quaternionf().rotateXYZ(
             (float) Math.toRadians(t.rotX()),
             (float) Math.toRadians(t.rotY()),
             (float) Math.toRadians(t.rotZ())
         );
-        final Vector3f userOffset = new Vector3f(t.offsetRight(), t.offsetUp(), t.offsetForward());
         final float scale = t.scale();
-        final ItemDisplay display = weaponDisplay;
+        final Vector3f translationOffset = new Vector3f(t.offsetRight(), t.offsetUp(), t.offsetForward());
         final ItemDisplay anchor = weaponAnchor;
 
-        // Each tick: read the anchor's current animated transform (set by DEU) and mirror
-        // it onto our weapon display, then teleport to match the anchor's server-side position.
-        weaponFollowTask = TimeArbiter.runTimeBoundBukkitTaskOnTimer(
+        // Register hook before the first metadata flush so even that packet is intercepted.
+        WeaponAnchorPacketHook.override(anchor, item, scale, rotOffset, translationOffset);
+
+        // 5-tick refresh: forces a Bukkit metadata packet so DEU state-machine resets are
+        // overridden within one loop cycle. The packet hook intercepts these too.
+        weaponRefreshTask = TimeArbiter.runTimeBoundBukkitTaskOnTimer(
             () -> {
-                if (!anchor.isValid() || !display.isValid()) return;
-
-                Transformation anchorT = anchor.getTransformation();
-
-                // Bone rotation (from DEU animation) composed with user's additional rotation.
-                Quaternionf finalRot = anchorT.getLeftRotation().mul(userRot, new Quaternionf());
-
-                // Bone translation + user's local offset.
-                Vector3f finalTrans = anchorT.getTranslation().add(userOffset, new Vector3f());
-
-                display.setTransformation(new Transformation(
-                    finalTrans,
-                    finalRot,
-                    new Vector3f(scale, scale, scale),
-                    new Quaternionf()
-                ));
-
-                // Sync server-side position so the display follows the mob as it moves.
-                TimeArbiter.teleportDisplay(
-                    display, anchor.getLocation(), null,
-                    Config.Hostile.DISPLAY_TELEPORT_DURATION,
-                    DisplayRig.class, 0
-                );
+                if (!mob.isValid() || !anchor.isValid()) return;
+                anchor.setGlowing(true);
+                anchor.setGlowColorOverride(Config.SwordColor.ATTACK_QUICK_GLOW);
+                anchor.setItemDisplayTransform(ItemDisplay.ItemDisplayTransform.THIRDPERSON_LEFTHAND);
+//                anchor.setInterpolationDelay(0);
+//                anchor.setInterpolationDuration(0);
+//                anchor.setTransformation(new Transformation(
+//                    baseTrans, new Quaternionf(), new Vector3f(scale, scale, scale), new Quaternionf()
+//                ));
+                anchor.setItemStack(item);
             },
-            null, null, 0, 1,
-            DisplayRig.class, "weaponSlotSync"
+            null, null, 0, 5,
+            DisplayRig.class, "setWeaponSlotItem"
         );
     }
 
@@ -288,10 +305,29 @@ public class DisplayRig {
     // Lifecycle
 
     /**
+     * Re-applies the currently armed weapon transform to the anchor using DEU's part API.
+     *
+     * <p>Called by {@link DEUAnimationHook} a few ticks after a state-machine transition.
+     * DEU's {@code playUsingPackets} sends frame-0 packets asynchronously; if those packets
+     * bypass ProtocolLib's pipeline position, a brief reset window can occur. This call
+     * re-asserts the correct server-side entity state (scale + item) so that both
+     * the ProtocolLib hook and any subsequent server-to-client resends reflect our values.</p>
+     */
+    public void reapplyWeaponTransform() {
+        if (currentWeaponItem == null || weaponAnchorPart == null || weaponAnchor == null) return;
+        if (!weaponAnchor.isValid()) return;
+        WeaponDisplayTransform t = WeaponDisplayRegistry.get(currentWeaponItem.getType());
+        // Use DEU's part API to set scale — sends a Bukkit metadata packet that the hook intercepts.
+        weaponAnchorPart.setDisplayScale(t.scale(), t.scale(), t.scale());
+        weaponAnchor.setItemStack(currentWeaponItem);
+    }
+
+    /**
      * Removes the spawned group from the world and unregisters the state machine.
      * Must be called when the mob dies or is removed.
      */
     public void despawn() {
+        DEUAnimationHook.untrack(group);
         clearWeaponDisplay();
         stateMachine.removeGroup(group);
         group.unregister(true, true);
@@ -300,15 +336,16 @@ public class DisplayRig {
     // -----------------------------------------------------------------------
     // Private helpers
 
-    /** Cancels the follow task and removes the weapon display entity. */
+    /** Cancels the refresh task and fully removes the packet hook. Called only from {@link #despawn}. */
     private void clearWeaponDisplay() {
-        if (weaponFollowTask != null) {
-            weaponFollowTask.cancel();
-            weaponFollowTask = null;
-        }
-        if (weaponDisplay != null && weaponDisplay.isValid()) {
-            weaponDisplay.remove();
-            weaponDisplay = null;
+        stopWeaponRefreshTask();
+        if (weaponAnchor != null) WeaponAnchorPacketHook.clear(weaponAnchor);
+    }
+
+    private void stopWeaponRefreshTask() {
+        if (weaponRefreshTask != null) {
+            weaponRefreshTask.cancel();
+            weaponRefreshTask = null;
         }
     }
 

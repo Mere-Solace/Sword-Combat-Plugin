@@ -42,6 +42,9 @@ public class ThrowAction extends SwordAction {
      * @param executor the combatant beginning a throw action
      */
     public static void throwReady(Combatant executor) {
+        if (executor instanceof SwordPlayer sp) {
+            sp.setBlocking(false);
+        }
         throwReady(executor, null);
     }
 

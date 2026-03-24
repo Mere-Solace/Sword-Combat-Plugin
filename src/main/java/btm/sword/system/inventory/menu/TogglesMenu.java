@@ -90,11 +90,17 @@ public class TogglesMenu extends Menu {
             () -> Config.World.BLOCK_INTERACTION_ALLOW_BLOCK_PLACING = !Config.World.BLOCK_INTERACTION_ALLOW_BLOCK_PLACING
         );
 
+        SimpleItem verboseAnimation = toggle(
+            "Animation (DEU hook)",
+            () -> Config.Debug.LOGGING_VERBOSE_ANIMATION,
+            () -> Config.Debug.LOGGING_VERBOSE_ANIMATION = !Config.Debug.LOGGING_VERBOSE_ANIMATION
+        );
+
         Gui gui = Gui.normal()
             .setStructure(
                 "# # # # # # # # #",
                 "# A B C D E . . #",
-                "# F G H I J . . #",
+                "# F G H I J K . #",
                 "# . . . . . . . #",
                 "< # # # # # # # #")
             .addIngredient('#', BORDER)
@@ -108,6 +114,7 @@ public class TogglesMenu extends Menu {
             .addIngredient('H', verboseListener)
             .addIngredient('I', specialItemChecks)
             .addIngredient('J', blockPlacing)
+            .addIngredient('K', verboseAnimation)
             .addIngredient('<', generatePreviousButtonOrDefault())
             .build();
 

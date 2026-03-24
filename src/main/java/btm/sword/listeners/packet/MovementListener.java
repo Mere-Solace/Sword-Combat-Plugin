@@ -10,11 +10,12 @@ import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.ListenerPriority;
 import com.comphenix.protocol.events.ListeningWhitelist;
 import com.comphenix.protocol.events.PacketEvent;
+import com.comphenix.protocol.events.PacketListener;
 
 import btm.sword.Sword;
 import btm.sword.utility.Debug;
 
-public class MovementListener implements com.comphenix.protocol.events.PacketListener {
+public class MovementListener implements PacketListener {
     public static final HashSet<UUID> lockedPlayers = new HashSet<>();
 
     @Override
