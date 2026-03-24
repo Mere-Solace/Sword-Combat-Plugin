@@ -7,7 +7,6 @@ import org.bukkit.entity.Display;
 import org.bukkit.entity.ItemDisplay;
 import org.bukkit.entity.Mob;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.util.Transformation;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
@@ -38,7 +37,6 @@ import net.donnypz.displayentityutils.utils.controller.GroupFollowProperties;
  * present, is triggered by {@link #triggerDeath()} and plays once before the mob is killed.</p>
  *
  * <p>Weapon slot display: if the DEU group contains a {@link Material#LIGHTNING_ROD}
- * {@link ItemDisplay} whose scale is below {@link #WEAPON_SLOT_SCALE_THRESHOLD} on all axes,
  * that entity is used as the weapon-slot anchor. Call {@link #setWeaponSlotItem(ItemStack)}
  * to show an item at the mob's hand; the display follows the mob's position and yaw.
  * Per-material offset/rotation/scale is loaded from {@link WeaponDisplayRegistry}.</p>
@@ -76,12 +74,6 @@ public class DisplayRig {
      */
     private final @Nullable SpawnedDisplayEntityPart weaponAnchorPart;
 
-    /**
-     * The anchor's original transformation captured at spawn, used to restore the invisible
-     * near-zero-scale state when the weapon slot is cleared.
-     */
-    private final @Nullable Transformation weaponAnchorOriginalTransform;
-
     /** Periodic refresh task; non-null while a weapon is actively shown. */
     private @Nullable TimeArbiter.TaskHandle weaponRefreshTask;
 
@@ -100,8 +92,6 @@ public class DisplayRig {
         this.weaponAnchor = weaponAnchor;
         this.weaponAnchorPart = weaponAnchor != null
             ? SpawnedDisplayEntityPart.getPart(weaponAnchor) : null;
-        this.weaponAnchorOriginalTransform = weaponAnchor != null
-            ? weaponAnchor.getTransformation() : null;
     }
 
     /**
@@ -187,39 +177,20 @@ public class DisplayRig {
 
         if (weaponAnchor == null || !weaponAnchor.isValid()) return;
 
-        final Vector3f baseTrans = weaponAnchorOriginalTransform != null
-            ? new Vector3f(weaponAnchorOriginalTransform.getTranslation())
-            : new Vector3f();
-
         if (item == null || item.getType() == Material.AIR) {
             // Hidden state: keep the hook active so DEU's item-reset packets are suppressed.
             currentWeaponItem = null;
             WeaponAnchorPacketHook.override(
                 weaponAnchor, new ItemStack(Material.AIR), 0.001f, new Quaternionf(), new Vector3f());
             weaponAnchor.setGlowing(false);
-            weaponAnchor.setInterpolationDelay(0);
-            weaponAnchor.setInterpolationDuration(0);
-            weaponAnchor.setTransformation(new Transformation(
-                baseTrans, new Quaternionf(), new Vector3f(0.001f, 0.001f, 0.001f), new Quaternionf()
-            ));
             weaponAnchor.setItemStack(new ItemStack(Material.AIR));
             return;
         }
 
         // Armed state.
         currentWeaponItem = item;
-        final WeaponDisplayTransform t = WeaponDisplayRegistry.get(item.getType());
-        final Quaternionf rotOffset = new Quaternionf().rotateXYZ(
-            (float) Math.toRadians(t.rotX()),
-            (float) Math.toRadians(t.rotY()),
-            (float) Math.toRadians(t.rotZ())
-        );
-        final float scale = t.scale();
-        final Vector3f translationOffset = new Vector3f(t.offsetRight(), t.offsetUp(), t.offsetForward());
-        final ItemDisplay anchor = weaponAnchor;
 
-        // Register hook before the first metadata flush so even that packet is intercepted.
-        WeaponAnchorPacketHook.override(anchor, item, scale, rotOffset, translationOffset);
+        final ItemDisplay anchor = weaponAnchor;
 
         // 5-tick refresh: forces a Bukkit metadata packet so DEU state-machine resets are
         // overridden within one loop cycle. The packet hook intercepts these too.
@@ -229,14 +200,9 @@ public class DisplayRig {
                 anchor.setGlowing(true);
                 anchor.setGlowColorOverride(Config.SwordColor.ATTACK_QUICK_GLOW);
                 anchor.setItemDisplayTransform(ItemDisplay.ItemDisplayTransform.THIRDPERSON_LEFTHAND);
-//                anchor.setInterpolationDelay(0);
-//                anchor.setInterpolationDuration(0);
-//                anchor.setTransformation(new Transformation(
-//                    baseTrans, new Quaternionf(), new Vector3f(scale, scale, scale), new Quaternionf()
-//                ));
                 anchor.setItemStack(item);
             },
-            null, null, 0, 5,
+            null, null, 0, 1,
             DisplayRig.class, "setWeaponSlotItem"
         );
     }
