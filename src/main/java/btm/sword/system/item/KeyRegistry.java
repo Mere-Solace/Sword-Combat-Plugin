@@ -177,6 +177,30 @@ public final class KeyRegistry {
     /** Cached {@link NamespacedKey} for {@link #WEAPON_TYPE}. */
     public static final NamespacedKey WEAPON_TYPE_KEY = key(WEAPON_TYPE);
 
+
+    /**
+     * Persistent data key stamped on every physical ability world item.
+     * Value is the {@link btm.sword.system.action.skill.SkillId#asString()} of the ability it represents.
+     * Used by {@link btm.sword.system.item.AbilityItemReader} to identify and match ability items.
+     */
+    public static final String ABILITY_ID = "ability_id";
+
+    /** Cached {@link NamespacedKey} for {@link #ABILITY_ID}. */
+    public static final NamespacedKey ABILITY_ID_KEY = key(ABILITY_ID);
+
+
+    /**
+     * Persistent data key marking an item as occupying an ability hotbar slot.
+     * Value is either {@code "PLACEHOLDER"} (locked/empty/depleted states) or
+     * {@code "EQUIPPED"} (an active ability item placed in the slot).
+     * Used by {@link btm.sword.system.item.special.AbilitySlotItem#isSatisfied} to
+     * identify valid ability-slot items during inventory upkeep.
+     */
+    public static final String ABILITY_SLOT = "ability_slot";
+
+    /** Cached {@link NamespacedKey} for {@link #ABILITY_SLOT}. */
+    public static final NamespacedKey ABILITY_SLOT_KEY = key(ABILITY_SLOT);
+
     // ------------------------------
     //  Utility Methods
     // ------------------------------

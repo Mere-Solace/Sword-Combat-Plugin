@@ -106,6 +106,55 @@ public class ThrowAction extends SwordAction {
     }
 
     /**
+     * Throws an item directly without the {@link #throwReady} aim-and-hold windup.
+     * <p>
+     * The display entity is spawned on the next server tick; once it exists the
+     * {@link ThrownItem} is immediately released at the given velocity — {@code onReady()}
+     * is never called. This is suitable for instant-release throws (e.g. knife throws)
+     * where no aim window or slowness effect is desired.
+     * <p>
+     * {@code displayScale} is applied to the item's transform in
+     * {@link ThrownItem#determineOrientation()} via
+     * {@link btm.sword.system.action.throwing.types.VisualProjectile#displayScale}.
+     * Pass {@code 1.0f} for normal size.
+     *
+     * @param executor     the combatant performing the throw
+     * @param item         the item to throw
+     * @param displayScale uniform scale applied to the display transform (e.g. {@code 0.5f} for half size)
+     * @param velocity     the initial velocity magnitude passed to {@link ThrownItem#onRelease(double)}
+     */
+    public static void throwDirect(Combatant executor, ItemStack item, float displayScale, double velocity) {
+        executor.setAttemptingThrow(true);
+        executor.setThrowCancelled(false);
+        executor.setThrowSuccessful(false);
+        if (executor instanceof SwordPlayer sp) sp.setActivationContext(ActivationContext.THROWING);
+
+        ThrownItem thrownItem = new ThrownItem(executor, display -> display.setItemStack(item), 1);
+        thrownItem.setItemStack(item);
+        thrownItem.setDisplayScale(displayScale);
+        executor.setThrownItem(thrownItem);
+
+        new BukkitRunnable() {
+            int misses = 0;
+            @Override
+            public void run() {
+                if (misses > 20) {
+                    cancel();
+                    return;
+                }
+                if (thrownItem.getDisplay() == null) {
+                    misses++;
+                } else {
+                    executor.setThrowSuccessful(true);
+                    if (executor instanceof SwordPlayer sp) sp.setActivationContext(ActivationContext.NORMAL);
+                    thrownItem.onRelease(velocity);
+                    cancel();
+                }
+            }
+        }.runTaskTimer(Sword.getInstance(), 0L, 1L);
+    }
+
+    /**
      * Cancels a throw action before it is released.
      * <p>
      * This restores the executor’s held item states to what they were prior to

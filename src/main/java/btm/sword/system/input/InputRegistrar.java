@@ -568,8 +568,10 @@ public class InputRegistrar {
                                                 SwordPlayer owner,
                                                 SkillSlot slot, int slotIndex) {
         // Tap variant
-        new InputExecutionTree.InputNodeBuilder(root, List.of(InputType.SWAP, InputType.RIGHT))
-            .action(new LinkedList<>(List.of(
+        new InputExecutionTree.InputNodeBuilder(root, List.of(
+            InputType.SWAP,
+            InputType.RIGHT
+        )).action(new LinkedList<>(List.of(
                 new InputExecutionTree.ActionContextPair(
                     () -> SkillSlotActionFactory.create(owner, slot, false),
                     sp -> sp.activeItemState(slotIndex))
@@ -578,7 +580,7 @@ public class InputRegistrar {
             .sameItemRequired(true)
             .cancellable(true)
             .display(true)
-            .visibleIf(ActivationContext.onlyIn(ActivationContext.NORMAL))
+            .visibleIf(ActivationContext.onlyIn(ActivationContext.NORMAL)) //TODO here: check if the player is holding an active item here as well
             .build();
 
         // Hold variant
