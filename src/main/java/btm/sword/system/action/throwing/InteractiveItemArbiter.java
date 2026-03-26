@@ -7,13 +7,20 @@ import org.bukkit.Particle;
 import org.bukkit.block.Block;
 import org.bukkit.entity.ItemDisplay;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.util.Vector;
 
+import btm.sword.system.action.skill.SkillId;
+import btm.sword.system.action.skill.container.PlayerSkillContainer;
+import btm.sword.system.action.skill.container.SkillSlot;
 import btm.sword.system.action.throwing.types.DroppedItem;
 import btm.sword.system.action.throwing.types.ThrownItem;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.impl.Combatant;
+import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.entity.umbral.UmbralBlade;
+import btm.sword.system.item.KeyRegistry;
+import btm.sword.system.item.special.AbilitySlotManager;
 import btm.sword.utility.Prefab;
 import btm.sword.utility.display.ParticleWrapper;
 
@@ -105,6 +112,17 @@ public class InteractiveItemArbiter {
         ItemStack item = interactiveItem.getItemStack();
         if (item == null) return;
         if (!item.isEmpty()) {
+            // Ability projectile pickup — refund a use to the thrower instead of giving the visual item
+            if (interactiveItem instanceof ThrownItem thrownItem
+                    && thrownItem.getThrower() instanceof SwordPlayer sp
+                    && KeyRegistry.hasKey(item, KeyRegistry.ABILITY_ID_KEY)) {
+                String abilityId = KeyRegistry.getKeyField(item, KeyRegistry.ABILITY_ID_KEY, PersistentDataType.STRING);
+                refundAbilityUse(sp, abilityId);
+                interactiveItem.dispose();
+                Prefab.Particles.GRAB_CLOUD.display(display.getLocation());
+                return;
+            }
+
             interactiveItem.dispose();
             executor.giveItem(item);
             Location displayLoc = display.getLocation();
@@ -119,6 +137,26 @@ public class InteractiveItemArbiter {
             }
             Prefab.Particles.GRAB_CLOUD.display(display.getLocation());
             interactiveItem.dispose();
+        }
+    }
+
+    /**
+     * Refunds one stack use of the named ability to the given player, if they have it equipped
+     * in an active slot. Used when an ability projectile (e.g. a thrown knife) is picked up.
+     *
+     * @param sp         the player who originally threw the projectile
+     * @param abilityId  the {@link SkillId#asString()} value stamped on the projectile
+     */
+    private static void refundAbilityUse(SwordPlayer sp, String abilityId) {
+        PlayerSkillContainer container = sp.getCombatProfile().getPlayerSkillContainer();
+        SkillId eq1 = container.getEquipped(SkillSlot.ACTIVE_1);
+        if (eq1 != null && eq1.asString().equals(abilityId)) {
+            sp.getAbilitySlotManager().addUse(AbilitySlotManager.SLOT_1);
+            return;
+        }
+        SkillId eq2 = container.getEquipped(SkillSlot.ACTIVE_2);
+        if (eq2 != null && eq2.asString().equals(abilityId)) {
+            sp.getAbilitySlotManager().addUse(AbilitySlotManager.SLOT_2);
         }
     }
 

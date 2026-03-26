@@ -181,6 +181,31 @@ public class AbilitySlotManager {
     }
 
     /**
+     * Adds one use back to the given slot (e.g. on projectile pickup).
+     * If the slot was depleted, transitions it back to EQUIPPED. No-ops if the slot has no
+     * {@link AbilityUseType#STACK} ability or is already at max uses.
+     *
+     * @param slotIndex 1 or 2
+     */
+    public void addUse(int slotIndex) {
+        SkillSlot skillSlot = toSkillSlot(slotIndex);
+        AbilitySkill ability = resolveAbility(skillSlot);
+        if (ability == null || !ability.useTypes().contains(AbilityUseType.STACK)) return;
+
+        int current = getRemainingUses(slotIndex);
+        int max = ability.maxUses();
+        if (current >= max) return;
+
+        int newUses = current < 0 ? 1 : Math.min(current + 1, max);
+        setRemainingUses(slotIndex, newUses);
+
+        AbilitySlotItem slotItem = slotIndex == SLOT_1 ? slot1 : slot2;
+        refreshSlot(slotItem, skillSlot, newUses, getRemainingDurability(slotIndex));
+        slotItem.restore(owner.player());
+        syncEnabled();
+    }
+
+    /**
      * Returns the two {@link AbilitySlotItem}s for inclusion in the managed items list.
      *
      * @return unmodifiable list of the two slot items

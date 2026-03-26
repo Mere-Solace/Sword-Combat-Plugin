@@ -26,6 +26,7 @@ import btm.sword.utility.Prefab;
 import btm.sword.utility.display.ParticleWrapper;
 import btm.sword.utility.entity.EntityUtil;
 import btm.sword.utility.entity.HitboxUtil;
+import btm.sword.utility.math.VectorUtil;
 import btm.sword.utility.sound.SoundUtil;
 import btm.sword.utility.sound.SwordSoundType;
 
@@ -40,6 +41,7 @@ public class Dash {
     private DashType dashType;
     private double dashPower;
     private boolean holdingLink;
+    private boolean itemRetrieved;
 
     private static final Supplier<Double> MAX_STRAIGHT_DASH_DISTANCE = () -> Config.Movement.DASH_MAX_DISTANCE;
     private static final Supplier<Double> NORMAL_ITEM_RAY_WIDTH = () -> Config.Movement.DASH_RAY_HITBOX_RADIUS;
@@ -64,6 +66,7 @@ public class Dash {
     }
 
     public void execute() {
+        itemRetrieved = false;
         dashType = DashType.NOTHING;
         onGround = EntityUtil.isOnGround(ex);
         holdingLink = executor.holdingSoulLink();
@@ -225,16 +228,27 @@ public class Dash {
 
         boolean umbralHeightBoost = !holdingLink || targetedBlade.inState(WaitingState.class) || targetedBlade.inState(LodgedState.class);
 
+        final Vector exDir = executor.dir();
+
         if (umbralHeightBoost &&
             heightDiff <= Config.Movement.DASH_FLAT_HEIGHT_UPPER &&
             heightDiff > Config.Movement.DASH_FLAT_HEIGHT_LOWER) {
-            executor.setVelocity(executor.dir()
-                .add(Config.Direction.UP().multiply(Config.Movement.DASH_FLAT_ITEM_DASH_UPWARD_SCALER)));
+
+            Vector dashVelocity = exDir.add(
+                Config.Direction.UP().multiply(Config.Movement.DASH_FLAT_ITEM_DASH_UPWARD_SCALER)
+            );
+            executor.setVelocity(dashVelocity);
         }
-        SwordScheduler.runBukkitTaskLater(() ->
-                executor.setVelocity(executor.dir().multiply(Math.log(distanceToItem * Config.Movement.DASH_FLAT_ITEM_DASH_DISTANCE_SCALER))),
-            !umbralHeightBoost ? 0 : Config.Movement.FLAT_DASH_HEIGHT_BOOST_DELAY_MS, TimeUnit.MILLISECONDS
-        );
+
+        final Vector toItem = calcVectorToItem().normalize();
+        if (VectorUtil.isBroken(toItem)) return;
+
+        if (!itemRetrieved && distanceToItem > 3) { // TODO: COnfig
+            SwordScheduler.runBukkitTaskLater(() -> // Velocity applied after the initial height boost
+                    executor.setVelocity(toItem.multiply(Math.log(distanceToItem * Config.Movement.DASH_FLAT_ITEM_DASH_DISTANCE_SCALER))),
+                !umbralHeightBoost ? 0 : Config.Movement.FLAT_DASH_HEIGHT_BOOST_DELAY_MS, TimeUnit.MILLISECONDS
+            );
+        }
     }
 
     private void scheduleCheckForItemPickup() {
@@ -263,6 +277,7 @@ public class Dash {
         SoundUtil.playSound(ex, SwordSoundType.ENTITY_ENDER_DRAGON_FLAP, Config.Movement.DASH_FLAP_SOUND_VOLUME, Config.Movement.DASH_FLAP_SOUND_PITCH);
         SoundUtil.playSound(ex, SwordSoundType.ENTITY_PLAYER_ATTACK_SWEEP, Config.Movement.DASH_SWEEP_SOUND_VOLUME, Config.Movement.DASH_SWEEP_SOUND_PITCH);
         executor.setVelocity(calcPostRetrievalVector());
+        itemRetrieved = true;
         InteractiveItemArbiter.onGrab(targetedDisplay, executor); // here is where the display is taken care of
     }
 

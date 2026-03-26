@@ -145,6 +145,7 @@ public class ThrowAction extends SwordAction {
                 if (thrownItem.getDisplay() == null) {
                     misses++;
                 } else {
+                    executor.setAttemptingThrow(false);
                     executor.setThrowSuccessful(true);
                     if (executor instanceof SwordPlayer sp) sp.setActivationContext(ActivationContext.NORMAL);
                     thrownItem.onRelease(velocity);

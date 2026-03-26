@@ -108,7 +108,7 @@ public class SkillSelectionMenu extends Menu {
 
         Window window = Window.single()
             .setViewer(swordPlayer.getPlayer())
-            .setTitle("MainMenu")
+            .setTitle(slot.title())
             .setGui(gui)
             .build();
 

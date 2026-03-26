@@ -73,6 +73,11 @@ public class VectorUtil {
         return new Basis(right, up, dir);
     }
 
+    public static boolean isBroken(Vector v) {
+        return Double.isNaN(v.getX()) || Double.isNaN(v.getY()) || Double.isNaN(v.getZ())
+            || Double.isInfinite(v.getX()) || Double.isInfinite(v.getY()) || Double.isInfinite(v.getZ());
+    }
+
     /**
      * Rotates an existing basis around its local axes.
      * <p>

@@ -10,10 +10,9 @@ import btm.sword.system.action.skill.AbilityUseType;
 import btm.sword.system.action.skill.SkillId;
 import btm.sword.system.action.skill.SkillIds;
 import btm.sword.system.action.skill.SkillType;
-import btm.sword.system.action.skill.type.ThrowableAbility;
+import btm.sword.system.action.skill.type.ActivatableAbility;
 import btm.sword.system.action.throwing.ThrowAction;
 import btm.sword.system.entity.impl.Combatant;
-import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.item.AbilityItemBuilder;
 import btm.sword.system.item.ItemStackBuilder;
 import net.kyori.adventure.text.Component;
@@ -29,7 +28,7 @@ import net.kyori.adventure.text.format.NamedTextColor;
  * <p>The projectile is a diamond sword thrown at half scale for a compact visual.
  * The throw fires immediately on activation without any aim-windup animation.</p>
  */
-public class KnifeThrowAbility extends ThrowableAbility {
+public class KnifeThrowAbility extends ActivatableAbility {
 
     private static final Component NAME = Component.text("Throwing Knife");
 
@@ -56,7 +55,7 @@ public class KnifeThrowAbility extends ThrowableAbility {
 
     @Override
     public ItemStack icon() {
-        return ItemStackBuilder.of(Material.IRON_NUGGET)
+        return ItemStackBuilder.of(Material.DIAMOND_SWORD)
             .name(Component.text("Throwing Knife", NamedTextColor.WHITE))
             .hideAll()
             .build();
@@ -72,12 +71,17 @@ public class KnifeThrowAbility extends ThrowableAbility {
 
     @Override
     public ItemStack buildWorldItem() {
-        ItemStack item = ItemStackBuilder.of(Material.IRON_NUGGET)
+        ItemStack item = ItemStackBuilder.of(Material.DIAMOND_SWORD)
             .name(Component.text("Throwing Knife", NamedTextColor.WHITE))
             .lore(description())
             .hideAll()
             .build();
         return AbilityItemBuilder.tag(item, id());
+    }
+
+    @Override
+    public boolean consumesOnUse() {
+        return true;
     }
 
     /** Stack count and cooldown both apply — non-exclusive. */
@@ -107,6 +111,7 @@ public class KnifeThrowAbility extends ThrowableAbility {
             .name(Component.text("Throwing Knife"))
             .hideAll()
             .build();
+        AbilityItemBuilder.tag(projectile, id());
         ThrowAction.throwDirect(combatant, projectile, PROJECTILE_SCALE, PROJECTILE_VELOCITY);
     }
 
@@ -117,10 +122,6 @@ public class KnifeThrowAbility extends ThrowableAbility {
 
     @Override
     public boolean canPerform(Combatant combatant) {
-        if (!combatant.canPerformAction()) return false;
-        if (combatant instanceof SwordPlayer sp) {
-            return !sp.isAttemptingThrow();
-        }
-        return true;
+        return combatant.canPerformAction();
     }
 }

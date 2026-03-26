@@ -487,7 +487,7 @@ public class SwordPlayer extends Combatant {
             activationContext = ActivationContext.NORMAL;
         }
 
-        if (handleAbilityInput(input)) {
+        if (isAtRoot() && handleAbilityInput(input)) {
             resetTree();
             return;
         }
