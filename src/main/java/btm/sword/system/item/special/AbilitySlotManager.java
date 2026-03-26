@@ -53,6 +53,12 @@ public class AbilitySlotManager {
     private final AbilitySlotItem slot2;
 
     /**
+     * Whether each ability slot currently has an EQUIPPED (usable) ability.
+     * Index 0 = SLOT_1, index 1 = SLOT_2. Kept in sync after every state change.
+     */
+    private final boolean[] slotEnabled = {false, false};
+
+    /**
      * Constructs the manager with default LOCKED placeholder items.
      *
      * @param owner the player who owns these ability slots
@@ -73,6 +79,7 @@ public class AbilitySlotManager {
         SkillSlotState state2 = container.getSlotState(SkillSlot.ACTIVE_2);
         refreshSlot(slot1, SkillSlot.ACTIVE_1, state1.remainingUses(), state1.remainingDurability());
         refreshSlot(slot2, SkillSlot.ACTIVE_2, state2.remainingUses(), state2.remainingDurability());
+        syncEnabled();
         restore(owner.player());
     }
 
@@ -93,6 +100,7 @@ public class AbilitySlotManager {
             refreshSlot(slot2, SkillSlot.ACTIVE_2, -1, -1);
             slot2.restore(owner.player());
         }
+        syncEnabled();
     }
 
     /**
@@ -108,8 +116,7 @@ public class AbilitySlotManager {
         if (ability == null) return;
 
         Player player = owner.player();
-        int targetSlot = slotIndex;
-        ItemStack current = player.getInventory().getItem(targetSlot);
+        ItemStack current = player.getInventory().getItem(slotIndex);
         Set<AbilityUseType> types = ability.useTypes();
 
         if (types.contains(AbilityUseType.STACK)) {
@@ -159,6 +166,7 @@ public class AbilitySlotManager {
         setRemainingUses(slotIndex, 0);
         setRemainingDurability(slotIndex, 0);
         item.restore(owner.player());
+        syncEnabled();
     }
 
     /**
@@ -241,7 +249,27 @@ public class AbilitySlotManager {
         slot2.restore(player);
     }
 
+    /**
+     * Returns the {@link SwordItemType} for the ability at the given hotbar slot index,
+     * or {@code null} if that slot does not have an active (equipped) ability.
+     * Used by {@code handleAbilityInput} as a reliable alternative to PDC tag lookups.
+     *
+     * @param heldSlot the player's currently held hotbar slot index
+     * @return {@link SwordItemType#ACTIVE_1}, {@link SwordItemType#ACTIVE_2}, or {@code null}
+     */
+    public SwordItemType getActiveTypeForHeldSlot(int heldSlot) {
+        if (heldSlot == SLOT_1 && slotEnabled[0]) return SwordItemType.ACTIVE_1;
+        if (heldSlot == SLOT_2 && slotEnabled[1]) return SwordItemType.ACTIVE_2;
+        return null;
+    }
+
     // ── Internal ─────────────────────────────────────────────────────────────
+
+    /** Syncs {@link #slotEnabled} from the current {@link AbilitySlotItem} states. */
+    private void syncEnabled() {
+        slotEnabled[0] = slot1.getState() == AbilitySlotItem.SlotState.EQUIPPED;
+        slotEnabled[1] = slot2.getState() == AbilitySlotItem.SlotState.EQUIPPED;
+    }
 
     private SkillSlot toSkillSlot(int slotIndex) {
         return slotIndex == SLOT_1 ? SkillSlot.ACTIVE_1 : SkillSlot.ACTIVE_2;

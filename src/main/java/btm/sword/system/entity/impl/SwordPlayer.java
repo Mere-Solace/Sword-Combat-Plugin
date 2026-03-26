@@ -487,7 +487,7 @@ public class SwordPlayer extends Combatant {
             activationContext = ActivationContext.NORMAL;
         }
 
-        if (handleAbilityInput(input, player.getInventory().getHeldItemSlot())) {
+        if (handleAbilityInput(input)) {
             resetTree();
             return;
         }
@@ -565,21 +565,32 @@ public class SwordPlayer extends Combatant {
         }
     }
 
-    private boolean handleAbilityInput(InputType input, int heldItemSlot) {
-        SwordItemType itemType = SwordItemType.fromString(getItemStackInHand(true));
-        if (itemType != SwordItemType.ACTIVE_1 && itemType != SwordItemType.ACTIVE_2) return false;
+    public boolean isAbilityItem(ItemStack item) {
+        SwordItemType itemType = SwordItemType.fromString(item);
+        Debug.combat("ItemType="+itemType);
+        return itemType == SwordItemType.ACTIVE_1 || itemType == SwordItemType.ACTIVE_2;
+    }
+
+    public boolean isAbilityItem(SwordItemType itemType) {
+        return itemType == SwordItemType.ACTIVE_1 || itemType == SwordItemType.ACTIVE_2;
+    }
+
+    private boolean handleAbilityInput(InputType input) {
+        int heldSlot = player.getInventory().getHeldItemSlot();
+        SwordItemType itemType = abilitySlotManager.getActiveTypeForHeldSlot(heldSlot);
+        if (itemType == null) return false;
 
         // Only LEFT (tap) and RIGHT_HOLD (charge/throw) trigger abilities
         if (input != InputType.LEFT && input != InputType.RIGHT_HOLD) return false;
         boolean holdVariant = input == InputType.RIGHT_HOLD;
 
         SkillSlot slot = itemType == SwordItemType.ACTIVE_1 ? SkillSlot.ACTIVE_1 : SkillSlot.ACTIVE_2;
-        int slotIndex = itemType == SwordItemType.ACTIVE_1 ? AbilitySlotManager.SLOT_1 : AbilitySlotManager.SLOT_2;
+        int slotIndex = heldSlot; // heldSlot is already the hotbar index (1 or 2)
 
         InputAction action = SkillSlotActionFactory.create(this, slot, holdVariant);
         if (action == null) return false;
 
-        if (!abilitySlotManager.isEquipped(slotIndex)) return true;
+        // slotEnabled already guarantees EQUIPPED — isEquipped check not needed
 
         SkillId equippedId = getCombatProfile().getPlayerSkillContainer().getEquipped(slot);
         Skill skill = SkillRegistry.get(equippedId);
@@ -1099,6 +1110,10 @@ public class SwordPlayer extends Combatant {
             (isPerformedDropAction() && KeyRegistry.hasKey(getLastHeldItemBeforeDrop(), KeyRegistry.SOUL_LINK_KEY));
     }
 
+    public boolean notHoldingAbilityItem() {
+        return abilitySlotManager.getActiveTypeForHeldSlot(player.getInventory().getHeldItemSlot()) == null;
+    }
+
     public boolean normalActState() {
         return activationContext == ActivationContext.NORMAL;
     }
@@ -1110,6 +1125,10 @@ public class SwordPlayer extends Combatant {
 
     public boolean throwingNonUmbralState() {
         return (throwingState() || nonUmbralState());
+    }
+
+    public boolean canBeginThrow() {
+        return nonUmbralState() && notHoldingAbilityItem();
     }
 
     public boolean nonUmbralState() {

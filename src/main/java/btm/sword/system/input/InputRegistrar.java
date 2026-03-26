@@ -182,17 +182,20 @@ public class InputRegistrar {
                 .name("Throw Ready")
                 .action(ThrowAction::throwReady)
                 .cooldown(executor -> 0)
-                .canCast(c -> c.canPerformAction() && (c instanceof SwordPlayer sp && sp.nonUmbralState()))
+                .canCast(c -> c.canPerformAction() &&
+                        (!(c instanceof SwordPlayer sp) ||
+                            sp.nonUmbralState() && sp.notHoldingAbilityItem()))
                 .displayDisabled(true)
                 .resetIfCannotPerform(true)
                 .build(),
-                SwordPlayer::nonUmbralState)
+                SwordPlayer::canBeginThrow)
             )))
             .timeoutTicks(100)
             .sameItemRequired(true)
             .cancellable(true)
             .display(true)
-            .visibleIf(ActivationContext.onlyIn(ActivationContext.NORMAL))
+            .visibleIf(sp -> sp.notHoldingAbilityItem() &&
+                    ActivationContext.onlyIn(ActivationContext.NORMAL).test(sp))
             .build();
 
         // throw
@@ -216,6 +219,7 @@ public class InputRegistrar {
             .sameItemRequired(true)
             .cancellable(true)
             .display(true)
+            .visibleIf(sp -> sp.notHoldingAbilityItem())
             .build();
 
         // debug kill

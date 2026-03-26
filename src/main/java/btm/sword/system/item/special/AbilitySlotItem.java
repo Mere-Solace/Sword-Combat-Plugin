@@ -10,6 +10,7 @@ import org.bukkit.persistence.PersistentDataType;
 import btm.sword.system.item.ItemStackBuilder;
 import btm.sword.system.item.KeyRegistry;
 import btm.sword.system.item.SwordItemType;
+import lombok.Getter;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -47,6 +48,13 @@ public class AbilitySlotItem extends SlotAnchoredItem {
         DEPLETED
     }
 
+    /**
+     * -- GETTER --
+     *  Returns the current visual state of this slot.
+     *
+     * @return the current {@link SlotState}
+     */
+    @Getter
     private SlotState state;
     private final SwordItemType swordItemType;
 
@@ -68,15 +76,6 @@ public class AbilitySlotItem extends SlotAnchoredItem {
         this.swordItemType = swordItemType;
         this.state = initialState;
         this.currentItem = buildStateItem(initialState, swordItemType);
-    }
-
-    /**
-     * Returns the current visual state of this slot.
-     *
-     * @return the current {@link SlotState}
-     */
-    public SlotState getState() {
-        return state;
     }
 
     /**
