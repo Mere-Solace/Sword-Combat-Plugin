@@ -428,9 +428,6 @@ public class InputRegistrar {
             .visibleIf(ActivationContext.onlyIn(ActivationContext.NORMAL))
             .build();
 
-        // Active Skill slots (ACTIVE_1 and ACTIVE_2)
-        registerActiveSkillSlot(root, owner, SkillSlot.ACTIVE_1, 1);
-        registerActiveSkillSlot(root, owner, SkillSlot.ACTIVE_2, 2);
     }
 
     // ── Helper methods ──────────────────────────────────────────────────────
@@ -550,49 +547,6 @@ public class InputRegistrar {
                     SwordPlayer::normalActState)
             )))
             .timeoutTicks(3)
-            .cancellable(true)
-            .display(true)
-            .visibleIf(ActivationContext.onlyIn(ActivationContext.NORMAL))
-            .build();
-    }
-
-    /**
-     * Registers tap and hold variants for an active skill slot.
-     *
-     * @param root      the tree root node
-     * @param owner     the player who owns the tree
-     * @param slot      the skill slot to bind
-     * @param slotIndex the hotbar slot index (1 or 2) for context predicate
-     */
-    private static void registerActiveSkillSlot(InputExecutionTree.InputNode root,
-                                                SwordPlayer owner,
-                                                SkillSlot slot, int slotIndex) {
-        // Tap variant
-        new InputExecutionTree.InputNodeBuilder(root, List.of(
-            InputType.SWAP,
-            InputType.RIGHT
-        )).action(new LinkedList<>(List.of(
-                new InputExecutionTree.ActionContextPair(
-                    () -> SkillSlotActionFactory.create(owner, slot, false),
-                    sp -> sp.activeItemState(slotIndex))
-            )))
-            .dynamic(true)
-            .sameItemRequired(true)
-            .cancellable(true)
-            .display(true)
-            .visibleIf(ActivationContext.onlyIn(ActivationContext.NORMAL)) //TODO here: check if the player is holding an active item here as well
-            .build();
-
-        // Hold variant
-        new InputExecutionTree.InputNodeBuilder(root, List.of(
-            InputType.SWAP, InputType.RIGHT, InputType.RIGHT_HOLD
-        )).action(new LinkedList<>(List.of(
-                new InputExecutionTree.ActionContextPair(
-                    () -> SkillSlotActionFactory.create(owner, slot, true),
-                    sp -> sp.activeItemState(slotIndex))
-            )))
-            .dynamic(true)
-            .sameItemRequired(true)
             .cancellable(true)
             .display(true)
             .visibleIf(ActivationContext.onlyIn(ActivationContext.NORMAL))

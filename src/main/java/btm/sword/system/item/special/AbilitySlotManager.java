@@ -13,6 +13,7 @@ import btm.sword.system.action.skill.SkillIds;
 import btm.sword.system.action.skill.SkillRegistry;
 import btm.sword.system.action.skill.container.PlayerSkillContainer;
 import btm.sword.system.action.skill.container.SkillSlot;
+import btm.sword.system.action.skill.container.SkillSlotState;
 import btm.sword.system.action.skill.type.AbilitySkill;
 import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.item.SwordItemType;
@@ -52,20 +53,6 @@ public class AbilitySlotManager {
     private final AbilitySlotItem slot2;
 
     /**
-     * Remaining stack-use count per slot. {@code -1} means not applicable (no STACK use type).
-     * Persisted across sessions via {@link btm.sword.system.playerdata.store.repository.AbilityStateRepository}.
-     */
-    private int remainingUses1 = -1;
-    private int remainingUses2 = -1;
-
-    /**
-     * Remaining durability per slot. {@code -1} means not applicable (no DURABILITY use type).
-     * Persisted across sessions via {@link btm.sword.system.playerdata.store.repository.AbilityStateRepository}.
-     */
-    private int remainingDurability1 = -1;
-    private int remainingDurability2 = -1;
-
-    /**
      * Constructs the manager with default LOCKED placeholder items.
      *
      * @param owner the player who owns these ability slots
@@ -81,8 +68,11 @@ public class AbilitySlotManager {
      * Should be called after construction and after the player's combat profile is loaded.
      */
     public void initialize() {
-        refreshSlot(slot1, SkillSlot.ACTIVE_1, remainingUses1, remainingDurability1);
-        refreshSlot(slot2, SkillSlot.ACTIVE_2, remainingUses2, remainingDurability2);
+        PlayerSkillContainer container = owner.getCombatProfile().getPlayerSkillContainer();
+        SkillSlotState state1 = container.getSlotState(SkillSlot.ACTIVE_1);
+        SkillSlotState state2 = container.getSlotState(SkillSlot.ACTIVE_2);
+        refreshSlot(slot1, SkillSlot.ACTIVE_1, state1.remainingUses(), state1.remainingDurability());
+        refreshSlot(slot2, SkillSlot.ACTIVE_2, state2.remainingUses(), state2.remainingDurability());
         restore(owner.player());
     }
 
@@ -92,14 +82,14 @@ public class AbilitySlotManager {
      * @param slotIndex 1 or 2
      */
     public void refresh(int slotIndex) {
+        SkillSlot skillSlot = toSkillSlot(slotIndex);
+        // Reset slot state — new equip starts fresh
+        owner.getCombatProfile().getPlayerSkillContainer()
+            .setSlotState(skillSlot, SkillSlotState.EMPTY);
         if (slotIndex == SLOT_1) {
-            remainingUses1 = -1;
-            remainingDurability1 = -1;
             refreshSlot(slot1, SkillSlot.ACTIVE_1, -1, -1);
             slot1.restore(owner.player());
         } else {
-            remainingUses2 = -1;
-            remainingDurability2 = -1;
             refreshSlot(slot2, SkillSlot.ACTIVE_2, -1, -1);
             slot2.restore(owner.player());
         }
@@ -199,21 +189,21 @@ public class AbilitySlotManager {
      * @return remaining use count, or {@code -1}
      */
     public int getRemainingUses(int slotIndex) {
-        return slotIndex == SLOT_1 ? remainingUses1 : remainingUses2;
+        return owner.getCombatProfile().getPlayerSkillContainer()
+            .getSlotState(toSkillSlot(slotIndex)).remainingUses();
     }
 
     /**
-     * Sets the remaining stack-use count for the given slot. Used by persistence on load.
+     * Sets the remaining stack-use count for the given slot, preserving other state dimensions.
      *
      * @param slotIndex 1 or 2
      * @param uses      remaining use count
      */
     public void setRemainingUses(int slotIndex, int uses) {
-        if (slotIndex == SLOT_1) {
-            remainingUses1 = uses;
-        } else {
-            remainingUses2 = uses;
-        }
+        SkillSlot slot = toSkillSlot(slotIndex);
+        PlayerSkillContainer container = owner.getCombatProfile().getPlayerSkillContainer();
+        SkillSlotState current = container.getSlotState(slot);
+        container.setSlotState(slot, new SkillSlotState(uses, current.remainingDurability(), current.cooldownExpiresAt()));
     }
 
     /**
@@ -224,21 +214,21 @@ public class AbilitySlotManager {
      * @return remaining durability, or {@code -1}
      */
     public int getRemainingDurability(int slotIndex) {
-        return slotIndex == SLOT_1 ? remainingDurability1 : remainingDurability2;
+        return owner.getCombatProfile().getPlayerSkillContainer()
+            .getSlotState(toSkillSlot(slotIndex)).remainingDurability();
     }
 
     /**
-     * Sets the remaining durability for the given slot. Used by persistence on load.
+     * Sets the remaining durability for the given slot, preserving other state dimensions.
      *
      * @param slotIndex 1 or 2
      * @param durability remaining durability
      */
     public void setRemainingDurability(int slotIndex, int durability) {
-        if (slotIndex == SLOT_1) {
-            remainingDurability1 = durability;
-        } else {
-            remainingDurability2 = durability;
-        }
+        SkillSlot slot = toSkillSlot(slotIndex);
+        PlayerSkillContainer container = owner.getCombatProfile().getPlayerSkillContainer();
+        SkillSlotState current = container.getSlotState(slot);
+        container.setSlotState(slot, new SkillSlotState(current.remainingUses(), durability, current.cooldownExpiresAt()));
     }
 
     /**
@@ -252,6 +242,10 @@ public class AbilitySlotManager {
     }
 
     // ── Internal ─────────────────────────────────────────────────────────────
+
+    private SkillSlot toSkillSlot(int slotIndex) {
+        return slotIndex == SLOT_1 ? SkillSlot.ACTIVE_1 : SkillSlot.ACTIVE_2;
+    }
 
     private void refreshSlot(AbilitySlotItem slotItem, SkillSlot skillSlot,
                               int persistedUses, int persistedDurability) {

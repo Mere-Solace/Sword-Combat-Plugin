@@ -108,15 +108,24 @@ public class AbilitySlotItem extends SlotAnchoredItem {
     }
 
     /**
-     * Returns {@code true} if the target slot holds any valid ability-slot item
-     * (locked, empty, equipped, or depleted placeholder).
+     * Returns {@code true} if the slot is satisfied.
+     *
+     * <p>For {@link SlotState#LOCKED} and {@link SlotState#EMPTY}, the slot is satisfied as long
+     * as it does not contain a stale ability item (tagged with {@link KeyRegistry#ABILITY_SLOT_KEY}).
+     * If one is found, the slot is unsatisfied so {@link #restore(Player)} can clear it.
+     * For {@link SlotState#EQUIPPED} and {@link SlotState#DEPLETED}, the slot must contain an
+     * item tagged with {@link KeyRegistry#ABILITY_SLOT_KEY}.</p>
      *
      * @param player the player whose inventory to check
-     * @return {@code true} if the slot is occupied by an ability-slot item
+     * @return {@code true} if the slot is occupied correctly or does not need enforcement
      */
     @Override
     public boolean isSatisfied(Player player) {
         ItemStack slotItem = player.getInventory().getItem(getTargetSlot());
+        if (state == SlotState.LOCKED || state == SlotState.EMPTY) {
+            // Satisfied unless a stale ability item is still sitting here
+            return slotItem == null || !KeyRegistry.hasKey(slotItem, KeyRegistry.ABILITY_SLOT_KEY);
+        }
         if (slotItem == null || slotItem.isEmpty()) return false;
         return KeyRegistry.hasKey(slotItem, KeyRegistry.ABILITY_SLOT_KEY);
     }
@@ -124,10 +133,21 @@ public class AbilitySlotItem extends SlotAnchoredItem {
     /**
      * Places the current state's item into the target slot.
      *
+     * <p>For {@link SlotState#LOCKED} and {@link SlotState#EMPTY}, clears any stale ability item
+     * from the slot but otherwise leaves the hotbar slot free for the player.
+     * For {@link SlotState#EQUIPPED} and {@link SlotState#DEPLETED}, writes the current item.</p>
+     *
      * @param player the player whose inventory to restore the item into
      */
     @Override
     public void restore(Player player) {
+        if (state == SlotState.LOCKED || state == SlotState.EMPTY) {
+            ItemStack current = player.getInventory().getItem(getTargetSlot());
+            if (current != null && KeyRegistry.hasKey(current, KeyRegistry.ABILITY_SLOT_KEY)) {
+                player.getInventory().setItem(getTargetSlot(), null);
+            }
+            return;
+        }
         player.getInventory().setItem(getTargetSlot(), currentItem);
     }
 

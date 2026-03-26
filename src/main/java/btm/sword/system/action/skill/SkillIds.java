@@ -45,6 +45,20 @@ public final class SkillIds {
         SkillId.of("sword", "passive.bleed_mastery");
 
 
+    /* =========================
+       Test Stubs (TODO: remove once real found abilities replace these)
+       ========================= */
+
+    public static final SkillId TEST_ALPHA =
+        SkillId.of("sword", "active.test_alpha");
+
+    public static final SkillId TEST_BETA =
+        SkillId.of("sword", "active.test_beta");
+
+    public static final SkillId TEST_GAMMA =
+        SkillId.of("sword", "active.test_gamma");
+
+
     // Remember to add new skills to this list!
     private static final List<SkillId> ALL = List.of(
         NONE,
@@ -52,7 +66,10 @@ public final class SkillIds {
         SHADOW_SLASH,
         VOID_LUNGE,
         KNIFE_THROW,
-        BLEED_MASTERY
+        BLEED_MASTERY,
+        TEST_ALPHA,
+        TEST_BETA,
+        TEST_GAMMA
     );
 
     public static List<SkillId> getAll() {
