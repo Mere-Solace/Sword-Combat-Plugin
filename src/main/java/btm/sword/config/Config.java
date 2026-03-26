@@ -2790,6 +2790,32 @@ public class Config {
             VISUALIZATION_SHOW_RAYTRACES, Boolean.class,
             v -> VISUALIZATION_SHOW_RAYTRACES = v,
             ConfigurationSection::getBoolean); }
+
+        /**
+         * When {@code true}, {@link btm.sword.system.playerdata.PlayerDataManager#register} skips
+         * the database load and always creates a fresh {@link btm.sword.system.playerdata.PlayerData},
+         * simulating a first-time join. Persisted to config.yaml.
+         * Toggle via the Dev Toggles menu or {@code /sword dev skipload}.
+         */
+        public static boolean SKIP_DATA_LOAD = false;
+        static { register(
+            "debug.skip_data_load",
+            SKIP_DATA_LOAD, Boolean.class,
+            v -> SKIP_DATA_LOAD = v,
+            ConfigurationSection::getBoolean); }
+
+        /**
+         * When {@code true}, all save paths in {@link btm.sword.system.playerdata.PlayerDataManager}
+         * ({@code saveAsync}, {@code flushAll}, {@code shutdown}) are no-ops — data is never written
+         * to the database. The store connection is still closed cleanly on shutdown.
+         * Persisted to config.yaml. Toggle via the Dev Toggles menu or {@code /sword dev skipsave}.
+         */
+        public static boolean SKIP_DATA_SAVE = false;
+        static { register(
+            "debug.skip_data_save",
+            SKIP_DATA_SAVE, Boolean.class,
+            v -> SKIP_DATA_SAVE = v,
+            ConfigurationSection::getBoolean); }
     }
     //endregion
 

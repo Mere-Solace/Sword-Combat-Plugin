@@ -20,3 +20,6 @@ permissions:
   sword.reload:
     description: Allows reloading configuration
     default: op
+  sword.dev:
+    description: Allows use of /sword dev subcommands (data toggles, fresh profile)
+    default: op

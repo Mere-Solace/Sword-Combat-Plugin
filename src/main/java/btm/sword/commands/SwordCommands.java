@@ -3,6 +3,7 @@ package btm.sword.commands;
 import java.util.List;
 import java.util.Map;
 
+import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -12,6 +13,7 @@ import com.mojang.brigadier.arguments.DoubleArgumentType;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 
+import btm.sword.config.Config;
 import btm.sword.config.ConfigManager;
 import btm.sword.system.control.TimeArbiter;
 import btm.sword.system.entity.SwordEntityArbiter;
@@ -19,6 +21,8 @@ import btm.sword.system.entity.display.WeaponDisplayRegistry;
 import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.entity.mob.MobTypeRegistry;
 import btm.sword.system.item.material.MaterialType;
+import btm.sword.system.playerdata.PlayerData;
+import btm.sword.system.playerdata.PlayerDataManager;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import net.kyori.adventure.text.Component;
@@ -48,7 +52,10 @@ public final class SwordCommands {
                 .executes(ctx -> {
                     CommandSender sender = ctx.getSource().getSender();
                     sender.sendMessage(Component.text("Sword: Combat Evolved", NamedTextColor.GOLD));
-                    sender.sendMessage(Component.text("Usage: /sword reload", NamedTextColor.GRAY));
+                    sender.sendMessage(Component.text(
+                        "Usage: /sword reload | /sword dev <skipload|skipsave|freshprofile|resetjoin>",
+                        NamedTextColor.GRAY
+                    ));
                     return Command.SINGLE_SUCCESS;
                 })
                 .then(
@@ -59,6 +66,40 @@ public final class SwordCommands {
                 .then(
                     Commands.argument("global_time_scale", DoubleArgumentType.doubleArg(0, 2))
                         .executes(ctx -> handleSetGlobalTimeScale(ctx.getSource(), DoubleArgumentType.getDouble(ctx, "global_time_scale")))
+                )
+                .then(
+                    Commands.literal("dev")
+                        .requires(source -> source.getSender().hasPermission("sword.dev"))
+                        .then(
+                            Commands.literal("skipload")
+                                .executes(ctx -> handleDevSkipLoad(ctx.getSource()))
+                        )
+                        .then(
+                            Commands.literal("skipsave")
+                                .executes(ctx -> handleDevSkipSave(ctx.getSource()))
+                        )
+                        .then(
+                            Commands.literal("freshprofile")
+                                .executes(ctx -> handleDevFreshProfile(ctx.getSource(), null))
+                                .then(
+                                    Commands.argument("player", StringArgumentType.word())
+                                        .executes(ctx -> handleDevFreshProfile(
+                                            ctx.getSource(),
+                                            StringArgumentType.getString(ctx, "player")
+                                        ))
+                                )
+                        )
+                        .then(
+                            Commands.literal("resetjoin")
+                                .executes(ctx -> handleDevResetJoin(ctx.getSource(), null))
+                                .then(
+                                    Commands.argument("player", StringArgumentType.word())
+                                        .executes(ctx -> handleDevResetJoin(
+                                            ctx.getSource(),
+                                            StringArgumentType.getString(ctx, "player")
+                                        ))
+                                )
+                        )
                 )
                 .then(
                     Commands.literal("give")
@@ -231,6 +272,13 @@ public final class SwordCommands {
         return sb.toString();
     }
 
+    /**
+     * Handles {@code /sword [global_time_scale]}.
+     *
+     * @param source the command source
+     * @param value  the new time scale (0.0–2.0)
+     * @return command result status
+     */
     public static int handleSetGlobalTimeScale(CommandSourceStack source, double value) {
         CommandSender sender = source.getSender();
 
@@ -239,5 +287,136 @@ public final class SwordCommands {
             return Command.SINGLE_SUCCESS;
         }
         return 2;
+    }
+
+    /**
+     * Handles {@code /sword dev skipload}.
+     * Toggles {@link Config.Debug#SKIP_DATA_LOAD} and immediately persists the change to config.yaml.
+     * Console-compatible — no player entity required.
+     *
+     * @param source the command source
+     * @return command result status
+     */
+    private static int handleDevSkipLoad(CommandSourceStack source) {
+        CommandSender sender = source.getSender();
+        @SuppressWarnings("unchecked")
+        Config.ConfigEntry<Boolean> entry = (Config.ConfigEntry<Boolean>) Config.ENTRIES.stream()
+            .filter(e -> e.path.equals("debug.skip_data_load"))
+            .findFirst()
+            .orElseThrow();
+        boolean newValue = !Config.Debug.SKIP_DATA_LOAD;
+        ConfigManager.getInstance().setValue(entry, newValue);
+        ConfigManager.getInstance().saveConfig();
+        sender.sendMessage(Component.text(
+            "SKIP_DATA_LOAD -> " + newValue + " (saved to config.yaml).",
+            newValue ? NamedTextColor.YELLOW : NamedTextColor.GREEN
+        ));
+        return Command.SINGLE_SUCCESS;
+    }
+
+    /**
+     * Handles {@code /sword dev skipsave}.
+     * Toggles {@link Config.Debug#SKIP_DATA_SAVE} and immediately persists the change to config.yaml.
+     * Console-compatible — no player entity required.
+     *
+     * @param source the command source
+     * @return command result status
+     */
+    private static int handleDevSkipSave(CommandSourceStack source) {
+        CommandSender sender = source.getSender();
+        @SuppressWarnings("unchecked")
+        Config.ConfigEntry<Boolean> entry = (Config.ConfigEntry<Boolean>) Config.ENTRIES.stream()
+            .filter(e -> e.path.equals("debug.skip_data_save"))
+            .findFirst()
+            .orElseThrow();
+        boolean newValue = !Config.Debug.SKIP_DATA_SAVE;
+        ConfigManager.getInstance().setValue(entry, newValue);
+        ConfigManager.getInstance().saveConfig();
+        sender.sendMessage(Component.text(
+            "SKIP_DATA_SAVE -> " + newValue + " (saved to config.yaml).",
+            newValue ? NamedTextColor.YELLOW : NamedTextColor.GREEN
+        ));
+        return Command.SINGLE_SUCCESS;
+    }
+
+    /**
+     * Handles {@code /sword dev freshprofile [player]}.
+     * Replaces the target player's session data with a fresh {@link PlayerData} instance.
+     * If run from console without a target argument, an error is returned.
+     *
+     * @param source     the command source
+     * @param playerName the target player name, or {@code null} to use the sender
+     * @return command result status
+     */
+    private static int handleDevFreshProfile(CommandSourceStack source, String playerName) {
+        CommandSender sender = source.getSender();
+        Player target = resolvePlayer(sender, playerName);
+        if (target == null) return 2;
+
+        PlayerDataManager.resetToFresh(target.getUniqueId());
+        sender.sendMessage(Component.text(
+            "Reset " + target.getName() + "'s session data to a fresh profile.",
+            NamedTextColor.GREEN
+        ));
+        if (!target.equals(sender)) {
+            target.sendMessage(Component.text(
+                "Your session data has been reset to a fresh profile by an admin.",
+                NamedTextColor.YELLOW
+            ));
+        }
+        return Command.SINGLE_SUCCESS;
+    }
+
+    /**
+     * Handles {@code /sword dev resetjoin [player]}.
+     * Toggles the {@code joinSequenceCompleted} flag on the target player's {@link PlayerData}.
+     * If run from console without a target argument, an error is returned.
+     *
+     * @param source     the command source
+     * @param playerName the target player name, or {@code null} to use the sender
+     * @return command result status
+     */
+    private static int handleDevResetJoin(CommandSourceStack source, String playerName) {
+        CommandSender sender = source.getSender();
+        Player target = resolvePlayer(sender, playerName);
+        if (target == null) return 2;
+
+        PlayerData data = PlayerDataManager.getPlayerData(target.getUniqueId());
+        if (data == null) {
+            sender.sendMessage(Component.text("No PlayerData found for " + target.getName() + ".", NamedTextColor.RED));
+            return 2;
+        }
+        boolean newValue = !data.isJoinSequenceCompleted();
+        data.setJoinSequenceCompleted(newValue);
+        sender.sendMessage(Component.text(
+            target.getName() + "'s joinSequenceCompleted -> " + newValue + ".",
+            NamedTextColor.GREEN
+        ));
+        return Command.SINGLE_SUCCESS;
+    }
+
+    /**
+     * Resolves a target {@link Player} from the given name or falls back to the sender.
+     * Sends an error message and returns {@code null} if resolution fails.
+     *
+     * @param sender the command sender (used as fallback when {@code name} is null)
+     * @param name   the player name to look up, or {@code null} to use the sender
+     * @return the resolved online player, or {@code null} if not found
+     */
+    private static Player resolvePlayer(CommandSender sender, String name) {
+        if (name != null) {
+            Player found = Bukkit.getPlayer(name);
+            if (found == null) {
+                sender.sendMessage(Component.text("Player not found: " + name, NamedTextColor.RED));
+            }
+            return found;
+        }
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(Component.text(
+                "Console must specify a player: /sword dev <subcommand> <player>", NamedTextColor.RED
+            ));
+            return null;
+        }
+        return player;
     }
 }
