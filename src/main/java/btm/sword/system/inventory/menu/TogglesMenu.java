@@ -1,10 +1,20 @@
 package btm.sword.system.inventory.menu;
 
+import java.util.List;
+
+import org.bukkit.Material;
 import org.bukkit.entity.Player;
 
 import btm.sword.config.Config;
+import btm.sword.config.ConfigManager;
 import btm.sword.system.entity.impl.SwordPlayer;
+import btm.sword.system.item.ItemStackBuilder;
+import btm.sword.system.playerdata.PlayerData;
+import btm.sword.system.playerdata.PlayerDataManager;
 import btm.sword.utility.Debug;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import xyz.xenondevs.invui.gui.Gui;
 import xyz.xenondevs.invui.item.impl.SimpleItem;
 import xyz.xenondevs.invui.window.Window;
@@ -12,7 +22,9 @@ import xyz.xenondevs.invui.window.Window;
 /**
  * Submenu of {@link DevMenu} listing all boolean debug and world toggles.
  * <p>
- * Toggles take effect immediately without a server restart and are not persisted across restarts.
+ * Most toggles take effect immediately without a server restart and are not persisted across
+ * restarts. Exceptions: "Skip Load" and "Skip Save" are written to config.yaml on toggle and
+ * survive server restarts.
  * </p>
  */
 public class TogglesMenu extends Menu {
@@ -96,12 +108,66 @@ public class TogglesMenu extends Menu {
             () -> Config.Debug.LOGGING_VERBOSE_ANIMATION = !Config.Debug.LOGGING_VERBOSE_ANIMATION
         );
 
+        @SuppressWarnings("unchecked")
+        Config.ConfigEntry<Boolean> skipLoadEntry = (Config.ConfigEntry<Boolean>) Config.ENTRIES.stream()
+            .filter(e -> e.path.equals("debug.skip_data_load"))
+            .findFirst()
+            .orElseThrow();
+
+        SimpleItem skipLoad = toggle(
+            "Skip Load (persisted)",
+            () -> Config.Debug.SKIP_DATA_LOAD,
+            () -> {
+                ConfigManager.getInstance().setValue(skipLoadEntry, !Config.Debug.SKIP_DATA_LOAD);
+                ConfigManager.getInstance().saveConfig();
+            }
+        );
+
+        @SuppressWarnings("unchecked")
+        Config.ConfigEntry<Boolean> skipSaveEntry = (Config.ConfigEntry<Boolean>) Config.ENTRIES.stream()
+            .filter(e -> e.path.equals("debug.skip_data_save"))
+            .findFirst()
+            .orElseThrow();
+
+        SimpleItem skipSave = toggle(
+            "Skip Save (persisted)",
+            () -> Config.Debug.SKIP_DATA_SAVE,
+            () -> {
+                ConfigManager.getInstance().setValue(skipSaveEntry, !Config.Debug.SKIP_DATA_SAVE);
+                ConfigManager.getInstance().saveConfig();
+            }
+        );
+
+        SimpleItem freshProfile = new SimpleItem(
+            new ItemStackBuilder(Material.RECOVERY_COMPASS)
+                .name(Component.text("Fresh Profile", NamedTextColor.AQUA, TextDecoration.BOLD))
+                .lore(List.of(Component.text("Replace your session data with a blank profile", NamedTextColor.DARK_GRAY)))
+                .build(),
+            click -> {
+                PlayerDataManager.resetToFresh(swordPlayer.getUniqueId());
+                swordPlayer.player().sendMessage(Component.text("Session data reset to fresh profile.", NamedTextColor.GREEN));
+                this.open();
+            }
+        );
+
+        SimpleItem resetJoin = toggle(
+            "Join Sequence Done",
+            () -> {
+                PlayerData pd = PlayerDataManager.getPlayerData(swordPlayer.getUniqueId());
+                return pd != null && pd.isJoinSequenceCompleted();
+            },
+            () -> {
+                PlayerData pd = PlayerDataManager.getPlayerData(swordPlayer.getUniqueId());
+                if (pd != null) pd.setJoinSequenceCompleted(!pd.isJoinSequenceCompleted());
+            }
+        );
+
         Gui gui = Gui.normal()
             .setStructure(
                 "# # # # # # # # #",
                 "# A B C D E . . #",
                 "# F G H I J K . #",
-                "# . . . . . . . #",
+                "# L M N O . . . #",
                 "< # # # # # # # #")
             .addIngredient('#', BORDER)
             .addIngredient('A', verboseDebug)
@@ -115,6 +181,10 @@ public class TogglesMenu extends Menu {
             .addIngredient('I', specialItemChecks)
             .addIngredient('J', blockPlacing)
             .addIngredient('K', verboseAnimation)
+            .addIngredient('L', skipLoad)
+            .addIngredient('M', skipSave)
+            .addIngredient('N', freshProfile)
+            .addIngredient('O', resetJoin)
             .addIngredient('<', generatePreviousButtonOrDefault())
             .build();
 
