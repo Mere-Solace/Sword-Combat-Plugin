@@ -2,6 +2,7 @@ package btm.sword.system.action.skill;
 
 import java.util.HashMap;
 
+import btm.sword.system.action.skill.type.impl.active.IceSpellAbility;
 import btm.sword.system.action.skill.type.impl.active.KnifeThrowAbility;
 import btm.sword.system.action.skill.type.impl.active.TestAlphaAbility;
 import btm.sword.system.action.skill.type.impl.active.TestBetaAbility;
@@ -17,6 +18,7 @@ public class SkillRegistry {
         register(new VoidLungeSkill());
         register(new ShadowSlashSkill());
         register(new KnifeThrowAbility());
+        register(new IceSpellAbility());
         // TODO: remove once real found abilities replace test stubs
         register(new TestAlphaAbility());
         register(new TestBetaAbility());

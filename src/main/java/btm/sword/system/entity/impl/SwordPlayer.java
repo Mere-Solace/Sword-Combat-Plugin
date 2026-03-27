@@ -10,6 +10,9 @@ import java.util.function.Supplier;
 
 import javax.annotation.Nullable;
 
+import btm.sword.system.action.skill.type.impl.charge.ChargeAction;
+import btm.sword.system.action.skill.type.impl.charge.ChargeSession;
+
 import org.bukkit.Color;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
@@ -121,6 +124,10 @@ public class SwordPlayer extends Combatant {
     private final SlotAnchoredItem chestplateItem;
     @Getter
     private final AbilitySlotManager abilitySlotManager;
+
+    /** Active charge session for chargeable abilities, or {@code null} if not charging. */
+    @Getter @Setter
+    private ChargeSession activeCharge;
 
     /** Economy storage for materials, credits, and auto-pickup preferences. Loaded from and saved to the database. */
     private PlayerStorage playerStorage;
@@ -555,6 +562,10 @@ public class SwordPlayer extends Combatant {
         InputAction action = inputExecutionTree.getNextAction();
 
         if (action != null) {
+            // The simplest way for charge action to pass is simply to let it step using the
+            // Left of a basic attack, but just block the action
+            if (input == InputType.LEFT && ChargeAction.isHoldingChargeable(this)) return;
+
             InputActionExecutor.execute(action, this);
         }
 
@@ -575,39 +586,47 @@ public class SwordPlayer extends Combatant {
         return itemType == SwordItemType.ACTIVE_1 || itemType == SwordItemType.ACTIVE_2;
     }
 
+    public boolean isHeldItemOnCooldown() {
+        return getItemStackInHand(true) instanceof ItemStack item && player.getCooldown(item) > 0;
+    }
+
     private boolean handleAbilityInput(InputType input) {
+        if (ChargeAction.isHoldingChargeable(this)) return false;
         int heldSlot = player.getInventory().getHeldItemSlot();
+
+        // Gate: is this even an ability slot? If not, let the normal input tree handle it.
         SwordItemType itemType = abilitySlotManager.getActiveTypeForHeldSlot(heldSlot);
         if (itemType == null) return false;
 
-        // Only LEFT (tap) and RIGHT_HOLD (charge/throw) trigger abilities
-        if (input != InputType.LEFT && input != InputType.RIGHT_HOLD) return false;
-        boolean holdVariant = input == InputType.RIGHT_HOLD;
+        // From here on, this IS an ability slot (return true to consume the input)
+        if (input == InputType.LEFT) {
+            if (isHeldItemOnCooldown()) return true;
 
-        SkillSlot slot = itemType == SwordItemType.ACTIVE_1 ? SkillSlot.ACTIVE_1 : SkillSlot.ACTIVE_2;
-        int slotIndex = heldSlot; // heldSlot is already the hotbar index (1 or 2)
+            SkillSlot slot = itemType == SwordItemType.ACTIVE_1 ? SkillSlot.ACTIVE_1 : SkillSlot.ACTIVE_2;
 
-        InputAction action = SkillSlotActionFactory.create(this, slot, holdVariant);
-        if (action == null) return false;
+            InputAction action = SkillSlotActionFactory.create(this, slot, false);
+            if (action == null) return true;
 
-        // slotEnabled already guarantees EQUIPPED — isEquipped check not needed
+            SkillId equippedId = getCombatProfile().getPlayerSkillContainer().getEquipped(slot);
+            Skill skill = SkillRegistry.get(equippedId);
+            if (!(skill instanceof ActiveSkill active) || !active.canPerform(this)) return true;
 
-        SkillId equippedId = getCombatProfile().getPlayerSkillContainer().getEquipped(slot);
-        Skill skill = SkillRegistry.get(equippedId);
-        if (!(skill instanceof ActiveSkill active) || !active.canPerform(this)) return true;
+            SkillSlotState state = getCombatProfile().getPlayerSkillContainer().getSlotState(slot);
+            if (System.currentTimeMillis() < state.cooldownExpiresAt()) return true;
 
-        SkillSlotState state = getCombatProfile().getPlayerSkillContainer().getSlotState(slot);
-        if (System.currentTimeMillis() < state.cooldownExpiresAt()) return true;
+            InputActionExecutor.execute(action, this);
 
-        InputActionExecutor.execute(action, this);
+            abilitySlotManager.consumeUse(heldSlot);
+            long expiry = System.currentTimeMillis() + active.calculateCooldown(this);
+            SkillSlotState current = getCombatProfile().getPlayerSkillContainer().getSlotState(slot);
+            getCombatProfile().getPlayerSkillContainer().setSlotState(slot,
+                new SkillSlotState(current.remainingUses(), current.remainingDurability(), expiry));
 
-        abilitySlotManager.consumeUse(slotIndex);
-        long expiry = System.currentTimeMillis() + active.calculateCooldown(this);
-        SkillSlotState current = getCombatProfile().getPlayerSkillContainer().getSlotState(slot);
-        getCombatProfile().getPlayerSkillContainer().setSlotState(slot,
-            new SkillSlotState(current.remainingUses(), current.remainingDurability(), expiry));
-
-        return true;
+            return true;
+        }
+        else {
+            return false;
+        }
     }
 
     @Override
@@ -1111,7 +1130,7 @@ public class SwordPlayer extends Combatant {
     }
 
     public boolean notHoldingAbilityItem() {
-        return abilitySlotManager.getActiveTypeForHeldSlot(player.getInventory().getHeldItemSlot()) == null;
+        return !abilitySlotManager.isAbilityHeldSlot(player.getInventory().getHeldItemSlot());
     }
 
     public boolean normalActState() {

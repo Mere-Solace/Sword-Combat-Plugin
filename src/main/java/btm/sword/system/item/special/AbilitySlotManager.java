@@ -88,6 +88,7 @@ public class AbilitySlotManager {
      *
      * @param slotIndex 1 or 2
      */
+    @SuppressWarnings("deprecation") // updateInventory is deprecated but functionally necessary here
     public void refresh(int slotIndex) {
         SkillSlot skillSlot = toSkillSlot(slotIndex);
         // Reset slot state — new equip starts fresh
@@ -101,6 +102,9 @@ public class AbilitySlotManager {
             slot2.restore(owner.player());
         }
         syncEnabled();
+        // Force client sync — without this, equipping while the slot is selected
+        // or while a menu is open may not visually register until the next tick.
+        owner.player().updateInventory();
     }
 
     /**
@@ -187,6 +191,7 @@ public class AbilitySlotManager {
      *
      * @param slotIndex 1 or 2
      */
+    @SuppressWarnings("deprecation") // updateInventory is deprecated but functionally necessary here
     public void addUse(int slotIndex) {
         SkillSlot skillSlot = toSkillSlot(slotIndex);
         AbilitySkill ability = resolveAbility(skillSlot);
@@ -203,6 +208,27 @@ public class AbilitySlotManager {
         refreshSlot(slotItem, skillSlot, newUses, getRemainingDurability(slotIndex));
         slotItem.restore(owner.player());
         syncEnabled();
+        owner.player().updateInventory();
+    }
+
+    /**
+     * Looks up which active slot (if any) has the given ability equipped, then
+     * calls {@link #addUse(int)} to restore one stack use. No-ops if neither
+     * slot matches the ability ID.
+     *
+     * @param abilityIdStr the {@link SkillId#asString()} stamped on the projectile
+     */
+    public void refundByAbilityId(String abilityIdStr) {
+        PlayerSkillContainer container = owner.getCombatProfile().getPlayerSkillContainer();
+        SkillId eq1 = container.getEquipped(SkillSlot.ACTIVE_1);
+        if (eq1 != null && eq1.asString().equals(abilityIdStr)) {
+            addUse(SLOT_1);
+            return;
+        }
+        SkillId eq2 = container.getEquipped(SkillSlot.ACTIVE_2);
+        if (eq2 != null && eq2.asString().equals(abilityIdStr)) {
+            addUse(SLOT_2);
+        }
     }
 
     /**
@@ -286,6 +312,28 @@ public class AbilitySlotManager {
         if (heldSlot == SLOT_1 && slotEnabled[0]) return SwordItemType.ACTIVE_1;
         if (heldSlot == SLOT_2 && slotEnabled[1]) return SwordItemType.ACTIVE_2;
         return null;
+    }
+
+    /**
+     * Returns {@code true} if the given hotbar slot holds an ability item in either
+     * {@link AbilitySlotItem.SlotState#EQUIPPED} or {@link AbilitySlotItem.SlotState#DEPLETED} state.
+     *
+     * <p>Unlike {@link #getActiveTypeForHeldSlot(int)}, this includes depleted slots so that
+     * dash/grab/catch pickup interactions still work when the ability's uses are exhausted.</p>
+     *
+     * @param heldSlot the player's currently held hotbar slot index
+     * @return {@code true} if the slot is EQUIPPED or DEPLETED
+     */
+    public boolean isAbilityHeldSlot(int heldSlot) {
+        if (heldSlot == SLOT_1) {
+            AbilitySlotItem.SlotState s = slot1.getState();
+            return s == AbilitySlotItem.SlotState.EQUIPPED || s == AbilitySlotItem.SlotState.DEPLETED;
+        }
+        if (heldSlot == SLOT_2) {
+            AbilitySlotItem.SlotState s = slot2.getState();
+            return s == AbilitySlotItem.SlotState.EQUIPPED || s == AbilitySlotItem.SlotState.DEPLETED;
+        }
+        return false;
     }
 
     // ── Internal ─────────────────────────────────────────────────────────────

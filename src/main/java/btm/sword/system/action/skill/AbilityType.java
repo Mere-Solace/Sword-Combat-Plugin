@@ -5,6 +5,7 @@ package btm.sword.system.action.skill;
  *
  * <ul>
  *   <li>{@link #ACTIVATABLE} — Press to activate; has a cooldown; never consumed.</li>
+ *   <li>{@link #CHARGEABLE} — Hold right-click to charge; release to fire a scaled projectile.</li>
  *   <li>{@link #THROWABLE} — Aimed-throw on hold; the physical item is consumed on each throw.</li>
  *   <li>{@link #CONSUMABLE} — One-shot activation; the physical item is consumed on use.</li>
  *   <li>{@link #PASSIVE} — Always active while the slot is equipped; no activation required.</li>
@@ -13,6 +14,7 @@ package btm.sword.system.action.skill;
  */
 public enum AbilityType {
     ACTIVATABLE,
+    CHARGEABLE,
     THROWABLE,
     CONSUMABLE,
     PASSIVE,

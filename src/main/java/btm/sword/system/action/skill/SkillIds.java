@@ -36,6 +36,9 @@ public final class SkillIds {
     public static final SkillId KNIFE_THROW =
         SkillId.of("sword", "active.knife_throw");
 
+    public static final SkillId ICE_SPELL =
+        SkillId.of("sword", "active.ice_spell");
+
 
     /* =========================
        Passive Skills
@@ -66,6 +69,7 @@ public final class SkillIds {
         SHADOW_SLASH,
         VOID_LUNGE,
         KNIFE_THROW,
+        ICE_SPELL,
         BLEED_MASTERY,
         TEST_ALPHA,
         TEST_BETA,

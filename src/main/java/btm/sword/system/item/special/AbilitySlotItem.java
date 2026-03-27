@@ -1,6 +1,7 @@
 package btm.sword.system.item.special;
 
 import java.util.List;
+import java.util.Map;
 
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -146,6 +147,14 @@ public class AbilitySlotItem extends SlotAnchoredItem {
                 player.getInventory().setItem(getTargetSlot(), null);
             }
             return;
+        }
+        // Preserve any non-ability item currently in the slot — move it elsewhere
+        ItemStack existing = player.getInventory().getItem(getTargetSlot());
+        if (existing != null && !existing.isEmpty()
+                && !KeyRegistry.hasKey(existing, KeyRegistry.ABILITY_SLOT_KEY)) {
+            Map<Integer, ItemStack> overflow = player.getInventory().addItem(existing);
+            overflow.values().forEach(leftover ->
+                player.getWorld().dropItemNaturally(player.getLocation(), leftover));
         }
         player.getInventory().setItem(getTargetSlot(), currentItem);
     }

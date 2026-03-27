@@ -18,6 +18,7 @@ import btm.sword.system.control.PredicateRunnablePair;
 import btm.sword.system.control.SwordScheduler;
 import btm.sword.system.control.TimeArbiter;
 import btm.sword.system.entity.impl.Combatant;
+import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.entity.umbral.UmbralBlade;
 import btm.sword.system.entity.umbral.statemachine.state.LodgedState;
 import btm.sword.system.entity.umbral.statemachine.state.WaitingState;
@@ -96,6 +97,13 @@ public class Dash {
                 }
             }
         }
+        // Holding an ability item — only pick up matching ability projectiles
+        else if (executor instanceof SwordPlayer sp && !sp.notHoldingAbilityItem()) {
+            targetedDisplay = raycastForAbilityProjectile();
+            if (targetedDisplay != null) {
+                dashType = flatDash ? DashType.FLAT_TO_ITEM : DashType.NORMAL_TO_ITEM;
+            }
+        }
 
         if (dashType == DashType.NOTHING || (targetedDisplay != null && isDashToItemImpeded())) {
             if (flatDash) {
@@ -167,6 +175,27 @@ public class Dash {
         );
 
         if (itemDisplay != null) Debug.movement("Normal Item Targeted.. itemDisplay=" + itemDisplay.getName());
+
+        return itemDisplay;
+    }
+
+    /**
+     * Raycasts for ability projectiles only (items tagged with {@code ABILITY_ID_KEY}).
+     * Used when the executor is holding an ability item and can only pick up matching projectiles.
+     */
+    public ItemDisplay raycastForAbilityProjectile() {
+        ItemDisplay itemDisplay = (ItemDisplay) HitboxUtil.ray(
+            executor.eyeLoc(),
+            executor.dir(),
+            MAX_STRAIGHT_DASH_DISTANCE.get(),
+            NORMAL_ITEM_RAY_WIDTH.get(),
+            entity -> entity instanceof ItemDisplay id &&
+                !entity.isDead() &&
+                InteractiveItemArbiter.checkIfInteractive(id) &&
+                InteractiveItemArbiter.isAbilityProjectile(id)
+        );
+
+        if (itemDisplay != null) Debug.movement("Ability Projectile Targeted.. itemDisplay=" + itemDisplay.getName());
 
         return itemDisplay;
     }

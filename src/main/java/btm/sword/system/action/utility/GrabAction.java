@@ -50,6 +50,10 @@ public class GrabAction extends SwordAction {
         double baseGrabRange = Config.Grab.BASE_RANGE;
         double baseGrabThickness = Config.Grab.BASE_THICKNESS;
 
+        if (executor instanceof SwordPlayer sp) {
+            sp.resetTree(); // TODO: find out why this is necessary and why the tree doesn't reset on its own...
+        }
+
         long duration = (long) executor.calcValueAdditive(AspectType.MIGHT, 100L, baseDuration,
             Config.Grab.DURATION_SCALING);
         double range = executor.calcValueAdditive(AspectType.WILLPOWER, 4.5, baseGrabRange,
@@ -60,12 +64,16 @@ public class GrabAction extends SwordAction {
         LivingEntity ex = executor.self();
         Location o = ex.getEyeLocation();
 
-        if (executor.getItemStackInHand(true).isEmpty() || executor.holdingSoulLink()) {
+        boolean holdingAbility = executor instanceof SwordPlayer sp2 && !sp2.notHoldingAbilityItem();
+
+        if (executor.getItemStackInHand(true).isEmpty() || executor.holdingSoulLink() || holdingAbility) {
             Entity grabbedItem = HitboxUtil.ray(o, o.getDirection(), range, grabThickness,
                 entity -> entity.getType() == EntityType.ITEM_DISPLAY &&
                     !entity.isDead() &&
                     entity instanceof ItemDisplay id &&
-                    InteractiveItemArbiter.checkIfInteractive(id));
+                    InteractiveItemArbiter.checkIfInteractive(id) &&
+                    // When holding an ability item, only target ability projectiles
+                    (!holdingAbility || InteractiveItemArbiter.isAbilityProjectile(id)));
 
             if (executor.holdingSoulLink() &&
                 grabbedItem instanceof ItemDisplay display &&

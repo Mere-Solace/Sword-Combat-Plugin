@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
+import btm.sword.utility.Debug;
+
 import org.bukkit.Material;
 
 import btm.sword.config.Config;
@@ -15,6 +17,7 @@ import btm.sword.system.action.attack.AttackAction;
 import btm.sword.system.action.attack.DashAttackAction;
 import btm.sword.system.action.movement.DashDirection;
 import btm.sword.system.action.movement.MovementAction;
+import btm.sword.system.action.skill.type.impl.charge.ChargeAction;
 import btm.sword.system.action.skill.container.SkillSlot;
 import btm.sword.system.action.skill.container.SkillSlotActionFactory;
 import btm.sword.system.action.throwing.ThrowAction;
@@ -114,12 +117,7 @@ public class InputRegistrar {
             new InputExecutionTree.ActionContextPair(
                 () -> InputAction.builder()
                     .name("Block")
-                    .action(c -> {
-                        // TODO: Revert after testing
-//                        PacketDisplayEntityGroup group = PacketDisplayEntityGroup.getGroup() // TODO:
-
-                        BlockAction.startBlock((SwordPlayer) c);
-                    })
+                    .action(c -> BlockAction.startBlock((SwordPlayer) c))
                     .cooldown(executor -> 0)
                     .canCast(c -> true)
                     .displayDisabled(false)
@@ -190,7 +188,7 @@ public class InputRegistrar {
                 .build(),
                 SwordPlayer::canBeginThrow)
             )))
-            .timeoutTicks(100)
+            .timeoutTicks(500)
             .sameItemRequired(true)
             .cancellable(true)
             .display(true)
@@ -219,8 +217,57 @@ public class InputRegistrar {
             .sameItemRequired(true)
             .cancellable(true)
             .display(true)
-            .visibleIf(sp -> sp.notHoldingAbilityItem())
+            .visibleIf(SwordPlayer::notHoldingAbilityItem)
             .build();
+
+        // Chargeable ability
+        new InputExecutionTree.InputNodeBuilder(root, List.of(
+            InputType.LEFT,
+            InputType.RIGHT
+        )).action(new LinkedList<>(List.of(
+                new InputExecutionTree.ActionContextPair(
+                    () -> InputAction.builder()
+                        .name("Begin Charge")
+                        .action(ChargeAction::startCharge)
+                        .cooldown(executor -> 0)
+                        .canCast(c -> c instanceof SwordPlayer sp &&
+                            ChargeAction.isHoldingChargeable(sp) &&
+                            !sp.isHeldItemOnCooldown())
+                        .displayDisabled(false)
+                        .resetIfCannotPerform(true)
+                        .build(),
+                    c -> c instanceof SwordPlayer sp &&
+                        ChargeAction.isHoldingChargeable(sp) &&
+                        !sp.isHeldItemOnCooldown())
+            )))
+            .cancellable(true)
+            .display(true)
+            .visibleIf(ChargeAction::isHoldingChargeable)
+            .build();
+
+        // Chargeable ability
+        new InputExecutionTree.InputNodeBuilder(root, List.of(
+            InputType.LEFT,
+            InputType.RIGHT,
+            InputType.RIGHT_HOLD
+        )).action(new LinkedList<>(List.of(
+            new InputExecutionTree.ActionContextPair(
+                () -> InputAction.builder()
+                    .name("Release Charge")
+                    .action(c -> Debug.combat("Release now happens implicitly within Charge Action..."))
+                    .cooldown(executor -> 0)
+                    .canCast(c -> true)
+                    .displayDisabled(false)
+                    .resetIfCannotPerform(true)
+                    .build(),
+                sp -> true)
+        )))
+            .cancellable(true)
+            .minHoldTime(250)
+            .display(true)
+            .visibleIf(ChargeAction::isHoldingChargeable)
+            .build();
+
 
         // debug kill
         new InputExecutionTree.InputNodeBuilder(root, List.of(
@@ -462,17 +509,17 @@ public class InputRegistrar {
             new InputExecutionTree.InputNodeBuilder(root,
                 Collections.nCopies(step, InputType.LEFT)
             ).action(new LinkedList<>(List.of(
-                    new InputExecutionTree.ActionContextPair(
-                        () -> InputAction.builder()
-                            .action(executor -> UmbralBladeAction.wieldedUmbralBladeAttack(executor, comboStep))
-                            .cooldown(cooldown)
-                            .canCast(Combatant::canPerformAction)
-                            .castDuration(attackCastDuration)
-                            .displayCooldown(true)
-                            .displayDisabled(true)
-                            .resetIfCannotPerform(false)
-                            .build(),
-                        SwordPlayer::umbralBladeState),
+                new InputExecutionTree.ActionContextPair(
+                    () -> InputAction.builder()
+                        .action(executor -> UmbralBladeAction.wieldedUmbralBladeAttack(executor, comboStep))
+                        .cooldown(cooldown)
+                        .canCast(Combatant::canPerformAction)
+                        .castDuration(attackCastDuration)
+                        .displayCooldown(true)
+                        .displayDisabled(true)
+                        .resetIfCannotPerform(false)
+                        .build(),
+                    SwordPlayer::umbralBladeState),
                 new InputExecutionTree.ActionContextPair(
                     () -> InputAction.builder()
                         .action(executor -> UmbralBladeAction.basicAttackWithLink(executor, comboStep))
