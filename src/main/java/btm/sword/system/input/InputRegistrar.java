@@ -17,12 +17,14 @@ import btm.sword.system.action.movement.DashDirection;
 import btm.sword.system.action.movement.MovementAction;
 import btm.sword.system.action.skill.container.SkillSlot;
 import btm.sword.system.action.skill.container.SkillSlotActionFactory;
+import btm.sword.system.action.skill.type.impl.charge.ChargeAction;
 import btm.sword.system.action.throwing.ThrowAction;
 import btm.sword.system.action.utility.GrabAction;
 import btm.sword.system.action.utility.UtilityAction;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.impl.Combatant;
 import btm.sword.system.entity.impl.SwordPlayer;
+import btm.sword.utility.Debug;
 import btm.sword.utility.SwordTimeUnit;
 
 
@@ -114,12 +116,7 @@ public class InputRegistrar {
             new InputExecutionTree.ActionContextPair(
                 () -> InputAction.builder()
                     .name("Block")
-                    .action(c -> {
-                        // TODO: Revert after testing
-//                        PacketDisplayEntityGroup group = PacketDisplayEntityGroup.getGroup() // TODO:
-
-                        BlockAction.startBlock((SwordPlayer) c);
-                    })
+                    .action(c -> BlockAction.startBlock((SwordPlayer) c))
                     .cooldown(executor -> 0)
                     .canCast(c -> true)
                     .displayDisabled(false)
@@ -182,17 +179,20 @@ public class InputRegistrar {
                 .name("Throw Ready")
                 .action(ThrowAction::throwReady)
                 .cooldown(executor -> 0)
-                .canCast(c -> c.canPerformAction() && (c instanceof SwordPlayer sp && sp.nonUmbralState()))
+                .canCast(c -> c.canPerformAction() &&
+                        (!(c instanceof SwordPlayer sp) ||
+                            sp.nonUmbralState() && sp.notHoldingAbilityItem()))
                 .displayDisabled(true)
                 .resetIfCannotPerform(true)
                 .build(),
-                SwordPlayer::nonUmbralState)
+                SwordPlayer::canBeginThrow)
             )))
-            .timeoutTicks(100)
+            .timeoutTicks(500)
             .sameItemRequired(true)
             .cancellable(true)
             .display(true)
-            .visibleIf(ActivationContext.onlyIn(ActivationContext.NORMAL))
+            .visibleIf(sp -> sp.notHoldingAbilityItem() &&
+                    ActivationContext.onlyIn(ActivationContext.NORMAL).test(sp))
             .build();
 
         // throw
@@ -216,7 +216,57 @@ public class InputRegistrar {
             .sameItemRequired(true)
             .cancellable(true)
             .display(true)
+            .visibleIf(SwordPlayer::notHoldingAbilityItem)
             .build();
+
+        // Chargeable ability
+        new InputExecutionTree.InputNodeBuilder(root, List.of(
+            InputType.LEFT,
+            InputType.RIGHT
+        )).action(new LinkedList<>(List.of(
+                new InputExecutionTree.ActionContextPair(
+                    () -> InputAction.builder()
+                        .name("Begin Charge")
+                        .action(ChargeAction::startCharge)
+                        .cooldown(executor -> 0)
+                        .canCast(c -> c instanceof SwordPlayer sp &&
+                            ChargeAction.isHoldingChargeable(sp) &&
+                            !sp.isHeldItemOnCooldown())
+                        .displayDisabled(false)
+                        .resetIfCannotPerform(true)
+                        .build(),
+                    c -> c instanceof SwordPlayer sp &&
+                        ChargeAction.isHoldingChargeable(sp) &&
+                        !sp.isHeldItemOnCooldown())
+            )))
+            .cancellable(true)
+            .display(true)
+            .visibleIf(ChargeAction::isHoldingChargeable)
+            .build();
+
+        // Chargeable ability
+        new InputExecutionTree.InputNodeBuilder(root, List.of(
+            InputType.LEFT,
+            InputType.RIGHT,
+            InputType.RIGHT_HOLD
+        )).action(new LinkedList<>(List.of(
+            new InputExecutionTree.ActionContextPair(
+                () -> InputAction.builder()
+                    .name("Release Charge")
+                    .action(c -> Debug.combat("Release now happens implicitly within Charge Action..."))
+                    .cooldown(executor -> 0)
+                    .canCast(c -> true)
+                    .displayDisabled(false)
+                    .resetIfCannotPerform(true)
+                    .build(),
+                sp -> true)
+        )))
+            .cancellable(true)
+            .minHoldTime(250)
+            .display(true)
+            .visibleIf(ChargeAction::isHoldingChargeable)
+            .build();
+
 
         // debug kill
         new InputExecutionTree.InputNodeBuilder(root, List.of(
@@ -428,9 +478,6 @@ public class InputRegistrar {
             .visibleIf(ActivationContext.onlyIn(ActivationContext.NORMAL))
             .build();
 
-        // Active Skill slots (ACTIVE_1 and ACTIVE_2)
-        registerActiveSkillSlot(root, owner, SkillSlot.ACTIVE_1, 1);
-        registerActiveSkillSlot(root, owner, SkillSlot.ACTIVE_2, 2);
     }
 
     // ── Helper methods ──────────────────────────────────────────────────────
@@ -461,17 +508,17 @@ public class InputRegistrar {
             new InputExecutionTree.InputNodeBuilder(root,
                 Collections.nCopies(step, InputType.LEFT)
             ).action(new LinkedList<>(List.of(
-                    new InputExecutionTree.ActionContextPair(
-                        () -> InputAction.builder()
-                            .action(executor -> UmbralBladeAction.wieldedUmbralBladeAttack(executor, comboStep))
-                            .cooldown(cooldown)
-                            .canCast(Combatant::canPerformAction)
-                            .castDuration(attackCastDuration)
-                            .displayCooldown(true)
-                            .displayDisabled(true)
-                            .resetIfCannotPerform(false)
-                            .build(),
-                        SwordPlayer::umbralBladeState),
+                new InputExecutionTree.ActionContextPair(
+                    () -> InputAction.builder()
+                        .action(executor -> UmbralBladeAction.wieldedUmbralBladeAttack(executor, comboStep))
+                        .cooldown(cooldown)
+                        .canCast(Combatant::canPerformAction)
+                        .castDuration(attackCastDuration)
+                        .displayCooldown(true)
+                        .displayDisabled(true)
+                        .resetIfCannotPerform(false)
+                        .build(),
+                    SwordPlayer::umbralBladeState),
                 new InputExecutionTree.ActionContextPair(
                     () -> InputAction.builder()
                         .action(executor -> UmbralBladeAction.basicAttackWithLink(executor, comboStep))
@@ -550,47 +597,6 @@ public class InputRegistrar {
                     SwordPlayer::normalActState)
             )))
             .timeoutTicks(3)
-            .cancellable(true)
-            .display(true)
-            .visibleIf(ActivationContext.onlyIn(ActivationContext.NORMAL))
-            .build();
-    }
-
-    /**
-     * Registers tap and hold variants for an active skill slot.
-     *
-     * @param root      the tree root node
-     * @param owner     the player who owns the tree
-     * @param slot      the skill slot to bind
-     * @param slotIndex the hotbar slot index (1 or 2) for context predicate
-     */
-    private static void registerActiveSkillSlot(InputExecutionTree.InputNode root,
-                                                SwordPlayer owner,
-                                                SkillSlot slot, int slotIndex) {
-        // Tap variant
-        new InputExecutionTree.InputNodeBuilder(root, List.of(InputType.SWAP, InputType.RIGHT))
-            .action(new LinkedList<>(List.of(
-                new InputExecutionTree.ActionContextPair(
-                    () -> SkillSlotActionFactory.create(owner, slot, false),
-                    sp -> sp.activeItemState(slotIndex))
-            )))
-            .dynamic(true)
-            .sameItemRequired(true)
-            .cancellable(true)
-            .display(true)
-            .visibleIf(ActivationContext.onlyIn(ActivationContext.NORMAL))
-            .build();
-
-        // Hold variant
-        new InputExecutionTree.InputNodeBuilder(root, List.of(
-            InputType.SWAP, InputType.RIGHT, InputType.RIGHT_HOLD
-        )).action(new LinkedList<>(List.of(
-                new InputExecutionTree.ActionContextPair(
-                    () -> SkillSlotActionFactory.create(owner, slot, true),
-                    sp -> sp.activeItemState(slotIndex))
-            )))
-            .dynamic(true)
-            .sameItemRequired(true)
             .cancellable(true)
             .display(true)
             .visibleIf(ActivationContext.onlyIn(ActivationContext.NORMAL))

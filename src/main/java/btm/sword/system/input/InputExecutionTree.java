@@ -467,9 +467,6 @@ public class InputExecutionTree {
                     if (dynamic) return pair.action().get();
                     if (pairCache == null) pairCache = new IdentityHashMap<>();
                     InputAction action = pairCache.computeIfAbsent(pair, p -> p.action().get());
-                    // TODO: allow for the ability to cast from different actions...?
-                    // Running into some issues here with healing and the NoOP, where the healing action
-                    // is available if holding blade, but S -> S should also be able to be fired, if the player does not want to continue healing...
                     if (action.unableToCast(owner)) {
                         continue;
                     }

@@ -36,6 +36,7 @@ import btm.sword.system.entity.impl.Combatant;
 import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.input.ActivationContext;
 import btm.sword.system.item.ItemUsageManager;
+import btm.sword.system.item.KeyRegistry;
 import btm.sword.utility.Debug;
 import btm.sword.utility.Prefab;
 import btm.sword.utility.display.DisplayUtil;
@@ -252,11 +253,21 @@ public class ThrownItem extends VisualProjectile {
     }
 
     /**
-     * Returns the item to the thrower's inventory when caught.
+     * Returns the item to the thrower when caught.
+     * Ability projectiles (tagged with {@link KeyRegistry#ABILITY_ID_KEY}) refund one
+     * slot use instead of placing the raw visual item into the thrower's inventory.
      */
     @Override
     protected void onCatch() {
-        thrower.giveItem(display.getItemStack());
+        ItemStack caughtItem = display.getItemStack();
+        if (caughtItem != null && KeyRegistry.hasKey(caughtItem, KeyRegistry.ABILITY_ID_KEY)
+                && thrower instanceof SwordPlayer sp) {
+            String abilityId = KeyRegistry.getKeyField(caughtItem, KeyRegistry.ABILITY_ID_KEY,
+                org.bukkit.persistence.PersistentDataType.STRING);
+            sp.getAbilitySlotManager().refundByAbilityId(abilityId);
+        } else {
+            thrower.giveItem(caughtItem);
+        }
         dispose();
     }
 

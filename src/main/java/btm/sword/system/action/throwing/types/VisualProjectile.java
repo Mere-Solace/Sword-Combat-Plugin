@@ -83,6 +83,13 @@ public class VisualProjectile extends SimulatedDisplay {
     protected Vector launchDirection;
 
     /**
+     * Uniform scale applied to the item display transform in {@link #determineOrientation()}.
+     * Defaults to {@code 1.0}. Set before launch (e.g. in {@link ThrowAction#throwDirect}) to
+     * adjust the visual size of the thrown item.
+     */
+    protected float displayScale = 1.0f;
+
+    /**
      * Scales the time parameter fed to {@link #positionFunction}.
      * Negative value means no scaling (raw tick count is used).
      */
@@ -471,28 +478,29 @@ public class VisualProjectile extends SimulatedDisplay {
             display.setTransformation(new Transformation(
                 base.add(new Vector3f()),
                 new Quaternionf().rotateY((float) Math.PI / 2).rotateZ((float) Math.PI / 2),
-                new Vector3f(1, 1, 1),
+                new Vector3f(displayScale, displayScale, displayScale),
                 new Quaternionf()
             ));
         } else if (name.endsWith("AXE") || name.endsWith("_HOE") || name.endsWith("_SHOVEL")) {
+            float axeScale = 1.5f * displayScale;
             display.setTransformation(new Transformation(
                 base.add(new Vector3f()),
                 new Quaternionf().rotateY((float) -Math.PI / 2).rotateZ((float) Math.PI / 4),
-                new Vector3f(1.5f, 1.5f, 1.5f),
+                new Vector3f(axeScale, axeScale, axeScale),
                 new Quaternionf()
             ));
         } else if (display.getItemStack().getType() == Material.SHIELD) {
             display.setTransformation(new Transformation(
                 base.add(new Vector3f(0, 0, 0)),
                 new Quaternionf().rotateY((float) (Math.PI / 1.01f) * 0),
-                new Vector3f(1, 1, 1),
+                new Vector3f(displayScale, displayScale, displayScale),
                 new Quaternionf()
             ));
         } else {
             display.setTransformation(new Transformation(
                 base.add(new Vector3f()),
                 new Quaternionf().rotateZ((float) Math.PI / 8),
-                new Vector3f(1, 1, 1),
+                new Vector3f(displayScale, displayScale, displayScale),
                 new Quaternionf()
             ));
         }

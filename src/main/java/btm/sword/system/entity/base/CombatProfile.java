@@ -127,7 +127,7 @@ public class CombatProfile {
 
         this.maxAirDodges = btm.sword.config.Config.Entity.COMBAT_PROFILE_MAX_AIR_DODGES;
 
-        playerSkillContainer = new PlayerSkillContainer(); // Related to #166
+        playerSkillContainer = new PlayerSkillContainer(); // TODO: Related to #166
     }
 
     /**

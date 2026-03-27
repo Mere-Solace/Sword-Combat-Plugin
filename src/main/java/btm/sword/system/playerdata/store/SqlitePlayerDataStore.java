@@ -12,6 +12,8 @@ import java.util.UUID;
 import java.util.logging.Logger;
 
 import btm.sword.system.action.skill.container.PlayerSkillContainer;
+import btm.sword.system.action.skill.container.SkillSlot;
+import btm.sword.system.action.skill.container.SkillSlotState;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.aspect.value.AspectValue;
 import btm.sword.system.entity.base.CombatProfile;
@@ -20,6 +22,7 @@ import btm.sword.system.playerdata.PlayerStorage;
 import btm.sword.system.playerdata.store.repository.AspectRepository;
 import btm.sword.system.playerdata.store.repository.ProfileRepository;
 import btm.sword.system.playerdata.store.repository.SkillRepository;
+import btm.sword.system.playerdata.store.repository.SkillStateRepository;
 import btm.sword.system.playerdata.store.repository.StorageRepository;
 
 /**
@@ -34,7 +37,7 @@ import btm.sword.system.playerdata.store.repository.StorageRepository;
  */
 public class SqlitePlayerDataStore implements PlayerDataStore {
 
-    private static final int CURRENT_SCHEMA_VERSION = 1;
+    private static final int CURRENT_SCHEMA_VERSION = 2;
 
     private final File dbFile;
     private final Logger logger;
@@ -43,6 +46,7 @@ public class SqlitePlayerDataStore implements PlayerDataStore {
     private ProfileRepository profileRepo;
     private AspectRepository aspectRepo;
     private SkillRepository skillRepo;
+    private SkillStateRepository skillStateRepo;
     private StorageRepository storageRepo;
 
     /**
@@ -74,11 +78,13 @@ public class SqlitePlayerDataStore implements PlayerDataStore {
         profileRepo = new ProfileRepository(conn);
         aspectRepo = new AspectRepository(conn);
         skillRepo = new SkillRepository(conn);
+        skillStateRepo = new SkillStateRepository(conn);
         storageRepo = new StorageRepository(conn);
 
         profileRepo.createTable();
         aspectRepo.createTable();
         skillRepo.createTable();
+        skillStateRepo.createTable();
         storageRepo.createTable();
         createSchemaVersionTable();
 
@@ -108,6 +114,9 @@ public class SqlitePlayerDataStore implements PlayerDataStore {
             } else {
                 skillContainer = new PlayerSkillContainer(skillData.available(), skillData.equipped());
             }
+            // available map now carries SkillAvailability states — constructor above handles it
+            Map<SkillSlot, SkillSlotState> slotStates = skillStateRepo.load(uuid);
+            slotStates.forEach(skillContainer::setSlotState);
             combatProfile.setPlayerSkillContainer(skillContainer);
 
             return new PlayerData(uuid, profile.firstLogin(), profile.joinSequenceCompleted(),
@@ -129,7 +138,8 @@ public class SqlitePlayerDataStore implements PlayerDataStore {
                     data.getDateOfFirstLogin().getTime(), profile.getMaxAirDodges());
                 aspectRepo.save(uuid, profile.getStats());
                 PlayerSkillContainer skills = profile.getPlayerSkillContainer();
-                skillRepo.save(uuid, skills.equippedView(), skills.allAvailableSkillIds());
+                skillRepo.save(uuid, skills.equippedView(), skills.allDiscoveredSkillAvailabilities());
+                skillStateRepo.save(uuid, skills.allSlotStates());
                 storageRepo.save(uuid, data.getPlayerStorage());
                 conn.commit();
             } catch (SQLException e) {
@@ -196,6 +206,10 @@ public class SqlitePlayerDataStore implements PlayerDataStore {
         if (version < CURRENT_SCHEMA_VERSION) {
             logger.info("[PlayerData] Schema at v" + version + ", migrating to v" + CURRENT_SCHEMA_VERSION);
             // V0 → V1: initial schema (tables already created above — nothing more to migrate)
+            if (version < 2) {
+                // V1 → V2: add availability column to player_available_skills
+                skillRepo.migrateV1ToV2();
+            }
             setSchemaVersion(CURRENT_SCHEMA_VERSION);
             logger.info("[PlayerData] Schema migration complete.");
         }

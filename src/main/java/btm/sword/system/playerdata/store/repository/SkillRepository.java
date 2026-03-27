@@ -4,15 +4,15 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.EnumMap;
-import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
 import btm.sword.system.action.skill.Skill;
 import btm.sword.system.action.skill.SkillId;
 import btm.sword.system.action.skill.SkillRegistry;
+import btm.sword.system.action.skill.container.SkillAvailability;
 import btm.sword.system.action.skill.container.SkillSlot;
 
 /**
@@ -45,9 +45,24 @@ public class SkillRepository {
              PreparedStatement s2 = conn.prepareStatement(
                 "CREATE TABLE IF NOT EXISTS player_available_skills ("
                 + "uuid TEXT NOT NULL, skill_id TEXT NOT NULL,"
+                + " availability TEXT NOT NULL DEFAULT 'AVAILABLE',"
                 + " PRIMARY KEY (uuid, skill_id))")) {
             s1.execute();
             s2.execute();
+        }
+    }
+
+    /**
+     * Migrates the {@code player_available_skills} table from schema v1 (no availability column)
+     * to v2 by adding the column with a default of {@code AVAILABLE} for all existing rows.
+     *
+     * @throws SQLException on any DB error
+     */
+    public void migrateV1ToV2() throws SQLException {
+        try (PreparedStatement stmt = conn.prepareStatement(
+                "ALTER TABLE player_available_skills ADD COLUMN"
+                + " availability TEXT NOT NULL DEFAULT 'AVAILABLE'")) {
+            stmt.execute();
         }
     }
 
@@ -60,7 +75,7 @@ public class SkillRepository {
      */
     public SkillData load(UUID uuid) throws SQLException {
         EnumMap<SkillSlot, SkillId> equipped = new EnumMap<>(SkillSlot.class);
-        List<SkillId> available = new ArrayList<>();
+        Map<SkillId, SkillAvailability> available = new HashMap<>();
 
         try (PreparedStatement stmt = conn.prepareStatement(
                 "SELECT slot, skill_id FROM player_skill_slots WHERE uuid = ?")) {
@@ -79,14 +94,16 @@ public class SkillRepository {
         }
 
         try (PreparedStatement stmt = conn.prepareStatement(
-                "SELECT skill_id FROM player_available_skills WHERE uuid = ?")) {
+                "SELECT skill_id, availability FROM player_available_skills WHERE uuid = ?")) {
             stmt.setString(1, uuid.toString());
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
                     try {
-                        available.add(SkillId.parse(rs.getString("skill_id")));
+                        SkillId id = SkillId.parse(rs.getString("skill_id"));
+                        SkillAvailability avail = SkillAvailability.valueOf(rs.getString("availability"));
+                        available.put(id, avail);
                     } catch (IllegalArgumentException e) {
-                        // Invalid id — skip
+                        // Invalid id or unknown availability value — skip
                     }
                 }
             }
@@ -104,7 +121,7 @@ public class SkillRepository {
      * @param available the current available (unlocked) skill list
      * @throws SQLException on any DB error
      */
-    public void save(UUID uuid, Map<SkillSlot, SkillId> equipped, List<SkillId> available)
+    public void save(UUID uuid, Map<SkillSlot, SkillId> equipped, Map<SkillId, SkillAvailability> available)
             throws SQLException {
         try (PreparedStatement del1 = conn.prepareStatement(
                 "DELETE FROM player_skill_slots WHERE uuid = ?");
@@ -131,12 +148,13 @@ public class SkillRepository {
 
         if (!available.isEmpty()) {
             try (PreparedStatement stmt = conn.prepareStatement(
-                    "INSERT INTO player_available_skills (uuid, skill_id) VALUES (?, ?)")) {
-                for (SkillId id : available) {
-                    Skill skill = SkillRegistry.get(id);
+                    "INSERT INTO player_available_skills (uuid, skill_id, availability) VALUES (?, ?, ?)")) {
+                for (Map.Entry<SkillId, SkillAvailability> entry : available.entrySet()) {
+                    Skill skill = SkillRegistry.get(entry.getKey());
                     if (skill == null) continue; // skill was removed from game — don't persist
                     stmt.setString(1, uuid.toString());
-                    stmt.setString(2, id.asString());
+                    stmt.setString(2, entry.getKey().asString());
+                    stmt.setString(3, entry.getValue().name());
                     stmt.addBatch();
                 }
                 stmt.executeBatch();
@@ -147,8 +165,8 @@ public class SkillRepository {
     /**
      * Raw skill data loaded from the database.
      *
-     * @param available the list of all unlocked skill IDs
+     * @param available a map of all discovered skill IDs to their availability state
      * @param equipped  the map of equipped skill slots to their assigned skill
      */
-    public record SkillData(List<SkillId> available, EnumMap<SkillSlot, SkillId> equipped) {}
+    public record SkillData(Map<SkillId, SkillAvailability> available, EnumMap<SkillSlot, SkillId> equipped) {}
 }

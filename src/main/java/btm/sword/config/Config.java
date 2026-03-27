@@ -2605,7 +2605,7 @@ public class Config {
         ); }
 
         /** Delay for flat dash height boost in milliseconds. */
-        public static int FLAT_DASH_HEIGHT_BOOST_DELAY_MS = 100;
+        public static int FLAT_DASH_HEIGHT_BOOST_DELAY_MS = 75;
         static { register(
             "movement.flat_dash_height_boost_delay_ms",
             FLAT_DASH_HEIGHT_BOOST_DELAY_MS, Integer.class,

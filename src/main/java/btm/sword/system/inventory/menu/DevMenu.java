@@ -180,6 +180,14 @@ public class DevMenu extends Menu {
             click -> btm.sword.system.join.InitialJoinCutscene.play(swordPlayer)
         );
 
+        SimpleItem skillEquip = new SimpleItem(
+            new ItemStackBuilder(Material.KNOWLEDGE_BOOK)
+                .name(Component.text("Skill Equip", NamedTextColor.LIGHT_PURPLE, TextDecoration.BOLD))
+                .lore(List.of(Component.text("Force-equip any skill to any slot", NamedTextColor.DARK_GRAY)))
+                .build(),
+            click -> new DevSkillEquipMenu(swordPlayer).open()
+        );
+
         SimpleItem itemLibrary = new SimpleItem(
             new ItemStackBuilder(Material.BOOKSHELF)
                 .name(Component.text("Item Library", NamedTextColor.GOLD, TextDecoration.BOLD))
@@ -262,7 +270,7 @@ public class DevMenu extends Menu {
         Gui gui = Gui.normal()
             .setStructure(
                 "# # # # # # # # #",
-                "# J N S F . L C #",
+                "# J N S F A L C #",
                 "# P X B K . H E #",
                 "# R I . T . M W #",
                 "# # # < . > # # #")
@@ -274,6 +282,7 @@ public class DevMenu extends Menu {
             .addIngredient('N', deuTools)
             .addIngredient('S', staticScene)
             .addIngredient('F', fakePlayerScene)
+            .addIngredient('A', skillEquip)
             .addIngredient('L', itemLibrary)
             .addIngredient('X', joinCutscene)
             .addIngredient('B', bossBarTest)

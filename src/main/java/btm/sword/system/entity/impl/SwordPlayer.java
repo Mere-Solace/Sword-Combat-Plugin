@@ -1,6 +1,7 @@
 package btm.sword.system.entity.impl;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -39,6 +40,17 @@ import com.destroystokyo.paper.profile.PlayerProfile;
 import btm.sword.config.Config;
 import btm.sword.system.action.BlockAction;
 import btm.sword.system.action.UmbralBladeAction;
+import btm.sword.system.action.skill.Skill;
+import btm.sword.system.action.skill.SkillId;
+import btm.sword.system.action.skill.SkillIds;
+import btm.sword.system.action.skill.SkillRegistry;
+import btm.sword.system.action.skill.container.PlayerSkillContainer;
+import btm.sword.system.action.skill.container.SkillSlot;
+import btm.sword.system.action.skill.container.SkillSlotActionFactory;
+import btm.sword.system.action.skill.container.SkillSlotState;
+import btm.sword.system.action.skill.type.ActiveSkill;
+import btm.sword.system.action.skill.type.impl.charge.ChargeAction;
+import btm.sword.system.action.skill.type.impl.charge.ChargeSession;
 import btm.sword.system.action.throwing.ThrowAction;
 import btm.sword.system.action.throwing.types.DroppedItem;
 import btm.sword.system.control.PredicateRunnablePair;
@@ -65,10 +77,12 @@ import btm.sword.system.item.ItemStackBuilder;
 import btm.sword.system.item.KeyRegistry;
 import btm.sword.system.item.StorageCategory;
 import btm.sword.system.item.SwordItemType;
+import btm.sword.system.item.special.AbilitySlotManager;
 import btm.sword.system.item.special.NonMovableItem;
 import btm.sword.system.item.special.SlotAnchoredItem;
 import btm.sword.system.playerdata.PlayerData;
 import btm.sword.system.playerdata.PlayerStorage;
+import btm.sword.system.scene.animation.CutsceneInputHandler;
 import btm.sword.utility.Debug;
 import btm.sword.utility.Prefab;
 import btm.sword.utility.SwordTimeUnit;
@@ -107,6 +121,12 @@ public class SwordPlayer extends Combatant {
     private SlotAnchoredItem questStorageButton;
     private final SlotAnchoredItem shieldItem;
     private final SlotAnchoredItem chestplateItem;
+    @Getter
+    private final AbilitySlotManager abilitySlotManager;
+
+    /** Active charge session for chargeable abilities, or {@code null} if not charging. */
+    @Getter @Setter
+    private ChargeSession activeCharge;
 
     /** Economy storage for materials, credits, and auto-pickup preferences. Loaded from and saved to the database. */
     private PlayerStorage playerStorage;
@@ -292,6 +312,15 @@ public class SwordPlayer extends Combatant {
             Material.NETHERITE_CHESTPLATE
         );
 
+        abilitySlotManager = new AbilitySlotManager(this);
+        abilitySlotManager.initialize();
+
+        // TODO: remove once test abilities are replaced with real found items
+        PlayerSkillContainer skillContainer = getCombatProfile().getPlayerSkillContainer();
+        skillContainer.discover(SkillIds.TEST_ALPHA);
+        skillContainer.discover(SkillIds.TEST_BETA);
+        skillContainer.discover(SkillIds.TEST_GAMMA);
+
         updateManagedItems();
 
         inputExecutionTree = new InputExecutionTree(this);
@@ -456,12 +485,17 @@ public class SwordPlayer extends Combatant {
         if (ItemClassifier.isBlocked(getItemStackInHand(true))) return;
 
         if (activationContext == ActivationContext.CUTSCENE) {
-            btm.sword.system.scene.animation.CutsceneInputHandler.handle(this, input);
+            CutsceneInputHandler.handle(this, input);
             return;
         }
 
         if (activationContext.equals(ActivationContext.CHANNELING)) {
             activationContext = ActivationContext.NORMAL;
+        }
+
+        if (isAtRoot() && handleAbilityInput(input)) {
+            resetTree();
+            return;
         }
 
         if (throwingState()) {
@@ -527,6 +561,10 @@ public class SwordPlayer extends Combatant {
         InputAction action = inputExecutionTree.getNextAction();
 
         if (action != null) {
+            // The simplest way for charge action to pass is simply to let it step using the
+            // Left of a basic attack, but just block the action
+            if (input == InputType.LEFT && ChargeAction.isHoldingChargeable(this)) return;
+
             InputActionExecutor.execute(action, this);
         }
 
@@ -534,6 +572,59 @@ public class SwordPlayer extends Combatant {
 
         if (internalAction != null) {
             internalAction.accept(this);
+        }
+    }
+
+    public boolean isAbilityItem(ItemStack item) {
+        SwordItemType itemType = SwordItemType.fromString(item);
+        Debug.combat("ItemType="+itemType);
+        return itemType == SwordItemType.ACTIVE_1 || itemType == SwordItemType.ACTIVE_2;
+    }
+
+    public boolean isAbilityItem(SwordItemType itemType) {
+        return itemType == SwordItemType.ACTIVE_1 || itemType == SwordItemType.ACTIVE_2;
+    }
+
+    public boolean isHeldItemOnCooldown() {
+        return getItemStackInHand(true) instanceof ItemStack item && player.getCooldown(item) > 0;
+    }
+
+    private boolean handleAbilityInput(InputType input) {
+        if (ChargeAction.isHoldingChargeable(this)) return false;
+        int heldSlot = player.getInventory().getHeldItemSlot();
+
+        // Gate: is this even an ability slot? If not, let the normal input tree handle it.
+        SwordItemType itemType = abilitySlotManager.getActiveTypeForHeldSlot(heldSlot);
+        if (itemType == null) return false;
+
+        // From here on, this IS an ability slot (return true to consume the input)
+        if (input == InputType.LEFT) {
+            if (isHeldItemOnCooldown()) return true;
+
+            SkillSlot slot = itemType == SwordItemType.ACTIVE_1 ? SkillSlot.ACTIVE_1 : SkillSlot.ACTIVE_2;
+
+            InputAction action = SkillSlotActionFactory.create(this, slot, false);
+            if (action == null) return true;
+
+            SkillId equippedId = getCombatProfile().getPlayerSkillContainer().getEquipped(slot);
+            Skill skill = SkillRegistry.get(equippedId);
+            if (!(skill instanceof ActiveSkill active) || !active.canPerform(this)) return true;
+
+            SkillSlotState state = getCombatProfile().getPlayerSkillContainer().getSlotState(slot);
+            if (System.currentTimeMillis() < state.cooldownExpiresAt()) return true;
+
+            InputActionExecutor.execute(action, this);
+
+            abilitySlotManager.consumeUse(heldSlot);
+            long expiry = System.currentTimeMillis() + active.calculateCooldown(this);
+            SkillSlotState current = getCombatProfile().getPlayerSkillContainer().getSlotState(slot);
+            getCombatProfile().getPlayerSkillContainer().setSlotState(slot,
+                new SkillSlotState(current.remainingUses(), current.remainingDurability(), expiry));
+
+            return true;
+        }
+        else {
+            return false;
         }
     }
 
@@ -774,10 +865,12 @@ public class SwordPlayer extends Combatant {
      * Must be called after construction and after {@link #reloadInventoryButtons()}.
      */
     private void updateManagedItems() {
-        managedItems = List.of(
+        List<SlotAnchoredItem> items = new ArrayList<>(List.of(
             shieldItem, chestplateItem, menuButton,
             currencyStorageButton, materialStorageButton, questStorageButton
-        );
+        ));
+        items.addAll(abilitySlotManager.getSlotItems());
+        managedItems = List.copyOf(items);
     }
 
     /**
@@ -1035,6 +1128,10 @@ public class SwordPlayer extends Combatant {
             (isPerformedDropAction() && KeyRegistry.hasKey(getLastHeldItemBeforeDrop(), KeyRegistry.SOUL_LINK_KEY));
     }
 
+    public boolean notHoldingAbilityItem() {
+        return !abilitySlotManager.isAbilityHeldSlot(player.getInventory().getHeldItemSlot());
+    }
+
     public boolean normalActState() {
         return activationContext == ActivationContext.NORMAL;
     }
@@ -1046,6 +1143,10 @@ public class SwordPlayer extends Combatant {
 
     public boolean throwingNonUmbralState() {
         return (throwingState() || nonUmbralState());
+    }
+
+    public boolean canBeginThrow() {
+        return nonUmbralState() && notHoldingAbilityItem();
     }
 
     public boolean nonUmbralState() {

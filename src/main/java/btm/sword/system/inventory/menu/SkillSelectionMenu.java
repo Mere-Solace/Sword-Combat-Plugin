@@ -1,20 +1,25 @@
 package btm.sword.system.inventory.menu;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import org.bukkit.Material;
+import org.bukkit.inventory.ItemStack;
 
 import btm.sword.system.action.skill.Skill;
 import btm.sword.system.action.skill.SkillId;
 import btm.sword.system.action.skill.SkillRegistry;
 import btm.sword.system.action.skill.SkillType;
 import btm.sword.system.action.skill.container.PlayerSkillContainer;
+import btm.sword.system.action.skill.container.SkillAvailability;
 import btm.sword.system.action.skill.container.SkillSlot;
 import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.item.ItemStackBuilder;
+import btm.sword.system.item.special.AbilitySlotManager;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import xyz.xenondevs.invui.gui.PagedGui;
 import xyz.xenondevs.invui.gui.structure.Markers;
 import xyz.xenondevs.invui.item.Item;
@@ -33,18 +38,40 @@ public class SkillSelectionMenu extends Menu {
         this.type = slot.type();
     }
 
+    private void refreshAbilitySlot(SkillSlot skillSlot) {
+        if (skillSlot == SkillSlot.ACTIVE_1) {
+            swordPlayer.getAbilitySlotManager().refresh(AbilitySlotManager.SLOT_1);
+        } else if (skillSlot == SkillSlot.ACTIVE_2) {
+            swordPlayer.getAbilitySlotManager().refresh(AbilitySlotManager.SLOT_2);
+        }
+    }
+
     @Override
     public void open() {
         AtomicReference<SkillId> curSelected = new AtomicReference<>(skillContainer.getEquipped(slot));
 
-        List<Item> skillSelectItems = skillContainer.freeSkillIds(type)
+        List<Item> skillSelectItems = new ArrayList<>(skillContainer.freeSkillIds(type)
             .stream()
-            .map(id -> new SimpleItem(
+            .map(id -> (Item) new SimpleItem(
                 SkillRegistry.get(id).icon(),
                 click -> {
                     skillContainer.equip(slot, id);
+                    refreshAbilitySlot(slot);
                     this.open();
-                })).collect(Collectors.toList()); // this line eliminates the type difference error.
+                })).collect(Collectors.toList())); // this line eliminates the type difference error.
+
+        // Discovered but locked skills (depleted / relinquished) — shown but not selectable
+        for (SkillId id : skillContainer.lockedSkillIds(type)) {
+            SkillAvailability availability = skillContainer.getAvailability(id);
+            Component lockLabel = availability == SkillAvailability.RELINQUISHED
+                ? Component.text(" [Relinquished]", NamedTextColor.DARK_RED)
+                : Component.text(" [Depleted]", NamedTextColor.DARK_GRAY);
+            ItemStack lockedIcon = new ItemStackBuilder(SkillRegistry.get(id).icon().getType())
+                .name(SkillRegistry.get(id).icon().getItemMeta().displayName().append(lockLabel))
+                .hideAll()
+                .build();
+            skillSelectItems.add(new SimpleItem(lockedIcon, click -> {}));
+        }
 
         Skill cur = SkillRegistry.get(curSelected.get());
 
@@ -56,6 +83,7 @@ public class SkillSelectionMenu extends Menu {
             : new SimpleItem(cur.icon(),
             click -> {
                 skillContainer.unequip(slot);
+                refreshAbilitySlot(slot);
                 this.open();
             });
 
@@ -80,7 +108,7 @@ public class SkillSelectionMenu extends Menu {
 
         Window window = Window.single()
             .setViewer(swordPlayer.getPlayer())
-            .setTitle("MainMenu")
+            .setTitle(slot.title())
             .setGui(gui)
             .build();
 

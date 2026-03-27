@@ -18,6 +18,7 @@ import btm.sword.system.action.skill.SkillRegistry;
 import btm.sword.system.action.skill.container.SkillSlot;
 import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.item.ItemStackBuilder;
+import btm.sword.system.item.special.AbilitySlotManager;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
@@ -110,6 +111,20 @@ public class CharacterMenu extends Menu {
         return click -> new SkillSelectionMenu(swordPlayer, slot).open();
     }
 
+    // TODO: remove — dev shortcut for replenishing ability slots during testing
+    private SimpleItem buildReplenishButton() {
+        return new SimpleItem(
+            new ItemStackBuilder(Material.HONEY_BOTTLE)
+                .name(Component.text("[Dev] Replenish Abilities", NamedTextColor.YELLOW, TextDecoration.BOLD))
+                .build(),
+            click -> {
+                swordPlayer.getAbilitySlotManager().refresh(AbilitySlotManager.SLOT_1);
+                swordPlayer.getAbilitySlotManager().refresh(AbilitySlotManager.SLOT_2);
+                this.open();
+            }
+        );
+    }
+
     /**
      * Builds a dev-only button that opens {@link DevStatEditorMenu}.
      * Hidden for non-op players (replaced with BORDER).
@@ -148,12 +163,13 @@ public class CharacterMenu extends Menu {
                 "# . { 1 2 3 { . #", // 3 Umbral Skills
                 ". . 4 - 9 - 5 . .", // 2 other active skills and 1 Core Passive
                 ". . { 6 7 8 { . .", // 3 other passives
-                "# . . . . . . D #",
+                "# . . . . . Z D #",
                 "# # # < W > # # #") // weapon combat proficiencies and info (equip normal weapon-specific passives and skills
             .addIngredient('#', BORDER)
             .addIngredient('S', swordPlayer.getPlayerHead())
             .addIngredient('<', generatePreviousButtonOrDefault())
             .addIngredient('>', generateForwardPreviousButtonOrDefault())
+            .addIngredient('Z', buildReplenishButton())
             .addIngredient('D', buildDevStatsButton(player));
 
         for (Map.Entry<Character, SkillSlot> entry : menuSlots.entrySet()) {
@@ -164,7 +180,7 @@ public class CharacterMenu extends Menu {
 
         Window window = Window.single()
             .setViewer(player)
-            .setTitle("MainMenu")
+            .setTitle("Character Loadout")
             .setGui(gui)
             .build();
 
