@@ -43,6 +43,18 @@ tasks {
         // Your plugin's jar (or shadowJar if present) will be used automatically.
         minecraftVersion("1.21.8")
 
+        // Auto-download required dependency plugins on first run.
+        // Jars are cached in run/plugins/ and only re-downloaded when missing.
+        // If a download fails, verify the release tag at the linked repo — tag format varies by project.
+        downloadPlugins {
+            // https://github.com/PZDonny/DisplayEntityUtils/releases — tag format: "3.4.3" (no v prefix)
+            github("PZDonny", "DisplayEntityUtils", "3.4.3", "displayentityutils-3.4.3.jar")
+            // https://github.com/retrooper/packetevents/releases — tag format: "v2.11.2"
+            github("retrooper", "packetevents", "v2.11.2", "packetevents-spigot-2.11.2.jar")
+            // https://github.com/dmulloy2/ProtocolLib/releases — tag format: "5.4.0" (no v prefix)
+            github("dmulloy2", "ProtocolLib", "5.4.0", "ProtocolLib.jar")
+        }
+
         // IMPORTANT: Auto-accept Minecraft EULA for development/testing
         // By using this runServer task, you agree to Minecraft's EULA: https://aka.ms/MinecraftEULA
         // This is standard practice for plugin development environments

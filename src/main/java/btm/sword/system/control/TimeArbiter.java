@@ -98,8 +98,8 @@ public class TimeArbiter {
             else if (timeScale < 0.6) potionStrength = 3;
             else if (timeScale < 0.8) potionStrength = 2;
             else potionStrength = 1;
-            PotionEffect slowness = new PotionEffect(PotionEffectType.SLOWNESS, 99999999, potionStrength);
-            PotionEffect slowFall = new PotionEffect(PotionEffectType.SLOW_FALLING, 99999999, potionStrength);
+            PotionEffect slowness = new PotionEffect(PotionEffectType.SLOWNESS, PotionEffect.INFINITE_DURATION, potionStrength);
+            PotionEffect slowFall = new PotionEffect(PotionEffectType.SLOW_FALLING, PotionEffect.INFINITE_DURATION, potionStrength);
             application = swordEntity -> {
                 swordEntity.self().clearActivePotionEffects();
                 swordEntity.self().addPotionEffect(slowness);
@@ -112,7 +112,7 @@ public class TimeArbiter {
             else if (timeScale < 1.6) potionStrength = 3;
             else if (timeScale < 1.8) potionStrength = 4;
             else potionStrength = 5;
-            PotionEffect speed = new PotionEffect(PotionEffectType.SPEED, 99999999, potionStrength);
+            PotionEffect speed = new PotionEffect(PotionEffectType.SPEED, PotionEffect.INFINITE_DURATION, potionStrength);
             application = swordEntity -> {
                 swordEntity.self().clearActivePotionEffects();
                 swordEntity.self().addPotionEffect(speed);
@@ -296,6 +296,7 @@ public class TimeArbiter {
             conditionalCallbacks, delayMs, periodMs, callingClass, callingMethod);
     }
 
+    @SuppressWarnings("all")
     public static TaskHandle runFixedIterationTaskTimer(@Nullable Runnable precheckRunnable,
                                                         @Nullable Runnable postcheckRunnable,
                                                         int delayMs,
@@ -346,8 +347,6 @@ public class TimeArbiter {
     }
 
     public static void teleportDisplay(Display display, Location destination, @Nullable Vector direction, int teleportDuration, Class<?> clazz, int lineNum) {
-//        Sword.getInstance().getLogger().info("Teleporting Display From: Class " + clazz + " line: " + lineNum);
-        // ^ Debug purposes. Will need to remove unused params later
         DisplayUtil.setSmoothTeleportDuration(display,
             teleportDuration == 0 ? 0 : Math.max(1, (int) (teleportDuration * GLOBAL_TELEPORT_DURATION_SCALING))
         );
