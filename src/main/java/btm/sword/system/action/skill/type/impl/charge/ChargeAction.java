@@ -1,28 +1,25 @@
 package btm.sword.system.action.skill.type.impl.charge;
 
-import btm.sword.system.action.skill.Skill;
-import btm.sword.system.action.skill.SkillId;
-import btm.sword.system.action.skill.SkillRegistry;
-import btm.sword.system.control.PredicateRunnablePair;
-import btm.sword.system.control.TimeArbiter;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.bukkit.Location;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.ItemDisplay;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
-import btm.sword.Sword;
+import btm.sword.system.action.skill.Skill;
+import btm.sword.system.action.skill.SkillId;
+import btm.sword.system.action.skill.SkillRegistry;
 import btm.sword.system.action.skill.container.SkillSlot;
 import btm.sword.system.action.throwing.ThrowAction;
+import btm.sword.system.control.PredicateRunnablePair;
+import btm.sword.system.control.TimeArbiter;
 import btm.sword.system.entity.impl.Combatant;
 import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.item.AbilityItemBuilder;
 import btm.sword.system.item.SwordItemType;
 import btm.sword.utility.Debug;
-
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Static utility that manages the charge lifecycle for {@link ChargeableAbility} skills.

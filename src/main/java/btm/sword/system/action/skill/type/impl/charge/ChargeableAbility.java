@@ -2,11 +2,11 @@ package btm.sword.system.action.skill.type.impl.charge;
 
 import java.util.Set;
 
-import btm.sword.system.action.skill.type.ActivatableAbility;
 import org.bukkit.entity.ItemDisplay;
 
 import btm.sword.system.action.skill.AbilityType;
 import btm.sword.system.action.skill.AbilityUseType;
+import btm.sword.system.action.skill.type.ActivatableAbility;
 
 /**
  * An ability that charges while the player holds right-click, then fires on release.

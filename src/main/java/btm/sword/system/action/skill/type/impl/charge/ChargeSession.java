@@ -3,10 +3,9 @@ package btm.sword.system.action.skill.type.impl.charge;
 import java.util.HashMap;
 import java.util.Map;
 
-import btm.sword.system.control.TimeArbiter;
-
 import org.bukkit.entity.ItemDisplay;
 
+import btm.sword.system.control.TimeArbiter;
 import lombok.Getter;
 import lombok.Setter;
 

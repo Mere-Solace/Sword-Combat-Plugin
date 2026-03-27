@@ -10,9 +10,6 @@ import java.util.function.Supplier;
 
 import javax.annotation.Nullable;
 
-import btm.sword.system.action.skill.type.impl.charge.ChargeAction;
-import btm.sword.system.action.skill.type.impl.charge.ChargeSession;
-
 import org.bukkit.Color;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
@@ -52,6 +49,8 @@ import btm.sword.system.action.skill.container.SkillSlot;
 import btm.sword.system.action.skill.container.SkillSlotActionFactory;
 import btm.sword.system.action.skill.container.SkillSlotState;
 import btm.sword.system.action.skill.type.ActiveSkill;
+import btm.sword.system.action.skill.type.impl.charge.ChargeAction;
+import btm.sword.system.action.skill.type.impl.charge.ChargeSession;
 import btm.sword.system.action.throwing.ThrowAction;
 import btm.sword.system.action.throwing.types.DroppedItem;
 import btm.sword.system.control.PredicateRunnablePair;
