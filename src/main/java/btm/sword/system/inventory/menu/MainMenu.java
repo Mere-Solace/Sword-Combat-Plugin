@@ -13,6 +13,7 @@ import org.bukkit.inventory.ItemStack;
 import btm.sword.config.Config;
 import btm.sword.gamemode.QueueManager;
 import btm.sword.gamemode.type.CaptureTheFlag1v1;
+import btm.sword.gamemode.type.RoguelikeRun;
 import btm.sword.system.control.SwordScheduler;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.impl.Dummy;
@@ -99,6 +100,14 @@ public class MainMenu extends Menu {
             )
         );
 
+        SimpleItem queueForRoguelike = new SimpleItem(
+            new ItemBuilder(Material.WITHER_SKELETON_SKULL)
+                .setDisplayName("Enter the Roguelike!"),
+            click -> QueueManager.enqueue(
+                RoguelikeRun.class, (SwordPlayer) SwordEntityArbiter.getOrAdd(click.getPlayer())
+            )
+        );
+
         SimpleItem spawnDummy = new SimpleItem(
             new ItemBuilder(Material.ARMOR_STAND)
                 .setDisplayName("Spawn a Training Dummy (max: 3 per player)"),
@@ -162,12 +171,13 @@ public class MainMenu extends Menu {
             .setStructure(
                 "# # # . . . # # #",
                 "# . . . P . . . #",
-                ". . . . D Q . . .",
+                ". . . D Q R . . .",
                 ". . . . . . . . .",
                 "# T . . H . M . #",
                 "# # # < V > # # #")
             .addIngredient('#', BORDER)
             .addIngredient('Q', queueForCTF)
+            .addIngredient('R', queueForRoguelike)
             .addIngredient('H', playerInfo)
             .addIngredient('P', HOW_TO_PLAY_ITEM)
             .addIngredient('D', spawnDummy)

@@ -413,6 +413,20 @@ menu_grid:
   rows: 11
   cols: 11
   loading_wait_ms: 1500
+roguelike:
+
+  spawn_world: "world"
+  spawn_x: 0.0
+  spawn_y: 64.0
+  spawn_z: 0.0
+  spawn_radius: 8.0
+
+  wave_1_pillagers: 3
+  wave_2_wither_skeletons: 3
+  wave_3_pillagers: 2
+  wave_3_wither_skeletons: 3
+
+
 join_sequence:
   opening_x: -186.5
   opening_z: -1058.5
