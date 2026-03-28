@@ -10,7 +10,11 @@ package btm.sword.utility.statemachine;
  */
 public abstract class State<T> {
 
-    /** @return a human-readable name for this state, used in debug logs. */
+    /**
+     * Returns a human-readable name for this state, used in debug logs.
+     *
+     * @return the state's display name
+     */
     public abstract String name();
 
     /**

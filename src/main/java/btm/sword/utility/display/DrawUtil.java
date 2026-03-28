@@ -53,13 +53,15 @@ public class DrawUtil {
     }
 
     /**
-     * @param particles ParticleWrappers to be displayed
-     * @param origin center of circle
-     * @param basis basis to use for orientation of circle
-     * @param outerRadius ~
-     * @param innerRadius ~
-     * @param spacingRadial distance between particles (from the inner to outer radius)
-     * @param spacingArc distance between particles (in radians) around circle
+     * Displays a filled ring of particles in the plane defined by {@code basis}.
+     *
+     * @param particles     the {@link btm.sword.utility.sound.ParticleWrapper} list to spawn
+     * @param origin        the center of the ring
+     * @param basis         orientation basis; the ring lies in the {@code forward}–{@code right} plane
+     * @param outerRadius   outer edge of the ring, in blocks
+     * @param innerRadius   inner edge (hole) of the ring, in blocks
+     * @param spacingRadial distance between particle rows along the radial direction, in blocks
+     * @param spacingArc    angular spacing between particles around the ring, in radians
      */
     public static void circle(List<ParticleWrapper> particles, Location origin, Basis basis, double outerRadius, double innerRadius, double spacingRadial, double spacingArc) {
         Vector up = basis.up();

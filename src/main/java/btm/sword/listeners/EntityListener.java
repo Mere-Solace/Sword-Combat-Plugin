@@ -25,6 +25,16 @@ import btm.sword.system.entity.impl.Hostile;
 import btm.sword.utility.Prefab;
 import net.donnypz.displayentityutils.events.AnimationCompleteEvent;
 
+/**
+ * Listener for entity lifecycle, damage, animation, and pickup events.
+ *
+ * <p>Bridges Bukkit/Paper entity events into the SwordEntity system: new
+ * {@link org.bukkit.entity.LivingEntity} instances are registered with
+ * {@link btm.sword.system.entity.SwordEntityArbiter}, departing entities are cleaned up,
+ * vanilla damage is intercepted and re-routed through the Sword combat pipeline, DEU
+ * animation completion drives death sequencing, and LIGHTNING_ROD item displays are tagged
+ * as weapon-slot anchors for {@link btm.sword.system.entity.display.DisplayRig}.</p>
+ */
 public class EntityListener implements Listener {
     /**
      * Handles the event when any entity is added to the world (including players).
@@ -139,9 +149,6 @@ public class EntityListener implements Listener {
 
     /**
      * Handles item pickup events by entities.
-     * <p>
-     *
-     * </p>
      *
      * @param event the {@link EntityPickupItemEvent} triggered when an entity picks up an item
      */

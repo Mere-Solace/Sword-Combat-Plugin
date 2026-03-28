@@ -39,6 +39,15 @@ import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import lombok.Getter;
 import xyz.xenondevs.invui.InvUI;
 
+/**
+ * Root plugin class for <b>Sword: Combat Evolved</b>.
+ * <p>
+ * Bootstraps all subsystems in {@link #onEnable()} (config, entity arbiter, listeners,
+ * commands, player-data, inventory menus, display rigs, join sequencing) and tears them
+ * down cleanly in {@link #onDisable()}. Exposes a static {@link #getInstance()} accessor
+ * and a thin {@link #print(String)} logging helper used throughout the codebase.
+ * </p>
+ */
 public final class Sword extends JavaPlugin {
     @Getter
     private static Sword instance;

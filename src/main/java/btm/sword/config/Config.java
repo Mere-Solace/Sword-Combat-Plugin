@@ -53,6 +53,8 @@ public class Config {
      *   <li><b>loader</b> - Custom loader for type-specific YAML parsing</li>
      * </ul>
      * </p>
+     *
+     * @param <T> the Java type of the configuration value
      */
     public static final class ConfigEntry<T> {
         public final String path;
@@ -70,6 +72,15 @@ public class Config {
             T load(ConfigurationSection section, String path, T defaultValue);
         }
 
+        /**
+         * Constructs a {@code ConfigEntry} and immediately self-registers it in {@link Config#ENTRIES}.
+         *
+         * @param path         YAML key (dot-separated, e.g. {@code "debug.skip_data_load"})
+         * @param defaultValue value used when the key is absent from config.yaml
+         * @param type         boxed type of the value
+         * @param assign       consumer that writes the loaded value into the owning static field
+         * @param loader       reads the raw value from a {@link ConfigurationSection}
+         */
         public ConfigEntry(String path, T defaultValue, Class<T> type, Consumer<T> assign, Loader<T> loader) {
             this.path = path;
             this.defaultValue = defaultValue;
@@ -276,21 +287,27 @@ public class Config {
      */
     public static class Direction {
         private static final Vector UP = new Vector(0, 1, 0);
+        /** @return a fresh clone of the world-up unit vector {@code (0, 1, 0)}. */
         public static Vector UP() { return UP.clone(); }
 
         private static final Vector DOWN = new Vector(0, -1, 0);
+        /** @return a fresh clone of the world-down unit vector {@code (0, -1, 0)}. */
         public static Vector DOWN() { return DOWN.clone(); }
 
         private static final Vector NORTH = new Vector(0, 0, -1);
+        /** @return a fresh clone of the north unit vector {@code (0, 0, -1)}. */
         public static Vector NORTH() { return NORTH.clone(); }
 
         private static final Vector SOUTH = new Vector(0, 0, 1);
+        /** @return a fresh clone of the south unit vector {@code (0, 0, 1)}. */
         public static Vector SOUTH() { return SOUTH.clone(); }
 
         private static final Vector OUT_UP = new Vector(0, 1, 1);
+        /** @return a fresh clone of the out-and-up diagonal vector {@code (0, 1, 1)}. */
         public static Vector OUT_UP() { return OUT_UP.clone(); }
 
         private static final Vector OUT_DOWN = new Vector(0, -1, 1);
+        /** @return a fresh clone of the out-and-down diagonal vector {@code (0, -1, 1)}. */
         public static Vector OUT_DOWN() { return OUT_DOWN.clone(); }
     }
     //endregion
@@ -298,6 +315,11 @@ public class Config {
     // ==============================================================================
     //region COLOR
     // ==============================================================================
+    /**
+     * All configurable Adventure {@link net.kyori.adventure.text.format.TextColor} and Bukkit
+     * {@link org.bukkit.Color} values used for UI text, particle effects, and glow tints.
+     * Hot-reloaded via {@code /sword reload}.
+     */
     public static class SwordColor {
         public static TextColor TEXT_RESOURCE_COLOR = TextColor.color(222, 222, 222);
         static { register(
@@ -1691,6 +1713,12 @@ public class Config {
     // ==============================================================================
     //region AUDIO - Sound effects and audio feedback
     // ==============================================================================
+    /**
+     * All configurable audio properties: global enable toggle, per-event sound keys,
+     * volumes, and pitches. Values map to {@link btm.sword.utility.sound.SwordSoundType} entries
+     * and are used by {@link btm.sword.utility.sound.SoundWrapper} and
+     * {@link btm.sword.utility.Prefab.Sounds}.
+     */
     public static class Audio {
         // Sounds configuration
         public static boolean SOUNDS_ENABLED = true;
@@ -2870,6 +2898,11 @@ public class Config {
     // ==============================================================================
     //region GRAB
     // ==============================================================================
+    /**
+     * All configurable parameters for the grab action: durations, range, hold physics,
+     * pull speed, and aspect-scaling factors. Used by
+     * {@link btm.sword.system.action.utility.GrabAction}.
+     */
     public static class Grab {
         public static int CAST_DURATION = 750;
         static { register(
@@ -3218,6 +3251,11 @@ public class Config {
     // ==============================================================================
     //region UmbralBlade States
     // ==============================================================================
+    /**
+     * All configurable parameters for the UmbralBlade weapon and its state machine:
+     * lunge timings, throw/recall physics, lodging thresholds, and blade display properties.
+     * Used by {@link btm.sword.system.entity.umbral.UmbralBlade} and its states.
+     */
     public static class UmbralBlade {
         public static double LUNGE_TIME_CUTOFF = 1.1;
         static { register(
@@ -3863,6 +3901,10 @@ public class Config {
     }
     //endregion
 
+    /**
+     * Material icons used for section header buttons throughout the inventory menu system.
+     * Each entry corresponds to one collapsible section in the dev/character menus.
+     */
     public static class Menu {
         /** Material icon for the Umbral section button. */
         public static Material UMBRAL_ICON = Material.HEAVY_CORE;

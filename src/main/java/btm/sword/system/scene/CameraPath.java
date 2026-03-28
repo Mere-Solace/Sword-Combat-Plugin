@@ -19,6 +19,8 @@ import btm.sword.utility.math.ControlVectors;
  * Call {@link #evaluate(double, World)} with {@code t} in {@code [0, 1]} to obtain
  * a {@link Location} on the curve with yaw/pitch oriented along the tangent direction.
  * </p>
+ *
+ * @param control the four world-space control points defining the cubic Bézier trajectory
  */
 public record CameraPath(ControlVectors control) {
 

@@ -21,6 +21,11 @@ import btm.sword.utility.math.Basis;
  *
  * <p>Use the {@link #of} factory for a standard local-space arc. The {@code rangeMultiplier}
  * passed to {@link #resolve} scales the {@code radius}.
+ *
+ * @param radius     distance from the attack origin to the arc path, in blocks
+ * @param startAngle azimuthal start angle in radians ({@code 0} = forward)
+ * @param endAngle   azimuthal end angle in radians
+ * @param height     vertical offset from the origin to the arc plane, in blocks
  */
 public record ArcShape(double radius,
                        double startAngle,
@@ -34,6 +39,7 @@ public record ArcShape(double radius,
      * @param startAngle azimuthal start angle in radians ({@code 0} = forward, positive = toward right)
      * @param endAngle   azimuthal end angle in radians; use {@code startAngle + 2π} for a full circle
      * @param height     vertical offset from the origin to the arc plane, in blocks
+     * @return a new {@code ArcShape} with the given parameters
      */
     public static ArcShape of(double radius, double startAngle, double endAngle, double height) {
         return new ArcShape(radius, startAngle, endAngle, height);
@@ -45,6 +51,7 @@ public record ArcShape(double radius,
      * @param radius     distance from the attack origin to the arc path, in blocks
      * @param startAngle azimuthal start angle in radians
      * @param endAngle   azimuthal end angle in radians
+     * @return a new {@code ArcShape} at height {@code 0.0}
      */
     public static ArcShape of(double radius, double startAngle, double endAngle) {
         return new ArcShape(radius, startAngle, endAngle, 0.0);
