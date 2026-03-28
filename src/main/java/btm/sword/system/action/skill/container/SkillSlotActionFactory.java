@@ -9,6 +9,14 @@ import btm.sword.system.entity.base.CombatProfile;
 import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.input.InputAction;
 
+/**
+ * Factory that builds {@link InputAction} instances for skill slots at runtime.
+ *
+ * <p>Resolves the skill equipped in a given slot from the player's {@link PlayerSkillContainer},
+ * constructs an {@link InputAction} with the skill's cooldown, cast guard, and soulfire cost
+ * wired in, and caches the result on the skill instance to avoid re-building on every input
+ * tree rebuild.</p>
+ */
 public final class SkillSlotActionFactory {
 
     /**

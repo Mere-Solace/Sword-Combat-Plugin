@@ -12,15 +12,31 @@ import btm.sword.system.control.PredicateRunnablePair;
 import btm.sword.system.control.TimeArbiter;
 import btm.sword.system.entity.impl.SwordPlayer;
 
+/**
+ * Abstract base for all Sword game modes.
+ * <p>
+ * Manages a boss-bar countdown timer and delegates lifecycle events ({@link #onStart},
+ * {@link #onTick}, {@link #onStop}) to concrete subclasses. Call {@link #start()} to
+ * begin the match and {@link #stop()} to end it (also called automatically when the timer
+ * expires).
+ * </p>
+ */
 public abstract class Gamemode {
 
+    /** Players participating in this match. */
     protected final List<SwordPlayer> players;
 
+    /** Remaining duration in seconds. Decremented once per second by the internal timer. */
     protected AtomicInteger durationSeconds = new AtomicInteger(180); // default
     private TimeArbiter.TaskHandle timerTask;
 
     private final BossBar bossBar;
 
+    /**
+     * Creates a game mode instance for the given players and initialises the boss bar.
+     *
+     * @param players the players participating in this match
+     */
     public Gamemode(List<SwordPlayer> players) {
         this.players = players;
 
@@ -35,11 +51,13 @@ public abstract class Gamemode {
         }
     }
 
+    /** Starts the match: invokes {@link #onStart()} and begins the countdown timer. */
     public void start() {
         onStart();
         startTimer();
     }
 
+    /** Ends the match: cancels the timer, removes the boss bar, and invokes {@link #onStop()}. */
     public void stop() {
         if (timerTask != null && !timerTask.isCancelled()) {
             timerTask.cancel();

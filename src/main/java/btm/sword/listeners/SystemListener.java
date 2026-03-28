@@ -11,7 +11,22 @@ import com.destroystokyo.paper.event.server.ServerTickEndEvent;
 
 import btm.sword.system.entity.SwordEntityArbiter;
 
+/**
+ * Server-lifecycle Bukkit event listener.
+ * <p>
+ * Handles global cleanup tasks on world unload (removing tracked display entities and
+ * any {@code remove_on_shutdown}-tagged {@link org.bukkit.entity.TextDisplay}s) and
+ * provides hooks for server tick-end and exception events.
+ * </p>
+ */
 public class SystemListener implements Listener {
+
+    /**
+     * Cleans up all tracked display entities and shutdown-tagged {@link TextDisplay}s
+     * when a world is unloaded.
+     *
+     * @param event the world unload event
+     */
     @EventHandler
     public void onWorldUnload(WorldUnloadEvent event) {
         SwordEntityArbiter.removeAllDisplays();

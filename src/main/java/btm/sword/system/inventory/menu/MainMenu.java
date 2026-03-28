@@ -27,6 +27,14 @@ import xyz.xenondevs.invui.item.builder.ItemBuilder;
 import xyz.xenondevs.invui.item.impl.SimpleItem;
 import xyz.xenondevs.invui.window.Window;
 
+/**
+ * The primary player-facing hub menu.
+ * <p>
+ * Displays the how-to-play reference, CTF queue button, dummy spawner, player info, and—for
+ * operators—a Dev Menu shortcut. Navigation to sub-screens (character, combat reference) is
+ * also wired here.
+ * </p>
+ */
 public class MainMenu extends Menu {
     public static final List<Component> HOW_TO_PLAY = List.of(
         Component.text("", Config.SwordColor.TEXT_ITEM_BASE),
@@ -176,7 +184,7 @@ public class MainMenu extends Menu {
             .addIngredient('<', generatePreviousButtonOrDefault())
             .addIngredient('>', generateForwardPreviousButtonOrDefault());
 
-        if (true || player.isOp()) { // TODO: revert later
+        if (player.isOp()) {
             builder.addIngredient('V', new SimpleItem(
                 new ItemStackBuilder(Material.DEBUG_STICK)
                     .name(Component.text("Dev Menu", Config.SwordColor.TEXT_COOL, TextDecoration.BOLD))

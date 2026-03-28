@@ -20,6 +20,6 @@ public class GroundedAffliction extends Affliction {
 
     @Override
     public void end(SwordEntity afflicted) {
-        Prefab.Particles.THROW_TRAIl.display(afflicted.self().getLocation());
+        Prefab.Particles.THROW_TRAIL.display(afflicted.self().getLocation());
     }
 }

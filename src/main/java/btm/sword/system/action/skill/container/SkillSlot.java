@@ -2,6 +2,13 @@ package btm.sword.system.action.skill.container;
 
 import btm.sword.system.action.skill.SkillType;
 
+/**
+ * All equip slots available to a player for their skill loadout.
+ *
+ * <p>Slots are grouped by {@link SkillType}: three {@code UMBRAL} slots (triggered by blade
+ * input combos), two {@code ACTIVE} slots (triggered by hotbar item usage), and four
+ * {@code PASSIVE} slots (one core, three standard).</p>
+ */
 public enum SkillSlot {
 
     UMBRAL_1(SkillType.UMBRAL,   "Umbral I — Swap · L · L"),
@@ -25,6 +32,7 @@ public enum SkillSlot {
         this.title = title;
     }
 
+    /** Returns the {@link SkillType} category this slot belongs to. */
     public SkillType type() {
         return type;
     }
