@@ -20,6 +20,16 @@ public final class ActionCaster {
 
     private ActionCaster() {}
 
+    /**
+     * Executes {@code action} on the next server tick and, if {@code castDurationMillis > 0},
+     * stores the resulting {@link BukkitTask} on {@code executor} to block further actions
+     * for the specified duration (scaled by the global time arbiter).
+     *
+     * @param executor          the combatant performing the cast
+     * @param castDurationMillis how long (in ms) to lock the executor after casting; {@code <= 0}
+     *                          means no lock is applied
+     * @param action            the action payload to run on the next tick
+     */
     public static void cast(Combatant executor, int castDurationMillis, Runnable action) {
         BukkitTask castTask = Bukkit.getScheduler().runTask(plugin, action);
 

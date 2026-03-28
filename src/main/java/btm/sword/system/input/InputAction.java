@@ -227,7 +227,7 @@ public class InputAction {
         return new Builder();
     }
 
-    /** */
+    /** Builder for constructing {@link InputAction} instances with a fluent API. */
     public static class Builder {
         private String name = "Pass-Through";
         private Consumer<Combatant> action;

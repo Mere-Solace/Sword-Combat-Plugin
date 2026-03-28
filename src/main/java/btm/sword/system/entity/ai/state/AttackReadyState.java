@@ -16,6 +16,9 @@ import btm.sword.system.entity.impl.Hostile;
  */
 public class AttackReadyState extends HostileAIFacade {
 
+    /** Creates an {@code AttackReadyState}. */
+    public AttackReadyState() { }
+
     @Override
     public String name() {
         return "ATTACK_READY";

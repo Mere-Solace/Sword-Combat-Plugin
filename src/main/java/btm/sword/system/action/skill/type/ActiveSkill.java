@@ -20,6 +20,9 @@ import net.kyori.adventure.text.Component;
  */
 public abstract class ActiveSkill implements Skill {
 
+    /** Creates an {@code ActiveSkill}. */
+    protected ActiveSkill() { }
+
     /** Cached {@link InputAction} so cooldowns persist across dynamic re-resolves. */
     @Getter @Setter
     private InputAction cachedInputAction;

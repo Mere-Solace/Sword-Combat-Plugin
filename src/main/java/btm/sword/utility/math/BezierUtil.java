@@ -13,6 +13,9 @@ import org.bukkit.util.Vector;
  * </p>
  */
 public class BezierUtil {
+
+    private BezierUtil() { }
+
     /**
      * Constructs a cubic Bézier curve function in 3D space.
      * Returns a function mapping parameter {@code t} (from 0 to 1) to a point on the curve
