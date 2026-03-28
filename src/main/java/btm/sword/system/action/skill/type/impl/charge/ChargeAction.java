@@ -92,9 +92,9 @@ public final class ChargeAction {
                 new PredicateRunnablePair(
                     () -> sp.isDead() || display.isDead() ||
                         sp.getActiveCharge() != session ||
-                        (it.incrementAndGet() > 3 && !sp.player().isBlocking()),
+                        (it.incrementAndGet() > 6 && !sp.player().isBlocking()),
                     () -> {
-                        if (it.get() > 6) releaseCharge(sp);
+                        if (it.get() > 10) releaseCharge(sp);
                         else cancelCharge(sp);
                     }
                 )
