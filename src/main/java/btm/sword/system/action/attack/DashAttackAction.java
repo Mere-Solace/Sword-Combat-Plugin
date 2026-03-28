@@ -12,7 +12,31 @@ import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.entity.umbral.input.BladeRequest;
 import btm.sword.system.entity.umbral.statemachine.state.StandbyState;
 
+/**
+ * Resolves and fires the appropriate attack for a dash-momentum hit.
+ *
+ * <p>Selects between a punch, a directional blade attack (if the umbral blade is in standby
+ * with sufficient soulfire), or a full weapon-style forward/backward dash attack based on
+ * the executor's current equipment and state.</p>
+ */
 public class DashAttackAction extends SwordAction {
+
+    /**
+     * Fires a dash-momentum attack for {@code executor} in the given {@code direction}.
+     *
+     * <p>Resolution order:
+     * <ol>
+     *   <li>Untagged / PUNCH-style items → {@link PunchAction#throwPunch}</li>
+     *   <li>Soul-link held + blade in Standby + enough soulfire → blade quick-attack</li>
+     *   <li>Otherwise → direction-keyed {@link btm.sword.system.attack.style.AttackProfile} from
+     *       the weapon's {@link btm.sword.system.attack.style.WeaponAttackStyle}</li>
+     * </ol>
+     * </p>
+     *
+     * @param executor  the combatant performing the attack
+     * @param direction the dash direction ({@link DashDirection#FORWARD} or
+     *                  {@link DashDirection#BACKWARD})
+     */
     public static void dashAttack(Combatant executor, DashDirection direction) {
         ItemStack itemUsedInAttack = executor.getItemStackInHand(true);
         WeaponAttackStyle weaponAttackStyle = WeaponAttackStyle.fromString(itemUsedInAttack);

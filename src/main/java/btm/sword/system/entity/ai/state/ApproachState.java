@@ -22,6 +22,9 @@ import btm.sword.system.entity.impl.Hostile;
  */
 public class ApproachState extends HostileAIFacade {
 
+    /** Creates an {@code ApproachState}. */
+    public ApproachState() { }
+
     @Override
     public String name() {
         return "APPROACH";

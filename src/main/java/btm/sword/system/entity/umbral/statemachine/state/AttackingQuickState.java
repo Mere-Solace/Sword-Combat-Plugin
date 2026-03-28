@@ -47,6 +47,10 @@ import btm.sword.utility.display.DrawUtil;
  *
  */
 public class AttackingQuickState extends UmbralStateFacade {
+
+    /** Creates an {@code AttackingQuickState}. */
+    public AttackingQuickState() { }
+
     @Override
     public String name() {
         return "ATTACKING_QUICK";

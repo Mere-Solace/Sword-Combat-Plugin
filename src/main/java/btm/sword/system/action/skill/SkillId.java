@@ -9,6 +9,8 @@ import org.jetbrains.annotations.NotNull;
  * <p>Use the {@link #of(String, String)} factory for most cases (namespace = plugin id,
  * value = skill name). {@link #parse(String)} accepts the {@code "namespace:value"} serialised
  * form used in player-data persistence.</p>
+ *
+ * @param key the underlying {@link NamespacedKey} that uniquely identifies the skill
  */
 public record SkillId(NamespacedKey key) {
 

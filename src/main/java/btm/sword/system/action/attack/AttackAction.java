@@ -25,13 +25,19 @@ import btm.sword.utility.misc.ConsumerToConsumePair;
  * knockback, and associated cooldowns.
  */
 public class AttackAction extends SwordAction {
+
+    /** Creates an {@code AttackAction}. */
+    public AttackAction() { }
+
     /**
      * Executes a basic attack for the given {@link Combatant} and {@link AttackType}.
      * <p>
      * Selects the correct attack variant based on the item in hand and whether the
      * executor is grounded or airborne. Aerial attacks reset the executor's combo tree.
      *
-     * @param executor The combatant performing the attack.
+     * @param executor  the combatant performing the attack
+     * @param comboStep the current step in the combo sequence (1-indexed), used to select
+     *                  the appropriate attack profile and alternating punch side
      */
     public static void basicAttack(Combatant executor, int comboStep) {
         ItemStack itemUsedInAttack = executor.getItemStackInHand(true);

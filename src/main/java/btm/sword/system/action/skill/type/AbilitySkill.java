@@ -28,7 +28,11 @@ import btm.sword.system.action.skill.Skill;
  */
 public interface AbilitySkill extends Skill {
 
-    /** @return the ability classification governing activation and consumption behavior */
+    /**
+     * Returns the ability classification governing activation and consumption behavior.
+     *
+     * @return the {@link AbilityType} for this ability
+     */
     AbilityType abilityType();
 
     /**

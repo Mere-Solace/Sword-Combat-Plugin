@@ -26,6 +26,11 @@ import btm.sword.utility.math.Basis;
  * <p>All angles are in radians. {@code startSweepAngle = 0} aligns with the attacker's
  * {@code right} vector in the plane perpendicular to forward.
  * The {@code rangeMultiplier} passed to {@link #resolve} scales the {@code range}.
+ *
+ * @param halfAngle       polar angle from the cone axis to its surface, in radians
+ * @param range           reach from the apex to the rim, in blocks
+ * @param startSweepAngle azimuthal start angle around the forward axis, in radians
+ * @param endSweepAngle   azimuthal end angle around the forward axis, in radians
  */
 public record ConeShape(double halfAngle, double range, double startSweepAngle,
                         double endSweepAngle) implements AttackShape {
@@ -38,6 +43,7 @@ public record ConeShape(double halfAngle, double range, double startSweepAngle,
      * @param startSweepAngle azimuthal start angle around the forward axis, in radians
      * @param endSweepAngle   azimuthal end angle around the forward axis, in radians;
      *                        use {@code startSweepAngle + 2π} for a full revolution
+     * @return a new {@code ConeShape} with the specified geometry
      */
     public static ConeShape of(double halfAngle, double range,
                                double startSweepAngle, double endSweepAngle) {
@@ -53,6 +59,7 @@ public record ConeShape(double halfAngle, double range, double startSweepAngle,
      * @param halfAngle polar angle from the forward axis to the cone surface, in radians
      * @param range     reach of the cone, in blocks
      * @param halfSweep half the total azimuthal sweep, in radians
+     * @return a new {@code ConeShape} sweeping from {@code -halfSweep} to {@code +halfSweep}
      */
     public static ConeShape symmetric(double halfAngle, double range, double halfSweep) {
         return new ConeShape(halfAngle, range, -halfSweep, halfSweep);

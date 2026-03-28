@@ -15,7 +15,11 @@ public record AnimationSlot(String tag, int durationTicks) {
     /** Sentinel for a slot with no animation registered. */
     public static final AnimationSlot NONE = new AnimationSlot("", 0);
 
-    /** Returns {@code true} when this slot has a non-empty animation tag. */
+    /**
+     * Returns {@code true} when this slot has a non-empty animation tag.
+     *
+     * @return {@code true} if {@code tag} is non-null and non-empty
+     */
     public boolean hasTag() {
         return tag != null && !tag.isEmpty();
     }
