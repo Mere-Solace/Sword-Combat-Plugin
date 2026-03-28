@@ -2776,6 +2776,54 @@ public class Config {
             v -> LOGGING_VERBOSE_ANIMATION = v,
             ConfigurationSection::getBoolean); }
 
+        /** Log input combo detection, trie traversal, and action dispatch. */
+        public static boolean LOGGING_VERBOSE_INPUT = false;
+        static { register(
+            "debug.logging_verbose_input",
+            LOGGING_VERBOSE_INPUT, Boolean.class,
+            v -> LOGGING_VERBOSE_INPUT = v,
+            ConfigurationSection::getBoolean); }
+
+        /** Log skill slot resolution, ability cast routing, and {@link btm.sword.system.action.skill.container.PlayerSkillContainer} state. */
+        public static boolean LOGGING_VERBOSE_SKILL = false;
+        static { register(
+            "debug.logging_verbose_skill",
+            LOGGING_VERBOSE_SKILL, Boolean.class,
+            v -> LOGGING_VERBOSE_SKILL = v,
+            ConfigurationSection::getBoolean); }
+
+        /** Log ability execution lifecycle: activation, soulfire cost, cooldown, and charge sessions. */
+        public static boolean LOGGING_VERBOSE_ABILITY = false;
+        static { register(
+            "debug.logging_verbose_ability",
+            LOGGING_VERBOSE_ABILITY, Boolean.class,
+            v -> LOGGING_VERBOSE_ABILITY = v,
+            ConfigurationSection::getBoolean); }
+
+        /** Log grab action lifecycle: cast, hold ticks, release, and target resolution. */
+        public static boolean LOGGING_VERBOSE_GRAB = false;
+        static { register(
+            "debug.logging_verbose_grab",
+            LOGGING_VERBOSE_GRAB, Boolean.class,
+            v -> LOGGING_VERBOSE_GRAB = v,
+            ConfigurationSection::getBoolean); }
+
+        /** Log attack sweeps: Bezier curve steps, hitbox detections, and {@link btm.sword.system.attack.HitValuePacket} dispatch. */
+        public static boolean LOGGING_VERBOSE_ATTACK = false;
+        static { register(
+            "debug.logging_verbose_attack",
+            LOGGING_VERBOSE_ATTACK, Boolean.class,
+            v -> LOGGING_VERBOSE_ATTACK = v,
+            ConfigurationSection::getBoolean); }
+
+        /** Log thrown-item lifecycle: spawn, flight ticks, collision, recall, and arbiter cleanup. */
+        public static boolean LOGGING_VERBOSE_THROWING = false;
+        static { register(
+            "debug.logging_verbose_throwing",
+            LOGGING_VERBOSE_THROWING, Boolean.class,
+            v -> LOGGING_VERBOSE_THROWING = v,
+            ConfigurationSection::getBoolean); }
+
         // Visualization configuration
         public static boolean VISUALIZATION_SHOW_HITBOXES = false;
         static { register(

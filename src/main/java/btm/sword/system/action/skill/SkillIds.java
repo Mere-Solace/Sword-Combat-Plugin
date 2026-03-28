@@ -2,6 +2,12 @@ package btm.sword.system.action.skill;
 
 import java.util.List;
 
+/**
+ * Catalogue of all known {@link SkillId} constants.
+ *
+ * <p>When adding a new skill, define its {@link SkillId} here and include it in
+ * {@link #getAll()} so it is discoverable by the player-skill system and menus.</p>
+ */
 public final class SkillIds {
 
     private SkillIds() {}
@@ -76,6 +82,11 @@ public final class SkillIds {
         TEST_GAMMA
     );
 
+    /**
+     * Returns all registered skill IDs, used to populate fresh player skill containers.
+     *
+     * @return immutable list of all known {@link SkillId}s
+     */
     public static List<SkillId> getAll() {
         return ALL;
     }

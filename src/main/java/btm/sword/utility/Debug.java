@@ -24,14 +24,21 @@ import btm.sword.utility.math.VectorUtil;
  * </p>
  *
  * <ul>
- *   <li>{@link #debug}    – General/fallback debug  ({@code VERBOSE_DEBUG})</li>
- *   <li>{@link #combat}   – Combat events            ({@code VERBOSE_COMBAT})</li>
- *   <li>{@link #movement} – Movement / dash          ({@code VERBOSE_MOVEMENT})</li>
- *   <li>{@link #inventory}– Inventory interactions   ({@code VERBOSE_INVENTORY})</li>
- *   <li>{@link #system}   – State machine, scheduling({@code VERBOSE_SYSTEM})</li>
- *   <li>{@link #umbral}   – UmbralBlade specific     ({@code VERBOSE_UMBRAL})</li>
- *   <li>{@link #hostile}  – Hostile entity behaviour ({@code VERBOSE_HOSTILE})</li>
- *   <li>{@link #listener}– Bukkit/Packet listener events ({@code VERBOSE_LISTENER})</li>
+ *   <li>{@link #debug}    – General/fallback debug        ({@code VERBOSE_DEBUG})</li>
+ *   <li>{@link #combat}   – Combat events                  ({@code VERBOSE_COMBAT})</li>
+ *   <li>{@link #movement} – Movement / dash                ({@code VERBOSE_MOVEMENT})</li>
+ *   <li>{@link #inventory}– Inventory interactions         ({@code VERBOSE_INVENTORY})</li>
+ *   <li>{@link #system}   – State machine, scheduling      ({@code VERBOSE_SYSTEM})</li>
+ *   <li>{@link #umbral}   – UmbralBlade specific           ({@code VERBOSE_UMBRAL})</li>
+ *   <li>{@link #hostile}  – Hostile entity behaviour       ({@code VERBOSE_HOSTILE})</li>
+ *   <li>{@link #listener} – Bukkit/Packet listener events  ({@code VERBOSE_LISTENER})</li>
+ *   <li>{@link #animation}– DEU animation hook             ({@code VERBOSE_ANIMATION})</li>
+ *   <li>{@link #input}    – Input combo trie / dispatch    ({@code VERBOSE_INPUT})</li>
+ *   <li>{@link #skill}    – Skill slot resolution          ({@code VERBOSE_SKILL})</li>
+ *   <li>{@link #ability}  – Ability lifecycle              ({@code VERBOSE_ABILITY})</li>
+ *   <li>{@link #grab}     – Grab action lifecycle          ({@code VERBOSE_GRAB})</li>
+ *   <li>{@link #attack}   – Attack sweeps / hitbox         ({@code VERBOSE_ATTACK})</li>
+ *   <li>{@link #throwing} – Thrown-item lifecycle          ({@code VERBOSE_THROWING})</li>
  * </ul>
  */
 public class Debug {
@@ -95,6 +102,36 @@ public class Debug {
     /** DEU animation hook / weapon-slot display debug. Gated by {@link Config.Debug#LOGGING_VERBOSE_ANIMATION}. */
     public static void animation(String message) {
         emit(Config.Debug.LOGGING_VERBOSE_ANIMATION, "Animation", message);
+    }
+
+    /** Input combo detection and trie traversal debug. Gated by {@link Config.Debug#LOGGING_VERBOSE_INPUT}. */
+    public static void input(String message) {
+        emit(Config.Debug.LOGGING_VERBOSE_INPUT, "Input", message);
+    }
+
+    /** Skill slot resolution and {@link btm.sword.system.action.skill.container.PlayerSkillContainer} debug. Gated by {@link Config.Debug#LOGGING_VERBOSE_SKILL}. */
+    public static void skill(String message) {
+        emit(Config.Debug.LOGGING_VERBOSE_SKILL, "Skill", message);
+    }
+
+    /** Ability activation, soulfire cost, cooldown, and charge session debug. Gated by {@link Config.Debug#LOGGING_VERBOSE_ABILITY}. */
+    public static void ability(String message) {
+        emit(Config.Debug.LOGGING_VERBOSE_ABILITY, "Ability", message);
+    }
+
+    /** Grab action lifecycle debug (cast, hold, release, target). Gated by {@link Config.Debug#LOGGING_VERBOSE_GRAB}. */
+    public static void grab(String message) {
+        emit(Config.Debug.LOGGING_VERBOSE_GRAB, "Grab", message);
+    }
+
+    /** Attack sweep, hitbox detection, and damage dispatch debug. Gated by {@link Config.Debug#LOGGING_VERBOSE_ATTACK}. */
+    public static void attack(String message) {
+        emit(Config.Debug.LOGGING_VERBOSE_ATTACK, "Attack", message);
+    }
+
+    /** Thrown-item lifecycle debug (spawn, flight, collision, recall). Gated by {@link Config.Debug#LOGGING_VERBOSE_THROWING}. */
+    public static void throwing(String message) {
+        emit(Config.Debug.LOGGING_VERBOSE_THROWING, "Throwing", message);
     }
 
     // =========================================================================

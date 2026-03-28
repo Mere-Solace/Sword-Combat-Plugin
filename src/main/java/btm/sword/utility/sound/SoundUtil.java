@@ -6,7 +6,26 @@ import btm.sword.Sword;
 import btm.sword.config.Config;
 import net.kyori.adventure.sound.Sound;
 
+/**
+ * Utility class for playing {@link btm.sword.utility.sound.SwordSoundType}-keyed sounds to entities.
+ * <p>
+ * All playback is gated on {@link btm.sword.config.Config.Audio#SOUNDS_ENABLED}. Exceptions during
+ * sound playback are caught and logged to prevent game-breaking errors from audio failures.
+ * </p>
+ */
 public class SoundUtil {
+
+    private SoundUtil() { }
+
+    /**
+     * Plays the given sound to the target entity at the specified volume and pitch.
+     * No-ops if {@link btm.sword.config.Config.Audio#SOUNDS_ENABLED} is {@code false}.
+     *
+     * @param target the entity to receive the sound
+     * @param type   the sound key to play
+     * @param volume playback volume (1.0 = normal)
+     * @param pitch  playback pitch (1.0 = normal)
+     */
     public static void playSound(LivingEntity target, SwordSoundType type, float volume, float pitch) {
         if (!Config.Audio.SOUNDS_ENABLED) return;
 

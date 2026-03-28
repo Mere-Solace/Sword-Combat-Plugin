@@ -11,6 +11,13 @@ import lombok.Getter;
 import lombok.Setter;
 import net.kyori.adventure.text.Component;
 
+/**
+ * Base class for player-activated skills that occupy {@code ACTIVE} or {@code UMBRAL} slots.
+ *
+ * <p>Concrete subclasses implement {@link #execute}, {@link #calculateCooldown}, and
+ * {@link #canPerform}. The cached {@link InputAction} is stored here so cooldown state
+ * survives input-tree rebuilds without resetting the timer.</p>
+ */
 public abstract class ActiveSkill implements Skill {
 
     /** Cached {@link InputAction} so cooldowns persist across dynamic re-resolves. */
@@ -24,8 +31,28 @@ public abstract class ActiveSkill implements Skill {
             .build();
     }
 
+    /**
+     * Executes this skill for the given combatant. Called when the player's input matches
+     * the registered input sequence and all cast guards pass.
+     *
+     * @param combatant the player performing the skill
+     */
     public abstract void execute(Combatant combatant);
+
+    /**
+     * Returns the cooldown for this skill in milliseconds.
+     *
+     * @param combatant the player performing the skill
+     * @return cooldown duration in milliseconds
+     */
     public abstract int calculateCooldown(Combatant combatant);
+
+    /**
+     * Returns {@code true} if this skill can currently be performed by the given combatant.
+     *
+     * @param combatant the player to check
+     * @return {@code true} if the skill's preconditions are met
+     */
     public abstract boolean canPerform(Combatant combatant);
 
     /**

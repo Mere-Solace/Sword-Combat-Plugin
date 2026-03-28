@@ -31,6 +31,17 @@ import btm.sword.utility.math.VectorUtil;
 import btm.sword.utility.sound.SoundUtil;
 import btm.sword.utility.sound.SwordSoundType;
 
+/**
+ * Executes a directional dash for a {@link Combatant}.
+ * <p>
+ * Resolves which {@link DashType} applies based on ground state, pitch, held items, and
+ * raycasts for nearby interactive items or the UmbralBlade, then launches the appropriate
+ * movement impulse via {@link btm.sword.system.control.TimeArbiter}.
+ * </p>
+ *
+ * <p>Direction is encoded as an integer (e.g. {@code 1} = forward, {@code -1} = backward);
+ * see the input registrar for the mapping.</p>
+ */
 public class Dash {
     private final Combatant executor;
     private final LivingEntity ex;
@@ -50,12 +61,19 @@ public class Dash {
 
     double FLAT_DASH_PITCH_THRESHOLD = Config.Movement.FLAT_DASH_PITCH_THRESHOLD;
 
+    /**
+     * Creates a Dash action for the given combatant and direction.
+     *
+     * @param executor  the entity performing the dash
+     * @param direction dash direction multiplier (positive = forward, negative = backward)
+     */
     public Dash(Combatant executor, int direction) {
         this.executor = executor;
         this.ex = executor.self();
         this.direction = direction;
     }
 
+    /** Classifies the kind of dash to execute based on context (ground state, held item, target). */
     private enum DashType {
         FLAT_TO_UMBRAL_BLADE, // onGround, certain pitch and height diff with blade, holding soul link, and targeted umbral blade
         NORMAL_TO_UMBRAL_BLADE, // some checks don't pass from flat: just straight to blade, no initial upward velocity.
@@ -66,6 +84,10 @@ public class Dash {
         NOTHING // Unset value
     }
 
+    /**
+     * Resolves the dash type and fires the appropriate movement impulse.
+     * Must be called from the main server thread.
+     */
     public void execute() {
         itemRetrieved = false;
         dashType = DashType.NOTHING;

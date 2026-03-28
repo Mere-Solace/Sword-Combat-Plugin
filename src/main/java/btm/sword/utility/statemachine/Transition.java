@@ -79,4 +79,4 @@ public record Transition<T>(
     Class<? extends State<T>> to,
     Predicate<T> condition,
     Consumer<T> onTransition
-) {}
+) { }

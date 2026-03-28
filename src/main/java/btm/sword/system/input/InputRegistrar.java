@@ -518,7 +518,7 @@ public class InputRegistrar {
                         .displayDisabled(true)
                         .resetIfCannotPerform(false)
                         .build(),
-                    SwordPlayer::umbralBladeState),
+                    SwordPlayer::normalNonAbilityState),
                 new InputExecutionTree.ActionContextPair(
                     () -> InputAction.builder()
                         .action(executor -> UmbralBladeAction.basicAttackWithLink(executor, comboStep))
@@ -530,7 +530,7 @@ public class InputRegistrar {
                         .displayDisabled(true)
                         .resetIfCannotPerform(!isLast)
                         .build(),
-                    SwordPlayer::soulLinkState),
+                    SwordPlayer::normalNonAbilityState),
                 new InputExecutionTree.ActionContextPair(
                     () -> InputAction.builder()
                         .action(executor -> AttackAction.basicAttack(executor, comboStep))
@@ -541,7 +541,7 @@ public class InputRegistrar {
                         .displayDisabled(true)
                         .resetIfCannotPerform(false)
                         .build(),
-                    SwordPlayer::normalActState)
+                    SwordPlayer::normalNonAbilityState)
             )))
                 .timeoutTicks(60)
                 .sameItemRequired(true)
@@ -550,7 +550,49 @@ public class InputRegistrar {
                 .visibleIf(ActivationContext.onlyIn(ActivationContext.NORMAL))
                 .build();
         }
+
+        // A NOOP passthrough to make chargeable abilities work smoothly
+        // And the Left click for normal abilities
+        new InputExecutionTree.InputNodeBuilder(root, List.of(
+            InputType.LEFT
+        )).action(new LinkedList<>(List.of(
+                new InputExecutionTree.ActionContextPair(
+                    () -> InputExecutionTree.NOOP.action().get(),
+                    ChargeAction::isHoldingChargeable)
+            )))
+            .timeoutTicks(500)
+            .sameItemRequired(true)
+            .cancellable(true)
+            .display(true)
+            .visibleIf(ActivationContext.onlyIn(ActivationContext.NORMAL))
+            .build();
     }
+
+    // TODO: Maybe we can go back to this architecture, although it is somewhat redundant
+//    /**
+//     * Registers tap and hold variants for an active skill slot.
+//     *
+//     * @param root      the tree root node
+//     * @param owner     the player who owns the tree
+//     * @param slot      the skill slot to bind
+//     * @param slotIndex the hotbar slot index (1 or 2) for context predicate
+//     */
+//    private static void registerActiveSkillSlot(InputExecutionTree.InputNode root,
+//                                                SwordPlayer owner,
+//                                                SkillSlot slot, int slotIndex) {
+//        // Tap variant
+//        new InputExecutionTree.InputNodeBuilder(root, List.of(InputType.LEFT))
+//            .action(new LinkedList<>(List.of(
+//                new InputExecutionTree.ActionContextPair(
+//                    () -> SkillSlotActionFactory.create(owner, slot, false),
+//                    sp -> !sp.notHoldingAbilityItem())
+//            )))
+//            .dynamic(true)
+//            .sameItemRequired(true)
+//            .cancellable(true)
+//            .display(true)
+//            .build();
+//    }
 
     /**
      * Registers a dash and its follow-up dash-attack for the given input key and direction.
@@ -594,12 +636,12 @@ public class InputRegistrar {
                         .displayDisabled(true)
                         .resetIfCannotPerform(true)
                         .build(),
-                    SwordPlayer::normalActState)
+                    SwordPlayer::normalNonAbilityState)
             )))
             .timeoutTicks(3)
             .cancellable(true)
             .display(true)
-            .visibleIf(ActivationContext.onlyIn(ActivationContext.NORMAL))
+            .visibleIf(SwordPlayer::normalNonAbilityState)
             .build();
     }
 }

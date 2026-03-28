@@ -210,7 +210,7 @@ public class VisualProjectile extends SimulatedDisplay {
         teleport();
         rotate();
 
-        Prefab.Particles.THROW_TRAIl.display(prev); // TODO: #119 - Make type of particles dynamic
+        Prefab.Particles.THROW_TRAIL.display(prev); // TODO: #119 - Make type of particles dynamic
         if (blockTrail != null && timeStep.get() % 3 == 0) // TODO: #119 - Make period dynamic
             blockTrail.display(prev);
 
