@@ -474,7 +474,19 @@ public abstract class Combatant extends SwordEntity {
      * @return true if air dash is possible, false otherwise
      */
     public boolean canAirDash() {
-        return canPerformAction() && getAirDashesPerformed() < getCombatProfile().getMaxAirDodges();
+        return canPerformAction() && (isSubmergedInLiquid()
+            || getAirDashesPerformed() < getCombatProfile().getMaxAirDodges());
+    }
+
+    /**
+     * Returns whether this combatant is currently moving through liquid.
+     * Liquid dashes are treated separately from true aerial dashes and should not
+     * consume the in-air dash budget.
+     *
+     * @return {@code true} when the combatant is in water or lava
+     */
+    public boolean isSubmergedInLiquid() {
+        return self().isInWater() || self().isInLava();
     }
 
     /**

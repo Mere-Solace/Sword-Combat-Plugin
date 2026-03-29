@@ -234,7 +234,9 @@ public class Dash {
             // ^^ will always go towards the item targeted, and then jump backwards/forwards depending on input.
         }
 
-        if (!onGround) executor.increaseAirDashesPerformed();
+        if (!onGround && !executor.isSubmergedInLiquid()) {
+            executor.increaseAirDashesPerformed();
+        }
     }
 
     private void plainDash() {
