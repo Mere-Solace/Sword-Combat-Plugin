@@ -212,6 +212,7 @@ public class Hostile extends Combatant {
     @Override
     public void onSpawn() {
         super.onSpawn();
+        joinTeam(btm.sword.system.entity.SwordTeam.RED);
         ((Resource) aspects.getAspect(AspectType.SHARDS)).stopRegenTask(); // prevent regen of shards
         MobGoalArbiter.GOALS.removeAllGoals(mob); // clear all vanilla goals before starting custom AI
         aiStateMachine = new HostileStateMachine(this, new IdleState());

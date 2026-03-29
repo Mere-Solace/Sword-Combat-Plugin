@@ -393,6 +393,7 @@ public class SwordPlayer extends Combatant {
     @Override
     public void onSpawn() {
         super.onSpawn();
+        joinTeam(btm.sword.system.entity.SwordTeam.BLUE);
     }
 
     /**
