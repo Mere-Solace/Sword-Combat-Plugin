@@ -518,7 +518,7 @@ public class InputRegistrar {
                         .displayDisabled(true)
                         .resetIfCannotPerform(false)
                         .build(),
-                    SwordPlayer::normalNonAbilityState),
+                    SwordPlayer::umbralBladeState),
                 new InputExecutionTree.ActionContextPair(
                     () -> InputAction.builder()
                         .action(executor -> UmbralBladeAction.basicAttackWithLink(executor, comboStep))
@@ -530,7 +530,7 @@ public class InputRegistrar {
                         .displayDisabled(true)
                         .resetIfCannotPerform(!isLast)
                         .build(),
-                    SwordPlayer::normalNonAbilityState),
+                    SwordPlayer::soulLinkState),
                 new InputExecutionTree.ActionContextPair(
                     () -> InputAction.builder()
                         .action(executor -> AttackAction.basicAttack(executor, comboStep))

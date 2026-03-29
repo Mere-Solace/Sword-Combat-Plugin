@@ -14,7 +14,7 @@ public class Passive extends SwordEntity {
     @Override
     public void onSpawn() {
         super.onSpawn();
-
+        joinTeam(btm.sword.system.entity.SwordTeam.GREEN);
     }
 
     @Override

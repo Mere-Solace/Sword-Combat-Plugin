@@ -6,6 +6,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import org.bukkit.GameMode;
@@ -26,6 +27,7 @@ import com.destroystokyo.paper.entity.ai.GoalType;
 
 import btm.sword.system.action.throwing.types.DroppedItem;
 import btm.sword.system.action.throwing.types.ThrownItem;
+import btm.sword.system.combat.Affliction;
 import btm.sword.system.control.SwordScheduler;
 import btm.sword.system.entity.ai.HostileStateMachine;
 import btm.sword.system.entity.ai.MobGoalArbiter;
@@ -41,6 +43,7 @@ import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.display.DisplayRig;
 import btm.sword.system.entity.mob.MobTypeDefinition;
 import btm.sword.system.entity.mob.MobTypeRegistry;
+import btm.sword.system.item.SwordItemType;
 import btm.sword.system.item.weapon.WeaponType;
 import btm.sword.utility.Debug;
 import lombok.Getter;
@@ -77,6 +80,12 @@ public class Hostile extends Combatant {
 
     /** Per-ability cooldown counters (ticks remaining). Decremented each tick; removed at 0. */
     private final Map<String, Integer> abilityCooldowns;
+
+    /**
+     * Log of every hit this mob received from a player, accumulated over its lifetime.
+     * Each entry records the attacker, weapon used, and damage split by type.
+     */
+    private final List<DamageEntry> damageLog = new ArrayList<>();
 
     /** {@code true} while this mob is grabbed — suppresses AI movement and attack execution. */
     private boolean incapacitated;
@@ -203,6 +212,7 @@ public class Hostile extends Combatant {
     @Override
     public void onSpawn() {
         super.onSpawn();
+        joinTeam(btm.sword.system.entity.SwordTeam.RED);
         ((Resource) aspects.getAspect(AspectType.SHARDS)).stopRegenTask(); // prevent regen of shards
         MobGoalArbiter.GOALS.removeAllGoals(mob); // clear all vanilla goals before starting custom AI
         aiStateMachine = new HostileStateMachine(this, new IdleState());
@@ -412,4 +422,50 @@ public class Hostile extends Combatant {
     public Location getOrigin() {
         return this.origin.clone();
     }
+
+    /**
+     * Records damage to {@link #damageLog} when the hit actually lands (i.e. not filtered by
+     * the invulnerability window), then delegates to the superclass implementation.
+     *
+     * @param source                   the {@link Combatant} dealing the hit
+     * @param reapedSoulfire           soulfire transferred from this entity to the attacker
+     * @param hitInvulnerableTickDuration invulnerability frames granted after this hit
+     * @param baseNumShards            raw shard (HP) damage
+     * @param baseToughnessDamage      raw toughness damage
+     * @param baseSoulfireReduction    soulfire drained from this entity
+     * @param knockbackVelocity        velocity to apply as knockback
+     * @param afflictions              optional afflictions to apply
+     */
+    @Override
+    public void hit(Combatant source,
+                    float reapedSoulfire,
+                    long hitInvulnerableTickDuration,
+                    int baseNumShards,
+                    float baseToughnessDamage,
+                    float baseSoulfireReduction,
+                    Vector knockbackVelocity,
+                    Affliction... afflictions) {
+        if (!isHit() && source instanceof SwordPlayer sp) {
+            SwordItemType weapon = SwordItemType.fromString(sp.getItemStackInHand(true));
+            damageLog.add(new DamageEntry(sp.player().getUniqueId(), sp.player().getName(), weapon, baseNumShards, baseToughnessDamage));
+        }
+        super.hit(source, reapedSoulfire, hitInvulnerableTickDuration, baseNumShards, baseToughnessDamage, baseSoulfireReduction, knockbackVelocity, afflictions);
+    }
+
+    /**
+     * A single damage event recorded against this mob.
+     *
+     * @param attackerUuid    UUID of the attacking player
+     * @param attackerName    display name of the attacking player at time of hit
+     * @param weapon          the {@link SwordItemType} held by the attacker
+     * @param shardDamage     raw shard (HP) damage dealt
+     * @param toughnessDamage raw toughness damage dealt
+     */
+    public record DamageEntry(
+        UUID attackerUuid,
+        String attackerName,
+        SwordItemType weapon,
+        int shardDamage,
+        float toughnessDamage
+    ) {}
 }

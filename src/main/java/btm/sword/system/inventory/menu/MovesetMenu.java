@@ -153,7 +153,7 @@ public class MovesetMenu extends Menu {
                 ". . . . . . . . .",
                 ". F G H . I . . .",
                 "# . . . . . . . #",
-                "# # # < . > # # #")
+                "< > # . . . # # #")
             .addIngredient('#', BORDER)
             .addIngredient('A', basicAttack)
             .addIngredient('B', grab)

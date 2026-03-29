@@ -1,4 +1,4 @@
-package btm.sword.system.inventory.menu;
+package btm.sword.system.inventory.menu.dev;
 
 import java.util.List;
 
@@ -12,6 +12,7 @@ import org.bukkit.entity.Player;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.impl.SwordPlayer;
+import btm.sword.system.inventory.menu.Menu;
 import btm.sword.system.item.ItemStackBuilder;
 import btm.sword.system.scene.CameraSystem;
 import net.kyori.adventure.text.Component;

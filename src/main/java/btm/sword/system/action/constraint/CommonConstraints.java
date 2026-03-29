@@ -92,4 +92,13 @@ public final class CommonConstraints {
      */
     public static final ActionConstraint NOT_BLOCKING =
         c -> !(c instanceof SwordPlayer sp) || !sp.isBlocking();
+
+    /**
+     * Stub — always passes. Intended to block actions while the player is carrying a CTF flag.
+     *
+     * <p>Full enforcement (no dash, no grab, no block while carrying) is pending a global context
+     * constraint system on {@code Combatant}. Until then, only the speed debuff is active.
+     * See GitHub issue #297 for the refactor tracking this.</p>
+     */
+    public static final ActionConstraint NOT_CARRYING_FLAG = c -> true;
 }

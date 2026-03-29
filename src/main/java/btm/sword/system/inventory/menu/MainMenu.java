@@ -13,11 +13,13 @@ import org.bukkit.inventory.ItemStack;
 import btm.sword.config.Config;
 import btm.sword.gamemode.QueueManager;
 import btm.sword.gamemode.type.CaptureTheFlag1v1;
+import btm.sword.gamemode.type.RoguelikeRun;
 import btm.sword.system.control.SwordScheduler;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.impl.Dummy;
 import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.inventory.InventoryMenuManager;
+import btm.sword.system.inventory.menu.dev.DevMenu;
 import btm.sword.system.item.ItemStackBuilder;
 import btm.sword.system.item.special.NonMovableItem;
 import net.kyori.adventure.text.Component;
@@ -107,6 +109,14 @@ public class MainMenu extends Menu {
             )
         );
 
+        SimpleItem queueForRoguelike = new SimpleItem(
+            new ItemBuilder(Material.WITHER_SKELETON_SKULL)
+                .setDisplayName("Enter the Roguelike!"),
+            click -> QueueManager.enqueue(
+                RoguelikeRun.class, (SwordPlayer) SwordEntityArbiter.getOrAdd(click.getPlayer())
+            )
+        );
+
         SimpleItem spawnDummy = new SimpleItem(
             new ItemBuilder(Material.ARMOR_STAND)
                 .setDisplayName("Spawn a Training Dummy (max: 3 per player)"),
@@ -170,12 +180,13 @@ public class MainMenu extends Menu {
             .setStructure(
                 "# # # . . . # # #",
                 "# . . . P . . . #",
-                ". . . . D Q . . .",
+                ". . . D Q R S . .",
                 ". . . . . . . . .",
                 "# T . . H . M . #",
-                "# # # < V > # # #")
+                "< > # . V . # # #")
             .addIngredient('#', BORDER)
             .addIngredient('Q', queueForCTF)
+            .addIngredient('R', queueForRoguelike)
             .addIngredient('H', playerInfo)
             .addIngredient('P', HOW_TO_PLAY_ITEM)
             .addIngredient('D', spawnDummy)
@@ -190,6 +201,31 @@ public class MainMenu extends Menu {
                     .name(Component.text("Dev Menu", Config.SwordColor.TEXT_COOL, TextDecoration.BOLD))
                     .build(),
                 click -> InventoryMenuManager.openMenu(DevMenu.class, swordPlayer)
+            ));
+
+            builder.addIngredient('S', new SimpleItem(
+                new ItemStackBuilder(Material.RED_CONCRETE)
+                    .name(Component.text("Stop Roguelike [DEV]", Config.SwordColor.TEXT_COOL, TextDecoration.BOLD))
+                    .lore(List.of(
+                        Component.text("Force-stops the active roguelike run.", Config.SwordColor.TEXT_ITEM_BASE),
+                        Component.text("Despawns wave enemies and clears all players.", Config.SwordColor.TEXT_ITEM_BASE)
+                    ))
+                    .build(),
+                click -> {
+                    List<RoguelikeRun> runs = QueueManager.getActiveRoguelikeRuns();
+                    if (runs.isEmpty()) {
+                        SwordPlayer clicker = (SwordPlayer) SwordEntityArbiter.getOrAdd(click.getPlayer());
+                        if (clicker != null) {
+                            clicker.message("No active roguelike run found.");
+                        }
+                        return;
+                    }
+                    List.copyOf(runs).forEach(RoguelikeRun::stop);
+                    SwordPlayer clicker = (SwordPlayer) SwordEntityArbiter.getOrAdd(click.getPlayer());
+                    if (clicker != null) {
+                        clicker.message("Roguelike stopped.");
+                    }
+                }
             ));
         }
 

@@ -1,4 +1,4 @@
-package btm.sword.system.inventory.menu;
+package btm.sword.system.inventory.menu.dev;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -10,6 +10,7 @@ import btm.sword.system.action.skill.SkillRegistry;
 import btm.sword.system.action.skill.container.PlayerSkillContainer;
 import btm.sword.system.action.skill.container.SkillSlot;
 import btm.sword.system.entity.impl.SwordPlayer;
+import btm.sword.system.inventory.menu.Menu;
 import btm.sword.system.item.ItemStackBuilder;
 import btm.sword.system.item.special.AbilitySlotManager;
 import net.kyori.adventure.text.Component;

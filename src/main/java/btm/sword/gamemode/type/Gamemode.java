@@ -80,7 +80,7 @@ public abstract class Gamemode {
             },
             () -> {},
             0,
-            20,
+            1000,
             Gamemode.class, "startTimer",
             new PredicateRunnablePair(
                 () -> durationSeconds.get() <= 0,
