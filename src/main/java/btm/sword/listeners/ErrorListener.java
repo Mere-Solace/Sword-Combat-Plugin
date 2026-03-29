@@ -42,9 +42,13 @@ public class ErrorListener implements Listener {
     // Static utilities
 
     /**
-     * Attempts to remove an entity immediately.  If Paper's chunk-system guard prevents
-     * the removal (entity is mid-section-status-update), the call is deferred one tick
-     * and a warning is logged.
+     * Removes an entity, always deferring to the following tick.
+     *
+     * <p>Paper's chunk system silently drops {@code entity.remove()} calls made while
+     * section-status updates are processing (e.g. inside {@code EntityRemoveFromWorldEvent}).
+     * It does not throw — it just logs a warning and returns, leaving the entity alive.
+     * Deferring by one tick guarantees the chunk lock has been released before the
+     * removal executes.</p>
      *
      * <p>Safe to call with {@code null} or already-dead entities — both are no-ops.</p>
      *
@@ -52,14 +56,6 @@ public class ErrorListener implements Listener {
      */
     public static void safeRemove(Entity entity) {
         if (entity == null || !entity.isValid()) return;
-        try {
-            entity.remove();
-        } catch (Exception e) {
-            Sword.getInstance().getLogger().warning(
-                "[ErrorListener] Could not remove " + entity.getType()
-                    + " (uuid=" + entity.getUniqueId() + ") immediately — deferring 1 tick. Reason: " + e.getMessage()
-            );
-            SwordScheduler.runBukkitTaskLater(entity::remove, SwordTimeUnit.MILLISECONDS_PER_TICK, TimeUnit.MILLISECONDS);
-        }
+        SwordScheduler.runBukkitTaskLater(entity::remove, SwordTimeUnit.MILLISECONDS_PER_TICK, TimeUnit.MILLISECONDS);
     }
 }

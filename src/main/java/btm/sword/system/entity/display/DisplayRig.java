@@ -1,6 +1,7 @@
 package btm.sword.system.entity.display;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import org.bukkit.Material;
 import org.bukkit.entity.Display;
@@ -13,8 +14,10 @@ import org.joml.Vector3f;
 
 import btm.sword.Sword;
 import btm.sword.config.Config;
+import btm.sword.system.control.SwordScheduler;
 import btm.sword.system.control.TimeArbiter;
 import btm.sword.system.entity.mob.AnimationSlots;
+import btm.sword.utility.SwordTimeUnit;
 import net.donnypz.displayentityutils.events.GroupSpawnedEvent;
 import net.donnypz.displayentityutils.managers.DisplayGroupManager;
 import net.donnypz.displayentityutils.managers.LoadMethod;
@@ -307,18 +310,24 @@ public class DisplayRig {
     /**
      * Removes the spawned group from the world and unregisters the state machine.
      * Must be called when the mob dies or is removed.
+     *
+     * <p>State-machine and packet-hook teardown happens synchronously so no further
+     * animation or weapon-override packets are sent.  The actual entity removal
+     * ({@code group.unregister}) is deferred one tick because this method is often
+     * invoked during {@code EntityRemoveFromWorldEvent}, at which point Paper's chunk
+     * system may have the section locked and will silently drop any {@code entity.remove()}
+     * calls made on the same tick.</p>
      */
     public void despawn() {
         DEUAnimationHook.untrack(group);
         clearWeaponDisplay();
         stateMachine.removeGroup(group);
-        try {
-            group.unregister(true, true);
-        } catch (Exception e) {
-            Sword.getInstance().getLogger().warning(
-                "[DisplayRig] Exception while unregistering display group — entities may not have been removed cleanly: " + e.getMessage()
-            );
-        }
+        SpawnedDisplayEntityGroup groupRef = this.group;
+        SwordScheduler.runBukkitTaskLater(
+            () -> groupRef.unregister(true, true),
+            SwordTimeUnit.MILLISECONDS_PER_TICK,
+            TimeUnit.MILLISECONDS
+        );
     }
 
     // -----------------------------------------------------------------------
