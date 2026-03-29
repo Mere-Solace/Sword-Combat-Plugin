@@ -42,6 +42,7 @@ import btm.sword.system.control.PredicateRunnablePair;
 import btm.sword.system.control.SwordScheduler;
 import btm.sword.system.control.TimeArbiter;
 import btm.sword.system.entity.SwordEntityArbiter;
+import btm.sword.system.entity.SwordTeam;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.impl.Combatant;
 import btm.sword.system.entity.impl.SwordPlayer;
@@ -544,6 +545,11 @@ public abstract class SwordEntity {
                     float baseSoulfireReduction,
                     Vector knockbackVelocity,
                     Affliction... afflictions) {
+        SwordTeam attackerTeam = SwordTeam.fromEntity(source.self());
+        if (attackerTeam != null && attackerTeam == SwordTeam.fromEntity(self)) {
+            return;
+        }
+
         if (hit)
             return;
         else
@@ -678,6 +684,29 @@ public abstract class SwordEntity {
      */
     public void displayShardLoss() {
         // TODO: later
+    }
+
+    /**
+     * Assigns this entity to the given {@link SwordTeam} by updating its Bukkit scoreboard tags.
+     * Any previously held sword team tag is removed first.
+     *
+     * @param team the team to join
+     */
+    public void joinTeam(SwordTeam team) {
+        for (SwordTeam existing : SwordTeam.values()) {
+            self.removeScoreboardTag(existing.tag());
+        }
+        self.addScoreboardTag(team.tag());
+    }
+
+    /**
+     * Returns this entity's current {@link SwordTeam} by reading its Bukkit scoreboard tags,
+     * or {@code null} if no sword team tag is present.
+     *
+     * @return the team, or {@code null}
+     */
+    public SwordTeam getTeam() {
+        return SwordTeam.fromEntity(self);
     }
 
     /**

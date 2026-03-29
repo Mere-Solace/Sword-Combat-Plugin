@@ -1,79 +1,215 @@
 package btm.sword.gamemode.type;
 
+import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
-import org.bukkit.entity.Player;
+import org.bukkit.Location;
 
+import btm.sword.config.Config;
+import btm.sword.gamemode.ctf.CtfTeam;
+import btm.sword.gamemode.ctf.FlagEntity;
+import btm.sword.system.control.SwordScheduler;
 import btm.sword.system.entity.impl.SwordPlayer;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
+import net.kyori.adventure.title.Title;
 
 /**
- * A 1v1 Capture-the-Flag game mode.
- * <p>
- * Two players are teleported to opposing spawn offsets at match start. The player with the
- * higher {@link #captureFlag} count when the 3-minute timer expires wins. Flag captures must
- * be driven externally by calling {@link #captureFlag(SwordPlayer)}.
- * </p>
+ * A 1v1 Capture the Flag game mode.
  *
- * <p>Title display integration is pending — see inline TODOs.</p>
+ * <h3>Rules</h3>
+ * <ul>
+ *   <li>Each team has a flag at their base. Carry the enemy flag back to your base to score.</li>
+ *   <li>First team to {@link Config.Ctf#CAPTURES_TO_WIN} captures wins. If {@code CAPTURES_TO_WIN}
+ *       is 0, the match runs for its full duration and the team with more captures at expiry wins.</li>
+ *   <li>On death: the flag is dropped at the death location and a
+ *       {@link Config.Ctf#RESPAWN_DELAY_SECONDS}-second respawn timer fires before the player
+ *       is returned to their team spawn.</li>
+ * </ul>
+ *
+ * <h3>Capture detection</h3>
+ * <p>Checked each tick: a carrier of the <em>enemy</em> flag standing within
+ * {@link Config.Ctf#CAPTURE_RADIUS} blocks of their <em>own</em> team's spawn location scores.</p>
+ *
+ * <h3>Solo / debug mode</h3>
+ * <p>Supports a single player (RED team only) for testing flag mechanics without a second player.</p>
  */
 public class CaptureTheFlag1v1 extends Gamemode {
 
-    private int p1Score = 0;
-    private int p2Score = 0;
+    private final Map<UUID, CtfTeam> playerTeams = new HashMap<>();
+    private final Map<CtfTeam, Integer> scores = new HashMap<>();
+    private final FlagEntity redFlag = new FlagEntity(CtfTeam.RED);
+    private final FlagEntity blueFlag = new FlagEntity(CtfTeam.BLUE);
+
+    private static final int MATCH_DURATION_SECONDS = 180;
 
     /**
-     * Creates a new 1v1 CTF match for the two given players with a 3-minute timer.
+     * Creates a new CTF match. Accepts 1 or 2 players.
+     * With 1 player they are assigned to RED; BLUE has no player (solo/debug mode).
      *
-     * @param players exactly two players participating in the match
+     * @param players 1 or 2 players participating in the match
      */
     public CaptureTheFlag1v1(List<SwordPlayer> players) {
         super(players);
-        this.durationSeconds = new AtomicInteger(180); // 3 minutes
+        this.durationSeconds = new java.util.concurrent.atomic.AtomicInteger(MATCH_DURATION_SECONDS);
+        scores.put(CtfTeam.RED, 0);
+        scores.put(CtfTeam.BLUE, 0);
+
+        playerTeams.put(players.get(0).player().getUniqueId(), CtfTeam.RED);
+        if (players.size() >= 2) {
+            playerTeams.put(players.get(1).player().getUniqueId(), CtfTeam.BLUE);
+        }
     }
 
     @Override
     protected void onStart() {
-        SwordPlayer sp1 = players.getFirst();
-        Player p1 = sp1.player();
-        SwordPlayer sp2 = players.getLast();
-        Player p2 = sp2.player();
+        for (SwordPlayer sp : players) {
+            CtfTeam team = getTeam(sp);
+            sp.player().teleport(team.getSpawnLocation());
+            sp.message(Component.text("Match started! Carry the enemy flag to your base.",
+                NamedTextColor.YELLOW));
+        }
 
-        p1.teleport(p1.getWorld().getSpawnLocation().add(10, 0, 0));
-        p2.teleport(p2.getWorld().getSpawnLocation().add(-10, 0, 0));
+        redFlag.spawnIdle();
+        blueFlag.spawnIdle();
     }
 
     @Override
     protected void onStop() {
-        SwordPlayer sp1 = players.getFirst();
-        Player p1 = sp1.player();
-        SwordPlayer sp2 = players.getLast();
-        Player p2 = sp2.player();
+        redFlag.cleanup();
+        blueFlag.cleanup();
 
-        String result;
-        if (p1Score > p2Score) result = p1.getName() + " wins!";
-        else if (p2Score > p1Score) result = p2.getName() + " wins!";
-        else result = "Tie!";
-        // TODO: display result title to both players
+        int redScore = scores.get(CtfTeam.RED);
+        int blueScore = scores.get(CtfTeam.BLUE);
+
+        CtfTeam winner;
+        if (redScore > blueScore) winner = CtfTeam.RED;
+        else if (blueScore > redScore) winner = CtfTeam.BLUE;
+        else winner = null;
+
+        String resultText = winner != null
+            ? winner.name() + " WINS! (" + scores.get(winner) + " captures)"
+            : "DRAW! (" + redScore + " - " + blueScore + ")";
+
+        NamedTextColor resultColor = winner != null ? winner.getTextColor() : NamedTextColor.YELLOW;
+
+        for (SwordPlayer sp : players) {
+            sp.player().showTitle(Title.title(
+                Component.text(resultText, resultColor, TextDecoration.BOLD),
+                Component.text("Match over", NamedTextColor.GRAY)
+            ));
+        }
     }
 
     @Override
     protected void onTick(int secondsLeft) {
-        // Optional: update scoreboard, etc.
+        checkFlagPickups();
+        checkCaptures();
+    }
+
+    @Override
+    protected int getMaxDuration() {
+        return MATCH_DURATION_SECONDS;
     }
 
     @Override
     protected String getTitle() {
-        return "Capture The Flag 1v1";
+        if (scores == null) return "Capture The Flag 1v1";
+        int r = scores.get(CtfTeam.RED);
+        int b = scores.get(CtfTeam.BLUE);
+        return "CTF \u2665 RED " + r + " - " + b + " BLUE";
     }
 
     /**
-     * Records a flag capture for the given player, incrementing their score.
+     * Called by {@link btm.sword.gamemode.QueueManager} (via {@link btm.sword.listeners.PlayerListener})
+     * when a participant dies during the match.
+     * <p>
+     * Drops the flag if the dead player was carrying one, then schedules a delayed respawn
+     * at their team spawn.
+     * </p>
      *
-     * @param p the player who captured the flag
+     * @param dead the player who died
      */
-    public void captureFlag(SwordPlayer p) {
-        if (p.equals(players.getFirst())) p1Score++;
-        else p2Score++;
+    public void onPlayerDeath(SwordPlayer dead) {
+        Location deathLoc = dead.player().getLocation();
+
+        if (redFlag.isCarriedBy(dead)) redFlag.drop(deathLoc);
+        if (blueFlag.isCarriedBy(dead)) blueFlag.drop(deathLoc);
+
+        int delaySeconds = Config.Ctf.RESPAWN_DELAY_SECONDS;
+        SwordScheduler.runBukkitTaskLater(() -> {
+            dead.player().spigot().respawn();
+            SwordScheduler.runBukkitTask(() -> {
+                CtfTeam team = getTeam(dead);
+                dead.player().teleport(team.getSpawnLocation());
+                dead.message(Component.text("Respawned at " + team.name() + " base.", team.getTextColor()));
+            });
+        }, delaySeconds, TimeUnit.SECONDS);
+    }
+
+    /**
+     * Returns the {@link CtfTeam} assigned to the given player. Defaults to RED for unknown players.
+     *
+     * @param player the player to look up
+     * @return the player's team
+     */
+    public CtfTeam getTeam(SwordPlayer player) {
+        return playerTeams.getOrDefault(player.player().getUniqueId(), CtfTeam.RED);
+    }
+
+    // --- private tick logic ---
+
+    private void checkFlagPickups() {
+        for (SwordPlayer sp : players) {
+            CtfTeam team = getTeam(sp);
+            FlagEntity enemyFlag = getFlagFor(team.enemy());
+
+            if (enemyFlag.getState() == FlagEntity.State.IDLE
+                    && sp.player().getLocation().distance(team.enemy().getSpawnLocation())
+                        <= Config.Ctf.CAPTURE_RADIUS) {
+                enemyFlag.pickup(sp);
+            }
+        }
+    }
+
+    private void checkCaptures() {
+        for (SwordPlayer sp : players) {
+            CtfTeam team = getTeam(sp);
+            FlagEntity enemyFlag = getFlagFor(team.enemy());
+
+            if (enemyFlag.isCarriedBy(sp)) {
+                Location ownBase = team.getSpawnLocation();
+                if (sp.player().getLocation().distance(ownBase) <= Config.Ctf.CAPTURE_RADIUS) {
+                    score(team, sp, enemyFlag);
+                }
+            }
+        }
+    }
+
+    private void score(CtfTeam team, SwordPlayer scorer, FlagEntity capturedFlag) {
+        scores.merge(team, 1, Integer::sum);
+        int newScore = scores.get(team);
+
+        capturedFlag.returnToBase();
+
+        Component captureMsg = Component.text(scorer.player().getName() + " captured the flag! ", team.getTextColor())
+            .append(Component.text("(" + team.name() + ": " + newScore + ")", NamedTextColor.YELLOW));
+
+        for (SwordPlayer sp : players) {
+            sp.message(captureMsg);
+        }
+
+        int threshold = Config.Ctf.CAPTURES_TO_WIN;
+        if (threshold > 0 && newScore >= threshold) {
+            stop();
+        }
+    }
+
+    private FlagEntity getFlagFor(CtfTeam team) {
+        return team == CtfTeam.RED ? redFlag : blueFlag;
     }
 }

@@ -1,4 +1,4 @@
-package btm.sword.system.inventory.menu;
+package btm.sword.system.inventory.menu.dev;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,6 +12,7 @@ import org.bukkit.inventory.ItemStack;
 import btm.sword.system.entity.display.WeaponDisplayRegistry;
 import btm.sword.system.entity.display.WeaponDisplayTransform;
 import btm.sword.system.entity.impl.SwordPlayer;
+import btm.sword.system.inventory.menu.Menu;
 import btm.sword.system.item.ItemStackBuilder;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;

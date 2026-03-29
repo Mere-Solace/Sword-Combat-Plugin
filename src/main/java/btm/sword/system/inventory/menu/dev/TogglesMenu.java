@@ -1,4 +1,4 @@
-package btm.sword.system.inventory.menu;
+package btm.sword.system.inventory.menu.dev;
 
 import java.util.List;
 
@@ -8,6 +8,7 @@ import org.bukkit.entity.Player;
 import btm.sword.config.Config;
 import btm.sword.config.ConfigManager;
 import btm.sword.system.entity.impl.SwordPlayer;
+import btm.sword.system.inventory.menu.Menu;
 import btm.sword.system.item.ItemStackBuilder;
 import btm.sword.system.playerdata.PlayerData;
 import btm.sword.system.playerdata.PlayerDataManager;

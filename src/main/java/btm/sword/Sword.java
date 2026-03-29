@@ -13,6 +13,7 @@ import com.comphenix.protocol.ProtocolManager;
 import btm.sword.commands.SwordCommands;
 import btm.sword.config.ConfigManager;
 import btm.sword.listeners.EntityListener;
+import btm.sword.listeners.ErrorListener;
 import btm.sword.listeners.InputListener;
 import btm.sword.listeners.PlayerListener;
 import btm.sword.listeners.SystemListener;
@@ -68,6 +69,7 @@ public final class Sword extends JavaPlugin {
 
         InvUI.getInstance().setPlugin(this);
 
+        getServer().getPluginManager().registerEvents(new ErrorListener(), this);
         getServer().getPluginManager().registerEvents(new InputListener(), this);
         getServer().getPluginManager().registerEvents(new PlayerListener(), this);
         getServer().getPluginManager().registerEvents(new ServerJoinArbiter(), this);

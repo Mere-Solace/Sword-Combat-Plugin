@@ -8,22 +8,23 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
 import btm.sword.system.entity.impl.SwordPlayer;
-import btm.sword.system.inventory.menu.AnimationBrowserMenu;
 import btm.sword.system.inventory.menu.ArtifactPouchMenu;
 import btm.sword.system.inventory.menu.CharacterMenu;
-import btm.sword.system.inventory.menu.ConfigMenu;
-import btm.sword.system.inventory.menu.CreativeInventoryMenu;
 import btm.sword.system.inventory.menu.CurrencyMenu;
-import btm.sword.system.inventory.menu.DEUBDEMenu;
-import btm.sword.system.inventory.menu.DeuGroupBrowserMenu;
-import btm.sword.system.inventory.menu.DevMenu;
 import btm.sword.system.inventory.menu.DevStatEditorMenu;
 import btm.sword.system.inventory.menu.ItemLibraryMenu;
 import btm.sword.system.inventory.menu.MainMenu;
 import btm.sword.system.inventory.menu.MaterialPouchMenu;
 import btm.sword.system.inventory.menu.Menu;
 import btm.sword.system.inventory.menu.MovesetMenu;
-import btm.sword.system.inventory.menu.WeaponDisplayEditorMenu;
+import btm.sword.system.inventory.menu.dev.AnimationBrowserMenu;
+import btm.sword.system.inventory.menu.dev.ConfigMenu;
+import btm.sword.system.inventory.menu.dev.CreativeInventoryMenu;
+import btm.sword.system.inventory.menu.dev.DEUBDEMenu;
+import btm.sword.system.inventory.menu.dev.DeuGroupBrowserMenu;
+import btm.sword.system.inventory.menu.dev.DevMenu;
+import btm.sword.system.inventory.menu.dev.TestingMenu;
+import btm.sword.system.inventory.menu.dev.WeaponDisplayEditorMenu;
 
 public class InventoryMenuManager {
     private static final Map<Class<? extends Menu>, Function<SwordPlayer, ? extends Menu>> MENU_REGISTRY = new ConcurrentHashMap<>();
@@ -48,6 +49,7 @@ public class InventoryMenuManager {
         register(ArtifactPouchMenu.class, ArtifactPouchMenu::new);
         register(ItemLibraryMenu.class, ItemLibraryMenu::new);
         register(WeaponDisplayEditorMenu.class, WeaponDisplayEditorMenu::new);
+        register(TestingMenu.class, TestingMenu::new);
         // SkillSelectionMenu is constructed with a slot index and is opened directly
     }
 
