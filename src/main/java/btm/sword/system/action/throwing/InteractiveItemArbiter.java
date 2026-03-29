@@ -2,6 +2,8 @@ package btm.sword.system.action.throwing;
 
 import java.util.HashMap;
 
+import btm.sword.system.action.skill.SkillId;
+
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.block.Block;
@@ -77,9 +79,9 @@ public final class InteractiveItemArbiter {
         return stack != null && !stack.isEmpty() && KeyRegistry.hasKey(stack, KeyRegistry.ABILITY_ID_KEY);
     }
 
-    public static boolean isImpaling(SwordEntity self, ItemDisplay targeted) {
+    public static boolean notImpaled(SwordEntity self, ItemDisplay targeted) {
         InteractiveItem thrown = INTERACTIVE_ITEMS.getOrDefault(targeted, null);
-        return thrown instanceof ThrownItem ti && ti.getHitEntity() != null && ti.getHitEntity().equals(self);
+        return !(thrown instanceof ThrownItem ti) || ti.getHitEntity() == null || !ti.getHitEntity().equals(self);
     }
 
     /**
@@ -144,10 +146,10 @@ public final class InteractiveItemArbiter {
                 new ParticleWrapper(() -> Particle.BLOCK, () -> 50, () -> 0.25, () -> 0.25, () -> 0.25)
                         .withBlockData(() -> item.getType().createBlockData()).display(displayLoc);
             }
-            Block b = displayLoc.clone().add(new Vector(0,-0.5,0)).getBlock();
+            Block b = displayLoc.clone().add(new Vector(0, -0.5, 0)).getBlock();
             if (!b.getType().isAir()) {
                 new ParticleWrapper(() -> Particle.BLOCK, () -> 30, () -> 0.5, () -> 0.5, () -> 0.5)
-                        .withBlockData(() -> b.getBlockData()).display(displayLoc);
+                        .withBlockData(b::getBlockData).display(displayLoc);
             }
             Prefab.Particles.GRAB_CLOUD.display(display.getLocation());
             interactiveItem.dispose();

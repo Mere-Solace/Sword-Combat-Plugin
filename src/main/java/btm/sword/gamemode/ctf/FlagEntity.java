@@ -2,6 +2,8 @@ package btm.sword.gamemode.ctf;
 
 import java.util.concurrent.TimeUnit;
 
+import lombok.Getter;
+
 import org.bukkit.Location;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.EntityType;
@@ -43,10 +45,26 @@ public class FlagEntity {
         DROPPED
     }
 
+    /**
+     * -- GETTER --
+     *  Returns the team that owns this flag.
+     */
+    @Getter
     private final CtfTeam team;
+    /**
+     * -- GETTER --
+     *  Returns the current state of this flag.
+     */
+    @Getter
     private State state = State.IDLE;
 
     private ArmorStand flagStand;
+    /**
+     * -- GETTER --
+     *  Returns the player currently carrying this flag, or
+     *  if no player is carrying the flag, null
+     */
+    @Getter
     private SwordPlayer carrier;
     private ItemStack carrierPrevHelmet;
     private Item droppedItem;
@@ -60,33 +78,6 @@ public class FlagEntity {
      */
     public FlagEntity(CtfTeam team) {
         this.team = team;
-    }
-
-    /**
-     * Returns the team that owns this flag.
-     *
-     * @return owning {@link CtfTeam}
-     */
-    public CtfTeam getTeam() {
-        return team;
-    }
-
-    /**
-     * Returns the current state of this flag.
-     *
-     * @return current {@link State}
-     */
-    public State getState() {
-        return state;
-    }
-
-    /**
-     * Returns the player currently carrying this flag, or {@code null} if not {@link State#CARRIED}.
-     *
-     * @return the carrier {@link SwordPlayer}, or {@code null}
-     */
-    public SwordPlayer getCarrier() {
-        return carrier;
     }
 
     /**
@@ -220,6 +211,7 @@ public class FlagEntity {
     }
 
     private void spawnDroppedItem(Location loc) {
+        //TODO: Use the actual dropped item logic that spawns an item display
         droppedItem = loc.getWorld().dropItem(loc, team.createFlagItem());
         droppedItem.setPickupDelay(Integer.MAX_VALUE); // prevent natural pickup
         droppedItem.setGravity(true);

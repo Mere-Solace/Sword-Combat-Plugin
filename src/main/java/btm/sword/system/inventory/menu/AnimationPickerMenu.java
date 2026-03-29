@@ -59,7 +59,7 @@ public class AnimationPickerMenu extends Menu {
     @Override
     public void open() {
         Player player = swordPlayer.player();
-        String currentKey = ConfigManager.getInstance().getConfig().getString(entry.path, (String) entry.defaultValue);
+        String currentKey = ConfigManager.getInstance().getConfig().getString(entry.path(), entry.defaultValue());
 
         AnimationRegistry.syncFromLocalStorage();
 

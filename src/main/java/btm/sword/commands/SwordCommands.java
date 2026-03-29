@@ -301,7 +301,7 @@ public final class SwordCommands {
         CommandSender sender = source.getSender();
         @SuppressWarnings("unchecked")
         Config.ConfigEntry<Boolean> entry = (Config.ConfigEntry<Boolean>) Config.ENTRIES.stream()
-            .filter(e -> e.path.equals("debug.skip_data_load"))
+            .filter(e -> e.path().equals("debug.skip_data_load"))
             .findFirst()
             .orElseThrow();
         boolean newValue = !Config.Debug.SKIP_DATA_LOAD;
@@ -326,7 +326,7 @@ public final class SwordCommands {
         CommandSender sender = source.getSender();
         @SuppressWarnings("unchecked")
         Config.ConfigEntry<Boolean> entry = (Config.ConfigEntry<Boolean>) Config.ENTRIES.stream()
-            .filter(e -> e.path.equals("debug.skip_data_save"))
+            .filter(e -> e.path().equals("debug.skip_data_save"))
             .findFirst()
             .orElseThrow();
         boolean newValue = !Config.Debug.SKIP_DATA_SAVE;

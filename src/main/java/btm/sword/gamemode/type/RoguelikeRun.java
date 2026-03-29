@@ -3,7 +3,10 @@ package btm.sword.gamemode.type;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import btm.sword.system.control.SwordScheduler;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -139,14 +142,24 @@ public class RoguelikeRun extends Gamemode {
         TextDisplay display = (TextDisplay) chestLoc.getWorld().spawnEntity(chestLoc, EntityType.TEXT_DISPLAY);
         display.text(Component.text("✧ Reward Chest ✧", NamedTextColor.GOLD, TextDecoration.BOLD));
         display.setBillboard(Display.Billboard.CENTER);
+
+        SwordScheduler.runBukkitTaskLater(
+            () -> {
+                try {
+                    if (display.isValid()) display.remove();
+                } catch (Exception e) {
+                    e.fillInStackTrace();
+                }
+            },
+            20, TimeUnit.SECONDS
+        );
         // TODO: #285 - distribute MiscItems (Soulfire Flask, Skill Scroll) once item system exists
     }
 
     private Location getSpawnCenter() {
-        World world = Bukkit.getWorld(Config.Roguelike.SPAWN_WORLD);
-        if (world == null) {
-            world = Bukkit.getWorlds().get(0);
-        }
+        World tryWorld = Bukkit.getWorld(Config.Roguelike.SPAWN_WORLD);
+        World world = tryWorld == null ? Bukkit.getWorlds().getFirst() : tryWorld;
+
         return new Location(world, Config.Roguelike.SPAWN_X, Config.Roguelike.SPAWN_Y, Config.Roguelike.SPAWN_Z);
     }
 

@@ -147,7 +147,7 @@ public class TogglesMenu extends Menu {
 
         @SuppressWarnings("unchecked")
         Config.ConfigEntry<Boolean> skipLoadEntry = (Config.ConfigEntry<Boolean>) Config.ENTRIES.stream()
-            .filter(e -> e.path.equals("debug.skip_data_load"))
+            .filter(e -> e.path().equals("debug.skip_data_load"))
             .findFirst()
             .orElseThrow();
 
@@ -162,7 +162,7 @@ public class TogglesMenu extends Menu {
 
         @SuppressWarnings("unchecked")
         Config.ConfigEntry<Boolean> skipSaveEntry = (Config.ConfigEntry<Boolean>) Config.ENTRIES.stream()
-            .filter(e -> e.path.equals("debug.skip_data_save"))
+            .filter(e -> e.path().equals("debug.skip_data_save"))
             .findFirst()
             .orElseThrow();
 

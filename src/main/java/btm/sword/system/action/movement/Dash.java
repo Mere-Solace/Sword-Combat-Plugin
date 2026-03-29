@@ -174,7 +174,7 @@ public class Dash {
                 }
                 else return false;
 
-                return !entity.isDead() && !InteractiveItemArbiter.isImpaling(executor, id);
+                return !entity.isDead() && InteractiveItemArbiter.notImpaled(executor, id);
             }
         );
 
@@ -192,7 +192,7 @@ public class Dash {
             entity ->  entity instanceof ItemDisplay id &&
                 !entity.isDead() &&
                 InteractiveItemArbiter.checkIfInteractive(id) &&
-                !InteractiveItemArbiter.isImpaling(executor, id) &&
+                InteractiveItemArbiter.notImpaled(executor, id) &&
                 !InteractiveItemArbiter.isUmbralBlade(id)
         );
 

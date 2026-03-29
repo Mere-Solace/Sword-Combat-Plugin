@@ -148,7 +148,7 @@ public class ConfigEntryItem extends AbstractItem {
                     Component.text("Default: ", NamedTextColor.GRAY)
                         .append(Component.text(String.valueOf(entry.defaultValue()), NamedTextColor.DARK_GRAY)),
                     Component.text("L/R: ±" + DOUBLE_STEP + "   Shift ×" +
-                        (int)(DOUBLE_SHIFT_STEP / DOUBLE_STEP), NamedTextColor.DARK_GRAY),
+                        (int) (DOUBLE_SHIFT_STEP / DOUBLE_STEP), NamedTextColor.DARK_GRAY),
                     Component.text("Shift+L: type a value", NamedTextColor.DARK_GRAY),
                     REVERT_HINT
                 ))
@@ -167,7 +167,7 @@ public class ConfigEntryItem extends AbstractItem {
                     Component.text("Default: ", NamedTextColor.GRAY)
                         .append(Component.text(String.valueOf(entry.defaultValue()), NamedTextColor.DARK_GRAY)),
                     Component.text("L/R: ±" + DOUBLE_STEP + "   Shift ×" +
-                        (int)(DOUBLE_SHIFT_STEP / DOUBLE_STEP), NamedTextColor.DARK_GRAY),
+                        (int) (DOUBLE_SHIFT_STEP / DOUBLE_STEP), NamedTextColor.DARK_GRAY),
                     Component.text("Shift+L: type a value", NamedTextColor.DARK_GRAY),
                     REVERT_HINT
                 ))
@@ -374,7 +374,7 @@ public class ConfigEntryItem extends AbstractItem {
             boolean shift = clickType.isShiftClick();
             double delta = shift ? DOUBLE_SHIFT_STEP : DOUBLE_STEP;
             double current = config.getDouble(path, defaultFloat());
-            float next = (float)(Math.round((current + (decrease ? -delta : delta)) * 100000.0) / 100000.0);
+            float next = (float) (Math.round((current + (decrease ? -delta : delta)) * 100000.0) / 100000.0);
             mgr.setValue((Config.ConfigEntry<Float>) entry, next);
             notifyWindows();
         }

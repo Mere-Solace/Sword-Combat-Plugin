@@ -128,7 +128,7 @@ public class AnimationBrowserMenu extends Menu {
 
         ConfigEntryItem conversionTimeout = new ConfigEntryItem(
             Config.ENTRIES.stream()
-                .filter(e -> e.path.equals("animation.conversion_step_timeout_seconds"))
+                .filter(e -> e.path().equals("animation.conversion_step_timeout_seconds"))
                 .findFirst().orElseThrow(),
             swordPlayer,
             this::open
@@ -204,7 +204,7 @@ public class AnimationBrowserMenu extends Menu {
             return;
         }
 
-        String base = remaining.remove(0);
+        String base = remaining.removeFirst();
         converted.add(base);
 
         AtomicBoolean stepDone = new AtomicBoolean(false);

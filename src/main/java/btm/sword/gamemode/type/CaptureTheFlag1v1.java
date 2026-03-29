@@ -121,7 +121,7 @@ public class CaptureTheFlag1v1 extends Gamemode {
         if (scores == null) return "Capture The Flag 1v1";
         int r = scores.get(CtfTeam.RED);
         int b = scores.get(CtfTeam.BLUE);
-        return "CTF \u2665 RED " + r + " - " + b + " BLUE";
+        return "† CTF †  - RED " + r + " — " + b + " BLUE -  † CTF †";
     }
 
     /**

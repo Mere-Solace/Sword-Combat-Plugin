@@ -35,7 +35,7 @@ public class ErrorListener implements Listener {
         Sword.getInstance().getLogger().severe(
             "[ErrorListener] Unhandled server exception (" + ex.getClass().getSimpleName() + "): " + ex.getMessage()
         );
-        ex.printStackTrace();
+        ex.fillInStackTrace();
     }
 
     // -----------------------------------------------------------------------

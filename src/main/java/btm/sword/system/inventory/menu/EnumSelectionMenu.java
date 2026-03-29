@@ -26,6 +26,9 @@ import btm.sword.utility.sound.SoundUtil;
 import btm.sword.utility.sound.SwordSoundType;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+
+import org.jetbrains.annotations.NotNull;
+
 import xyz.xenondevs.invui.gui.PagedGui;
 import xyz.xenondevs.invui.gui.structure.Markers;
 import xyz.xenondevs.invui.item.Item;
@@ -73,7 +76,7 @@ public class EnumSelectionMenu extends Menu {
 
     @Override
     public void open() {
-        if (entry.type == SwordSoundType.class && soundPrefix == null) {
+        if (entry.type() == SwordSoundType.class && soundPrefix == null) {
             openSoundPrefixBrowser();
         } else {
             openValueList();
@@ -166,8 +169,8 @@ public class EnumSelectionMenu extends Menu {
             .build();
 
         String title = filter != null
-            ? entry.path + "  |  SoundType  [" + filter + "]  (" + displayPrefixes.size() + "/" + byPrefix.size() + ")"
-            : entry.path + "  |  SoundType — " + byPrefix.size() + " categories";
+            ? entry.path() + "  |  SoundType  [" + filter + "]  (" + displayPrefixes.size() + "/" + byPrefix.size() + ")"
+            : entry.path() + "  |  SoundType — " + byPrefix.size() + " categories";
 
         Window.single()
             .setViewer(player)
@@ -184,13 +187,13 @@ public class EnumSelectionMenu extends Menu {
     private void openValueList() {
         Player player = swordPlayer.player();
         FileConfiguration config = ConfigManager.getInstance().getConfig();
-        Class<?> type = entry.type;
+        Class<?> type = entry.type();
         boolean isSoundType = type == SwordSoundType.class;
 
         // Determine currently stored value name for selection highlight
-        String stored = config.getString(entry.path);
+        String stored = config.getString(entry.path());
         String currentName = stored != null ? stored.toUpperCase()
-            : (entry.defaultValue instanceof Enum<?> e ? e.name() : "");
+            : (entry.defaultValue() instanceof Enum<?> e ? e.name() : "");
 
         // Filter constants: by sound prefix, then by item validity for Material, then by search filter.
         // For Material, use Registry.MATERIAL to exclude legacy (LEGACY_*) entries.
@@ -253,11 +256,11 @@ public class EnumSelectionMenu extends Menu {
             .filter(c -> type != Material.class || (((Material) c).isItem() && !((Material) c).isAir()))
             .count();
         String title = filter != null
-            ? entry.path + "  |  " + (soundPrefix != null ? soundPrefix : type.getSimpleName())
+            ? entry.path() + "  |  " + (soundPrefix != null ? soundPrefix : type.getSimpleName())
                 + "  [" + filter + "]  (" + constants.size() + "/" + totalInScope + ")"
             : soundPrefix != null
-                ? entry.path + "  |  " + soundPrefix + " (" + constants.size() + ")"
-                : entry.path + "  |  " + type.getSimpleName() + " (" + constants.size() + ")";
+                ? entry.path() + "  |  " + soundPrefix + " (" + constants.size() + ")"
+                : entry.path() + "  |  " + type.getSimpleName() + " (" + constants.size() + ")";
 
         PagedGui<Item> gui = PagedGui.items()
             .setStructure(
@@ -295,7 +298,7 @@ public class EnumSelectionMenu extends Menu {
             @Override
             public ItemProvider getItemProvider() {
                 Component name = selected
-                    ? Component.text("\u2714 ", NamedTextColor.GREEN).append(Component.text(value.name(), NamedTextColor.WHITE))
+                    ? Component.text("✔ ", NamedTextColor.GREEN).append(Component.text(value.name(), NamedTextColor.WHITE))
                     : Component.text(value.name(), NamedTextColor.GRAY);
                 List<Component> lore = new java.util.ArrayList<>();
                 if (selected) {
@@ -313,14 +316,14 @@ public class EnumSelectionMenu extends Menu {
 
             @Override
             @SuppressWarnings({"unchecked", "rawtypes"})
-            public void handleClick(ClickType clickType, Player p, InventoryClickEvent event) {
+            public void handleClick(@NotNull ClickType clickType, @NotNull Player p, @NotNull InventoryClickEvent event) {
                 if (isSoundType && clickType == ClickType.RIGHT) {
                     SoundUtil.playSound(p, (SwordSoundType) value, 1.0f, 1.0f);
                     return;
                 }
                 ConfigManager.getInstance().setValue((Config.ConfigEntry) entry, value);
                 swordPlayer.message(Component.text("Set ", NamedTextColor.GREEN)
-                    .append(Component.text(entry.path, NamedTextColor.WHITE))
+                    .append(Component.text(entry.path(), NamedTextColor.WHITE))
                     .append(Component.text(" = ", NamedTextColor.GREEN))
                     .append(Component.text(value.name(), NamedTextColor.YELLOW)));
                 reopenParent.run();
