@@ -19,6 +19,7 @@ import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.impl.Dummy;
 import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.inventory.InventoryMenuManager;
+import btm.sword.system.inventory.menu.dev.DevMenu;
 import btm.sword.system.item.ItemStackBuilder;
 import btm.sword.system.item.special.NonMovableItem;
 import net.kyori.adventure.text.Component;
@@ -182,7 +183,7 @@ public class MainMenu extends Menu {
                 ". . . D Q R S . .",
                 ". . . . . . . . .",
                 "# T . . H . M . #",
-                "# # # < V > # # #")
+                "< > # . V . # # #")
             .addIngredient('#', BORDER)
             .addIngredient('Q', queueForCTF)
             .addIngredient('R', queueForRoguelike)

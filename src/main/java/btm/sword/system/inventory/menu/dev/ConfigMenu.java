@@ -1,4 +1,4 @@
-package btm.sword.system.inventory.menu;
+package btm.sword.system.inventory.menu.dev;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -15,6 +15,7 @@ import btm.sword.config.ConfigManager;
 import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.inventory.item.ForwardItem;
 import btm.sword.system.inventory.item.PreviousItem;
+import btm.sword.system.inventory.menu.Menu;
 import btm.sword.system.item.ItemStackBuilder;
 import btm.sword.utility.ChatInputCapture;
 import net.kyori.adventure.text.Component;
