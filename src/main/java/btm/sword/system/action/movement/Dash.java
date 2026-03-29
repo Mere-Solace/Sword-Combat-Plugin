@@ -59,7 +59,7 @@ public class Dash {
     private static final Supplier<Double> NORMAL_ITEM_RAY_WIDTH = () -> Config.Movement.DASH_RAY_HITBOX_RADIUS;
     private static final Supplier<Double> UMBRAL_RAY_WIDTH = () -> Config.Movement.DASH_UMBRAL_RAY_HITBOX_RADIUS;
 
-    double FLAT_DASH_PITCH_THRESHOLD = Config.Movement.FLAT_DASH_PITCH_THRESHOLD;
+    double flatDashPitchThreshold = Config.Movement.FLAT_DASH_PITCH_THRESHOLD;
 
     /**
      * Creates a Dash action for the given combatant and direction.
@@ -136,7 +136,7 @@ public class Dash {
             }
         }
 
-        Debug.movement("DashType="+dashType);
+        Debug.movement("DashType=" + dashType);
 
         dash();
     }
@@ -147,8 +147,8 @@ public class Dash {
         //          |
         //           \   < flat when forwards and not targeting item, otherwise not flat
 
-        boolean belowForwardThreshold = executor.dir().dot(Config.Direction.UP()) < FLAT_DASH_PITCH_THRESHOLD;
-        boolean aboveBackwardThreshold = executor.dir().dot(Config.Direction.UP()) > -FLAT_DASH_PITCH_THRESHOLD * Config.Movement.DASH_DOWNWARD_FLAT_CHECK_MULTIPLIER;
+        boolean belowForwardThreshold = executor.dir().dot(Config.Direction.up()) < flatDashPitchThreshold;
+        boolean aboveBackwardThreshold = executor.dir().dot(Config.Direction.up()) > -flatDashPitchThreshold * Config.Movement.DASH_DOWNWARD_FLAT_CHECK_MULTIPLIER;
 
         flatDash = onGround && (
             (direction > 0 && belowForwardThreshold) ||
@@ -241,7 +241,7 @@ public class Dash {
         executor.setDashDirection(executor.dir().multiply(direction));
         double dashMag = dashPower * direction;
         Vector d = flatDash ? executor.getFlatDir() : executor.dir();
-        executor.setVelocity(d.multiply(dashMag).add(Config.Direction.UP().multiply(Config.Movement.DASH_UPWARD_BOOST)));
+        executor.setVelocity(d.multiply(dashMag).add(Config.Direction.up().multiply(Config.Movement.DASH_UPWARD_BOOST)));
     }
 
     private Vector calcVectorToItem() {
@@ -250,7 +250,7 @@ public class Dash {
 
     private Vector calcPostRetrievalVector() {
         return executor.getFlatDir().multiply(direction * Config.Movement.DASH_FORWARD_MULTIPLIER)
-            .add(Config.Direction.UP().multiply(Config.Movement.DASH_UPWARD_MULTIPLIER));
+            .add(Config.Direction.up().multiply(Config.Movement.DASH_UPWARD_MULTIPLIER));
     }
 
     private void dashToItem() {
@@ -275,7 +275,7 @@ public class Dash {
     private void performFlatDashToItem(double distanceToItem) {
         double heightDiff = targetedDisplay.getLocation().getY() - ex.getLocation().getY();
 
-        Debug.movement("heightDiff="+heightDiff);
+        Debug.movement("heightDiff=" + heightDiff);
 
         boolean umbralHeightBoost = !holdingLink || targetedBlade.inState(WaitingState.class) || targetedBlade.inState(LodgedState.class);
 
@@ -286,7 +286,7 @@ public class Dash {
             heightDiff > Config.Movement.DASH_FLAT_HEIGHT_LOWER) {
 
             Vector dashVelocity = exDir.add(
-                Config.Direction.UP().multiply(Config.Movement.DASH_FLAT_ITEM_DASH_UPWARD_SCALER)
+                Config.Direction.up().multiply(Config.Movement.DASH_FLAT_ITEM_DASH_UPWARD_SCALER)
             );
             executor.setVelocity(dashVelocity);
         }
@@ -363,20 +363,20 @@ public class Dash {
     }
 
     public static void scheduleParticleDisplay(Combatant executor) {
-        int MAX_ITERATIONS = 5;
+        int maxIterations = 5;
         int[] iteration = {0};
         TimeArbiter.runFixedIterationTaskTimer(
             null,
             () -> {
-                new ParticleWrapper(() -> Particle.CLOUD, () -> MAX_ITERATIONS + 1 - iteration[0], () -> 0.25, () -> 0.25, () -> 0.25)
+                new ParticleWrapper(() -> Particle.CLOUD, () -> maxIterations + 1 - iteration[0], () -> 0.25, () -> 0.25, () -> 0.25)
                     .withSpeed(() -> 0.0).display(executor.getLocation());
-                new ParticleWrapper(() -> Particle.SMOKE, () -> 3 * (MAX_ITERATIONS + 1 - iteration[0]), () -> 0.3, () -> 0.3, () -> 0.3)
+                new ParticleWrapper(() -> Particle.SMOKE, () -> 3 * (maxIterations + 1 - iteration[0]), () -> 0.3, () -> 0.3, () -> 0.3)
                     .withSpeed(() -> 0.0).display(executor.getLocation());
 
                 iteration[0]++;
             },
             Config.Movement.DASH_VELOCITY_TASK_DELAY, Config.Movement.DASH_VELOCITY_TASK_PERIOD,
-            MAX_ITERATIONS,
+            maxIterations,
             MovementAction.class, "dashStraight", null
         );
     }

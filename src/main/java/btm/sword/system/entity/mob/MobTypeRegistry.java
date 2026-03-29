@@ -41,7 +41,7 @@ import btm.sword.Sword;
  *   abilities: []                   # reserved for future ability system integration
  * </pre>
  */
-public class MobTypeRegistry {
+public final class MobTypeRegistry {
 
     private static final String FILE_NAME = "mob_types.yml";
     private static Map<String, MobTypeDefinition> byId = Collections.emptyMap();

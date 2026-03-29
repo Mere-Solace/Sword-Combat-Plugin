@@ -43,7 +43,7 @@ public class DevSkillEquipMenu extends Menu {
     @Override
     public void open() {
         List<Item> skillItems = new ArrayList<>();
-        for (Skill skill : SkillRegistry.skillMapping.values()) {
+        for (Skill skill : SkillRegistry.SKILL_MAPPING.values()) {
             skillItems.add(new SimpleItem(skill.icon(), click -> openSlotPicker(skill)));
         }
 

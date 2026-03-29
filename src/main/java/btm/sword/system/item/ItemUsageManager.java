@@ -6,7 +6,9 @@ import org.bukkit.inventory.meta.Damageable;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 
-public class ItemUsageManager {
+public final class ItemUsageManager {
+
+    private ItemUsageManager() {}
 
     public static boolean isUnbreakable(ItemStack itemStack) {
         var value = KeyRegistry.getKeyField(itemStack, KeyRegistry.BREAKABLE_WEAPON_KEY, PersistentDataType.BOOLEAN);

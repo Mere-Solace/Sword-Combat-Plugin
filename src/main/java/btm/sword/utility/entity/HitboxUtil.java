@@ -19,7 +19,10 @@ import org.bukkit.util.Vector;
  * filtering by distance, thickness, and optional predicates.
  * </p>
  */
-public class HitboxUtil {
+public final class HitboxUtil {
+
+    private HitboxUtil() {}
+
     /**
      * Returns all {@link LivingEntity} instances within a line-shaped hitbox starting from a location,
      * extending towards a direction vector up to maxRange, with a specified hitbox thickness.

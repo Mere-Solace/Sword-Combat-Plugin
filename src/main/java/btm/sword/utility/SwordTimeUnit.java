@@ -8,7 +8,7 @@ package btm.sword.utility;
  */
 public final class SwordTimeUnit {
 
-    private SwordTimeUnit() { }
+    private SwordTimeUnit() {}
 
     /** Bukkit server ticks per second (20). */
     public static final int TICKS_PER_SECOND = 20;

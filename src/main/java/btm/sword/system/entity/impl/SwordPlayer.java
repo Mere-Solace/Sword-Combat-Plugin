@@ -1262,7 +1262,7 @@ public class SwordPlayer extends Combatant {
      * @param timeLeft time left on cooldown in milliseconds
      */
     public void displayCooldown(long timeLeft) {
-        double timeToDisplay = timeLeft > 1000L ? (double)timeLeft/1000 : timeLeft;
+        double timeToDisplay = timeLeft > 1000L ? (double) timeLeft / 1000 : timeLeft;
         String unit = timeLeft > 1000L ? "s" : "ms";
         self.showTitle(Title.title(
                 Component.text(""),
@@ -1278,19 +1278,19 @@ public class SwordPlayer extends Combatant {
      *
      * @param title main title text component
      * @param subtitle subtitle text component
-     * @param fade_in duration of fade-in in milliseconds
+     * @param fadeIn duration of fade-in in milliseconds
      * @param duration duration to display the title in milliseconds
-     * @param fade_out duration of fade-out in milliseconds
+     * @param fadeOut duration of fade-out in milliseconds
      */
-    public void displayTitle(@Nullable Component title, @Nullable Component subtitle, long fade_in, long duration, long fade_out) {
+    public void displayTitle(@Nullable Component title, @Nullable Component subtitle, long fadeIn, long duration, long fadeOut) {
         if (title == null && subtitle == null) return;
         self.showTitle(Title.title(
                 title == null ? Component.text("") : title,
                 subtitle == null ? Component.text("") : subtitle,
                 Title.Times.times(
-                    Duration.ofMillis(fade_in),
+                    Duration.ofMillis(fadeIn),
                     Duration.ofMillis(duration),
-                    Duration.ofMillis(fade_out))));
+                    Duration.ofMillis(fadeOut))));
     }
 
     public void itemNameDisplay(Component displayName) {
@@ -1399,7 +1399,7 @@ public class SwordPlayer extends Combatant {
         DisplayUtil.setInterpolationValues(targetIndicator, 0, 10);
         targetIndicator.setTransformation(
             new Transformation(
-                new Vector3f(0, 1.35f + ((float) Math.cos(ticks * Math.PI/16) * 0.5f), 0),
+                new Vector3f(0, 1.35f + ((float) Math.cos(ticks * Math.PI / 16) * 0.5f), 0),
                 new Quaternionf(),
                 new Vector3f(scale, scale, scale),
                 new Quaternionf()

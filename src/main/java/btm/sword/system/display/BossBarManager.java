@@ -49,7 +49,7 @@ import net.kyori.adventure.text.Component;
  */
 public final class BossBarManager {
 
-    private static final List<SwordBossBar> activeBars = new ArrayList<>();
+    private static final List<SwordBossBar> ACTIVE_BARS = new ArrayList<>();
 
     private BossBarManager() {}
 
@@ -76,7 +76,7 @@ public final class BossBarManager {
      */
     public static SwordBossBar create(Component title, float progress, BossBar.Color color, BossBar.Overlay overlay) {
         SwordBossBar bar = new SwordBossBar(title, progress, color, overlay);
-        activeBars.add(bar);
+        ACTIVE_BARS.add(bar);
         return bar;
     }
 
@@ -104,7 +104,7 @@ public final class BossBarManager {
      * @param player the player who disconnected
      */
     public static void onPlayerQuit(Player player) {
-        for (SwordBossBar bar : activeBars) {
+        for (SwordBossBar bar : ACTIVE_BARS) {
             if (bar.hasViewer(player)) {
                 bar.removeViewer(player);
             }
@@ -115,9 +115,9 @@ public final class BossBarManager {
      * Destroys all active boss bars. Called on plugin disable.
      */
     public static void removeAll() {
-        List<SwordBossBar> snapshot = new ArrayList<>(activeBars);
+        List<SwordBossBar> snapshot = new ArrayList<>(ACTIVE_BARS);
         snapshot.forEach(SwordBossBar::remove);
-        activeBars.clear();
+        ACTIVE_BARS.clear();
     }
 
     /**
@@ -127,6 +127,6 @@ public final class BossBarManager {
      * @param bar the bar to deregister
      */
     static void unregister(SwordBossBar bar) {
-        activeBars.remove(bar);
+        ACTIVE_BARS.remove(bar);
     }
 }

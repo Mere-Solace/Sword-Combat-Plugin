@@ -228,7 +228,7 @@ public abstract class Combatant extends SwordEntity {
         TimeArbiter.runFixedIterationTaskTimer(
             null,
             null,
-            0,25,160,
+            0, 25, 160,
             Combatant.class, "requestUmbralBladeState",
             null,
             new PredicateRunnablePair(
@@ -540,7 +540,7 @@ public abstract class Combatant extends SwordEntity {
      * @return the calculated cooldown duration floored at min
      */
     public int calcCooldown(AspectType type, double min, double base, double multiplier) {
-        return (int) Math.max(min, base - (multiplier * aspects.getAspectVal(type)) );
+        return (int) Math.max(min, base - (multiplier * aspects.getAspectVal(type)));
     }
 
     /**

@@ -14,7 +14,10 @@ import btm.sword.system.entity.impl.Combatant;
 import btm.sword.utility.Prefab;
 import btm.sword.utility.display.ParticleWrapper;
 
-public class SoulfireManager {
+public final class SoulfireManager {
+
+    private SoulfireManager() {}
+
     public static void transferSoulfire(Combatant receiver, SwordEntity hit, float totalAmount) {
         float remainder = totalAmount;
         List<Float> packets = new ArrayList<>();
@@ -57,7 +60,7 @@ public class SoulfireManager {
         Vector initialDirection = new Vector(
             (Math.random() - 0.5) * 2,
             (Math.random() - 0.5) * 2,
-            (Math.random()- 0.5) * 2
+            (Math.random() - 0.5) * 2
         ).normalize();
 
         int maxIterations = 300;

@@ -7,7 +7,10 @@ import org.bukkit.util.Vector;
 
 import btm.sword.utility.math.Basis;
 
-public class DrawUtil {
+public final class DrawUtil {
+
+    private DrawUtil() {}
+
     /**
      * Creates a linear sequence of particles (or effects) between two locations using the secant method.
      * The particles are spaced evenly along the line from origin to end, separated by a specified spacing.
@@ -75,7 +78,7 @@ public class DrawUtil {
             theta += spacingArc;
             rotator = forward.clone().rotateAroundAxis(up, theta);
             for (int i = radialIterations; i > 0; i--) {
-                ParticleWrapper.displayAll(particles, origin.clone().add(rotator.clone().multiply(innerRadius + (i*spacingRadial))));
+                ParticleWrapper.displayAll(particles, origin.clone().add(rotator.clone().multiply(innerRadius + (i * spacingRadial))));
             }
         }
     }

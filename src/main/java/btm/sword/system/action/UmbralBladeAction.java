@@ -82,7 +82,7 @@ public class UmbralBladeAction extends SwordAction {
 
         UmbralBlade blade = sp.getUmbralBlade();
 
-        Debug.umbral("performing wielded umbral blade attack. reclaim type="+blade.getReclaimType());
+        Debug.umbral("performing wielded umbral blade attack. reclaim type=" + blade.getReclaimType());
 
         switch (blade.getReclaimType()) {
             case NONE -> AttackAction.basicAttack(wielder, comboStep);
@@ -123,7 +123,7 @@ public class UmbralBladeAction extends SwordAction {
             sp.act(InputType.LEFT);
             return;
         }
-        throwPunch(wielder, comboStep == 1 || comboStep == 3,-1);
+        throwPunch(wielder, comboStep == 1 || comboStep == 3, -1);
     }
 
     public static void beginHealChannel(Combatant wielder) {
@@ -293,7 +293,7 @@ public class UmbralBladeAction extends SwordAction {
 
                     wielder.getUmbralBlade().onGrab(wielder);
                 },
-                0,50,10,
+                0, 50, 10,
                 UmbralBladeAction.class, "performBlink",
                 null
             );

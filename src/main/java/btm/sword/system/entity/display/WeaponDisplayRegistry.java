@@ -35,7 +35,7 @@ import btm.sword.Sword;
  *     scale:  1.0
  * </pre>
  */
-public class WeaponDisplayRegistry {
+public final class WeaponDisplayRegistry {
 
     private static final String FILE_NAME = "weapon_display.yml";
     private static Map<Material, WeaponDisplayTransform> transforms = new EnumMap<>(Material.class);

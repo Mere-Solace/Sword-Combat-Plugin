@@ -27,7 +27,7 @@ import btm.sword.Sword;
  * The target entity must be spawned and tracked client-side before the packet is sent.
  * A 1-tick delay after entity spawn is sufficient to ensure this.
  */
-public class PacketAdapter {
+public final class PacketAdapter {
 
     private PacketAdapter() {}
 

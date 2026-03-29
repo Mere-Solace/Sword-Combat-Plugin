@@ -12,7 +12,7 @@ import btm.sword.system.entity.base.SwordEntity;
  * and {@link SwordEntity} wrappers, particularly checking ground status and managing
  * visual following behavior of item displays.
  */
-public class EntityUtil {
+public final class EntityUtil {
     private EntityUtil() {
         throw new UnsupportedOperationException("Utility class");
     }

@@ -85,15 +85,15 @@ public class Projectile {
         double upwardCoef = speed * Math.sin(phi);
         Vector flat = dir.clone().setY(0).normalize();
         Vector fwdVel = flat.clone().multiply(forwardCoef);
-        Vector upVel = Config.Direction.UP().multiply(upwardCoef);
+        Vector upVel = Config.Direction.up().multiply(upwardCoef);
 
         positionFunction = t -> flat.clone().multiply(forwardCoef * t)
-            .add(Config.Direction.UP().multiply(
+            .add(Config.Direction.up().multiply(
                 (upwardCoef * t) - (speed * (1.0 / gravDamper) * t * t)));
 
         velocityFunction = t -> fwdVel.clone()
             .add(upVel.clone()
-                .add(Config.Direction.UP().multiply(-speed * (2.0 / gravDamper) * t)));
+                .add(Config.Direction.up().multiply(-speed * (2.0 / gravDamper) * t)));
     }
 
     /**

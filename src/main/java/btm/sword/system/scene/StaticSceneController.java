@@ -28,7 +28,7 @@ import btm.sword.system.input.ActivationContext;
  * the player's viewport — the view is perfectly fixed with zero jitter.
  * The camera attachment and any open inventory are closed together in a single deferred tick so
  * there is no transition window where the player sees their first-person arm overlay.
- * {@link MovementListener#lockedPlayers} blocks body movement via packet cancellation.
+ * {@link MovementListener#LOCKED_PLAYERS} blocks body movement via packet cancellation.
  * {@link ActivationContext#CUTSCENE} suppresses all combat inputs and enables SHIFT-to-exit via
  * the existing {@code CutsceneInputHandler}.
  * </p>
@@ -80,7 +80,7 @@ public class StaticSceneController extends CameraController {
             return;
         }
 
-        MovementListener.lockedPlayers.add(player.getUniqueId());
+        MovementListener.LOCKED_PLAYERS.add(player.getUniqueId());
         cachedOwner.enterSceneOverlay();
 
         World world = cameraLocation.getWorld();
@@ -118,7 +118,7 @@ public class StaticSceneController extends CameraController {
     protected void onStop() {
         if (cachedOwner == null) return;
 
-        MovementListener.lockedPlayers.remove(cachedOwner.player().getUniqueId());
+        MovementListener.LOCKED_PLAYERS.remove(cachedOwner.player().getUniqueId());
 
         if (tickTask != null)      { tickTask.cancel();       tickTask      = null; }
         if (cameraSession != null) { cameraSession.detach();  cameraSession = null; }

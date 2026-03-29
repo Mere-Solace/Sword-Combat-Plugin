@@ -20,8 +20,11 @@ import btm.sword.system.entity.impl.Combatant;
 import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.input.InputRegistrar;
 
-public class Misc {
-    public static final Consumer<Combatant> turn = c -> {
+public final class Misc {
+
+    private Misc() {}
+
+    public static final Consumer<Combatant> TURN = c -> {
         if (!(c instanceof SwordPlayer sp)) return;
         ProtocolManager man = ProtocolLibrary.getProtocolManager();
 
@@ -78,7 +81,7 @@ public class Misc {
         Debug.system("Sent that packet...");
     };
 
-    public static final Consumer<Combatant> spinUp = c -> {
+    public static final Consumer<Combatant> SPIN_UP = c -> {
         if (!(c instanceof SwordPlayer sp)) return;
 
         ArmorStand marker = (ArmorStand) sp.player().getWorld().spawnEntity(sp.locFromEyeDir(3), EntityType.ARMOR_STAND);
@@ -99,9 +102,9 @@ public class Misc {
             null,
             () -> {
 
-                Location loc = marker.getLocation().add(Config.Direction.UP().multiply(0.005));
+                Location loc = marker.getLocation().add(Config.Direction.up().multiply(0.005));
                 Vector dir = loc.getDirection();
-                dir.rotateAroundAxis(Config.Direction.UP(), Math.PI / 360);
+                dir.rotateAroundAxis(Config.Direction.up(), Math.PI / 360);
 
                 loc.setDirection(dir);
                 marker.teleport(loc);
@@ -113,7 +116,7 @@ public class Misc {
     };
 
 
-    public static final Consumer<Combatant> cameraTest = c -> {
+    public static final Consumer<Combatant> CAMERA_TEST = c -> {
         if (!(c instanceof SwordPlayer sp)) return;
 
         Vector dummyDir = sp.dir().multiply(-1);

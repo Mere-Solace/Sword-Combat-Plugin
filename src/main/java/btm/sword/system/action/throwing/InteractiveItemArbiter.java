@@ -26,7 +26,10 @@ import btm.sword.utility.display.ParticleWrapper;
  * Handles registration, lookup, interaction, and cleanup of thrown items that use {@link ItemDisplay} entities
  * for visual representation and interaction tracking.
  */
-public class InteractiveItemArbiter {
+public final class InteractiveItemArbiter {
+
+    private InteractiveItemArbiter() {}
+
     /**
      * Registry of all active thrown items mapped by their associated {@link ItemDisplay}.
      */

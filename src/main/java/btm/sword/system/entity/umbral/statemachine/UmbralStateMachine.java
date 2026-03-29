@@ -253,7 +253,7 @@ public class UmbralStateMachine extends StateMachine<UmbralBlade> {
             LodgedState.class,
             b -> b.getHitEntity() != null,
             b -> {
-                Vector kb = VectorUtil.getProjOntoPlane(b.getVelocity(), Config.Direction.UP())
+                Vector kb = VectorUtil.getProjOntoPlane(b.getVelocity(), Config.Direction.up())
                     .multiply(Config.Combat.THROWN_DAMAGE_SWORD_AXE_KNOCKBACK_AIRBORNE);
                 b.getHitEntity().hit(b.getThrower(), Prefab.Attacks.UMBRAL_IMPALE, kb);
             }
@@ -413,7 +413,7 @@ public class UmbralStateMachine extends StateMachine<UmbralBlade> {
             LodgedState.class,
             b -> b.getHitEntity() != null,
             b -> {
-                Vector kb = VectorUtil.getProjOntoPlane(b.getVelocity(), Config.Direction.UP())
+                Vector kb = VectorUtil.getProjOntoPlane(b.getVelocity(), Config.Direction.up())
                     .multiply(Config.Combat.THROWN_DAMAGE_SWORD_AXE_KNOCKBACK_AIRBORNE);
                 b.getHitEntity().hit(b.getThrower(), Prefab.Attacks.UMBRAL_IMPALE, kb);
             }

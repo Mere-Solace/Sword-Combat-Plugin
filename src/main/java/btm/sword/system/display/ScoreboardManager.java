@@ -32,7 +32,7 @@ import net.kyori.adventure.text.Component;
  */
 public final class ScoreboardManager {
 
-    private static final Map<UUID, SwordScoreboard> boards = new HashMap<>();
+    private static final Map<UUID, SwordScoreboard> BOARDS = new HashMap<>();
 
     private ScoreboardManager() {}
 
@@ -47,7 +47,7 @@ public final class ScoreboardManager {
     public static SwordScoreboard create(Player player, Component title) {
         remove(player);
         SwordScoreboard board = new SwordScoreboard(player, title);
-        boards.put(player.getUniqueId(), board);
+        BOARDS.put(player.getUniqueId(), board);
         return board;
     }
 
@@ -58,7 +58,7 @@ public final class ScoreboardManager {
      * @return an {@link Optional} containing the scoreboard, or empty if none exists
      */
     public static Optional<SwordScoreboard> get(Player player) {
-        return Optional.ofNullable(boards.get(player.getUniqueId()));
+        return Optional.ofNullable(BOARDS.get(player.getUniqueId()));
     }
 
     /**
@@ -68,7 +68,7 @@ public final class ScoreboardManager {
      * @param player the player whose scoreboard to remove
      */
     public static void remove(Player player) {
-        SwordScoreboard existing = boards.remove(player.getUniqueId());
+        SwordScoreboard existing = BOARDS.remove(player.getUniqueId());
         if (existing != null) {
             existing.remove();
         }
@@ -88,7 +88,7 @@ public final class ScoreboardManager {
      * Destroys all registered scoreboards. Called on plugin disable.
      */
     public static void removeAll() {
-        boards.values().forEach(SwordScoreboard::remove);
-        boards.clear();
+        BOARDS.values().forEach(SwordScoreboard::remove);
+        BOARDS.clear();
     }
 }

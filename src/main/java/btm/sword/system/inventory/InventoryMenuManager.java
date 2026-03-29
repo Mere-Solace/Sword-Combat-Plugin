@@ -26,7 +26,10 @@ import btm.sword.system.inventory.menu.dev.DevMenu;
 import btm.sword.system.inventory.menu.dev.TestingMenu;
 import btm.sword.system.inventory.menu.dev.WeaponDisplayEditorMenu;
 
-public class InventoryMenuManager {
+public final class InventoryMenuManager {
+
+    private InventoryMenuManager() {}
+
     private static final Map<Class<? extends Menu>, Function<SwordPlayer, ? extends Menu>> MENU_REGISTRY = new ConcurrentHashMap<>();
 
     public static <T extends Menu> void register(Class<T> menuType, Function<SwordPlayer, T> creator) {

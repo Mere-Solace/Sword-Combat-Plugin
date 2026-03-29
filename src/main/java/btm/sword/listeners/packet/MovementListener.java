@@ -23,7 +23,7 @@ import btm.sword.utility.Debug;
  *       sends {@code USE_ENTITY} targeting the player's own entity ID, which would normally
  *       trigger a vanilla "Cannot interact with self" disconnect. This listener silently cancels
  *       those packets.</li>
- *   <li><b>Movement locking</b> — UUIDs added to {@link #lockedPlayers} have all movement packets
+ *   <li><b>Movement locking</b> — UUIDs added to {@link #LOCKED_PLAYERS} have all movement packets
  *       cancelled, freezing the player client-side (used during grab / throw animations).</li>
  * </ol>
  *
@@ -38,7 +38,7 @@ public class MovementListener implements PacketListener {
      * Set of player UUIDs whose movement packets should be cancelled.
      * Add a UUID here to freeze a player; remove it to restore normal movement.
      */
-    public static final HashSet<UUID> lockedPlayers = new HashSet<>();
+    public static final HashSet<UUID> LOCKED_PLAYERS = new HashSet<>();
 
     @Override
     public void onPacketSending(PacketEvent event) {
@@ -75,7 +75,7 @@ public class MovementListener implements PacketListener {
 
             Debug.listener("Received a packet.\nPacketType=" + event.getPacketType());
 
-            if (!lockedPlayers.contains(player.getUniqueId())) return;
+            if (!LOCKED_PLAYERS.contains(player.getUniqueId())) return;
 
             event.setCancelled(true);
         }

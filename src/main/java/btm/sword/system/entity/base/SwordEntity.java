@@ -275,7 +275,7 @@ public abstract class SwordEntity {
 
 //        if (self().getType() == EntityType.ITEM_DISPLAY || self().getType() == EntityType.ITEM) return;
 
-        statusDisplay = (TextDisplay) self().getWorld().spawnEntity(eyeLoc().setDirection(Config.Direction.NORTH()), EntityType.TEXT_DISPLAY);
+        statusDisplay = (TextDisplay) self().getWorld().spawnEntity(eyeLoc().setDirection(Config.Direction.north()), EntityType.TEXT_DISPLAY);
         if (self() instanceof Player p) {
             p.hideEntity(Sword.getInstance(), statusDisplay);
         }
@@ -286,7 +286,7 @@ public abstract class SwordEntity {
                 new Transformation(
                         new Vector3f(0, 0.1f, 0),
                         new Quaternionf(),
-                        new Vector3f(0.75f,0.75f,0.75f),
+                        new Vector3f(0.75f, 0.75f, 0.75f),
                         new Quaternionf()
                 )
         );
@@ -859,7 +859,7 @@ public abstract class SwordEntity {
 
             ItemStack[] contents = inv.getStorageContents();
             for (int slot = 0; slot < contents.length; slot++) {
-//				if (slot >= 36 && slot <= 39) continue;
+//                if (slot >= 36 && slot <= 39) continue;
 
                 ItemStack slotItem = contents[slot];
                 if (slotItem == null || slotItem.getType().isAir()) {
@@ -871,7 +871,7 @@ public abstract class SwordEntity {
             // TODO: Convert this into a StuckItem
 
             if (!itemStack.isEmpty()) {
-                Vector dropVel = Config.Direction.DOWN().multiply(0.5);
+                Vector dropVel = Config.Direction.down().multiply(0.5);
 
                 DroppedItem stuck = new DroppedItem(getChestLocation(), dropVel, itemStack);
                 stuck.register();

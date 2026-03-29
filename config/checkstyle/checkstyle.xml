@@ -27,7 +27,7 @@
     <module name="TreeWalker">
         <!-- Checks for imports -->
         <module name="UnusedImports">
-            <property name="processJavadoc" value="false"/>
+            <property name="processJavadoc" value="true"/>
         </module>
 
         <module name="RedundantImport"/>
@@ -44,6 +44,8 @@
 
         <module name="EmptyCatchBlock">
             <property name="severity" value="warning"/>
+            <!-- Allow empty catch blocks when the variable is named 'ignored' (explicit intent) -->
+            <property name="exceptionVariableName" value="ignored"/>
         </module>
 
         <module name="MissingOverride"/>
@@ -77,7 +79,10 @@
         <module name="MethodName"/>
         <module name="PackageName"/>
         <module name="ParameterName"/>
-        <module name="StaticVariableName"/>
+        <module name="StaticVariableName">
+            <!-- Allow SCREAMING_SNAKE_CASE for config value fields (intentional convention) -->
+            <property name="format" value="^([a-z][a-zA-Z0-9]*|[A-Z][A-Z0-9]*(_[A-Z0-9]+)*)$"/>
+        </module>
         <module name="TypeName"/>
 
         <!-- Whitespace -->
@@ -85,10 +90,28 @@
         <module name="GenericWhitespace"/>
         <module name="MethodParamPad"/>
         <module name="NoWhitespaceAfter"/>
-        <module name="NoWhitespaceBefore"/>
+        <module name="NoWhitespaceBefore">
+            <!-- Allow line-break-preceded semicolons (e.g. empty enum bodies) -->
+            <property name="allowLineBreaks" value="true"/>
+        </module>
         <module name="ParenPad"/>
         <module name="TypecastParenPad"/>
         <module name="WhitespaceAfter"/>
-        <module name="WhitespaceAround"/>
+        <module name="WhitespaceAround">
+            <!-- Allow empty blocks ({}) without requiring spaces inside.
+                 LCURLY/RCURLY are excluded from tokens so that empty blocks like
+                 `case X -> {}`, `catch (E ignored) {}`, and `() -> {}` are all valid. -->
+            <property name="allowEmptyConstructors" value="true"/>
+            <property name="allowEmptyMethods" value="true"/>
+            <property name="allowEmptyLambdas" value="true"/>
+            <property name="allowEmptyTypes" value="true"/>
+            <property name="tokens" value="ASSIGN, BAND, BAND_ASSIGN, BOR, BOR_ASSIGN, BSR, BSR_ASSIGN,
+                BXOR, BXOR_ASSIGN, COLON, DIV, DIV_ASSIGN, DO_WHILE, EQUAL, GE, GT, LAMBDA, LAND,
+                LE, LITERAL_CATCH, LITERAL_DO, LITERAL_ELSE, LITERAL_FINALLY, LITERAL_FOR,
+                LITERAL_IF, LITERAL_RETURN, LITERAL_SWITCH, LITERAL_SYNCHRONIZED, LITERAL_TRY,
+                LITERAL_WHILE, LOR, LT, MINUS, MINUS_ASSIGN, MOD, MOD_ASSIGN, NOT_EQUAL,
+                PLUS, PLUS_ASSIGN, QUESTION, SL, SLIST, SL_ASSIGN, SR, SR_ASSIGN, STAR,
+                STAR_ASSIGN, LITERAL_ASSERT, TYPE_EXTENSION_AND"/>
+        </module>
     </module>
 </module>

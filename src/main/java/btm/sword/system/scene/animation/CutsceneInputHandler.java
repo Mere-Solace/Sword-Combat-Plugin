@@ -17,7 +17,7 @@ import btm.sword.system.scene.CameraSystem;
  *   <li>All other inputs — silently ignored (reserved for future dialogue / chapter-skip).</li>
  * </ul>
  */
-public class CutsceneInputHandler {
+public final class CutsceneInputHandler {
 
     private CutsceneInputHandler() {}
 

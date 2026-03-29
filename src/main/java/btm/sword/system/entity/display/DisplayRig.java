@@ -47,7 +47,7 @@ import net.donnypz.displayentityutils.utils.controller.GroupFollowProperties;
  * <p>Call {@link #spawn(Mob, String, AnimationSlots)} to create a rig.
  * Call {@link #despawn()} when the mob dies to clean up entities.</p>
  */
-public class DisplayRig {
+public final class DisplayRig {
 
     /**
      * Scoreboard tag added by {@link btm.sword.listeners.EntityListener} to any

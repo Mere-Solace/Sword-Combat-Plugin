@@ -30,7 +30,7 @@ import net.donnypz.displayentityutils.utils.DisplayEntities.machine.MachineState
 public class AttackState extends HostileAIFacade {
 
     /** Creates an {@code AttackState}. */
-    public AttackState() { }
+    public AttackState() {}
 
     @Override
     public String name() {

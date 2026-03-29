@@ -10,7 +10,9 @@ import org.bukkit.scheduler.BukkitRunnable;
 import btm.sword.Sword;
 
 
-public class SwordScheduler {
+public final class SwordScheduler {
+
+    private SwordScheduler() {}
 
     /**
      * Creates a new {@link ScheduleChain} whose first step runs after the given delay.

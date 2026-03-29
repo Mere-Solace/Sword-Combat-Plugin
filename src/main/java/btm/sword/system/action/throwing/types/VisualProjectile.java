@@ -621,17 +621,17 @@ public class VisualProjectile extends SimulatedDisplay {
         Vector flatDir = resolveFlatDir();
         velocity = flatDir.clone();
         Vector forwardVelocity = flatDir.clone().multiply(forwardCoefficient);
-        Vector upwardVelocity = Config.Direction.UP().multiply(upwardCoefficient);
+        Vector upwardVelocity = Config.Direction.up().multiply(upwardCoefficient);
 
         double gravDamper = Config.Physics.THROWN_ITEMS_GRAVITY_DAMPER;
 
         positionFunction = t -> flatDir.clone().multiply(forwardCoefficient * t)
-            .add(Config.Direction.UP().multiply(
+            .add(Config.Direction.up().multiply(
                 (upwardCoefficient * t) - (initialVelocity * (1.0 / gravDamper) * t * t)));
 
         velocityFunction = t -> forwardVelocity.clone()
             .add(upwardVelocity.clone()
-                .add(Config.Direction.UP().multiply(-initialVelocity * (2.0 / gravDamper) * t)));
+                .add(Config.Direction.up().multiply(-initialVelocity * (2.0 / gravDamper) * t)));
     }
 
     // -----------------------------------------------------------------------

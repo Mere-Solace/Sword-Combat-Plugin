@@ -8,5 +8,5 @@ package btm.sword.gamemode;
 public class ArenaManager {
 
     /** Creates an {@code ArenaManager}. */
-    public ArenaManager() { }
+    public ArenaManager() {}
 }

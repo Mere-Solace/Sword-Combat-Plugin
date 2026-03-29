@@ -71,7 +71,7 @@ public enum AttackType implements AttackProfile {
         () -> Config.AttackCurves.WIDE_UMBRAL_SLASH3_END,
         () -> Config.AttackCurves.WIDE_UMBRAL_SLASH3_C1,
         () -> Config.AttackCurves.WIDE_UMBRAL_SLASH3_C2),
-        e -> attack -> attack.getForwardVector().add(Config.Direction.UP().multiply(-2))
+        e -> attack -> attack.getForwardVector().add(Config.Direction.up().multiply(-2))
     ),
     WIDE_UMBRAL_SLASH3_WINDUP(new ControlVectors(
         () -> Config.AttackCurves.WIDE_UMBRAL_SLASH3_WINDUP_START,
@@ -107,7 +107,7 @@ public enum AttackType implements AttackProfile {
         () -> Config.AttackCurves.UP_SMASH_END,
         () -> Config.AttackCurves.UP_SMASH_C1,
         () -> Config.AttackCurves.UP_SMASH_C2),
-        e -> attack -> Config.Direction.UP().multiply(5)
+        e -> attack -> Config.Direction.up().multiply(5)
     ),
 
     LUNGE1(new ControlVectors(
@@ -161,10 +161,10 @@ public enum AttackType implements AttackProfile {
     ),
 
     DEFAULT(new ControlVectors(
-        Config.Direction::UP,
-        Config.Direction::DOWN,
-        Config.Direction::OUT_UP,
-        Config.Direction::OUT_DOWN
+        Config.Direction::up,
+        Config.Direction::down,
+        Config.Direction::outUp,
+        Config.Direction::outDown
     )),
 
     BLADE_RETRIEVAL_CIRCULAR_SLASH(

@@ -9,7 +9,7 @@ import btm.sword.Sword;
 import btm.sword.system.action.throwing.types.Projectile;
 
 /**
- * Manages all active {@link Projectile} instances and drives their physics loop
+ * Manages all ACTIVE {@link Projectile} instances and drives their physics loop
  * from a single repeating Bukkit task.
  * <p>
  * {@link btm.sword.system.entity.umbral.UmbralBlade UmbralBlade} and other FSM-driven
@@ -17,9 +17,11 @@ import btm.sword.system.action.throwing.types.Projectile;
  * Only standalone projectiles spawned via {@link Projectile#launch} are registered.
  * </p>
  */
-public class ProjectileManager {
+public final class ProjectileManager {
 
-    private static final List<Projectile> active = new ArrayList<>();
+    private ProjectileManager() {}
+
+    private static final List<Projectile> ACTIVE = new ArrayList<>();
 
     /**
      * Registers a {@link Projectile} so that it will be ticked each physics step.
@@ -27,7 +29,7 @@ public class ProjectileManager {
      * @param projectile the projectile to track
      */
     public static void register(Projectile projectile) {
-        active.add(projectile);
+        ACTIVE.add(projectile);
     }
 
     /**
@@ -38,7 +40,7 @@ public class ProjectileManager {
     public static void startTicking() {
         Bukkit.getScheduler().runTaskTimer(
             Sword.getInstance(),
-            () -> active.removeIf(p -> !p.tick()),
+            () -> ACTIVE.removeIf(p -> !p.tick()),
             0L, 1L
         );
     }

@@ -32,7 +32,9 @@ import lombok.Setter;
 
 
 // these methods provide a central location that every movement/speed call must go through
-public class TimeArbiter {
+public final class TimeArbiter {
+
+    private TimeArbiter() {}
     @Getter
     private static volatile double GLOBAL_TIME_SCALE = 1.0;
     private static volatile double GLOBAL_TELEPORT_DURATION_SCALING = 1.0;
@@ -40,12 +42,12 @@ public class TimeArbiter {
     public static volatile Consumer<SwordEntity> movementSpeedApplication = swordEntity -> {};
     public static boolean updatingTimeScale = false;
 
-    private static final Map<Integer, TaskHandle> timeBoundTasks = new ConcurrentHashMap<>();
-    private static final Supplier<Boolean> pauseAll = () -> false; // TODO: determine from where this should come
+    private static final Map<Integer, TaskHandle> TIME_BOUND_TASKS = new ConcurrentHashMap<>();
+    private static final Supplier<Boolean> PAUSE_ALL = () -> false; // TODO: determine from where this should come
 
-    private static final Map<Integer, TaskHandle> timeIndependentTasks = new ConcurrentHashMap<>();
+    private static final Map<Integer, TaskHandle> TIME_INDEPENDENT_TASKS = new ConcurrentHashMap<>();
 
-    private static final AtomicInteger taskCounter = new AtomicInteger();
+    private static final AtomicInteger TASK_COUNTER = new AtomicInteger();
 
 
     public static boolean setGlobalTimeScale(double timeScale) {
@@ -63,7 +65,7 @@ public class TimeArbiter {
             GLOBAL_TELEPORT_DURATION_SCALING = Math.max(1.0, 1 / GLOBAL_TIME_SCALE);
 
             // Mark all uncancelled tasks to be restarted
-            for (TaskHandle task : timeBoundTasks.values()) {
+            for (TaskHandle task : TIME_BOUND_TASKS.values()) {
                 if (!task.isCancelled()) {  // Only restart non-cancelled tasks
                     task.setMarkedToRestart(true);
                 }
@@ -78,7 +80,7 @@ public class TimeArbiter {
     }
 
     private static void processRestartRequest(int taskID, boolean timeBound) {
-        TaskHandle handle = timeBound ? timeBoundTasks.get(taskID) : timeIndependentTasks.get(taskID);
+        TaskHandle handle = timeBound ? TIME_BOUND_TASKS.get(taskID) : TIME_INDEPENDENT_TASKS.get(taskID);
         if (handle == null) return;
 
         handle.future.cancel(true);
@@ -122,7 +124,7 @@ public class TimeArbiter {
         return application;
     }
 
-    public static class TaskHandle {
+    public static final class TaskHandle {
         @Getter
         private final int taskID;
         private final boolean timeBound;
@@ -209,7 +211,7 @@ public class TimeArbiter {
                                          Runnable paused, PredicateRunnablePair[] callbacks,
                                          int delayMs, int periodMs,
                                          Class<?> callingClass, String callingMethodName) {
-        int taskID = taskCounter.incrementAndGet();
+        int taskID = TASK_COUNTER.incrementAndGet();
 
         Debug.system("create task [" + taskID + "] from "
             + callingClass.getSimpleName() + "." + callingMethodName);
@@ -221,9 +223,9 @@ public class TimeArbiter {
         scheduleTaskFuture(handle);
 
         if (timeBound) {
-            timeBoundTasks.put(taskID, handle);
+            TIME_BOUND_TASKS.put(taskID, handle);
         } else {
-            timeIndependentTasks.put(taskID, handle);
+            TIME_INDEPENDENT_TASKS.put(taskID, handle);
         }
         return handle;
     }
@@ -247,7 +249,7 @@ public class TimeArbiter {
                         }
                     }
                     if (handle.cancelled.get()) return;
-                    if (handle.timeBound && (pauseAll.get() || handle.paused)) {
+                    if (handle.timeBound && (PAUSE_ALL.get() || handle.paused)) {
                         if (handle.pausedRunnable != null) handle.pausedRunnable.run();
                         return;
                     }
@@ -329,16 +331,16 @@ public class TimeArbiter {
     }
 
     private static void cleanupTask(int taskId) {
-        if (timeBoundTasks.remove(taskId) == null)
-            timeIndependentTasks.remove(taskId);
+        if (TIME_BOUND_TASKS.remove(taskId) == null)
+            TIME_INDEPENDENT_TASKS.remove(taskId);
     }
 
     /**
      * Cancel all tasks (shutdown hook)
      */
     public static void shutdown() {
-        timeBoundTasks.values().forEach(TaskHandle::cancel);
-        timeBoundTasks.clear();
+        TIME_BOUND_TASKS.values().forEach(TaskHandle::cancel);
+        TIME_BOUND_TASKS.clear();
     }
 
     public static void setVelocity(Entity entity, Vector velocity) {

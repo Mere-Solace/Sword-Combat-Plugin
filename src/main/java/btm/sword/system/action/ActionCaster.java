@@ -16,7 +16,7 @@ import btm.sword.system.entity.impl.Combatant;
  * for a given duration). This replaces the previous responsibility in {@code SwordAction}.
  */
 public final class ActionCaster {
-    private static final Plugin plugin = Sword.getInstance();
+    private static final Plugin PLUGIN = Sword.getInstance();
 
     private ActionCaster() {}
 
@@ -31,7 +31,7 @@ public final class ActionCaster {
      * @param action            the action payload to run on the next tick
      */
     public static void cast(Combatant executor, int castDurationMillis, Runnable action) {
-        BukkitTask castTask = Bukkit.getScheduler().runTask(plugin, action);
+        BukkitTask castTask = Bukkit.getScheduler().runTask(PLUGIN, action);
 
         if (castDurationMillis <= 0) return;
 

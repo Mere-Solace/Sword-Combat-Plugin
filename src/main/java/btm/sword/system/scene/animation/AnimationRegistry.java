@@ -64,7 +64,7 @@ import btm.sword.Sword;
  * {@code ../src/main/resources/animations.yml} exists (dev environment only), mirrors
  * the save there so changes survive a rebuild.
  */
-public class AnimationRegistry {
+public final class AnimationRegistry {
 
     private static final String ANIMATIONS_FILE = "animations.yml";
     private static final File DEU_BASE = new File("plugins/DisplayEntityUtils");

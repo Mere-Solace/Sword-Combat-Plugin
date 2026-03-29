@@ -66,7 +66,7 @@ public class MovementAction extends SwordAction {
 
         Dash.scheduleParticleDisplay(executor);
 
-        PotionEffect speed = new PotionEffect(PotionEffectType.SPEED, Config.Movement.SPEED_DURATION-1, Config.Movement.SPEED_AMPLIFIER-1);
+        PotionEffect speed = new PotionEffect(PotionEffectType.SPEED, Config.Movement.SPEED_DURATION - 1, Config.Movement.SPEED_AMPLIFIER - 1);
         executor.self().addPotionEffect(speed);
 
         executor.setVelocity(basis.forward().multiply(0.25).add(basis.right().multiply(1.5 * direction)));
@@ -114,7 +114,7 @@ public class MovementAction extends SwordAction {
         TimeArbiter.runFixedIterationTaskTimer(
             null,
             () -> {
-                DrawUtil.line(List.of(Prefab.Particles.TEST_SWORD_WHITE), target.getChestLocation(), throwDirection, target.getAverageSize()*2, 0.25);
+                DrawUtil.line(List.of(Prefab.Particles.TEST_SWORD_WHITE), target.getChestLocation(), throwDirection, target.getAverageSize() * 2, 0.25);
                 Prefab.Particles.THROW_TRAIL.display(target.getChestLocation());
 
                 World world = targetEntity.getWorld();
@@ -124,7 +124,7 @@ public class MovementAction extends SwordAction {
                 if (!newLocation.isFinite()) return;
 
                 RayTraceResult blockResult = world.rayTraceBlocks(target.getChestLocation(), throwDirection,
-                    target.getAverageSize()*2, FluidCollisionMode.NEVER,
+                    target.getAverageSize() * 2, FluidCollisionMode.NEVER,
                     true,
                     block -> block.getType().isCollidable());
 

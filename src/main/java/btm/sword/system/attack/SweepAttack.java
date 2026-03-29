@@ -15,7 +15,7 @@ import btm.sword.config.Config;
 import btm.sword.system.attack.style.AttackProfile;
 import btm.sword.utility.math.VectorUtil;
 
-public class SweepAttack extends Attack{
+public class SweepAttack extends Attack {
     private ItemDisplay sweepTail;
     private ItemDisplay sweepBody;
     private ItemDisplay sweepFront;
@@ -55,7 +55,7 @@ public class SweepAttack extends Attack{
 //
 //        dynamicNormal = attackProfile.normalVector() == null;
 //        if (!dynamicNormal) {
-//            displayRollRotation = (float) VectorUtil.getAngleBetweenTwoVectors(attackProfile.normalVector(), Config.Direction.UP());
+//            displayRollRotation = (float) VectorUtil.getAngleBetweenTwoVectors(attackProfile.normalVector(), Config.Direction.up());
 //        }
 //
 //        sweepDisplays = new ArrayList<>(attackIterations);
@@ -84,7 +84,7 @@ public class SweepAttack extends Attack{
             Vector body = cur == null ? weaponPathFunction.apply(attackStartValue) : cur;
             return (float) VectorUtil.getAngleBetweenTwoVectors(
                 to == null ? body.subtract(prev) : to,
-                Config.Direction.UP()
+                Config.Direction.up()
             );
         }
         return displayRollRotation;
@@ -94,7 +94,7 @@ public class SweepAttack extends Attack{
         displayRollRotation = calcDisplayRotation();
 
         Transformation transformation = new Transformation(
-            new Vector3f(xScale/2, -zScale/2, -zScale/2), // to center the block at the location
+            new Vector3f(xScale / 2, -zScale / 2, -zScale / 2), // to center the block at the location
             new Quaternionf().rotateZ(displayRollRotation),
             new Vector3f(xScale, yScale, zScale),
             new Quaternionf()

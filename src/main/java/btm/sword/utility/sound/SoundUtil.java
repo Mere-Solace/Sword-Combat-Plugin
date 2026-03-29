@@ -13,9 +13,9 @@ import net.kyori.adventure.sound.Sound;
  * sound playback are caught and logged to prevent game-breaking errors from audio failures.
  * </p>
  */
-public class SoundUtil {
+public final class SoundUtil {
 
-    private SoundUtil() { }
+    private SoundUtil() {}
 
     /**
      * Plays the given sound to the target entity at the specified volume and pitch.

@@ -22,7 +22,10 @@ import btm.sword.utility.sound.SwordSoundType;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextDecoration;
 
-public class Prefab {
+public final class Prefab {
+
+    private Prefab() {}
+
     public static class Particles {
         public static final ParticleWrapper TEST_FLAME = new ParticleWrapper(
             () -> Particle.FLAME, () -> 2, () -> 0.025, () -> 0.025, () -> 0.025).withSpeed(() -> 0.0);

@@ -121,7 +121,7 @@ public class EntityListener implements Listener {
             }
         }
 
-        if(event.getEntity() instanceof LivingEntity && event.getDamage() < 7474040) {
+        if (event.getEntity() instanceof LivingEntity && event.getDamage() < 7474040) {
             event.setDamage(0.01);
             ((LivingEntity) event.getEntity()).heal(100);
         }

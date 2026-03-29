@@ -41,7 +41,9 @@ import btm.sword.utility.math.VectorUtil;
  *   <li>{@link #throwing} – Thrown-item lifecycle          ({@code VERBOSE_THROWING})</li>
  * </ul>
  */
-public class Debug {
+public final class Debug {
+
+    private Debug() {}
 
     private static final StackWalker WALKER =
         StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);

@@ -18,17 +18,20 @@ import btm.sword.system.entity.base.SwordEntity;
  * and converting between different coordinate frames in 3D space.
  * </p>
  */
-public class VectorUtil {
+public final class VectorUtil {
+
+    private VectorUtil() {}
+
     public static Basis getBasis(Location origin, Vector dir) {
         dir.normalize();
         if (dir.isZero()) { // just in case, return a default basis
             return new Basis(
-                Config.Direction.UP().crossProduct(Config.Direction.SOUTH()),
-                Config.Direction.UP(),
-                Config.Direction.SOUTH());
+                Config.Direction.up().crossProduct(Config.Direction.south()),
+                Config.Direction.up(),
+                Config.Direction.south());
         }
 
-        Vector upReference = Config.Direction.UP();
+        Vector upReference = Config.Direction.up();
         Vector right;
 
         double isDirectionStraightUpOrDown = dir.dot(upReference);
@@ -50,7 +53,7 @@ public class VectorUtil {
     }
 
     public static Basis getBasisWithoutPitch(Entity origin) {
-        Vector up = Config.Direction.UP();
+        Vector up = Config.Direction.up();
         double yaw;
         if (origin instanceof Player player) {
             yaw = Math.toRadians(player.getBodyYaw());
@@ -65,7 +68,7 @@ public class VectorUtil {
     }
 
     public static Basis getBasisWithoutPitch(Location location) {
-        Vector up = Config.Direction.UP();
+        Vector up = Config.Direction.up();
         double yaw = Math.toRadians(location.getYaw());
         Vector dir = new Vector(-Math.sin(yaw), 0, Math.cos(yaw));
         Vector right = dir.getCrossProduct(up).normalize();
@@ -126,7 +129,7 @@ public class VectorUtil {
      * @return The component of {@code v} that lies on the plane.
      */
     public static Vector getProjOntoPlane(Vector v, Vector norm) {
-        return v.clone().subtract(norm.clone().multiply(v.dot(norm)/norm.lengthSquared()));
+        return v.clone().subtract(norm.clone().multiply(v.dot(norm) / norm.lengthSquared()));
     }
 
     /**

@@ -35,9 +35,12 @@ import btm.sword.system.playerdata.PlayerDataManager;
  * {@link Hostile}, and {@link Passive}. It also keeps track of online players separately from NPCs.
  * </p>
  */
-public class SwordEntityArbiter {
-    private static final HashMap<UUID, SwordEntity> existingSwordNPCs = new HashMap<>();
-    private static final HashMap<UUID, SwordEntity> onlineSwordPlayers = new HashMap<>();
+public final class SwordEntityArbiter {
+
+    private SwordEntityArbiter() {}
+
+    private static final HashMap<UUID, SwordEntity> EXISTING_SWORD_NPCS = new HashMap<>();
+    private static final HashMap<UUID, SwordEntity> ONLINE_SWORD_PLAYERS = new HashMap<>();
 
     /**
      * Registers an {@link Entity} as a {@link SwordEntity} in the system.
@@ -54,14 +57,14 @@ public class SwordEntityArbiter {
         UUID entityUUID = entity.getUniqueId();
         if (entity instanceof Player player) {
             PlayerDataManager.register(player);
-            if (onlineSwordPlayers.get(entityUUID) == null) {
-                onlineSwordPlayers.put(entityUUID, new SwordPlayer(player, PlayerDataManager.getPlayerData(entityUUID)));
+            if (ONLINE_SWORD_PLAYERS.get(entityUUID) == null) {
+                ONLINE_SWORD_PLAYERS.put(entityUUID, new SwordPlayer(player, PlayerDataManager.getPlayerData(entityUUID)));
             }
 
             if (Sword.getInstance().isEnabled()) {
                 SwordScheduler.runBukkitTaskLater(
                     () -> {
-                        SwordEntity sp = onlineSwordPlayers.getOrDefault(entityUUID, null);
+                        SwordEntity sp = ONLINE_SWORD_PLAYERS.getOrDefault(entityUUID, null);
                         if (sp != null) sp.onRegister();
                     },
                     200, TimeUnit.MILLISECONDS
@@ -71,12 +74,12 @@ public class SwordEntityArbiter {
         else if (!entity.isDead()) {
             SwordEntity swordEntity = initializeNPC(entity);
             if (swordEntity == null) return;
-            existingSwordNPCs.putIfAbsent(entityUUID, swordEntity);
+            EXISTING_SWORD_NPCS.putIfAbsent(entityUUID, swordEntity);
 
             if (Sword.getInstance().isEnabled()) {
                 SwordScheduler.runBukkitTaskLater(
                     () -> {
-                        SwordEntity entityToRegister = existingSwordNPCs.get(entityUUID);
+                        SwordEntity entityToRegister = EXISTING_SWORD_NPCS.get(entityUUID);
                         if (entityToRegister == null) return;
                         entityToRegister.onRegister();
                     }, 200, TimeUnit.MILLISECONDS
@@ -94,7 +97,7 @@ public class SwordEntityArbiter {
      * @param entity entity to remove
      */
     public static void remove(LivingEntity entity) {
-        if (onlineSwordPlayers.remove(entity.getUniqueId()) == null) existingSwordNPCs.remove(entity.getUniqueId());
+        if (ONLINE_SWORD_PLAYERS.remove(entity.getUniqueId()) == null) EXISTING_SWORD_NPCS.remove(entity.getUniqueId());
     }
 
     /**
@@ -107,7 +110,7 @@ public class SwordEntityArbiter {
      * @return the SwordEntity corresponding to the UUID, or null if none found
      */
     public static SwordEntity get(LivingEntity entity) {
-        return onlineSwordPlayers.getOrDefault(entity.getUniqueId(), existingSwordNPCs.get(entity.getUniqueId()));
+        return ONLINE_SWORD_PLAYERS.getOrDefault(entity.getUniqueId(), EXISTING_SWORD_NPCS.get(entity.getUniqueId()));
     }
 
     /**
@@ -162,7 +165,7 @@ public class SwordEntityArbiter {
                  PALE_OAK_CHEST_BOAT, SPRUCE_BOAT, SPRUCE_CHEST_BOAT, EXPERIENCE_ORB, EYE_OF_ENDER, UNKNOWN, AREA_EFFECT_CLOUD,
                  EGG, END_CRYSTAL, ENDER_PEARL, EXPERIENCE_BOTTLE, TRIDENT, EVOKER_FANGS, WIND_CHARGE, ARROW, BREEZE_WIND_CHARGE,
                  BAMBOO_CHEST_RAFT, BAMBOO_RAFT, FISHING_BOBBER, TNT, TNT_MINECART, COMMAND_BLOCK_MINECART, FIREBALL, FIREWORK_ROCKET,
-                 DRAGON_FIREBALL, SMALL_FIREBALL, LEASH_KNOT, LLAMA_SPIT, SHULKER_BULLET, WITHER_SKULL, LINGERING_POTION, LIGHTNING_BOLT ,
+                 DRAGON_FIREBALL, SMALL_FIREBALL, LEASH_KNOT, LLAMA_SPIT, SHULKER_BULLET, WITHER_SKULL, LINGERING_POTION, LIGHTNING_BOLT,
                  MARKER -> { return null; }
             default -> {
                 return new Passive(entity, new CombatProfile());
@@ -187,7 +190,7 @@ public class SwordEntityArbiter {
      * Called during plugin shutdown to clean up orphaned display entities.
      */
     public static void removeAllDisplays() {
-        for (SwordEntity entity : onlineSwordPlayers.values()) {
+        for (SwordEntity entity : ONLINE_SWORD_PLAYERS.values()) {
             SwordPlayer sp = (SwordPlayer) entity;
             if (sp.getActiveCameraController() != null) {
                 sp.getActiveCameraController().stop();
@@ -226,18 +229,18 @@ public class SwordEntityArbiter {
     public static void applyToAllRegisteredEntities(Consumer<SwordEntity>... actions) {
         int entitiesAffected = 0;
         int playersAffected = 0;
-        for (SwordEntity entity : existingSwordNPCs.values()) {
+        for (SwordEntity entity : EXISTING_SWORD_NPCS.values()) {
             entitiesAffected++;
             for (Consumer<SwordEntity> action : actions) {
                 action.accept(entity);
             }
         }
-        for (SwordEntity entity : onlineSwordPlayers.values()) {
+        for (SwordEntity entity : ONLINE_SWORD_PLAYERS.values()) {
             playersAffected++;
             for (Consumer<SwordEntity> action : actions) {
                 action.accept(entity);
             }
         }
-        Sword.print(entitiesAffected + " Entities Affected, " + playersAffected + " Players Affected" );
+        Sword.print(entitiesAffected + " Entities Affected, " + playersAffected + " Players Affected");
     }
 }

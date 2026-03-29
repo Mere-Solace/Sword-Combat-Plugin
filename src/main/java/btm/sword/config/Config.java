@@ -35,7 +35,9 @@ import net.kyori.adventure.text.format.TextColor;
  * for reload/save operations.
  * </p>
  */
-public class Config {
+public final class Config {
+
+    private Config() {}
 
     // ==============================================================================
     // CONFIG ENTRY REGISTRATION SYSTEM
@@ -105,7 +107,8 @@ public class Config {
      * Called from static initializer blocks to add entries to the ENTRIES list.
      * </p>
      */
-    public static <T> void register(String path, T defaultValue, Class<T> type, Consumer<T> assign, ConfigEntry.Loader<T> loader) {
+    public static <T> void register(
+            String path, T defaultValue, Class<T> type, Consumer<T> assign, ConfigEntry.Loader<T> loader) {
         ENTRIES.add(new ConfigEntry<>(path, defaultValue, type, assign, loader));
     }
 
@@ -172,7 +175,8 @@ public class Config {
     /**
      * Loader for List<EntityType> configuration values.
      */
-    public static List<EntityType> loadEntityTypeList(ConfigurationSection section, String path, List<EntityType> defaultValue) {
+    public static List<EntityType> loadEntityTypeList(
+            ConfigurationSection section, String path, List<EntityType> defaultValue) {
         if (!section.contains(path)) return defaultValue;
         List<String> names = section.getStringList(path);
         return names.stream()
@@ -190,7 +194,8 @@ public class Config {
     /**
      * Loader for Enum configuration values.
      */
-    public static <E extends Enum<E>> E loadEnum(ConfigurationSection section, String path, E defaultValue, Class<E> enumClass) {
+    public static <E extends Enum<E>> E loadEnum(
+            ConfigurationSection section, String path, E defaultValue, Class<E> enumClass) {
         if (!section.contains(path)) return defaultValue;
         String value = section.getString(path);
         if (value == null) return defaultValue;
@@ -288,27 +293,27 @@ public class Config {
     public static class Direction {
         private static final Vector UP = new Vector(0, 1, 0);
         /** @return a fresh clone of the world-up unit vector {@code (0, 1, 0)}. */
-        public static Vector UP() { return UP.clone(); }
+        public static Vector up() { return UP.clone(); }
 
         private static final Vector DOWN = new Vector(0, -1, 0);
         /** @return a fresh clone of the world-down unit vector {@code (0, -1, 0)}. */
-        public static Vector DOWN() { return DOWN.clone(); }
+        public static Vector down() { return DOWN.clone(); }
 
         private static final Vector NORTH = new Vector(0, 0, -1);
         /** @return a fresh clone of the north unit vector {@code (0, 0, -1)}. */
-        public static Vector NORTH() { return NORTH.clone(); }
+        public static Vector north() { return NORTH.clone(); }
 
         private static final Vector SOUTH = new Vector(0, 0, 1);
         /** @return a fresh clone of the south unit vector {@code (0, 0, 1)}. */
-        public static Vector SOUTH() { return SOUTH.clone(); }
+        public static Vector south() { return SOUTH.clone(); }
 
         private static final Vector OUT_UP = new Vector(0, 1, 1);
         /** @return a fresh clone of the out-and-up diagonal vector {@code (0, 1, 1)}. */
-        public static Vector OUT_UP() { return OUT_UP.clone(); }
+        public static Vector outUp() { return OUT_UP.clone(); }
 
         private static final Vector OUT_DOWN = new Vector(0, -1, 1);
         /** @return a fresh clone of the out-and-down diagonal vector {@code (0, -1, 1)}. */
-        public static Vector OUT_DOWN() { return OUT_DOWN.clone(); }
+        public static Vector outDown() { return OUT_DOWN.clone(); }
     }
     //endregion
 
@@ -2812,7 +2817,8 @@ public class Config {
             v -> LOGGING_VERBOSE_INPUT = v,
             ConfigurationSection::getBoolean); }
 
-        /** Log skill slot resolution, ability cast routing, and {@link btm.sword.system.action.skill.container.PlayerSkillContainer} state. */
+        /** Log skill slot resolution, ability cast routing, and
+         * {@link btm.sword.system.action.skill.container.PlayerSkillContainer} state. */
         public static boolean LOGGING_VERBOSE_SKILL = false;
         static { register(
             "debug.logging_verbose_skill",
@@ -2836,7 +2842,8 @@ public class Config {
             v -> LOGGING_VERBOSE_GRAB = v,
             ConfigurationSection::getBoolean); }
 
-        /** Log attack sweeps: Bezier curve steps, hitbox detections, and {@link btm.sword.system.attack.HitValuePacket} dispatch. */
+        /** Log attack sweeps: Bezier curve steps, hitbox detections,
+         * and {@link btm.sword.system.attack.HitValuePacket} dispatch. */
         public static boolean LOGGING_VERBOSE_ATTACK = false;
         static { register(
             "debug.logging_verbose_attack",
@@ -3759,11 +3766,14 @@ public class Config {
 
         /** Bleed hit effect. */
         public static Particle BLEED_TYPE = Particle.BLOCK;
-        static { register("particles.bleed_type", BLEED_TYPE, Particle.class, v -> BLEED_TYPE = v, Config::loadParticle); }
+        static { register("particles.bleed_type", BLEED_TYPE, Particle.class,
+            v -> BLEED_TYPE = v, Config::loadParticle); }
         public static int BLEED_COUNT = 25;
-        static { register("particles.bleed_count", BLEED_COUNT, Integer.class, v -> BLEED_COUNT = v, ConfigurationSection::getInt); }
+        static { register("particles.bleed_count", BLEED_COUNT, Integer.class,
+            v -> BLEED_COUNT = v, ConfigurationSection::getInt); }
         public static double BLEED_SPEED = -1.0;
-        static { register("particles.bleed_speed", BLEED_SPEED, Double.class, v -> BLEED_SPEED = v, ConfigurationSection::getDouble); }
+        static { register("particles.bleed_speed", BLEED_SPEED, Double.class,
+            v -> BLEED_SPEED = v, ConfigurationSection::getDouble); }
 
         /** Thrown-item impale effect (lodged in entity). */
         public static Particle THROWN_ITEM_IMPALE_TYPE = Particle.TRIAL_SPAWNER_DETECTION;

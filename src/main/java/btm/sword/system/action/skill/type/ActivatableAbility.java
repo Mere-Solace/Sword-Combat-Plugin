@@ -12,7 +12,7 @@ import btm.sword.system.action.skill.AbilityType;
 public abstract class ActivatableAbility extends ActiveSkill implements AbilitySkill {
 
     /** Creates an {@code ActivatableAbility}. */
-    protected ActivatableAbility() { }
+    protected ActivatableAbility() {}
 
     @Override
     public AbilityType abilityType() {

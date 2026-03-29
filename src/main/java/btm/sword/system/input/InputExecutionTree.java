@@ -264,13 +264,13 @@ public class InputExecutionTree {
         int r1 = 110;
         int g1 = 144;
         int b1 = 174;
-        int r_diff = r1-r0;
-        int g_diff = g1-g0;
-        int b_diff = b1-b0;
+        int rDiff = r1 - r0;
+        int gDiff = g1 - g0;
+        int bDiff = b1 - b0;
         float clamped = Math.max(0f, Math.min(1f, t));
-        int r = (int) (r0 + clamped * (r_diff));
-        int g = (int) (g0 + clamped * (g_diff));
-        int b = (int) (b0 + clamped * (b_diff));
+        int r = (int) (r0 + clamped * (rDiff));
+        int g = (int) (g0 + clamped * (gDiff));
+        int b = (int) (b0 + clamped * (bDiff));
         return TextColor.color(r, g, b);
     }
 
@@ -344,7 +344,7 @@ public class InputExecutionTree {
             c -> 0),
         c -> true);
 
-    public record ActionContextPair(Supplier<InputAction> action, Predicate<SwordPlayer> context) { }
+    public record ActionContextPair(Supplier<InputAction> action, Predicate<SwordPlayer> context) {}
 
     /**
      * Represents a node in the {@link InputExecutionTree}, used to map input sequences to actions.

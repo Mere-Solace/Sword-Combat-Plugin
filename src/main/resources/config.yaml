@@ -333,13 +333,9 @@ debug:
   logging_verbose_movement: false
   
   logging_verbose_config: false
-  logging_verbose_animation: false
   
   visualization_show_hitboxes: false
   visualization_show_raytraces: false
-  
-  skip_data_load: false
-  skip_data_save: false
 
 
 grab:
@@ -374,15 +370,6 @@ hostile:
   pre_attack_ticks: 24
   retreat_ticks: 40
   flee_health_fraction: 0.2
-  display_group: witha
-  display_ride_offset_y: 0.0
-  display_anim_idle: idle
-  display_anim_walk: walk
-  display_anim_fall: fall
-  display_anim_melee: melee
-  mob_throw_weight: 0.3
-  mob_retrieve_pickup_range: 2.0
-  display_teleport_duration: 3
 
 
 umbral:
@@ -412,25 +399,17 @@ menu_grid:
   spacing_z: 21.0
   rows: 11
   cols: 11
-  loading_wait_ms: 1500
-roguelike:
-  
-  spawn_world: world
-  spawn_x: -129.0
-  spawn_y: 64.0
-  spawn_z: 138.0
-  spawn_radius: 8.0
-  
-  wave_1_pillagers: 3
-  wave_2_wither_skeletons: 3
-  wave_3_pillagers: 2
-  wave_3_wither_skeletons: 3
-
-
 join_sequence:
   opening_x: -186.5
   opening_z: -1058.5
 ctf:
-  red_spawn_x: -81.0
-  red_spawn_z: 315.0
-  red_spawn_y: 92.0
+  red_spawn_x: -209.0
+  red_spawn_y: 105.0
+  red_spawn_z: -1968.0
+  blue_spawn_x: -209.0
+  blue_spawn_y: 105.0
+  blue_spawn_z: -1998.0
+roguelike:
+  spawn_x: -209.0
+  spawn_y: 104.0
+  spawn_z: -1968.0

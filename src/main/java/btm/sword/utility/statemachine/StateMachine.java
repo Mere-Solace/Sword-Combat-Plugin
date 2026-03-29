@@ -46,13 +46,13 @@ public class StateMachine<T> {
      * Hook called immediately before a transition's action is executed.
      * Override for cross-cutting pre-transition logic.
      */
-    public void onAnyTransition() { }
+    public void onAnyTransition() {}
 
     /**
      * Hook called immediately after the new state has been entered following a transition.
      * Override for cross-cutting post-transition logic.
      */
-    public void afterAnyTransition() { }
+    public void afterAnyTransition() {}
 
     /**
      * Ticks the current state and evaluates all registered transitions.

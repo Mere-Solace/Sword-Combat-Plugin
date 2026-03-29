@@ -27,7 +27,9 @@ import btm.sword.utility.Prefab;
  * Useful for visual effects and particle display management in the Sword plugin.
  * </p>
  */
-public class DisplayUtil {
+public final class DisplayUtil {
+
+    private DisplayUtil() {}
 
     /**
      * Performs a smooth teleport of a {@link Display} over a specified duration in ticks.
@@ -75,7 +77,7 @@ public class DisplayUtil {
                         )
                     );
                     currentDirectionToTarget.set(curTarget.toVector().subtract(display.getLocation().toVector()));
-                } catch (RuntimeException ignored) { }
+                } catch (RuntimeException ignored) {}
             },
             () -> {
                 Vector scaledDiff = currentDirectionToTarget.get().normalize().multiply(speed);
@@ -102,7 +104,7 @@ public class DisplayUtil {
             ),
             new PredicateRunnablePair(
                 () -> currentDirectionToTarget.get().isZero() ||
-                    currentDirectionToTarget.get().lengthSquared() < endDistance*endDistance ||
+                    currentDirectionToTarget.get().lengthSquared() < endDistance * endDistance ||
                     ticks.get() > timeoutTicks || endCondition.get() &&
                     !(contiueDespiteArrivalCondition.get()), // make this condition very predictable
                 () -> {
@@ -133,7 +135,7 @@ public class DisplayUtil {
         Consumer<T> callback, T toConsume) {
 
         double originalYaw = Math.toRadians(entity.self().getBodyYaw());
-        Vector offset = Config.Direction.UP().multiply(heightOffset);
+        Vector offset = Config.Direction.up().multiply(heightOffset);
 
         itemDisplay.setBillboard(Config.Display.ITEM_DISPLAY_FOLLOW_BILLBOARD_MODE);
 
@@ -144,7 +146,7 @@ public class DisplayUtil {
                 Location l = entity.self().getLocation().add(offset);
 
                 double yawRads = Math.toRadians(followHead ? entity.self().getYaw() : entity.self().getBodyYaw());
-                Vector curDir = direction.clone().rotateAroundY(originalYaw-yawRads);
+                Vector curDir = direction.clone().rotateAroundY(originalYaw - yawRads);
 
                 TimeArbiter.teleportDisplay(
                     itemDisplay,

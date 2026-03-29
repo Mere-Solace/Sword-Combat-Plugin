@@ -27,7 +27,7 @@ import btm.sword.utility.misc.ConsumerToConsumePair;
 public class AttackAction extends SwordAction {
 
     /** Creates an {@code AttackAction}. */
-    public AttackAction() { }
+    public AttackAction() {}
 
     /**
      * Executes a basic attack for the given {@link Combatant} and {@link AttackType}.
@@ -44,11 +44,11 @@ public class AttackAction extends SwordAction {
         WeaponAttackStyle weaponAttackStyle = WeaponAttackStyle.fromString(itemUsedInAttack);
 
         if (weaponAttackStyle.equals(WeaponAttackStyle.PUNCH)) { // catch any untagged items and perform a punch with it
-            throwPunch(executor, comboStep == 1 || comboStep == 3 ,-1);
+            throwPunch(executor, comboStep == 1 || comboStep == 3, -1);
             return;
         }
 
-        double dot = executor.dir().dot(Config.Direction.UP());
+        double dot = executor.dir().dot(Config.Direction.up());
 
         if (executor.isGrounded()) {
             switch (weaponAttackStyle) {

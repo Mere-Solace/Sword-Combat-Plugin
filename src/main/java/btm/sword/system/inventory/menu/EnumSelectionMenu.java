@@ -425,7 +425,7 @@ public class EnumSelectionMenu extends Menu {
             try {
                 Material mat = Material.valueOf(candidate);
                 if (!mat.isAir() && mat.isItem()) return mat;
-            } catch (IllegalArgumentException ignored) { }
+            } catch (IllegalArgumentException ignored) {}
         }
         return Material.STONE;
     }
@@ -442,7 +442,7 @@ public class EnumSelectionMenu extends Menu {
             try {
                 Material mat = Material.valueOf(candidate);
                 if (mat.isItem() && !mat.isAir()) return mat;
-            } catch (IllegalArgumentException ignored) { }
+            } catch (IllegalArgumentException ignored) {}
         }
         return Material.CHEST;
     }
@@ -458,7 +458,7 @@ public class EnumSelectionMenu extends Menu {
             String candidate = String.join("_", java.util.Arrays.copyOf(parts, len)) + "_SPAWN_EGG";
             try {
                 return Material.valueOf(candidate);
-            } catch (IllegalArgumentException ignored) { }
+            } catch (IllegalArgumentException ignored) {}
         }
         return Material.SKELETON_SKULL;
     }

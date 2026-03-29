@@ -75,7 +75,7 @@ public class DEUAnimationController extends CameraController {
         Player player = cachedOwner.player();
         Location location = player.getLocation().clone();
 
-        MovementListener.lockedPlayers.add(player.getUniqueId());
+        MovementListener.LOCKED_PLAYERS.add(player.getUniqueId());
 
 
         DisplayEntityGroup group = DisplayGroupManager.getGroup(LoadMethod.LOCAL, def.groupTag());
@@ -145,7 +145,7 @@ public class DEUAnimationController extends CameraController {
         if (cachedOwner == null) return;
         Player player = cachedOwner.player();
 
-        MovementListener.lockedPlayers.remove(player.getUniqueId());
+        MovementListener.LOCKED_PLAYERS.remove(player.getUniqueId());
 
         if (anchorSession != null) {
             anchorSession.detach();

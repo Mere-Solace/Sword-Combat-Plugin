@@ -27,7 +27,7 @@ import org.bukkit.entity.Player;
  * (e.g. on an unsupported server version), {@link #isAvailable()} returns {@code false}
  * and callers should fall back to spectator-mode targeting.
  */
-public class CameraService {
+public final class CameraService {
 
     private CameraService() {}
 

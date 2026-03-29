@@ -443,7 +443,7 @@ public class Attack extends SwordAction implements Runnable {
 
             // potential reduction of damage formula
         }
-        else if (direction.lengthSquared() > (double) 2 / (attackIterations*attackIterations)) {
+        else if (direction.lengthSquared() > (double) 2 / (attackIterations * attackIterations)) {
             // interpolated particle, same as normal particle
             // 0.5 - half the length to the particle
             Prefab.Particles.TEST_SWING.display(attackLocation.clone().add(direction.multiply(0.5)));

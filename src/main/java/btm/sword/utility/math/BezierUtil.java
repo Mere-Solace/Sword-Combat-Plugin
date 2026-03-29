@@ -12,9 +12,9 @@ import org.bukkit.util.Vector;
  * Used to interpolate 3D paths, transitions, or geometric forms within the Sword plugin.
  * </p>
  */
-public class BezierUtil {
+public final class BezierUtil {
 
-    private BezierUtil() { }
+    private BezierUtil() {}
 
     /**
      * Constructs a cubic Bézier curve function in 3D space.
@@ -26,15 +26,15 @@ public class BezierUtil {
      */
     public static Function<Double, Vector> cubicBezier3D(ControlVectors control) {
         return t -> {
-            double t2 = t*t;
-            double t3 = t*t2;
-            double mt = 1-t;
-            double mt2 = mt*mt;
-            double mt3 = mt*mt2;
+            double t2 = t * t;
+            double t3 = t * t2;
+            double mt = 1 - t;
+            double mt2 = mt * mt;
+            double mt3 = mt * mt2;
 
             Vector p0 = control.start().multiply(mt3);
-            Vector p1 = control.c1().multiply(3*mt2*t);
-            Vector p2 = control.c2().multiply(3*mt*t2);
+            Vector p1 = control.c1().multiply(3 * mt2 * t);
+            Vector p2 = control.c2().multiply(3 * mt * t2);
             Vector p3 = control.end().multiply(t3);
 
             return p0.add(p1).add(p2).add(p3);

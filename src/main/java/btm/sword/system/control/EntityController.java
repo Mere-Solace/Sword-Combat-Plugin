@@ -5,7 +5,9 @@ import org.bukkit.entity.Entity;
 
 import io.papermc.paper.entity.TeleportFlag;
 
-public class EntityController {
+public final class EntityController {
+
+    private EntityController() {}
 
     public static void teleport(Entity entity, Location location) {
         entity.teleport(location, TeleportFlag.EntityState.RETAIN_PASSENGERS);

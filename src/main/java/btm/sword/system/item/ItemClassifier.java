@@ -47,7 +47,7 @@ public final class ItemClassifier {
         Material.LINGERING_POTION
     );
 
-    private ItemClassifier() { }
+    private ItemClassifier() {}
 
     /**
      * Classifies an item stack into an {@link ItemClass}.
@@ -63,7 +63,7 @@ public final class ItemClassifier {
         if (explicit != null) {
             try {
                 return ItemClass.valueOf(explicit);
-            } catch (IllegalArgumentException ignored) { }
+            } catch (IllegalArgumentException ignored) {}
         }
 
         Material mat = item.getType();

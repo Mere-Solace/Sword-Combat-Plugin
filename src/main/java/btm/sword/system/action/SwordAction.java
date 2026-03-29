@@ -8,8 +8,10 @@ import org.bukkit.scheduler.BukkitScheduler;
 import btm.sword.Sword;
 
 public abstract class SwordAction {
-    protected static final BukkitScheduler s = Bukkit.getScheduler();
-    protected static final Plugin plugin = Sword.getInstance();
+
+    protected SwordAction() {}
+    protected static final BukkitScheduler S = Bukkit.getScheduler();
+    protected static final Plugin PLUGIN = Sword.getInstance();
 
     // cast allows each sword action method to cast itself, setting the current ability (cast) task
     // of the executor, thus not allowing the executor to cast other abilities during this time.

@@ -300,20 +300,20 @@ public class UmbralBlade extends ThrownItem {
         } else if (state == RecallingState.class) {
             return new Transformation(
                 new Vector3f(),
-                new Quaternionf().rotateX((float) -Math.PI/2),
+                new Quaternionf().rotateX((float) -Math.PI / 2),
                 scale,
                 new Quaternionf());
         } else if (state == LungingState.class) {
             return new Transformation(
                 new Vector3f(),
-                new Quaternionf().rotateX((float) Math.PI/2),
+                new Quaternionf().rotateX((float) Math.PI / 2),
                 scale,
                 new Quaternionf()
             );
         } else if (state == GrabImpaleState.class) {
             return new Transformation(
                 new Vector3f(),
-                new Quaternionf().rotateX((float) -Math.PI/2),
+                new Quaternionf().rotateX((float) -Math.PI / 2),
                 scale,
                 new Quaternionf()
             );
@@ -322,7 +322,7 @@ public class UmbralBlade extends ThrownItem {
         } else if (state == AttackingQuickState.class || state == AttackingHeavyState.class) {
             return new Transformation(
                 new Vector3f(0, 0, -1),
-                new Quaternionf().rotateX((float) Math.PI/2),
+                new Quaternionf().rotateX((float) Math.PI / 2),
                 scale,
                 new Quaternionf());
         } else {
@@ -351,7 +351,7 @@ public class UmbralBlade extends ThrownItem {
                     Config.UmbralBlade.IDLE_MOVEMENT_PERIOD
                 );
 
-                step[0] += Math.PI/8;
+                step[0] += Math.PI / 8;
             },
             null,
             null,
@@ -529,7 +529,7 @@ public class UmbralBlade extends ThrownItem {
     }
 
     public void onGrab(Combatant combatant) {
-        Debug.umbral("onGrab. inState()="+bladeStateMachine.getState().name());
+        Debug.umbral("onGrab. inState()=" + bladeStateMachine.getState().name());
 
         if (!isOwnedBy(combatant)) {
             // TODO: #241 - Add rejection logic for non-thrower grabs

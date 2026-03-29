@@ -19,6 +19,8 @@ import btm.sword.system.input.InputAction;
  */
 public final class SkillSlotActionFactory {
 
+    private SkillSlotActionFactory() {}
+
     /**
      * Resolves an {@link InputAction} for the skill equipped in {@code slot}.
      *

@@ -130,7 +130,7 @@ public class Resource extends Aspect {
      * @return current resource / effective cap
      */
     public float curPercent() {
-        return curValue/ effectiveMaxValue();
+        return curValue / effectiveMaxValue();
     }
 
     /**
@@ -204,7 +204,7 @@ public class Resource extends Aspect {
      * @return effective period (ticks)
      */
     public int effectivePeriod() {
-        return (int)(baseRegenPeriod * effPeriodPercent);
+        return (int) (baseRegenPeriod * effPeriodPercent);
     }
 
     /**

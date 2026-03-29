@@ -415,7 +415,7 @@ public class ThrownItem extends VisualProjectile {
     public void startImpalementTask(SwordEntity target) {
         Vector kb = EntityUtil.isOnGround(target.self())
             ? velocity.clone().multiply(Config.Combat.THROWN_DAMAGE_SWORD_AXE_KNOCKBACK_GROUNDED)
-            : VectorUtil.getProjOntoPlane(velocity, Config.Direction.UP())
+            : VectorUtil.getProjOntoPlane(velocity, Config.Direction.up())
                 .multiply(Config.Combat.THROWN_DAMAGE_SWORD_AXE_KNOCKBACK_AIRBORNE);
 
         if (display.isValid()) {

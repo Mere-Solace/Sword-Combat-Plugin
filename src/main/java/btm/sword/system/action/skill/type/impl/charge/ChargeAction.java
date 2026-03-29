@@ -40,7 +40,7 @@ public final class ChargeAction {
     /** Distance in front of the player's eye to hold the charging display. */
     private static final double HOLD_DISTANCE = 4.5;
 
-    private ChargeAction() { }
+    private ChargeAction() {}
 
     /**
      * Begins charging the equipped chargeable ability. Resolves the ability from the held slot,
@@ -87,7 +87,7 @@ public final class ChargeAction {
                     chargeable.onChargeTick(session, elapsed);
                 },
                 null,
-                0,50,
+                0, 50,
                 ChargeAction.class, "startCharge",
                 new PredicateRunnablePair(
                     () -> sp.isDead() || display.isDead() ||

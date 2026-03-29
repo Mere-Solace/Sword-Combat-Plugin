@@ -17,10 +17,12 @@ import btm.sword.system.action.skill.type.impl.umbral.VoidLungeSkill;
  * as the class is loaded, without requiring an explicit {@code onEnable} hook. Pass a
  * {@link SkillId} to {@link #get(SkillId)} to retrieve the corresponding implementation.</p>
  */
-public class SkillRegistry {
+public final class SkillRegistry {
+
+    private SkillRegistry() {}
 
     /** The backing map; populated by the static initialiser. */
-    public static final HashMap<SkillId, Skill> skillMapping = new HashMap<>();
+    public static final HashMap<SkillId, Skill> SKILL_MAPPING = new HashMap<>();
 
     // No Bukkit/Paper API features are used here, so we can use a static call instead of a call in on Enable
     static {
@@ -35,7 +37,7 @@ public class SkillRegistry {
     }
 
     private static void register(Skill skill) {
-        skillMapping.put(skill.id(), skill);
+        SKILL_MAPPING.put(skill.id(), skill);
     }
 
     /**
@@ -45,6 +47,6 @@ public class SkillRegistry {
      * @return the registered {@link Skill}, or {@code null} if not found
      */
     public static Skill get(SkillId id) {
-        return skillMapping.get(id);
+        return SKILL_MAPPING.get(id);
     }
 }

@@ -75,7 +75,7 @@ public final class WeaponAnchorPacketHook {
      * @param rotOffset        additional rotation right-multiplied onto DEU's animated left rotation
      * @param translationOffset per-material offset added on top of DEU's animated bone translation
      */
-    record OverrideState(Object nmsItem, float scale, Quaternionf rotOffset, Vector3f translationOffset) { }
+    record OverrideState(Object nmsItem, float scale, Quaternionf rotOffset, Vector3f translationOffset) {}
 
     /**
      * Registers the {@code ENTITY_METADATA} packet listener with ProtocolLib.
@@ -157,7 +157,7 @@ public final class WeaponAnchorPacketHook {
                                 entry.setValue(state.nmsItem());
                                 touched = true;
                             }
-                            default -> { }
+                            default -> {}
                         }
                     }
 
@@ -209,5 +209,5 @@ public final class WeaponAnchorPacketHook {
         Debug.animation("PacketHook: override cleared entity=" + anchor.getEntityId());
     }
 
-    private WeaponAnchorPacketHook() { }
+    private WeaponAnchorPacketHook() {}
 }

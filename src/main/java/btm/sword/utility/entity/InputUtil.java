@@ -4,7 +4,10 @@ import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.data.BlockData;
 
-public class InputUtil {
+public final class InputUtil {
+
+    private InputUtil() {}
+
     // When a player start clicks:
     //      check if main hand is not air. if it isn't, it's a main hand start click. otherwise, it's an offhand start click.
     //      Either way, replace both with

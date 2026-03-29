@@ -70,13 +70,13 @@ public class DashAttackAction extends SwordAction {
         }
 
         AttackProfile attackDir = switch (direction) {
-            case FORWARD -> weaponAttackStyle.f_dash();
-            case BACKWARD -> weaponAttackStyle.b_dash();
+            case FORWARD -> weaponAttackStyle.fDash();
+            case BACKWARD -> weaponAttackStyle.bDash();
             default -> weaponAttackStyle.attacks().getFirst();
         };
 
         new Attack(itemUsedInAttack, attackDir, !direction.equals(DashDirection.BACKWARD),
-            50,30,0,1)
+            50, 30, 0, 1)
             // use the direction of the dash so that players can't spin around and use the long attack omnidirectionally
             .setOrigin(forward ? executor.getChestLocation().setDirection(executor.getDashDirection()) : null)
             .execute(executor);

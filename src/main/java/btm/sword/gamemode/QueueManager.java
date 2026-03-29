@@ -21,29 +21,31 @@ import btm.sword.system.entity.impl.SwordPlayer;
  * Roguelike runs start solo (1 player); CTF requires 2.
  * </p>
  *
- * <p>Active CTF matches are registered in {@link #activeMatches} so that
+ * <p>Active CTF matches are registered in {@link #ACTIVE_MATCHES} so that
  * {@link btm.sword.listeners.PlayerListener} can route death events to the correct match.</p>
  */
-public class QueueManager {
+public final class QueueManager {
 
-    private static final Map<Class<? extends Gamemode>, Queue<SwordPlayer>> queueMap;
+    private QueueManager() {}
+
+    private static final Map<Class<? extends Gamemode>, Queue<SwordPlayer>> QUEUE_MAP;
 
     /**
      * Maps each participating player's UUID to their active CTF match.
      * Populated on match start, cleaned up on match stop.
      */
-    private static final Map<UUID, CaptureTheFlag1v1> activeMatches = new HashMap<>();
+    private static final Map<UUID, CaptureTheFlag1v1> ACTIVE_MATCHES = new HashMap<>();
 
     /**
      * All currently active roguelike runs.
      * Populated when a run starts, removed when it stops.
      */
-    private static final List<RoguelikeRun> activeRoguelikeRuns = new ArrayList<>();
+    private static final List<RoguelikeRun> ACTIVE_ROGUELIKE_RUNS = new ArrayList<>();
 
     static {
-        queueMap = new HashMap<>();
-        queueMap.put(CaptureTheFlag1v1.class, new ConcurrentLinkedQueue<>());
-        queueMap.put(RoguelikeRun.class, new ConcurrentLinkedQueue<>());
+        QUEUE_MAP = new HashMap<>();
+        QUEUE_MAP.put(CaptureTheFlag1v1.class, new ConcurrentLinkedQueue<>());
+        QUEUE_MAP.put(RoguelikeRun.class, new ConcurrentLinkedQueue<>());
     }
 
     /**
@@ -54,7 +56,7 @@ public class QueueManager {
      * @param swordPlayer the player requesting to join the queue
      */
     public static void enqueue(Class<? extends Gamemode> gamemode, SwordPlayer swordPlayer) {
-        Queue<SwordPlayer> currentPlayerQueue = queueMap.get(gamemode);
+        Queue<SwordPlayer> currentPlayerQueue = QUEUE_MAP.get(gamemode);
         if (currentPlayerQueue.contains(swordPlayer)) {
             swordPlayer.message("You are already queued.");
             return;
@@ -83,13 +85,13 @@ public class QueueManager {
      * </p>
      */
     public static void tryStartNextMatch() {
-        Queue<SwordPlayer> roguelikeQueue = queueMap.get(RoguelikeRun.class);
+        Queue<SwordPlayer> roguelikeQueue = QUEUE_MAP.get(RoguelikeRun.class);
         if (roguelikeQueue != null && !roguelikeQueue.isEmpty()) {
             SwordPlayer player = roguelikeQueue.poll();
             startRoguelikeRun(List.of(player));
         }
 
-        Queue<SwordPlayer> ctfQueue = queueMap.get(CaptureTheFlag1v1.class);
+        Queue<SwordPlayer> ctfQueue = QUEUE_MAP.get(CaptureTheFlag1v1.class);
         if (ctfQueue != null && ctfQueue.size() >= 2) {
             SwordPlayer p1 = ctfQueue.poll();
             SwordPlayer p2 = ctfQueue.poll();
@@ -104,7 +106,7 @@ public class QueueManager {
      * @return the active {@link CaptureTheFlag1v1}, or {@code null}
      */
     public static CaptureTheFlag1v1 getActiveCtfMatch(UUID uuid) {
-        return activeMatches.get(uuid);
+        return ACTIVE_MATCHES.get(uuid);
     }
 
     /**
@@ -114,7 +116,7 @@ public class QueueManager {
      * @param uuid the UUID to deregister
      */
     public static void deregisterFromMatch(UUID uuid) {
-        activeMatches.remove(uuid);
+        ACTIVE_MATCHES.remove(uuid);
     }
 
     /**
@@ -123,7 +125,7 @@ public class QueueManager {
      * @return list of active {@link RoguelikeRun} instances
      */
     public static List<RoguelikeRun> getActiveRoguelikeRuns() {
-        return Collections.unmodifiableList(activeRoguelikeRuns);
+        return Collections.unmodifiableList(ACTIVE_ROGUELIKE_RUNS);
     }
 
     /**
@@ -133,19 +135,19 @@ public class QueueManager {
      * @param run the run to deregister
      */
     public static void deregisterRoguelikeRun(RoguelikeRun run) {
-        activeRoguelikeRuns.remove(run);
+        ACTIVE_ROGUELIKE_RUNS.remove(run);
     }
 
     private static void startRoguelikeRun(List<SwordPlayer> players) {
         RoguelikeRun run = new RoguelikeRun(players);
-        activeRoguelikeRuns.add(run);
+        ACTIVE_ROGUELIKE_RUNS.add(run);
         run.start();
     }
 
     private static void startCtfMatch(List<SwordPlayer> players) {
         CaptureTheFlag1v1 match = new CaptureTheFlag1v1(players);
         for (SwordPlayer sp : players) {
-            activeMatches.put(sp.player().getUniqueId(), match);
+            ACTIVE_MATCHES.put(sp.player().getUniqueId(), match);
         }
         match.start();
     }

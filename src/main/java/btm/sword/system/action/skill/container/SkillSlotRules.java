@@ -11,6 +11,8 @@ import btm.sword.system.action.skill.SkillType;
  */
 public final class SkillSlotRules {
 
+    private SkillSlotRules() {}
+
     /**
      * Returns {@code true} if the given skill's type matches the slot's accepted type.
      *

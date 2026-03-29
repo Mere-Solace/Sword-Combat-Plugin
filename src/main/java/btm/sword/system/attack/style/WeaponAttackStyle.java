@@ -82,19 +82,19 @@ public enum WeaponAttackStyle {
         return downAirAttack;
     }
 
-    public AttackProfile f_dash() {
+    public AttackProfile fDash() {
         return forwardDashAttack;
     }
 
-    public AttackProfile b_dash() {
+    public AttackProfile bDash() {
         return backwardDashAttack;
     }
 
-    public AttackProfile r_strafe() {
+    public AttackProfile rStrafe() {
         return rightStrafeAttack;
     }
 
-    public AttackProfile l_strafe() {
+    public AttackProfile lStrafe() {
         return leftStrafeAttack;
     }
 

@@ -34,7 +34,7 @@ public class CharacterMenu extends Menu {
         super(player);
     }
 
-    public static final Map<Character, SkillSlot> menuSlots = Map.of(
+    public static final Map<Character, SkillSlot> MENU_SLOTS = Map.of(
         '1', SkillSlot.UMBRAL_1,
         '2', SkillSlot.UMBRAL_2,
         '3', SkillSlot.UMBRAL_3,
@@ -46,7 +46,7 @@ public class CharacterMenu extends Menu {
         '9', SkillSlot.PASSIVE_CORE
     );
 
-    public static final ItemStack lockedSlot = ItemStackBuilder
+    public static final ItemStack LOCKED_SLOT = ItemStackBuilder
         .of(Material.BARRIER)
         .name(Component.text("Locked Slot", TextColor.color(255, 0, 0), TextDecoration.BOLD))
         .build();
@@ -104,7 +104,7 @@ public class CharacterMenu extends Menu {
     }
 
     private SimpleItem generateLockedSlotButton(SkillSlot slot) {
-        return new SimpleItem(lockedSlot, unlockSlot(slot));
+        return new SimpleItem(LOCKED_SLOT, unlockSlot(slot));
     }
 
     private Consumer<Click> selectAction(SkillSlot slot) {
@@ -133,7 +133,7 @@ public class CharacterMenu extends Menu {
         if (!player.isOp()) {
             return new SimpleItem(
                 new ItemStackBuilder(Material.AIR).build(),
-                click -> { }
+                click -> {}
             );
         }
         return new SimpleItem(
@@ -172,7 +172,7 @@ public class CharacterMenu extends Menu {
             .addIngredient('Z', buildReplenishButton())
             .addIngredient('D', buildDevStatsButton(player));
 
-        for (Map.Entry<Character, SkillSlot> entry : menuSlots.entrySet()) {
+        for (Map.Entry<Character, SkillSlot> entry : MENU_SLOTS.entrySet()) {
             normal.addIngredient(entry.getKey(), generateMenuSlotButton(entry.getValue()));
         }
 

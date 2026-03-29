@@ -10,7 +10,7 @@ import btm.sword.system.entity.impl.SwordPlayer;
  * There are no maps or tick loops here.
  * </p>
  */
-public class CameraSystem {
+public final class CameraSystem {
 
     private CameraSystem() {}
 

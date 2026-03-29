@@ -42,7 +42,9 @@ import btm.sword.utility.SwordTimeUnit;
  * Keep this in mind when developing sequential action systems.
  * </p>
  */
-public class InputRegistrar {
+public final class InputRegistrar {
+
+    private InputRegistrar() {}
 
     /**
      * Registers the four dash inputs (SWAP+SWAP, SWAP+SWAP+LEFT, SHIFT+SHIFT, SHIFT+SHIFT+LEFT)

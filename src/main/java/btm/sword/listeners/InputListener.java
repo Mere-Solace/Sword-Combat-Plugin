@@ -187,7 +187,7 @@ public class InputListener implements Listener {
 
         if (!swordPlayer.getInputBuffer().accept(InputType.RIGHT)) return;
 
-        if (swordPlayer.isUnableToBlock()){
+        if (swordPlayer.isUnableToBlock()) {
             swordPlayer.displayDisablingEffect();
             return;
         }
