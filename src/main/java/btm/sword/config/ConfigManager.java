@@ -6,6 +6,8 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.util.logging.Level;
 
+import lombok.Getter;
+
 import org.bukkit.Color;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -31,6 +33,13 @@ public final class ConfigManager {
 
     private final Sword plugin;
     private File configFile;
+    /**
+     * -- GETTER --
+     *  Exposes the in-memory
+     *  for reading current config values.
+     *  The returned object is kept in sync with changes made via the live in-memory YAML configuration
+     */
+    @Getter
     private FileConfiguration config;
 
     /**
@@ -135,12 +144,12 @@ public final class ConfigManager {
      */
     private <T> void loadEntry(Config.ConfigEntry<T> entry) {
         try {
-            T value = entry.loader.load(config, entry.path, entry.defaultValue);
-            entry.assign.accept(value);
+            T value = entry.loader().load(config, entry.path(), entry.defaultValue());
+            entry.assign().accept(value);
         } catch (Exception e) {
             plugin.getLogger().log(Level.WARNING,
-                "Failed to load config entry '" + entry.path + "', using default: " + entry.defaultValue, e);
-            entry.assign.accept(entry.defaultValue);
+                "Failed to load config entry '" + entry.path() + "', using default: " + entry.defaultValue(), e);
+            entry.assign().accept(entry.defaultValue());
         }
     }
 
@@ -163,16 +172,6 @@ public final class ConfigManager {
     }
 
     /**
-     * Exposes the in-memory {@link FileConfiguration} for reading current config values.
-     * The returned object is kept in sync with changes made via {@link #setValue}.
-     *
-     * @return the live in-memory YAML configuration
-     */
-    public FileConfiguration getConfig() {
-        return config;
-    }
-
-    /**
      * Updates a config entry: applies the new value to the static Config field
      * and writes it back into the in-memory YAML so it is reflected in the
      * config menu and persisted by the next {@link #saveConfig} call.
@@ -182,27 +181,27 @@ public final class ConfigManager {
      * @param <T>   the entry type
      */
     public <T> void setValue(Config.ConfigEntry<T> entry, T value) {
-        entry.assign.accept(value);
+        entry.assign().accept(value);
         // Enums must be stored as name strings — YAML has no enum type
-        if (value instanceof Enum<?> e) {
-            config.set(entry.path, e.name());
-        } else if (value instanceof Float f) {
-            // Float must be stored as double — YAML has no float type
-            config.set(entry.path, (double) f);
-        } else if (value instanceof Color c) {
-            // Bukkit Color has no YAML serializer; store as hex string matching loadColor()
-            config.set(entry.path, String.format("#%02X%02X%02X", c.getRed(), c.getGreen(), c.getBlue()));
-        } else if (value instanceof TextColor tc) {
-            // Adventure TextColor has no YAML serializer; store as hex string matching loadTextColor()
-            config.set(entry.path, String.format("#%06X", tc.value()));
-        } else if (value instanceof org.bukkit.util.Vector v) {
-            // Vector has no flat YAML representation; store as {x,y,z} section matching loadVector()
-            org.bukkit.configuration.ConfigurationSection sec = config.createSection(entry.path);
-            sec.set("x", v.getX());
-            sec.set("y", v.getY());
-            sec.set("z", v.getZ());
-        } else {
-            config.set(entry.path, value);
+        switch (value) {
+            case Enum<?> e -> config.set(entry.path(), e.name());
+            case Float f ->
+                // Float must be stored as double — YAML has no float type
+                config.set(entry.path(), (double) f);
+            case Color c ->
+                // Bukkit Color has no YAML serializer; store as hex string matching loadColor()
+                config.set(entry.path(), String.format("#%02X%02X%02X", c.getRed(), c.getGreen(), c.getBlue()));
+            case TextColor tc ->
+                // Adventure TextColor has no YAML serializer; store as hex string matching loadTextColor()
+                config.set(entry.path(), String.format("#%06X", tc.value()));
+            case org.bukkit.util.Vector v -> {
+                // Vector has no flat YAML representation; store as {x,y,z} section matching loadVector()
+                org.bukkit.configuration.ConfigurationSection sec = config.createSection(entry.path());
+                sec.set("x", v.getX());
+                sec.set("y", v.getY());
+                sec.set("z", v.getZ());
+            }
+            case null, default -> config.set(entry.path(), value);
         }
     }
 

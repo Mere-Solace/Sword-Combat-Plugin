@@ -44,35 +44,27 @@ public final class Config {
     // ==============================================================================
 
     /**
-     * ConfigEntry represents a single configuration value with metadata for loading and saving.
-     * <p>
-     * Each entry contains:
-     * <ul>
-     *   <li><b>path</b> - YAML path (e.g., "angles.umbral_blade_idle_period")</li>
-     *   <li><b>defaultValue</b> - Default value if not in config.yaml</li>
-     *   <li><b>type</b> - Java class type for type safety</li>
-     *   <li><b>assign</b> - Consumer lambda to update the static field</li>
-     *   <li><b>loader</b> - Custom loader for type-specific YAML parsing</li>
-     * </ul>
-     * </p>
-     *
-     * @param <T> the Java type of the configuration value
-     */
-    public static final class ConfigEntry<T> {
-        public final String path;
-        public final T defaultValue;
-        public final Class<T> type;
-        public final Consumer<T> assign;
-        public final Loader<T> loader;
-
-        /**
-         * Functional interface for custom YAML loading logic.
-         * @param <T> The type of value to load
+         * ConfigEntry represents a single configuration value with metadata for loading and saving.
+         * <p>
+         * Each entry contains:
+         * <ul>
+         *   <li><b>path</b> - YAML path (e.g., "angles.umbral_blade_idle_period")</li>
+         *   <li><b>defaultValue</b> - Default value if not in config.yaml</li>
+         *   <li><b>type</b> - Java class type for type safety</li>
+         *   <li><b>assign</b> - Consumer lambda to update the static field</li>
+         *   <li><b>loader</b> - Custom loader for type-specific YAML parsing</li>
+         * </ul>
+         * </p>
+         *
+         * @param <T> the Java type of the configuration value
          */
-        @FunctionalInterface
-        public interface Loader<T> {
-            T load(ConfigurationSection section, String path, T defaultValue);
-        }
+        public record ConfigEntry<T>(String path, T defaultValue, Class<T> type, Consumer<T> assign, Loader<T> loader) {
+            /** Functional interface for custom YAML loading logic. */
+            @FunctionalInterface
+            public interface Loader<T> {
+                /** Reads a value of type {@code T} from the given config section. */
+                T load(ConfigurationSection section, String path, T defaultValue);
+            }
 
         /**
          * Constructs a {@code ConfigEntry} and immediately self-registers it in {@link Config#ENTRIES}.
@@ -83,14 +75,9 @@ public final class Config {
          * @param assign       consumer that writes the loaded value into the owning static field
          * @param loader       reads the raw value from a {@link ConfigurationSection}
          */
-        public ConfigEntry(String path, T defaultValue, Class<T> type, Consumer<T> assign, Loader<T> loader) {
-            this.path = path;
-            this.defaultValue = defaultValue;
-            this.type = type;
-            this.assign = assign;
-            this.loader = loader;
+        public ConfigEntry {
         }
-    }
+        }
 
     /**
      * List of all registered configuration entries.
@@ -142,6 +129,7 @@ public final class Config {
         return section.contains(path) ? section.getStringList(path) : defaultValue;
     }
 
+    /** Loader for {@link net.kyori.adventure.text.format.TextColor} configuration values. */
     public static TextColor loadTextColor(ConfigurationSection section, String path, TextColor defaultValue) {
         if (!section.contains(path)) return defaultValue;
         String value = section.getString(path);
@@ -153,6 +141,7 @@ public final class Config {
         }
     }
 
+    /** Loader for {@link org.bukkit.Color} configuration values from hex strings. */
     public static org.bukkit.Color loadColor(ConfigurationSection section, String path, org.bukkit.Color defaultValue) {
         if (!section.contains(path)) return defaultValue;
         String value = section.getString(path);
@@ -206,6 +195,7 @@ public final class Config {
         }
     }
 
+    /** Loader for {@link Float} configuration values. */
     public static Float loadFloat(ConfigurationSection section, String path, Float defaultValue) {
         return (float) section.getDouble(path, defaultValue);
     }
@@ -257,6 +247,7 @@ public final class Config {
         return loadEnum(section, path, defaultValue, Particle.class);
     }
 
+    /** Loader for {@link btm.sword.system.attack.style.AttackType} configuration values. */
     public static AttackType loadAttackType(ConfigurationSection section, String path, AttackType defaultValue) {
         if (!section.contains(path)) return defaultValue;
         String value = section.getString(path);
@@ -1295,7 +1286,7 @@ public final class Config {
             "combat.channel_duration_ms",
             CHANNEL_DURATION_MS, Long.class,
             v -> CHANNEL_DURATION_MS = v,
-            (section, path, def) -> section.getLong(path, def)
+            ConfigurationSection::getLong
         ); }
 
         /** Period in milliseconds between each heal tick during channel. */
@@ -1384,6 +1375,7 @@ public final class Config {
     // ==============================================================================
     //region TIMING - Cooldowns, durations, intervals
     // ==============================================================================
+
     /**
      * Timing configuration for cooldowns, durations, and update intervals.
      * <p>
@@ -3748,9 +3740,7 @@ public final class Config {
     //endregion
 
     //region Menu Configuration
-    /**
-     * Menu configuration section for ConfigMenu section button icons.
-     */
+
     // ==============================================================================
     //region Particle Configuration
     // ==============================================================================

@@ -60,7 +60,7 @@ public class ConfigSectionMenu extends Menu {
 
         List<Config.ConfigEntry<?>> displayed = filter == null ? entries
             : entries.stream()
-                .filter(e -> e.path.toLowerCase().contains(filter))
+                .filter(e -> e.path().toLowerCase().contains(filter))
                 .toList();
 
         List<Item> entryItems = displayed.stream()

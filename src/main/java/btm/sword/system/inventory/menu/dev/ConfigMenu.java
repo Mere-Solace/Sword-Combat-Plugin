@@ -69,6 +69,9 @@ public class ConfigMenu extends Menu {
         SECTION_MATERIALS.put("animation",     () -> Config.Menu.SECTION_ICON);
     }
 
+    /**
+     * Creates a new instance of ConfigMenu.
+     */
     public ConfigMenu(SwordPlayer player) {
         super(player);
     }
@@ -80,9 +83,9 @@ public class ConfigMenu extends Menu {
         // Group entries by section (first path segment before the first '.')
         Map<String, List<Config.ConfigEntry<?>>> sections = new LinkedHashMap<>();
         for (Config.ConfigEntry<?> entry : Config.ENTRIES) {
-            String section = entry.path.contains(".")
-                ? entry.path.substring(0, entry.path.indexOf('.'))
-                : entry.path;
+            String section = entry.path().contains(".")
+                ? entry.path().substring(0, entry.path().indexOf('.'))
+                : entry.path();
             sections.computeIfAbsent(section, k -> new ArrayList<>()).add(entry);
         }
 
@@ -146,7 +149,7 @@ public class ConfigMenu extends Menu {
                     }
                     String term = input.toLowerCase();
                     List<Config.ConfigEntry<?>> matches = Config.ENTRIES.stream()
-                        .filter(e -> e.path.toLowerCase().contains(term))
+                        .filter(e -> e.path().toLowerCase().contains(term))
                         .collect(Collectors.toList());
                     new ConfigSectionMenu(swordPlayer, "search: " + term, matches).open();
                 })
