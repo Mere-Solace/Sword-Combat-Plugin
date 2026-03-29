@@ -443,3 +443,18 @@ roguelike:
 join_sequence:
   opening_x: -186.5
   opening_z: -1058.5
+
+ctf:
+  spawn_world: "world"
+  red_spawn_x: 15.0
+  red_spawn_y: 64.0
+  red_spawn_z: 0.0
+  blue_spawn_x: -15.0
+  blue_spawn_y: 64.0
+  blue_spawn_z: 0.0
+  flag_return_timer_seconds: 30
+  respawn_delay_seconds: 5
+  captures_to_win: 3
+  capture_radius: 3.0
+  flag_carrier_slow_duration: 999999
+  flag_carrier_slow_amplifier: 1

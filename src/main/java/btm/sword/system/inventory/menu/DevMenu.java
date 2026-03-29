@@ -10,6 +10,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 import btm.sword.config.Config;
+import btm.sword.gamemode.QueueManager;
 import btm.sword.system.control.SwordScheduler;
 import btm.sword.system.display.BossBarManager;
 import btm.sword.system.display.ScoreboardManager;
@@ -207,6 +208,20 @@ public class DevMenu extends Menu {
             click -> new WeaponDisplayEditorMenu(swordPlayer).open()
         );
 
+        SimpleItem ctfDebug = new SimpleItem(
+            new ItemStackBuilder(Material.WHITE_BANNER)
+                .name(Component.text("Start CTF (Solo Debug)", NamedTextColor.AQUA, TextDecoration.BOLD))
+                .lore(List.of(
+                    Component.text("Launch a CTF instance instantly", NamedTextColor.DARK_GRAY),
+                    Component.text("Bypasses 2-player queue requirement", NamedTextColor.DARK_GRAY)
+                ))
+                .build(),
+            click -> {
+                QueueManager.startCtfDebug(swordPlayer);
+                swordPlayer.message(Component.text("CTF debug session started!", NamedTextColor.GREEN));
+            }
+        );
+
         SimpleItem bossBarTest = new SimpleItem(
             new ItemStackBuilder(Material.ORANGE_BANNER)
                 .name(Component.text("Boss Bar Fill Test", NamedTextColor.GOLD, TextDecoration.BOLD))
@@ -271,7 +286,7 @@ public class DevMenu extends Menu {
             .setStructure(
                 "# # # # # # # # #",
                 "# J N S F A L C #",
-                "# P X B K . H E #",
+                "# P X B K D H E #",
                 "# R I . T . M W #",
                 "# # # < . > # # #")
             .addIngredient('#', BORDER)
@@ -287,6 +302,7 @@ public class DevMenu extends Menu {
             .addIngredient('X', joinCutscene)
             .addIngredient('B', bossBarTest)
             .addIngredient('K', scoreboardTest)
+            .addIngredient('D', ctfDebug)
             .addIngredient('C', creativeInventory)
             .addIngredient('W', woodenAxe)
             .addIngredient('E', witherSkeletonEgg)

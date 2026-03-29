@@ -28,6 +28,8 @@ import org.intellij.lang.annotations.Subst;
 
 import btm.sword.Sword;
 import btm.sword.config.Config;
+import btm.sword.gamemode.QueueManager;
+import btm.sword.gamemode.type.CaptureTheFlag1v1;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.impl.SwordPlayer;
@@ -60,8 +62,8 @@ public class PlayerListener implements Listener {
     /**
      * Handles player death events.
      * <p>
-     * Currently unimplemented, but can be used in the future to track death-related
-     * statistics or handle cleanup of transient effects.
+     * Forwards the death to the player's active CTF match (if any) so the match can drop
+     * the carried flag and schedule a respawn.
      * </p>
      *
      * @param event the {@link PlayerDeathEvent} triggered when a player dies
@@ -69,6 +71,12 @@ public class PlayerListener implements Listener {
     @EventHandler
     public void onPlayerDeath(PlayerDeathEvent event) {
         SwordEntityArbiter.getOrAdd(event.getPlayer()).onDeath();
+
+        CaptureTheFlag1v1 match = QueueManager.getActiveCtfMatch(event.getPlayer().getUniqueId());
+        if (match != null) {
+            SwordPlayer dead = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer());
+            match.onPlayerDeath(dead);
+        }
     }
 
     /**

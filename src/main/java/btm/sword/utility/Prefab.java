@@ -272,6 +272,12 @@ public class Prefab {
             new PotionEffectWrapper(PotionEffectType.SPEED, Config.Movement.SPEED_DURATION, Config.Movement.SPEED_AMPLIFIER);
         public static final PotionEffectWrapper HEAL_CHANNEL_SLOW =
             new PotionEffectWrapper(PotionEffectType.SLOWNESS, Config.Combat.HEAL_CHANNEL_SLOW_DURATION, Config.Combat.HEAL_CHANNEL_SLOW_AMPLIFIER);
+        /** Applied to a player carrying a CTF flag. Effectively permanent; removed on drop/capture/match end. */
+        public static final PotionEffectWrapper FLAG_CARRIER_SLOW =
+            new PotionEffectWrapper(() -> PotionEffectType.SLOWNESS,
+                () -> Config.Ctf.FLAG_CARRIER_SLOW_DURATION,
+                () -> Config.Ctf.FLAG_CARRIER_SLOW_AMPLIFIER,
+                () -> false, () -> false, () -> false);
     }
 
     /** Pre-built lore/description {@link net.kyori.adventure.text.Component} lists for special items. */
