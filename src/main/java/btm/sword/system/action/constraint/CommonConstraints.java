@@ -98,7 +98,7 @@ public final class CommonConstraints {
      *
      * <p>Full enforcement (no dash, no grab, no block while carrying) is pending a global context
      * constraint system on {@code Combatant}. Until then, only the speed debuff is active.
-     * See GitHub issue #TODO for the refactor tracking this.</p>
+     * See GitHub issue #297 for the refactor tracking this.</p>
      */
     public static final ActionConstraint NOT_CARRYING_FLAG = c -> true;
 }
