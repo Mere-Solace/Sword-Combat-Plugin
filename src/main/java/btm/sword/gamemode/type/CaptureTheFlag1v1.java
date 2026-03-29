@@ -45,6 +45,8 @@ public class CaptureTheFlag1v1 extends Gamemode {
     private final FlagEntity redFlag = new FlagEntity(CtfTeam.RED);
     private final FlagEntity blueFlag = new FlagEntity(CtfTeam.BLUE);
 
+    private static final int MATCH_DURATION_SECONDS = 180;
+
     /**
      * Creates a new CTF match. Accepts 1 or 2 players.
      * With 1 player they are assigned to RED; BLUE has no player (solo/debug mode).
@@ -53,6 +55,7 @@ public class CaptureTheFlag1v1 extends Gamemode {
      */
     public CaptureTheFlag1v1(List<SwordPlayer> players) {
         super(players);
+        this.durationSeconds = new java.util.concurrent.atomic.AtomicInteger(MATCH_DURATION_SECONDS);
         scores.put(CtfTeam.RED, 0);
         scores.put(CtfTeam.BLUE, 0);
 
@@ -106,6 +109,11 @@ public class CaptureTheFlag1v1 extends Gamemode {
     protected void onTick(int secondsLeft) {
         checkFlagPickups();
         checkCaptures();
+    }
+
+    @Override
+    protected int getMaxDuration() {
+        return MATCH_DURATION_SECONDS;
     }
 
     @Override
