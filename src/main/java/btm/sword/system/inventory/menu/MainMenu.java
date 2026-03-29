@@ -179,7 +179,7 @@ public class MainMenu extends Menu {
             .setStructure(
                 "# # # . . . # # #",
                 "# . . . P . . . #",
-                ". . . D Q R . . .",
+                ". . . D Q R S . .",
                 ". . . . . . . . .",
                 "# T . . H . M . #",
                 "# # # < V > # # #")
@@ -200,6 +200,31 @@ public class MainMenu extends Menu {
                     .name(Component.text("Dev Menu", Config.SwordColor.TEXT_COOL, TextDecoration.BOLD))
                     .build(),
                 click -> InventoryMenuManager.openMenu(DevMenu.class, swordPlayer)
+            ));
+
+            builder.addIngredient('S', new SimpleItem(
+                new ItemStackBuilder(Material.RED_CONCRETE)
+                    .name(Component.text("Stop Roguelike [DEV]", Config.SwordColor.TEXT_COOL, TextDecoration.BOLD))
+                    .lore(List.of(
+                        Component.text("Force-stops the active roguelike run.", Config.SwordColor.TEXT_ITEM_BASE),
+                        Component.text("Despawns wave enemies and clears all players.", Config.SwordColor.TEXT_ITEM_BASE)
+                    ))
+                    .build(),
+                click -> {
+                    List<RoguelikeRun> runs = QueueManager.getActiveRoguelikeRuns();
+                    if (runs.isEmpty()) {
+                        SwordPlayer clicker = (SwordPlayer) SwordEntityArbiter.getOrAdd(click.getPlayer());
+                        if (clicker != null) {
+                            clicker.message("No active roguelike run found.");
+                        }
+                        return;
+                    }
+                    List.copyOf(runs).forEach(RoguelikeRun::stop);
+                    SwordPlayer clicker = (SwordPlayer) SwordEntityArbiter.getOrAdd(click.getPlayer());
+                    if (clicker != null) {
+                        clicker.message("Roguelike stopped.");
+                    }
+                }
             ));
         }
 

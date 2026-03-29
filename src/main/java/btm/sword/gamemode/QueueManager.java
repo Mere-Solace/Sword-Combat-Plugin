@@ -1,5 +1,7 @@
 package btm.sword.gamemode;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,6 +33,12 @@ public class QueueManager {
      * Populated on match start, cleaned up on match stop.
      */
     private static final Map<UUID, CaptureTheFlag1v1> activeMatches = new HashMap<>();
+
+    /**
+     * All currently active roguelike runs.
+     * Populated when a run starts, removed when it stops.
+     */
+    private static final List<RoguelikeRun> activeRoguelikeRuns = new ArrayList<>();
 
     static {
         queueMap = new HashMap<>();
@@ -78,7 +86,7 @@ public class QueueManager {
         Queue<SwordPlayer> roguelikeQueue = queueMap.get(RoguelikeRun.class);
         if (roguelikeQueue != null && !roguelikeQueue.isEmpty()) {
             SwordPlayer player = roguelikeQueue.poll();
-            new RoguelikeRun(List.of(player)).start();
+            startRoguelikeRun(List.of(player));
         }
 
         Queue<SwordPlayer> ctfQueue = queueMap.get(CaptureTheFlag1v1.class);
@@ -107,6 +115,31 @@ public class QueueManager {
      */
     public static void deregisterFromMatch(UUID uuid) {
         activeMatches.remove(uuid);
+    }
+
+    /**
+     * Returns an unmodifiable view of all currently active roguelike runs.
+     *
+     * @return list of active {@link RoguelikeRun} instances
+     */
+    public static List<RoguelikeRun> getActiveRoguelikeRuns() {
+        return Collections.unmodifiableList(activeRoguelikeRuns);
+    }
+
+    /**
+     * Removes the given roguelike run from the active run registry.
+     * Should be called when the run ends.
+     *
+     * @param run the run to deregister
+     */
+    public static void deregisterRoguelikeRun(RoguelikeRun run) {
+        activeRoguelikeRuns.remove(run);
+    }
+
+    private static void startRoguelikeRun(List<SwordPlayer> players) {
+        RoguelikeRun run = new RoguelikeRun(players);
+        activeRoguelikeRuns.add(run);
+        run.start();
     }
 
     private static void startCtfMatch(List<SwordPlayer> players) {
