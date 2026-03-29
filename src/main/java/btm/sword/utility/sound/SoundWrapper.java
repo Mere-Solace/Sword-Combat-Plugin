@@ -60,18 +60,34 @@ public record SoundWrapper(
 
     private static final double BASE_SOUND_RADIUS = 20;
 
+    /**
+     * Plays this sound to all players within the given radius of {@code sourceLocation}.
+     *
+     * @param sourceLocation origin of the sound
+     * @param radius         search radius in blocks
+     */
     public void playForAllInRadius(Location sourceLocation, double radius) {
         for (Player player : sourceLocation.getWorld().getNearbyPlayers(sourceLocation, radius)) {
             SoundUtil.playSound(player, soundSupplier.get(), volumeSupplier.get(), pitchSupplier.get());
         }
     }
 
+    /**
+     * Plays this sound to all players within {@value #BASE_SOUND_RADIUS} blocks of {@code sourceLocation}.
+     *
+     * @param sourceLocation origin of the sound
+     */
     public void playForAllInRadius(Location sourceLocation) {
         for (Player player : sourceLocation.getWorld().getNearbyPlayers(sourceLocation, BASE_SOUND_RADIUS)) {
             SoundUtil.playSound(player, soundSupplier.get(), volumeSupplier.get(), pitchSupplier.get());
         }
     }
 
+    /**
+     * Plays this sound to all players within {@value #BASE_SOUND_RADIUS} blocks of {@code origin}'s location.
+     *
+     * @param origin entity at the sound's source position
+     */
     public void playForAllInRadius(Entity origin) {
         for (Player player : origin.getWorld().getNearbyPlayers(origin.getLocation(), BASE_SOUND_RADIUS)) {
             SoundUtil.playSound(player, soundSupplier.get(), volumeSupplier.get(), pitchSupplier.get());

@@ -15,7 +15,29 @@ import com.comphenix.protocol.events.PacketListener;
 import btm.sword.Sword;
 import btm.sword.utility.Debug;
 
+/**
+ * ProtocolLib packet listener that handles two concerns:
+ * <ol>
+ *   <li><b>Self-interaction cancellation</b> — during DEU camera animations the client's camera
+ *       attaches to a virtual entity looking back at the player's model; a right-click therefore
+ *       sends {@code USE_ENTITY} targeting the player's own entity ID, which would normally
+ *       trigger a vanilla "Cannot interact with self" disconnect. This listener silently cancels
+ *       those packets.</li>
+ *   <li><b>Movement locking</b> — UUIDs added to {@link #lockedPlayers} have all movement packets
+ *       cancelled, freezing the player client-side (used during grab / throw animations).</li>
+ * </ol>
+ *
+ * <p><b>Known issue (TODO):</b> The {@code USE_ENTITY} read can throw a
+ * {@code FieldAccessException} if the packet structure differs between client versions.
+ * The exception is silently swallowed to prevent server log spam; see the inline comment for
+ * the tracked issue.</p>
+ */
 public class MovementListener implements PacketListener {
+
+    /**
+     * Set of player UUIDs whose movement packets should be cancelled.
+     * Add a UUID here to freeze a player; remove it to restore normal movement.
+     */
     public static final HashSet<UUID> lockedPlayers = new HashSet<>();
 
     @Override
@@ -27,16 +49,11 @@ public class MovementListener implements PacketListener {
     public void onPacketReceiving(PacketEvent event) {
         Player player = event.getPlayer();
 
-        // TODO: Fix this block:
-        //[Sword] Unhandled exception occurred in onPacketReceiving(PacketEvent) for Sword
-        //com.comphenix.protocol.reflect.FieldAccessException: Field index 0 is out of bounds for length 0
-        //        at ProtocolLib.jar/com.comphenix.protocol.reflect.FieldAccessException.fromFormat(FieldAccessException.java:49) ~[ProtocolLib.jar:?]
-        //        at ProtocolLib.jar/com.comphenix.protocol.reflect.StructureModifier.read(StructureModifier.java:247) ~[ProtocolLib.jar:?]
-        //        at Sword-1.0-SNAPSHOT.jar/btm.sword.listeners.packet.MovementListener.onPacketReceiving(MovementListener.java:34) ~[Sword-1.0-SNAPSHOT.jar:?]
         // Prevent "Cannot interact with self" server kick.
         // During DEU camera animations the client's camera is attached to a virtual entity
         // looking back at the player's model. A right-click sends USE_ENTITY targeting the
         // player's own entity ID, which triggers a vanilla disconnect. Cancel it silently.
+        // TODO: Fix FieldAccessException — Field index 0 is out of bounds for some packet variants.
         if (event.getPacketType() == PacketType.Play.Client.USE_ENTITY) {
             try {
                 Integer targetId = (Integer) event.getPacket().getModifier().withType(Integer.class).read(0);   // <=== * HERE *
@@ -44,8 +61,8 @@ public class MovementListener implements PacketListener {
                     event.setCancelled(true);
                 }
             }
-            catch (Exception e) {
-//                e.getCause();
+            catch (Exception ignored) {
+                // Silently ignored — see class-level TODO for tracking this issue.
             }
             return;
         }
@@ -56,7 +73,7 @@ public class MovementListener implements PacketListener {
             event.getPacketType() == PacketType.Play.Client.GROUND ||
             event.getPacketType() == PacketType.Play.Client.ARM_ANIMATION) {
 
-            Debug.listener("Received a packet.\nPacketType="+event.getPacketType());
+            Debug.listener("Received a packet.\nPacketType=" + event.getPacketType());
 
             if (!lockedPlayers.contains(player.getUniqueId())) return;
 

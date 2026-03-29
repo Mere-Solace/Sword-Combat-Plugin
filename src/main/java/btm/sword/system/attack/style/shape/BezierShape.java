@@ -21,6 +21,10 @@ import btm.sword.utility.math.ControlVectors;
  *       transformation. Used when geometry is computed procedurally at attack time (e.g.,
  *       sweeps targeting a specific entity). Use {@link #worldSpace} to create a world-space shape.</li>
  * </ul>
+ *
+ * @param controlVectors the cubic Bézier control points (local or world space)
+ * @param isWorldSpace   {@code true} if {@code controlVectors} are in world space;
+ *                       {@code false} if they are local to the attacker's orientation
  */
 public record BezierShape(ControlVectors controlVectors,
                           boolean isWorldSpace) implements AttackShape {

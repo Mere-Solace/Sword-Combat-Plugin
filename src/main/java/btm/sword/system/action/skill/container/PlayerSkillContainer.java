@@ -15,6 +15,17 @@ import btm.sword.system.action.skill.SkillRegistry;
 import btm.sword.system.action.skill.SkillType;
 
 
+/**
+ * Tracks a player's discovered skills, their availability state, and current loadout.
+ *
+ * <p>Skills move through a lifecycle: discovered → {@link SkillAvailability#AVAILABLE} →
+ * equipped in a {@link SkillSlot} → potentially {@link SkillAvailability#DEPLETED} or
+ * {@link SkillAvailability#RELINQUISHED}. Only skills in the availability map are shown in
+ * menus; only {@code AVAILABLE} ones can be equipped.</p>
+ *
+ * <p>Persisted via {@link btm.sword.system.playerdata.PlayerData}; reconstruct from saved data
+ * using the {@link #PlayerSkillContainer(java.util.Map, java.util.EnumMap)} constructor.</p>
+ */
 public final class PlayerSkillContainer {
 
     private final EnumMap<SkillType, Set<SkillId>> availableSkillsMap = new EnumMap<>(SkillType.class);
@@ -30,6 +41,12 @@ public final class PlayerSkillContainer {
     private final EnumMap<SkillSlot, SkillId> equipped;
     private final Map<SkillSlot, SkillSlotState> slotStates = new EnumMap<>(SkillSlot.class);
 
+    /**
+     * Creates a container for a new or imported skill set.
+     *
+     * @param availableSkills skills to mark as discovered and available
+     * @param equipped        the initial slot → skill mapping
+     */
     public PlayerSkillContainer(Collection<SkillId> availableSkills, EnumMap<SkillSlot, SkillId> equipped) {
         initializeSkillMap();
         addAvailableSkills(availableSkills);
@@ -57,6 +74,10 @@ public final class PlayerSkillContainer {
         this.equipped = equipped;
     }
 
+    /**
+     * Creates a default container with all known skills available and a preset equipped loadout.
+     * Intended for testing only.
+     */
     public PlayerSkillContainer() { // for testing purposes
         initializeSkillMap();
         addAvailableSkills(SkillIds.getAll());
@@ -74,12 +95,18 @@ public final class PlayerSkillContainer {
         );
     }
 
+    /** Initialises the available-skills map with empty sets for each {@link SkillType}. */
     public void initializeSkillMap() {
         availableSkillsMap.put(SkillType.UMBRAL, new HashSet<>());
         availableSkillsMap.put(SkillType.ACTIVE, new HashSet<>());
         availableSkillsMap.put(SkillType.PASSIVE, new HashSet<>());
     }
 
+    /**
+     * Discovers all given skills, marking each as {@link SkillAvailability#AVAILABLE}.
+     *
+     * @param skillIds the skills to add
+     */
     public void addAvailableSkills(Collection<SkillId> skillIds) {
         for (SkillId id : skillIds) {
             discover(id);
@@ -136,6 +163,12 @@ public final class PlayerSkillContainer {
         return availabilityMap.get(id) == SkillAvailability.AVAILABLE;
     }
 
+    /**
+     * Unlocks the given slot if it is currently {@link SkillIds#LOCKED}, setting it to
+     * {@link SkillIds#NONE} (empty but usable).
+     *
+     * @param slot the slot to unlock
+     */
     public void unlock(SkillSlot slot) {
         if (!equipped.get(slot).equals(SkillIds.LOCKED)) {
             return;
@@ -143,10 +176,22 @@ public final class PlayerSkillContainer {
         equipped.put(slot, SkillIds.NONE);
     }
 
+    /**
+     * Returns {@code true} if the skill has been discovered and is currently available to equip.
+     *
+     * @param id the skill to check
+     * @return {@code true} if the skill can be equipped
+     */
     public boolean isAvailable(SkillId id) {
         return availabilityMap.get(id) == SkillAvailability.AVAILABLE;
     }
 
+    /**
+     * Returns the skill equipped in the given slot, or {@link SkillIds#NONE} if empty.
+     *
+     * @param slot the slot to query
+     * @return the equipped skill ID; never {@code null}
+     */
     public SkillId getEquipped(SkillSlot slot) {
         SkillId id = equipped.get(slot);
         return id == null ? SkillIds.NONE : id;
@@ -174,6 +219,11 @@ public final class PlayerSkillContainer {
         }
     }
 
+    /**
+     * Clears the given slot, setting it to {@link SkillIds#NONE}. No-ops if the slot is locked.
+     *
+     * @param slot the slot to clear
+     */
     public void unequip(SkillSlot slot) {
         if (equipped.get(slot).equals(SkillIds.LOCKED)) {
             return;
@@ -248,6 +298,11 @@ public final class PlayerSkillContainer {
         return Map.copyOf(slotStates);
     }
 
+    /**
+     * Returns an unmodifiable view of the currently equipped loadout.
+     *
+     * @return map of slot → equipped skill ID
+     */
     public Map<SkillSlot, SkillId> equippedView() {
         return Map.copyOf(equipped);
     }

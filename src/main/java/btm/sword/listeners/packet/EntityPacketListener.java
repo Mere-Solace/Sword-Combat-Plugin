@@ -14,6 +14,14 @@ import com.comphenix.protocol.wrappers.WrappedDataValue;
 import btm.sword.Sword;
 import btm.sword.utility.Debug;
 
+/**
+ * ProtocolLib packet listener that intercepts outbound entity-related packets for debug logging.
+ * <p>
+ * Only active when {@link btm.sword.config.Config.Debug#LOGGING_VERBOSE_LISTENER} is enabled.
+ * Logs entity metadata indices and packet types to help diagnose DEU display entity issues.
+ * Has no effect on normal gameplay — all packets are forwarded unmodified.
+ * </p>
+ */
 public class EntityPacketListener implements PacketListener {
 
     @Override

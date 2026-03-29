@@ -108,6 +108,42 @@ public class TogglesMenu extends Menu {
             () -> Config.Debug.LOGGING_VERBOSE_ANIMATION = !Config.Debug.LOGGING_VERBOSE_ANIMATION
         );
 
+        SimpleItem verboseInput = toggle(
+            "Input (combo / trie)",
+            () -> Config.Debug.LOGGING_VERBOSE_INPUT,
+            () -> Config.Debug.LOGGING_VERBOSE_INPUT = !Config.Debug.LOGGING_VERBOSE_INPUT
+        );
+
+        SimpleItem verboseSkill = toggle(
+            "Skill (slot resolution)",
+            () -> Config.Debug.LOGGING_VERBOSE_SKILL,
+            () -> Config.Debug.LOGGING_VERBOSE_SKILL = !Config.Debug.LOGGING_VERBOSE_SKILL
+        );
+
+        SimpleItem verboseAbility = toggle(
+            "Ability (lifecycle)",
+            () -> Config.Debug.LOGGING_VERBOSE_ABILITY,
+            () -> Config.Debug.LOGGING_VERBOSE_ABILITY = !Config.Debug.LOGGING_VERBOSE_ABILITY
+        );
+
+        SimpleItem verboseGrab = toggle(
+            "Grab (action lifecycle)",
+            () -> Config.Debug.LOGGING_VERBOSE_GRAB,
+            () -> Config.Debug.LOGGING_VERBOSE_GRAB = !Config.Debug.LOGGING_VERBOSE_GRAB
+        );
+
+        SimpleItem verboseAttack = toggle(
+            "Attack (sweeps / hitbox)",
+            () -> Config.Debug.LOGGING_VERBOSE_ATTACK,
+            () -> Config.Debug.LOGGING_VERBOSE_ATTACK = !Config.Debug.LOGGING_VERBOSE_ATTACK
+        );
+
+        SimpleItem verboseThrowing = toggle(
+            "Throwing (item lifecycle)",
+            () -> Config.Debug.LOGGING_VERBOSE_THROWING,
+            () -> Config.Debug.LOGGING_VERBOSE_THROWING = !Config.Debug.LOGGING_VERBOSE_THROWING
+        );
+
         @SuppressWarnings("unchecked")
         Config.ConfigEntry<Boolean> skipLoadEntry = (Config.ConfigEntry<Boolean>) Config.ENTRIES.stream()
             .filter(e -> e.path.equals("debug.skip_data_load"))
@@ -165,9 +201,9 @@ public class TogglesMenu extends Menu {
         Gui gui = Gui.normal()
             .setStructure(
                 "# # # # # # # # #",
-                "# A B C D E . . #",
-                "# F G H I J K . #",
-                "# L M N O . . . #",
+                "# A B C D E P Q #",
+                "# F G H I J K R #",
+                "# S T U L M N O #",
                 "< # # # # # # # #")
             .addIngredient('#', BORDER)
             .addIngredient('A', verboseDebug)
@@ -175,12 +211,18 @@ public class TogglesMenu extends Menu {
             .addIngredient('C', verboseMovement)
             .addIngredient('D', verboseInventory)
             .addIngredient('E', verboseSystem)
+            .addIngredient('P', verboseInput)
+            .addIngredient('Q', verboseSkill)
             .addIngredient('F', verboseUmbral)
             .addIngredient('G', verboseHostile)
             .addIngredient('H', verboseListener)
-            .addIngredient('I', specialItemChecks)
-            .addIngredient('J', blockPlacing)
-            .addIngredient('K', verboseAnimation)
+            .addIngredient('I', verboseAnimation)
+            .addIngredient('J', verboseAbility)
+            .addIngredient('K', verboseGrab)
+            .addIngredient('R', verboseAttack)
+            .addIngredient('S', verboseThrowing)
+            .addIngredient('T', specialItemChecks)
+            .addIngredient('U', blockPlacing)
             .addIngredient('L', skipLoad)
             .addIngredient('M', skipSave)
             .addIngredient('N', freshProfile)

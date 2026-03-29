@@ -14,8 +14,24 @@ import org.bukkit.inventory.ItemStack;
 import btm.sword.config.Config;
 import btm.sword.system.control.SwordScheduler;
 
+/**
+ * Listener for world-level events: block interactions and item consumption.
+ *
+ * <p>Block breaking and placing are gated behind
+ * {@link btm.sword.config.Config.World#BLOCK_INTERACTION_ALLOW_BLOCK_PLACING}. When
+ * placing is forbidden the event is cancelled outright; when allowed, any block placed
+ * by a player is immediately restored to its pre-placement stack so that blocks are never
+ * truly consumed (preserving the combat-focused design intent of not depleting inventory).
+ * Item-consumption events are similarly intercepted so consumables are never removed from
+ * the player's hand.</p>
+ */
 public class WorldListener implements Listener {
 
+    /**
+     * Cancels block-break events when block interactions are disabled.
+     *
+     * @param event the {@link BlockBreakEvent} to gate
+     */
     @EventHandler
     public void onBlockBreak(BlockBreakEvent event) {
         if (!Config.World.BLOCK_INTERACTION_ALLOW_BLOCK_PLACING) {
@@ -23,6 +39,12 @@ public class WorldListener implements Listener {
         }
     }
 
+    /**
+     * Cancels block-place events when block interactions are disabled, or restores the used
+     * item stack one tick later so players are never charged a block from their inventory.
+     *
+     * @param event the {@link BlockPlaceEvent} to gate
+     */
     @EventHandler
     public void onBlockPlace(BlockPlaceEvent event) {
         if (!Config.World.BLOCK_INTERACTION_ALLOW_BLOCK_PLACING) {
@@ -44,6 +66,12 @@ public class WorldListener implements Listener {
         }, 50, TimeUnit.MILLISECONDS);
     }
 
+    /**
+     * Prevents consumables from being removed by replacing the consumed item with a clone
+     * of itself, effectively making all food/potions infinite.
+     *
+     * @param event the {@link PlayerItemConsumeEvent} to intercept
+     */
     @EventHandler
     public void onItemConsume(PlayerItemConsumeEvent event) {
         event.setReplacement(event.getItem().clone());

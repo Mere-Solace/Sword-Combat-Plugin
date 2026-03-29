@@ -115,7 +115,7 @@ public class MovementAction extends SwordAction {
             null,
             () -> {
                 DrawUtil.line(List.of(Prefab.Particles.TEST_SWORD_WHITE), target.getChestLocation(), throwDirection, target.getAverageSize()*2, 0.25);
-                Prefab.Particles.THROW_TRAIl.display(target.getChestLocation());
+                Prefab.Particles.THROW_TRAIL.display(target.getChestLocation());
 
                 World world = targetEntity.getWorld();
                 Location currentLocation = target.getChestLocation();

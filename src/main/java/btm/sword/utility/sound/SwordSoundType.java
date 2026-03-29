@@ -5,6 +5,14 @@ import org.jetbrains.annotations.NotNull;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.sound.Sound;
 
+/**
+ * All Minecraft and custom sound keys available to the Sword plugin.
+ *
+ * <p>Implements {@link Sound.Type} so that entries can be passed directly to the
+ * Adventure {@link net.kyori.adventure.sound.Sound} API. Custom sounds (e.g.
+ * {@code RANDOM_BANE_SLASH}) must be registered in the resource pack; all other entries
+ * are standard Minecraft sound event keys.</p>
+ */
 public enum SwordSoundType implements Sound.Type {
     //#region Custom Sounds:
     RANDOM_BANE_SLASH("random.baneslash"),
@@ -1208,6 +1216,10 @@ public enum SwordSoundType implements Sound.Type {
         this.key = Key.key(keyString);
     }
 
+    /**
+     * {@inheritDoc}
+     * Returns the Adventure {@link Key} for this sound event.
+     */
     @Override
     public @NotNull Key key() {
         return key;

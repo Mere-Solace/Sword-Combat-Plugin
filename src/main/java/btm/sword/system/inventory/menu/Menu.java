@@ -15,9 +15,21 @@ import xyz.xenondevs.invui.item.Click;
 import xyz.xenondevs.invui.item.builder.ItemBuilder;
 import xyz.xenondevs.invui.item.impl.SimpleItem;
 
+/**
+ * Abstract base class for all InvUI-backed Sword menus.
+ * <p>
+ * Provides shared decorative items ({@link #BORDER}, {@link #WALL}), navigation helpers
+ * ({@link #generatePreviousButtonOrDefault()}, {@link #generateForwardPreviousButtonOrDefault()}),
+ * and the {@link #toggle(String, BooleanSupplier, Runnable)} factory for boolean-toggle items.
+ * Concrete subclasses implement {@link #open()} to build and display their specific GUI.
+ * </p>
+ */
 public abstract class Menu {
+
+    /** The player this menu instance belongs to. */
     protected final SwordPlayer swordPlayer;
 
+    /** Shared black stained-glass-pane border item used as inactive GUI decoration. */
     public static final SimpleItem BORDER = new SimpleItem(
         new ItemStackBuilder(Material.BLACK_STAINED_GLASS_PANE)
             .name(Component.text("|[]|", Config.SwordColor.TEXT_COOL_DARK))
@@ -30,12 +42,23 @@ public abstract class Menu {
             .build()
     );
 
+    /**
+     * Creates a Menu instance bound to the given player.
+     *
+     * @param player the player this menu belongs to
+     */
     public Menu(SwordPlayer player) {
         this.swordPlayer = player;
     }
 
+    /** Opens this menu for the bound player. Implementations build and display the InvUI window. */
     public abstract void open();
 
+    /**
+     * Returns a "Go back" navigation button that opens the previous menu in the player's history.
+     *
+     * @return a {@link SimpleItem} wired to {@link btm.sword.system.inventory.PlayerMenuManager#openPreviousMenu()}
+     */
     protected SimpleItem generatePreviousButtonOrDefault() {
         return new SimpleItem(
                 new ItemBuilder(Material.WAXED_COPPER_TRAPDOOR)
@@ -45,6 +68,11 @@ public abstract class Menu {
             );
     }
 
+    /**
+     * Returns a "Go forward" navigation button that re-opens the next menu in the player's history.
+     *
+     * @return a {@link SimpleItem} wired to {@link btm.sword.system.inventory.PlayerMenuManager#openForwardPreviousMenu()}
+     */
     protected SimpleItem generateForwardPreviousButtonOrDefault() {
         return new SimpleItem(
                 new ItemBuilder(Material.WAXED_COPPER_TRAPDOOR)

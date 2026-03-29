@@ -10,7 +10,16 @@ import btm.sword.system.action.skill.type.impl.active.TestGammaAbility;
 import btm.sword.system.action.skill.type.impl.umbral.ShadowSlashSkill;
 import btm.sword.system.action.skill.type.impl.umbral.VoidLungeSkill;
 
+/**
+ * Static registry mapping every known {@link SkillId} to its {@link Skill} implementation.
+ *
+ * <p>All skills are registered in the {@code static} initialiser so they are available as soon
+ * as the class is loaded, without requiring an explicit {@code onEnable} hook. Pass a
+ * {@link SkillId} to {@link #get(SkillId)} to retrieve the corresponding implementation.</p>
+ */
 public class SkillRegistry {
+
+    /** The backing map; populated by the static initialiser. */
     public static final HashMap<SkillId, Skill> skillMapping = new HashMap<>();
 
     // No Bukkit/Paper API features are used here, so we can use a static call instead of a call in on Enable
@@ -29,6 +38,12 @@ public class SkillRegistry {
         skillMapping.put(skill.id(), skill);
     }
 
+    /**
+     * Looks up the skill for the given ID.
+     *
+     * @param id the skill ID to look up
+     * @return the registered {@link Skill}, or {@code null} if not found
+     */
     public static Skill get(SkillId id) {
         return skillMapping.get(id);
     }

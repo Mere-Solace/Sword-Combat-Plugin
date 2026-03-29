@@ -47,6 +47,10 @@ import btm.sword.utility.math.ControlVectors;
  *
  */
 public class AttackingHeavyState extends UmbralStateFacade {
+
+    /** Creates an {@code AttackingHeavyState}. */
+    public AttackingHeavyState() { }
+
     @Override
     public String name() {
         return "ATTACKING_HEAVY";

@@ -329,11 +329,24 @@ world:
 
 debug:
 
+  # General / fallback debug output
+  logging_verbose_debug: false
+
+  # Per-system verbose logging
   logging_verbose_combat: false
   logging_verbose_movement: false
-
-  logging_verbose_config: false
+  logging_verbose_inventory: false
+  logging_verbose_system: false
+  logging_verbose_umbral: false
+  logging_verbose_hostile: false
+  logging_verbose_listener: false
   logging_verbose_animation: false
+  logging_verbose_input: false
+  logging_verbose_skill: false
+  logging_verbose_ability: false
+  logging_verbose_grab: false
+  logging_verbose_attack: false
+  logging_verbose_throwing: false
 
   visualization_show_hitboxes: false
   visualization_show_raytraces: false

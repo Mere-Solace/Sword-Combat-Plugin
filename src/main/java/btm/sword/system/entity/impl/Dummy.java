@@ -18,6 +18,14 @@ import btm.sword.utility.sound.SwordSoundType;
 import lombok.Setter;
 
 
+/**
+ * A placeable training dummy entity.
+ * <p>
+ * Wraps an {@link ArmorStand} with a minimal {@link btm.sword.system.entity.base.CombatProfile}
+ * (10 shards, 2000 max, regen 1/tick). Owned by a {@link SwordPlayer}; removed from the owner's
+ * dummy list on death.
+ * </p>
+ */
 public class Dummy extends Passive {
     @Setter
     private SwordPlayer owner;

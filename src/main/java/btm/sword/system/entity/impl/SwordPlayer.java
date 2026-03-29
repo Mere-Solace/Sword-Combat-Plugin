@@ -125,7 +125,8 @@ public class SwordPlayer extends Combatant {
     private final AbilitySlotManager abilitySlotManager;
 
     /** Active charge session for chargeable abilities, or {@code null} if not charging. */
-    @Getter @Setter
+    @Getter
+    @Setter
     private ChargeSession activeCharge;
 
     /** Economy storage for materials, credits, and auto-pickup preferences. Loaded from and saved to the database. */
@@ -220,8 +221,8 @@ public class SwordPlayer extends Combatant {
      * True while the creative dev mode (clear inventory, wooden axe) is active.
      * Suppresses all item upkeep except the menu button (maintained at slot 17).
      * -- GETTER --
-     *  Returns
-     *  if the player is currently in creative dev mode.
+     * Returns
+     * if the player is currently in creative dev mode.
      */
     private boolean inCreativeDevMode = false;
 
@@ -253,14 +254,14 @@ public class SwordPlayer extends Combatant {
     private float formProgress;
     private final Supplier<Float> formExpTickStepVal =
         () -> 1.0f / SwordTimeUnit.millisToTicks(aspects.form().effectivePeriod());
-           // 1.0f because needs to be scaled between 0 and 1.
+    // 1.0f because needs to be scaled between 0 and 1.
 
     /**
      * Constructs a new SwordPlayer wrapping a Bukkit {@link Player} with associated {@link PlayerData}.
      * Initializes the input execution tree and player head item.
      *
      * @param associatedEntity the Bukkit living entity (player) to wrap
-     * @param data the {@link PlayerData} containing extended player info
+     * @param data             the {@link PlayerData} containing extended player info
      */
     public SwordPlayer(LivingEntity associatedEntity, PlayerData data) {
         super(associatedEntity, data.getCombatProfile());
@@ -295,7 +296,7 @@ public class SwordPlayer extends Combatant {
 
         currencyStorageButton = buildStorageButton(StorageCategory.CURRENCY, currencyLore);
         materialStorageButton = buildStorageButton(StorageCategory.MATERIAL, materialLore);
-        questStorageButton    = buildStorageButton(StorageCategory.QUEST, List::of);
+        questStorageButton = buildStorageButton(StorageCategory.QUEST, List::of);
 
         shieldItem = new SlotAnchoredItem(
             new ItemStackBuilder(Material.SHIELD).build(),
@@ -493,7 +494,7 @@ public class SwordPlayer extends Combatant {
             activationContext = ActivationContext.NORMAL;
         }
 
-        if (isAtRoot() && handleAbilityInput(input)) {
+        if (isAtRoot() && !ChargeAction.isHoldingChargeable(this) && handleAbilityInput(input)) {
             resetTree();
             return;
         }
@@ -525,8 +526,7 @@ public class SwordPlayer extends Combatant {
                 startHoldingRight();
             else
                 return;
-        }
-        else if (input == InputType.SHIFT) {
+        } else if (input == InputType.SHIFT) {
             if (sneakTask == null)
                 startSneaking();
             else
@@ -543,14 +543,14 @@ public class SwordPlayer extends Combatant {
                 if (throwingState()) ThrowAction.throwCancel(this);
                 return;
             }
-        }
-        else if (input == InputType.SHIFT_HOLD) {
+        } else if (input == InputType.SHIFT_HOLD) {
             long minTime = inputExecutionTree.getMinHoldLengthOfNext(input);
             if (minTime == -1 || timeSneakHeld < minTime) {
                 return;
             }
         }
 
+        // The execution trie is only traversed if the code makes it here!
         InputExecutionTree.InputNode node = inputExecutionTree.step(input);
 
         if (node == null)
@@ -563,7 +563,7 @@ public class SwordPlayer extends Combatant {
         if (action != null) {
             // The simplest way for charge action to pass is simply to let it step using the
             // Left of a basic attack, but just block the action
-            if (input == InputType.LEFT && ChargeAction.isHoldingChargeable(this)) return;
+            if (isAtRoot() && input == InputType.LEFT && ChargeAction.isHoldingChargeable(this)) return;
 
             InputActionExecutor.execute(action, this);
         }
@@ -577,7 +577,7 @@ public class SwordPlayer extends Combatant {
 
     public boolean isAbilityItem(ItemStack item) {
         SwordItemType itemType = SwordItemType.fromString(item);
-        Debug.combat("ItemType="+itemType);
+        Debug.combat("ItemType=" + itemType);
         return itemType == SwordItemType.ACTIVE_1 || itemType == SwordItemType.ACTIVE_2;
     }
 
@@ -590,7 +590,6 @@ public class SwordPlayer extends Combatant {
     }
 
     private boolean handleAbilityInput(InputType input) {
-        if (ChargeAction.isHoldingChargeable(this)) return false;
         int heldSlot = player.getInventory().getHeldItemSlot();
 
         // Gate: is this even an ability slot? If not, let the normal input tree handle it.
@@ -622,8 +621,7 @@ public class SwordPlayer extends Combatant {
                 new SkillSlotState(current.remainingUses(), current.remainingDurability(), expiry));
 
             return true;
-        }
-        else {
+        } else {
             return false;
         }
     }
@@ -641,8 +639,7 @@ public class SwordPlayer extends Combatant {
                 return; // don't want to go over: it causes an error
             }
             formProgress += formExpTickStepVal.get();
-        }
-        else {
+        } else {
             player.setLevel(curFormVal);
             formProgress = 0;
         }
@@ -679,7 +676,7 @@ public class SwordPlayer extends Combatant {
     public void reloadInventoryButtons() {
         currencyStorageButton = buildStorageButton(StorageCategory.CURRENCY, currencyLore);
         materialStorageButton = buildStorageButton(StorageCategory.MATERIAL, materialLore);
-        questStorageButton    = buildStorageButton(StorageCategory.QUEST, List::of);
+        questStorageButton = buildStorageButton(StorageCategory.QUEST, List::of);
 
         updateManagedItems();
 
@@ -899,7 +896,7 @@ public class SwordPlayer extends Combatant {
         for (SlotAnchoredItem item : managedItems) {
             if (item.isUpkeepEnabled() && !item.isSatisfied(player)) {
                 if (KeyRegistry.hasKey(item.getItemStack(), KeyRegistry.MAIN_MENU_BUTTON_KEY) ||
-                Debug.SPECIAL_ITEM_CHECKS_ENABLED) {
+                    Debug.SPECIAL_ITEM_CHECKS_ENABLED) {
                     item.restore(player);
                 }
             }
@@ -925,7 +922,7 @@ public class SwordPlayer extends Combatant {
      * </p>
      *
      * @param itemStack the item stack involved in the input; must not be null
-     * @param input the input type being evaluated
+     * @param input     the input type being evaluated
      * @return {@code true} if the input was fully handled and the event should be cancelled
      */
     public boolean handleItemInteraction(ItemStack itemStack, InputType input) {
@@ -954,7 +951,7 @@ public class SwordPlayer extends Combatant {
         switch (category) {
             case MATERIAL -> InventoryMenuManager.openMenu(MaterialPouchMenu.class, this);
             case CURRENCY -> InventoryMenuManager.openMenu(CurrencyMenu.class, this);
-            case QUEST    -> InventoryMenuManager.openMenu(ArtifactPouchMenu.class, this);
+            case QUEST -> InventoryMenuManager.openMenu(ArtifactPouchMenu.class, this);
         }
     }
 
@@ -1073,7 +1070,7 @@ public class SwordPlayer extends Combatant {
     public void updateVisualStats() {
         player.setAbsorptionAmount(aspects.toughnessCur());
         player.setHealth(Math.max(2, 2 * aspects.shardsCur()));
-        player.setFoodLevel((int) (20 * (aspects.soulfireCur()/aspects.soulfireMaxVal())));
+        player.setFoodLevel((int) (20 * (aspects.soulfireCur() / aspects.soulfireMaxVal())));
     }
 
     /**
@@ -1132,6 +1129,12 @@ public class SwordPlayer extends Combatant {
         return !abilitySlotManager.isAbilityHeldSlot(player.getInventory().getHeldItemSlot());
     }
 
+    public boolean normalNonAbilityState() {
+     return normalActState() &&
+        !ChargeAction.isHoldingChargeable(this) &&
+        notHoldingAbilityItem();
+    }
+
     public boolean normalActState() {
         return activationContext == ActivationContext.NORMAL;
     }
@@ -1163,12 +1166,6 @@ public class SwordPlayer extends Combatant {
 
     public boolean umbralState() {
         return normalActState() && (holdingSoulLink() || holdingUmbralBlade());
-    }
-
-    public boolean activeItemState(int slot) {
-        return normalActState() &&
-                SwordItemType.fromString(getItemStackInHand(true)) ==
-                    (slot == 1 ? SwordItemType.ACTIVE_1 : SwordItemType.ACTIVE_2);
     }
 
     /**

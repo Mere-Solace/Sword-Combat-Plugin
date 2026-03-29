@@ -18,7 +18,11 @@ public enum ArmorType {
         this.id = id;
     }
 
-    /** Returns the unique string identifier for this armor type. */
+    /**
+     * Returns the unique string identifier for this armor type.
+     *
+     * @return the armor type id string
+     */
     public String id() {
         return id;
     }

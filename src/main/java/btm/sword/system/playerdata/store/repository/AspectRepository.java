@@ -22,7 +22,11 @@ public class AspectRepository {
 
     private final Connection conn;
 
-    /** @param conn the shared JDBC connection */
+    /**
+     * Constructs a repository backed by the given JDBC connection.
+     *
+     * @param conn the shared JDBC connection
+     */
     public AspectRepository(Connection conn) {
         this.conn = conn;
     }

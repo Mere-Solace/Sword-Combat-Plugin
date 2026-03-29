@@ -100,12 +100,9 @@ public class Prefab {
             () -> 0.05, () -> 0.05, () -> 0.05)
             .withTransition(() -> 1.0, () -> new Particle.DustTransition(Color.fromRGB(53, 166, 240), Color.fromRGB(52, 72, 81), 0.5f));
 
-        public static final ParticleWrapper THROW_TRAIl = new ParticleWrapper(
+        public static final ParticleWrapper THROW_TRAIL = new ParticleWrapper(
             () -> Config.Particles.THROW_TRAIL_TYPE, () -> Config.Particles.THROW_TRAIL_COUNT,
             () -> 0.0, () -> 0.0, () -> 0.0).withSpeed(() -> Config.Particles.THROW_TRAIL_SPEED);
-//        public static final ParticleWrapper THROW_TRAIl = new ParticleWrapper(
-//            () -> Particle.DUST, () -> 1, () -> 0.2, () -> 0.2, () -> 0.2)
-//            .withOptions(() -> new Particle.DustOptions(Color.WHITE, 2.5f));
 
         public static final ParticleWrapper ITEM_THROW_BREAK = new ParticleWrapper(
             () -> Config.Particles.ITEM_THROW_BREAK_TYPE, () -> Config.Particles.ITEM_THROW_BREAK_COUNT,
@@ -123,12 +120,16 @@ public class Prefab {
             () -> 0.5, () -> 0.5, () -> 0.5).withSpeed(() -> Config.Particles.TOUGH_RECHARGE_2_SPEED);
     }
 
+    /** Pre-built knockback instruction functions for use with {@link btm.sword.system.attack.Attack}. */
     public static class Instructions {
         public static final Function<SwordEntity, Function<Attack, Vector>> DEFAULT_KNOCKBACK =
             e -> a -> a.getTo().add(a.getForwardVector());
     }
 
-    // using Suppliers so that this basic record-like class (AttackHitValue) can use the values from the config.
+    /**
+     * Pre-built {@link btm.sword.system.attack.HitValuePacket} instances for common attack types.
+     * Values are backed by {@link Config} suppliers so hot-reload is respected.
+     */
     public static class Attacks {
         public static final HitValuePacket DEFAULT_MOB_HIT = new HitValuePacket(
             () -> Config.Combat.HIT_DEFAULT_MOB_REAPED_SOULFIRE,
@@ -194,6 +195,7 @@ public class Prefab {
         );
     }
 
+    /** Pre-built {@link btm.sword.utility.sound.SoundWrapper} instances for common sound events. */
     public static class Sounds {
         /**
          * Attack sound effect for melee combat.
@@ -264,11 +266,15 @@ public class Prefab {
         );
     }
 
+    /** Pre-built {@link btm.sword.utility.PotionEffectWrapper} instances for common status effects. */
     public static class PotionEffects {
-        public static final PotionEffectWrapper DASH_SPEED = new PotionEffectWrapper(PotionEffectType.SPEED, Config.Movement.SPEED_DURATION, Config.Movement.SPEED_AMPLIFIER);
-        public static final PotionEffectWrapper HEAL_CHANNEL_SLOW = new PotionEffectWrapper(PotionEffectType.SLOWNESS, Config.Combat.HEAL_CHANNEL_SLOW_DURATION, Config.Combat.HEAL_CHANNEL_SLOW_AMPLIFIER);
+        public static final PotionEffectWrapper DASH_SPEED =
+            new PotionEffectWrapper(PotionEffectType.SPEED, Config.Movement.SPEED_DURATION, Config.Movement.SPEED_AMPLIFIER);
+        public static final PotionEffectWrapper HEAL_CHANNEL_SLOW =
+            new PotionEffectWrapper(PotionEffectType.SLOWNESS, Config.Combat.HEAL_CHANNEL_SLOW_DURATION, Config.Combat.HEAL_CHANNEL_SLOW_AMPLIFIER);
     }
 
+    /** Pre-built lore/description {@link net.kyori.adventure.text.Component} lists for special items. */
     public static class Text {
         public static final List<Component> SOUL_LINK_LORE = List.of(
             Component.text("", Config.SwordColor.TEXT_ITEM_BASE),
