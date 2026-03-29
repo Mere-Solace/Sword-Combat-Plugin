@@ -25,7 +25,7 @@ import net.kyori.adventure.text.format.TextDecoration;
  * <p>
  * Players survive {@value #TOTAL_WAVES} escalating waves of enemies. After the final wave
  * is cleared a {@link TextDisplay} reward chest marker appears at the spawn centre.
- * The run ends either when all waves are cleared or when the 15-minute safety cap
+ * The run ends either when all waves are cleared or when the 5-minute safety cap
  * ({@value #MAX_DURATION_SECONDS}s) expires.
  * </p>
  *
@@ -35,7 +35,7 @@ import net.kyori.adventure.text.format.TextDecoration;
 public class RoguelikeRun extends Gamemode {
 
     private static final int TOTAL_WAVES = 3;
-    private static final int MAX_DURATION_SECONDS = 900; // 15-minute safety cap
+    private static final int MAX_DURATION_SECONDS = 300; // 5-minute safety cap
 
     private int currentWave = 0;
     private boolean runComplete = false;
