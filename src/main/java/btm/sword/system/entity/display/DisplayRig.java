@@ -112,10 +112,26 @@ public class DisplayRig {
             return null;
         }
 
-        SpawnedDisplayEntityGroup group = def.spawn(mob.getLocation(), GroupSpawnedEvent.SpawnReason.CUSTOM);
+        SpawnedDisplayEntityGroup group;
+        try {
+            group = def.spawn(mob.getLocation(), GroupSpawnedEvent.SpawnReason.CUSTOM);
+        } catch (Exception e) {
+            Sword.getInstance().getLogger().warning(
+                "[DisplayRig] Exception while spawning group '" + groupTag + "': " + e.getMessage()
+            );
+            return null;
+        }
         if (group == null) return null;
 
-        group.rideEntity(mob);
+        try {
+            group.rideEntity(mob);
+        } catch (Exception e) {
+            Sword.getInstance().getLogger().warning(
+                "[DisplayRig] Exception while mounting group '" + groupTag + "' to mob: " + e.getMessage()
+            );
+            group.unregister(true, true);
+            return null;
+        }
 
         for (Display display : group.getPartEntities(Display.class)) {
             display.setTeleportDuration(Config.Hostile.DISPLAY_TELEPORT_DURATION);
@@ -296,7 +312,13 @@ public class DisplayRig {
         DEUAnimationHook.untrack(group);
         clearWeaponDisplay();
         stateMachine.removeGroup(group);
-        group.unregister(true, true);
+        try {
+            group.unregister(true, true);
+        } catch (Exception e) {
+            Sword.getInstance().getLogger().warning(
+                "[DisplayRig] Exception while unregistering display group — entities may not have been removed cleanly: " + e.getMessage()
+            );
+        }
     }
 
     // -----------------------------------------------------------------------
