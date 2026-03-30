@@ -182,6 +182,15 @@ public final class Prefab {
             () -> Config.Combat.HIT_PUNCH_SOULFIRE_LOSS
         );
 
+        /** Hit packet for thrown knife ability projectiles. Low shard damage, high toughness damage. */
+        public static final HitValuePacket KNIFE_THROW = new HitValuePacket(
+            () -> 0f,
+            () -> Config.Combat.THROWN_DAMAGE_SWORD_AXE_INVULNERABILITY_TICKS,
+            () -> 1,
+            () -> 15f,
+            () -> 0f
+        );
+
         /**
          * Hit packet for UmbralBlade lunge and grab-impale hits.
          * SHIELD_PASSING: reduces damage by {@link Config.Combat#SHIELD_PASSING_BYPASS_POWER}
