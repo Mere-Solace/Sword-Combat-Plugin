@@ -8,6 +8,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
 
+import btm.sword.system.action.throwing.InteractiveItemArbiter;
 import btm.sword.system.item.ItemStackBuilder;
 import btm.sword.system.item.KeyRegistry;
 import btm.sword.system.item.SwordItemType;
@@ -21,17 +22,17 @@ import net.kyori.adventure.text.format.TextDecoration;
  *
  * <p>The slot has four visual states:
  * <ul>
- *   <li>{@link SlotState#LOCKED} — gray glass, slot has not been unlocked.</li>
- *   <li>{@link SlotState#EMPTY} — gray glass, unlocked but no ability equipped.</li>
- *   <li>{@link SlotState#EQUIPPED} — the ability's world item, tagged and non-movable.</li>
- *   <li>{@link SlotState#DEPLETED} — black glass, ability uses exhausted.</li>
+ *   <li>{@link SlotState#LOCKED} - gray glass, slot has not been unlocked.</li>
+ *   <li>{@link SlotState#EMPTY} - gray glass, unlocked but no ability equipped.</li>
+ *   <li>{@link SlotState#EQUIPPED} - the ability's world item, tagged and non-movable.</li>
+ *   <li>{@link SlotState#DEPLETED} - black glass, ability uses exhausted.</li>
  * </ul>
  *
  * <p>{@link #isSatisfied(Player)} returns {@code true} when any of these four states
  * occupies the target slot. If none match, {@link #restore(Player)} replaces the slot
  * with the current state's item.</p>
  *
- * <p>These items follow the same protection pattern as the umbral blade and soul link —
+ * <p>These items follow the same protection pattern as the umbral blade and soul link -
  * they are only protected/restored when {@link btm.sword.utility.Debug#SPECIAL_ITEM_CHECKS_ENABLED}
  * is {@code true}. The {@code inventoryUpkeep()} loop already checks this for managed items.</p>
  */
@@ -52,8 +53,6 @@ public class AbilitySlotItem extends SlotAnchoredItem {
     /**
      * -- GETTER --
      *  Returns the current visual state of this slot.
-     *
-     * @return the current {@link SlotState}
      */
     @Getter
     private SlotState state;
@@ -81,7 +80,7 @@ public class AbilitySlotItem extends SlotAnchoredItem {
 
     /**
      * Updates the slot's visual state and internal item. Does not place the item
-     * into the player's inventory — call {@link #restore(Player)} afterward.
+     * into the player's inventory - call {@link #restore(Player)} afterward.
      *
      * @param newState the new state
      */
@@ -133,33 +132,74 @@ public class AbilitySlotItem extends SlotAnchoredItem {
     /**
      * Places the current state's item into the target slot.
      *
-     * <p>For {@link SlotState#LOCKED} and {@link SlotState#EMPTY}, clears any stale ability item
-     * from the slot but otherwise leaves the hotbar slot free for the player.
-     * For {@link SlotState#EQUIPPED} and {@link SlotState#DEPLETED}, writes the current item.</p>
+     * <p>When a real ability item is displaced, it is first offered back to the player's
+     * inventory and only falls back to a dropped-item world spawn if inventory is full.
+     * Placeholder panes are never preserved.</p>
      *
      * @param player the player whose inventory to restore the item into
      */
     @Override
     public void restore(Player player) {
+        ItemStack existing = player.getInventory().getItem(getTargetSlot());
         if (state == SlotState.LOCKED || state == SlotState.EMPTY) {
-            ItemStack current = player.getInventory().getItem(getTargetSlot());
-            if (current != null && KeyRegistry.hasKey(current, KeyRegistry.ABILITY_SLOT_KEY)) {
+            if (existing != null && KeyRegistry.hasKey(existing, KeyRegistry.ABILITY_SLOT_KEY)) {
                 player.getInventory().setItem(getTargetSlot(), null);
             }
             return;
         }
-        // Preserve any non-ability item currently in the slot — move it elsewhere
-        ItemStack existing = player.getInventory().getItem(getTargetSlot());
-        if (existing != null && !existing.isEmpty()
-                && !KeyRegistry.hasKey(existing, KeyRegistry.ABILITY_SLOT_KEY)) {
-            Map<Integer, ItemStack> overflow = player.getInventory().addItem(existing);
-            overflow.values().forEach(leftover ->
-                player.getWorld().dropItemNaturally(player.getLocation(), leftover));
-        }
+
+        ItemStack displaced = shouldPreserveOnReplace(existing) ? toInventoryItem(existing) : null;
         player.getInventory().setItem(getTargetSlot(), currentItem);
+        if (displaced != null) {
+            moveToInventoryOrDrop(player, displaced);
+        }
     }
 
-    // ── Static item builders ─────────────────────────────────────────────────
+    private boolean shouldPreserveOnReplace(ItemStack existing) {
+        if (existing == null || existing.isEmpty() || isCurrentSlotItem(existing)) {
+            return false;
+        }
+
+        if (!KeyRegistry.hasKey(existing, KeyRegistry.ABILITY_SLOT_KEY)) {
+            return toInventoryItem(existing) != null;
+        }
+
+        String existingAbilityId = KeyRegistry.getKeyField(existing, KeyRegistry.ABILITY_ID_KEY, PersistentDataType.STRING);
+        String currentAbilityId = currentItem == null
+            ? null
+            : KeyRegistry.getKeyField(currentItem, KeyRegistry.ABILITY_ID_KEY, PersistentDataType.STRING);
+
+        return existingAbilityId != null
+            && currentAbilityId != null
+            && !existingAbilityId.equals(currentAbilityId)
+            && toInventoryItem(existing) != null;
+    }
+
+    private boolean isCurrentSlotItem(ItemStack existing) {
+        return currentItem != null
+            && existing.isSimilar(currentItem)
+            && existing.getAmount() == currentItem.getAmount();
+    }
+
+    private ItemStack toInventoryItem(ItemStack existing) {
+        if (existing == null || existing.isEmpty()) return null;
+
+        if (KeyRegistry.hasKey(existing, KeyRegistry.ABILITY_SLOT_KEY)
+            && !KeyRegistry.hasKey(existing, KeyRegistry.ABILITY_ID_KEY)) {
+            return null;
+        }
+
+        ItemStack copy = existing.clone();
+        KeyRegistry.removeKey(copy, KeyRegistry.ABILITY_SLOT_KEY);
+        KeyRegistry.removeKey(copy, KeyRegistry.NON_MOVABLE_KEY);
+        KeyRegistry.removeKey(copy, KeyRegistry.ITEM_TYPE_KEY);
+        return copy;
+    }
+
+    private void moveToInventoryOrDrop(Player player, ItemStack item) {
+        Map<Integer, ItemStack> overflow = player.getInventory().addItem(item);
+        overflow.values().forEach(leftover -> InteractiveItemArbiter.dropNaturally(player.getLocation(), leftover));
+    }
 
     private static ItemStack buildStateItem(SlotState state, SwordItemType swordItemType) {
         return switch (state) {
@@ -175,7 +215,7 @@ public class AbilitySlotItem extends SlotAnchoredItem {
                 Component.text("Depleted", NamedTextColor.DARK_GRAY, TextDecoration.ITALIC),
                 List.of(Component.text("This ability has been used up.", NamedTextColor.DARK_GRAY)),
                 swordItemType);
-            case EQUIPPED -> // Equipped items are set via setEquipped(); this fallback should not normally be reached.
+            case EQUIPPED ->
                 buildPlaceholder(Material.GRAY_STAINED_GLASS_PANE,
                     Component.text("Empty Ability Slot", NamedTextColor.GRAY),
                     List.of(Component.text("Equip an ability from the Character Menu.", NamedTextColor.GRAY)),
