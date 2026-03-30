@@ -6,8 +6,6 @@ import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import btm.sword.system.control.SwordScheduler;
-
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -18,6 +16,7 @@ import org.bukkit.entity.TextDisplay;
 
 import btm.sword.config.Config;
 import btm.sword.gamemode.QueueManager;
+import btm.sword.system.control.SwordScheduler;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.impl.SwordPlayer;
 import net.kyori.adventure.text.Component;

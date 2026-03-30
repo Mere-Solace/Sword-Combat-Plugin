@@ -2,8 +2,6 @@ package btm.sword.gamemode.ctf;
 
 import java.util.concurrent.TimeUnit;
 
-import lombok.Getter;
-
 import org.bukkit.Location;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.EntityType;
@@ -14,6 +12,7 @@ import btm.sword.config.Config;
 import btm.sword.system.control.SwordScheduler;
 import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.utility.Prefab;
+import lombok.Getter;
 import net.kyori.adventure.text.Component;
 
 /**

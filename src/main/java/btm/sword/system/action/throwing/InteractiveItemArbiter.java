@@ -2,8 +2,6 @@ package btm.sword.system.action.throwing;
 
 import java.util.HashMap;
 
-import btm.sword.system.action.skill.SkillId;
-
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.block.Block;
@@ -12,6 +10,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.util.Vector;
 
+import btm.sword.system.action.skill.SkillId;
 import btm.sword.system.action.throwing.types.DroppedItem;
 import btm.sword.system.action.throwing.types.ThrownItem;
 import btm.sword.system.entity.base.SwordEntity;

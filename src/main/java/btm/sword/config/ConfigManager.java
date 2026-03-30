@@ -6,13 +6,12 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.util.logging.Level;
 
-import lombok.Getter;
-
 import org.bukkit.Color;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 
 import btm.sword.Sword;
+import lombok.Getter;
 import net.kyori.adventure.text.format.TextColor;
 
 /**
