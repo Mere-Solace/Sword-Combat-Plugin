@@ -21,6 +21,7 @@ import btm.sword.system.control.TimeArbiter;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.impl.Combatant;
+import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.utility.Debug;
 import btm.sword.utility.Prefab;
 import btm.sword.utility.SwordTimeUnit;
@@ -46,7 +47,6 @@ public class MovementAction extends SwordAction {
      * @param executor The combatant performing the dash.
      */
     public static void dash(Combatant executor, DashDirection direction) {
-        boolean onGround = executor.isGrounded();
         Runnable dashConsumer;
         switch (direction) {
             case FORWARD -> dashConsumer = () -> new Dash(executor, 1).execute();
@@ -57,6 +57,12 @@ public class MovementAction extends SwordAction {
         }
         // execution occurs immediately; input-driven casting is handled by the InputAction's castDuration
         dashConsumer.run();
+
+        // TODO: I'm resetting the tree here because not being at root is causing issues with the ability action
+        //  system. Should there be a builder call that describes terminals for ability inputs?
+        if (executor instanceof SwordPlayer sp && !sp.notHoldingAbilityItem()) {
+            sp.resetTree();
+        }
     }
 
     private static void strafe(Combatant executor, boolean onGround, int direction) {

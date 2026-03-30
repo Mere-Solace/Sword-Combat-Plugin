@@ -89,6 +89,8 @@ public class VisualProjectile extends SimulatedDisplay {
      */
     protected float displayScale = 1.0f;
 
+    protected Vector3f displayScaleVector = new Vector3f(1.0f);
+
     /**
      * Scales the time parameter fed to {@link #positionFunction}.
      * Negative value means no scaling (raw tick count is used).
@@ -478,29 +480,30 @@ public class VisualProjectile extends SimulatedDisplay {
             display.setTransformation(new Transformation(
                 base.add(new Vector3f()),
                 new Quaternionf().rotateY((float) Math.PI / 2).rotateZ((float) Math.PI / 2),
-                new Vector3f(displayScale, displayScale, displayScale),
+                displayScaleVector,
                 new Quaternionf()
             ));
         } else if (name.endsWith("AXE") || name.endsWith("_HOE") || name.endsWith("_SHOVEL")) {
-            float axeScale = 1.5f * displayScale;
+            Vector3f axeScaleVector = new Vector3f(displayScaleVector).mul(1.5f); // TODO: Config?
             display.setTransformation(new Transformation(
                 base.add(new Vector3f()),
                 new Quaternionf().rotateY((float) -Math.PI / 2).rotateZ((float) Math.PI / 4),
-                new Vector3f(axeScale, axeScale, axeScale),
+                // TODO: Config all of these magic numbers?
+                axeScaleVector,
                 new Quaternionf()
             ));
         } else if (display.getItemStack().getType() == Material.SHIELD) {
             display.setTransformation(new Transformation(
-                base.add(new Vector3f(0, 0, 0)),
+                base.add(new Vector3f(0)),
                 new Quaternionf().rotateY((float) (Math.PI / 1.01f) * 0),
-                new Vector3f(displayScale, displayScale, displayScale),
+                displayScaleVector,
                 new Quaternionf()
             ));
         } else {
             display.setTransformation(new Transformation(
                 base.add(new Vector3f()),
                 new Quaternionf().rotateZ((float) Math.PI / 8),
-                new Vector3f(displayScale, displayScale, displayScale),
+                displayScaleVector,
                 new Quaternionf()
             ));
         }
@@ -703,6 +706,16 @@ public class VisualProjectile extends SimulatedDisplay {
      */
     public void setTimeStep(int timeStep) {
         this.timeStep.set(timeStep);
+    }
+
+    public void setDisplayScale(float displayScale) {
+        this.displayScale = displayScale;
+        this.displayScaleVector = new Vector3f(displayScale);
+    }
+
+    public void setDisplayScale(Vector3f displayScaleVector) {
+        this.displayScale = 1;
+        this.displayScaleVector = displayScaleVector;
     }
 
     /**

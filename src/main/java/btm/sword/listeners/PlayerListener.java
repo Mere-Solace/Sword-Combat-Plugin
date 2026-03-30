@@ -281,7 +281,7 @@ public class PlayerListener implements Listener {
                 }
 
                 sp.spawnInventoryDrop(current);
-                sp.setItemAtIndex(new ItemStack(Material.AIR), slot);
+                sp.setItemAtIndex(ItemStack.of(Material.AIR), slot);
 
                 event.setCancelled(true);
             }

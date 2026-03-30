@@ -936,7 +936,7 @@ public abstract class SwordEntity {
      * @param main true for main hand, false for off hand
      */
     public void setItemTypeInHand(Material itemType, boolean main) {
-        setItemStackInHand(new ItemStack(itemType), main);
+        setItemStackInHand(ItemStack.of(itemType), main);
     }
 
     /**

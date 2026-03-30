@@ -32,7 +32,7 @@ public class PlayerMenuManager {
         if (!cursor.isEmpty()) {
             Map<Integer, ItemStack> leftover = player.getInventory().addItem(cursor.clone());
             leftover.values().forEach(swordPlayer::spawnInventoryDrop);
-            player.setItemOnCursor(new ItemStack(Material.AIR));
+            player.setItemOnCursor(ItemStack.of(Material.AIR));
         }
 
         menu.open();
@@ -44,7 +44,7 @@ public class PlayerMenuManager {
         SwordScheduler.runBukkitTaskLater(() -> {
             ItemStack afterCursor = player.getItemOnCursor();
             if (!afterCursor.isEmpty() && KeyRegistry.hasKey(afterCursor, KeyRegistry.NON_MOVABLE_KEY)) {
-                player.setItemOnCursor(new ItemStack(Material.AIR));
+                player.setItemOnCursor(ItemStack.of(Material.AIR));
             }
         }, 50, TimeUnit.MILLISECONDS);
     }

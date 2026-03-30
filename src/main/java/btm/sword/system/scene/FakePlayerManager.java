@@ -824,6 +824,6 @@ public final class FakePlayerManager {
     }
 
     private static ItemStack orAir(ItemStack item) {
-        return item != null ? item : new ItemStack(org.bukkit.Material.AIR);
+        return item != null ? item : ItemStack.of(org.bukkit.Material.AIR);
     }
 }

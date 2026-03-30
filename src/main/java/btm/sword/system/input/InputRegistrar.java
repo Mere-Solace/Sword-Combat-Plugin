@@ -255,7 +255,10 @@ public final class InputRegistrar {
             new InputExecutionTree.ActionContextPair(
                 () -> InputAction.builder()
                     .name("Release Charge")
-                    .action(c -> Debug.combat("Release now happens implicitly within Charge Action..."))
+                    .action(c -> {
+                        if (c instanceof SwordPlayer sp) sp.resetTree();
+                        Debug.combat("Release now happens implicitly within Charge Action...");
+                    })
                     .cooldown(executor -> 0)
                     .canCast(c -> true)
                     .displayDisabled(false)

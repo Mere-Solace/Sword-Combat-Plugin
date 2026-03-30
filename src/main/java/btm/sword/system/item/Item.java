@@ -22,7 +22,7 @@ import lombok.Getter;
  * <p>
  * Example usage:
  * <pre>
- * ItemStack stack = new ItemStack(Material.DIAMOND_SWORD);
+ * ItemStack stack = ItemStack.of(Material.DIAMOND_SWORD);
  * Item custom = new Item(stack);
  *
  * if (custom.hasTag("uuid")) {

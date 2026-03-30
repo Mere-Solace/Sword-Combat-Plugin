@@ -128,7 +128,7 @@ public class MobThrowAbility implements MobAbility {
             }
 
             h.mob().setRotation(yaw, 0f);
-            ItemStack dirt = new ItemStack(Material.DIRT);
+            ItemStack dirt = ItemStack.of(Material.DIRT);
             h.setItemStackInHand(dirt, true);
 
             ThrowAction.throwReady(h, dirt);

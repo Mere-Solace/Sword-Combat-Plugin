@@ -202,24 +202,19 @@ public class AbilitySlotItem extends SlotAnchoredItem {
     }
 
     private static ItemStack buildStateItem(SlotState state, SwordItemType swordItemType) {
-        return switch (state) {
+        return switch (state) { // TODO: Config the materials
             case LOCKED -> buildPlaceholder(Material.GRAY_STAINED_GLASS_PANE,
                 Component.text("Locked Ability Slot", NamedTextColor.DARK_GRAY, TextDecoration.BOLD),
                 List.of(Component.text("Unlock this slot from the Character Menu.", NamedTextColor.GRAY)),
                 swordItemType);
-            case EMPTY -> buildPlaceholder(Material.GRAY_STAINED_GLASS_PANE,
+            case EMPTY, EQUIPPED -> buildPlaceholder(Material.GRAY_STAINED_GLASS_PANE,
                 Component.text("Empty Ability Slot", NamedTextColor.GRAY),
                 List.of(Component.text("Equip an ability from the Character Menu.", NamedTextColor.GRAY)),
                 swordItemType);
-            case DEPLETED -> buildPlaceholder(Material.BLACK_STAINED_GLASS_PANE,
+            case DEPLETED -> buildPlaceholder(Material.GRAY_DYE,
                 Component.text("Depleted", NamedTextColor.DARK_GRAY, TextDecoration.ITALIC),
                 List.of(Component.text("This ability has been used up.", NamedTextColor.DARK_GRAY)),
                 swordItemType);
-            case EQUIPPED ->
-                buildPlaceholder(Material.GRAY_STAINED_GLASS_PANE,
-                    Component.text("Empty Ability Slot", NamedTextColor.GRAY),
-                    List.of(Component.text("Equip an ability from the Character Menu.", NamedTextColor.GRAY)),
-                    swordItemType);
         };
     }
 

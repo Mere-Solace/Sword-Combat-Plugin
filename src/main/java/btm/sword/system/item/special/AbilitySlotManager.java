@@ -157,6 +157,8 @@ public class AbilitySlotManager {
             int ticks = ability.cooldownTicks();
             player.setCooldown(current.getType(), ticks);
         }
+
+        syncSlotItemFromState(slotIndex);
     }
 
     /**
@@ -301,6 +303,20 @@ public class AbilitySlotManager {
     }
 
     /**
+     * Restores a single managed ability slot from persistent slot state.
+     * Useful when the live inventory stack was temporarily replaced (for example,
+     * by the right-click hold gunpowder placeholder).
+     *
+     * @param slotIndex 1 or 2
+     */
+    public void restoreSlot(int slotIndex) {
+        syncSlotItemFromState(slotIndex);
+        AbilitySlotItem slotItem = slotIndex == SLOT_1 ? slot1 : slot2;
+        slotItem.restore(owner.player());
+        syncEnabled();
+    }
+
+    /**
      * Returns the {@link SwordItemType} for the ability at the given hotbar slot index,
      * or {@code null} if that slot does not have an active (equipped) ability.
      * Used by {@code handleAbilityInput} as a reliable alternative to PDC tag lookups.
@@ -342,6 +358,13 @@ public class AbilitySlotManager {
     private void syncEnabled() {
         slotEnabled[0] = slot1.getState() == AbilitySlotItem.SlotState.EQUIPPED;
         slotEnabled[1] = slot2.getState() == AbilitySlotItem.SlotState.EQUIPPED;
+    }
+
+    private void syncSlotItemFromState(int slotIndex) {
+        SkillSlot skillSlot = toSkillSlot(slotIndex);
+        SkillSlotState state = owner.getCombatProfile().getPlayerSkillContainer().getSlotState(skillSlot);
+        AbilitySlotItem slotItem = slotIndex == SLOT_1 ? slot1 : slot2;
+        refreshSlot(slotItem, skillSlot, state.remainingUses(), state.remainingDurability());
     }
 
     private SkillSlot toSkillSlot(int slotIndex) {

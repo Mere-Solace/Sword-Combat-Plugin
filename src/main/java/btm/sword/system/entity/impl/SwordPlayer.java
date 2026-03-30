@@ -29,7 +29,6 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.persistence.PersistentDataType;
-import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Transformation;
 import org.bukkit.util.Vector;
 import org.joml.Quaternionf;
@@ -82,6 +81,7 @@ import btm.sword.system.item.special.NonMovableItem;
 import btm.sword.system.item.special.SlotAnchoredItem;
 import btm.sword.system.playerdata.PlayerData;
 import btm.sword.system.playerdata.PlayerStorage;
+import btm.sword.system.scene.CameraController;
 import btm.sword.system.scene.animation.CutsceneInputHandler;
 import btm.sword.utility.Debug;
 import btm.sword.utility.Prefab;
@@ -162,7 +162,7 @@ public class SwordPlayer extends Combatant {
     private boolean performedDropAction;
     @Getter
     @Setter
-    private ItemStack lastHeldItemBeforeDrop = new ItemStack(Material.AIR);
+    private ItemStack lastHeldItemBeforeDrop = ItemStack.of(Material.AIR);
     @Setter
     private boolean changingHandIndex;
     @Setter
@@ -171,9 +171,6 @@ public class SwordPlayer extends Combatant {
     private boolean threwItem;
     @Setter
     private boolean blocking;
-
-    private boolean punchingWithLink = false;
-    private boolean commandingWithLink = false;
 
     /** System.currentTimeMillis() deadline for the active parry hit-detection window. */
     @Setter
@@ -244,9 +241,8 @@ public class SwordPlayer extends Combatant {
 
     @Getter
     @Setter
-    private btm.sword.system.scene.CameraController activeCameraController;
+    private CameraController activeCameraController;
 
-    private BukkitTask targetIndicatorTask;
     private SwordEntity targetedEntity;
     private TextDisplay targetIndicator;
 
@@ -270,7 +266,7 @@ public class SwordPlayer extends Combatant {
         profile = player.getPlayerProfile();
         username = profile.getName();
 
-        ItemStack temp = new ItemStack(Material.PLAYER_HEAD);
+        ItemStack temp = ItemStack.of(Material.PLAYER_HEAD);
         SkullMeta skullMeta = (SkullMeta) temp.getItemMeta();
         skullMeta.setPlayerProfile(profile);
 
@@ -495,6 +491,12 @@ public class SwordPlayer extends Combatant {
             activationContext = ActivationContext.NORMAL;
         }
 
+        Debug.input("Pre-Ability Check Message, cur path="+inputExecutionTree.getPlainTextInputSequence() +
+            "\n           input="+input+
+            "\n           holdingAbilityItem?="+!notHoldingAbilityItem()+
+            "\n           isAtRoot="+isAtRoot() +
+            "\n           notHoldingChargeable="+!ChargeAction.isHoldingChargeable(this));
+
         if (isAtRoot() && !ChargeAction.isHoldingChargeable(this) && handleAbilityInput(input)) {
             resetTree();
             return;
@@ -551,6 +553,8 @@ public class SwordPlayer extends Combatant {
             }
         }
 
+        Debug.input("Line before step is resolved.");
+
         // The execution trie is only traversed if the code makes it here!
         InputExecutionTree.InputNode node = inputExecutionTree.step(input);
 
@@ -574,16 +578,6 @@ public class SwordPlayer extends Combatant {
         if (internalAction != null) {
             internalAction.accept(this);
         }
-    }
-
-    public boolean isAbilityItem(ItemStack item) {
-        SwordItemType itemType = SwordItemType.fromString(item);
-        Debug.combat("ItemType=" + itemType);
-        return itemType == SwordItemType.ACTIVE_1 || itemType == SwordItemType.ACTIVE_2;
-    }
-
-    public boolean isAbilityItem(SwordItemType itemType) {
-        return itemType == SwordItemType.ACTIVE_1 || itemType == SwordItemType.ACTIVE_2;
     }
 
     public boolean isHeldItemOnCooldown() {
@@ -689,7 +683,7 @@ public class SwordPlayer extends Combatant {
 
     /**
      * Enters the scene overlay: saves the player's inventory (slots 0–35), fills all slots with
-     * blue stained glass panes (keeping the menu button in slot 8), hides the player from others,
+     * blue stained-glass panes (keeping the menu button in slot 8), hides the player from others,
      * and deactivates the umbral blade. Also suppresses {@link #inventoryUpkeep()} until exited.
      * <p>
      * Call from a {@link btm.sword.system.scene.CameraController}'s {@code onStart()} hook.
@@ -814,9 +808,9 @@ public class SwordPlayer extends Combatant {
 
         // Place menu button one row above the hotbar (slot 17) to free up the hotbar
         player.getInventory().setItem(17, menuButton.getItemStack());
-        player.getInventory().setItem(0, new ItemStack(Material.WOODEN_AXE));
-        player.getInventory().setItem(1, new ItemStack(Material.FIREWORK_ROCKET));
-        player.getInventory().setItem(38, new ItemStack(Material.ELYTRA));
+        player.getInventory().setItem(0, ItemStack.of(Material.WOODEN_AXE));
+        player.getInventory().setItem(1, ItemStack.of(Material.FIREWORK_ROCKET));
+        player.getInventory().setItem(38, ItemStack.of(Material.ELYTRA));
 
         setAllAnchoredItemUpkeep(false);
         Debug.SPECIAL_ITEM_CHECKS_ENABLED = false;
@@ -1002,7 +996,7 @@ public class SwordPlayer extends Combatant {
         }
 
         // Scene overlay is active — cancel all inventory interactions except the menu button above.
-        // Left-clicking an interactible (non-NON_MOVABLE) slot fires the scene-exit stub.
+        // Left-clicking an interactable (non-NON_MOVABLE) slot fires the scene-exit stub.
         // When special item checks are disabled, all overlay restrictions are bypassed.
         if (inSceneOverlay && Debug.SPECIAL_ITEM_CHECKS_ENABLED) {
             if (clickType == ClickType.LEFT && !clicked.getType().isAir() &&
@@ -1084,7 +1078,7 @@ public class SwordPlayer extends Combatant {
     }
 
     public ItemStack getPlayerHeadItemWithCustomText(Component title, List<Component> lore) {
-        ItemStack temp = new ItemStack(Material.PLAYER_HEAD);
+        ItemStack temp = ItemStack.of(Material.PLAYER_HEAD);
         SkullMeta skullMeta = (SkullMeta) temp.getItemMeta();
         skullMeta.setPlayerProfile(profile);
 
@@ -1229,7 +1223,7 @@ public class SwordPlayer extends Combatant {
         float cur = aspects.soulfireCur();
         itemNameDisplay(Component.text("»  " + (int) cur, TextColor.color(80, 80, 80), TextDecoration.BOLD)
             .append(Component.text("  ᅳ" + consumed, TextColor.color(30, 108, 167), TextDecoration.BOLD))
-            .append(Component.text("  «", TextColor.color(80, 80, 80), TextDecoration.BOLD)));
+            .append(Component.text("  «", TextColor.color(80, 80, 80), TextDecoration.BOLD)), null);
     }
 
     public void displayLackOfSoulfire(float required) {
@@ -1293,14 +1287,18 @@ public class SwordPlayer extends Combatant {
                     Duration.ofMillis(fadeOut))));
     }
 
-    public void itemNameDisplay(Component displayName) {
+    // TODO: Some way to cache this new itemStack and just send the equipment change each time
+    public void itemNameDisplay(Component displayName, Material newMaterial) {
         ItemStack stack = getItemStackInHand(true).clone();
-        if (stack.isEmpty() || stack.getType().isAir()) stack = new ItemStack(Material.GUNPOWDER);
+        if (newMaterial != null && (stack.isEmpty() || stack.getType().isAir())) {
+            stack = ItemStack.of(newMaterial);
+        }
         ItemMeta metaData = stack.getItemMeta();
         if (metaData == null) {
             return;
         }
-        metaData.displayName(displayName);
+
+        metaData.customName(displayName);
 
         stack.setItemMeta(metaData);
         player.sendEquipmentChange(self, EquipmentSlot.HAND, stack);
@@ -1313,12 +1311,12 @@ public class SwordPlayer extends Combatant {
      * @param color the {@link TextColor} to apply
      * @param style the {@link TextDecoration} to apply, or null for none
      */
-    public void itemNameDisplay(String toDisplay, TextColor color, TextDecoration style) {
+    public void itemNameDisplay(String toDisplay, TextColor color, @Nullable TextDecoration style, Material newMaterial) {
         if (style == null) {
-            itemNameDisplay(Component.text(toDisplay, color));
+            itemNameDisplay(Component.text(toDisplay, color), newMaterial);
         }
         else {
-            itemNameDisplay(Component.text(toDisplay, color, style));
+            itemNameDisplay(Component.text(toDisplay, color, style), newMaterial);
         }
     }
 
@@ -1370,6 +1368,7 @@ public class SwordPlayer extends Combatant {
         targetedEntity = newTarget;
     }
 
+    // TODO: Apply more often and give more meaning (Issue #279)
     protected void targetEntityIndicatorTick() {
         if (targetedEntity == null) return;
 
@@ -1432,18 +1431,19 @@ public class SwordPlayer extends Combatant {
         holdingRight = true;
         rightHoldTimeStart = System.currentTimeMillis();
 
-        mainItemStackAtTimeOfHold = getItemStackInHand(true);
-        offItemStackAtTimeOfHold = getItemStackInHand(false);
+        ItemStack mainHand = getItemStackInHand(true);
+        ItemStack offHand = getItemStackInHand(false);
+        mainItemStackAtTimeOfHold = mainHand == null ? ItemStack.of(Material.AIR) : mainHand.clone();
+        offItemStackAtTimeOfHold = offHand == null ? ItemStack.of(Material.AIR) : offHand.clone();
 
         indexOfRightHold = getCurrentInvIndex();
 
-        if (!holdingUmbralItemInMainHand()) {
-
-            if (!mainItemStackAtTimeOfHold.isEmpty() &&
-                !holdingUmbralItemInMainHand()) {
-                setItemStackInHand(new ItemStack(Material.GUNPOWDER), true); // can change the logic here later
-            }
+        if (!mainItemStackAtTimeOfHold.isEmpty() &&
+            !holdingUmbralItemInMainHand() &&
+            notHoldingAbilityItem()) {
+            setItemStackInHand(ItemStack.of(Material.GUNPOWDER), true); // can change the logic here later
         }
+
 
         rightClickHoldTask = TimeArbiter.runTimeIndependentBukkitTaskOnTimer(
             () -> {
@@ -1492,8 +1492,14 @@ public class SwordPlayer extends Combatant {
         setBlocking(false);
         cancelBlockDrainTask();
         setItemStackInHand(offItemStackAtTimeOfHold, false);
-        if (!mainItemStackAtTimeOfHold.isEmpty() && !threwItem && !holdingUmbralItemInMainHand())
-            setItemAtIndex(mainItemStackAtTimeOfHold, indexOfRightHold);
+        if (!threwItem && !holdingUmbralItemInMainHand()) {
+            if (abilitySlotManager.isAbilityHeldSlot(indexOfRightHold)) {
+                abilitySlotManager.restoreSlot(indexOfRightHold);
+            }
+            else if (!mainItemStackAtTimeOfHold.isEmpty()) {
+                setItemAtIndex(mainItemStackAtTimeOfHold, indexOfRightHold);
+            }
+        }
     }
 
     /**

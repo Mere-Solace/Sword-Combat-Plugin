@@ -144,7 +144,7 @@ public class Hostile extends Combatant {
     private int onGuardTimer;
     private int attackReadyTimer;
 
-    ItemStack itemInLeftHand = new ItemStack(Material.SHIELD);
+    ItemStack itemInLeftHand = ItemStack.of(Material.SHIELD);
     ItemStack itemInRightHand = WeaponType.FALCHION.buildItemStack();
 
     /**
@@ -190,7 +190,7 @@ public class Hostile extends Combatant {
             } else {
                 equipment.setItemInMainHand(itemInRightHand);
                 equipment.setItemInOffHand(itemInLeftHand);
-                equipment.setChestplate(new ItemStack(Material.NETHERITE_CHESTPLATE));
+                equipment.setChestplate(ItemStack.of(Material.NETHERITE_CHESTPLATE));
             }
         }
     }

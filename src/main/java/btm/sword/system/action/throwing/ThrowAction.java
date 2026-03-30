@@ -6,10 +6,12 @@ import org.bukkit.entity.ItemDisplay;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Vector3f;
 
 import btm.sword.Sword;
 import btm.sword.system.action.SwordAction;
 import btm.sword.system.action.throwing.types.ThrownItem;
+import btm.sword.system.action.throwing.types.VisualProjectile;
 import btm.sword.system.entity.impl.Combatant;
 import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.input.ActivationContext;
@@ -115,15 +117,15 @@ public class ThrowAction extends SwordAction {
      * <p>
      * {@code displayScale} is applied to the item's transform in
      * {@link ThrownItem#determineOrientation()} via
-     * {@link btm.sword.system.action.throwing.types.VisualProjectile#displayScale}.
+     * {@link VisualProjectile#setDisplayScale(Vector3f)}.
      * Pass {@code 1.0f} for normal size.
      *
      * @param executor     the combatant performing the throw
      * @param item         the item to throw
-     * @param displayScale uniform scale applied to the display transform (e.g. {@code 0.5f} for half size)
+     * @param displayScale scale vector applied to the display transform (e.g. {@code new Vector3f(x_scale, y_scale, z_scale)})
      * @param velocity     the initial velocity magnitude passed to {@link ThrownItem#onRelease(double)}
      */
-    public static void throwDirect(Combatant executor, ItemStack item, float displayScale, double velocity) {
+    public static void throwDirect(Combatant executor, ItemStack item, Vector3f displayScale, double velocity) {
         executor.setAttemptingThrow(true);
         executor.setThrowCancelled(false);
         executor.setThrowSuccessful(false);
@@ -153,6 +155,28 @@ public class ThrowAction extends SwordAction {
                 }
             }
         }.runTaskTimer(Sword.getInstance(), 0L, 1L);
+    }
+
+    /**
+     * Throws an item directly without the {@link #throwReady} aim-and-hold windup.
+     * <p>
+     * The display entity is spawned on the next server tick; once it exists the
+     * {@link ThrownItem} is immediately released at the given velocity — {@code onReady()}
+     * is never called. This is suitable for instant-release throws (e.g. knife throws)
+     * where no aim window or slowness effect is desired.
+     * <p>
+     * {@code displayScale} is applied to the item's transform in
+     * {@link ThrownItem#determineOrientation()} via
+     * {@link VisualProjectile#setDisplayScale(Vector3f)}.
+     * Pass {@code 1.0f} for normal size.
+     *
+     * @param executor     the combatant performing the throw
+     * @param item         the item to throw
+     * @param displayScale uniform scale applied to the display transform (e.g. {@code 0.5f} for half size)
+     * @param velocity     the initial velocity magnitude passed to {@link ThrownItem#onRelease(double)}
+     */
+    public static void throwDirect(Combatant executor, ItemStack item, float displayScale, double velocity) {
+        throwDirect(executor, item, new Vector3f(displayScale), velocity);
     }
 
     /**

@@ -184,7 +184,7 @@ public class MovesetMenu extends Menu {
      * @return the colored leather boots ItemStack
      */
     private ItemStack buildMovementToggleItem(boolean enabled) {
-        ItemStack boots = new ItemStack(Material.LEATHER_BOOTS);
+        ItemStack boots = ItemStack.of(Material.LEATHER_BOOTS);
         LeatherArmorMeta meta = (LeatherArmorMeta) boots.getItemMeta();
         meta.setColor(enabled ? Color.LIME : Color.RED);
 

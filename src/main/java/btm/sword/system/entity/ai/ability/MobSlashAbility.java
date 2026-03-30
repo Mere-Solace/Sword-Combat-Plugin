@@ -42,7 +42,7 @@ public class MobSlashAbility implements MobAbility {
     public void execute(Hostile h) {
         if (h.getCurrentTarget() == null || !h.getCurrentTarget().self().isValid()) return;
         AttackType type = SLASH_TYPES[ThreadLocalRandom.current().nextInt(SLASH_TYPES.length)];
-        MobSweepAttack attack = new MobSweepAttack(new ItemStack(Material.STONE_SWORD), type, false);
+        MobSweepAttack attack = new MobSweepAttack(ItemStack.of(Material.STONE_SWORD), type, false);
         attack.execute(h);
     }
 
