@@ -51,8 +51,7 @@ public class MobThrowAbility implements MobAbility {
      */
     @Override
     public boolean canUse(Hostile h) {
-        Integer cooldown = h.getAbilityCooldowns().get(name());
-        if (cooldown != null && cooldown > 0) return false;
+        if (h.getAbilityCooldown(name()) > 0) return false;
         return ThreadLocalRandom.current().nextDouble() < Config.Hostile.MOB_THROW_WEIGHT;
     }
 

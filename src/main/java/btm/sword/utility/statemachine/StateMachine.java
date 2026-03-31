@@ -1,9 +1,8 @@
 package btm.sword.utility.statemachine;
 
 
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.function.Predicate;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Generic finite state machine (FSM).
@@ -27,8 +26,8 @@ public class StateMachine<T> {
     /** The currently active state. */
     protected State<T> currentState;
 
-    /** Ordered map of transitions; evaluated top-to-bottom each tick. */
-    protected final Map<Transition<T>, Predicate<T>> transitions = new LinkedHashMap<>();
+    /** Ordered list of transitions; evaluated top-to-bottom each tick. */
+    protected final List<Transition<T>> transitions = new ArrayList<>();
 
     /**
      * Creates the state machine with the given context and enters the initial state immediately.
@@ -60,7 +59,7 @@ public class StateMachine<T> {
      */
     public void tick() {
         currentState.onTick(context);
-        for (var t : transitions.keySet()) {
+        for (var t : transitions) {
             if (t.from().isAssignableFrom(currentState.getClass())
                 && t.condition().test(context)) {
                 onAnyTransition();
@@ -94,7 +93,7 @@ public class StateMachine<T> {
      * @param transition the transition to register
      */
     public void addTransition(Transition<T> transition) {
-        transitions.put(transition, transition.condition());
+        transitions.add(transition);
     }
 
     /**

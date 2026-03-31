@@ -53,9 +53,7 @@ public class IdleState extends HostileAIFacade {
     }
 
     private void handleAggroScan(Hostile h) {
-        h.setAggroScanTimer(h.getAggroScanTimer() + 1);
-        if (h.getAggroScanTimer() < 10) return;
-        h.setAggroScanTimer(0);
+        if (!h.shouldRunAggroScan()) return;
 
         // If the mob remembers a previous target, re-engage them immediately when in range.
         SwordEntity remembered = h.getAggroTarget();

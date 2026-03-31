@@ -1,12 +1,9 @@
 package btm.sword.system.entity.impl;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
-import java.util.Random;
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
 import org.bukkit.GameMode;
@@ -61,12 +58,39 @@ import lombok.Setter;
 @Getter
 @Setter
 public class Hostile extends Combatant {
+    private enum AbilitySlot {
+        SLASH("mob_slash"),
+        THROW("mob_throw");
+
+        private static final AbilitySlot[] VALUES = values();
+
+        private final String abilityName;
+
+        AbilitySlot(String abilityName) {
+            this.abilityName = abilityName;
+        }
+
+        public static AbilitySlot fromName(String name) {
+            for (AbilitySlot slot : VALUES) {
+                if (slot.abilityName.equals(name)) {
+                    return slot;
+                }
+            }
+            return null;
+        }
+    }
+
+    private record RegisteredAbility(AbilitySlot slot, MobAbility ability) {}
+
+    private static final int AGGRO_SCAN_CADENCE = 10;
+    private static final int ALLY_SCAN_CADENCE = 20;
+
     private final Mob mob;
     private final Pathfinder pathfinder;
     private Location origin;
 
     /** Ordered list of abilities this mob can select from during pre-attack. */
-    private final List<MobAbility> possibleAbilities;
+    private final List<RegisteredAbility> possibleAbilities;
 
     /** The ability selected at the start of PreAttackState; executed on AttackState entry. */
     private MobAbility pendingAbility;
@@ -79,7 +103,7 @@ public class Hostile extends Combatant {
     private ThrownItem lodgedThrowItem;
 
     /** Per-ability cooldown counters (ticks remaining). Decremented each tick; removed at 0. */
-    private final Map<String, Integer> abilityCooldowns;
+    private final int[] abilityCooldowns;
 
     /**
      * Log of every hit this mob received from a player, accumulated over its lifetime.
@@ -161,11 +185,11 @@ public class Hostile extends Combatant {
         pathfinder.setCanOpenDoors(true);
 
         origin = mob.getLocation();
-        possibleAbilities = new ArrayList<>();
-        abilityCooldowns = new HashMap<>();
-
-        possibleAbilities.add(new MobSlashAbility());
-        possibleAbilities.add(new MobThrowAbility());
+        possibleAbilities = List.of(
+            new RegisteredAbility(AbilitySlot.SLASH, new MobSlashAbility()),
+            new RegisteredAbility(AbilitySlot.THROW, new MobThrowAbility())
+        );
+        abilityCooldowns = new int[AbilitySlot.values().length];
 
         MobTypeDefinition mobTypeDef = MobTypeRegistry.getByEntityType(associatedEntity.getType());
         usesDisplayRig = mobTypeDef != null && mobTypeDef.displayGroup() != null;
@@ -342,17 +366,18 @@ public class Hostile extends Combatant {
      * {@code pendingAbility} is set to {@code null}.
      */
     public void selectAbility() {
-        List<MobAbility> available = new ArrayList<>();
-        for (MobAbility ability : possibleAbilities) {
+        MobAbility selected = null;
+        int seenUsable = 0;
+        for (RegisteredAbility registered : possibleAbilities) {
+            MobAbility ability = registered.ability();
             if (ability.canUse(this)) {
-                available.add(ability);
+                seenUsable++;
+                if (ThreadLocalRandom.current().nextInt(seenUsable) == 0) {
+                    selected = ability;
+                }
             }
         }
-        if (available.isEmpty()) {
-            pendingAbility = null;
-            return;
-        }
-        pendingAbility = available.get(new Random().nextInt(available.size()));
+        pendingAbility = selected;
     }
 
     /**
@@ -362,19 +387,37 @@ public class Hostile extends Combatant {
      * @param ticks the cooldown duration in ticks
      */
     public void setAbilityCooldown(String name, int ticks) {
-        abilityCooldowns.put(name, ticks);
+        AbilitySlot slot = AbilitySlot.fromName(name);
+        if (slot != null) {
+            abilityCooldowns[slot.ordinal()] = Math.max(ticks, 0);
+        }
+    }
+
+    public int getAbilityCooldown(String name) {
+        AbilitySlot slot = AbilitySlot.fromName(name);
+        return slot == null ? 0 : abilityCooldowns[slot.ordinal()];
+    }
+
+    public boolean shouldRunAggroScan() {
+        return shouldRunStaggeredScan(AGGRO_SCAN_CADENCE);
+    }
+
+    public boolean shouldRunAllyScan() {
+        return shouldRunStaggeredScan(ALLY_SCAN_CADENCE);
+    }
+
+    private boolean shouldRunStaggeredScan(int cadence) {
+        if (cadence <= 0) {
+            return true;
+        }
+        return Math.floorMod((int) (ticks + uuid.hashCode()), cadence) == 0;
     }
 
     /** Decrements all per-ability cooldown counters and removes entries that reach zero. */
     private void tickAbilityCooldowns() {
-        Iterator<Map.Entry<String, Integer>> it = abilityCooldowns.entrySet().iterator();
-        while (it.hasNext()) {
-            Map.Entry<String, Integer> entry = it.next();
-            int remaining = entry.getValue() - 1;
-            if (remaining <= 0) {
-                it.remove();
-            } else {
-                entry.setValue(remaining);
+        for (int i = 0; i < abilityCooldowns.length; i++) {
+            if (abilityCooldowns[i] > 0) {
+                abilityCooldowns[i]--;
             }
         }
     }

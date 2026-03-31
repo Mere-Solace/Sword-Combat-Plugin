@@ -76,6 +76,8 @@ import net.kyori.adventure.text.format.TextDecoration;
 @Getter
 @Setter
 public abstract class SwordEntity {
+    private static final PotionEffect IMPALE_SLOW = new PotionEffect(PotionEffectType.SLOWNESS, 1, 1);
+
     protected final UUID uuid;
     protected final CombatProfile combatProfile;
     protected final LivingEntity self;
@@ -222,7 +224,7 @@ public abstract class SwordEntity {
 
 
         if (isImpaled()) {
-            self.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 1, 1));
+            self.addPotionEffect(IMPALE_SLOW);
         }
 
         if (statusDisplay != null && isStatusActive()) {

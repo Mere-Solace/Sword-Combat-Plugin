@@ -468,7 +468,7 @@ public class UmbralStateMachine extends StateMachine<UmbralBlade> {
         if (deactivated) return;
 
         currentState.onTick(context);
-        for (var t : transitions.keySet()) {
+        for (var t : transitions) {
             if (t.from().isAssignableFrom(currentState.getClass())
                 && t.condition().test(context)) {
 
