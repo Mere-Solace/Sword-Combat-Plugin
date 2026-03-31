@@ -23,6 +23,7 @@ import btm.sword.system.action.throwing.ThrowAction;
 import btm.sword.system.control.SwordScheduler;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.impl.SwordPlayer;
+import btm.sword.system.entity.impl.ThrowPhase;
 import btm.sword.system.input.InputType;
 import btm.sword.system.item.ItemClassifier;
 import btm.sword.utility.entity.InputUtil;
@@ -291,7 +292,7 @@ public class InputListener implements Listener {
             swordPlayer.resetTree();
         }
 
-        if (swordPlayer.isAttemptingThrow()) {
+        if (swordPlayer.getThrowPhase() == ThrowPhase.THROWING) {
             ThrowAction.throwCancel(swordPlayer);
         }
 

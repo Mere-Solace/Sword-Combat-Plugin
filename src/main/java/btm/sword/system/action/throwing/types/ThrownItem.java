@@ -36,6 +36,7 @@ import btm.sword.system.control.TimeArbiter;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.impl.Combatant;
 import btm.sword.system.entity.impl.SwordPlayer;
+import btm.sword.system.entity.impl.ThrowPhase;
 import btm.sword.system.input.ActivationContext;
 import btm.sword.system.item.ItemUsageManager;
 import btm.sword.system.item.KeyRegistry;
@@ -157,9 +158,8 @@ public class ThrownItem extends VisualProjectile {
             sp.setThrownItemIndex();
 
             if (sp.isInteractingWithEntity()) {
-                sp.setAttemptingThrow(false);
+                sp.setThrowPhase(ThrowPhase.SUCCESS);
                 sp.setActivationContext(ActivationContext.NORMAL);
-                sp.setThrowSuccessful(true);
                 sp.getThrownItem().onRelease(2);
                 thrower.setItemTypeInHand(Material.AIR, true);
                 sp.endHoldingRight();
@@ -196,7 +196,7 @@ public class ThrownItem extends VisualProjectile {
             0, 50,
             ThrownItem.class, "onReady",
             new PredicateRunnablePair(
-                thrower::isThrowCancelled,
+                () -> thrower.getThrowPhase() == ThrowPhase.CANCELLED,
                 () -> {
                     display.remove();
                     ThrowAction.throwCancel(thrower);
@@ -204,7 +204,7 @@ public class ThrownItem extends VisualProjectile {
                 }
             ),
             new PredicateRunnablePair(
-                thrower::isThrowSuccessful,
+                () -> thrower.getThrowPhase() == ThrowPhase.SUCCESS,
                 () -> thrower.setItemTypeInHand(Material.AIR, true)
             )
         );

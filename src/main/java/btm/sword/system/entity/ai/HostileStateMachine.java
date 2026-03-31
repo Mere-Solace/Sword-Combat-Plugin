@@ -18,6 +18,7 @@ import btm.sword.system.entity.ai.state.RetreatState;
 import btm.sword.system.entity.ai.state.RetrieveWeaponState;
 import btm.sword.system.entity.ai.state.SurroundState;
 import btm.sword.system.entity.impl.Hostile;
+import btm.sword.system.entity.impl.ThrowPhase;
 import btm.sword.utility.statemachine.State;
 import btm.sword.utility.statemachine.StateMachine;
 import btm.sword.utility.statemachine.Transition;
@@ -94,7 +95,7 @@ public class HostileStateMachine extends StateMachine<Hostile> {
             h -> {
                 if (h.getAiStateMachine().getState() instanceof RetrieveWeaponState) return false;
                 if (h.getAiStateMachine().getState() instanceof FleeState) return false;
-                if (h.isAttemptingThrow()) return false;
+                if (h.getThrowPhase() == ThrowPhase.THROWING) return false;
                 return h.getLodgedThrowItem() != null
                     && h.getLodgedThrowItem().getDisplay() != null
                     && h.getLodgedThrowItem().getDisplay().isValid();
