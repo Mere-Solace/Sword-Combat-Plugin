@@ -495,11 +495,11 @@ public class SwordPlayer extends Combatant {
             activationContext = ActivationContext.NORMAL;
         }
 
-        Debug.input("Pre-Ability Check Message, cur path="+inputExecutionTree.getPlainTextInputSequence() +
-            "\n           input="+input+
-            "\n           holdingAbilityItem?="+!notHoldingAbilityItem()+
-            "\n           isAtRoot="+isAtRoot() +
-            "\n           notHoldingChargeable="+!ChargeAction.isHoldingChargeable(this));
+        Debug.input("Pre-Ability Check Message, cur path=" + inputExecutionTree.getPlainTextInputSequence()
+            + "\n           input=" + input
+            + "\n           holdingAbilityItem?=" + !notHoldingAbilityItem()
+            + "\n           isAtRoot=" + isAtRoot()
+            + "\n           notHoldingChargeable=" + !ChargeAction.isHoldingChargeable(this));
 
         if (isAtRoot() && !ChargeAction.isHoldingChargeable(this) && handleAbilityInput(input)) {
             resetTree();
