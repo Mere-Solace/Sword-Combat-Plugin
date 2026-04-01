@@ -168,6 +168,9 @@ public class Hostile extends Combatant {
     private int onGuardTimer;
     private int attackReadyTimer;
 
+    /** Cached squared distance to {@link #currentTarget}, refreshed once per tick by {@link HostileStateMachine}. */
+    @Getter private double cachedDistSqToTarget = Double.MAX_VALUE;
+
     ItemStack itemInLeftHand = ItemStack.of(Material.SHIELD);
     ItemStack itemInRightHand = WeaponType.FALCHION.buildItemStack();
 
@@ -327,6 +330,19 @@ public class Hostile extends Combatant {
     public void onReleased() {
         incapacitated = false;
         mob.setAware(true);
+    }
+
+    /**
+     * Refreshes {@link #cachedDistSqToTarget} once per tick so transition conditions
+     * can read it without re-allocating {@link org.bukkit.Location} objects.
+     * Call this at the start of {@link btm.sword.system.entity.ai.HostileStateMachine#tick()}.
+     */
+    public void refreshTargetDistanceCache() {
+        if (currentTarget == null || !currentTarget.self().isValid()) {
+            cachedDistSqToTarget = Double.MAX_VALUE;
+        } else {
+            cachedDistSqToTarget = self().getLocation().distanceSquared(currentTarget.self().getLocation());
+        }
     }
 
     public void broadcastMessage(double radius, String message) {

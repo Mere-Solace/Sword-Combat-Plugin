@@ -45,12 +45,22 @@ public class HostileStateMachine extends StateMachine<Hostile> {
 
     @Override
     public void onAnyTransition() {
-        context.broadcastMessage(20, "cur: " + currentState.name());
+        if (Config.Debug.LOGGING_VERBOSE_HOSTILE) {
+            context.broadcastMessage(20, "cur: " + currentState.name());
+        }
     }
 
     @Override
     public void afterAnyTransition() {
-        context.broadcastMessage(20, ">>> New State: " + currentState.name());
+        if (Config.Debug.LOGGING_VERBOSE_HOSTILE) {
+            context.broadcastMessage(20, ">>> New State: " + currentState.name());
+        }
+    }
+
+    @Override
+    public void tick() {
+        context.refreshTargetDistanceCache();
+        super.tick();
     }
 
     /**
@@ -132,8 +142,7 @@ public class HostileStateMachine extends StateMachine<Hostile> {
             PreAttackState.class,
             h -> {
                 if (h.getCurrentTarget() == null || !h.getCurrentTarget().self().isValid()) return false;
-                return h.self().getLocation()
-                    .distanceSquared(h.getCurrentTarget().self().getLocation()) < Config.Hostile.APPROACH_DISTANCE_SQUARED;
+                return h.getCachedDistSqToTarget() < Config.Hostile.APPROACH_DISTANCE_SQUARED;
             },
             h -> {}
         ));
@@ -169,8 +178,7 @@ public class HostileStateMachine extends StateMachine<Hostile> {
             h -> {
                 if (!h.isAttackDone() || h.getAttackPostRoll() != 0) return false;
                 if (h.getCurrentTarget() == null || !h.getCurrentTarget().self().isValid()) return false;
-                return h.self().getLocation()
-                    .distanceSquared(h.getCurrentTarget().self().getLocation()) <= Config.Hostile.AGGRO_RANGE_SQUARED;
+                return h.getCachedDistSqToTarget() <= Config.Hostile.AGGRO_RANGE_SQUARED;
             },
             h -> {}
         ));
@@ -182,8 +190,7 @@ public class HostileStateMachine extends StateMachine<Hostile> {
             h -> {
                 if (!h.isAttackDone() || h.getAttackPostRoll() != 1) return false;
                 if (h.getCurrentTarget() == null || !h.getCurrentTarget().self().isValid()) return false;
-                return h.self().getLocation()
-                    .distanceSquared(h.getCurrentTarget().self().getLocation()) <= Config.Hostile.AGGRO_RANGE_SQUARED;
+                return h.getCachedDistSqToTarget() <= Config.Hostile.AGGRO_RANGE_SQUARED;
             },
             h -> {}
         ));
@@ -195,8 +202,7 @@ public class HostileStateMachine extends StateMachine<Hostile> {
             h -> {
                 if (!h.isAttackDone() || h.getAttackPostRoll() != 2) return false;
                 if (h.getCurrentTarget() == null || !h.getCurrentTarget().self().isValid()) return false;
-                return h.self().getLocation()
-                    .distanceSquared(h.getCurrentTarget().self().getLocation()) <= Config.Hostile.AGGRO_RANGE_SQUARED;
+                return h.getCachedDistSqToTarget() <= Config.Hostile.AGGRO_RANGE_SQUARED;
             },
             h -> h.setCombo(true)
         ));
@@ -208,8 +214,7 @@ public class HostileStateMachine extends StateMachine<Hostile> {
             h -> {
                 if (!h.isAttackDone()) return false;
                 if (h.getCurrentTarget() == null || !h.getCurrentTarget().self().isValid()) return true;
-                return h.self().getLocation()
-                    .distanceSquared(h.getCurrentTarget().self().getLocation()) > Config.Hostile.AGGRO_RANGE_SQUARED;
+                return h.getCachedDistSqToTarget() > Config.Hostile.AGGRO_RANGE_SQUARED;
             },
             h -> {
                 h.setCurrentTarget(null);
@@ -229,8 +234,7 @@ public class HostileStateMachine extends StateMachine<Hostile> {
             h -> {
                 if (h.getOnGuardTimer() > 0) return false;
                 if (h.getCurrentTarget() == null || !h.getCurrentTarget().self().isValid()) return false;
-                return h.self().getLocation()
-                    .distanceSquared(h.getCurrentTarget().self().getLocation()) <= Config.Hostile.AGGRO_RANGE_SQUARED;
+                return h.getCachedDistSqToTarget() <= Config.Hostile.AGGRO_RANGE_SQUARED;
             },
             h -> {}
         ));
@@ -242,8 +246,7 @@ public class HostileStateMachine extends StateMachine<Hostile> {
             h -> {
                 if (h.getOnGuardTimer() > 0) return false;
                 if (h.getCurrentTarget() == null || !h.getCurrentTarget().self().isValid()) return true;
-                return h.self().getLocation()
-                    .distanceSquared(h.getCurrentTarget().self().getLocation()) > Config.Hostile.AGGRO_RANGE_SQUARED;
+                return h.getCachedDistSqToTarget() > Config.Hostile.AGGRO_RANGE_SQUARED;
             },
             h -> {
                 h.setCurrentTarget(null);
@@ -260,8 +263,7 @@ public class HostileStateMachine extends StateMachine<Hostile> {
             h -> {
                 if (h.getAttackReadyTimer() > 0) return false;
                 if (h.getCurrentTarget() == null || !h.getCurrentTarget().self().isValid()) return false;
-                return h.self().getLocation()
-                    .distanceSquared(h.getCurrentTarget().self().getLocation()) <= Config.Hostile.AGGRO_RANGE_SQUARED;
+                return h.getCachedDistSqToTarget() <= Config.Hostile.AGGRO_RANGE_SQUARED;
             },
             h -> {}
         ));
@@ -273,8 +275,7 @@ public class HostileStateMachine extends StateMachine<Hostile> {
             h -> {
                 if (h.getAttackReadyTimer() > 0) return false;
                 if (h.getCurrentTarget() == null || !h.getCurrentTarget().self().isValid()) return true;
-                return h.self().getLocation()
-                    .distanceSquared(h.getCurrentTarget().self().getLocation()) > Config.Hostile.AGGRO_RANGE_SQUARED;
+                return h.getCachedDistSqToTarget() > Config.Hostile.AGGRO_RANGE_SQUARED;
             },
             h -> {
                 h.setCurrentTarget(null);
@@ -291,8 +292,7 @@ public class HostileStateMachine extends StateMachine<Hostile> {
             h -> {
                 if (h.getRetreatTimer() > 0) return false;
                 if (h.getCurrentTarget() == null || !h.getCurrentTarget().self().isValid()) return false;
-                return h.self().getLocation()
-                    .distanceSquared(h.getCurrentTarget().self().getLocation()) < Config.Hostile.AGGRO_RANGE_SQUARED;
+                return h.getCachedDistSqToTarget() < Config.Hostile.AGGRO_RANGE_SQUARED;
             },
             h -> {}
         ));
@@ -304,8 +304,7 @@ public class HostileStateMachine extends StateMachine<Hostile> {
             h -> {
                 if (h.getRetreatTimer() > 0) return false;
                 if (h.getCurrentTarget() == null || !h.getCurrentTarget().self().isValid()) return true;
-                return h.self().getLocation()
-                    .distanceSquared(h.getCurrentTarget().self().getLocation()) >= Config.Hostile.AGGRO_RANGE_SQUARED;
+                return h.getCachedDistSqToTarget() >= Config.Hostile.AGGRO_RANGE_SQUARED;
             },
             h -> {
                 h.setCurrentTarget(null);
@@ -339,8 +338,7 @@ public class HostileStateMachine extends StateMachine<Hostile> {
             h -> {
                 if (h.getLodgedThrowItem() != null) return false;
                 if (h.getCurrentTarget() == null || !h.getCurrentTarget().self().isValid()) return false;
-                return h.self().getLocation()
-                    .distanceSquared(h.getCurrentTarget().self().getLocation()) <= Config.Hostile.AGGRO_RANGE_SQUARED;
+                return h.getCachedDistSqToTarget() <= Config.Hostile.AGGRO_RANGE_SQUARED;
             },
             h -> {}
         ));
@@ -352,8 +350,7 @@ public class HostileStateMachine extends StateMachine<Hostile> {
             h -> {
                 if (h.getLodgedThrowItem() != null) return false;
                 if (h.getCurrentTarget() == null || !h.getCurrentTarget().self().isValid()) return true;
-                return h.self().getLocation()
-                    .distanceSquared(h.getCurrentTarget().self().getLocation()) > Config.Hostile.AGGRO_RANGE_SQUARED;
+                return h.getCachedDistSqToTarget() > Config.Hostile.AGGRO_RANGE_SQUARED;
             },
             h -> {
                 h.setCurrentTarget(null);
