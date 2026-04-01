@@ -56,10 +56,10 @@ public class ItemStackBuilder {
      */
     public ItemStackBuilder(Material material) {
         ItemMeta preMeta;
-        this.item = new ItemStack(material);
+        this.item = ItemStack.of(material);
         preMeta = item.getItemMeta();
         if (preMeta == null)
-            preMeta = new ItemStack(Material.SHIELD).getItemMeta();
+            preMeta = ItemStack.of(Material.SHIELD).getItemMeta();
         this.meta = preMeta;
     }
 
@@ -81,7 +81,7 @@ public class ItemStackBuilder {
      */
     public ItemStackBuilder name(Component component) {
         meta.itemName(component);
-        meta.displayName(component);
+        meta.customName(component);
         return this;
     }
 

@@ -200,9 +200,9 @@ public final class DisplayRig {
             // Hidden state: keep the hook active so DEU's item-reset packets are suppressed.
             currentWeaponItem = null;
             WeaponAnchorPacketHook.override(
-                weaponAnchor, new ItemStack(Material.AIR), 0.001f, new Quaternionf(), new Vector3f());
+                weaponAnchor, ItemStack.of(Material.AIR), 0.001f, new Quaternionf(), new Vector3f());
             weaponAnchor.setGlowing(false);
-            weaponAnchor.setItemStack(new ItemStack(Material.AIR));
+            weaponAnchor.setItemStack(ItemStack.of(Material.AIR));
             return;
         }
 

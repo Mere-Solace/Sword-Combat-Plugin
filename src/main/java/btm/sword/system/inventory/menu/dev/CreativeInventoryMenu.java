@@ -55,7 +55,7 @@ public class CreativeInventoryMenu extends Menu {
                 new ItemStackBuilder(m)
                     .name(Component.text(formatName(m), NamedTextColor.WHITE))
                     .build(),
-                click -> click.getPlayer().getInventory().addItem(new ItemStack(m, m.getMaxStackSize()))
+                click -> click.getPlayer().getInventory().addItem(ItemStack.of(m, m.getMaxStackSize()))
             ))
             .collect(Collectors.toList());
 

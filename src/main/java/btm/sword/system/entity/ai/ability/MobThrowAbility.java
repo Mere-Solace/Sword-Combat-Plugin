@@ -14,6 +14,7 @@ import btm.sword.system.control.SwordScheduler;
 import btm.sword.system.entity.ai.MobGoalArbiter;
 import btm.sword.system.entity.ai.goal.LookAtTargetGoal;
 import btm.sword.system.entity.impl.Hostile;
+import btm.sword.system.entity.impl.ThrowPhase;
 
 /**
  * A ranged throwing ability for hostile mobs.
@@ -51,8 +52,7 @@ public class MobThrowAbility implements MobAbility {
      */
     @Override
     public boolean canUse(Hostile h) {
-        Integer cooldown = h.getAbilityCooldowns().get(name());
-        if (cooldown != null && cooldown > 0) return false;
+        if (h.getAbilityCooldown(name()) > 0) return false;
         return ThreadLocalRandom.current().nextDouble() < Config.Hostile.MOB_THROW_WEIGHT;
     }
 
@@ -63,7 +63,7 @@ public class MobThrowAbility implements MobAbility {
         // Guard: combo re-entry (roll=2) re-calls execute() before the first throw's delayed
         // throwItem() fires. Without this check, a second ThrownItem is created and the first
         // one's display + landing marker are orphaned and never cleaned up.
-        if (h.isAttemptingThrow()) return;
+        if (h.getThrowPhase() == ThrowPhase.THROWING) return;
 
         MobGoalArbiter.GOALS.addGoal(h.mob(), 1, new LookAtTargetGoal(h.mob(), h));
 
@@ -108,7 +108,7 @@ public class MobThrowAbility implements MobAbility {
      */
     private void executeDirtThrow(Hostile h, Vector toTarget) {
         // Prevent re-entry during the animation window
-        h.setAttemptingThrow(true);
+        h.setThrowPhase(ThrowPhase.THROWING);
 
         float yaw = h.mob().getLocation().getYaw();
         h.mob().setRotation(yaw, 70f);
@@ -123,12 +123,12 @@ public class MobThrowAbility implements MobAbility {
         SwordScheduler.runBukkitTaskLater(() -> {
             if (!h.self().isValid() || h.getCurrentTarget() == null
                     || !h.getCurrentTarget().self().isValid()) {
-                h.setAttemptingThrow(false);
+                h.setThrowPhase(ThrowPhase.IDLE);
                 return;
             }
 
             h.mob().setRotation(yaw, 0f);
-            ItemStack dirt = new ItemStack(Material.DIRT);
+            ItemStack dirt = ItemStack.of(Material.DIRT);
             h.setItemStackInHand(dirt, true);
 
             ThrowAction.throwReady(h, dirt);

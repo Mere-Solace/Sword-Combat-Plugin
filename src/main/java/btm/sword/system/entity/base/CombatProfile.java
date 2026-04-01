@@ -1,6 +1,6 @@
 package btm.sword.system.entity.base;
 
-import java.util.HashMap;
+import java.util.EnumMap;
 
 import btm.sword.system.action.skill.container.PlayerSkillContainer;
 import btm.sword.system.entity.aspect.AspectType;
@@ -15,7 +15,7 @@ import lombok.Getter;
  * <p>
  * Each {@code CombatProfile} defines a unique set of {@link AspectType aspect values}
  * that govern core combat resources such as shards, toughness, and soulfire.
- * These stats are stored in a {@link HashMap} mapping {@link AspectType} keys to
+ * These stats are stored in an {@link EnumMap} mapping {@link AspectType} keys to
  * {@link AspectValue} or {@link ResourceValue} instances.
  * </p>
  *
@@ -79,7 +79,7 @@ public class CombatProfile {
      * adjusted in-game through {@link btm.sword.system.entity.base.EntityAspects}.
      * </p>
      */
-    private final HashMap<AspectType, AspectValue> stats = new HashMap<>(); // max Stats
+    private final EnumMap<AspectType, AspectValue> stats = new EnumMap<>(AspectType.class); // max Stats
 
     /**
      * The maximum number of consecutive air-dodges the entity can perform

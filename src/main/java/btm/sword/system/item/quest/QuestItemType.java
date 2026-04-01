@@ -37,7 +37,7 @@ public enum QuestItemType {
      * @return an ItemStack for this quest item type
      */
     public ItemStack buildItemStack() {
-        return new ItemStack(Material.AIR);
+        return ItemStack.of(Material.AIR);
     }
 
     /**

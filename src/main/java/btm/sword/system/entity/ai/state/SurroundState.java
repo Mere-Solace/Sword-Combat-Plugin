@@ -42,9 +42,7 @@ public class SurroundState extends HostileAIFacade {
     public void onTick(Hostile h) {
         if (h.getCurrentTarget() == null || !h.getCurrentTarget().self().isValid()) return;
 
-        h.setAllyScanTimer(h.getAllyScanTimer() + 1);
-        if (h.getAllyScanTimer() >= 20) {
-            h.setAllyScanTimer(0);
+        if (h.shouldRunAllyScan()) {
             evaluateArcPosition(h);
         }
     }

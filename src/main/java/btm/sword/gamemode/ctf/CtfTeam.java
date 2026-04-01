@@ -6,12 +6,14 @@ import org.bukkit.Bukkit;
 import org.bukkit.DyeColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.block.banner.Pattern;
 import org.bukkit.block.banner.PatternType;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BannerMeta;
 
 import btm.sword.config.Config;
+import lombok.Getter;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -33,32 +35,24 @@ public enum CtfTeam {
     /** The blue team. Spawn located at {@code Config.Ctf.BLUE_SPAWN_*}. */
     BLUE(DyeColor.BLUE, Material.BLUE_BANNER, NamedTextColor.BLUE);
 
+    /**
+     * -- GETTER --
+     *  Returns the DyeColor associated with this team.
+     */
+    @Getter
     private final DyeColor dyeColor;
     private final Material bannerMaterial;
+    /**
+     * -- GETTER --
+     *  Returns the Adventure text colour for this team, used in chat/title messages.
+     */
+    @Getter
     private final NamedTextColor textColor;
 
     CtfTeam(DyeColor dyeColor, Material bannerMaterial, NamedTextColor textColor) {
         this.dyeColor = dyeColor;
         this.bannerMaterial = bannerMaterial;
         this.textColor = textColor;
-    }
-
-    /**
-     * Returns the DyeColor associated with this team.
-     *
-     * @return team dye colour
-     */
-    public DyeColor getDyeColor() {
-        return dyeColor;
-    }
-
-    /**
-     * Returns the Adventure text colour for this team, used in chat/title messages.
-     *
-     * @return team text colour
-     */
-    public NamedTextColor getTextColor() {
-        return textColor;
     }
 
     /**
@@ -79,8 +73,8 @@ public enum CtfTeam {
      * @return team spawn {@link Location}
      */
     public Location getSpawnLocation() {
-        org.bukkit.World world = Bukkit.getWorld(Config.Ctf.SPAWN_WORLD);
-        if (world == null) world = Bukkit.getWorlds().get(0);
+        World tryWorld = Bukkit.getWorld(Config.Ctf.SPAWN_WORLD);
+        World world = tryWorld == null ? Bukkit.getWorlds().getFirst() : tryWorld;
 
         if (this == RED) {
             return new Location(world, Config.Ctf.RED_SPAWN_X, Config.Ctf.RED_SPAWN_Y, Config.Ctf.RED_SPAWN_Z);
@@ -99,7 +93,7 @@ public enum CtfTeam {
      * @return a named, patterned banner item
      */
     public ItemStack createFlagItem() {
-        ItemStack banner = new ItemStack(bannerMaterial);
+        ItemStack banner = ItemStack.of(bannerMaterial);
         BannerMeta meta = (BannerMeta) banner.getItemMeta();
 
         if (this == RED) {
@@ -114,7 +108,7 @@ public enum CtfTeam {
             ));
         }
 
-        meta.displayName(Component.text(name() + " FLAG", textColor, TextDecoration.BOLD)
+        meta.customName(Component.text(name() + " FLAG", textColor, TextDecoration.BOLD)
             .decoration(TextDecoration.ITALIC, false));
         banner.setItemMeta(meta);
         return banner;

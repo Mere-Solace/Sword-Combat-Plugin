@@ -33,8 +33,7 @@ public abstract class SimulatedDisplay implements InteractiveItem {
     protected void determineOrientation() {
         String name = display.getItemStack().getType().toString();
 
-        // *** These numbers are fine for now, config later but this system may change.
-
+        // TODO: use CONFIG
         if (name.endsWith("_SWORD")) {
             display.setTransformation(new Transformation(
                 new Vector3f(),
@@ -71,5 +70,4 @@ public abstract class SimulatedDisplay implements InteractiveItem {
             ));
         }
     }
-
 }

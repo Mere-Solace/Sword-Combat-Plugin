@@ -7,6 +7,7 @@ import java.util.concurrent.TimeUnit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 
 import btm.sword.config.Config;
 import btm.sword.gamemode.QueueManager;
@@ -20,6 +21,7 @@ import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.inventory.menu.Menu;
 import btm.sword.system.inventory.menu.PacketTestMenu;
 import btm.sword.system.item.ItemStackBuilder;
+import btm.sword.system.item.weapon.WeaponType;
 import btm.sword.system.scene.DEUAnimationController;
 import btm.sword.system.scene.SceneManager;
 import btm.sword.system.scene.animation.AnimationDef;
@@ -194,11 +196,40 @@ public class TestingMenu extends Menu {
             }
         );
 
+        SimpleItem hudOverrideTest = new SimpleItem(
+            new ItemStackBuilder(Material.GOLDEN_CARROT)
+                .name(Component.text("HUD Effect Test", NamedTextColor.GOLD, TextDecoration.BOLD))
+                .lore(List.of(
+                    Component.text("Cycles: wither (5s) → poison (5s) → hunger (5s) → bubbles (5s)", NamedTextColor.DARK_GRAY)
+                ))
+                .build(),
+            click -> {
+                swordPlayer.testHudSequence();
+                swordPlayer.message(Component.text("HUD effect cycle started (20s total).", NamedTextColor.GREEN));
+            }
+        );
+
+        SimpleItem smithingInteractionTest = new SimpleItem(
+            new ItemStackBuilder(Material.SMITHING_TABLE)
+                .name(Component.text("Smithing Refit Test", NamedTextColor.AQUA, TextDecoration.BOLD))
+                .lore(List.of(
+                    Component.text("Gives you a Falchion and opens smithing", NamedTextColor.DARK_GRAY),
+                    Component.text("Place only the Falchion in the base slot", NamedTextColor.DARK_GRAY)
+                ))
+                .build(),
+            click -> {
+                ItemStack falchion = WeaponType.FALCHION.buildItemStack();
+                player.getInventory().addItem(falchion);
+                player.openSmithingTable(null, true);
+                swordPlayer.message(Component.text("Smithing test ready: place the Falchion into the base slot.", NamedTextColor.GREEN));
+            }
+        );
+
         Gui gui = Gui.normal()
             .setStructure(
                 "# # # . . . # # #",
                 "# P X . F . B K #",
-                ". D . . . . . . .",
+                ". D . H . M . . .",
                 "# O . . . . . . #",
                 "< > # . . . # # #")
             .addIngredient('#', BORDER)
@@ -209,6 +240,8 @@ public class TestingMenu extends Menu {
             .addIngredient('B', bossBarTest)
             .addIngredient('K', scoreboardTest)
             .addIngredient('D', ctfDebug)
+            .addIngredient('H', hudOverrideTest)
+            .addIngredient('M', smithingInteractionTest)
             .addIngredient('O', ctfStop)
             .addIngredient('<', generatePreviousButtonOrDefault())
             .addIngredient('>', generateForwardPreviousButtonOrDefault())

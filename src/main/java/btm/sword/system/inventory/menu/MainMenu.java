@@ -172,7 +172,7 @@ public class MainMenu extends Menu {
                 }
                 ItemStack cursor = click.getPlayer().getItemOnCursor();
                 if (cursor.isEmpty() || NonMovableItem.isNonMovable(cursor)) return;
-                click.getPlayer().setItemOnCursor(new ItemStack(Material.AIR));
+                click.getPlayer().setItemOnCursor(ItemStack.of(Material.AIR));
             }
         );
 

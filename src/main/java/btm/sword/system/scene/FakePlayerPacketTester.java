@@ -123,7 +123,7 @@ public final class FakePlayerPacketTester {
     public static void loopEntityFlags(SwordPlayer viewer) {
         startLoop(viewer, "ENTITY_DATA (living entity flags — blocking)", () -> {
             FakePlayerManager.setEquipmentSlot(
-                viewer, EnumWrappers.ItemSlot.MAINHAND, new ItemStack(Material.SHIELD));
+                viewer, EnumWrappers.ItemSlot.MAINHAND, ItemStack.of(Material.SHIELD));
             return FakePlayerManager.setEntityFlags(viewer, true, false, false);
         });
     }
@@ -181,7 +181,7 @@ public final class FakePlayerPacketTester {
             () -> assertSent(FakePlayerManager.velocityFake(viewer, 0.0, 0.42, 0.0)))) passed++;
         if (run(log, "ENTITY_DATA (living entity flags — blocking)", () -> {
             assertSent(FakePlayerManager.setEquipmentSlot(
-                viewer, EnumWrappers.ItemSlot.MAINHAND, new ItemStack(Material.SHIELD)));
+                viewer, EnumWrappers.ItemSlot.MAINHAND, ItemStack.of(Material.SHIELD)));
             assertSent(FakePlayerManager.setEntityFlags(viewer, true, false, false));
         })) passed++;
 

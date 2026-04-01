@@ -24,6 +24,7 @@ import lombok.Setter;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 
 /**
  * Represents a finite state tree that tracks sequences of player {@link InputType} inputs,
@@ -68,7 +69,7 @@ public class InputExecutionTree {
         stopTimeoutTimer();
         potentialInputSelectionText = Component.text(""); // reset potential input before new step
         // before taking input, if it is known that the current node is a leaf, reset and take input from the root
-        if (!hasChildren()) reset();
+        if (isTerminal()) reset();
 
         if (currentNode == null) {
             reset();
@@ -108,7 +109,7 @@ public class InputExecutionTree {
 
         currentNode = next;
 
-        if (!hasChildren()) return next;
+        if (isTerminal()) return next;
 
         boolean alreadyAppendedArrow = false;
 
@@ -239,12 +240,17 @@ public class InputExecutionTree {
      *
      * @return true if children exist, false otherwise
      */
-    public boolean hasChildren() {
-        return !currentNode.children.isEmpty();
+    public boolean isTerminal() {
+        return currentNode.children.isEmpty();
     }
 
     public Component getInputSequenceAsComponent() {
         return Component.textOfChildren(baseSequenceToDisplay, potentialInputSelectionText);
+    }
+
+    public String getPlainTextInputSequence() {
+        return PlainTextComponentSerializer.plainText().serialize(baseSequenceToDisplay) +
+            PlainTextComponentSerializer.plainText().serialize(potentialInputSelectionText);
     }
 
     /**
@@ -549,24 +555,19 @@ public class InputExecutionTree {
         }
 
         /**
-         * Returns true if this node is inaccessible for the given player.
+         * Sets the node-level visibility predicate. When the predicate returns {@code false}
+         * the node is hidden and not navigable, regardless of its action context predicates.
+         * <p>
+         * The Predicate should return true if this node is inaccessible for the given player.
          * <p>
          * For leaf nodes (with actions): hidden if no action's context predicate passes.
          * For intermediate nodes (null or empty actions): hidden only if every child is also
          * hidden — this prevents stepping into a path whose entire subtree is context-gated
          * (e.g. the F {@literal >} L umbral-skill prefix when not holding soul link).
          * </p>
-         *
-         * @param player the player to evaluate
-         * @return true if no accessible path exists through this node, false otherwise
-         */
-        /**
-         * Sets the node-level visibility predicate. When the predicate returns {@code false}
-         * the node is hidden and not navigable, regardless of its action context predicates.
-         *
          * @param visibleIf predicate returning {@code true} when this node should be visible
          */
-        public void setVisibleIf(Predicate<SwordPlayer> visibleIf) {
+        public void setVisibleIfPredicate(Predicate<SwordPlayer> visibleIf) {
             this.visibleIf = visibleIf;
         }
 
@@ -717,7 +718,7 @@ public class InputExecutionTree {
                     dummy.setDynamic(dynamic);
                 }
                 if (visibleIf != null) {
-                    dummy.setVisibleIf(visibleIf);
+                    dummy.setVisibleIfPredicate(visibleIf);
                 }
             }
         }

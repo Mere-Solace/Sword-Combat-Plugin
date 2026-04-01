@@ -34,15 +34,14 @@ public class MobSlashAbility implements MobAbility {
 
     @Override
     public boolean canUse(Hostile h) {
-        Integer cooldown = h.getAbilityCooldowns().get(name());
-        return cooldown == null || cooldown <= 0;
+        return h.getAbilityCooldown(name()) <= 0;
     }
 
     @Override
     public void execute(Hostile h) {
         if (h.getCurrentTarget() == null || !h.getCurrentTarget().self().isValid()) return;
         AttackType type = SLASH_TYPES[ThreadLocalRandom.current().nextInt(SLASH_TYPES.length)];
-        MobSweepAttack attack = new MobSweepAttack(new ItemStack(Material.STONE_SWORD), type, false);
+        MobSweepAttack attack = new MobSweepAttack(ItemStack.of(Material.STONE_SWORD), type, false);
         attack.execute(h);
     }
 

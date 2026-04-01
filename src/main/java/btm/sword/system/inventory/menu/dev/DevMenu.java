@@ -199,7 +199,7 @@ public class DevMenu extends Menu {
             new ItemStackBuilder(material)
                 .name(Component.text(label, NamedTextColor.WHITE))
                 .build(),
-            click -> click.getPlayer().getInventory().addItem(new ItemStack(material))
+            click -> click.getPlayer().getInventory().addItem(ItemStack.of(material))
         );
     }
 }

@@ -5,16 +5,20 @@ import java.util.Set;
 
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
+import org.joml.Vector3f;
 
 import btm.sword.system.action.skill.AbilityUseType;
 import btm.sword.system.action.skill.SkillId;
 import btm.sword.system.action.skill.SkillIds;
 import btm.sword.system.action.skill.SkillType;
 import btm.sword.system.action.skill.type.ActivatableAbility;
+import btm.sword.system.action.throwing.ImpactType;
 import btm.sword.system.action.throwing.ThrowAction;
+import btm.sword.system.action.throwing.types.ThrownItem;
 import btm.sword.system.entity.impl.Combatant;
 import btm.sword.system.item.AbilityItemBuilder;
 import btm.sword.system.item.ItemStackBuilder;
+import btm.sword.utility.Prefab;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 
@@ -33,7 +37,7 @@ public class KnifeThrowAbility extends ActivatableAbility {
     private static final Component NAME = Component.text("Throwing Knife");
 
     /** Projectile scale relative to a normal thrown sword. */
-    private static final float PROJECTILE_SCALE = 0.5f;
+    private static final Vector3f PROJECTILE_SCALE = new Vector3f(0.5f, 0.75f, 0.5f);
 
     /** Initial velocity magnitude passed to the physics simulation. */
     private static final double PROJECTILE_VELOCITY = 2.0;
@@ -64,8 +68,7 @@ public class KnifeThrowAbility extends ActivatableAbility {
     @Override
     public List<Component> description() {
         return List.of(
-            Component.text("Hurl a knife at your target.", NamedTextColor.GRAY),
-            Component.text("Can also be used as a weak melee weapon.", NamedTextColor.DARK_GRAY)
+            Component.text("Hurl a knife at your target.", NamedTextColor.GRAY)
         );
     }
 
@@ -109,10 +112,18 @@ public class KnifeThrowAbility extends ActivatableAbility {
     public void execute(Combatant combatant) {
         ItemStack projectile = ItemStackBuilder.of(Material.DIAMOND_SWORD)
             .name(Component.text("Throwing Knife"))
+            .tagImpactType(ImpactType.IMPALE)
+            .unbreakable(true)
             .hideAll()
             .build();
         AbilityItemBuilder.tag(projectile, id());
         ThrowAction.throwDirect(combatant, projectile, PROJECTILE_SCALE, PROJECTILE_VELOCITY);
+        ThrownItem thrown = combatant.getThrownItem();
+        if (thrown != null) {
+            thrown.setHitPacket(Prefab.Attacks.KNIFE_THROW);
+            thrown.setKnockbackFunction(target ->
+                thrown.getVelocity().clone().multiply(0.2).add(target.self().getVelocity()));
+        }
     }
 
     @Override

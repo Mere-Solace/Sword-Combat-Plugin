@@ -6,13 +6,17 @@ import org.bukkit.entity.ItemDisplay;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Vector3f;
 
 import btm.sword.Sword;
 import btm.sword.system.action.SwordAction;
 import btm.sword.system.action.throwing.types.ThrownItem;
+import btm.sword.system.action.throwing.types.VisualProjectile;
 import btm.sword.system.entity.impl.Combatant;
 import btm.sword.system.entity.impl.SwordPlayer;
+import btm.sword.system.entity.impl.ThrowPhase;
 import btm.sword.system.input.ActivationContext;
+import btm.sword.utility.Debug;
 
 /**
  * Handles the sequence of actions involved in a {@code Combatant} performing a throw action.
@@ -64,9 +68,7 @@ public class ThrowAction extends SwordAction {
      * @param itemOverride the explicit item to throw, or {@code null} to derive from the executor's hand
      */
     public static void throwReady(Combatant executor, @Nullable ItemStack itemOverride) {
-        executor.setAttemptingThrow(true);
-        executor.setThrowCancelled(false);
-        executor.setThrowSuccessful(false);
+        executor.setThrowPhase(ThrowPhase.THROWING);
         if (executor instanceof SwordPlayer sp) sp.setActivationContext(ActivationContext.THROWING);
 
         Consumer<ItemDisplay> setupInstructions;
@@ -115,18 +117,16 @@ public class ThrowAction extends SwordAction {
      * <p>
      * {@code displayScale} is applied to the item's transform in
      * {@link ThrownItem#determineOrientation()} via
-     * {@link btm.sword.system.action.throwing.types.VisualProjectile#displayScale}.
+     * {@link VisualProjectile#setDisplayScale(Vector3f)}.
      * Pass {@code 1.0f} for normal size.
      *
      * @param executor     the combatant performing the throw
      * @param item         the item to throw
-     * @param displayScale uniform scale applied to the display transform (e.g. {@code 0.5f} for half size)
+     * @param displayScale scale vector applied to the display transform (e.g. {@code new Vector3f(x_scale, y_scale, z_scale)})
      * @param velocity     the initial velocity magnitude passed to {@link ThrownItem#onRelease(double)}
      */
-    public static void throwDirect(Combatant executor, ItemStack item, float displayScale, double velocity) {
-        executor.setAttemptingThrow(true);
-        executor.setThrowCancelled(false);
-        executor.setThrowSuccessful(false);
+    public static void throwDirect(Combatant executor, ItemStack item, Vector3f displayScale, double velocity) {
+        executor.setThrowPhase(ThrowPhase.THROWING);
         if (executor instanceof SwordPlayer sp) sp.setActivationContext(ActivationContext.THROWING);
 
         ThrownItem thrownItem = new ThrownItem(executor, display -> display.setItemStack(item), 1);
@@ -145,14 +145,35 @@ public class ThrowAction extends SwordAction {
                 if (thrownItem.getDisplay() == null) {
                     misses++;
                 } else {
-                    executor.setAttemptingThrow(false);
-                    executor.setThrowSuccessful(true);
+                    executor.setThrowPhase(ThrowPhase.SUCCESS);
                     if (executor instanceof SwordPlayer sp) sp.setActivationContext(ActivationContext.NORMAL);
                     thrownItem.onRelease(velocity);
                     cancel();
                 }
             }
         }.runTaskTimer(Sword.getInstance(), 0L, 1L);
+    }
+
+    /**
+     * Throws an item directly without the {@link #throwReady} aim-and-hold windup.
+     * <p>
+     * The display entity is spawned on the next server tick; once it exists the
+     * {@link ThrownItem} is immediately released at the given velocity — {@code onReady()}
+     * is never called. This is suitable for instant-release throws (e.g. knife throws)
+     * where no aim window or slowness effect is desired.
+     * <p>
+     * {@code displayScale} is applied to the item's transform in
+     * {@link ThrownItem#determineOrientation()} via
+     * {@link VisualProjectile#setDisplayScale(Vector3f)}.
+     * Pass {@code 1.0f} for normal size.
+     *
+     * @param executor     the combatant performing the throw
+     * @param item         the item to throw
+     * @param displayScale uniform scale applied to the display transform (e.g. {@code 0.5f} for half size)
+     * @param velocity     the initial velocity magnitude passed to {@link ThrownItem#onRelease(double)}
+     */
+    public static void throwDirect(Combatant executor, ItemStack item, float displayScale, double velocity) {
+        throwDirect(executor, item, new Vector3f(displayScale), velocity);
     }
 
     /**
@@ -168,10 +189,8 @@ public class ThrowAction extends SwordAction {
      * @param executor The combatant whose throw action is being canceled.
      */
     public static void throwCancel(Combatant executor) {
-        Sword.getInstance().getLogger().info("\nThrow was <CANCELED>\n");
-        executor.setAttemptingThrow(false);
-        executor.setThrowCancelled(true);
-        executor.setThrowSuccessful(false);
+        Debug.system("Throw was <CANCELED>");
+        executor.setThrowPhase(ThrowPhase.CANCELLED);
         if (executor instanceof SwordPlayer sp) sp.setActivationContext(ActivationContext.NORMAL);
 
         if (executor instanceof SwordPlayer sp) {
@@ -198,10 +217,9 @@ public class ThrowAction extends SwordAction {
      * @param executor The combatant performing the throw.
      */
     public static void throwItem(Combatant executor) {
-        if (executor.isThrowCancelled()) return;
+        if (executor.getThrowPhase() == ThrowPhase.CANCELLED) return;
 
-        executor.setAttemptingThrow(false);
-        executor.setThrowSuccessful(true);
+        executor.setThrowPhase(ThrowPhase.SUCCESS);
         if (executor instanceof SwordPlayer sp) sp.setActivationContext(ActivationContext.NORMAL);
 
         if (executor.getThrownItem() != null) executor.getThrownItem().onRelease(2);

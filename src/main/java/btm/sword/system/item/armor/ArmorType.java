@@ -33,7 +33,7 @@ public enum ArmorType {
      * @return the configured armor ItemStack, or {@link Material#AIR} if not yet implemented
      */
     public ItemStack buildItemStack() {
-        return new ItemStack(Material.AIR);
+        return ItemStack.of(Material.AIR);
     }
 
     /**

@@ -2,6 +2,7 @@ package btm.sword.system.action.throwing.types;
 
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 import org.bukkit.Color;
@@ -28,12 +29,14 @@ import btm.sword.config.Config;
 import btm.sword.system.action.throwing.ImpactType;
 import btm.sword.system.action.throwing.ThrowAction;
 import btm.sword.system.action.throwing.impale.Impalement;
+import btm.sword.system.attack.HitValuePacket;
 import btm.sword.system.control.PredicateRunnablePair;
 import btm.sword.system.control.SwordScheduler;
 import btm.sword.system.control.TimeArbiter;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.impl.Combatant;
 import btm.sword.system.entity.impl.SwordPlayer;
+import btm.sword.system.entity.impl.ThrowPhase;
 import btm.sword.system.input.ActivationContext;
 import btm.sword.system.item.ItemUsageManager;
 import btm.sword.system.item.KeyRegistry;
@@ -66,6 +69,15 @@ public class ThrownItem extends VisualProjectile {
 
     /** Predicate tested by the impalement follow-task to decide when embedding ends. */
     protected Predicate<VisualProjectile> exitImpalementStatePredicate;
+
+    /** If non-null, overrides {@link btm.sword.utility.Prefab.Attacks#THROWN_WEAPON} for hit resolution. */
+    private HitValuePacket hitPacket;
+
+    /**
+     * If non-null, overrides the default grounded/airborne knockback calculation.
+     * Receives the hit target and returns the knockback vector to apply.
+     */
+    private Function<SwordEntity, org.bukkit.util.Vector> knockbackFunction;
 
     // Landing marker (issue #15)
     private TextDisplay landingMarker;
@@ -146,9 +158,8 @@ public class ThrownItem extends VisualProjectile {
             sp.setThrownItemIndex();
 
             if (sp.isInteractingWithEntity()) {
-                sp.setAttemptingThrow(false);
+                sp.setThrowPhase(ThrowPhase.SUCCESS);
                 sp.setActivationContext(ActivationContext.NORMAL);
-                sp.setThrowSuccessful(true);
                 sp.getThrownItem().onRelease(2);
                 thrower.setItemTypeInHand(Material.AIR, true);
                 sp.endHoldingRight();
@@ -166,9 +177,11 @@ public class ThrownItem extends VisualProjectile {
                 if (thrower instanceof SwordPlayer sp) {
                     if (!sp.isChangingHandIndex() && sp.getCurrentInvIndex() == sp.getThrownItemIndex()) {
                         if (iteration[0] < 10)
-                            sp.itemNameDisplay("- HURL IT AT 'EM SOLDIER! -", TextColor.color(100, 100, 100), null);
+                            sp.itemNameDisplay("- HURL IT AT 'EM SOLDIER! -",
+                                TextColor.color(100, 100, 100), null, Material.GUNPOWDER);
                         else
-                            sp.itemNameDisplay("| HURL IT AT 'EM SOLDIER! |", TextColor.color(150, 150, 150), null);
+                            sp.itemNameDisplay("| HURL IT AT 'EM SOLDIER! |",
+                                TextColor.color(150, 150, 150), null, Material.GUNPOWDER);
 
                         if (iteration[0] > 20) iteration[0] = 0;
                         iteration[0]++;
@@ -183,7 +196,7 @@ public class ThrownItem extends VisualProjectile {
             0, 50,
             ThrownItem.class, "onReady",
             new PredicateRunnablePair(
-                thrower::isThrowCancelled,
+                () -> thrower.getThrowPhase() == ThrowPhase.CANCELLED,
                 () -> {
                     display.remove();
                     ThrowAction.throwCancel(thrower);
@@ -191,7 +204,7 @@ public class ThrownItem extends VisualProjectile {
                 }
             ),
             new PredicateRunnablePair(
-                thrower::isThrowSuccessful,
+                () -> thrower.getThrowPhase() == ThrowPhase.SUCCESS,
                 () -> thrower.setItemTypeInHand(Material.AIR, true)
             )
         );
@@ -245,7 +258,7 @@ public class ThrownItem extends VisualProjectile {
 
         handleItemDamageAndCheckIfBroken();
 
-        if (ImpactType.fromItem(display.getItemStack()) == ImpactType.IMPALE) {
+        if (ImpactType.fromItem(itemStack) == ImpactType.IMPALE) {
             startImpalementTask(hitEntity);
         } else {
             nonImpalingImpact(hitEntity);
@@ -322,9 +335,15 @@ public class ThrownItem extends VisualProjectile {
             entity.getUniqueId() != display.getUniqueId()
                 && (entity instanceof LivingEntity l)
                 && !l.isDead();
-        return timeStep.get() < Config.Timing.THROWN_ITEMS_CATCH_GRACE_PERIOD
+        boolean excludeThrower = isAbilityItem()
+            || timeStep.get() < Config.Timing.THROWN_ITEMS_CATCH_GRACE_PERIOD;
+        return excludeThrower
             ? entity -> filter.test(entity) && entity.getUniqueId() != thrower.getUniqueId()
             : filter;
+    }
+
+    private boolean isAbilityItem() {
+        return itemStack != null && KeyRegistry.hasKey(itemStack, KeyRegistry.ABILITY_ID_KEY);
     }
 
     /**
@@ -394,8 +413,10 @@ public class ThrownItem extends VisualProjectile {
      * @param target the struck entity
      */
     protected void nonImpalingImpact(SwordEntity target) {
-        target.hit(thrower, Prefab.Attacks.THROWN_WEAPON,
-            velocity.clone().multiply(Config.Combat.THROWN_DAMAGE_OTHER_KNOCKBACK_MULTIPLIER));
+        Vector kb = knockbackFunction != null
+            ? knockbackFunction.apply(target)
+            : velocity.clone().multiply(Config.Combat.THROWN_DAMAGE_OTHER_KNOCKBACK_MULTIPLIER);
+        target.hit(thrower, hitPacket != null ? hitPacket : Prefab.Attacks.THROWN_WEAPON, kb);
 
         target.world().createExplosion(target.getChestLocation(),
             Config.Combat.THROWN_DAMAGE_OTHER_EXPLOSION_POWER,
@@ -413,15 +434,17 @@ public class ThrownItem extends VisualProjectile {
      * @param target the struck entity
      */
     public void startImpalementTask(SwordEntity target) {
-        Vector kb = EntityUtil.isOnGround(target.self())
-            ? velocity.clone().multiply(Config.Combat.THROWN_DAMAGE_SWORD_AXE_KNOCKBACK_GROUNDED)
-            : VectorUtil.getProjOntoPlane(velocity, Config.Direction.up())
-                .multiply(Config.Combat.THROWN_DAMAGE_SWORD_AXE_KNOCKBACK_AIRBORNE);
+        Vector kb = knockbackFunction != null
+            ? knockbackFunction.apply(target)
+            : EntityUtil.isOnGround(target.self())
+                ? velocity.clone().multiply(Config.Combat.THROWN_DAMAGE_SWORD_AXE_KNOCKBACK_GROUNDED)
+                : VectorUtil.getProjOntoPlane(velocity, Config.Direction.up())
+                    .multiply(Config.Combat.THROWN_DAMAGE_SWORD_AXE_KNOCKBACK_AIRBORNE);
 
         if (display.isValid()) {
             impale(target.self());
         }
-        target.hit(thrower, Prefab.Attacks.THROWN_WEAPON, kb);
+        target.hit(thrower, hitPacket != null ? hitPacket : Prefab.Attacks.THROWN_WEAPON, kb);
     }
 
     /**
@@ -589,6 +612,19 @@ public class ThrownItem extends VisualProjectile {
     // -----------------------------------------------------------------------
     // Dispose override — also removes the landing marker
     // -----------------------------------------------------------------------
+
+    /**
+     * For ability projectiles, silently disposes instead of dropping an interactive world item.
+     * Prevents knives and other ability throws from littering the ground on entity death or expiry.
+     */
+    @Override
+    public void disposeWithNewInteractiveItem() {
+        if (isAbilityItem()) {
+            dispose();
+            return;
+        }
+        super.disposeWithNewInteractiveItem();
+    }
 
     /**
      * Disposes of the item display, cancels tasks, and removes any landing marker.

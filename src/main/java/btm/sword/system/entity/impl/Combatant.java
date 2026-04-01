@@ -64,9 +64,7 @@ public abstract class Combatant extends SwordEntity {
     private ThrownItem thrownItem;
     private ItemStack offHandItemStackDuringThrow;
     private ItemStack mainHandItemStackDuringThrow;
-    private boolean attemptingThrow;
-    private boolean throwCancelled;
-    private boolean throwSuccessful;
+    private ThrowPhase throwPhase = ThrowPhase.IDLE;
 
     private final AttributeInstance attrHealth;
     private final AttributeInstance attrAbsorption;
