@@ -29,6 +29,8 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.persistence.PersistentDataType;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Transformation;
 import org.bukkit.util.Vector;
 import org.joml.Quaternionf;
@@ -57,6 +59,8 @@ import btm.sword.system.control.SwordScheduler;
 import btm.sword.system.control.TimeArbiter;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.base.SwordEntity;
+import btm.sword.system.hud.HudOverrideManager;
+import btm.sword.system.hud.HudRenderState;
 import btm.sword.system.input.ActivationContext;
 import btm.sword.system.input.InputAction;
 import btm.sword.system.input.InputActionExecutor;
@@ -197,10 +201,7 @@ public class SwordPlayer extends Combatant {
 
     private int thrownItemIndex;
 
-    private boolean swappingInInv;
-    private boolean droppingInInv;
-    @Setter
-    private boolean inInventorySession;
+    private InventoryMode inventoryMode = InventoryMode.NONE;
 
     /** True while the scene overlay (glass-pane fill + invisibility) is active. Suppresses inventory upkeep. */
     private boolean inSceneOverlay = false;
@@ -340,9 +341,7 @@ public class SwordPlayer extends Combatant {
 
         thrownItemIndex = -1;
 
-        swappingInInv = false;
-        droppingInInv = false;
-        inInventorySession = false;
+        inventoryMode = InventoryMode.NONE;
     }
 
     /**
@@ -491,11 +490,11 @@ public class SwordPlayer extends Combatant {
             activationContext = ActivationContext.NORMAL;
         }
 
-        Debug.input("Pre-Ability Check Message, cur path="+inputExecutionTree.getPlainTextInputSequence() +
-            "\n           input="+input+
-            "\n           holdingAbilityItem?="+!notHoldingAbilityItem()+
-            "\n           isAtRoot="+isAtRoot() +
-            "\n           notHoldingChargeable="+!ChargeAction.isHoldingChargeable(this));
+        Debug.input("Pre-Ability Check Message, cur path=" + inputExecutionTree.getPlainTextInputSequence()
+            + "\n           input=" + input
+            + "\n           holdingAbilityItem?=" + !notHoldingAbilityItem()
+            + "\n           isAtRoot=" + isAtRoot()
+            + "\n           notHoldingChargeable=" + !ChargeAction.isHoldingChargeable(this));
 
         if (isAtRoot() && !ChargeAction.isHoldingChargeable(this) && handleAbilityInput(input)) {
             resetTree();
@@ -1064,8 +1063,48 @@ public class SwordPlayer extends Combatant {
 
     public void updateVisualStats() {
         player.setAbsorptionAmount(aspects.toughnessCur());
-        player.setHealth(Math.max(2, 2 * aspects.shardsCur()));
-        player.setFoodLevel((int) (20 * (aspects.soulfireCur() / aspects.soulfireMaxVal())));
+        HudRenderState state = new HudRenderState(
+            Math.max(2, 2 * aspects.shardsCur()),
+            (int) (20 * (aspects.soulfireCur() / aspects.soulfireMaxVal())),
+            5.0f,
+            player.getRemainingAir()
+        );
+        HudOverrideManager.apply(player, HudOverrideManager.resolve(player, state));
+    }
+
+    /**
+     * Cycles through four HUD effect visuals for testing purposes, each lasting 5 seconds:
+     * wither hearts, poisoned hearts, empty food bar, then bubbles animating full to empty to full.
+     */
+    public void testHudSequence() {
+        player.addPotionEffect(new PotionEffect(PotionEffectType.WITHER, 100, 0, false, false));
+
+        SwordScheduler.after(5, TimeUnit.SECONDS, () -> {
+            player.removePotionEffect(PotionEffectType.WITHER);
+            player.addPotionEffect(new PotionEffect(PotionEffectType.POISON, 100, 0, false, false));
+        })
+        .andThen(5, TimeUnit.SECONDS, () -> {
+            player.removePotionEffect(PotionEffectType.POISON);
+            HudOverrideManager.register(player, "hud_test", 200,
+                (p, state) -> new HudRenderState(state.health(), 0, 0.0f, state.air()));
+        })
+        .andThen(5, TimeUnit.SECONDS, () -> {
+            HudOverrideManager.clear(player, "hud_test");
+            int maxAir = player.getMaximumAir();
+            int[] it = {0};
+            TimeArbiter.runFixedIterationTaskTimer(
+                () -> {
+                    int step = it[0]++;
+                    int air = step <= 50
+                        ? (int) ((maxAir - 1) * (1.0 - step / 50.0))
+                        : (int) ((maxAir - 1) * (step - 50) / 50.0);
+                    player.setRemainingAir(air);
+                },
+                null, 0, 50, 100,
+                SwordPlayer.class, "testHudSequence",
+                () -> player.setRemainingAir(maxAir)
+            );
+        });
     }
 
     /**
@@ -1580,32 +1619,50 @@ public class SwordPlayer extends Combatant {
 
     /**
      * Marks that the player is currently swapping items in inventory.
-     * Resets the flag shortly after (1 tick).
+     * Resets to {@link InventoryMode#NONE} after ~1 tick.
      */
     public void setSwappingInInv() {
-        swappingInInv = true;
-
+        inventoryMode = InventoryMode.SWAPPING;
         SwordScheduler.runBukkitTaskLater(
-            () -> swappingInInv = false,
+            () -> { if (inventoryMode == InventoryMode.SWAPPING) inventoryMode = InventoryMode.NONE; },
             50, TimeUnit.MILLISECONDS
         );
     }
 
     /**
      * Marks that the player is currently dropping items in inventory.
-     * Resets the flag shortly after (1 tick).
+     * Resets to {@link InventoryMode#NONE} after ~2 ticks.
      */
     public void setDroppingInInv() {
         Debug.inventory(">> set dropping in inv");
-
-        droppingInInv = true;
+        inventoryMode = InventoryMode.DROPPING;
         SwordScheduler.runBukkitTaskLater(
             () -> {
                 Debug.inventory(">> no longer dropping in inv");
-                droppingInInv = false;
+                if (inventoryMode == InventoryMode.DROPPING) inventoryMode = InventoryMode.NONE;
             },
             100, TimeUnit.MILLISECONDS
         );
+    }
+
+    /** Sets the inventory mode to {@link InventoryMode#SESSION} when the player opens a screen. */
+    public void setInInventorySession(boolean active) {
+        inventoryMode = active ? InventoryMode.SESSION : InventoryMode.NONE;
+    }
+
+    /** Returns {@code true} if the player currently has an inventory screen open. */
+    public boolean isInInventorySession() {
+        return inventoryMode == InventoryMode.SESSION;
+    }
+
+    /** Returns {@code true} if the player is in a momentary item-drop action. */
+    public boolean isDroppingInInv() {
+        return inventoryMode == InventoryMode.DROPPING;
+    }
+
+    /** Returns {@code true} if the player is in a momentary item-swap action. */
+    public boolean isSwappingInInv() {
+        return inventoryMode == InventoryMode.SWAPPING;
     }
 
     public void setPerformedDropAction() {
@@ -1614,11 +1671,6 @@ public class SwordPlayer extends Combatant {
             () -> performedDropAction = false,
             100, TimeUnit.MILLISECONDS
         );
-    }
-
-    @SuppressWarnings("all")
-    public boolean isInInventorySession() {
-        return inInventorySession;
     }
 
     public void incrementNumDummies() {

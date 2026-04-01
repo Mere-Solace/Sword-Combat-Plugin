@@ -54,9 +54,7 @@ public class ApproachState extends HostileAIFacade {
     }
 
     private void handleAllyScan(Hostile h) {
-        h.setAllyScanTimer(h.getAllyScanTimer() + 1);
-        if (h.getAllyScanTimer() < 20) return;
-        h.setAllyScanTimer(0);
+        if (!h.shouldRunAllyScan()) return;
 
         double aggroRadius = Math.sqrt(Config.Hostile.AGGRO_RANGE_SQUARED);
         List<Hostile> allies = h.self().getWorld().getNearbyLivingEntities(

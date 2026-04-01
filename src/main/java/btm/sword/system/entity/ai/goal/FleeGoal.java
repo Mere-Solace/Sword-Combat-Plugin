@@ -91,9 +91,7 @@ public class FleeGoal implements Goal<@NotNull Mob> {
     /** Recalculates the flee direction every {@value #RECALC_CADENCE} ticks. */
     @Override
     public void tick() {
-        recalcTick++;
-        if (recalcTick >= RECALC_CADENCE) {
-            recalcTick = 0;
+        if (hostile.shouldRunAllyScan()) {
             recalculateFleeDirection();
         }
     }

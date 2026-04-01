@@ -32,6 +32,8 @@ public enum SwordTeam {
     /** Reserved for future faction use. */
     YELLOW("sword_team_yellow");
 
+    private static final SwordTeam[] VALUES = values();
+
     private final String tag;
 
     SwordTeam(String tag) {
@@ -51,7 +53,7 @@ public enum SwordTeam {
      * @return the matching team, or {@code null}
      */
     public static SwordTeam fromEntity(LivingEntity entity) {
-        for (SwordTeam team : values()) {
+        for (SwordTeam team : VALUES) {
             if (entity.getScoreboardTags().contains(team.tag)) {
                 return team;
             }

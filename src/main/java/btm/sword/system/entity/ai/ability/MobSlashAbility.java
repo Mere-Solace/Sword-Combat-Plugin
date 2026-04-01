@@ -34,8 +34,7 @@ public class MobSlashAbility implements MobAbility {
 
     @Override
     public boolean canUse(Hostile h) {
-        Integer cooldown = h.getAbilityCooldowns().get(name());
-        return cooldown == null || cooldown <= 0;
+        return h.getAbilityCooldown(name()) <= 0;
     }
 
     @Override

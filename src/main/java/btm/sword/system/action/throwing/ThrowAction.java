@@ -14,7 +14,9 @@ import btm.sword.system.action.throwing.types.ThrownItem;
 import btm.sword.system.action.throwing.types.VisualProjectile;
 import btm.sword.system.entity.impl.Combatant;
 import btm.sword.system.entity.impl.SwordPlayer;
+import btm.sword.system.entity.impl.ThrowPhase;
 import btm.sword.system.input.ActivationContext;
+import btm.sword.utility.Debug;
 
 /**
  * Handles the sequence of actions involved in a {@code Combatant} performing a throw action.
@@ -66,9 +68,7 @@ public class ThrowAction extends SwordAction {
      * @param itemOverride the explicit item to throw, or {@code null} to derive from the executor's hand
      */
     public static void throwReady(Combatant executor, @Nullable ItemStack itemOverride) {
-        executor.setAttemptingThrow(true);
-        executor.setThrowCancelled(false);
-        executor.setThrowSuccessful(false);
+        executor.setThrowPhase(ThrowPhase.THROWING);
         if (executor instanceof SwordPlayer sp) sp.setActivationContext(ActivationContext.THROWING);
 
         Consumer<ItemDisplay> setupInstructions;
@@ -126,9 +126,7 @@ public class ThrowAction extends SwordAction {
      * @param velocity     the initial velocity magnitude passed to {@link ThrownItem#onRelease(double)}
      */
     public static void throwDirect(Combatant executor, ItemStack item, Vector3f displayScale, double velocity) {
-        executor.setAttemptingThrow(true);
-        executor.setThrowCancelled(false);
-        executor.setThrowSuccessful(false);
+        executor.setThrowPhase(ThrowPhase.THROWING);
         if (executor instanceof SwordPlayer sp) sp.setActivationContext(ActivationContext.THROWING);
 
         ThrownItem thrownItem = new ThrownItem(executor, display -> display.setItemStack(item), 1);
@@ -147,8 +145,7 @@ public class ThrowAction extends SwordAction {
                 if (thrownItem.getDisplay() == null) {
                     misses++;
                 } else {
-                    executor.setAttemptingThrow(false);
-                    executor.setThrowSuccessful(true);
+                    executor.setThrowPhase(ThrowPhase.SUCCESS);
                     if (executor instanceof SwordPlayer sp) sp.setActivationContext(ActivationContext.NORMAL);
                     thrownItem.onRelease(velocity);
                     cancel();
@@ -192,10 +189,8 @@ public class ThrowAction extends SwordAction {
      * @param executor The combatant whose throw action is being canceled.
      */
     public static void throwCancel(Combatant executor) {
-        Sword.getInstance().getLogger().info("\nThrow was <CANCELED>\n");
-        executor.setAttemptingThrow(false);
-        executor.setThrowCancelled(true);
-        executor.setThrowSuccessful(false);
+        Debug.system("Throw was <CANCELED>");
+        executor.setThrowPhase(ThrowPhase.CANCELLED);
         if (executor instanceof SwordPlayer sp) sp.setActivationContext(ActivationContext.NORMAL);
 
         if (executor instanceof SwordPlayer sp) {
@@ -222,10 +217,9 @@ public class ThrowAction extends SwordAction {
      * @param executor The combatant performing the throw.
      */
     public static void throwItem(Combatant executor) {
-        if (executor.isThrowCancelled()) return;
+        if (executor.getThrowPhase() == ThrowPhase.CANCELLED) return;
 
-        executor.setAttemptingThrow(false);
-        executor.setThrowSuccessful(true);
+        executor.setThrowPhase(ThrowPhase.SUCCESS);
         if (executor instanceof SwordPlayer sp) sp.setActivationContext(ActivationContext.NORMAL);
 
         if (executor.getThrownItem() != null) executor.getThrownItem().onRelease(2);

@@ -284,7 +284,7 @@ public class VisualProjectile extends SimulatedDisplay {
     protected void rotate() {
         switch (getThrowStyle()) {
             case SPEAR -> {}
-            case HATCHET -> applyRotation(false, (float) Config.Physics.THROWN_ITEMS_ROTATION_SPEED_AXE);
+            case HATCHET, ROTATE -> applyRotation(false, (float) Config.Physics.THROWN_ITEMS_ROTATION_SPEED_AXE);
             case LOB -> applyRotation(true, (float) (Config.Physics.THROWN_ITEMS_ROTATION_SPEED_DEFAULT_SPEED * 0.4));
             default -> applyRotation(true, (float) Config.Physics.THROWN_ITEMS_ROTATION_SPEED_DEFAULT_SPEED);
         }

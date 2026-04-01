@@ -76,6 +76,8 @@ import net.kyori.adventure.text.format.TextDecoration;
 @Getter
 @Setter
 public abstract class SwordEntity {
+    private static final PotionEffect IMPALE_SLOW = new PotionEffect(PotionEffectType.SLOWNESS, 1, 1);
+
     protected final UUID uuid;
     protected final CombatProfile combatProfile;
     protected final LivingEntity self;
@@ -107,6 +109,8 @@ public abstract class SwordEntity {
 
     private boolean grabbed;
     private boolean aiEnabled;
+
+    private SwordTeam cachedTeam;
 
     protected boolean shielding;
 
@@ -222,7 +226,7 @@ public abstract class SwordEntity {
 
 
         if (isImpaled()) {
-            self.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 1, 1));
+            self.addPotionEffect(IMPALE_SLOW);
         }
 
         if (statusDisplay != null && isStatusActive()) {
@@ -545,8 +549,7 @@ public abstract class SwordEntity {
                     float baseSoulfireReduction,
                     Vector knockbackVelocity,
                     Affliction... afflictions) {
-        SwordTeam attackerTeam = SwordTeam.fromEntity(source.self());
-        if (attackerTeam != null && attackerTeam == SwordTeam.fromEntity(self)) {
+        if (source.getCachedTeam() != null && source.getCachedTeam() == cachedTeam) {
             return;
         }
 
@@ -693,20 +696,21 @@ public abstract class SwordEntity {
      * @param team the team to join
      */
     public void joinTeam(SwordTeam team) {
-        for (SwordTeam existing : SwordTeam.values()) {
-            self.removeScoreboardTag(existing.tag());
+        if (cachedTeam != null) {
+            self.removeScoreboardTag(cachedTeam.tag());
         }
         self.addScoreboardTag(team.tag());
+        cachedTeam = team;
     }
 
     /**
-     * Returns this entity's current {@link SwordTeam} by reading its Bukkit scoreboard tags,
-     * or {@code null} if no sword team tag is present.
+     * Returns this entity's current {@link SwordTeam} from the cached field set in
+     * {@link #joinTeam(SwordTeam)}, or {@code null} if no team has been assigned.
      *
      * @return the team, or {@code null}
      */
     public SwordTeam getTeam() {
-        return SwordTeam.fromEntity(self);
+        return cachedTeam;
     }
 
     /**
