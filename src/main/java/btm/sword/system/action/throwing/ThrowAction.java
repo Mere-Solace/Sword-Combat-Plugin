@@ -16,6 +16,7 @@ import btm.sword.system.entity.impl.Combatant;
 import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.entity.impl.ThrowPhase;
 import btm.sword.system.input.ActivationContext;
+import btm.sword.utility.Debug;
 
 /**
  * Handles the sequence of actions involved in a {@code Combatant} performing a throw action.
@@ -188,7 +189,7 @@ public class ThrowAction extends SwordAction {
      * @param executor The combatant whose throw action is being canceled.
      */
     public static void throwCancel(Combatant executor) {
-        Sword.getInstance().getLogger().info("\nThrow was <CANCELED>\n");
+        Debug.system("Throw was <CANCELED>");
         executor.setThrowPhase(ThrowPhase.CANCELLED);
         if (executor instanceof SwordPlayer sp) sp.setActivationContext(ActivationContext.NORMAL);
 
