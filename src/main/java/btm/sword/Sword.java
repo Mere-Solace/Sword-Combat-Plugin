@@ -12,6 +12,7 @@ import com.comphenix.protocol.ProtocolManager;
 
 import btm.sword.commands.SwordCommands;
 import btm.sword.config.ConfigManager;
+import btm.sword.listeners.CustomInteractionListener;
 import btm.sword.listeners.EntityListener;
 import btm.sword.listeners.ErrorListener;
 import btm.sword.listeners.InputListener;
@@ -29,6 +30,7 @@ import btm.sword.system.entity.display.DEUAnimationHook;
 import btm.sword.system.entity.display.WeaponAnchorPacketHook;
 import btm.sword.system.entity.display.WeaponDisplayRegistry;
 import btm.sword.system.entity.mob.MobTypeRegistry;
+import btm.sword.system.interaction.CustomInteractionManager;
 import btm.sword.system.inventory.InventoryMenuManager;
 import btm.sword.system.join.MenuSlotGrid;
 import btm.sword.system.join.ServerJoinArbiter;
@@ -72,6 +74,7 @@ public final class Sword extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new ErrorListener(), this);
         getServer().getPluginManager().registerEvents(new InputListener(), this);
         getServer().getPluginManager().registerEvents(new PlayerListener(), this);
+        getServer().getPluginManager().registerEvents(new CustomInteractionListener(), this);
         getServer().getPluginManager().registerEvents(new ServerJoinArbiter(), this);
         getServer().getPluginManager().registerEvents(new EntityListener(), this);
         getServer().getPluginManager().registerEvents(new DEUAnimationHook(), this);
@@ -96,6 +99,7 @@ public final class Sword extends JavaPlugin {
         ProjectileManager.startTicking();
 
         InventoryMenuManager.registerAll();
+        CustomInteractionManager.initialize();
 
         AnimationRegistry.initialize(this);
         MobTypeRegistry.initialize(this);
