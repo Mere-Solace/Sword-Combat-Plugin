@@ -1,8 +1,12 @@
 package btm.sword;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
+import org.bukkit.GameRule;
+import org.bukkit.World;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
@@ -110,7 +114,33 @@ public final class Sword extends JavaPlugin {
         // Place the staging grid platforms (worlds are loaded before onEnable on Paper)
         MenuSlotGrid.placeAllBlocks();
 
+        applyDevSetupIfFirstRun();
+
         getLogger().info("~ Sword: Combat Evolved has been enabled ~");
+    }
+
+    /**
+     * On first plugin start, applies developer-friendly gamerules to all loaded worlds:
+     * {@code keepInventory=true} and {@code doMobLoot=false}. Writes a marker file so this
+     * only runs once per server instance and is not reapplied on every reload.
+     */
+    private void applyDevSetupIfFirstRun() {
+        File marker = new File(getDataFolder(), "dev-setup.lock");
+        if (marker.exists()) return;
+
+        for (World world : getServer().getWorlds()) {
+            world.setGameRule(GameRule.KEEP_INVENTORY, true);
+            world.setGameRule(GameRule.DO_MOB_LOOT, false);
+        }
+
+        getDataFolder().mkdirs();
+        try {
+            marker.createNewFile();
+        } catch (IOException e) {
+            getLogger().warning("Could not create dev-setup.lock: " + e.getMessage());
+        }
+
+        getLogger().info("Dev setup applied: keepInventory=true, doMobLoot=false");
     }
 
     @Override
