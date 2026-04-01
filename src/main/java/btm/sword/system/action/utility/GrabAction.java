@@ -23,6 +23,7 @@ import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.impl.Combatant;
 import btm.sword.system.entity.impl.SwordPlayer;
+import btm.sword.system.entity.impl.ThrowPhase;
 import btm.sword.utility.Prefab;
 import btm.sword.utility.SwordTimeUnit;
 import btm.sword.utility.entity.HitboxUtil;
@@ -123,7 +124,9 @@ public class GrabAction extends SwordAction {
         SwordEntity swordTarget = SwordEntityArbiter.getOrAdd(target);
         if (swordTarget == null || swordTarget.isHit()) return;
 
-        if (swordTarget instanceof Combatant c && c.isAttemptingThrow()) c.setThrowCancelled(true);
+        if (swordTarget instanceof Combatant c && c.getThrowPhase() == ThrowPhase.THROWING) {
+            c.setThrowPhase(ThrowPhase.CANCELLED);
+        }
 
         if (executor instanceof SwordPlayer swordPlayer) {
             swordPlayer.setTargetedEntity(swordTarget);

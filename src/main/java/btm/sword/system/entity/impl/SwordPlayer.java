@@ -201,10 +201,7 @@ public class SwordPlayer extends Combatant {
 
     private int thrownItemIndex;
 
-    private boolean swappingInInv;
-    private boolean droppingInInv;
-    @Setter
-    private boolean inInventorySession;
+    private InventoryMode inventoryMode = InventoryMode.NONE;
 
     /** True while the scene overlay (glass-pane fill + invisibility) is active. Suppresses inventory upkeep. */
     private boolean inSceneOverlay = false;
@@ -344,9 +341,7 @@ public class SwordPlayer extends Combatant {
 
         thrownItemIndex = -1;
 
-        swappingInInv = false;
-        droppingInInv = false;
-        inInventorySession = false;
+        inventoryMode = InventoryMode.NONE;
     }
 
     /**
@@ -1624,32 +1619,50 @@ public class SwordPlayer extends Combatant {
 
     /**
      * Marks that the player is currently swapping items in inventory.
-     * Resets the flag shortly after (1 tick).
+     * Resets to {@link InventoryMode#NONE} after ~1 tick.
      */
     public void setSwappingInInv() {
-        swappingInInv = true;
-
+        inventoryMode = InventoryMode.SWAPPING;
         SwordScheduler.runBukkitTaskLater(
-            () -> swappingInInv = false,
+            () -> { if (inventoryMode == InventoryMode.SWAPPING) inventoryMode = InventoryMode.NONE; },
             50, TimeUnit.MILLISECONDS
         );
     }
 
     /**
      * Marks that the player is currently dropping items in inventory.
-     * Resets the flag shortly after (1 tick).
+     * Resets to {@link InventoryMode#NONE} after ~2 ticks.
      */
     public void setDroppingInInv() {
         Debug.inventory(">> set dropping in inv");
-
-        droppingInInv = true;
+        inventoryMode = InventoryMode.DROPPING;
         SwordScheduler.runBukkitTaskLater(
             () -> {
                 Debug.inventory(">> no longer dropping in inv");
-                droppingInInv = false;
+                if (inventoryMode == InventoryMode.DROPPING) inventoryMode = InventoryMode.NONE;
             },
             100, TimeUnit.MILLISECONDS
         );
+    }
+
+    /** Sets the inventory mode to {@link InventoryMode#SESSION} when the player opens a screen. */
+    public void setInInventorySession(boolean active) {
+        inventoryMode = active ? InventoryMode.SESSION : InventoryMode.NONE;
+    }
+
+    /** Returns {@code true} if the player currently has an inventory screen open. */
+    public boolean isInInventorySession() {
+        return inventoryMode == InventoryMode.SESSION;
+    }
+
+    /** Returns {@code true} if the player is in a momentary item-drop action. */
+    public boolean isDroppingInInv() {
+        return inventoryMode == InventoryMode.DROPPING;
+    }
+
+    /** Returns {@code true} if the player is in a momentary item-swap action. */
+    public boolean isSwappingInInv() {
+        return inventoryMode == InventoryMode.SWAPPING;
     }
 
     public void setPerformedDropAction() {
@@ -1658,11 +1671,6 @@ public class SwordPlayer extends Combatant {
             () -> performedDropAction = false,
             100, TimeUnit.MILLISECONDS
         );
-    }
-
-    @SuppressWarnings("all")
-    public boolean isInInventorySession() {
-        return inInventorySession;
     }
 
     public void incrementNumDummies() {
