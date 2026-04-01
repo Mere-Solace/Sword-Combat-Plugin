@@ -2,7 +2,10 @@ package btm.sword.utility.statemachine;
 
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Generic finite state machine (FSM).
@@ -30,6 +33,13 @@ public class StateMachine<T> {
     protected final List<Transition<T>> transitions = new ArrayList<>();
 
     /**
+     * Per-state-class cache of the filtered, ordered subset of {@link #transitions} that apply
+     * to that state. Computed lazily on first encounter; avoids the O(N) full scan and
+     * {@link Class#isAssignableFrom} calls every tick.
+     */
+    private final Map<Class<?>, List<Transition<T>>> effectiveTransitionCache = new HashMap<>();
+
+    /**
      * Creates the state machine with the given context and enters the initial state immediately.
      *
      * @param context      the shared context object
@@ -54,14 +64,16 @@ public class StateMachine<T> {
     public void afterAnyTransition() {}
 
     /**
-     * Ticks the current state and evaluates all registered transitions.
-     * Called once per server tick by the owning system.
+     * Ticks the current state and evaluates only the transitions applicable to the current state.
+     * <p>
+     * The applicable subset is computed lazily on first encounter via
+     * {@link #effectiveTransitionsFor(Class)} and cached for subsequent ticks,
+     * eliminating the O(N) full scan and {@link Class#isAssignableFrom} calls every tick.
      */
     public void tick() {
         currentState.onTick(context);
-        for (var t : transitions) {
-            if (t.from().isAssignableFrom(currentState.getClass())
-                && t.condition().test(context)) {
+        for (var t : effectiveTransitionsFor(currentState.getClass())) {
+            if (t.condition().test(context)) {
                 onAnyTransition();
                 t.onTransition().accept(context);
                 setState(createState(t.to()));
@@ -69,6 +81,20 @@ public class StateMachine<T> {
                 return;
             }
         }
+    }
+
+    /**
+     * Returns the cached subset of {@link #transitions} whose {@code from} class is assignable
+     * from {@code stateClass}. Built once per unique state class and reused on every subsequent tick.
+     *
+     * @param stateClass the concrete state class currently active
+     * @return ordered list of transitions applicable to that state
+     */
+    private List<Transition<T>> effectiveTransitionsFor(Class<?> stateClass) {
+        return effectiveTransitionCache.computeIfAbsent(stateClass,
+            cls -> transitions.stream()
+                .filter(t -> t.from().isAssignableFrom(cls))
+                .collect(Collectors.toList()));
     }
 
     /**
@@ -94,6 +120,7 @@ public class StateMachine<T> {
      */
     public void addTransition(Transition<T> transition) {
         transitions.add(transition);
+        effectiveTransitionCache.clear();
     }
 
     /**
