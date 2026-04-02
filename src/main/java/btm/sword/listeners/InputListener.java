@@ -3,6 +3,8 @@ package btm.sword.listeners;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
+import btm.sword.utility.Debug;
+
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -78,7 +80,7 @@ public class InputListener implements Listener {
     public void onAttackCooldownResetEvent(PlayerAttackEntityCooldownResetEvent event) {
         SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer());
 
-        swordPlayer.message("PlayerAttackEntityCooldownResetEvent");
+        Debug.input("PlayerAttackEntityCooldownResetEvent");
     }
 
     /**
