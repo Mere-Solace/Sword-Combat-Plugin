@@ -95,6 +95,9 @@ public abstract class SwordEntity {
     protected TextDisplay statusDisplay;
     protected boolean statusActive;
 
+    private int prevDisplayShards = -1;
+    private float prevDisplayToughness = -1f;
+
     private long timeOfLastAttack;
     /**
      * in milliseconds
@@ -244,8 +247,16 @@ public abstract class SwordEntity {
 
     protected void updateStatusDisplayText() {
         int shards = (int) aspects.shardsCur();
-        int maxEffShards = (int) aspects.shardsMaxVal();
         float toughness = aspects.toughnessCur();
+
+        if (shards == prevDisplayShards && toughness == prevDisplayToughness) {
+            return;
+        }
+
+        prevDisplayShards = shards;
+        prevDisplayToughness = toughness;
+
+        int maxEffShards = (int) aspects.shardsMaxVal();
         float maxEffToughness = aspects.toughnessMaxVal();
 
         String bar = "█".repeat(shards);
