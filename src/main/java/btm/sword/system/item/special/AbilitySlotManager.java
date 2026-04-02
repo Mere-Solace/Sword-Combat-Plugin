@@ -120,7 +120,6 @@ public class AbilitySlotManager {
         if (ability == null) return;
 
         Player player = owner.player();
-        ItemStack current = player.getInventory().getItem(slotIndex);
         Set<AbilityUseType> types = ability.useTypes();
 
         if (types.contains(AbilityUseType.STACK)) {
@@ -131,9 +130,6 @@ public class AbilitySlotManager {
                 if (remaining <= 0) {
                     deplete(slotIndex);
                     return;
-                }
-                if (current != null) {
-                    current.setAmount(remaining);
                 }
             }
         }
@@ -147,18 +143,17 @@ public class AbilitySlotManager {
                     deplete(slotIndex);
                     return;
                 }
-                if (current != null) {
-                    updateDurabilityDisplay(current, remaining, ability.maxDurability());
-                }
             }
         }
 
-        if (types.contains(AbilityUseType.COOLDOWN) && ability.cooldownTicks() > 0 && current != null) {
-            int ticks = ability.cooldownTicks();
-            player.setCooldown(current.getType(), ticks);
+        if (types.contains(AbilityUseType.COOLDOWN) && ability.cooldownTicks() > 0) {
+            ItemStack current = player.getInventory().getItem(slotIndex);
+            if (current != null) {
+                player.setCooldown(current.getType(), ability.cooldownTicks());
+            }
         }
 
-        syncSlotItemFromState(slotIndex);
+        restoreSlot(slotIndex);
     }
 
     /**

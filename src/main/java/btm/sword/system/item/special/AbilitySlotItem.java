@@ -159,20 +159,10 @@ public class AbilitySlotItem extends SlotAnchoredItem {
         if (existing == null || existing.isEmpty() || isCurrentSlotItem(existing)) {
             return false;
         }
-
-        if (!KeyRegistry.hasKey(existing, KeyRegistry.ABILITY_SLOT_KEY)) {
-            return toInventoryItem(existing) != null;
+        if (KeyRegistry.hasKey(existing, KeyRegistry.ABILITY_SLOT_KEY)) {
+            return false;
         }
-
-        String existingAbilityId = KeyRegistry.getKeyField(existing, KeyRegistry.ABILITY_ID_KEY, PersistentDataType.STRING);
-        String currentAbilityId = currentItem == null
-            ? null
-            : KeyRegistry.getKeyField(currentItem, KeyRegistry.ABILITY_ID_KEY, PersistentDataType.STRING);
-
-        return existingAbilityId != null
-            && currentAbilityId != null
-            && !existingAbilityId.equals(currentAbilityId)
-            && toInventoryItem(existing) != null;
+        return toInventoryItem(existing) != null;
     }
 
     private boolean isCurrentSlotItem(ItemStack existing) {
