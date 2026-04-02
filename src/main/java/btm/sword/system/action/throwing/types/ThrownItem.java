@@ -300,9 +300,7 @@ public class ThrownItem extends VisualProjectile {
             boolean isMainHand = thrower.getItemStackInHand(true).isSimilar(itemStack);
             thrower.setItemStackInHand(ItemStack.of(Material.AIR), isMainHand);
         }
-        if (!isAbilityItem()) {
-            super.handleOnReleaseActions(); // InteractiveItemArbiter.put(this)
-        }
+        super.handleOnReleaseActions(); // InteractiveItemArbiter.put(this)
     }
 
     /**
