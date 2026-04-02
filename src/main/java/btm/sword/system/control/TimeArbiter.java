@@ -1,10 +1,10 @@
 package btm.sword.system.control;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
@@ -12,12 +12,12 @@ import java.util.function.Supplier;
 
 import javax.annotation.Nullable;
 
-import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Display;
 import org.bukkit.entity.Entity;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Transformation;
 import org.bukkit.util.Vector;
 
@@ -28,63 +28,91 @@ import btm.sword.utility.Debug;
 import btm.sword.utility.SwordTimeUnit;
 import btm.sword.utility.display.DisplayUtil;
 import lombok.Getter;
-import lombok.Setter;
 
 
 // these methods provide a central location that every movement/speed call must go through
+
+/**
+ * Central scheduling arbiter for all repeating Sword tasks.
+ *
+ * <p>All {@link TaskHandle} registrations are driven by a single global
+ * {@link BukkitRunnable} that fires every server tick. This replaces the
+ * previous per-task {@link java.util.concurrent.ScheduledExecutorService}
+ * approach, which created ~200+ concurrent futures at runtime.</p>
+ *
+ * <p>Time-bound tasks automatically apply {@link #GLOBAL_TIME_SCALE} to their
+ * effective period on every fire — no rescheduling is needed when the scale
+ * changes.</p>
+ */
 public final class TimeArbiter {
 
     private TimeArbiter() {}
+
     @Getter
     private static volatile double GLOBAL_TIME_SCALE = 1.0;
     private static volatile double GLOBAL_TELEPORT_DURATION_SCALING = 1.0;
 
+    /** Pluggable movement-speed application, updated when the global time scale changes. */
     public static volatile Consumer<SwordEntity> movementSpeedApplication = swordEntity -> {};
+    /** Guards against re-entrant {@link #setGlobalTimeScale} calls. */
     public static boolean updatingTimeScale = false;
 
+    /** Lookup maps kept for O(1) cleanup by task ID. */
     private static final Map<Integer, TaskHandle> TIME_BOUND_TASKS = new ConcurrentHashMap<>();
-    private static final Supplier<Boolean> PAUSE_ALL = () -> false; // TODO: determine from where this should come
-
+    private static final Supplier<Boolean> PAUSE_ALL = () -> false;
     private static final Map<Integer, TaskHandle> TIME_INDEPENDENT_TASKS = new ConcurrentHashMap<>();
 
     private static final AtomicInteger TASK_COUNTER = new AtomicInteger();
 
+    /**
+     * All active (non-cancelled) task handles, driven by the single global tick.
+     * Only ever accessed from the main server thread.
+     */
+    private static final List<TaskHandle> REGISTERED_TASKS = new ArrayList<>();
 
+    // ── Global tick ───────────────────────────────────────────────────────────
+
+    /**
+     * Starts the single global tick loop that drives all registered tasks.
+     * Must be called once from {@link Sword#onEnable()}.
+     */
+    public static void startGlobalTick() {
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                long now = System.currentTimeMillis();
+                REGISTERED_TASKS.removeIf(handle -> {
+                    if (handle.isCancelled()) return true;
+                    handle.tick(now);
+                    return handle.isCancelled();
+                });
+            }
+        }.runTaskTimer(Sword.getInstance(), 0L, 1L);
+    }
+
+    // ── Time scale ────────────────────────────────────────────────────────────
+
+    /**
+     * Sets the global time scale (0.0–2.0, where 1.0 is normal speed).
+     * Time-bound tasks will apply the new scale automatically on their next fire;
+     * no rescheduling is required.
+     *
+     * @param timeScale the new time scale
+     * @return {@code true} if applied successfully
+     */
     public static boolean setGlobalTimeScale(double timeScale) {
-
-        // When timescale is set, need to update all displays and places where displays are located
-        // So that this method can set their smooth teleport duration.
-
-        // TODO: change speed for newly spawned and registered entities (not this class but needed to get it down)
-
         if (updatingTimeScale) return false;
 
         updatingTimeScale = true;
         try {
             GLOBAL_TIME_SCALE = Math.max(0.0, Math.min(2.0, timeScale));
             GLOBAL_TELEPORT_DURATION_SCALING = Math.max(1.0, 1 / GLOBAL_TIME_SCALE);
-
-            // Mark all uncancelled tasks to be restarted
-            for (TaskHandle task : TIME_BOUND_TASKS.values()) {
-                if (!task.isCancelled()) {  // Only restart non-cancelled tasks
-                    task.setMarkedToRestart(true);
-                }
-            }
             movementSpeedApplication = applicationOfTimeEffects(timeScale);
             SwordEntityArbiter.applyToAllRegisteredEntities(movementSpeedApplication);
-
             return true;
         } finally {
             updatingTimeScale = false;
         }
-    }
-
-    private static void processRestartRequest(int taskID, boolean timeBound) {
-        TaskHandle handle = timeBound ? TIME_BOUND_TASKS.get(taskID) : TIME_INDEPENDENT_TASKS.get(taskID);
-        if (handle == null) return;
-
-        handle.future.cancel(true);
-        handle.rescheduleFuture();
     }
 
     private static Consumer<SwordEntity> applicationOfTimeEffects(double timeScale) {
@@ -124,18 +152,28 @@ public final class TimeArbiter {
         return application;
     }
 
+    // ── TaskHandle ────────────────────────────────────────────────────────────
+
+    /**
+     * A handle to a registered repeating task.
+     *
+     * <p>Instead of owning a {@link java.util.concurrent.ScheduledFuture}, each
+     * handle tracks {@code nextFireTimeMs} and is driven by the global tick.
+     * Cancellation sets a flag; the global tick removes cancelled handles via
+     * {@link List#removeIf}.</p>
+     */
     public static final class TaskHandle {
+
         @Getter
         private final int taskID;
         private final boolean timeBound;
 
-        private ScheduledFuture<?> future;
+        /** Absolute epoch-ms at which this task should next fire. */
+        private long nextFireTimeMs;
+
         @Getter
         private volatile boolean paused = false;
         private final AtomicBoolean cancelled = new AtomicBoolean(false);
-        @Getter
-        @Setter
-        private boolean markedToRestart = false;
 
         private final Runnable precheckRunnable;
         private final Runnable postcheckRunnable;
@@ -145,67 +183,100 @@ public final class TimeArbiter {
         @Getter
         private final int originalPeriodMs;
 
-        // Testing Attributes
         private final Class<?> callingClass;
         private final String callingMethodName;
 
-        private TaskHandle(int taskID, boolean timeBound, ScheduledFuture<?> future,
+        private TaskHandle(int taskID, boolean timeBound, long nextFireTimeMs,
                            Runnable precheck, Runnable postcheck, Runnable paused,
                            PredicateRunnablePair[] callbacks, int delay, int period,
                            Class<?> callingClass, String callingMethodName) {
-
             this.taskID = taskID;
             this.timeBound = timeBound;
-            this.future = future;
+            this.nextFireTimeMs = nextFireTimeMs;
             this.precheckRunnable = precheck;
             this.postcheckRunnable = postcheck;
             this.pausedRunnable = paused;
             this.conditionalCallbacks = callbacks;
             this.originalDelayMs = delay;
             this.originalPeriodMs = period;
-
-            // For testing purposes:
             this.callingClass = callingClass;
             this.callingMethodName = callingMethodName;
         }
 
+        /**
+         * Called every server tick by the global loop.
+         * Fires the task if {@code now >= nextFireTimeMs} and reschedules the
+         * next fire time using the current time scale for time-bound tasks.
+         *
+         * @param now {@code System.currentTimeMillis()} captured once per tick
+         */
+        void tick(long now) {
+            if (cancelled.get() || now < nextFireTimeMs) return;
+
+            if (timeBound && (PAUSE_ALL.get() || paused)) {
+                if (pausedRunnable != null) pausedRunnable.run();
+                scheduleNextFire(now);
+                return;
+            }
+
+            if (precheckRunnable != null) precheckRunnable.run();
+
+            for (PredicateRunnablePair callback : conditionalCallbacks) {
+                if (callback.testAndAccept()) {
+                    cancel();
+                    return;
+                }
+            }
+
+            if (postcheckRunnable != null) postcheckRunnable.run();
+            scheduleNextFire(now);
+        }
+
+        private void scheduleNextFire(long now) {
+            long effectivePeriod = timeBound
+                ? Math.max(1L, (long) (originalPeriodMs / GLOBAL_TIME_SCALE))
+                : originalPeriodMs;
+            nextFireTimeMs = now + effectivePeriod;
+        }
+
+        /** Pauses this task (time-bound tasks only — runs {@code pausedRunnable} instead). */
         public void pause() {
             paused = true;
         }
+
+        /** Resumes a paused task. */
         public void resume() {
             paused = false;
         }
+
+        /**
+         * Cancels this task. The global tick will remove it from the registered
+         * list on the next pass.
+         *
+         * @return {@code true} if this call performed the cancellation
+         */
         public boolean cancel() {
-            boolean successfullyCanceled = false;
-            try {
-                successfullyCanceled = cancelled.compareAndSet(false, true) && future.cancel(true);
-            } catch (RuntimeException e) {
-                Sword.getInstance().getLogger().warning("Error when canceling a TaskHandler: " + e);
+            boolean ok = cancelled.compareAndSet(false, true);
+            if (ok) {
+                Debug.system("cancel task [" + taskID + "] from "
+                    + callingClass.getSimpleName() + "." + callingMethodName);
+                cleanupTask(taskID);
             }
-
-            Debug.system("cancel task [" + taskID + "] ok=" + successfullyCanceled
-                + " from " + callingClass.getSimpleName() + "." + callingMethodName);
-
-            cleanupTask(taskID);
-
-            return successfullyCanceled;
+            return ok;
         }
+
+        /**
+         * Returns whether this task has been cancelled.
+         *
+         * @return {@code true} if cancelled
+         */
         public boolean isCancelled() {
             return cancelled.get();
         }
-
-        public void rescheduleFuture() {
-            if (!cancelled.get()) {
-                future.cancel(false);  // Stop old future
-            }
-            scheduleTaskFuture(this);
-            setMarkedToRestart(false);
-        }
     }
 
-    /**
-     * Internal method to create tasks (used by constructor and recreation)
-     */
+    // ── Internal task creation ─────────────────────────────────────────────────
+
     private static TaskHandle createTask(boolean timeBound,
                                          Runnable precheck, Runnable postcheck,
                                          Runnable paused, PredicateRunnablePair[] callbacks,
@@ -216,11 +287,14 @@ public final class TimeArbiter {
         Debug.system("create task [" + taskID + "] from "
             + callingClass.getSimpleName() + "." + callingMethodName);
 
-        TaskHandle handle = new TaskHandle(taskID, timeBound,
-            null, precheck, postcheck, paused, callbacks, delayMs, periodMs,
+        double scale = timeBound ? GLOBAL_TIME_SCALE : 1.0;
+        long firstFireMs = System.currentTimeMillis() + (long) (delayMs / scale);
+
+        TaskHandle handle = new TaskHandle(taskID, timeBound, firstFireMs,
+            precheck, postcheck, paused, callbacks, delayMs, periodMs,
             callingClass, callingMethodName);
 
-        scheduleTaskFuture(handle);
+        REGISTERED_TASKS.add(handle);
 
         if (timeBound) {
             TIME_BOUND_TASKS.put(taskID, handle);
@@ -230,50 +304,26 @@ public final class TimeArbiter {
         return handle;
     }
 
-    private static void scheduleTaskFuture(TaskHandle handle) {
-
-        int effectivePeriod = handle.timeBound ?
-            (int) (Math.max(1, handle.originalPeriodMs / GLOBAL_TIME_SCALE)) :
-            handle.originalPeriodMs;
-
-        handle.future = Sword.getScheduler().scheduleAtFixedRate(() ->
-                Bukkit.getScheduler().runTask(Sword.getInstance(), () -> {
-                    if (handle.isMarkedToRestart()) {
-                        int newPeriod = (int) (handle.originalPeriodMs / GLOBAL_TIME_SCALE);
-                        if (effectivePeriod != newPeriod) {
-                            processRestartRequest(handle.taskID, handle.timeBound);
-                            return;
-                        }
-                        else {
-                            handle.setMarkedToRestart(false);
-                        }
-                    }
-                    if (handle.cancelled.get()) return;
-                    if (handle.timeBound && (PAUSE_ALL.get() || handle.paused)) {
-                        if (handle.pausedRunnable != null) handle.pausedRunnable.run();
-                        return;
-                    }
-
-                    if (handle.precheckRunnable != null) handle.precheckRunnable.run();
-
-                    for (PredicateRunnablePair callback : handle.conditionalCallbacks) {
-                        if (callback.testAndAccept()) {
-                            handle.cancel();
-                            cleanupTask(handle.taskID);
-                            return;
-                        }
-                    }
-
-                    if (handle.postcheckRunnable != null) handle.postcheckRunnable.run();
-                }),
-            (int) (handle.originalDelayMs / GLOBAL_TIME_SCALE),
-            (int) (Math.max(1, handle.originalPeriodMs / GLOBAL_TIME_SCALE)),
-            TimeUnit.MILLISECONDS
-        );
+    private static void cleanupTask(int taskId) {
+        if (TIME_BOUND_TASKS.remove(taskId) == null)
+            TIME_INDEPENDENT_TASKS.remove(taskId);
     }
 
+    // ── Public factory methods ─────────────────────────────────────────────────
+
     /**
-     * Public factory method
+     * Registers a repeating task that is affected by the global time scale.
+     * Supports pause/resume via {@code pausedRunnable}.
+     *
+     * @param precheckRunnable    runs before condition checks each fire; may be null
+     * @param postcheckRunnable   runs after condition checks each fire; may be null
+     * @param pausedRunnable      runs instead of the normal body when paused; may be null
+     * @param delayMs             initial delay in milliseconds before the first fire
+     * @param periodMs            repeat interval in milliseconds
+     * @param callingClass        class registering this task (for debug logging)
+     * @param callingMethodName   method registering this task (for debug logging)
+     * @param conditionalCallbacks auto-cancel conditions checked each fire
+     * @return a {@link TaskHandle} that can be paused, resumed, or cancelled
      */
     public static TaskHandle runTimeBoundBukkitTaskOnTimer(@Nullable Runnable precheckRunnable,
                                                            @Nullable Runnable postcheckRunnable,
@@ -287,6 +337,18 @@ public final class TimeArbiter {
             conditionalCallbacks, delayMs, periodMs, callingClass, callingMethodName);
     }
 
+    /**
+     * Registers a repeating task that is <em>not</em> affected by the global time scale.
+     *
+     * @param precheckRunnable    runs before condition checks each fire; may be null
+     * @param postcheckRunnable   runs after condition checks each fire; may be null
+     * @param delayMs             initial delay in milliseconds before the first fire
+     * @param periodMs            repeat interval in milliseconds
+     * @param callingClass        class registering this task (for debug logging)
+     * @param callingMethod       method registering this task (for debug logging)
+     * @param conditionalCallbacks auto-cancel conditions checked each fire
+     * @return a {@link TaskHandle} that can be cancelled
+     */
     public static TaskHandle runTimeIndependentBukkitTaskOnTimer(@Nullable Runnable precheckRunnable,
                                                                  @Nullable Runnable postcheckRunnable,
                                                                  int delayMs,
@@ -298,6 +360,20 @@ public final class TimeArbiter {
             conditionalCallbacks, delayMs, periodMs, callingClass, callingMethod);
     }
 
+    /**
+     * Registers a repeating task that automatically cancels after {@code maxIterations} fires.
+     *
+     * @param precheckRunnable     runs before condition checks each fire; may be null
+     * @param postcheckRunnable    runs after condition checks each fire; may be null
+     * @param delayMs              initial delay in milliseconds
+     * @param periodMs             repeat interval in milliseconds
+     * @param maxIterations        maximum number of times to fire before auto-cancel
+     * @param callingClass         class registering this task
+     * @param callingMethod        method registering this task
+     * @param lastIterationCallback runs on the final iteration; may be null
+     * @param conditionalCallbacks  additional auto-cancel conditions
+     * @return a {@link TaskHandle} that can be cancelled early
+     */
     @SuppressWarnings("all")
     public static TaskHandle runFixedIterationTaskTimer(@Nullable Runnable precheckRunnable,
                                                         @Nullable Runnable postcheckRunnable,
@@ -320,8 +396,8 @@ public final class TimeArbiter {
         return createTask(
             false,
             () -> {
-            if (precheckRunnable != null) precheckRunnable.run();
-            iteration[0]++;
+                if (precheckRunnable != null) precheckRunnable.run();
+                iteration[0]++;
             },
             postcheckRunnable, null,
             endPredicates,
@@ -330,32 +406,53 @@ public final class TimeArbiter {
         );
     }
 
-    private static void cleanupTask(int taskId) {
-        if (TIME_BOUND_TASKS.remove(taskId) == null)
-            TIME_INDEPENDENT_TASKS.remove(taskId);
-    }
+    // ── Lifecycle ─────────────────────────────────────────────────────────────
 
     /**
-     * Cancel all tasks (shutdown hook)
+     * Cancels all registered tasks and clears state. Called on plugin shutdown.
      */
     public static void shutdown() {
-        TIME_BOUND_TASKS.values().forEach(TaskHandle::cancel);
+        for (TaskHandle handle : REGISTERED_TASKS) {
+            handle.cancelled.set(true);
+        }
+        REGISTERED_TASKS.clear();
         TIME_BOUND_TASKS.clear();
+        TIME_INDEPENDENT_TASKS.clear();
     }
 
+    // ── Display / physics utilities ───────────────────────────────────────────
+
+    /**
+     * Sets the velocity of an entity. Exists as a central hook for future
+     * time-scale-aware velocity adjustment.
+     *
+     * @param entity   the entity to move
+     * @param velocity the velocity vector to apply
+     */
     public static void setVelocity(Entity entity, Vector velocity) {
         entity.setVelocity(velocity.clone());
         // TODO: find a way to lessen velocity while still getting the entity to the same spot if time is slowed down/sped up
     }
 
-    public static void teleportDisplay(Display display, Location destination, @Nullable Vector direction, int teleportDuration, Class<?> clazz, int lineNum) {
+    /**
+     * Teleports a display entity with a smooth teleport duration scaled by the global time scale.
+     *
+     * @param display           the display to teleport
+     * @param destination       target location
+     * @param direction         optional facing direction; if null the display keeps its current facing
+     * @param teleportDuration  base teleport duration (ms)
+     * @param clazz             calling class (for tracing)
+     * @param lineNum           calling line number (for tracing)
+     */
+    public static void teleportDisplay(Display display, Location destination, @Nullable Vector direction,
+                                       int teleportDuration, Class<?> clazz, int lineNum) {
         DisplayUtil.setSmoothTeleportDuration(display,
             teleportDuration == 0 ? 0 : Math.max(1, (int) (teleportDuration * GLOBAL_TELEPORT_DURATION_SCALING))
         );
         if (direction == null) {
             display.teleport(destination);
         } else {
-            destination.setDirection(direction); // doing in two lines just in case, I don't believe it affects it though.
+            destination.setDirection(direction);
             display.teleport(destination);
         }
     }
@@ -363,17 +460,17 @@ public final class TimeArbiter {
     private static final double TELEPORT_NORMALIZING_FACTOR = 3;
 
     /**
+     * Applies a transformation to a display entity with a duration scaled by the global time scale.
      *
-     * @param display the display affected
-     * @param transformation the new transformation to be applied
-     * @param transformDuration millisecond duration of teleport (will be converted to ticks in this method)
+     * @param display           the display to transform
+     * @param transformation    the new transformation
+     * @param transformDuration base duration in milliseconds
      */
     public static void setDisplayTransformation(Display display, Transformation transformation, int transformDuration) {
-        int effectiveDuration = transformDuration == 0 ? 0 :
-            (int) (SwordTimeUnit.millisToTicks(transformDuration) * TELEPORT_NORMALIZING_FACTOR * GLOBAL_TELEPORT_DURATION_SCALING);
+        int effectiveDuration = transformDuration == 0 ? 0
+            : (int) (SwordTimeUnit.millisToTicks(transformDuration) * TELEPORT_NORMALIZING_FACTOR * GLOBAL_TELEPORT_DURATION_SCALING);
 
         DisplayUtil.setInterpolationValues(display, 0, effectiveDuration);
-
         display.setTransformation(transformation);
     }
 }
