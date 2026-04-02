@@ -3,8 +3,6 @@ package btm.sword.listeners;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
-import btm.sword.utility.Debug;
-
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -28,6 +26,7 @@ import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.entity.impl.ThrowPhase;
 import btm.sword.system.input.InputType;
 import btm.sword.system.item.ItemClassifier;
+import btm.sword.utility.Debug;
 import btm.sword.utility.entity.InputUtil;
 import io.papermc.paper.event.player.PrePlayerAttackEntityEvent;
 
