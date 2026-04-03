@@ -4,7 +4,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.PriorityQueue;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
@@ -57,10 +62,84 @@ public final class TimeArbiter {
     /** Guards against re-entrant {@link #setGlobalTimeScale} calls. */
     public static boolean updatingTimeScale = false;
 
+    // We now don't even access the maps, so it does not matter if they are maps or have O(1) lookup
+    // we will just cancel a task internally, and if it's canceled, it'll clean itself up the next time it tries to run
+    // tasks will only schedule themselves one iteration out, and they will be placed into
+    // bucketed priority queues based on their next run time in epoch milliseconds.
     /** Lookup maps kept for O(1) cleanup by task ID. */
     private static final Map<Integer, TaskHandle> TIME_BOUND_TASKS = new ConcurrentHashMap<>();
     private static final Supplier<Boolean> PAUSE_ALL = () -> false;
     private static final Map<Integer, TaskHandle> TIME_INDEPENDENT_TASKS = new ConcurrentHashMap<>();
+
+
+
+    // private class for task bucket:
+    // contains a millisecond range,
+    // a Priority queue
+    // and a scheduled future object that runs at a specified rate
+    //        ^ result of calling Sword.getScheduler().scheduleAtFixedRate()
+
+    // TODO: move to a util class or smth.
+    private record Range(int low, int high) {
+        public boolean in(int val) {
+            return val > low && val <= high;
+        }
+    }
+
+    private class TaskHandleBucket {
+        private final TimeUnit timeUnit;
+        private final Range range;
+        private final PriorityQueue<TaskHandle> pq = new PriorityQueue<>();
+        private ScheduledFuture<?> scheduler;
+
+        public TaskHandleBucket(TimeUnit timeUnit, Range range) {
+            this.timeUnit = timeUnit;
+            this.range = range;
+        }
+
+        public TaskHandleBucket(Range range) {
+            this(TimeUnit.MILLISECONDS, range);
+        }
+
+        public void tick(long now) {
+            while (!pq.isEmpty()
+                && pq.peek().nextFireTimeMs < System.currentTimeMillis()) {
+                while (!pq.isEmpty() && pq.peek() == null) pq.poll();
+                if (pq.isEmpty()) return;
+                pq.poll().tick(now);
+            }
+        }
+
+        public void begin() {
+            scheduler = Sword.getScheduler().scheduleAtFixedRate(
+                () -> tick(System.currentTimeMillis()),
+                0, range.low, timeUnit
+            );
+        }
+    }
+
+
+
+    private static final Range R_1MS_5MS = new Range(1, 5);
+    private static final PriorityQueue<TaskHandle> TASK_QUEUE_1MS_5MS = new PriorityQueue<>();
+
+    private static final Range R_5MS_25MS = new Range(1, 5);
+    private static final PriorityQueue<TaskHandle> TASK_QUEUE_5MS_25MS = new PriorityQueue<>();
+
+    private static final Range R_25MS_100MS = new Range(1, 5);
+    private static final PriorityQueue<TaskHandle> TASK_QUEUE_25MS_100MS = new PriorityQueue<>();
+
+    private static final Range R_100MS_1000MS = new Range(1, 5);
+    private static final PriorityQueue<TaskHandle> TASK_QUEUE_100MS_1000MS = new PriorityQueue<>();
+
+    private static final Range R_1S_5S = new Range(1, 5);
+    private static final PriorityQueue<TaskHandle> TASK_QUEUE_1S_5S = new PriorityQueue<>();
+
+    private static final Range R_5S_30S = new Range(1, 5);
+    private static final PriorityQueue<TaskHandle> TASK_QUEUE_5S_30S = new PriorityQueue<>();
+
+    private static final Range R_30S_PLUS = new Range(1, 5);
+    private static final PriorityQueue<TaskHandle> TASK_QUEUE_30S_PLUS = new PriorityQueue<>();
 
     private static final AtomicInteger TASK_COUNTER = new AtomicInteger();
 
@@ -82,7 +161,7 @@ public final class TimeArbiter {
             public void run() {
                 long now = System.currentTimeMillis();
                 REGISTERED_TASKS.removeIf(handle -> {
-                    if (handle.isCancelled()) return true;
+                    if (handle == null || handle.isCancelled()) return true;
                     handle.tick(now);
                     return handle.isCancelled();
                 });
@@ -171,6 +250,9 @@ public final class TimeArbiter {
         /** Absolute epoch-ms at which this task should next fire. */
         private long nextFireTimeMs;
 
+        // TODO: need to have a calculation for get time remaining so that when tasks are re-scheduled
+        //  we don't immediately schedule all tasks, and keep the time spacing of task scheduling
+        //  uniform across time scales.
         @Getter
         private volatile boolean paused = false;
         private final AtomicBoolean cancelled = new AtomicBoolean(false);
