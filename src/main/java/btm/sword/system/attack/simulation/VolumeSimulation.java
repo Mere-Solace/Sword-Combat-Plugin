@@ -119,11 +119,11 @@ public final class VolumeSimulation {
                 .translate(snap.center())
                 .rotateY((float) Math.toRadians(snap.yaw()));
 
-            attack.getTrajectory().sample(t, worldTransform, attack.getVolumeOutput());
+            attack.getTrajectory().sample(t, worldTransform, attack.getVolume());
             spatialGrid.insert(
                 attack.getAttackerUuid(),
-                attack.getVolumeOutput().aabbMin,
-                attack.getVolumeOutput().aabbMax
+                attack.getVolume().aabbMin,
+                attack.getVolume().aabbMax
             );
         }
 
@@ -142,13 +142,13 @@ public final class VolumeSimulation {
                 if (attack == null) continue;
                 if (!attack.getHitThisAttack().add(entityUuid)) continue;
 
-                if (!attack.getVolumeOutput().intersects(snap.min(), snap.max())) {
+                if (!attack.getVolume().intersects(snap.min(), snap.max())) {
                     attack.getHitThisAttack().remove(entityUuid);
                     continue;
                 }
 
-                Vector3f contact = new Vector3f(attack.getVolumeOutput().aabbMin)
-                    .add(attack.getVolumeOutput().aabbMax).mul(0.5f);
+                Vector3f contact = new Vector3f(attack.getVolume().aabbMin)
+                    .add(attack.getVolume().aabbMax).mul(0.5f);
 
                 CollisionEventBridge.INSTANCE.post(
                     new CollisionEvent(attack.getAttackerUuid(), entityUuid, contact, attack.getHitValue())
