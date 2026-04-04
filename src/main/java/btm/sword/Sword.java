@@ -27,6 +27,7 @@ import btm.sword.listeners.packet.EntityPacketListener;
 import btm.sword.listeners.packet.MovementListener;
 import btm.sword.system.action.throwing.InteractiveItemArbiter;
 import btm.sword.system.action.throwing.ProjectileManager;
+import btm.sword.system.attack.simulation.CollisionEventBridge;
 import btm.sword.system.control.TimeArbiter;
 import btm.sword.system.display.BossBarManager;
 import btm.sword.system.display.ScoreboardManager;
@@ -103,6 +104,14 @@ public final class Sword extends JavaPlugin {
         SwordEntityArbiter.registerAllExistingEntities();
 
         TimeArbiter.beginAll();
+
+        // Drain simulation collision events to the main thread every tick
+        TimeArbiter.runTimeIndependentBukkitTaskOnTimer(
+            null,
+            CollisionEventBridge.INSTANCE::drainToMain,
+            0, 50,
+            Sword.class, "collisionEventDrain"
+        );
 
         // Start the standalone projectile tick loop (does not affect FSM-driven projectiles)
         ProjectileManager.startTicking();

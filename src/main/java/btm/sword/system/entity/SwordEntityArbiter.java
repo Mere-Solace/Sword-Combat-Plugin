@@ -114,6 +114,19 @@ public final class SwordEntityArbiter {
     }
 
     /**
+     * Gets the {@link SwordEntity} associated with the given {@link UUID} directly,
+     * without requiring a Bukkit {@link org.bukkit.entity.LivingEntity} reference.
+     * Prefers online players over NPCs.
+     *
+     * @param uuid the UUID to look up
+     * @return the SwordEntity, or {@code null} if none is registered for that UUID
+     */
+    public static SwordEntity getByUuid(UUID uuid) {
+        SwordEntity player = ONLINE_SWORD_PLAYERS.get(uuid);
+        return player != null ? player : EXISTING_SWORD_NPCS.get(uuid);
+    }
+
+    /**
      * Gets the {@link SwordEntity} for the specified UUID,
      * registering and initializing it if it does not already exist.
      *
