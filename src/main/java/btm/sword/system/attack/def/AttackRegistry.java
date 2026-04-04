@@ -3,6 +3,11 @@ package btm.sword.system.attack.def;
 import java.io.File;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.file.YamlConfiguration;
+
+import btm.sword.utility.Debug;
+
 /**
  * Global registry of all named {@link AttackDef}s.
  *
@@ -39,12 +44,23 @@ public final class AttackRegistry {
 
     /**
      * Bulk-loads attack definitions from {@code attacks.yml} and registers them all.
-     * Existing entries with matching ids are replaced.
+     * Existing entries with matching ids are replaced. Malformed entries are skipped
+     * with a warning rather than aborting the whole load.
      *
      * @param attacksYml the YAML file to load from
-     * @todo #319 — implement once AttackDefSerializer is built
      */
     public static void loadAll(File attacksYml) {
-        // TODO: #319 — delegate to AttackDefSerializer once implemented
+        YamlConfiguration yaml = YamlConfiguration.loadConfiguration(attacksYml);
+        ConfigurationSection attacks = yaml.getConfigurationSection("attacks");
+        if (attacks == null) return;
+        for (String id : attacks.getKeys(false)) {
+            ConfigurationSection section = attacks.getConfigurationSection(id);
+            if (section == null) continue;
+            try {
+                register(AttackDefSerializer.load(section, id));
+            } catch (Exception e) {
+                Debug.system("AttackRegistry: failed to load attack '" + id + "': " + e.getMessage());
+            }
+        }
     }
 }

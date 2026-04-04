@@ -35,6 +35,15 @@ public final class SweepTrajectory implements VolumeTrajectory {
     }
 
     /**
+     * Returns the sweep curve this trajectory evaluates.
+     *
+     * @return the sweep curve
+     */
+    public SweepCurve getCurve() {
+        return curve;
+    }
+
+    /**
      * {@inheritDoc}
      *
      * @param out must be a {@link CapsuleVolume}

@@ -38,6 +38,15 @@ public final class KeyframedTrajectory implements VolumeTrajectory {
     }
 
     /**
+     * Returns the immutable keyframe list.
+     *
+     * @return keyframes in order
+     */
+    public List<VolumeKeyframe> getKeyframes() {
+        return keyframes;
+    }
+
+    /**
      * {@inheritDoc}
      *
      * @param out must be an {@link ObbVolume}
