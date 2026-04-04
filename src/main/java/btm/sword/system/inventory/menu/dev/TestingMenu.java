@@ -229,10 +229,15 @@ public class TestingMenu extends Menu {
 
         SimpleItem testVolumeAttackItem = new SimpleItem(
             new ItemStackBuilder(Material.BLAZE_ROD)
-                .name(Component.text("Test Volume Attack Item", NamedTextColor.RED, TextDecoration.BOLD))
+                .name(Component.text("Attack Volume Test", NamedTextColor.RED, TextDecoration.BOLD))
                 .lore(List.of(
-                    Component.text("Left-click to trigger test_volume_attack", NamedTextColor.DARK_GRAY),
-                    Component.text("Tests the VolumeSimulation + AttackDef pipeline", NamedTextColor.DARK_GRAY)
+                    Component.text("Triggers ", NamedTextColor.GRAY)
+                        .append(Component.text("test_volume_attack", NamedTextColor.RED))
+                        .append(Component.text(" on left click", NamedTextColor.GRAY)),
+                    Component.text("600ms OBB sweep — 1–2 blocks in front", NamedTextColor.DARK_GRAY),
+                    Component.empty(),
+                    Component.text("Requires a nearby Dummy or SwordPlayer", NamedTextColor.DARK_GRAY)
+                        .decorate(TextDecoration.ITALIC)
                 ))
                 .build(),
             click -> {

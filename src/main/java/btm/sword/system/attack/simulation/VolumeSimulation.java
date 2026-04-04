@@ -115,9 +115,10 @@ public final class VolumeSimulation {
                 EntitySnapshotMap.INSTANCE.get(attack.getAttackerUuid());
             if (snap == null) continue;
 
+            // Minecraft yaw is clockwise from south; negate for JOML's counter-clockwise rotateY
             Matrix4f worldTransform = new Matrix4f()
                 .translate(snap.center())
-                .rotateY((float) Math.toRadians(snap.yaw()));
+                .rotateY(-(float) Math.toRadians(snap.yaw()));
 
             attack.getTrajectory().sample(t, worldTransform, attack.getVolume());
             spatialGrid.insert(
