@@ -145,6 +145,12 @@ public class TogglesMenu extends Menu {
             () -> Config.Debug.LOGGING_VERBOSE_THROWING = !Config.Debug.LOGGING_VERBOSE_THROWING
         );
 
+        SimpleItem verboseAttackVolume = toggle(
+            "Attack Volume (sim / hits)",
+            () -> Config.Debug.LOGGING_VERBOSE_ATTACK_VOLUME,
+            () -> Config.Debug.LOGGING_VERBOSE_ATTACK_VOLUME = !Config.Debug.LOGGING_VERBOSE_ATTACK_VOLUME
+        );
+
         @SuppressWarnings("unchecked")
         Config.ConfigEntry<Boolean> skipLoadEntry = (Config.ConfigEntry<Boolean>) Config.ENTRIES.stream()
             .filter(e -> e.path().equals("debug.skip_data_load"))
@@ -202,9 +208,9 @@ public class TogglesMenu extends Menu {
         Gui gui = Gui.normal()
             .setStructure(
                 "# # # # # # # # #",
-                "# A B C D E P Q #",
-                "# F G H I J K R #",
-                "# S T U L M N O #",
+                "# A B C D E P Q V",
+                "# F G H I J K R .",
+                "# S T U L M N O .",
                 "< # # # # # # # #")
             .addIngredient('#', BORDER)
             .addIngredient('A', verboseDebug)
@@ -228,6 +234,7 @@ public class TogglesMenu extends Menu {
             .addIngredient('M', skipSave)
             .addIngredient('N', freshProfile)
             .addIngredient('O', resetJoin)
+            .addIngredient('V', verboseAttackVolume)
             .addIngredient('<', generatePreviousButtonOrDefault())
             .build();
 

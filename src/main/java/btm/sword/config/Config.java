@@ -2851,6 +2851,14 @@ public final class Config {
             v -> LOGGING_VERBOSE_THROWING = v,
             ConfigurationSection::getBoolean); }
 
+        /** Log AttackDef volume simulation: launch, per-hit confirmation, and attack expiry. */
+        public static boolean LOGGING_VERBOSE_ATTACK_VOLUME = false;
+        static { register(
+            "debug.logging_verbose_attack_volume",
+            LOGGING_VERBOSE_ATTACK_VOLUME, Boolean.class,
+            v -> LOGGING_VERBOSE_ATTACK_VOLUME = v,
+            ConfigurationSection::getBoolean); }
+
         // Visualization configuration
         public static boolean VISUALIZATION_SHOW_HITBOXES = false;
         static { register(

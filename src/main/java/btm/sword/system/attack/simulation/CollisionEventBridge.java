@@ -7,6 +7,7 @@ import org.bukkit.util.Vector;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.impl.Combatant;
+import btm.sword.utility.Debug;
 
 /**
  * Thread-safe bridge delivering {@link CollisionEvent}s from the off-thread
@@ -53,9 +54,19 @@ public final class CollisionEventBridge {
             SwordEntity attacker = SwordEntityArbiter.getByUuid(event.attackerUuid());
             SwordEntity victim = SwordEntityArbiter.getByUuid(event.victimUuid());
 
-            if (attacker == null || victim == null) continue;
-            if (!(attacker instanceof Combatant combatant)) continue;
+            if (attacker == null || victim == null) {
+                Debug.attackVolume("DRAIN skip — entity not found: attacker=" + event.attackerUuid() + " victim=" + event.victimUuid());
+                continue;
+            }
+            if (!(attacker instanceof Combatant combatant)) {
+                Debug.attackVolume("DRAIN skip — attacker is not a Combatant: " + event.attackerUuid());
+                continue;
+            }
 
+            Debug.attackVolume("HIT_DISPATCH attacker=" + combatant.self().getName()
+                + " victim=" + victim.self().getName()
+                + " shards=" + event.hitValue().shardDamage()
+                + " toughness=" + event.hitValue().toughnessDamage());
             victim.hit(combatant, event.hitValue(), ZERO_KNOCKBACK);
         }
     }

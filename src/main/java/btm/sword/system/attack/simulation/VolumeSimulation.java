@@ -126,6 +126,11 @@ public final class VolumeSimulation {
                 attack.getVolume().aabbMin,
                 attack.getVolume().aabbMax
             );
+
+            Debug.attackVolume("TICK t=" + String.format("%.2f", t)
+                + " aabbMin=" + fmtVec(attack.getVolume().aabbMin)
+                + " aabbMax=" + fmtVec(attack.getVolume().aabbMax)
+                + " entities_in_map=" + EntitySnapshotMap.INSTANCE.entrySet().size());
         }
 
         // ── Narrow phase ─────────────────────────────────────────────────────
@@ -151,6 +156,11 @@ public final class VolumeSimulation {
                 Vector3f contact = new Vector3f(attack.getVolume().aabbMin)
                     .add(attack.getVolume().aabbMax).mul(0.5f);
 
+                Debug.attackVolume("NARROW_HIT attacker=" + attack.getAttackerUuid()
+                    + " victim=" + entityUuid
+                    + " victimAABB=[" + fmtVec(snap.min()) + " → " + fmtVec(snap.max()) + "]"
+                    + " volAABB=[" + fmtVec(attack.getVolume().aabbMin) + " → " + fmtVec(attack.getVolume().aabbMax) + "]");
+
                 CollisionEventBridge.INSTANCE.post(
                     new CollisionEvent(attack.getAttackerUuid(), entityUuid, contact, attack.getHitValue())
                 );
@@ -162,10 +172,16 @@ public final class VolumeSimulation {
             activeAttacks.removeAll(finished);
             for (SimulationAttack attack : finished) {
                 attackByOwner.remove(attack.getAttackerUuid());
+                Debug.attackVolume("EXPIRE attacker=" + attack.getAttackerUuid()
+                    + " hits=" + attack.getHitThisAttack().size());
                 if (attack.getOnEnd() != null) {
                     Bukkit.getScheduler().runTask(Sword.getInstance(), attack.getOnEnd());
                 }
             }
         }
+    }
+
+    private static String fmtVec(Vector3f v) {
+        return String.format("(%.2f,%.2f,%.2f)", v.x, v.y, v.z);
     }
 }

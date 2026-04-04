@@ -639,6 +639,11 @@ public abstract class Combatant extends SwordEntity {
         currentAttack = new ActiveAttack(def, uuid, startMs, hitThisAttack);
         isAttacking = true;
 
+        Debug.attackVolume("LAUNCH id=" + def.getId()
+            + " owner=" + self().getName()
+            + " duration=" + def.getDurationMs() + "ms"
+            + " type=" + def.getType());
+
         SimulationAttack simAttack = new SimulationAttack(
             uuid,
             def.getTrajectory(),
@@ -657,6 +662,9 @@ public abstract class Combatant extends SwordEntity {
      * Clears the active attack state.
      */
     protected void onAttackEnd() {
+        Debug.attackVolume("END id=" + (currentAttack != null ? currentAttack.def().getId() : "?")
+            + " owner=" + self().getName()
+            + " hits=" + (currentAttack != null ? currentAttack.hitThisAttack().size() : 0));
         currentAttack = null;
         isAttacking = false;
     }
