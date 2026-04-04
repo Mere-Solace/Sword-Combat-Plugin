@@ -27,6 +27,7 @@ import btm.sword.listeners.packet.EntityPacketListener;
 import btm.sword.listeners.packet.MovementListener;
 import btm.sword.system.action.throwing.InteractiveItemArbiter;
 import btm.sword.system.action.throwing.ProjectileManager;
+import btm.sword.system.control.TimeArbiter;
 import btm.sword.system.display.BossBarManager;
 import btm.sword.system.display.ScoreboardManager;
 import btm.sword.system.entity.SwordEntityArbiter;
@@ -99,6 +100,8 @@ public final class Sword extends JavaPlugin {
         // Catch and register all entities whose data is already cached by the server
         SwordEntityArbiter.registerAllExistingEntities();
 
+        TimeArbiter.beginAll();
+
         // Start the standalone projectile tick loop (does not affect FSM-driven projectiles)
         ProjectileManager.startTicking();
 
@@ -162,6 +165,7 @@ public final class Sword extends JavaPlugin {
         MenuSlotGrid.releaseAll();
 
         PlayerDataManager.shutdown();
+        TimeArbiter.shutdown();
 
         getLogger().info("~ Sword: Combat Evolved has been disabled ~");
     }
