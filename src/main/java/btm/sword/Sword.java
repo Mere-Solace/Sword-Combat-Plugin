@@ -42,6 +42,7 @@ import btm.sword.system.join.ServerJoinArbiter;
 import btm.sword.system.playerdata.PlayerDataManager;
 import btm.sword.system.scene.FakePlayerManager;
 import btm.sword.system.scene.animation.AnimationRegistry;
+import btm.sword.utility.Debug;
 import io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import lombok.Getter;
@@ -73,6 +74,7 @@ public final class Sword extends JavaPlugin {
         ConfigManager.initialize(this);
         // load in values from the config file to override the defaults from the Config class
         ConfigManager.getInstance().loadConfig();
+        Debug.init(getDataFolder());
 
         InvUI.getInstance().setPlugin(this);
 

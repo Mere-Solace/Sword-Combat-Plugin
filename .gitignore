@@ -147,3 +147,6 @@ jdk-*/
 .sdkmanrc
 
 bb/
+
+# Local dev player names — never commit
+devnames.txt

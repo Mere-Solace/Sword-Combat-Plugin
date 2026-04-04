@@ -1,5 +1,9 @@
 package btm.sword.utility;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.bukkit.Bukkit;
@@ -18,8 +22,8 @@ import btm.sword.utility.math.VectorUtil;
 /**
  * Centralized debug utility. Each category maps to a {@link Config.Debug} flag and a DevMenu toggle.
  * <p>
- * All methods log to the server console and, if online, send a chat message to the dev player
- * ({@code BladeSworn}). Caller class and line number are captured automatically via
+ * All methods log to the server console and, if online, send a chat message to each player
+ * listed in {@code devnames.txt} (plugin data folder). Caller class and line number are captured automatically via
  * {@link StackWalker} — no need to pass them manually.
  * </p>
  *
@@ -45,6 +49,8 @@ public final class Debug {
 
     private Debug() {}
 
+    private static final List<String> DEV_NAMES = new ArrayList<>();
+
     private static final StackWalker WALKER =
         StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);
 
@@ -53,6 +59,29 @@ public final class Debug {
      * always returns {@code false}, letting devs freely move special items for testing.
      */
     public static boolean SPECIAL_ITEM_CHECKS_ENABLED = true;
+
+    /**
+     * Loads the list of dev player names from {@code devnames.txt} in the plugin data folder.
+     * One name per line; lines beginning with {@code #} and blank lines are ignored.
+     * Safe to call on reload — clears the previous list first.
+     *
+     * @param dataFolder the plugin's data folder ({@link org.bukkit.plugin.Plugin#getDataFolder()})
+     */
+    public static void init(File dataFolder) {
+        DEV_NAMES.clear();
+        File file = new File(dataFolder, "devnames.txt");
+        if (!file.exists()) return;
+        try {
+            for (String entry : Files.readAllLines(file.toPath())) {
+                entry = entry.strip();
+                if (!entry.isEmpty() && !entry.startsWith("#")) {
+                    DEV_NAMES.add(entry);
+                }
+            }
+        } catch (IOException e) {
+            Sword.print("[Debug] Failed to read devnames.txt: " + e.getMessage());
+        }
+    }
 
     // =========================================================================
     // Category methods
@@ -223,9 +252,11 @@ public final class Debug {
         String line = "[" + tag + "][" + location + "] " + message;
         Sword.print(line);
 
-        Player dev = Bukkit.getPlayer("BladeSworn");
-        if (dev != null && dev.isValid()) {
-            dev.sendMessage(line);
+        for (String devName : DEV_NAMES) {
+            Player dev = Bukkit.getPlayer(devName);
+            if (dev != null && dev.isValid()) {
+                dev.sendMessage(line);
+            }
         }
     }
 }
