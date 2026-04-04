@@ -74,7 +74,8 @@ public final class AttackDef {
         private int durationMs;
         private VolumeTrajectory trajectory;
         private HitValuePacket hitValue;
-        private BiFunction<Vector3f, SwordEntity, Vector3f> knockbackFunction = (contact, src) -> new Vector3f();
+        private BiFunction<Vector3f, SwordEntity, Vector3f> knockbackFunction =
+            (contact, src) -> new Vector3f();
 
         /**
          * @param id unique attack identifier; must not be null or empty

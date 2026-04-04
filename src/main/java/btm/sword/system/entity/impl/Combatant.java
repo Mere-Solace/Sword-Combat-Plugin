@@ -1,5 +1,8 @@
 package btm.sword.system.entity.impl;
 
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 import org.bukkit.Location;
@@ -15,6 +18,10 @@ import btm.sword.config.Config;
 import btm.sword.system.action.ActionCaster;
 import btm.sword.system.action.movement.MovementAction;
 import btm.sword.system.action.throwing.types.ThrownItem;
+import btm.sword.system.attack.ActiveAttack;
+import btm.sword.system.attack.def.AttackDef;
+import btm.sword.system.attack.simulation.SimulationAttack;
+import btm.sword.system.attack.simulation.VolumeSimulation;
 import btm.sword.system.control.PredicateRunnablePair;
 import btm.sword.system.control.SwordScheduler;
 import btm.sword.system.control.TimeArbiter;
@@ -48,6 +55,9 @@ import lombok.Setter;
 @Setter
 public abstract class Combatant extends SwordEntity {
     private BukkitTask abilityCastTask = null;
+
+    private ActiveAttack currentAttack = null;
+    private boolean isAttacking = false;
 
     private int airDashesPerformed;
     protected Vector dashDirection;
@@ -591,5 +601,63 @@ public abstract class Combatant extends SwordEntity {
     public boolean canPerformShadowBlink() {
         return canPerformAction() &&
             (getUmbralBlade().inState(LodgedState.class));
+    }
+
+    /**
+     * Returns the currently active {@link ActiveAttack}, or {@code null} if no
+     * {@link AttackDef}-driven attack is in progress.
+     *
+     * @return current active attack, or {@code null}
+     */
+    public ActiveAttack getCurrentAttack() {
+        return currentAttack;
+    }
+
+    /**
+     * Returns {@code true} if an {@link AttackDef}-driven attack is currently running.
+     *
+     * @return {@code true} while an attack is active
+     */
+    public boolean isAttacking() {
+        return isAttacking;
+    }
+
+    /**
+     * Launches an {@link AttackDef}-driven attack for this combatant.
+     *
+     * <p>Builds a shared {@code hitThisAttack} set, records the game-layer
+     * {@link ActiveAttack}, and registers a {@link SimulationAttack} with
+     * {@link VolumeSimulation} to begin the 200 Hz collision loop.
+     * {@link #onAttackEnd()} is posted back to the main thread when the attack expires.</p>
+     *
+     * @param def the attack definition to execute
+     */
+    public void launchAttackDef(AttackDef def) {
+        long startMs = System.currentTimeMillis();
+        Set<UUID> hitThisAttack = ConcurrentHashMap.newKeySet();
+
+        currentAttack = new ActiveAttack(def, uuid, startMs, hitThisAttack);
+        isAttacking = true;
+
+        SimulationAttack simAttack = new SimulationAttack(
+            uuid,
+            def.getTrajectory(),
+            def.createVolume(),
+            startMs,
+            def.getDurationMs(),
+            def.getHitValue(),
+            hitThisAttack,
+            this::onAttackEnd
+        );
+        VolumeSimulation.INSTANCE.addAttack(simAttack);
+    }
+
+    /**
+     * Called on the main thread when the simulation attack expires.
+     * Clears the active attack state.
+     */
+    protected void onAttackEnd() {
+        currentAttack = null;
+        isAttacking = false;
     }
 }

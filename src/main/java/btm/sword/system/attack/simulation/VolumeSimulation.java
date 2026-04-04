@@ -22,10 +22,10 @@ import btm.sword.utility.Debug;
  * <p>
  * Runs at 200 Hz on a dedicated simulation thread. Each tick:
  * <ol>
- *   <li>Evaluates all {@link ActiveAttack} trajectories against the attacker's latest
+ *   <li>Evaluates all {@link SimulationAttack} trajectories against the attacker's latest
  *       {@link EntitySnapshotMap} snapshot to produce world-space volumes.</li>
  *   <li>Inserts volumes into a {@link SpatialGrid} for broad-phase culling.</li>
- *   <li>Queries the grid per entity, runs {@link VolumeOutput#intersects} for narrow-phase
+ *   <li>Queries the grid per entity, runs {@link Volume#intersects} for narrow-phase
  *       confirmation, and posts {@link CollisionEvent}s to {@link CollisionEventBridge}.</li>
  *   <li>Expires attacks whose normalized time has reached {@code 1.0} and posts their
  *       {@code onEnd} callbacks back to the main thread.</li>
@@ -49,9 +49,9 @@ public final class VolumeSimulation {
     });
 
     private final SpatialGrid spatialGrid = new SpatialGrid();
-    private final CopyOnWriteArrayList<ActiveAttack> activeAttacks = new CopyOnWriteArrayList<>();
+    private final CopyOnWriteArrayList<SimulationAttack> activeAttacks = new CopyOnWriteArrayList<>();
     /** O(1) lookup from attacker UUID to active attack for the narrow phase. */
-    private final ConcurrentHashMap<UUID, ActiveAttack> attackByOwner = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<UUID, SimulationAttack> attackByOwner = new ConcurrentHashMap<>();
 
     private VolumeSimulation() {}
 
@@ -84,7 +84,7 @@ public final class VolumeSimulation {
      *
      * @param attack the attack to register
      */
-    public void addAttack(ActiveAttack attack) {
+    public void addAttack(SimulationAttack attack) {
         activeAttacks.add(attack);
         attackByOwner.put(attack.getAttackerUuid(), attack);
     }
@@ -101,10 +101,10 @@ public final class VolumeSimulation {
         long now = System.currentTimeMillis();
         spatialGrid.clear();
 
-        List<ActiveAttack> finished = new ArrayList<>();
+        List<SimulationAttack> finished = new ArrayList<>();
 
         // ── Trajectory evaluation + broad phase ──────────────────────────────
-        for (ActiveAttack attack : activeAttacks) {
+        for (SimulationAttack attack : activeAttacks) {
             float t = (float) ((now - attack.getStartMs()) / (double) attack.getDurationMs());
             if (t >= 1.0f) {
                 finished.add(attack);
@@ -138,7 +138,7 @@ public final class VolumeSimulation {
             for (SpatialGrid.VolumeEntry candidate : candidates) {
                 if (candidate.ownerUuid().equals(entityUuid)) continue;
 
-                ActiveAttack attack = attackByOwner.get(candidate.ownerUuid());
+                SimulationAttack attack = attackByOwner.get(candidate.ownerUuid());
                 if (attack == null) continue;
                 if (!attack.getHitThisAttack().add(entityUuid)) continue;
 
@@ -159,7 +159,7 @@ public final class VolumeSimulation {
         // ── Expire finished attacks ───────────────────────────────────────────
         if (!finished.isEmpty()) {
             activeAttacks.removeAll(finished);
-            for (ActiveAttack attack : finished) {
+            for (SimulationAttack attack : finished) {
                 attackByOwner.remove(attack.getAttackerUuid());
                 if (attack.getOnEnd() != null) {
                     Bukkit.getScheduler().runTask(Sword.getInstance(), attack.getOnEnd());

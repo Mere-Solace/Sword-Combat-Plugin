@@ -8,6 +8,7 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.persistence.PersistentDataType;
 
 import btm.sword.config.Config;
 import btm.sword.gamemode.QueueManager;
@@ -21,6 +22,7 @@ import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.inventory.menu.Menu;
 import btm.sword.system.inventory.menu.PacketTestMenu;
 import btm.sword.system.item.ItemStackBuilder;
+import btm.sword.system.item.KeyRegistry;
 import btm.sword.system.item.weapon.WeaponType;
 import btm.sword.system.scene.DEUAnimationController;
 import btm.sword.system.scene.SceneManager;
@@ -225,11 +227,28 @@ public class TestingMenu extends Menu {
             }
         );
 
+        SimpleItem testVolumeAttackItem = new SimpleItem(
+            new ItemStackBuilder(Material.BLAZE_ROD)
+                .name(Component.text("Test Volume Attack Item", NamedTextColor.RED, TextDecoration.BOLD))
+                .lore(List.of(
+                    Component.text("Left-click to trigger test_volume_attack", NamedTextColor.DARK_GRAY),
+                    Component.text("Tests the VolumeSimulation + AttackDef pipeline", NamedTextColor.DARK_GRAY)
+                ))
+                .build(),
+            click -> {
+                ItemStack item = ItemStack.of(Material.BLAZE_ROD);
+                item.editPersistentDataContainer(pdc ->
+                    pdc.set(KeyRegistry.TEST_VOLUME_ATTACK_KEY, PersistentDataType.BOOLEAN, true));
+                player.getInventory().addItem(item);
+                swordPlayer.message(Component.text("Test volume attack item added to inventory.", NamedTextColor.GREEN));
+            }
+        );
+
         Gui gui = Gui.normal()
             .setStructure(
                 "# # # . . . # # #",
                 "# P X . F . B K #",
-                ". D . H . M . . .",
+                ". D . H . M . V .",
                 "# O . . . . . . #",
                 "< > # . . . # # #")
             .addIngredient('#', BORDER)
@@ -243,6 +262,7 @@ public class TestingMenu extends Menu {
             .addIngredient('H', hudOverrideTest)
             .addIngredient('M', smithingInteractionTest)
             .addIngredient('O', ctfStop)
+            .addIngredient('V', testVolumeAttackItem)
             .addIngredient('<', generatePreviousButtonOrDefault())
             .addIngredient('>', generateForwardPreviousButtonOrDefault())
             .build();

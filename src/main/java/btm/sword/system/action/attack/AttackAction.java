@@ -7,6 +7,7 @@ import org.bukkit.inventory.ItemStack;
 import btm.sword.config.Config;
 import btm.sword.system.action.SwordAction;
 import btm.sword.system.attack.SweepAttack;
+import btm.sword.system.attack.def.AttackRegistry;
 import btm.sword.system.attack.style.AttackProfile;
 import btm.sword.system.attack.style.AttackType;
 import btm.sword.system.attack.style.WeaponAttackStyle;
@@ -14,6 +15,7 @@ import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.impl.Combatant;
 import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.item.ItemUsageManager;
+import btm.sword.system.item.KeyRegistry;
 import btm.sword.utility.misc.ConsumerToConsumePair;
 
 
@@ -41,6 +43,12 @@ public class AttackAction extends SwordAction {
      */
     public static void basicAttack(Combatant executor, int comboStep) {
         ItemStack itemUsedInAttack = executor.getItemStackInHand(true);
+
+        if (KeyRegistry.hasKey(itemUsedInAttack, KeyRegistry.TEST_VOLUME_ATTACK_KEY)) {
+            executor.launchAttackDef(AttackRegistry.get("test_volume_attack"));
+            return;
+        }
+
         WeaponAttackStyle weaponAttackStyle = WeaponAttackStyle.fromString(itemUsedInAttack);
 
         if (weaponAttackStyle.equals(WeaponAttackStyle.PUNCH)) { // catch any untagged items and perform a punch with it
