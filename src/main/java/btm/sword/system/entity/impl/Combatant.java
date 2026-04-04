@@ -11,6 +11,8 @@ import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
 
@@ -639,6 +641,12 @@ public abstract class Combatant extends SwordEntity {
         currentAttack = new ActiveAttack(def, uuid, startMs, hitThisAttack);
         isAttacking = true;
 
+        // Damp XZ momentum and apply slow-falling for the attack window
+        Vector vel = self().getVelocity();
+        self().setVelocity(new Vector(vel.getX() * 0.3, vel.getY(), vel.getZ() * 0.3));
+        int durationTicks = def.getDurationMs() / 50;
+        self().addPotionEffect(new PotionEffect(PotionEffectType.SLOW_FALLING, durationTicks, 0, true, false));
+
         Debug.attackVolume("LAUNCH id=" + def.getId()
             + " owner=" + self().getName()
             + " duration=" + def.getDurationMs() + "ms"
@@ -665,6 +673,7 @@ public abstract class Combatant extends SwordEntity {
         Debug.attackVolume("END id=" + (currentAttack != null ? currentAttack.def().getId() : "?")
             + " owner=" + self().getName()
             + " hits=" + (currentAttack != null ? currentAttack.hitThisAttack().size() : 0));
+        self().removePotionEffect(PotionEffectType.SLOW_FALLING);
         currentAttack = null;
         isAttacking = false;
     }
