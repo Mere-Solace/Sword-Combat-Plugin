@@ -4,25 +4,22 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.PriorityQueue;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 import javax.annotation.Nullable;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Display;
 import org.bukkit.entity.Entity;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
-import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Transformation;
 import org.bukkit.util.Vector;
 
@@ -35,19 +32,21 @@ import btm.sword.utility.display.DisplayUtil;
 import lombok.Getter;
 
 
-// these methods provide a central location that every movement/speed call must go through
-
 /**
  * Central scheduling arbiter for all repeating Sword tasks.
  *
- * <p>All {@link TaskHandle} registrations are driven by a single global
- * {@link BukkitRunnable} that fires every server tick. This replaces the
- * previous per-task {@link java.util.concurrent.ScheduledExecutorService}
- * approach, which created ~200+ concurrent futures at runtime.</p>
+ * <p>Tasks are routed into one of seven {@link TaskHandleBucket}s based on their
+ * base period. Each bucket owns a {@link PriorityBlockingQueue} ordered by
+ * {@code nextFireTimeMs} and is driven by a {@link ScheduledFuture} on the shared
+ * async executor. When a bucket fires, it drains all due tasks into a single
+ * {@code Bukkit.runTask()} batch so task bodies always execute on the main thread.</p>
+ *
+ * <p>Bucket schedulers start lazily on the first {@link TaskHandleBucket#offer} and
+ * stop automatically when the queue empties, so idle buckets consume no executor
+ * resources.</p>
  *
  * <p>Time-bound tasks automatically apply {@link #GLOBAL_TIME_SCALE} to their
- * effective period on every fire — no rescheduling is needed when the scale
- * changes.</p>
+ * effective period on every fire — no rescheduling needed when the scale changes.</p>
  */
 public final class TimeArbiter {
 
@@ -62,118 +61,160 @@ public final class TimeArbiter {
     /** Guards against re-entrant {@link #setGlobalTimeScale} calls. */
     public static boolean updatingTimeScale = false;
 
-    // We now don't even access the maps, so it does not matter if they are maps or have O(1) lookup
-    // we will just cancel a task internally, and if it's canceled, it'll clean itself up the next time it tries to run
-    // tasks will only schedule themselves one iteration out, and they will be placed into
-    // bucketed priority queues based on their next run time in epoch milliseconds.
     /** Lookup maps kept for O(1) cleanup by task ID. */
     private static final Map<Integer, TaskHandle> TIME_BOUND_TASKS = new ConcurrentHashMap<>();
-    private static final Supplier<Boolean> PAUSE_ALL = () -> false;
     private static final Map<Integer, TaskHandle> TIME_INDEPENDENT_TASKS = new ConcurrentHashMap<>();
-
-
-
-    // private class for task bucket:
-    // contains a millisecond range,
-    // a Priority queue
-    // and a scheduled future object that runs at a specified rate
-    //        ^ result of calling Sword.getScheduler().scheduleAtFixedRate()
-
-    // TODO: move to a util class or smth.
-    private record Range(int low, int high) {
-        public boolean in(int val) {
-            return val > low && val <= high;
-        }
-    }
-
-    private class TaskHandleBucket {
-        private final TimeUnit timeUnit;
-        private final Range range;
-        private final PriorityQueue<TaskHandle> pq = new PriorityQueue<>();
-        private ScheduledFuture<?> scheduler;
-
-        public TaskHandleBucket(TimeUnit timeUnit, Range range) {
-            this.timeUnit = timeUnit;
-            this.range = range;
-        }
-
-        public TaskHandleBucket(Range range) {
-            this(TimeUnit.MILLISECONDS, range);
-        }
-
-        public void tick(long now) {
-            while (!pq.isEmpty()
-                && pq.peek().nextFireTimeMs < System.currentTimeMillis()) {
-                while (!pq.isEmpty() && pq.peek() == null) pq.poll();
-                if (pq.isEmpty()) return;
-                pq.poll().tick(now);
-            }
-        }
-
-        public void begin() {
-            scheduler = Sword.getScheduler().scheduleAtFixedRate(
-                () -> tick(System.currentTimeMillis()),
-                0, range.low, timeUnit
-            );
-        }
-    }
-
-
-
-    private static final Range R_1MS_5MS = new Range(1, 5);
-    private static final PriorityQueue<TaskHandle> TASK_QUEUE_1MS_5MS = new PriorityQueue<>();
-
-    private static final Range R_5MS_25MS = new Range(1, 5);
-    private static final PriorityQueue<TaskHandle> TASK_QUEUE_5MS_25MS = new PriorityQueue<>();
-
-    private static final Range R_25MS_100MS = new Range(1, 5);
-    private static final PriorityQueue<TaskHandle> TASK_QUEUE_25MS_100MS = new PriorityQueue<>();
-
-    private static final Range R_100MS_1000MS = new Range(1, 5);
-    private static final PriorityQueue<TaskHandle> TASK_QUEUE_100MS_1000MS = new PriorityQueue<>();
-
-    private static final Range R_1S_5S = new Range(1, 5);
-    private static final PriorityQueue<TaskHandle> TASK_QUEUE_1S_5S = new PriorityQueue<>();
-
-    private static final Range R_5S_30S = new Range(1, 5);
-    private static final PriorityQueue<TaskHandle> TASK_QUEUE_5S_30S = new PriorityQueue<>();
-
-    private static final Range R_30S_PLUS = new Range(1, 5);
-    private static final PriorityQueue<TaskHandle> TASK_QUEUE_30S_PLUS = new PriorityQueue<>();
 
     private static final AtomicInteger TASK_COUNTER = new AtomicInteger();
 
-    /**
-     * All active (non-cancelled) task handles, driven by the single global tick.
-     * Only ever accessed from the main server thread.
-     */
-    private static final List<TaskHandle> REGISTERED_TASKS = new ArrayList<>();
-
-    // ── Global tick ───────────────────────────────────────────────────────────
+    // ── Range ─────────────────────────────────────────────────────────────────
 
     /**
-     * Starts the single global tick loop that drives all registered tasks.
-     * Must be called once from {@link Sword#onEnable()}.
+     * A half-open millisecond interval [{@code low}, {@code high}) used to route
+     * tasks to the appropriate {@link TaskHandleBucket}.
      */
-    public static void startGlobalTick() {
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                long now = System.currentTimeMillis();
-                REGISTERED_TASKS.removeIf(handle -> {
-                    if (handle == null || handle.isCancelled()) return true;
-                    handle.tick(now);
-                    return handle.isCancelled();
-                });
+    private record Range(int low, int high) {
+        /** @return {@code true} if {@code val} falls in [{@code low}, {@code high}) */
+        public boolean in(int val) {
+            return val >= low && val < high;
+        }
+    }
+
+    // ── TaskHandleBucket ──────────────────────────────────────────────────────
+
+    /**
+     * A single scheduling tier. Tasks whose base period falls within this bucket's
+     * {@link Range} are placed here. A {@link ScheduledFuture} fires at {@code pollRate}
+     * in {@code pollUnit}, drains all due tasks from the {@link PriorityBlockingQueue},
+     * and dispatches them as a single batch to the Bukkit main thread.
+     *
+     * <p>The scheduler starts lazily on the first {@link #offer} call and cancels itself
+     * automatically when the queue empties.</p>
+     */
+    private static final class TaskHandleBucket {
+
+        private final int pollRate;
+        private final TimeUnit pollUnit;
+        private final Range range;
+        private final PriorityBlockingQueue<TaskHandle> pq = new PriorityBlockingQueue<>();
+        private volatile ScheduledFuture<?> scheduler;
+        private final AtomicBoolean active = new AtomicBoolean(false);
+
+        TaskHandleBucket(int pollRate, TimeUnit pollUnit, Range range) {
+            this.pollRate = pollRate;
+            this.pollUnit = pollUnit;
+            this.range = range;
+        }
+
+        /**
+         * Adds a task to this bucket and starts the scheduler if it was idle.
+         *
+         * @param handle the task to enqueue
+         */
+        void offer(TaskHandle handle) {
+            pq.offer(handle);
+            if (active.compareAndSet(false, true)) {
+                begin();
             }
-        }.runTaskTimer(Sword.getInstance(), 0L, 1L);
+        }
+
+        private void begin() {
+            scheduler = Sword.getScheduler().scheduleAtFixedRate(this::tick, 0, pollRate, pollUnit);
+        }
+
+        private void tick() {
+            try {
+                long now = System.currentTimeMillis();
+                List<TaskHandle> batch = new ArrayList<>();
+                TaskHandle head;
+                while ((head = pq.peek()) != null) {
+                    if (head.isCancelled()) {
+                        pq.poll(); // lazy cancelled-task cleanup
+                        continue;
+                    }
+                    if (head.nextFireTimeMs > now) break;
+                    pq.poll();
+                    batch.add(head);
+                }
+                if (batch.isEmpty()) {
+                    checkShutdown();
+                    return;
+                }
+                Bukkit.getScheduler().runTask(Sword.getInstance(), () -> {
+                    for (TaskHandle t : batch) {
+                        if (t.isCancelled()) continue;
+                        try {
+                            t.tick(now);
+                        } catch (Exception e) {
+                            Debug.system("Task [" + t.getTaskID() + "] threw during execution: " + e.getMessage());
+                            t.cancel();
+                        }
+                        if (!t.isCancelled()) t.ownerBucket.offer(t);
+                    }
+                });
+                checkShutdown();
+            } catch (Exception e) {
+                Debug.system("Bucket tick threw unexpectedly: " + e.getMessage());
+            }
+        }
+
+        /**
+         * Cancels the scheduler when the queue is empty. A race guard restarts it
+         * if a task was offered between the empty check and the cancel.
+         */
+        private void checkShutdown() {
+            if (pq.isEmpty() && active.compareAndSet(true, false)) {
+                scheduler.cancel(false);
+                // Race guard: offer() may have won the race between isEmpty() and cancel().
+                if (!pq.isEmpty() && active.compareAndSet(false, true)) {
+                    begin();
+                }
+            }
+        }
+
+        /**
+         * Cancels the scheduler and marks all queued tasks cancelled. Called on plugin shutdown.
+         */
+        void stop() {
+            active.set(false);
+            if (scheduler != null) scheduler.cancel(false);
+            pq.forEach(t -> t.cancelled.set(true));
+            pq.clear();
+        }
+    }
+
+    // ── Buckets ───────────────────────────────────────────────────────────────
+
+    private static final TaskHandleBucket BUCKET_1MS = new TaskHandleBucket(
+        1, TimeUnit.MILLISECONDS, new Range(1, 5));
+    private static final TaskHandleBucket BUCKET_5MS = new TaskHandleBucket(
+        5, TimeUnit.MILLISECONDS, new Range(5, 25));
+    private static final TaskHandleBucket BUCKET_25MS = new TaskHandleBucket(
+        25, TimeUnit.MILLISECONDS, new Range(25, 100));
+    private static final TaskHandleBucket BUCKET_100MS = new TaskHandleBucket(
+        100, TimeUnit.MILLISECONDS, new Range(100, 1000));
+    private static final TaskHandleBucket BUCKET_1S = new TaskHandleBucket(
+        1, TimeUnit.SECONDS, new Range(1000, 5000));
+    private static final TaskHandleBucket BUCKET_5S = new TaskHandleBucket(
+        5, TimeUnit.SECONDS, new Range(5000, 30000));
+    private static final TaskHandleBucket BUCKET_30S = new TaskHandleBucket(
+        30, TimeUnit.SECONDS, new Range(30000, Integer.MAX_VALUE));
+
+    private static TaskHandleBucket bucketFor(int periodMs) {
+        if (BUCKET_1MS.range.in(periodMs))   return BUCKET_1MS;
+        if (BUCKET_5MS.range.in(periodMs))   return BUCKET_5MS;
+        if (BUCKET_25MS.range.in(periodMs))  return BUCKET_25MS;
+        if (BUCKET_100MS.range.in(periodMs)) return BUCKET_100MS;
+        if (BUCKET_1S.range.in(periodMs))    return BUCKET_1S;
+        if (BUCKET_5S.range.in(periodMs))    return BUCKET_5S;
+        return BUCKET_30S;
     }
 
     // ── Time scale ────────────────────────────────────────────────────────────
 
     /**
      * Sets the global time scale (0.0–2.0, where 1.0 is normal speed).
-     * Time-bound tasks will apply the new scale automatically on their next fire;
+     * Time-bound tasks apply the new scale automatically on their next fire;
      * no rescheduling is required.
      *
      * @param timeScale the new time scale
@@ -236,12 +277,15 @@ public final class TimeArbiter {
     /**
      * A handle to a registered repeating task.
      *
-     * <p>Instead of owning a {@link java.util.concurrent.ScheduledFuture}, each
-     * handle tracks {@code nextFireTimeMs} and is driven by the global tick.
-     * Cancellation sets a flag; the global tick removes cancelled handles via
-     * {@link List#removeIf}.</p>
+     * <p>Each handle tracks {@code nextFireTimeMs} and is placed in the appropriate
+     * {@link TaskHandleBucket} based on its {@code originalPeriodMs}. After executing
+     * on the Bukkit main thread, non-cancelled handles are re-inserted into their
+     * bucket's queue via {@link TaskHandleBucket#offer}.</p>
+     *
+     * <p>Implements {@link Comparable} so {@link PriorityBlockingQueue} can order
+     * handles by next fire time.</p>
      */
-    public static final class TaskHandle {
+    public static final class TaskHandle implements Comparable<TaskHandle> {
 
         @Getter
         private final int taskID;
@@ -250,9 +294,6 @@ public final class TimeArbiter {
         /** Absolute epoch-ms at which this task should next fire. */
         private long nextFireTimeMs;
 
-        // TODO: need to have a calculation for get time remaining so that when tasks are re-scheduled
-        //  we don't immediately schedule all tasks, and keep the time spacing of task scheduling
-        //  uniform across time scales.
         @Getter
         private volatile boolean paused = false;
         private final AtomicBoolean cancelled = new AtomicBoolean(false);
@@ -261,17 +302,19 @@ public final class TimeArbiter {
         private final Runnable postcheckRunnable;
         private final Runnable pausedRunnable;
         private final PredicateRunnablePair[] conditionalCallbacks;
-        private final int originalDelayMs;
         @Getter
         private final int originalPeriodMs;
 
         private final Class<?> callingClass;
         private final String callingMethodName;
 
-        private TaskHandle(int taskID, boolean timeBound, long nextFireTimeMs,
-                           Runnable precheck, Runnable postcheck, Runnable paused,
-                           PredicateRunnablePair[] callbacks, int delay, int period,
-                           Class<?> callingClass, String callingMethodName) {
+        /** The bucket this task belongs to — used for re-insertion after main-thread execution. */
+        private TaskHandleBucket ownerBucket;
+
+        TaskHandle(int taskID, boolean timeBound, long nextFireTimeMs,
+                   Runnable precheck, Runnable postcheck, Runnable paused,
+                   PredicateRunnablePair[] callbacks, int period,
+                   Class<?> callingClass, String callingMethodName) {
             this.taskID = taskID;
             this.timeBound = timeBound;
             this.nextFireTimeMs = nextFireTimeMs;
@@ -279,23 +322,26 @@ public final class TimeArbiter {
             this.postcheckRunnable = postcheck;
             this.pausedRunnable = paused;
             this.conditionalCallbacks = callbacks;
-            this.originalDelayMs = delay;
             this.originalPeriodMs = period;
             this.callingClass = callingClass;
             this.callingMethodName = callingMethodName;
         }
 
+        @Override
+        public int compareTo(TaskHandle other) {
+            return Long.compare(this.nextFireTimeMs, other.nextFireTimeMs);
+        }
+
         /**
-         * Called every server tick by the global loop.
-         * Fires the task if {@code now >= nextFireTimeMs} and reschedules the
-         * next fire time using the current time scale for time-bound tasks.
+         * Called by the bucket's main-thread batch runner.
+         * Fires the task body if due and reschedules the next fire time.
          *
-         * @param now {@code System.currentTimeMillis()} captured once per tick
+         * @param now {@code System.currentTimeMillis()} captured at batch-drain time
          */
         void tick(long now) {
             if (cancelled.get() || now < nextFireTimeMs) return;
 
-            if (timeBound && (PAUSE_ALL.get() || paused)) {
+            if (timeBound && paused) {
                 if (pausedRunnable != null) pausedRunnable.run();
                 scheduleNextFire(now);
                 return;
@@ -332,8 +378,7 @@ public final class TimeArbiter {
         }
 
         /**
-         * Cancels this task. The global tick will remove it from the registered
-         * list on the next pass.
+         * Cancels this task. The bucket lazily removes it on the next poll.
          *
          * @return {@code true} if this call performed the cancellation
          */
@@ -373,16 +418,19 @@ public final class TimeArbiter {
         long firstFireMs = System.currentTimeMillis() + (long) (delayMs / scale);
 
         TaskHandle handle = new TaskHandle(taskID, timeBound, firstFireMs,
-            precheck, postcheck, paused, callbacks, delayMs, periodMs,
+            precheck, postcheck, paused, callbacks, periodMs,
             callingClass, callingMethodName);
-
-        REGISTERED_TASKS.add(handle);
 
         if (timeBound) {
             TIME_BOUND_TASKS.put(taskID, handle);
         } else {
             TIME_INDEPENDENT_TASKS.put(taskID, handle);
         }
+
+        TaskHandleBucket bucket = bucketFor(periodMs);
+        handle.ownerBucket = bucket;
+        bucket.offer(handle);
+
         return handle;
     }
 
@@ -444,6 +492,7 @@ public final class TimeArbiter {
 
     /**
      * Registers a repeating task that automatically cancels after {@code maxIterations} fires.
+     * Scales with {@link #GLOBAL_TIME_SCALE}.
      *
      * @param precheckRunnable     runs before condition checks each fire; may be null
      * @param postcheckRunnable    runs after condition checks each fire; may be null
@@ -476,7 +525,7 @@ public final class TimeArbiter {
         );
 
         return createTask(
-            false,
+            true,
             () -> {
                 if (precheckRunnable != null) precheckRunnable.run();
                 iteration[0]++;
@@ -491,13 +540,25 @@ public final class TimeArbiter {
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
     /**
-     * Cancels all registered tasks and clears state. Called on plugin shutdown.
+     * No-op hook called from {@link Sword#onEnable()}. Bucket schedulers start
+     * lazily on the first task registration; no explicit initialization is needed.
+     */
+    public static void beginAll() {
+        // Buckets are lazy — they start automatically when the first task is offered.
+    }
+
+    /**
+     * Cancels all active bucket schedulers and marks all queued tasks cancelled.
+     * Must be called from {@link Sword#onDisable()}.
      */
     public static void shutdown() {
-        for (TaskHandle handle : REGISTERED_TASKS) {
-            handle.cancelled.set(true);
-        }
-        REGISTERED_TASKS.clear();
+        BUCKET_1MS.stop();
+        BUCKET_5MS.stop();
+        BUCKET_25MS.stop();
+        BUCKET_100MS.stop();
+        BUCKET_1S.stop();
+        BUCKET_5S.stop();
+        BUCKET_30S.stop();
         TIME_BOUND_TASKS.clear();
         TIME_INDEPENDENT_TASKS.clear();
     }
@@ -555,4 +616,7 @@ public final class TimeArbiter {
         DisplayUtil.setInterpolationValues(display, 0, effectiveDuration);
         display.setTransformation(transformation);
     }
+
+
+
 }

@@ -22,6 +22,6 @@ public abstract class SwordAction {
     // abilities may still be canceled internally before the cast runnable is up, though.
 
     // Casting logic has been moved to {@link ActionCaster} to centralize cast scheduling and
-    // make casting independent from the abstract action class. Callers should use
+    // make casting independent of the abstract action class. Callers should use
     // `ActionCaster.cast(executor, durationMillis, runnable)` instead.
 }

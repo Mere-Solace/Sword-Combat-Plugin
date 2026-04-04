@@ -79,8 +79,7 @@ public class AttackAction extends SwordAction {
     }
 
     public static void basicSlash(Combatant executor, ItemStack itemUsedInAttack, AttackProfile profile, Boolean orientWithPitch) {
-        new SweepAttack(itemUsedInAttack, profile,
-            orientWithPitch)
+        new SweepAttack(itemUsedInAttack, profile, orientWithPitch)
             .setAttackDuration(attacker -> (int) attacker.calcValueReductive(
                 AspectType.CELERITY,
                 Config.Combat.ATTACKS_CAST_TIMING_MIN_DURATION,
