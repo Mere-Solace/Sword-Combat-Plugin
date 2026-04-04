@@ -28,6 +28,7 @@ import btm.sword.listeners.packet.MovementListener;
 import btm.sword.system.action.throwing.InteractiveItemArbiter;
 import btm.sword.system.action.throwing.ProjectileManager;
 import btm.sword.system.attack.simulation.CollisionEventBridge;
+import btm.sword.system.attack.simulation.VolumeSimulation;
 import btm.sword.system.control.TimeArbiter;
 import btm.sword.system.display.BossBarManager;
 import btm.sword.system.display.ScoreboardManager;
@@ -105,6 +106,8 @@ public final class Sword extends JavaPlugin {
 
         TimeArbiter.beginAll();
 
+        VolumeSimulation.INSTANCE.start();
+
         // Drain simulation collision events to the main thread every tick
         TimeArbiter.runTimeIndependentBukkitTaskOnTimer(
             null,
@@ -176,6 +179,7 @@ public final class Sword extends JavaPlugin {
         MenuSlotGrid.releaseAll();
 
         PlayerDataManager.shutdown();
+        VolumeSimulation.INSTANCE.shutdown();
         TimeArbiter.shutdown();
 
         getLogger().info("~ Sword: Combat Evolved has been disabled ~");
