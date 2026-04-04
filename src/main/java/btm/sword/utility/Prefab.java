@@ -7,6 +7,8 @@ import java.util.function.Function;
 import org.bukkit.Color;
 import org.bukkit.Material;
 import org.bukkit.Particle;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 
@@ -15,11 +17,14 @@ import btm.sword.system.attack.Attack;
 import btm.sword.system.attack.Blockability;
 import btm.sword.system.attack.HitValuePacket;
 import btm.sword.system.entity.base.SwordEntity;
+import btm.sword.system.item.ItemStackBuilder;
+import btm.sword.system.item.KeyRegistry;
 import btm.sword.utility.display.ParticleWrapper;
 import btm.sword.utility.entity.PotionEffectWrapper;
 import btm.sword.utility.sound.SoundWrapper;
 import btm.sword.utility.sound.SwordSoundType;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 
 public final class Prefab {
@@ -345,6 +350,33 @@ public final class Prefab {
         );
     }
 
+
+    /** Pre-built dev and test {@link ItemStack} factories. */
+    public static class Items {
+
+        /**
+         * Builds a test volume attack wand — a blaze rod tagged with
+         * {@link KeyRegistry#TEST_VOLUME_ATTACK_KEY} that triggers
+         * {@code test_volume_attack} on left click.
+         *
+         * @return a new ItemStack ready to give to a player
+         */
+        public static ItemStack testVolumeWand() {
+            return new ItemStackBuilder(Material.BLAZE_ROD)
+                .name(Component.text("✦ Volume Attack Wand", NamedTextColor.GOLD, TextDecoration.BOLD))
+                .lore(List.of(
+                    Component.text("Dev test item", NamedTextColor.DARK_GRAY).decorate(TextDecoration.ITALIC),
+                    Component.empty(),
+                    Component.text("Left Click ", NamedTextColor.YELLOW)
+                        .append(Component.text("— fires ", NamedTextColor.GRAY))
+                        .append(Component.text("test_volume_attack", NamedTextColor.GOLD)),
+                    Component.text("600ms OBB sweep, 1–2 blocks ahead", NamedTextColor.DARK_GRAY)
+                ))
+                .unbreakable(true)
+                .tag(KeyRegistry.TEST_VOLUME_ATTACK_KEY, PersistentDataType.BOOLEAN, true)
+                .build();
+        }
+    }
 
     public static final Material[] MODERN_MATERIALS = {
         Material.ACACIA_BOAT,

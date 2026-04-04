@@ -8,7 +8,6 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.persistence.PersistentDataType;
 
 import btm.sword.config.Config;
 import btm.sword.gamemode.QueueManager;
@@ -22,12 +21,12 @@ import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.inventory.menu.Menu;
 import btm.sword.system.inventory.menu.PacketTestMenu;
 import btm.sword.system.item.ItemStackBuilder;
-import btm.sword.system.item.KeyRegistry;
 import btm.sword.system.item.weapon.WeaponType;
 import btm.sword.system.scene.DEUAnimationController;
 import btm.sword.system.scene.SceneManager;
 import btm.sword.system.scene.animation.AnimationDef;
 import btm.sword.system.scene.animation.AnimationRegistry;
+import btm.sword.utility.Prefab;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -228,24 +227,10 @@ public class TestingMenu extends Menu {
         );
 
         SimpleItem testVolumeAttackItem = new SimpleItem(
-            new ItemStackBuilder(Material.BLAZE_ROD)
-                .name(Component.text("Attack Volume Test", NamedTextColor.RED, TextDecoration.BOLD))
-                .lore(List.of(
-                    Component.text("Triggers ", NamedTextColor.GRAY)
-                        .append(Component.text("test_volume_attack", NamedTextColor.RED))
-                        .append(Component.text(" on left click", NamedTextColor.GRAY)),
-                    Component.text("600ms OBB sweep — 1–2 blocks in front", NamedTextColor.DARK_GRAY),
-                    Component.empty(),
-                    Component.text("Requires a nearby Dummy or SwordPlayer", NamedTextColor.DARK_GRAY)
-                        .decorate(TextDecoration.ITALIC)
-                ))
-                .build(),
+            Prefab.Items.testVolumeWand(),
             click -> {
-                ItemStack item = ItemStack.of(Material.BLAZE_ROD);
-                item.editPersistentDataContainer(pdc ->
-                    pdc.set(KeyRegistry.TEST_VOLUME_ATTACK_KEY, PersistentDataType.BOOLEAN, true));
-                player.getInventory().addItem(item);
-                swordPlayer.message(Component.text("Test volume attack item added to inventory.", NamedTextColor.GREEN));
+                player.getInventory().addItem(Prefab.Items.testVolumeWand());
+                swordPlayer.message(Component.text("Volume Attack Wand added to inventory.", NamedTextColor.GOLD));
             }
         );
 
