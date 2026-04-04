@@ -2,12 +2,15 @@ package btm.sword.system.inventory.menu.dev;
 
 import java.util.List;
 
+import btm.sword.utility.Prefab;
+
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.inventory.menu.ItemLibraryMenu;
+import btm.sword.system.inventory.menu.MainMenu;
 import btm.sword.system.inventory.menu.Menu;
 import btm.sword.system.item.ItemStackBuilder;
 import net.kyori.adventure.text.Component;
@@ -74,6 +77,7 @@ public class DevMenu extends Menu {
 
         SimpleItem woodenAxe = giveItem(Material.WOODEN_AXE, "Wooden Axe");
         SimpleItem witherSkeletonEgg = giveItem(Material.WITHER_SKELETON_SPAWN_EGG, "Wither Skeleton Spawn Egg");
+        SimpleItem blockDisplayEntitySpawnEgg = giveItem(Material.PILLAGER_SPAWN_EGG, "Pillager Spawn Egg");
 
         SimpleItem creativeMode;
         if (swordPlayer.isInCreativeDevMode()) {
@@ -152,13 +156,22 @@ public class DevMenu extends Menu {
             click -> new WeaponDisplayEditorMenu(swordPlayer).open()
         );
 
+        SimpleItem testVolumeAttackItem = new SimpleItem(
+            Prefab.Items.testVolumeWand(),
+            click -> {
+                player.getInventory().addItem(Prefab.Items.testVolumeWand());
+                swordPlayer.message(Component.text("Volume Attack Wand added to inventory.", NamedTextColor.GOLD));
+            }
+        );
+
+
         Gui gui = Gui.normal()
             .setStructure(
                 "# # # . . . # # #",
                 "# J N . T . L C #",
-                ". H . . ? . . E .",
-                ". . . . A . . W .",
-                "# R I . . . M . #",
+                ". H V . ? . . E .",
+                ". . . . A . . P .",
+                "# R I . . . M W #",
                 "< > # . . . # # #")
             .addIngredient('#', BORDER)
             .addIngredient('T', toggles)
@@ -171,9 +184,11 @@ public class DevMenu extends Menu {
             .addIngredient('C', creativeInventory)
             .addIngredient('W', woodenAxe)
             .addIngredient('E', witherSkeletonEgg)
+            .addIngredient('P', blockDisplayEntitySpawnEgg)
             .addIngredient('I', reloadProfile)
             .addIngredient('M', creativeMode)
             .addIngredient('H', weaponDisplay)
+            .addIngredient('V', testVolumeAttackItem)
             .addIngredient('<', generatePreviousButtonOrDefault())
             .addIngredient('>', generateForwardPreviousButtonOrDefault())
             .build();

@@ -221,16 +221,8 @@ public class TestingMenu extends Menu {
             click -> {
                 ItemStack falchion = WeaponType.FALCHION.buildItemStack();
                 player.getInventory().addItem(falchion);
-                player.openSmithingTable(null, true);
+                player.openSmithingTable(null, true); // TODO: Deprecated!!!
                 swordPlayer.message(Component.text("Smithing test ready: place the Falchion into the base slot.", NamedTextColor.GREEN));
-            }
-        );
-
-        SimpleItem testVolumeAttackItem = new SimpleItem(
-            Prefab.Items.testVolumeWand(),
-            click -> {
-                player.getInventory().addItem(Prefab.Items.testVolumeWand());
-                swordPlayer.message(Component.text("Volume Attack Wand added to inventory.", NamedTextColor.GOLD));
             }
         );
 
@@ -252,7 +244,6 @@ public class TestingMenu extends Menu {
             .addIngredient('H', hudOverrideTest)
             .addIngredient('M', smithingInteractionTest)
             .addIngredient('O', ctfStop)
-            .addIngredient('V', testVolumeAttackItem)
             .addIngredient('<', generatePreviousButtonOrDefault())
             .addIngredient('>', generateForwardPreviousButtonOrDefault())
             .build();
