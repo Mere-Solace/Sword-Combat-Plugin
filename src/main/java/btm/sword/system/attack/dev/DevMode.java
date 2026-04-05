@@ -9,10 +9,12 @@ package btm.sword.system.attack.dev;
  *                             a sweep curve.</li>
  *   <li>{@link #EDITING}   — interactively placing or adjusting volume keyframes on an existing or
  *                             in-progress attack definition.</li>
+ *   <li>{@link #VIEWING}   — read-only visualization of a loaded attack's keyframes; no editing allowed.</li>
  * </ul>
  */
 public enum DevMode {
     IDLE,
     RECORDING,
-    EDITING
+    EDITING,
+    VIEWING
 }

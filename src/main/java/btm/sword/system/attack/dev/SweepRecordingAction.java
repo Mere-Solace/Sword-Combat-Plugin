@@ -17,6 +17,7 @@ import btm.sword.system.attack.def.AttackDef;
 import btm.sword.system.attack.def.AttackDefSerializer;
 import btm.sword.system.attack.def.AttackRegistry;
 import btm.sword.system.attack.simulation.VolumeKeyframe;
+import btm.sword.system.attack.simulation.VolumeShape;
 import btm.sword.system.control.PredicateRunnablePair;
 import btm.sword.system.control.TimeArbiter;
 import btm.sword.system.entity.impl.Combatant;
@@ -153,7 +154,7 @@ public final class SweepRecordingAction {
         Vector3f defaultHalfExtents = new Vector3f(0.4f, 0.4f, 0.4f);
         for (RecordedSample s : samples) {
             float t = spanMs == 0 ? 0f : (float) (s.capturedAtMs() - firstMs) / spanMs;
-            keyframes.add(new VolumeKeyframe(t, new Vector3f(s.localPosition()), defaultHalfExtents, new Quaternionf()));
+            keyframes.add(new VolumeKeyframe(t, new Vector3f(s.localPosition()), defaultHalfExtents, new Quaternionf(), VolumeShape.SPHERE));
         }
 
         // Placeholder hit values — intended to be edited in the saved YAML

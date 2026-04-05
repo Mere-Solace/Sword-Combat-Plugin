@@ -174,6 +174,28 @@ public final class AttackDevSession {
     }
 
     /**
+     * Transitions to {@link DevMode#VIEWING} with the given attack's keyframes.
+     * Only visualizes — no editing is possible. Use {@link #stopViewing()} to return to IDLE.
+     *
+     * @param name      the attack id being viewed
+     * @param keyframes the keyframes to display (copied into a mutable list)
+     */
+    public void startViewing(String name, List<VolumeKeyframe> keyframes) {
+        this.currentAttackName = name;
+        this.editKeyframes = new ArrayList<>(keyframes);
+        this.currentKeyframeIndex = -1;
+        this.mode = DevMode.VIEWING;
+        VolumeEditorMode.startViewingForSession(this);
+    }
+
+    /**
+     * Transitions back to {@link DevMode#IDLE} from {@link DevMode#VIEWING}.
+     */
+    public void stopViewing() {
+        this.mode = DevMode.IDLE;
+    }
+
+    /**
      * Sets the currently selected keyframe index. Clamped to valid range by callers.
      *
      * @param index the new selected index

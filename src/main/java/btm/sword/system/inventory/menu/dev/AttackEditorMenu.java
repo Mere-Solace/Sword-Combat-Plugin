@@ -14,6 +14,7 @@ import btm.sword.system.attack.def.AttackDefSerializer;
 import btm.sword.system.attack.def.AttackRegistry;
 import btm.sword.system.attack.dev.AttackDevSession;
 import btm.sword.system.attack.simulation.VolumeKeyframe;
+import btm.sword.system.attack.simulation.VolumeShape;
 import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.inventory.item.ForwardItem;
 import btm.sword.system.inventory.item.PreviousItem;
@@ -202,6 +203,30 @@ public class AttackEditorMenu extends Menu {
             }
         );
 
+        VolumeShape currentShape = keyframes.isEmpty()
+            ? VolumeShape.SPHERE
+            : keyframes.get(session.getCurrentKeyframeIndex()).shape();
+        SimpleItem setShape = new SimpleItem(
+            new ItemStackBuilder(Material.ENDER_EYE)
+                .name(Component.text("Set Shape", NamedTextColor.LIGHT_PURPLE, TextDecoration.BOLD))
+                .lore(List.of(
+                    Component.text("Current: ", NamedTextColor.DARK_GRAY)
+                        .append(Component.text(currentShape.name(), NamedTextColor.AQUA)),
+                    Component.text("Click to cycle shape.", NamedTextColor.YELLOW)
+                ))
+                .build(),
+            click -> {
+                List<VolumeKeyframe> kfs = session.getEditKeyframes();
+                if (kfs.isEmpty()) return;
+                int idx = session.getCurrentKeyframeIndex();
+                VolumeKeyframe kf = kfs.get(idx);
+                VolumeShape[] shapes = VolumeShape.values();
+                VolumeShape next = shapes[(kf.shape().ordinal() + 1) % shapes.length];
+                kfs.set(idx, new VolumeKeyframe(kf.t(), kf.localPosition(), kf.halfExtents(), kf.rotation(), next));
+                new AttackEditorMenu(swordPlayer).open();
+            }
+        );
+
         // ── Row 4 — position nudge ─────────────────────────────────────────────
 
         SimpleItem posXDec = posButton(session, "Pos X −", NamedTextColor.RED, false, Axis.POS_X, true);
@@ -227,7 +252,7 @@ public class AttackEditorMenu extends Menu {
                 "B # D I U # L S #",
                 "x x x x x x x x x",
                 "x x x x x x x x x",
-                "< > # A F # # # #",
+                "< > # A F V # # #",
                 "q w e r t y # # #",
                 "u i o p g h # # #")
             .addIngredient('#', BORDER)
@@ -242,6 +267,7 @@ public class AttackEditorMenu extends Menu {
             .addIngredient('x', Markers.CONTENT_LIST_SLOT_HORIZONTAL)
             .addIngredient('A', addFrame)
             .addIngredient('F', deleteFrame)
+            .addIngredient('V', setShape)
             // pos row
             .addIngredient('q', posXDec)
             .addIngredient('w', posXInc)
@@ -284,12 +310,18 @@ public class AttackEditorMenu extends Menu {
 
             List<Component> lore = new ArrayList<>();
             lore.add(Component.text(String.format("t = %.3f", kf.t()), NamedTextColor.AQUA));
+            lore.add(Component.text("shape: ", NamedTextColor.DARK_GRAY)
+                .append(Component.text(kf.shape().name(), NamedTextColor.LIGHT_PURPLE)));
             lore.add(Component.text(
                 String.format("pos:  x=%.2f  y=%.2f  z=%.2f", pos.x, pos.y, pos.z),
                 NamedTextColor.GRAY));
-            lore.add(Component.text(
-                String.format("half: x=%.2f  y=%.2f  z=%.2f", he.x, he.y, he.z),
-                NamedTextColor.GRAY));
+            if (kf.shape() == VolumeShape.SPHERE) {
+                lore.add(Component.text(String.format("radius: %.2f", he.x), NamedTextColor.GRAY));
+            } else {
+                lore.add(Component.text(
+                    String.format("half: x=%.2f  y=%.2f  z=%.2f", he.x, he.y, he.z),
+                    NamedTextColor.GRAY));
+            }
             lore.add(Component.empty());
             lore.add(selected
                 ? Component.text("▶ Selected", NamedTextColor.GOLD, TextDecoration.BOLD)
@@ -362,7 +394,7 @@ public class AttackEditorMenu extends Menu {
                 case POS_Y -> he.y = Math.max(0.05f, he.y + delta);
                 case POS_Z -> he.z = Math.max(0.05f, he.z + delta);
             }
-            return new VolumeKeyframe(kf.t(), kf.localPosition(), he, kf.rotation());
+            return new VolumeKeyframe(kf.t(), kf.localPosition(), he, kf.rotation(), kf.shape());
         } else {
             Vector3f pos = new Vector3f(kf.localPosition());
             switch (axis) {
@@ -370,7 +402,7 @@ public class AttackEditorMenu extends Menu {
                 case POS_Y -> pos.y += delta;
                 case POS_Z -> pos.z += delta;
             }
-            return new VolumeKeyframe(kf.t(), pos, kf.halfExtents(), kf.rotation());
+            return new VolumeKeyframe(kf.t(), pos, kf.halfExtents(), kf.rotation(), kf.shape());
         }
     }
 
@@ -387,7 +419,7 @@ public class AttackEditorMenu extends Menu {
     private static void insertFrameAfterSelected(AttackDevSession session) {
         List<VolumeKeyframe> kfs = session.getEditKeyframes();
         if (kfs.isEmpty()) {
-            kfs.add(new VolumeKeyframe(0f, new Vector3f(0f, 1f, 1f), new Vector3f(0.4f), new Quaternionf()));
+            kfs.add(new VolumeKeyframe(0f, new Vector3f(0f, 1f, 1f), new Vector3f(0.5f, 0.5f, 0.5f), new Quaternionf(), VolumeShape.SPHERE));
             session.setCurrentKeyframeIndex(0);
             return;
         }
@@ -402,13 +434,14 @@ public class AttackEditorMenu extends Menu {
             Vector3f pos = new Vector3f(cur.localPosition()).lerp(next.localPosition(), 0.5f);
             Vector3f he = new Vector3f(cur.halfExtents()).lerp(next.halfExtents(), 0.5f);
             Quaternionf rot = new Quaternionf(cur.rotation()).slerp(next.rotation(), 0.5f);
-            newFrame = new VolumeKeyframe(t, pos, he, rot);
+            newFrame = new VolumeKeyframe(t, pos, he, rot, cur.shape());
         } else {
             float t = Math.min(1.0f, cur.t() + 0.1f);
             newFrame = new VolumeKeyframe(t,
                 new Vector3f(cur.localPosition()),
                 new Vector3f(cur.halfExtents()),
-                new Quaternionf(cur.rotation()));
+                new Quaternionf(cur.rotation()),
+                cur.shape());
         }
 
         kfs.add(idx + 1, newFrame);

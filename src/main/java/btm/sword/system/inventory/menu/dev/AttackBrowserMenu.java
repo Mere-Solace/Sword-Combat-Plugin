@@ -8,6 +8,7 @@ import org.bukkit.Material;
 
 import btm.sword.system.attack.def.AttackDef;
 import btm.sword.system.attack.dev.AttackDevSession;
+import btm.sword.system.attack.dev.DevMode;
 import btm.sword.system.attack.simulation.KeyframedTrajectory;
 import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.inventory.item.ForwardItem;
@@ -46,6 +47,12 @@ public class AttackBrowserMenu extends Menu {
 
     @Override
     public void open() {
+        // Stop any active viewing session so the player can re-open the browser cleanly
+        AttackDevSession existing = AttackDevSession.get(swordPlayer.player().getUniqueId());
+        if (existing != null && existing.getMode() == DevMode.VIEWING) {
+            existing.stopViewing();
+        }
+
         List<Item> attackItems = buildAttackItems();
 
         SimpleItem back = new SimpleItem(
@@ -123,7 +130,8 @@ public class AttackBrowserMenu extends Menu {
         }
         lore.add(Component.empty());
         if (editable) {
-            lore.add(Component.text("Click to edit", NamedTextColor.YELLOW));
+            lore.add(Component.text("Left-click to edit", NamedTextColor.YELLOW));
+            lore.add(Component.text("Right-click to visualize", NamedTextColor.AQUA));
         } else {
             lore.add(Component.text("SWEEP attacks cannot be edited here", NamedTextColor.RED));
         }
@@ -141,8 +149,16 @@ public class AttackBrowserMenu extends Menu {
         return new SimpleItem(builder.build(), click -> {
             KeyframedTrajectory kt = (KeyframedTrajectory) def.getTrajectory();
             AttackDevSession session = AttackDevSession.getOrCreate(swordPlayer.player());
-            session.startEditing(def.getId(), kt.getKeyframes(), def.getDurationMs(), def.getHitValue());
-            new AttackEditorMenu(swordPlayer).open();
+            if (click.getClickType().isRightClick()) {
+                session.startViewing(def.getId(), kt.getKeyframes());
+                swordPlayer.player().closeInventory();
+                swordPlayer.message(Component.text(
+                    "[Dev] Visualizing '" + def.getId() + "' — close your inventory to stop.",
+                    NamedTextColor.YELLOW));
+            } else {
+                session.startEditing(def.getId(), kt.getKeyframes(), def.getDurationMs(), def.getHitValue());
+                new AttackEditorMenu(swordPlayer).open();
+            }
         });
     }
 }

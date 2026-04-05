@@ -16,6 +16,7 @@ import btm.sword.system.attack.simulation.KeyframedTrajectory;
 import btm.sword.system.attack.simulation.SweepCurve;
 import btm.sword.system.attack.simulation.SweepTrajectory;
 import btm.sword.system.attack.simulation.VolumeKeyframe;
+import btm.sword.system.attack.simulation.VolumeShape;
 import btm.sword.utility.Debug;
 
 /**
@@ -101,9 +102,21 @@ public final class AttackDefSerializer {
             Vector3f position = readVector3f((Map<?, ?>) map.get("position"));
             Vector3f halfExtents = readVector3f((Map<?, ?>) map.get("half-extents"));
             Quaternionf rotation = readQuaternionf((Map<?, ?>) map.get("rotation"));
-            keyframes.add(new VolumeKeyframe(t, position, halfExtents, rotation));
+            VolumeShape shape = readShape(map.get("shape"));
+            keyframes.add(new VolumeKeyframe(t, position, halfExtents, rotation, shape));
         }
         return keyframes;
+    }
+
+    private static VolumeShape readShape(Object value) {
+        if (value instanceof String s) {
+            try {
+                return VolumeShape.valueOf(s.toUpperCase());
+            } catch (IllegalArgumentException ignored) {
+                // fall through to default
+            }
+        }
+        return VolumeShape.OBB;
     }
 
     // ── Save ──────────────────────────────────────────────────────────────────
@@ -174,7 +187,8 @@ public final class AttackDefSerializer {
                 "t", (double) kf.t(),
                 "position", vecMap(kf.localPosition()),
                 "half-extents", vecMap(kf.halfExtents()),
-                "rotation", quatMap(kf.rotation())
+                "rotation", quatMap(kf.rotation()),
+                "shape", kf.shape().name()
             ));
         }
         yaml.set(path + ".keyframes", kfMaps);
