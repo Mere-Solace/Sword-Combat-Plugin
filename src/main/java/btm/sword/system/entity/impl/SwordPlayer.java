@@ -14,6 +14,7 @@ import org.bukkit.Color;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Display;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Item;
@@ -1202,6 +1203,10 @@ public class SwordPlayer extends Combatant {
         return normalActState() && (holdingSoulLink() || holdingUmbralBlade());
     }
 
+    public boolean heldItemHasKey(NamespacedKey key) {
+        return KeyRegistry.hasKey(getItemStackInHand(true), key);
+    }
+
     /**
      * Resets the input execution tree to its root state.
      */
@@ -1479,7 +1484,8 @@ public class SwordPlayer extends Combatant {
 
         if (!mainItemStackAtTimeOfHold.isEmpty() &&
             !holdingUmbralItemInMainHand() &&
-            notHoldingAbilityItem()) {
+            notHoldingAbilityItem() &&
+            !heldItemHasKey(KeyRegistry.TEST_VOLUME_ATTACK_KEY)) {
             setItemStackInHand(ItemStack.of(Material.GUNPOWDER), true); // can change the logic here later
         }
 

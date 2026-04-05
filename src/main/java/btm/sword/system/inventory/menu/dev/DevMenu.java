@@ -2,8 +2,6 @@ package btm.sword.system.inventory.menu.dev;
 
 import java.util.List;
 
-import btm.sword.utility.Prefab;
-
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -156,12 +154,12 @@ public class DevMenu extends Menu {
             click -> new WeaponDisplayEditorMenu(swordPlayer).open()
         );
 
-        SimpleItem testVolumeAttackItem = new SimpleItem(
-            Prefab.Items.testVolumeWand(),
-            click -> {
-                player.getInventory().addItem(Prefab.Items.testVolumeWand());
-                swordPlayer.message(Component.text("Volume Attack Wand added to inventory.", NamedTextColor.GOLD));
-            }
+        SimpleItem attackEditor = new SimpleItem(
+            new ItemStackBuilder(Material.GOLDEN_SWORD)
+                .name(Component.text("Attack Editor", NamedTextColor.GOLD, TextDecoration.BOLD))
+                .lore(List.of(Component.text("Browse and edit VOLUME attack definitions", NamedTextColor.DARK_GRAY)))
+                .build(),
+            click -> new AttackBrowserMenu(swordPlayer).open()
         );
 
 
@@ -188,7 +186,7 @@ public class DevMenu extends Menu {
             .addIngredient('I', reloadProfile)
             .addIngredient('M', creativeMode)
             .addIngredient('H', weaponDisplay)
-            .addIngredient('V', testVolumeAttackItem)
+            .addIngredient('V', attackEditor)
             .addIngredient('<', generatePreviousButtonOrDefault())
             .addIngredient('>', generateForwardPreviousButtonOrDefault())
             .build();

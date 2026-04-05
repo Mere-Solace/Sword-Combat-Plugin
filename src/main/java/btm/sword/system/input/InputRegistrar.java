@@ -21,9 +21,11 @@ import btm.sword.system.action.skill.type.impl.charge.ChargeAction;
 import btm.sword.system.action.throwing.ThrowAction;
 import btm.sword.system.action.utility.GrabAction;
 import btm.sword.system.action.utility.UtilityAction;
+import btm.sword.system.attack.dev.SweepRecordingAction;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.impl.Combatant;
 import btm.sword.system.entity.impl.SwordPlayer;
+import btm.sword.system.item.KeyRegistry;
 import btm.sword.utility.Debug;
 import btm.sword.utility.SwordTimeUnit;
 
@@ -69,6 +71,15 @@ public final class InputRegistrar {
             InputType.SHIFT,
             InputType.LEFT
         )).action(new LinkedList<>(List.of(
+            new InputExecutionTree.ActionContextPair(
+                () -> InputAction.builder()
+                .action(SweepRecordingAction::toggleRecording)
+                .cooldown(executor -> 0)
+                .canCast(c -> true)
+                .displayDisabled(false)
+                .resetIfCannotPerform(false)
+                .build(),
+                p -> p.heldItemHasKey(KeyRegistry.TEST_VOLUME_ATTACK_KEY)),
             new InputExecutionTree.ActionContextPair(
                 () -> InputAction.builder()
                 .action(GrabAction::grab)

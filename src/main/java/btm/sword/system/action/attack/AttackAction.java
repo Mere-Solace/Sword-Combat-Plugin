@@ -4,10 +4,13 @@ import static btm.sword.system.action.attack.PunchAction.throwPunch;
 
 import org.bukkit.inventory.ItemStack;
 
+import btm.sword.Sword;
 import btm.sword.config.Config;
 import btm.sword.system.action.SwordAction;
 import btm.sword.system.attack.SweepAttack;
 import btm.sword.system.attack.def.AttackRegistry;
+import btm.sword.system.attack.dev.AttackDevSession;
+import btm.sword.system.attack.dev.DevMode;
 import btm.sword.system.attack.style.AttackProfile;
 import btm.sword.system.attack.style.AttackType;
 import btm.sword.system.attack.style.WeaponAttackStyle;
@@ -45,6 +48,22 @@ public class AttackAction extends SwordAction {
         ItemStack itemUsedInAttack = executor.getItemStackInHand(true);
 
         if (KeyRegistry.hasKey(itemUsedInAttack, KeyRegistry.TEST_VOLUME_ATTACK_KEY)) {
+            if (executor instanceof SwordPlayer sp) {
+                AttackDevSession devSession = AttackDevSession.get(sp.player().getUniqueId());
+                Sword.print("[AttackAction] wand fired by " + sp.player().getName()
+                    + " — devSession=" + (devSession == null ? "null" : devSession.getMode())
+                    + " loadedAttack=" + (devSession == null || devSession.getLoadedAttackDef() == null
+                        ? "null" : devSession.getLoadedAttackDef().getId())
+                    + " editingSessions=" + AttackDevSession.getEditingSessions().size());
+                if (devSession != null && devSession.getMode() == DevMode.EDITING) {
+                    Sword.print("[AttackAction]   keyframes=" + devSession.getEditKeyframes().size()
+                        + " duration=" + devSession.getEditDurationMs() + "ms");
+                }
+                if (devSession != null && devSession.getLoadedAttackDef() != null) {
+                    executor.launchAttackDef(devSession.getLoadedAttackDef());
+                    return;
+                }
+            }
             executor.launchAttackDef(AttackRegistry.get("test_volume_attack"));
             return;
         }

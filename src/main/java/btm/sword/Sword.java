@@ -115,6 +115,9 @@ public final class Sword extends JavaPlugin {
 
         VolumeSimulation.INSTANCE.start();
 
+        // Load any saved attack definitions from plugins/sword/attacks/
+        AttackRegistry.loadDirectory(new File(getDataFolder(), "attacks"));
+
         // Register dev test AttackDef used by the TEST_VOLUME_ATTACK test item
         AttackRegistry.register(new AttackDef.Builder("test_volume_attack")
             .duration(600)

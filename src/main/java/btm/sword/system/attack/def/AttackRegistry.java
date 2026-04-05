@@ -1,6 +1,8 @@
 package btm.sword.system.attack.def;
 
 import java.io.File;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.bukkit.configuration.ConfigurationSection;
@@ -40,6 +42,40 @@ public final class AttackRegistry {
         AttackDef def = REGISTRY.get(id);
         if (def == null) throw new IllegalArgumentException("No AttackDef registered for id: " + id);
         return def;
+    }
+
+    /**
+     * Returns an unmodifiable view of all registered attack definitions, keyed by id.
+     *
+     * @return all registered attacks
+     */
+    public static Collection<AttackDef> getAll() {
+        return Collections.unmodifiableCollection(REGISTRY.values());
+    }
+
+    /**
+     * Removes the attack with the given id from the registry.
+     *
+     * @param id the attack id to remove
+     */
+    public static void unregister(String id) {
+        REGISTRY.remove(id);
+    }
+
+    /**
+     * Loads all {@code .yml} files from {@code dir} as attack definitions, registering
+     * each one. Files that fail to parse are skipped with a warning. Idempotent —
+     * safe to call multiple times (later calls overwrite earlier ones with the same id).
+     *
+     * @param dir the directory to scan (must exist and be a directory)
+     */
+    public static void loadDirectory(File dir) {
+        if (!dir.isDirectory()) return;
+        File[] files = dir.listFiles((d, name) -> name.endsWith(".yml"));
+        if (files == null) return;
+        for (File file : files) {
+            loadAll(file);
+        }
     }
 
     /**

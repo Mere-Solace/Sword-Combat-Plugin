@@ -26,7 +26,6 @@ import btm.sword.system.scene.DEUAnimationController;
 import btm.sword.system.scene.SceneManager;
 import btm.sword.system.scene.animation.AnimationDef;
 import btm.sword.system.scene.animation.AnimationRegistry;
-import btm.sword.utility.Prefab;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;

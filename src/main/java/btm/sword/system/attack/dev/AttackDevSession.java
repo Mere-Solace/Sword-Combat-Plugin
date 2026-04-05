@@ -1,6 +1,7 @@
 package btm.sword.system.attack.dev;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -8,20 +9,30 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.bukkit.entity.Player;
 import org.joml.Vector3f;
 
+import btm.sword.system.attack.HitValuePacket;
 import btm.sword.system.attack.def.AttackDef;
+import btm.sword.system.attack.def.AttackPrimitive;
+import btm.sword.system.attack.simulation.VolumeKeyframe;
 import lombok.Getter;
 
 /**
  * Tracks per-player state during an attack creation or editing session.
  *
  * <p>Sessions are stored in a static {@link ConcurrentHashMap} keyed by player UUID.
- * Use {@link #getOrCreate(Player)} to obtain or lazily create a session, and
- * {@link #remove(UUID)} to clean up on logout or session cancellation.</p>
+ * Use {@link #getOrCreate(Player)} to obtain or lazily create a session,
+ * {@link #get(UUID)} for a non-creating lookup, and {@link #remove(UUID)} to clean
+ * up on logout or session cancellation.</p>
  *
  * <p>A session transitions between {@link DevMode} states via the
  * {@link #startRecording(String)}, {@link #stopRecording()},
- * {@link #startEditing(String, AttackDef.Builder)}, and {@link #stopEditing()} methods.
- * While in any non-{@link DevMode#IDLE} state, {@link #isActive()} returns {@code true}.</p>
+ * {@link #startEditing(String, List, int, HitValuePacket)}, and {@link #stopEditing()}
+ * methods. While in any non-{@link DevMode#IDLE} state, {@link #isActive()} returns
+ * {@code true}.</p>
+ *
+ * <p>During EDITING, the mutable {@link #editKeyframes} list and {@link #editDurationMs}
+ * field are the primary working state. Call {@link #buildCurrentAttack()} to materialise
+ * the current state into an {@link AttackDef}, and {@link #loadIntoWand()} to cache that
+ * definition so the test wand fires it on left-click.</p>
  */
 @Getter
 public final class AttackDevSession {
@@ -31,9 +42,27 @@ public final class AttackDevSession {
     private final Player player;
     private DevMode mode = DevMode.IDLE;
     private String currentAttackName = null;
-    private final List<Vector3f> recordingBuffer = new ArrayList<>();
-    private AttackDef.Builder editBuilder = null;
+
+    // ── Recording state ───────────────────────────────────────────────────────
+    /** Local-space tip samples captured during the current recording. */
+    private final List<RecordedSample> recordingBuffer = new ArrayList<>();
+    /** World-space tip positions mirroring {@link #recordingBuffer}, used for particle visualization. */
+    private final List<Vector3f> worldPositions = new ArrayList<>();
+
+    // ── Editing state ─────────────────────────────────────────────────────────
+    /** Mutable list of OBB keyframes being edited. Directly mutated by the editor menu. */
+    private List<VolumeKeyframe> editKeyframes = new ArrayList<>();
+    /** Attack duration in milliseconds for the current edit session. */
+    private int editDurationMs = 600;
+    /** Hit-value packet for the current edit session. Carried over from the loaded definition. */
+    private HitValuePacket editHitValue = null;
+    /** Index of the currently selected keyframe in {@link #editKeyframes}. */
     private int currentKeyframeIndex = 0;
+    /**
+     * The most recently built {@link AttackDef} loaded into the test wand.
+     * {@code null} means the wand fires the default {@code test_volume_attack}.
+     */
+    private AttackDef loadedAttackDef = null;
 
     private AttackDevSession(Player player) {
         this.player = player;
@@ -52,6 +81,16 @@ public final class AttackDevSession {
     }
 
     /**
+     * Returns the existing session for the given UUID, or {@code null} if none exists.
+     *
+     * @param playerId the UUID of the player to look up
+     * @return the session, or {@code null}
+     */
+    public static AttackDevSession get(UUID playerId) {
+        return SESSIONS.get(playerId);
+    }
+
+    /**
      * Removes and discards the session for the given player UUID, if one exists.
      * Should be called on logout or when the player explicitly cancels a session.
      *
@@ -61,10 +100,27 @@ public final class AttackDevSession {
         SESSIONS.remove(playerId);
     }
 
-    // ── Instance API ──────────────────────────────────────────────────────────
+    /**
+     * Returns a snapshot of all sessions currently in {@link DevMode#EDITING} mode.
+     * Used by {@link VolumeEditorMode} to render keyframe visualizations each tick.
+     *
+     * @return immutable list of active editing sessions
+     */
+    public static List<AttackDevSession> getEditingSessions() {
+        return SESSIONS.values().stream()
+            .filter(s -> s.mode == DevMode.EDITING)
+            .toList();
+    }
+
+    /** Returns all active sessions. */
+    public static Collection<AttackDevSession> allSessions() {
+        return SESSIONS.values();
+    }
+
+    // ── Instance API — Recording ──────────────────────────────────────────────
 
     /**
-     * Transitions to {@link DevMode#RECORDING} and clears the recording buffer.
+     * Transitions to {@link DevMode#RECORDING} and clears all recording buffers.
      * Any previous recording data is discarded.
      *
      * @param name the name of the attack being recorded
@@ -72,42 +128,99 @@ public final class AttackDevSession {
     public void startRecording(String name) {
         this.currentAttackName = name;
         this.recordingBuffer.clear();
+        this.worldPositions.clear();
         this.mode = DevMode.RECORDING;
     }
 
     /**
-     * Transitions back to {@link DevMode#IDLE} and returns the captured buffer.
-     * The returned list is a snapshot — the internal buffer is not cleared.
+     * Transitions back to {@link DevMode#IDLE} and returns a snapshot of the captured samples.
+     * The internal buffer is not cleared, so {@link #getRecordingBuffer()} remains accessible
+     * after this call.
      *
-     * @return the list of recorded local-space tip positions
+     * @return immutable snapshot of the recorded {@link RecordedSample}s
      */
-    public List<Vector3f> stopRecording() {
+    public List<RecordedSample> stopRecording() {
         this.mode = DevMode.IDLE;
         return List.copyOf(recordingBuffer);
     }
 
+    // ── Instance API — Editing ────────────────────────────────────────────────
+
     /**
-     * Transitions to {@link DevMode#EDITING} with the given attack name and partial builder.
+     * Transitions to {@link DevMode#EDITING} with the given attack parameters.
+     * Replaces any previous editing state.
      *
-     * @param name    the name of the attack being edited
-     * @param builder the in-progress {@link AttackDef.Builder} to continue editing
+     * @param name        the attack id being edited
+     * @param keyframes   the initial keyframe list (copied into a mutable list)
+     * @param durationMs  the attack duration in milliseconds
+     * @param hitValue    the hit-value packet to preserve when saving
      */
-    public void startEditing(String name, AttackDef.Builder builder) {
+    public void startEditing(String name, List<VolumeKeyframe> keyframes, int durationMs, HitValuePacket hitValue) {
         this.currentAttackName = name;
-        this.editBuilder = builder;
+        this.editKeyframes = new ArrayList<>(keyframes);
+        this.editDurationMs = durationMs;
+        this.editHitValue = hitValue;
         this.currentKeyframeIndex = 0;
         this.mode = DevMode.EDITING;
+        VolumeEditorMode.startForSession(this);
     }
 
     /**
-     * Transitions back to {@link DevMode#IDLE} and returns the current builder.
-     *
-     * @return the {@link AttackDef.Builder} as it stood when editing stopped
+     * Transitions back to {@link DevMode#IDLE}. The editing state remains accessible
+     * (e.g. for a final save) until the next {@link #startEditing} call or session removal.
      */
-    public AttackDef.Builder stopEditing() {
+    public void stopEditing() {
         this.mode = DevMode.IDLE;
-        return editBuilder;
     }
+
+    /**
+     * Sets the currently selected keyframe index. Clamped to valid range by callers.
+     *
+     * @param index the new selected index
+     */
+    public void setCurrentKeyframeIndex(int index) {
+        this.currentKeyframeIndex = index;
+    }
+
+    /**
+     * Updates the attack duration for the current edit session.
+     *
+     * @param durationMs new duration in milliseconds; must be &gt; 0
+     */
+    public void setEditDurationMs(int durationMs) {
+        this.editDurationMs = durationMs;
+    }
+
+    /**
+     * Constructs an immutable {@link AttackDef} from the current edit state (keyframes,
+     * duration, hit value). Does not modify session state.
+     *
+     * @return the built attack definition
+     * @throws IllegalStateException if the session is not in EDITING mode or has no keyframes
+     */
+    public AttackDef buildCurrentAttack() {
+        if (editKeyframes.isEmpty()) {
+            throw new IllegalStateException("Cannot build AttackDef: no keyframes defined");
+        }
+        return new AttackDef.Builder(currentAttackName)
+            .type(AttackPrimitive.VOLUME)
+            .keyframes(editKeyframes)
+            .duration(editDurationMs)
+            .onHit(editHitValue != null ? editHitValue
+                : new HitValuePacket(() -> 0f, () -> 10, () -> 2, () -> 0f, () -> 0f))
+            .build();
+    }
+
+    /**
+     * Builds the current attack definition from edit state and stores it as the
+     * {@linkplain #loadedAttackDef wand-loaded attack}. The next left-click with the
+     * test wand will fire this definition instead of the default {@code test_volume_attack}.
+     */
+    public void loadIntoWand() {
+        this.loadedAttackDef = buildCurrentAttack();
+    }
+
+    // ── Convenience ───────────────────────────────────────────────────────────
 
     /**
      * Returns {@code true} if this session is in any state other than {@link DevMode#IDLE}.
