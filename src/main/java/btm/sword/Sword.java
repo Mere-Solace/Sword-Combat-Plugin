@@ -209,6 +209,7 @@ public final class Sword extends JavaPlugin {
 
 
 
+    /** Logs an informational message through the plugin logger. */
     public static void print(String str) {
         instance.getLogger().info(str);
     }

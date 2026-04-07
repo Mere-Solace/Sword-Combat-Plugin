@@ -39,6 +39,7 @@ import xyz.xenondevs.invui.window.Window;
  */
 public class CurrencyMenu extends Menu {
 
+    /** Constructs the currency menu for the given player. */
     public CurrencyMenu(SwordPlayer player) {
         super(player);
     }

@@ -45,6 +45,7 @@ public final class InteractiveItemArbiter {
         INTERACTIVE_ITEMS.put(interactiveItem.getDisplay(), interactiveItem);
     }
 
+    /** Returns the {@link InteractiveItem} registered for the given display, or {@code null} if none. */
     public static InteractiveItem get(ItemDisplay itemDisplay) {
         return INTERACTIVE_ITEMS.get(itemDisplay);
     }
@@ -59,6 +60,7 @@ public final class InteractiveItemArbiter {
         return INTERACTIVE_ITEMS.containsKey(id);
     }
 
+    /** Returns {@code true} if the display is registered as an UmbralBlade interactive item. */
     public static boolean isUmbralBlade(ItemDisplay id) {
         return INTERACTIVE_ITEMS.get(id) instanceof UmbralBlade;
     }
@@ -78,6 +80,7 @@ public final class InteractiveItemArbiter {
         return stack != null && !stack.isEmpty() && KeyRegistry.hasKey(stack, KeyRegistry.ABILITY_ID_KEY);
     }
 
+    /** Returns {@code true} if the targeted item is not currently impaling the given entity. */
     public static boolean notImpaled(SwordEntity self, ItemDisplay targeted) {
         InteractiveItem thrown = INTERACTIVE_ITEMS.getOrDefault(targeted, null);
         return !(thrown instanceof ThrownItem ti) || ti.getHitEntity() == null || !ti.getHitEntity().equals(self);
@@ -178,6 +181,7 @@ public final class InteractiveItemArbiter {
         INTERACTIVE_ITEMS.clear();
     }
 
+    /** Spawns a {@link DroppedItem} at the origin with a randomised upward velocity. */
     public static void dropNaturally(Location origin, ItemStack stack) {
         if (!stack.isEmpty()) {
             Vector dropVel = new Vector(

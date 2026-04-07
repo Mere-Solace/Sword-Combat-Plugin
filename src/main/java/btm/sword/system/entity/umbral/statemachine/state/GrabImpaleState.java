@@ -15,6 +15,7 @@ import btm.sword.system.entity.umbral.UmbralBlade;
 import btm.sword.system.entity.umbral.statemachine.UmbralStateFacade;
 import btm.sword.utility.display.DisplayUtil;
 
+/** State that lunges the blade toward a grabbed target and impales it on contact. */
 public class GrabImpaleState extends UmbralStateFacade {
     private TimeArbiter.TaskHandle slerpTask;
     private ScheduledFuture<?> attackTask;

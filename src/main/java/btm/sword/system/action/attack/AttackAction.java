@@ -105,6 +105,7 @@ public class AttackAction extends SwordAction {
         }
     }
 
+    /** Executes a basic sweep slash attack using the provided profile and item. */
     public static void basicSlash(Combatant executor, ItemStack itemUsedInAttack, AttackProfile profile, Boolean orientWithPitch) {
         new SweepAttack(itemUsedInAttack, profile, orientWithPitch)
             .setAttackDuration(attacker -> (int) attacker.calcValueReductive(

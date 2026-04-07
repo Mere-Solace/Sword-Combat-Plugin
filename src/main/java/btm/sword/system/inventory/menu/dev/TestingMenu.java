@@ -34,6 +34,7 @@ import xyz.xenondevs.invui.gui.Gui;
 import xyz.xenondevs.invui.item.impl.SimpleItem;
 import xyz.xenondevs.invui.window.Window;
 
+/** Developer menu providing quick access to testing utilities such as volume wands and dummy spawning. */
 public class TestingMenu extends Menu {
 
     /**

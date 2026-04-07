@@ -35,7 +35,9 @@ import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 
+/** Provides static action methods for all UmbralBlade combat inputs and skill activations. */
 public class UmbralBladeAction extends SwordAction {
+    /** Toggles wield state: wields the blade if not already wielded, otherwise sends a TOGGLE request. */
     public static void wield(Combatant wielder) {
 
         Debug.umbral("wield called");
@@ -51,6 +53,7 @@ public class UmbralBladeAction extends SwordAction {
         }
     }
 
+    /** Sends a TOGGLE request to the blade state machine. */
     public static void toggle(Combatant wielder) {
         UmbralBlade blade = wielder.getUmbralBlade();
         if (blade == null) return;
@@ -58,6 +61,7 @@ public class UmbralBladeAction extends SwordAction {
         blade.request(BladeRequest.TOGGLE);
     }
 
+    /** Sends a LUNGE request, or a RECALL if the blade is currently lodged. */
     public static void lunge(Combatant wielder) {
         UmbralBlade blade = wielder.getUmbralBlade();
         if (blade == null) return;
@@ -70,6 +74,7 @@ public class UmbralBladeAction extends SwordAction {
         }
     }
 
+    /** Sends a heavy attack request to the blade state machine. */
     public static void sweep(Combatant wielder) {
         UmbralBlade blade = wielder.getUmbralBlade();
         if (blade == null) return;
@@ -77,6 +82,7 @@ public class UmbralBladeAction extends SwordAction {
         blade.request(BladeRequest.ATTACK_HEAVY);
     }
 
+    /** Dispatches the appropriate attack based on the current reclaim type and combo step. */
     public static void wieldedUmbralBladeAttack(Combatant wielder, int comboStep) {
         if (!(wielder instanceof SwordPlayer sp)) return;
 
@@ -101,6 +107,7 @@ public class UmbralBladeAction extends SwordAction {
         }
     }
 
+    /** Executes the circular reclaim slash attack that triggers on blade retrieval. */
     public static void circularReclaimSlash(Combatant wielder) {
         new Attack(wielder.getItemStackInHand(true), // TODO: Store somewhere
             AttackType.BLADE_RETRIEVAL_CIRCULAR_SLASH,
@@ -109,6 +116,7 @@ public class UmbralBladeAction extends SwordAction {
             0, 1).execute(wielder);
     }
 
+    /** Performs a quick attack if soulfire permits, otherwise falls back to a punch or input re-route. */
     public static void basicAttackWithLink(Combatant wielder, int comboStep) {
         UmbralBlade blade = wielder.getUmbralBlade();
         if (blade == null) return;
@@ -126,6 +134,7 @@ public class UmbralBladeAction extends SwordAction {
         throwPunch(wielder, comboStep == 1 || comboStep == 3, -1);
     }
 
+    /** Starts the soulfire heal channel, draining soulfire over time and restoring shards on completion. */
     public static void beginHealChannel(Combatant wielder) {
         Debug.umbral("heal channeling");
 
@@ -223,6 +232,7 @@ public class UmbralBladeAction extends SwordAction {
         ));
     }
 
+    /** Sends a WAITING request to place the blade into a hovering idle state. */
     public static void hoverBlade(Combatant wielder) {
         UmbralBlade blade = wielder.getUmbralBlade();
         if (blade == null) return;
@@ -230,6 +240,7 @@ public class UmbralBladeAction extends SwordAction {
         blade.request(BladeRequest.WAITING);
     }
 
+    /** Sends a FINISHER request to trigger the spiral finisher sequence. */
     public static void spiralFinisher(Combatant wielder) {
         UmbralBlade blade = wielder.getUmbralBlade();
         if (blade == null) return;
@@ -237,6 +248,7 @@ public class UmbralBladeAction extends SwordAction {
         blade.request(BladeRequest.FINISHER);
     }
 
+    /** Teleports the wielder to a targeted entity after consuming soulfire, then triggers a follow-up attack. */
     public static void shadowBlink(Combatant wielder) {
         UmbralBlade blade = wielder.getUmbralBlade();
         if (blade == null) return;

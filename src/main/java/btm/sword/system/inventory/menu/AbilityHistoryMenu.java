@@ -37,6 +37,7 @@ public class AbilityHistoryMenu extends Menu {
 
     private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm");
 
+    /** Constructs the ability history menu for the given player. */
     public AbilityHistoryMenu(SwordPlayer player) {
         super(player);
     }

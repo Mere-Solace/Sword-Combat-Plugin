@@ -15,15 +15,18 @@ public final class CustomInteractionManager {
 
     private CustomInteractionManager() {}
 
+    /** Clears all registered interactions and re-registers the built-in set. */
     public static void initialize() {
         INTERACTIONS.clear();
         register(new RotateThrowStyleSmithingInteraction());
     }
 
+    /** Adds a custom inventory interaction to the registry. */
     public static void register(CustomInventoryInteraction interaction) {
         INTERACTIONS.add(interaction);
     }
 
+    /** Returns the first registered interaction whose type and match predicate satisfy the context, or {@code null}. */
     public static CustomInventoryInteraction find(CustomInteractionContext context) {
         InventoryType type = context.inventoryType();
         for (CustomInventoryInteraction interaction : INTERACTIONS) {

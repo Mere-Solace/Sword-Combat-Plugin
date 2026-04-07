@@ -392,6 +392,7 @@ public class PlayerListener implements Listener {
 //        event.setCancelled(true);
     }
 
+    /** Handles game mode changes; removes blade display entities and deactivates the blade in spectator mode. */
     @EventHandler
     public void gameChangeEvent(PlayerGameModeChangeEvent event) {
         SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer());

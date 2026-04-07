@@ -20,6 +20,7 @@ import btm.sword.system.entity.impl.Combatant;
 import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.input.InputRegistrar;
 
+/** Miscellaneous utility actions and helpers that do not fit into a dedicated utility class. */
 public final class Misc {
 
     private Misc() {}

@@ -250,6 +250,7 @@ public final class KeyRegistry {
         itemStack.editPersistentDataContainer(pdc -> pdc.set(key, dataType, value));
     }
 
+    /** Returns the value stored under the given key on the item stack, or {@code null} if absent. */
     public static <T, Z> Z getKeyField(ItemStack itemStack, @NotNull NamespacedKey key, PersistentDataType<T, Z> dataType) {
         return itemStack.getPersistentDataContainer().get(key, dataType);
     }

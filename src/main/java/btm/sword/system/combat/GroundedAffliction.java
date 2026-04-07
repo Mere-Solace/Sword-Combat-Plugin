@@ -6,7 +6,9 @@ import org.bukkit.util.Vector;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.utility.Prefab;
 
+/** An affliction that pins the entity downward, suppressing upward velocity for its duration. */
 public class GroundedAffliction extends Affliction {
+    /** Creates a grounded affliction with the given tick duration and downward strength. */
     public GroundedAffliction(long tickDuration, double strength) {
         super(true, tickDuration, strength);
     }

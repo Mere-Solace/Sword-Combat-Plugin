@@ -19,19 +19,23 @@ public record CustomInteractionContext(
     public static final int SMITHING_ADDITION_SLOT = 2;
     public static final int SMITHING_RESULT_SLOT = 3;
 
+    /** Returns the top (crafting) inventory from the player's current inventory view. */
     public Inventory topInventory() {
         return view.getTopInventory();
     }
 
+    /** Returns the type of the top inventory. */
     public InventoryType inventoryType() {
         return topInventory().getType();
     }
 
+    /** Returns the item in the given slot of the top inventory, or an empty stack if absent. */
     public ItemStack topItem(int slot) {
         ItemStack item = topInventory().getItem(slot);
         return item == null ? ItemStack.empty() : item;
     }
 
+    /** Sets the item in the given slot of the top inventory. */
     public void setTopItem(int slot, ItemStack item) {
         topInventory().setItem(slot, item);
     }

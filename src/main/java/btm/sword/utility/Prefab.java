@@ -27,10 +27,12 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 
+/** Central registry of pre-configured particles, sounds, attacks, potion effects, items, and text used across the plugin. */
 public final class Prefab {
 
     private Prefab() {}
 
+    /** Pre-configured {@link ParticleWrapper} constants for effects used throughout the plugin. */
     public static class Particles {
         public static final ParticleWrapper TEST_FLAME = new ParticleWrapper(
             () -> Particle.FLAME, () -> 2, () -> 0.025, () -> 0.025, () -> 0.025).withSpeed(() -> 0.0);

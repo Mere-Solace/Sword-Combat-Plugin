@@ -126,6 +126,7 @@ public abstract class Affliction {
         );
     }
 
+    /** Signals this affliction to cancel on the next tick evaluation. */
     public void cancel() {
         this.shouldCancel = true;
     }

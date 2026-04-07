@@ -21,6 +21,7 @@ import btm.sword.system.interaction.CustomInventoryInteraction;
  */
 public class CustomInteractionListener implements Listener {
 
+    /** Enables the custom interaction HUD override when a smithing table is opened. */
     @EventHandler
     public void onInventoryOpen(InventoryOpenEvent event) {
         if (event.getInventory().getType() == InventoryType.SMITHING && event.getPlayer() instanceof Player player) {
@@ -28,6 +29,7 @@ public class CustomInteractionListener implements Listener {
         }
     }
 
+    /** Disables the custom interaction HUD override when a smithing table is closed. */
     @EventHandler
     public void onInventoryClose(InventoryCloseEvent event) {
         if (event.getInventory().getType() == InventoryType.SMITHING && event.getPlayer() instanceof Player player) {
@@ -35,6 +37,7 @@ public class CustomInteractionListener implements Listener {
         }
     }
 
+    /** Delegates smithing preparation to the registered {@link CustomInventoryInteraction} if one matches. */
     @EventHandler
     public void onPrepareSmithing(PrepareSmithingEvent event) {
         if (!(event.getView().getPlayer() instanceof Player player)) {
@@ -48,6 +51,7 @@ public class CustomInteractionListener implements Listener {
         }
     }
 
+    /** Handles result slot clicks in smithing tables, consuming inputs and delivering the crafted result. */
     @EventHandler
     public void onInventoryClick(InventoryClickEvent event) {
         if (!(event.getWhoClicked() instanceof Player player)) {

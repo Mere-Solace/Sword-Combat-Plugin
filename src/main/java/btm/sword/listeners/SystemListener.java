@@ -37,6 +37,7 @@ public class SystemListener implements Listener {
         }
     }
 
+    /** Reserved handler for server tick end events; no behaviour is currently implemented. */
     @EventHandler
     public void onStop(ServerTickEndEvent event) {
 

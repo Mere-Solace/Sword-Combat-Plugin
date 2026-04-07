@@ -11,6 +11,7 @@ import btm.sword.system.entity.umbral.statemachine.UmbralStateFacade;
 import btm.sword.utility.display.DisplayUtil;
 import net.kyori.adventure.text.Component;
 
+/** State where the blade hovers near the wielder in a ready position, following their movement. */
 public class StandbyState extends UmbralStateFacade {
     private TimeArbiter.TaskHandle followTask;
 

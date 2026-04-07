@@ -44,6 +44,7 @@ public class ItemStackBuilder {
     private ItemMeta meta;
     private boolean stripAttributeModifiers = false;
 
+    /** Returns a new builder for the given material. */
     public static ItemStackBuilder of(Material material) {
         return new ItemStackBuilder(material);
     }
@@ -110,6 +111,7 @@ public class ItemStackBuilder {
 
     // TODO: use ItemMeta instanceof Damageable to set Max damage, get damage, etc.
 
+    /** Sets the max damage and starting damage for a damageable item; no-op if the item is not damageable. */
     public ItemStackBuilder setDamageValues(int maxDamage, int startingDamage) {
         if (meta instanceof Damageable damageable) {
             damageable.setMaxDamage(maxDamage);
@@ -134,18 +136,22 @@ public class ItemStackBuilder {
         return this;
     }
 
+    /** Tags the item with its {@link SwordItemType} identifier for runtime type detection. */
     public ItemStackBuilder tagSwordItem(SwordItemType type) {
         return tag(KeyRegistry.ITEM_TYPE_KEY, PersistentDataType.STRING, type.string());
     }
 
+    /** Tags the item with the given {@link WeaponAttackStyle} string for attack-style resolution. */
     public ItemStackBuilder tagAttackStyle(WeaponAttackStyle type) {
         return tag(KeyRegistry.ATTACK_STYLE_KEY, PersistentDataType.STRING, type.string());
     }
 
+    /** Tags the item with the given impact type string for hit effect resolution. */
     public ItemStackBuilder tagImpactType(ImpactType type) {
         return tag(KeyRegistry.IMPACT_TYPE_KEY, PersistentDataType.STRING, type.string());
     }
 
+    /** Tags the item as a storage button of the given category. */
     public ItemStackBuilder tagStorageButton(StorageCategory category) {
         return tag(KeyRegistry.STORAGE_BUTTON_KEY, PersistentDataType.STRING, category.string());
     }

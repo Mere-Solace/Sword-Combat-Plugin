@@ -8,6 +8,7 @@ import org.bukkit.persistence.PersistentDataType;
 
 import btm.sword.system.item.KeyRegistry;
 
+/** Defines the attack style of a weapon, mapping it to a set of combo and situational attack profiles. */
 public enum WeaponAttackStyle {
     PUNCH("punch"),
     SLASH("slash", List.of(
@@ -66,38 +67,47 @@ public enum WeaponAttackStyle {
             null, null, null, null);
     }
 
+    /** Returns the lowercase string key used to look up this style from persistent data. */
     public String string() {
         return string;
     }
 
+    /** Returns the ordered list of ground combo attack profiles. */
     public List<AttackProfile> attacks() {
         return attackChain;
     }
 
+    /** Returns the neutral air attack profile. */
     public AttackProfile neutralAir() {
         return neutralAirAttack;
     }
 
+    /** Returns the down air attack profile. */
     public AttackProfile downAir() {
         return downAirAttack;
     }
 
+    /** Returns the forward dash attack profile. */
     public AttackProfile fDash() {
         return forwardDashAttack;
     }
 
+    /** Returns the backward dash attack profile. */
     public AttackProfile bDash() {
         return backwardDashAttack;
     }
 
+    /** Returns the right strafe attack profile. */
     public AttackProfile rStrafe() {
         return rightStrafeAttack;
     }
 
+    /** Returns the left strafe attack profile. */
     public AttackProfile lStrafe() {
         return leftStrafeAttack;
     }
 
+    /** Resolves the attack style from the item's persistent data, defaulting to PUNCH if not found. */
     public static WeaponAttackStyle fromString(ItemStack item) {
         return MAP_TO_ENUM.getOrDefault(KeyRegistry.getKeyField(item, KeyRegistry.ATTACK_STYLE_KEY, PersistentDataType.STRING), PUNCH);
     }

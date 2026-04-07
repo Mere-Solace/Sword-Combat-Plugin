@@ -708,11 +708,13 @@ public class VisualProjectile extends SimulatedDisplay {
         this.timeStep.set(timeStep);
     }
 
+    /** Sets a uniform display scale applied to all three axes of the projectile's item display. */
     public void setDisplayScale(float displayScale) {
         this.displayScale = displayScale;
         this.displayScaleVector = new Vector3f(displayScale);
     }
 
+    /** Sets a per-axis display scale vector for the projectile's item display. */
     public void setDisplayScale(Vector3f displayScaleVector) {
         this.displayScale = 1;
         this.displayScaleVector = displayScaleVector;

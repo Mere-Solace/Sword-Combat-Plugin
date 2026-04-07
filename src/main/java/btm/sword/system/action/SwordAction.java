@@ -7,6 +7,7 @@ import org.bukkit.scheduler.BukkitScheduler;
 
 import btm.sword.Sword;
 
+/** Base class for all sword combat actions, providing shared scheduler and plugin references. */
 public abstract class SwordAction {
 
     protected SwordAction() {}

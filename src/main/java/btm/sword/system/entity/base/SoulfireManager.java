@@ -14,10 +14,12 @@ import btm.sword.system.entity.impl.Combatant;
 import btm.sword.utility.Prefab;
 import btm.sword.utility.display.ParticleWrapper;
 
+/** Manages soulfire transfers between combatants, splitting totals into discrete packets with visual feedback. */
 public final class SoulfireManager {
 
     private SoulfireManager() {}
 
+    /** Transfers soulfire from a hit entity to the receiver, split into visual packets with particle arcs. */
     public static void transferSoulfire(Combatant receiver, SwordEntity hit, float totalAmount) {
         float remainder = totalAmount;
         List<Float> packets = new ArrayList<>();

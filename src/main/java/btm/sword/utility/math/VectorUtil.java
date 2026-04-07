@@ -22,6 +22,7 @@ public final class VectorUtil {
 
     private VectorUtil() {}
 
+    /** Computes a right-up-forward basis aligned to the given direction vector, handling straight up/down edge cases. */
     public static Basis getBasis(Location origin, Vector dir) {
         dir.normalize();
         if (dir.isZero()) { // just in case, return a default basis
@@ -52,6 +53,7 @@ public final class VectorUtil {
         return new Basis(right, up, dir);
     }
 
+    /** Computes a horizontal-only basis from the entity's yaw, ignoring pitch. */
     public static Basis getBasisWithoutPitch(Entity origin) {
         Vector up = Config.Direction.up();
         double yaw;
@@ -67,6 +69,7 @@ public final class VectorUtil {
         return new Basis(right, up, dir);
     }
 
+    /** Computes a horizontal-only basis from the location's yaw, ignoring pitch. */
     public static Basis getBasisWithoutPitch(Location location) {
         Vector up = Config.Direction.up();
         double yaw = Math.toRadians(location.getYaw());
@@ -76,6 +79,7 @@ public final class VectorUtil {
         return new Basis(right, up, dir);
     }
 
+    /** Returns {@code true} if any component of the vector is NaN or infinite. */
     public static boolean isBroken(Vector v) {
         return Double.isNaN(v.getX()) || Double.isNaN(v.getY()) || Double.isNaN(v.getZ())
             || Double.isInfinite(v.getX()) || Double.isInfinite(v.getY()) || Double.isInfinite(v.getZ());
@@ -165,6 +169,7 @@ public final class VectorUtil {
         return Math.toDegrees(Math.atan2(-v.getX(), v.getZ()));
     }
 
+    /** Returns the angle in radians between two vectors, clamping the cosine to avoid acos domain errors. */
     public static double getAngleBetweenTwoVectors(Vector v, Vector u) {
         double vNorm = v.length();
         double uNorm = u.length();
@@ -176,6 +181,7 @@ public final class VectorUtil {
         return Math.acos(cos); // radians
     }
 
+    /** Returns a normalised vector from {@code from}'s chest to {@code to}'s chest, scaled by {@code scalar}. */
     public static Vector getVectorTo(SwordEntity from, SwordEntity to, double scalar) {
         return to.getChestLocation().toVector()
             .subtract(from.getChestLocation().toVector())

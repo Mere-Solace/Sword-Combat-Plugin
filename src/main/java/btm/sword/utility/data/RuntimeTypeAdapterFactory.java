@@ -16,6 +16,7 @@ import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
 
+/** A Gson {@link TypeAdapterFactory} that serialises polymorphic types using a discriminator field. */
 public final class RuntimeTypeAdapterFactory<T> implements TypeAdapterFactory {
     private final Class<?> baseType;
     private final String typeFieldName;
@@ -29,20 +30,24 @@ public final class RuntimeTypeAdapterFactory<T> implements TypeAdapterFactory {
         this.typeFieldName = typeFieldName;
     }
 
+    /** Creates a factory using the given base type and custom discriminator field name. */
     public static <T> RuntimeTypeAdapterFactory<T> of(Class<T> baseType, String typeFieldName) {
         return new RuntimeTypeAdapterFactory<>(baseType, typeFieldName);
     }
 
+    /** Creates a factory using the given base type with the default {@code "type"} discriminator field. */
     public static <T> RuntimeTypeAdapterFactory<T> of(Class<T> baseType) {
         return new RuntimeTypeAdapterFactory<>(baseType, "type");
     }
 
+    /** Registers a subtype with an explicit label used in the serialised discriminator field. */
     public RuntimeTypeAdapterFactory<T> registerSubtype(Class<? extends T> type, String label) {
         labelToSubtype.put(label, type);
         subtypeToLabel.put(type, label);
         return this;
     }
 
+    /** Registers a subtype using its simple class name as the label. */
     public RuntimeTypeAdapterFactory<T> registerSubtype(Class<? extends T> type) {
         return registerSubtype(type, type.getSimpleName());
     }

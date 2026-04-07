@@ -1,5 +1,6 @@
 package btm.sword.system.action.throwing;
 
+/** Defines the trajectory and rotation style applied when an item is thrown. */
 public enum ItemThrowStyle {
     SPEAR, // Strong, direct throw with no rotation, impaling enemies hit
     LOB, // for heavy objects like blocks, slight upward arc forward

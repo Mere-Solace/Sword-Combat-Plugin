@@ -28,8 +28,10 @@ import xyz.xenondevs.invui.item.Click;
 import xyz.xenondevs.invui.item.impl.SimpleItem;
 import xyz.xenondevs.invui.window.Window;
 
+/** Menu displaying the player's equipped skills and providing access to the skill selection sub-menus. */
 public class CharacterMenu extends Menu {
 
+    /** Constructs the character menu for the given player. */
     public CharacterMenu(SwordPlayer player) {
         super(player);
     }

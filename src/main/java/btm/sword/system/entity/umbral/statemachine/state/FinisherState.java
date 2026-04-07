@@ -13,6 +13,7 @@ import btm.sword.system.entity.umbral.statemachine.UmbralStateFacade;
 //import org.joml.Quaternionf;
 //import org.joml.Vector3f;
 
+/** Placeholder state for the spiral finisher sequence; body is not yet implemented. */
 public class FinisherState extends UmbralStateFacade {
     @Override
     public String name() {

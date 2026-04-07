@@ -18,6 +18,9 @@ import btm.sword.system.item.ItemStackBuilder;
 import btm.sword.utility.ChatInputCapture;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+
+import org.jetbrains.annotations.NotNull;
+
 import xyz.xenondevs.invui.gui.Gui;
 import xyz.xenondevs.invui.item.ItemProvider;
 import xyz.xenondevs.invui.item.ItemWrapper;
@@ -41,6 +44,7 @@ import xyz.xenondevs.invui.window.Window;
  */
 public class DevStatEditorMenu extends Menu {
 
+    /** Constructs the developer stat editor menu for the given player. */
     public DevStatEditorMenu(SwordPlayer player) {
         super(player);
     }
@@ -131,7 +135,7 @@ public class DevStatEditorMenu extends Menu {
             }
 
             @Override
-            public void handleClick(ClickType clickType, Player p, InventoryClickEvent event) {
+            public void handleClick(@NotNull ClickType clickType, Player p, InventoryClickEvent event) {
                 if (isResource) {
                     Resource r = (Resource) aspect;
                     if (clickType == ClickType.LEFT) {

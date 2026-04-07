@@ -54,7 +54,7 @@ public final class DisplayUtil {
         display.setInterpolationDuration(duration);
     }
 
-    // returns a task for use in detecting when finished
+    /** Smoothly rotates the display toward an offset position using slerp, returning a task handle. */
     public static TimeArbiter.TaskHandle displaySlerpToOffset(
         SwordEntity entity, ItemDisplay display, Vector offset,
         double speed, int tpDuration, int period,
@@ -174,6 +174,7 @@ public final class DisplayUtil {
         );
     }
 
+    /** Starts a task that moves the display to a lerp-computed offset relative to the entity each period. */
     public static TimeArbiter.TaskHandle itemDisplayFollowLerp(
         SwordEntity entity, ItemDisplay display, Vector offset,
         int tpDuration, int period, boolean withPitch) {
@@ -245,6 +246,7 @@ public final class DisplayUtil {
         );
     }
 
+    /** Starts a task that teleports the display directly to the entity's location each period. */
     public static TimeArbiter.TaskHandle itemDisplayFollowDirect(
         Entity entity, ItemDisplay display, int tpDuration, int period) {
 

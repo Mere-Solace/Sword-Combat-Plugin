@@ -75,6 +75,7 @@ public class InputListener implements Listener {
         swordPlayer.act(InputType.LEFT);
     }
 
+    /** Handles the attack cooldown reset event; currently used only for debug tracing. */
     @EventHandler // imagine that...
     public void onAttackCooldownResetEvent(PlayerAttackEntityCooldownResetEvent event) {
         SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer());
@@ -197,6 +198,7 @@ public class InputListener implements Listener {
         swordPlayer.act(InputType.RIGHT);
     }
 
+    /** Reserved handler for entity-targeted interactions; no behaviour is currently implemented. */
     @EventHandler
     public void onPlayerInteractAtEntity(PlayerInteractAtEntityEvent event) {
 

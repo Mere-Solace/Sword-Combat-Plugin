@@ -10,6 +10,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 import btm.sword.Sword;
 
 
+/** Provides main-thread scheduling utilities that delegate to {@link TimeArbiter} and Bukkit's scheduler. */
 public final class SwordScheduler {
 
     private SwordScheduler() {}
@@ -52,6 +53,7 @@ public final class SwordScheduler {
             }, delay, unit);
     }
 
+    /** Runs the given {@link Runnable} synchronously on the Bukkit main thread immediately. */
     public static void runBukkitTask(Runnable runnable) {
         Bukkit.getScheduler().runTask(Sword.getInstance(), runnable);
     }

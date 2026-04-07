@@ -7,8 +7,10 @@ import xyz.xenondevs.invui.item.ItemProvider;
 import xyz.xenondevs.invui.item.builder.ItemBuilder;
 import xyz.xenondevs.invui.item.impl.controlitem.PageItem;
 
+/** A paged GUI control item that returns to the previous page. */
 public class PreviousItem extends PageItem {
 
+    /** Constructs a backward page-navigation item. */
     public PreviousItem() {
         super(false);
     }

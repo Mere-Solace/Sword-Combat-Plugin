@@ -10,8 +10,10 @@ import btm.sword.system.action.SwordAction;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.impl.Combatant;
 
+/** Utility combat actions used for testing and debug purposes. */
 public class UtilityAction extends SwordAction {
 
+    /** Deals extreme damage to the nearest entity in the executor's line of sight, or creates an explosion. */
     @SuppressWarnings("all")
     public static void death(Combatant executor) {
         LivingEntity ex = executor.self();

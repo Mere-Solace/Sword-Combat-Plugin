@@ -339,6 +339,7 @@ public class Attack extends SwordAction implements Runnable {
         return i * msPerIteration;
     }
 
+    /** Schedules the post-attack callback after the configured delay, if one is set. */
     public void handleCallback() {
         if (callback != null) {
             SwordScheduler.runBukkitTaskLater(callback, msBeforeCallbackSchedule, TimeUnit.MILLISECONDS);
@@ -468,26 +469,32 @@ public class Attack extends SwordAction implements Runnable {
         weaponPathFunction = attackProfile.shape().resolve(basis, rangeMultiplier);
     }
 
+    /** Returns a clone of the current weapon tip position in world space. */
     public Vector getCur() {
         return cur.clone();
     }
 
+    /** Returns a clone of the previous weapon tip position in world space. */
     public Vector getPrev() {
         return prev.clone();
     }
 
+    /** Returns a clone of the target weapon tip position for the current iteration. */
     public Vector getTo() {
         return to.clone();
     }
 
+    /** Returns a clone of the current right basis vector in world space. */
     public Vector getRightVector() {
         return curRight.clone();
     }
 
+    /** Returns a clone of the current forward basis vector in world space. */
     public Vector getForwardVector() {
         return curForward.clone();
     }
 
+    /** Returns a clone of the current up basis vector in world space. */
     public Vector getUpVector() {
         return curUp.clone();
     }
