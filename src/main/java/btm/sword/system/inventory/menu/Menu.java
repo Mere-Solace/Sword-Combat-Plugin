@@ -4,6 +4,7 @@ import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 
 import org.bukkit.Material;
+import org.bukkit.inventory.ItemStack;
 
 import btm.sword.config.Config;
 import btm.sword.system.entity.impl.SwordPlayer;
@@ -80,6 +81,29 @@ public abstract class Menu {
                     .setDisplayName("Go forward"),
                 click -> swordPlayer.getPlayerMenuManager().openForwardPreviousMenu()
             );
+    }
+
+    /**
+     * Builds a {@link SimpleItem} that gives the player one stack of the given material on click.
+     *
+     * @param material the material to give
+     * @param label    display name for the item button
+     * @return a {@link SimpleItem} that gives the item on click
+     */
+    protected SimpleItem giveItem(Material material, String label) {
+        return new SimpleItem(
+            new ItemStackBuilder(material)
+                .name(Component.text(label, NamedTextColor.WHITE))
+                .build(),
+            click -> click.getPlayer().getInventory().addItem(ItemStack.of(material))
+        );
+    }
+
+    protected SimpleItem giveItem(ItemStack stack) {
+        return new SimpleItem(
+            stack,
+            click -> click.getPlayer().getInventory().addItem(stack)
+        );
     }
 
     /**

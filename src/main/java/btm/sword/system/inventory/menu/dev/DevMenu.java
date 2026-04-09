@@ -4,7 +4,6 @@ import java.util.List;
 
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
 
 import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.inventory.menu.ItemLibraryMenu;
@@ -198,21 +197,5 @@ public class DevMenu extends Menu {
             .build();
 
         window.open();
-    }
-
-    /**
-     * Builds a {@link SimpleItem} that gives the player one stack of the given material on click.
-     *
-     * @param material the material to give
-     * @param label    display name for the item button
-     * @return a {@link SimpleItem} that gives the item on click
-     */
-    private SimpleItem giveItem(Material material, String label) {
-        return new SimpleItem(
-            new ItemStackBuilder(material)
-                .name(Component.text(label, NamedTextColor.WHITE))
-                .build(),
-            click -> click.getPlayer().getInventory().addItem(ItemStack.of(material))
-        );
     }
 }
