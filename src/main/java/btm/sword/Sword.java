@@ -44,6 +44,7 @@ import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.display.DEUAnimationHook;
 import btm.sword.system.entity.display.WeaponAnchorPacketHook;
 import btm.sword.system.entity.display.WeaponDisplayRegistry;
+import btm.sword.system.entity.impl.DevSwordPlayer;
 import btm.sword.system.entity.mob.MobTypeRegistry;
 import btm.sword.system.interaction.CustomInteractionManager;
 import btm.sword.system.inventory.InventoryMenuManager;
@@ -79,6 +80,9 @@ public final class Sword extends JavaPlugin {
     public void onEnable() {
         instance = this;
         scheduler = Executors.newSingleThreadScheduledExecutor();
+
+        // Load dev player names from the bundled devnames.txt resource (gitignored, baked into JAR)
+        DevSwordPlayer.loadDevNames(this);
 
         // Initialize configuration system (must be first for other systems to use it)
         ConfigManager.initialize(this);

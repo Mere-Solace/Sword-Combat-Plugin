@@ -7,6 +7,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 import org.joml.Vector3f;
 
 import btm.sword.system.attack.HitValuePacket;
@@ -14,6 +15,7 @@ import btm.sword.system.attack.def.AttackDef;
 import btm.sword.system.attack.def.AttackPrimitive;
 import btm.sword.system.attack.simulation.VolumeKeyframe;
 import lombok.Getter;
+import lombok.Setter;
 
 /**
  * Tracks per-player state during an attack creation or editing session.
@@ -42,6 +44,19 @@ public final class AttackDevSession {
     private final Player player;
     private DevMode mode = DevMode.IDLE;
     private String currentAttackName = null;
+
+    // ── AnimationMode state ───────────────────────────────────────────────────
+    /**
+     * Snapshot of the player's inventory taken on {@link AnimationMode#enter}.
+     * Restored on {@link AnimationMode#exit} to return to the creative-dev state.
+     */
+    @Setter private ItemStack[] savedAnimationInventory = null;
+
+    /**
+     * Number of hotbar-tool mutations made since the last save in AnimationMode.
+     * Displayed in the {@link SaveConfirmDialog} title. Reset to 0 after each save.
+     */
+    @Setter private int editCount = 0;
 
     // ── Recording state ───────────────────────────────────────────────────────
     /** Local-space tip samples captured during the current recording. */

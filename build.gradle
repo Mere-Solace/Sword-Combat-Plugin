@@ -116,6 +116,13 @@ processResources {
     filesMatching('paper-plugin.yml') {
         expand props
     }
+
+    // Bundle devnames.txt into the JAR if present locally (gitignored).
+    // The server reads it from the classpath — the raw file need not be deployed.
+    def devNamesFile = rootProject.file('devnames.txt')
+    if (devNamesFile.exists()) {
+        from(devNamesFile)
+    }
 }
 
 // Checkstyle configuration - detects code quality issues

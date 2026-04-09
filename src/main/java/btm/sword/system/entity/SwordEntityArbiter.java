@@ -17,6 +17,7 @@ import btm.sword.Sword;
 import btm.sword.system.control.SwordScheduler;
 import btm.sword.system.entity.base.CombatProfile;
 import btm.sword.system.entity.base.SwordEntity;
+import btm.sword.system.entity.impl.DevSwordPlayer;
 import btm.sword.system.entity.impl.Dummy;
 import btm.sword.system.entity.impl.Hostile;
 import btm.sword.system.entity.impl.Passive;
@@ -24,6 +25,7 @@ import btm.sword.system.entity.impl.RigHostile;
 import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.entity.mob.MobTypeDefinition;
 import btm.sword.system.entity.mob.MobTypeRegistry;
+import btm.sword.system.playerdata.PlayerData;
 import btm.sword.system.playerdata.PlayerDataManager;
 
 /**
@@ -58,7 +60,11 @@ public final class SwordEntityArbiter {
         if (entity instanceof Player player) {
             PlayerDataManager.register(player);
             if (ONLINE_SWORD_PLAYERS.get(entityUUID) == null) {
-                ONLINE_SWORD_PLAYERS.put(entityUUID, new SwordPlayer(player, PlayerDataManager.getPlayerData(entityUUID)));
+                PlayerData data = PlayerDataManager.getPlayerData(entityUUID);
+                SwordPlayer sp = DevSwordPlayer.isDevPlayer(player.getName())
+                    ? new DevSwordPlayer(player, data)
+                    : new SwordPlayer(player, data);
+                ONLINE_SWORD_PLAYERS.put(entityUUID, sp);
             }
 
             if (Sword.getInstance().isEnabled()) {
@@ -97,7 +103,8 @@ public final class SwordEntityArbiter {
      * @param entity entity to remove
      */
     public static void remove(LivingEntity entity) {
-        if (ONLINE_SWORD_PLAYERS.remove(entity.getUniqueId()) == null) EXISTING_SWORD_NPCS.remove(entity.getUniqueId());
+        UUID uuid = entity.getUniqueId();
+        if (ONLINE_SWORD_PLAYERS.remove(uuid) == null) EXISTING_SWORD_NPCS.remove(uuid);
     }
 
     /**

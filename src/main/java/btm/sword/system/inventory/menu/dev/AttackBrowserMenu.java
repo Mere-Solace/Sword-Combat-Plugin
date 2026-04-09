@@ -5,16 +5,20 @@ import java.util.Comparator;
 import java.util.List;
 
 import org.bukkit.Material;
+import org.bukkit.event.inventory.ClickType;
 
 import btm.sword.system.attack.def.AttackDef;
+import btm.sword.system.attack.dev.AnimationMode;
 import btm.sword.system.attack.dev.AttackDevSession;
 import btm.sword.system.attack.dev.DevMode;
 import btm.sword.system.attack.simulation.KeyframedTrajectory;
+import btm.sword.system.entity.impl.DevSwordPlayer;
 import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.inventory.item.ForwardItem;
 import btm.sword.system.inventory.item.PreviousItem;
 import btm.sword.system.inventory.menu.Menu;
 import btm.sword.system.item.ItemStackBuilder;
+import btm.sword.utility.Prefab;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -78,15 +82,18 @@ public class AttackBrowserMenu extends Menu {
             }
         );
 
+        SimpleItem giveWand = giveItem(Prefab.Items.testVolumeWand());
+
         PagedGui<Item> gui = PagedGui.items()
             .setStructure(
-                "P # # # # # # N #",
+                "P # # # # # # # #",
                 "x x x x x x x x x",
                 "x x x x x x x x x",
-                "# # # < # > # # #")
+                "N G # < # > # # #")
             .addIngredient('#', BORDER)
             .addIngredient('P', back)
             .addIngredient('N', newRecording)
+            .addIngredient('G', giveWand)
             .addIngredient('<', new PreviousItem())
             .addIngredient('>', new ForwardItem())
             .addIngredient('x', Markers.CONTENT_LIST_SLOT_HORIZONTAL)
@@ -132,6 +139,7 @@ public class AttackBrowserMenu extends Menu {
         if (editable) {
             lore.add(Component.text("Left-click to edit", NamedTextColor.YELLOW));
             lore.add(Component.text("Right-click to visualize", NamedTextColor.AQUA));
+            lore.add(Component.text("Shift-click to enter Animation Mode", NamedTextColor.GOLD));
         } else {
             lore.add(Component.text("SWEEP attacks cannot be edited here", NamedTextColor.RED));
         }
@@ -149,7 +157,15 @@ public class AttackBrowserMenu extends Menu {
         return new SimpleItem(builder.build(), click -> {
             KeyframedTrajectory kt = (KeyframedTrajectory) def.getTrajectory();
             AttackDevSession session = AttackDevSession.getOrCreate(swordPlayer.player());
-            if (click.getClickType().isRightClick()) {
+            if (click.getClickType() == ClickType.SHIFT_LEFT) {
+                if (!(swordPlayer instanceof DevSwordPlayer dev)) {
+                    swordPlayer.message(Component.text("[Dev] Not a dev player — cannot enter Animation Mode.", NamedTextColor.RED));
+                    return;
+                }
+                session.startEditing(def.getId(), kt.getKeyframes(), def.getDurationMs(), def.getHitValue());
+                swordPlayer.player().closeInventory();
+                AnimationMode.enter(dev, session);
+            } else if (click.getClickType().isRightClick()) {
                 session.startViewing(def.getId(), kt.getKeyframes());
                 swordPlayer.player().closeInventory();
                 swordPlayer.message(Component.text(
