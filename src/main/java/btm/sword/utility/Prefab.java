@@ -369,10 +369,14 @@ public final class Prefab {
                 .lore(List.of(
                     Component.text("Dev test item", NamedTextColor.DARK_GRAY).decorate(TextDecoration.ITALIC),
                     Component.empty(),
-                    Component.text("Left Click ", NamedTextColor.YELLOW)
-                        .append(Component.text("— fires ", NamedTextColor.GRAY))
-                        .append(Component.text("test_volume_attack", NamedTextColor.GOLD)),
-                    Component.text("600ms OBB sweep, 1–2 blocks ahead", NamedTextColor.DARK_GRAY)
+                    Component.text("Shift+Left  ", NamedTextColor.YELLOW)
+                        .append(Component.text("— start / stop recording", NamedTextColor.GRAY)),
+                    Component.text("Left        ", NamedTextColor.YELLOW)
+                        .append(Component.text("— fire loaded attack", NamedTextColor.GRAY)),
+                    Component.text("Shift+Swap  ", NamedTextColor.YELLOW)
+                        .append(Component.text("— open editor", NamedTextColor.GRAY)),
+                    Component.text("Drop+Drop   ", NamedTextColor.YELLOW)
+                        .append(Component.text("— exit session", NamedTextColor.GRAY))
                 ))
                 .unbreakable(true)
                 .tag(KeyRegistry.TEST_VOLUME_ATTACK_KEY, PersistentDataType.BOOLEAN, true)

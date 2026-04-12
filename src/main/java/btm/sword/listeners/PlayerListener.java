@@ -21,6 +21,7 @@ import org.bukkit.event.inventory.InventoryEvent;
 import org.bukkit.event.inventory.InventoryOpenEvent;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.player.PlayerGameModeChangeEvent;
+import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
@@ -30,6 +31,8 @@ import btm.sword.Sword;
 import btm.sword.config.Config;
 import btm.sword.gamemode.QueueManager;
 import btm.sword.gamemode.type.CaptureTheFlag1v1;
+import btm.sword.system.attack.dev.AttackDevSession;
+import btm.sword.system.attack.dev.DevMode;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.impl.SwordPlayer;
@@ -390,6 +393,32 @@ public class PlayerListener implements Listener {
     @EventHandler
     public void playerShieldBreakEvent(PlayerShieldDisableEvent event) {
 //        event.setCancelled(true);
+    }
+
+    /**
+     * Locks player XZ position during a recording session.
+     *
+     * <p>If the player has an active {@link DevMode#RECORDING} session, any XZ movement
+     * beyond 0.1 blocks from the locked origin is silently cancelled by teleporting
+     * the player back. Y movement (jumping, falling) is allowed so the game remains
+     * playable while recording.</p>
+     *
+     * @param event the {@link PlayerMoveEvent} triggered on any position or look change
+     */
+    @EventHandler
+    public void onPlayerMove(PlayerMoveEvent event) {
+        AttackDevSession session = AttackDevSession.get(event.getPlayer().getUniqueId());
+        if (session == null || session.getMode() != DevMode.RECORDING) return;
+
+        org.bukkit.Location locked = session.getLockedOrigin();
+        if (locked == null) return;
+
+        org.bukkit.Location to = event.getTo();
+        double dx = to.getX() - locked.getX();
+        double dz = to.getZ() - locked.getZ();
+        if (dx * dx + dz * dz > 0.01) {
+            event.setTo(locked.clone().add(0, to.getY() - locked.getY(), 0));
+        }
     }
 
     /** Handles game mode changes; removes blade display entities and deactivates the blade in spectator mode. */

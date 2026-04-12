@@ -119,6 +119,18 @@ public final class DevSwordPlayer extends SwordPlayer {
     }
 
     /**
+     * Suppresses {@link btm.sword.system.entity.umbral.UmbralBlade} state-machine ticks
+     * only while {@link AnimationMode} is active. Outside AnimationMode the dev player
+     * drives the blade normally.
+     */
+    @Override
+    public void handleUmbralBladeTick() {
+        if (!inAnimationMode) {
+            super.handleUmbralBladeTick();
+        }
+    }
+
+    /**
      * Routes input to {@link AnimationModeInputHandler} when in AnimationMode.
      * Falls through to the normal input execution tree otherwise, so non-animation
      * dev inputs still work.

@@ -22,6 +22,7 @@ import btm.sword.system.action.throwing.ThrowAction;
 import btm.sword.system.action.utility.GrabAction;
 import btm.sword.system.action.utility.UtilityAction;
 import btm.sword.system.attack.dev.SweepRecordingAction;
+import btm.sword.system.attack.dev.WandActions;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.impl.Combatant;
 import btm.sword.system.entity.impl.SwordPlayer;
@@ -284,11 +285,20 @@ public final class InputRegistrar {
             .build();
 
 
-        // debug kill
+        // DROP+DROP — wand: exit dev session + open browser; fallback: debug kill
         new InputExecutionTree.InputNodeBuilder(root, List.of(
             InputType.DROP,
             InputType.DROP
         )).action(new LinkedList<>(List.of(
+            new InputExecutionTree.ActionContextPair(
+                () -> InputAction.builder()
+                .action(WandActions::exitSession)
+                .cooldown(executor -> 0)
+                .canCast(c -> true)
+                .displayDisabled(false)
+                .resetIfCannotPerform(false)
+                .build(),
+                p -> p.heldItemHasKey(KeyRegistry.TEST_VOLUME_ATTACK_KEY)),
             new InputExecutionTree.ActionContextPair(
                 () -> InputAction.builder()
                 .action(UtilityAction::death)
@@ -354,11 +364,20 @@ public final class InputRegistrar {
             .visibleIf(ActivationContext.onlyIn(ActivationContext.NORMAL))
             .build();
 
-        // umbral blade toggling and wielding
+        // umbral blade toggling and wielding (wand: open editor first)
         new InputExecutionTree.InputNodeBuilder(root, List.of(
             InputType.SHIFT,
             InputType.SWAP
         )).action(new LinkedList<>(List.of(
+            new InputExecutionTree.ActionContextPair(
+                () -> InputAction.builder()
+                .action(WandActions::openEditor)
+                .cooldown(executor -> 0)
+                .canCast(c -> true)
+                .displayDisabled(false)
+                .resetIfCannotPerform(false)
+                .build(),
+                p -> p.heldItemHasKey(KeyRegistry.TEST_VOLUME_ATTACK_KEY)),
             new InputExecutionTree.ActionContextPair(
                 () -> InputAction.builder()
                 .action(UmbralBladeAction::toggle)

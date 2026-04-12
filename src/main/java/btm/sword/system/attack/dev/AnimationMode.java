@@ -1,10 +1,16 @@
 package btm.sword.system.attack.dev;
 
+import java.util.List;
+
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 
 import btm.sword.system.entity.impl.DevSwordPlayer;
 import btm.sword.system.inventory.menu.dev.AttackBrowserMenu;
+import btm.sword.system.item.ItemStackBuilder;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 
 /**
  * Manages the lifecycle of AnimationMode — the in-world attack keyframe editing mode
@@ -123,20 +129,63 @@ public final class AnimationMode {
     }
 
     private static void populateAnimationHotbar(DevSwordPlayer dev) {
-        // TODO #349: build and place tool items for slots 0–8
-        // Slot 0: ARROW              — select previous keyframe
-        // Slot 1: ARROW              — select next keyframe
-        // Slot 2: LIGHT_BLUE_DYE    — nudge position X (L: −0.1, R: +0.1, Shift: ±0.5)
-        // Slot 3: GREEN_DYE          — nudge position Y
-        // Slot 4: CYAN_DYE           — nudge position Z
-        // Slot 5: ORANGE_DYE         — nudge half-extents / sphere radius
-        // Slot 6: ENDER_EYE          — cycle shape (OBB → SPHERE → …)
-        // Slot 7: CLOCK              — play / pause animated preview
-        // Slot 8: WRITABLE_BOOK      — open AttackEditorMenu (stays in AnimationMode)
+        dev.player().getInventory().setItem(0,
+            new ItemStackBuilder(Material.ARROW)
+                .name(Component.text("← Prev Keyframe", NamedTextColor.WHITE, TextDecoration.BOLD))
+                .lore(List.of(Component.text("Any click — select previous keyframe", NamedTextColor.DARK_GRAY)))
+                .build());
+        dev.player().getInventory().setItem(1,
+            new ItemStackBuilder(Material.ARROW)
+                .name(Component.text("Next Keyframe →", NamedTextColor.WHITE, TextDecoration.BOLD))
+                .lore(List.of(Component.text("Any click — select next keyframe", NamedTextColor.DARK_GRAY)))
+                .build());
+        dev.player().getInventory().setItem(2,
+            new ItemStackBuilder(Material.LIGHT_BLUE_DYE)
+                .name(Component.text("Nudge Pos X", NamedTextColor.AQUA, TextDecoration.BOLD))
+                .lore(List.of(Component.text("L: −0.1  R: +0.1  Drop: −0.5  Swap: +0.5", NamedTextColor.DARK_GRAY)))
+                .build());
+        dev.player().getInventory().setItem(3,
+            new ItemStackBuilder(Material.GREEN_DYE)
+                .name(Component.text("Nudge Pos Y", NamedTextColor.GREEN, TextDecoration.BOLD))
+                .lore(List.of(Component.text("L: −0.1  R: +0.1  Drop: −0.5  Swap: +0.5", NamedTextColor.DARK_GRAY)))
+                .build());
+        dev.player().getInventory().setItem(4,
+            new ItemStackBuilder(Material.CYAN_DYE)
+                .name(Component.text("Nudge Pos Z", NamedTextColor.DARK_AQUA, TextDecoration.BOLD))
+                .lore(List.of(Component.text("L: −0.1  R: +0.1  Drop: −0.5  Swap: +0.5", NamedTextColor.DARK_GRAY)))
+                .build());
+        dev.player().getInventory().setItem(5,
+            new ItemStackBuilder(Material.ORANGE_DYE)
+                .name(Component.text("Nudge Half-Extents", NamedTextColor.GOLD, TextDecoration.BOLD))
+                .lore(List.of(
+                    Component.text("L: −0.05  R: +0.05  Drop: −0.25  Swap: +0.25", NamedTextColor.DARK_GRAY),
+                    Component.text("SPHERE: adjusts radius only", NamedTextColor.GRAY)
+                ))
+                .build());
+        dev.player().getInventory().setItem(6,
+            new ItemStackBuilder(Material.ENDER_EYE)
+                .name(Component.text("Cycle Shape", NamedTextColor.LIGHT_PURPLE, TextDecoration.BOLD))
+                .lore(List.of(Component.text("Any click — OBB → SPHERE → …", NamedTextColor.DARK_GRAY)))
+                .build());
+        dev.player().getInventory().setItem(7,
+            new ItemStackBuilder(Material.CLOCK)
+                .name(Component.text("Play / Pause Preview", NamedTextColor.YELLOW, TextDecoration.BOLD))
+                .lore(List.of(Component.text("Any click — toggle animated preview", NamedTextColor.DARK_GRAY)))
+                .build());
+        dev.player().getInventory().setItem(8,
+            new ItemStackBuilder(Material.WRITABLE_BOOK)
+                .name(Component.text("Open Editor", NamedTextColor.WHITE, TextDecoration.BOLD))
+                .lore(List.of(Component.text("Any click — open AttackEditorMenu", NamedTextColor.DARK_GRAY)))
+                .build());
     }
 
     private static ItemStack buildExitItem() {
-        // TODO: use ItemStackBuilder to add "Exit Animation Mode" name + lore
-        return ItemStack.of(Material.BARRIER);
+        return new ItemStackBuilder(Material.BARRIER)
+            .name(Component.text("Exit Animation Mode", NamedTextColor.RED, TextDecoration.BOLD))
+            .lore(List.of(
+                Component.text("Left-click — save & exit", NamedTextColor.DARK_GRAY),
+                Component.text("Opens the save confirm dialog.", NamedTextColor.GRAY)
+            ))
+            .build();
     }
 }

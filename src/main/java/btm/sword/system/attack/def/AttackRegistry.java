@@ -54,6 +54,16 @@ public final class AttackRegistry {
     }
 
     /**
+     * Returns {@code true} if an attack with the given id is present in the registry.
+     *
+     * @param id the attack identifier to check
+     * @return {@code true} if registered, {@code false} otherwise
+     */
+    public static boolean contains(String id) {
+        return REGISTRY.containsKey(id);
+    }
+
+    /**
      * Removes the attack with the given id from the registry.
      *
      * @param id the attack id to remove

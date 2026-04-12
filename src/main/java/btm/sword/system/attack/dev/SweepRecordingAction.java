@@ -4,6 +4,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.World;
@@ -43,11 +44,13 @@ import net.kyori.adventure.text.format.NamedTextColor;
  * At save time the world-space positions are converted to the attacker's local frame using
  * the bounding-box origin and yaw captured when recording started.</p>
  *
+ * <p>The player is locked to their starting position (XZ) while recording — any drift is
+ * teleported back via {@code PlayerMoveEvent} in {@link btm.sword.listeners.PlayerListener}.
+ * A forward-facing particle arrow at the origin shows the recording's reference direction.</p>
+ *
  * <p>The sampling loop auto-cancels when the session leaves {@link DevMode#RECORDING}
  * (via a {@link PredicateRunnablePair} stop condition) and immediately triggers the
- * 5-second particle persistence phase. A live ray preview
- * ({@link Particle#TRIAL_SPAWNER_DETECTION}, 1–2 blocks ahead) is rendered each tick
- * regardless of blocking state.</p>
+ * 5-second particle persistence phase.</p>
  */
 public final class SweepRecordingAction {
 
@@ -59,6 +62,17 @@ public final class SweepRecordingAction {
 
     /** Number of persistence-phase iterations (each 100 ms → 5 seconds total). */
     private static final int PERSISTENCE_ITERATIONS = 50;
+
+    /** Length of the north-arrow rendered at the recording origin, in blocks. */
+    private static final float ARROW_LENGTH = 1.5f;
+
+    /** Dust colour for the origin crosshair (white). */
+    private static final Particle.DustOptions ORIGIN_DUST =
+        new Particle.DustOptions(Color.fromRGB(255, 255, 255), 0.3f);
+
+    /** Dust colour for the forward reference arrow (gold). */
+    private static final Particle.DustOptions ARROW_DUST =
+        new Particle.DustOptions(Color.fromRGB(255, 200, 0), 0.25f);
 
     private SweepRecordingAction() {}
 
@@ -112,12 +126,13 @@ public final class SweepRecordingAction {
                         new RecordedSample(computeWorldTip(player), System.currentTimeMillis()));
                 }
 
-                // Live look-ray preview and all captured world positions
+                // Live look-ray preview, all captured world positions, and origin arrow
                 renderRay(player);
                 List<Vector3f> positions = session.getRecordingBuffer().stream()
                     .map(RecordedSample::worldPosition)
                     .toList();
                 renderCapturedPoints(player.player().getWorld(), positions);
+                renderOriginArrow(player.player().getWorld(), session);
             },
             null,
             0, SAMPLE_PERIOD_MS,
@@ -127,10 +142,10 @@ public final class SweepRecordingAction {
                 () -> session.getMode() != DevMode.RECORDING || !player.player().isOnline(),
                 () -> {
                     if (player.player().isOnline()) {
-                        List<Vector3f> positions = session.getRecordingBuffer().stream()
+                        List<Vector3f> persistPositions = session.getRecordingBuffer().stream()
                             .map(RecordedSample::worldPosition)
                             .toList();
-                        launchPersistencePhase(player, positions);
+                        launchPersistencePhase(player, persistPositions);
                     }
                 })
         );
@@ -140,17 +155,17 @@ public final class SweepRecordingAction {
      * Converts the recorded world-space samples into a VOLUME {@link AttackDef} and writes it
      * to {@code plugins/sword/attacks/<name>.yml} via {@link AttackDefSerializer}.
      *
-     * <p>Each world-space tip is converted to the attacker's local frame using the bounding-box
-     * centre and yaw captured at the start of the recording (stored in the session). This produces
-     * a consistent local-space path regardless of player movement during recording.</p>
-     *
-     * <p>Timestamps are normalized so the first sample becomes {@code t=0.0} and the last
-     * becomes {@code t=1.0}. Each keyframe uses a default half-extents of 0.4 × 0.4 × 0.4
-     * and an identity rotation — these are intended to be hand-tuned after recording.</p>
+     * <p>The save name is resolved with {@link #nextAvailableName} to avoid overwriting existing
+     * attacks. Each world-space tip is converted to the attacker's local frame using the
+     * bounding-box centre and yaw captured at the start of the recording.</p>
      */
     private static void saveDraft(AttackDevSession session, List<RecordedSample> samples,
             SwordPlayer player) {
-        String name = session.getCurrentAttackName();
+        File attacksDir = new File(Sword.getInstance().getDataFolder(), "attacks");
+        attacksDir.mkdirs();
+
+        String name = nextAvailableName("sweep_draft", attacksDir);
+
         long firstMs = samples.getFirst().capturedAtMs();
         long lastMs = samples.getLast().capturedAtMs();
         long spanMs = lastMs - firstMs;
@@ -181,8 +196,6 @@ public final class SweepRecordingAction {
             .keyframes(keyframes)
             .build();
 
-        File attacksDir = new File(Sword.getInstance().getDataFolder(), "attacks");
-        attacksDir.mkdirs();
         File file = new File(attacksDir, name + ".yml");
         AttackDefSerializer.save(file, draft);
         AttackRegistry.register(draft);
@@ -195,6 +208,29 @@ public final class SweepRecordingAction {
         // Start editing the newly recorded attack immediately
         session.startEditing(name, keyframes, (int) spanMs, placeholder);
         new AttackEditorMenu(player).open();
+    }
+
+    /**
+     * Returns a name that is not already occupied in either the {@link AttackRegistry} or
+     * on the filesystem. If {@code base} is free, returns it unchanged. Otherwise appends
+     * {@code _1}, {@code _2}, … until a free slot is found.
+     *
+     * @param base the desired base name (e.g. {@code "sweep_draft"})
+     * @param dir  the attacks directory to check for existing YAML files
+     * @return the first available name
+     */
+    static String nextAvailableName(String base, File dir) {
+        if (!AttackRegistry.contains(base) && !new File(dir, base + ".yml").exists()) {
+            return base;
+        }
+        int n = 1;
+        while (true) {
+            String candidate = base + "_" + n;
+            if (!AttackRegistry.contains(candidate) && !new File(dir, candidate + ".yml").exists()) {
+                return candidate;
+            }
+            n++;
+        }
     }
 
     private static void launchPersistencePhase(SwordPlayer player, List<Vector3f> worldPositions) {
@@ -227,6 +263,36 @@ public final class SweepRecordingAction {
                 eye.getY() + dir.getY() * t,
                 eye.getZ() + dir.getZ() * t,
                 1, 0, 0, 0, 0);
+        }
+    }
+
+    /**
+     * Renders a crosshair at the locked origin and a forward-pointing arrow showing the
+     * recording's reference direction. Visible throughout the recording session.
+     */
+    private static void renderOriginArrow(World world, AttackDevSession session) {
+        Location origin = session.getLockedOrigin();
+        if (origin == null) return;
+
+        float ox = (float) origin.getX();
+        float oy = (float) origin.getY() + 0.9f; // approx eye-level mid-body
+        float oz = (float) origin.getZ();
+
+        // Crosshair: small ± X and ± Z ticks at origin
+        world.spawnParticle(Particle.DUST, ox + 0.3f, oy, oz, 1, 0, 0, 0, 0, ORIGIN_DUST);
+        world.spawnParticle(Particle.DUST, ox - 0.3f, oy, oz, 1, 0, 0, 0, 0, ORIGIN_DUST);
+        world.spawnParticle(Particle.DUST, ox, oy, oz + 0.3f, 1, 0, 0, 0, 0, ORIGIN_DUST);
+        world.spawnParticle(Particle.DUST, ox, oy, oz - 0.3f, 1, 0, 0, 0, 0, ORIGIN_DUST);
+
+        // Forward arrow along recording reference direction (rotateY(-yawRad) * (0,0,1))
+        float yaw = session.getRecordingRefYaw();
+        float yawRad = (float) Math.toRadians(yaw);
+        float fwdX = -(float) Math.sin(yawRad);
+        float fwdZ = (float) Math.cos(yawRad);
+        for (float t = 0.2f; t <= ARROW_LENGTH; t += 0.2f) {
+            world.spawnParticle(Particle.DUST,
+                ox + fwdX * t, oy, oz + fwdZ * t,
+                1, 0, 0, 0, 0, ARROW_DUST);
         }
     }
 

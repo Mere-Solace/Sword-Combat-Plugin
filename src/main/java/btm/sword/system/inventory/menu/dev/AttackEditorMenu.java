@@ -206,6 +206,36 @@ public class AttackEditorMenu extends Menu {
         VolumeShape currentShape = keyframes.isEmpty()
             ? VolumeShape.SPHERE
             : keyframes.get(session.getCurrentKeyframeIndex()).shape();
+        SimpleItem shiftAllYDec = new SimpleItem(
+            new ItemStackBuilder(Material.RED_DYE)
+                .name(Component.text("Shift All Y −", NamedTextColor.RED, TextDecoration.BOLD))
+                .lore(List.of(
+                    Component.text("Left: −0.1  Right: −0.5", NamedTextColor.DARK_GRAY),
+                    Component.text("Moves all keyframe positions down.", NamedTextColor.GRAY)
+                ))
+                .build(),
+            click -> {
+                float delta = click.getClickType().isRightClick() ? -0.5f : -0.1f;
+                shiftAllY(session, delta);
+                new AttackEditorMenu(swordPlayer).open();
+            }
+        );
+
+        SimpleItem shiftAllYInc = new SimpleItem(
+            new ItemStackBuilder(Material.LIME_DYE)
+                .name(Component.text("Shift All Y +", NamedTextColor.GREEN, TextDecoration.BOLD))
+                .lore(List.of(
+                    Component.text("Left: +0.1  Right: +0.5", NamedTextColor.DARK_GRAY),
+                    Component.text("Moves all keyframe positions up.", NamedTextColor.GRAY)
+                ))
+                .build(),
+            click -> {
+                float delta = click.getClickType().isRightClick() ? 0.5f : 0.1f;
+                shiftAllY(session, delta);
+                new AttackEditorMenu(swordPlayer).open();
+            }
+        );
+
         SimpleItem setShape = new SimpleItem(
             new ItemStackBuilder(Material.ENDER_EYE)
                 .name(Component.text("Set Shape", NamedTextColor.LIGHT_PURPLE, TextDecoration.BOLD))
@@ -252,7 +282,7 @@ public class AttackEditorMenu extends Menu {
                 "B # D I U # L S #",
                 "x x x x x x x x x",
                 "x x x x x x x x x",
-                "< > # A F V # # #",
+                "< > # A F V J K #",
                 "q w e r t y # # #",
                 "u i o p g h # # #")
             .addIngredient('#', BORDER)
@@ -268,6 +298,8 @@ public class AttackEditorMenu extends Menu {
             .addIngredient('A', addFrame)
             .addIngredient('F', deleteFrame)
             .addIngredient('V', setShape)
+            .addIngredient('J', shiftAllYDec)
+            .addIngredient('K', shiftAllYInc)
             // pos row
             .addIngredient('q', posXDec)
             .addIngredient('w', posXInc)
@@ -446,6 +478,24 @@ public class AttackEditorMenu extends Menu {
 
         kfs.add(idx + 1, newFrame);
         session.setCurrentKeyframeIndex(idx + 1);
+    }
+
+    // ── Shift All Y ───────────────────────────────────────────────────────────
+
+    /**
+     * Applies a Y-axis delta to every keyframe's local position.
+     *
+     * @param session the active editing session
+     * @param delta   amount to add to each keyframe's {@code localPosition.y}
+     */
+    private static void shiftAllY(AttackDevSession session, float delta) {
+        List<VolumeKeyframe> kfs = session.getEditKeyframes();
+        for (int i = 0; i < kfs.size(); i++) {
+            VolumeKeyframe kf = kfs.get(i);
+            Vector3f pos = new Vector3f(kf.localPosition());
+            pos.y += delta;
+            kfs.set(i, new VolumeKeyframe(kf.t(), pos, kf.halfExtents(), kf.rotation(), kf.shape()));
+        }
     }
 
     // ── Save ──────────────────────────────────────────────────────────────────

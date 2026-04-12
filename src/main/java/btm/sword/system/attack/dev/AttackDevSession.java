@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.BoundingBox;
@@ -14,6 +15,7 @@ import org.joml.Vector3f;
 import btm.sword.system.attack.HitValuePacket;
 import btm.sword.system.attack.def.AttackDef;
 import btm.sword.system.attack.def.AttackPrimitive;
+import btm.sword.system.attack.simulation.KeyframedTrajectory;
 import btm.sword.system.attack.simulation.VolumeKeyframe;
 import lombok.Getter;
 import lombok.Setter;
@@ -59,9 +61,22 @@ public final class AttackDevSession {
      */
     @Setter private int editCount = 0;
 
+    /**
+     * Whether the animated keyframe preview is currently playing in AnimationMode.
+     * Toggled by {@link AnimationModeInputHandler} slot 7. The preview loop task
+     * self-cancels when this becomes {@code false}.
+     */
+    @Setter private boolean playingPreview = false;
+
     // ── Recording state ───────────────────────────────────────────────────────
     /** World-space tip samples captured during the current recording. */
     private final List<RecordedSample> recordingBuffer = new ArrayList<>();
+    /**
+     * Player {@link Location} (feet) captured at the start of recording.
+     * Used to lock the player in place via {@code PlayerMoveEvent} and as the
+     * world-space origin for the north-arrow visualization.
+     */
+    private Location lockedOrigin = null;
     /**
      * Bounding-box centre of the player at the moment {@link #startRecording} was called.
      * Used as the local-space origin when converting recorded world positions to keyframes.
@@ -154,7 +169,8 @@ public final class AttackDevSession {
         this.recordingBuffer.clear();
         this.mode = DevMode.RECORDING;
 
-        // Capture the reference frame used later to convert world-space samples to local keyframes
+        // Capture position lock and reference frame at recording start
+        this.lockedOrigin = player.getLocation().clone();
         BoundingBox bb = player.getBoundingBox();
         this.recordingRefOrigin = new Vector3f(
             (float) bb.getCenterX(), (float) bb.getCenterY(), (float) bb.getCenterZ());
@@ -269,6 +285,34 @@ public final class AttackDevSession {
      */
     public void loadIntoWand() {
         this.loadedAttackDef = buildCurrentAttack();
+    }
+
+    /**
+     * Starts an editing session from an existing {@link AttackDef}, extracting keyframes and
+     * duration from its {@link KeyframedTrajectory}. Convenience wrapper over
+     * {@link #startEditing(String, List, int, HitValuePacket)} for wand-based re-entry.
+     *
+     * @param def the attack definition to edit; must have a {@link KeyframedTrajectory}
+     * @throws IllegalArgumentException if the trajectory is not a {@link KeyframedTrajectory}
+     */
+    public void startEditingFromDef(AttackDef def) {
+        if (!(def.getTrajectory() instanceof KeyframedTrajectory kt)) {
+            throw new IllegalArgumentException("Cannot edit non-keyframed attack: " + def.getId());
+        }
+        startEditing(def.getId(), kt.getKeyframes(), def.getDurationMs(), def.getHitValue());
+    }
+
+    /**
+     * Stops whatever active session is running and returns to {@link DevMode#IDLE}.
+     * No-op if already {@link DevMode#IDLE}.
+     */
+    public void stopCurrentSession() {
+        switch (mode) {
+            case EDITING  -> stopEditing();
+            case VIEWING  -> stopViewing();
+            case RECORDING -> { this.mode = DevMode.IDLE; }
+            default -> { }
+        }
     }
 
     // ── Convenience ───────────────────────────────────────────────────────────
