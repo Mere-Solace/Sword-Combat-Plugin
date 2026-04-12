@@ -19,6 +19,8 @@ import btm.sword.system.attack.dev.AttackDevSession;
 import btm.sword.system.attack.dev.SaveConfirmDialog;
 import btm.sword.system.input.InputType;
 import btm.sword.system.playerdata.PlayerData;
+import lombok.Getter;
+import lombok.Setter;
 
 /**
  * A developer-only subclass of {@link SwordPlayer} constructed at login for players
@@ -44,6 +46,8 @@ import btm.sword.system.playerdata.PlayerData;
  * line, {@code #} lines are comments). If the resource is absent all players are treated
  * as normal.
  */
+@Setter
+@Getter
 public final class DevSwordPlayer extends SwordPlayer {
 
     // ── Static dev-name registry ──────────────────────────────────────────────
@@ -91,6 +95,16 @@ public final class DevSwordPlayer extends SwordPlayer {
 
     // ── Instance state ────────────────────────────────────────────────────────
 
+    /**
+     * -- GETTER --
+     *  Returns
+     *  when the player is actively in AnimationMode —
+     *  hotbar populated with editing tools and combat suppressed.
+     * -- SETTER --
+     *  Sets the AnimationMode flag. Called by
+     *  on entry and exit.
+     *
+     */
     private boolean inAnimationMode = false;
 
     /**
@@ -102,26 +116,6 @@ public final class DevSwordPlayer extends SwordPlayer {
      */
     public DevSwordPlayer(LivingEntity associatedEntity, PlayerData data) {
         super(associatedEntity, data);
-    }
-
-    /**
-     * Returns {@code true} when the player is actively in AnimationMode —
-     * hotbar populated with editing tools and combat suppressed.
-     *
-     * @return whether AnimationMode is currently active
-     */
-    public boolean isInAnimationMode() {
-        return inAnimationMode;
-    }
-
-    /**
-     * Sets the AnimationMode flag. Called by {@link btm.sword.system.attack.dev.AnimationMode}
-     * on entry and exit.
-     *
-     * @param value {@code true} to activate AnimationMode, {@code false} to deactivate
-     */
-    public void setInAnimationMode(boolean value) {
-        inAnimationMode = value;
     }
 
     /**
@@ -138,14 +132,6 @@ public final class DevSwordPlayer extends SwordPlayer {
             return;
         }
         super.act(input);
-    }
-
-    /**
-     * Always a no-op. Suppresses all UmbralBlade state-machine ticks for this wrapper.
-     */
-    @Override
-    public void handleUmbralBladeTick() {
-        // no-op: DevSwordPlayer never drives the blade
     }
 
     /**

@@ -5,11 +5,10 @@ import org.joml.Vector3f;
 /**
  * A single sweep-path sample captured during a recording session.
  *
- * @param localPosition the tip position in the player's local space (yaw-stripped,
- *                      +Z forward, +X right, +Y up), at {@code TIP_DISTANCE} blocks
- *                      from the body origin
+ * @param worldPosition the tip position in world space, computed as
+ *                      {@code eyePos + lookDir * TIP_DISTANCE}
  * @param capturedAtMs  absolute {@link System#currentTimeMillis()} at capture time,
  *                      used to derive the normalized {@code t} value when exporting
  *                      to {@link btm.sword.system.attack.simulation.VolumeKeyframe}
  */
-public record RecordedSample(Vector3f localPosition, long capturedAtMs) {}
+public record RecordedSample(Vector3f worldPosition, long capturedAtMs) {}

@@ -8,6 +8,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.util.BoundingBox;
 import org.joml.Vector3f;
 
 import btm.sword.system.attack.HitValuePacket;
@@ -59,10 +60,18 @@ public final class AttackDevSession {
     @Setter private int editCount = 0;
 
     // ── Recording state ───────────────────────────────────────────────────────
-    /** Local-space tip samples captured during the current recording. */
+    /** World-space tip samples captured during the current recording. */
     private final List<RecordedSample> recordingBuffer = new ArrayList<>();
-    /** World-space tip positions mirroring {@link #recordingBuffer}, used for particle visualization. */
-    private final List<Vector3f> worldPositions = new ArrayList<>();
+    /**
+     * Bounding-box centre of the player at the moment {@link #startRecording} was called.
+     * Used as the local-space origin when converting recorded world positions to keyframes.
+     */
+    private Vector3f recordingRefOrigin = null;
+    /**
+     * Player yaw (degrees) at the moment {@link #startRecording} was called.
+     * Used as the reference yaw for the world→local conversion in {@code saveDraft}.
+     */
+    private float recordingRefYaw = 0f;
 
     // ── Editing state ─────────────────────────────────────────────────────────
     /** Mutable list of OBB keyframes being edited. Directly mutated by the editor menu. */
@@ -143,8 +152,13 @@ public final class AttackDevSession {
     public void startRecording(String name) {
         this.currentAttackName = name;
         this.recordingBuffer.clear();
-        this.worldPositions.clear();
         this.mode = DevMode.RECORDING;
+
+        // Capture the reference frame used later to convert world-space samples to local keyframes
+        BoundingBox bb = player.getBoundingBox();
+        this.recordingRefOrigin = new Vector3f(
+            (float) bb.getCenterX(), (float) bb.getCenterY(), (float) bb.getCenterZ());
+        this.recordingRefYaw = player.getLocation().getYaw();
     }
 
     /**

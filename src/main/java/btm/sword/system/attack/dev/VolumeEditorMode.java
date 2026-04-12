@@ -5,7 +5,9 @@ import java.util.List;
 import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.Particle;
+import org.bukkit.Sound;
 import org.bukkit.World;
+import org.bukkit.entity.Player;
 import org.bukkit.util.BoundingBox;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
@@ -16,6 +18,9 @@ import btm.sword.system.attack.simulation.VolumeKeyframe;
 import btm.sword.system.attack.simulation.VolumeShape;
 import btm.sword.system.control.PredicateRunnablePair;
 import btm.sword.system.control.TimeArbiter;
+import net.kyori.adventure.bossbar.BossBar;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 
 /**
  * Renders volume keyframe wireframes for all active {@link AttackDevSession}s in
@@ -43,10 +48,13 @@ public final class VolumeEditorMode {
     private static final float EDGE_SPACING = 0.18f;
     private static final int SPHERE_SEGMENTS = 16;
 
+    /** How many ticks to skip between grey (non-selected) keyframe renders. */
+    private static final int GREY_RENDER_PERIOD = 3;
+
     private static final Particle.DustOptions DUST_SELECTED =
-        new Particle.DustOptions(Color.fromRGB(255, 170, 0), 0.55f);
+        new Particle.DustOptions(Color.fromRGB(255, 170, 0), 0.7f);
     private static final Particle.DustOptions DUST_DEFAULT =
-        new Particle.DustOptions(Color.fromRGB(160, 160, 160), 0.4f);
+        new Particle.DustOptions(Color.fromRGB(160, 160, 160), 0.2f);
 
     private VolumeEditorMode() {}
 
@@ -81,6 +89,21 @@ public final class VolumeEditorMode {
     }
 
     private static void startLoop(AttackDevSession session, DevMode expectedMode) {
+        Player player = session.getPlayer();
+        String modeLabel = expectedMode == DevMode.EDITING ? "Edit" : "View";
+        notifyOn(player, modeLabel);
+
+        // Show a boss bar for the duration of the wireframe session
+        BossBar.Color barColor = expectedMode == DevMode.EDITING ? BossBar.Color.YELLOW : BossBar.Color.GREEN;
+        BossBar bossBar = BossBar.bossBar(
+            Component.text("[Dev] " + modeLabel + " — " + session.getCurrentAttackName(),
+                expectedMode == DevMode.EDITING ? NamedTextColor.GOLD : NamedTextColor.GREEN),
+            1.0f,
+            barColor,
+            BossBar.Overlay.PROGRESS
+        );
+        player.showBossBar(bossBar);
+
         int[] tickCount = {0};
         TimeArbiter.runTimeIndependentBukkitTaskOnTimer(
             () -> {
@@ -89,20 +112,35 @@ public final class VolumeEditorMode {
                     Sword.print("[VolumeEditorMode] tick #" + tickCount[0]
                         + " mode=" + session.getMode()
                         + " keyframes=" + session.getEditKeyframes().size()
-                        + " online=" + session.getPlayer().isOnline());
+                        + " online=" + player.isOnline());
                 }
-                if (session.getMode() != expectedMode || !session.getPlayer().isOnline()) return;
+                if (session.getMode() != expectedMode || !player.isOnline()) return;
                 renderSession(session, tickCount[0]);
             },
             null,
             0, TICK_MS,
             VolumeEditorMode.class, "startLoop-" + expectedMode.name(),
             new PredicateRunnablePair(
-                () -> session.getMode() != expectedMode || !session.getPlayer().isOnline(),
-                () -> Sword.print("[VolumeEditorMode] render loop ended for "
-                    + session.getPlayer().getName())
+                () -> session.getMode() != expectedMode || !player.isOnline(),
+                () -> {
+                    Sword.print("[VolumeEditorMode] render loop ended for " + player.getName());
+                    if (player.isOnline()) {
+                        player.hideBossBar(bossBar);
+                        notifyOff(player, modeLabel);
+                    }
+                }
             )
         );
+    }
+
+    private static void notifyOn(Player player, String modeLabel) {
+        player.sendActionBar(Component.text("[Dev] Wireframe " + modeLabel + " ON", NamedTextColor.GOLD));
+        player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_CHIME, 0.6f, 2.0f);
+    }
+
+    private static void notifyOff(Player player, String modeLabel) {
+        player.sendActionBar(Component.text("[Dev] Wireframe " + modeLabel + " OFF", NamedTextColor.GRAY));
+        player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 0.6f, 0.5f);
     }
 
     private static void renderSession(AttackDevSession session, int tickCount) {
@@ -140,12 +178,16 @@ public final class VolumeEditorMode {
         int totalParticles = 0;
         for (int i = 0; i < keyframes.size(); i++) {
             VolumeKeyframe kf = keyframes.get(i);
+            boolean isSelected = (i == selectedIdx);
+
+            // Grey keyframes render at a reduced rate to keep particle count low
+            if (!isSelected && tickCount % GREY_RENDER_PERIOD != 0) continue;
 
             // Transform local center to world space
             Vector3f worldCenter = worldTransform.transformPosition(
                 new Vector3f(kf.localPosition()), new Vector3f());
 
-            Particle.DustOptions dust = (i == selectedIdx) ? DUST_SELECTED : DUST_DEFAULT;
+            Particle.DustOptions dust = isSelected ? DUST_SELECTED : DUST_DEFAULT;
 
             if (kf.shape() == VolumeShape.SPHERE) {
                 totalParticles += renderSphereWireframe(world, worldCenter, kf.halfExtents().x, dust);
@@ -156,7 +198,7 @@ public final class VolumeEditorMode {
                     Sword.print("[VolumeEditorMode]   kf[" + i + "] local=" + fmtVec(kf.localPosition())
                         + " → world=" + fmtVec(worldCenter)
                         + " half=" + fmtVec(kf.halfExtents())
-                        + (i == selectedIdx ? " [SELECTED]" : ""));
+                        + (isSelected ? " [SELECTED]" : ""));
                 }
                 totalParticles += renderObbWireframe(world, worldCenter, kf.halfExtents(), worldRot, dust);
             }
