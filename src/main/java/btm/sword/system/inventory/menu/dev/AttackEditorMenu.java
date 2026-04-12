@@ -2,9 +2,12 @@ package btm.sword.system.inventory.menu.dev;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.bukkit.Material;
+import org.bukkit.event.inventory.ClickType;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
@@ -98,19 +101,24 @@ public class AttackEditorMenu extends Menu {
         );
 
         int durMs = session.getEditDurationMs();
+        Set<Integer> multiSel = session.getSelectedKeyframeIndices();
+        List<Component> infoLore = new ArrayList<>();
+        infoLore.add(Component.text("Duration: ", NamedTextColor.DARK_GRAY)
+            .append(Component.text(durMs + "ms", NamedTextColor.YELLOW)));
+        infoLore.add(Component.text("Frames: ", NamedTextColor.DARK_GRAY)
+            .append(Component.text(String.valueOf(keyframes.size()), NamedTextColor.YELLOW)));
+        infoLore.add(Component.text("Cursor: ", NamedTextColor.DARK_GRAY)
+            .append(Component.text(
+                keyframes.isEmpty() ? "—" : String.valueOf(session.getCurrentKeyframeIndex()),
+                NamedTextColor.AQUA)));
+        if (!multiSel.isEmpty()) {
+            infoLore.add(Component.text("Selection: ", NamedTextColor.DARK_GRAY)
+                .append(Component.text(multiSel.size() + " frames", NamedTextColor.YELLOW)));
+        }
         SimpleItem durInfo = new SimpleItem(
             new ItemStackBuilder(Material.CLOCK)
                 .name(Component.text(session.getCurrentAttackName(), NamedTextColor.GOLD, TextDecoration.BOLD))
-                .lore(List.of(
-                    Component.text("Duration: ", NamedTextColor.DARK_GRAY)
-                        .append(Component.text(durMs + "ms", NamedTextColor.YELLOW)),
-                    Component.text("Frames: ", NamedTextColor.DARK_GRAY)
-                        .append(Component.text(String.valueOf(keyframes.size()), NamedTextColor.YELLOW)),
-                    Component.text("Selected: ", NamedTextColor.DARK_GRAY)
-                        .append(Component.text(
-                            keyframes.isEmpty() ? "—" : String.valueOf(session.getCurrentKeyframeIndex()),
-                            NamedTextColor.AQUA))
-                ))
+                .lore(infoLore)
                 .build()
         );
 
@@ -124,6 +132,40 @@ public class AttackEditorMenu extends Menu {
             click -> {
                 int delta = click.getClickType().isRightClick() ? 500 : 100;
                 session.setEditDurationMs(session.getEditDurationMs() + delta);
+                new AttackEditorMenu(swordPlayer).open();
+            }
+        );
+
+        SimpleItem selectBefore = new SimpleItem(
+            new ItemStackBuilder(Material.SPECTRAL_ARROW)
+                .name(Component.text("Select Before Cursor", NamedTextColor.YELLOW, TextDecoration.BOLD))
+                .lore(List.of(
+                    Component.text("Selects all frames before the cursor.", NamedTextColor.DARK_GRAY),
+                    Component.text("Nudge buttons operate on selection.", NamedTextColor.GRAY)
+                ))
+                .build(),
+            click -> {
+                int cursor = session.getCurrentKeyframeIndex();
+                LinkedHashSet<Integer> sel = new LinkedHashSet<>();
+                for (int i = 0; i < cursor; i++) sel.add(i);
+                session.setSelectedKeyframeIndices(sel);
+                new AttackEditorMenu(swordPlayer).open();
+            }
+        );
+
+        SimpleItem selectAfter = new SimpleItem(
+            new ItemStackBuilder(Material.SPECTRAL_ARROW)
+                .name(Component.text("Select After Cursor", NamedTextColor.YELLOW, TextDecoration.BOLD))
+                .lore(List.of(
+                    Component.text("Selects all frames after the cursor.", NamedTextColor.DARK_GRAY),
+                    Component.text("Nudge buttons operate on selection.", NamedTextColor.GRAY)
+                ))
+                .build(),
+            click -> {
+                int cursor = session.getCurrentKeyframeIndex();
+                LinkedHashSet<Integer> sel = new LinkedHashSet<>();
+                for (int i = cursor + 1; i < keyframes.size(); i++) sel.add(i);
+                session.setSelectedKeyframeIndices(sel);
                 new AttackEditorMenu(swordPlayer).open();
             }
         );
@@ -199,6 +241,7 @@ public class AttackEditorMenu extends Menu {
                 kfs.remove(session.getCurrentKeyframeIndex());
                 int newIdx = Math.min(session.getCurrentKeyframeIndex(), kfs.size() - 1);
                 session.setCurrentKeyframeIndex(newIdx);
+                session.clearSelectedKeyframeIndices();
                 new AttackEditorMenu(swordPlayer).open();
             }
         );
@@ -232,6 +275,66 @@ public class AttackEditorMenu extends Menu {
             click -> {
                 float delta = click.getClickType().isRightClick() ? 0.5f : 0.1f;
                 shiftAllY(session, delta);
+                new AttackEditorMenu(swordPlayer).open();
+            }
+        );
+
+        SimpleItem shiftAllXDec = new SimpleItem(
+            new ItemStackBuilder(Material.RED_DYE)
+                .name(Component.text("Shift All X −", NamedTextColor.RED, TextDecoration.BOLD))
+                .lore(List.of(
+                    Component.text("Left: −0.1  Right: −0.5", NamedTextColor.DARK_GRAY),
+                    Component.text("Moves all keyframe positions back on X.", NamedTextColor.GRAY)
+                ))
+                .build(),
+            click -> {
+                float delta = click.getClickType().isRightClick() ? -0.5f : -0.1f;
+                shiftAllX(session, delta);
+                new AttackEditorMenu(swordPlayer).open();
+            }
+        );
+
+        SimpleItem shiftAllXInc = new SimpleItem(
+            new ItemStackBuilder(Material.LIME_DYE)
+                .name(Component.text("Shift All X +", NamedTextColor.GREEN, TextDecoration.BOLD))
+                .lore(List.of(
+                    Component.text("Left: +0.1  Right: +0.5", NamedTextColor.DARK_GRAY),
+                    Component.text("Moves all keyframe positions forward on X.", NamedTextColor.GRAY)
+                ))
+                .build(),
+            click -> {
+                float delta = click.getClickType().isRightClick() ? 0.5f : 0.1f;
+                shiftAllX(session, delta);
+                new AttackEditorMenu(swordPlayer).open();
+            }
+        );
+
+        SimpleItem shiftAllZDec = new SimpleItem(
+            new ItemStackBuilder(Material.RED_DYE)
+                .name(Component.text("Shift All Z −", NamedTextColor.RED, TextDecoration.BOLD))
+                .lore(List.of(
+                    Component.text("Left: −0.1  Right: −0.5", NamedTextColor.DARK_GRAY),
+                    Component.text("Moves all keyframe positions back on Z.", NamedTextColor.GRAY)
+                ))
+                .build(),
+            click -> {
+                float delta = click.getClickType().isRightClick() ? -0.5f : -0.1f;
+                shiftAllZ(session, delta);
+                new AttackEditorMenu(swordPlayer).open();
+            }
+        );
+
+        SimpleItem shiftAllZInc = new SimpleItem(
+            new ItemStackBuilder(Material.LIME_DYE)
+                .name(Component.text("Shift All Z +", NamedTextColor.GREEN, TextDecoration.BOLD))
+                .lore(List.of(
+                    Component.text("Left: +0.1  Right: +0.5", NamedTextColor.DARK_GRAY),
+                    Component.text("Moves all keyframe positions forward on Z.", NamedTextColor.GRAY)
+                ))
+                .build(),
+            click -> {
+                float delta = click.getClickType().isRightClick() ? 0.5f : 0.1f;
+                shiftAllZ(session, delta);
                 new AttackEditorMenu(swordPlayer).open();
             }
         );
@@ -279,19 +382,21 @@ public class AttackEditorMenu extends Menu {
 
         PagedGui<Item> gui = PagedGui.items()
             .setStructure(
-                "B # D I U # L S #",
+                "B c D I U d L S #",
                 "x x x x x x x x x",
                 "x x x x x x x x x",
                 "< > # A F V J K #",
-                "q w e r t y # # #",
-                "u i o p g h # # #")
+                "q w e r t y m n #",
+                "u i o p g h a b #")
             .addIngredient('#', BORDER)
             .addIngredient('>', new ForwardItem())
             .addIngredient('<', new PreviousItem())
             .addIngredient('B', back)
+            .addIngredient('c', selectBefore)
             .addIngredient('D', durDecrease)
             .addIngredient('I', durInfo)
             .addIngredient('U', durIncrease)
+            .addIngredient('d', selectAfter)
             .addIngredient('L', loadWand)
             .addIngredient('S', saveButton)
             .addIngredient('x', Markers.CONTENT_LIST_SLOT_HORIZONTAL)
@@ -307,6 +412,8 @@ public class AttackEditorMenu extends Menu {
             .addIngredient('r', posYInc)
             .addIngredient('t', posZDec)
             .addIngredient('y', posZInc)
+            .addIngredient('m', shiftAllXDec)
+            .addIngredient('n', shiftAllXInc)
             // half-extents row
             .addIngredient('u', heXDec)
             .addIngredient('i', heXInc)
@@ -314,6 +421,8 @@ public class AttackEditorMenu extends Menu {
             .addIngredient('p', heYInc)
             .addIngredient('g', heZDec)
             .addIngredient('h', heZInc)
+            .addIngredient('a', shiftAllZDec)
+            .addIngredient('b', shiftAllZInc)
             .setContent(kfItems)
             .build();
 
@@ -329,13 +438,15 @@ public class AttackEditorMenu extends Menu {
 
     private List<Item> buildKeyframeItems(AttackDevSession session) {
         List<VolumeKeyframe> keyframes = session.getEditKeyframes();
-        int selectedIdx = session.getCurrentKeyframeIndex();
+        int cursor = session.getCurrentKeyframeIndex();
+        Set<Integer> multiSel = session.getSelectedKeyframeIndices();
         List<Item> items = new ArrayList<>(keyframes.size());
 
         for (int i = 0; i < keyframes.size(); i++) {
             final int idx = i;
             VolumeKeyframe kf = keyframes.get(i);
-            boolean selected = (idx == selectedIdx);
+            boolean isPrimary = (idx == cursor);
+            boolean inRange = !multiSel.isEmpty() && multiSel.contains(idx);
 
             Vector3f pos = kf.localPosition();
             Vector3f he = kf.halfExtents();
@@ -355,19 +466,44 @@ public class AttackEditorMenu extends Menu {
                     NamedTextColor.GRAY));
             }
             lore.add(Component.empty());
-            lore.add(selected
-                ? Component.text("▶ Selected", NamedTextColor.GOLD, TextDecoration.BOLD)
-                : Component.text("Click to select", NamedTextColor.YELLOW));
+            if (isPrimary) {
+                lore.add(Component.text("▶ Cursor", NamedTextColor.GOLD, TextDecoration.BOLD));
+            } else if (inRange) {
+                lore.add(Component.text("◆ In selection", NamedTextColor.YELLOW, TextDecoration.BOLD));
+            } else {
+                lore.add(Component.text("Click to select  Shift+Click to range-select", NamedTextColor.YELLOW));
+            }
 
-            Material mat = selected ? Material.LIME_STAINED_GLASS_PANE : Material.WHITE_STAINED_GLASS_PANE;
+            Material mat;
+            NamedTextColor nameColor;
+            if (isPrimary) {
+                mat = Material.LIME_STAINED_GLASS_PANE;
+                nameColor = NamedTextColor.GOLD;
+            } else if (inRange) {
+                mat = Material.YELLOW_STAINED_GLASS_PANE;
+                nameColor = NamedTextColor.YELLOW;
+            } else {
+                mat = Material.WHITE_STAINED_GLASS_PANE;
+                nameColor = NamedTextColor.WHITE;
+            }
+
             items.add(new SimpleItem(
                 new ItemStackBuilder(mat)
-                    .name(Component.text("Frame " + idx, selected ? NamedTextColor.GOLD : NamedTextColor.WHITE,
-                        TextDecoration.BOLD))
+                    .name(Component.text("Frame " + idx, nameColor, TextDecoration.BOLD))
                     .lore(lore)
                     .build(),
                 click -> {
-                    session.setCurrentKeyframeIndex(idx);
+                    ClickType type = click.getClickType();
+                    if (type == ClickType.SHIFT_LEFT || type == ClickType.SHIFT_RIGHT) {
+                        int lo = Math.min(cursor, idx);
+                        int hi = Math.max(cursor, idx);
+                        LinkedHashSet<Integer> range = new LinkedHashSet<>();
+                        for (int j = lo; j <= hi; j++) range.add(j);
+                        session.setSelectedKeyframeIndices(range);
+                    } else {
+                        session.clearSelectedKeyframeIndices();
+                        session.setCurrentKeyframeIndex(idx);
+                    }
                     new AttackEditorMenu(swordPlayer).open();
                 }
             ));
@@ -389,22 +525,49 @@ public class AttackEditorMenu extends Menu {
      */
     private SimpleItem posButton(AttackDevSession session, String label, NamedTextColor color,
             boolean halfExtent, Axis axis, boolean decrement) {
+        boolean hasSelection = !session.getSelectedKeyframeIndices().isEmpty();
+        List<Component> lore = new ArrayList<>();
+        lore.add(Component.text("L: ±0.1  R: ±0.5", NamedTextColor.DARK_GRAY));
+        if (hasSelection) {
+            lore.add(Component.text("Applies to " + session.getSelectedKeyframeIndices().size()
+                + " selected frame(s) + cursor", NamedTextColor.YELLOW));
+        }
         return new SimpleItem(
             new ItemStackBuilder(halfExtent ? Material.ORANGE_DYE : Material.LIGHT_BLUE_DYE)
                 .name(Component.text(label, color, TextDecoration.BOLD))
-                .lore(List.of(Component.text("L: ±0.1  R: ±0.5", NamedTextColor.DARK_GRAY)))
+                .lore(lore)
                 .build(),
             click -> {
                 List<VolumeKeyframe> kfs = session.getEditKeyframes();
                 if (kfs.isEmpty()) return;
-                int idx = session.getCurrentKeyframeIndex();
-                VolumeKeyframe kf = kfs.get(idx);
                 float step = click.getClickType().isRightClick() ? STEP_LARGE : STEP_SMALL;
                 float delta = decrement ? -step : step;
-                kfs.set(idx, applyDelta(kf, halfExtent, axis, delta));
+                Set<Integer> sel = session.getSelectedKeyframeIndices();
+                if (sel.isEmpty()) {
+                    int idx = session.getCurrentKeyframeIndex();
+                    kfs.set(idx, applyDelta(kfs.get(idx), halfExtent, axis, delta));
+                } else {
+                    applyDeltaToIndices(kfs, sel, halfExtent, axis, delta);
+                    applyDeltaToIndex(kfs, session.getCurrentKeyframeIndex(), halfExtent, axis, delta);
+                }
                 new AttackEditorMenu(swordPlayer).open();
             }
         );
+    }
+
+    private static void applyDeltaToIndices(List<VolumeKeyframe> kfs, Set<Integer> indices,
+            boolean halfExtent, Axis axis, float delta) {
+        for (int idx : indices) {
+            if (idx >= 0 && idx < kfs.size()) {
+                applyDeltaToIndex(kfs, idx, halfExtent, axis, delta);
+            }
+        }
+    }
+
+    private static void applyDeltaToIndex(List<VolumeKeyframe> kfs, int idx,
+            boolean halfExtent, Axis axis, float delta) {
+        if (idx < 0 || idx >= kfs.size()) return;
+        kfs.set(idx, applyDelta(kfs.get(idx), halfExtent, axis, delta));
     }
 
     private enum Axis { POS_X, POS_Y, POS_Z }
@@ -480,7 +643,23 @@ public class AttackEditorMenu extends Menu {
         session.setCurrentKeyframeIndex(idx + 1);
     }
 
-    // ── Shift All Y ───────────────────────────────────────────────────────────
+    // ── Shift All X / Y / Z ──────────────────────────────────────────────────
+
+    /**
+     * Applies an X-axis delta to every keyframe's local position.
+     *
+     * @param session the active editing session
+     * @param delta   amount to add to each keyframe's {@code localPosition.x}
+     */
+    private static void shiftAllX(AttackDevSession session, float delta) {
+        List<VolumeKeyframe> kfs = session.getEditKeyframes();
+        for (int i = 0; i < kfs.size(); i++) {
+            VolumeKeyframe kf = kfs.get(i);
+            Vector3f pos = new Vector3f(kf.localPosition());
+            pos.x += delta;
+            kfs.set(i, new VolumeKeyframe(kf.t(), pos, kf.halfExtents(), kf.rotation(), kf.shape()));
+        }
+    }
 
     /**
      * Applies a Y-axis delta to every keyframe's local position.
@@ -494,6 +673,22 @@ public class AttackEditorMenu extends Menu {
             VolumeKeyframe kf = kfs.get(i);
             Vector3f pos = new Vector3f(kf.localPosition());
             pos.y += delta;
+            kfs.set(i, new VolumeKeyframe(kf.t(), pos, kf.halfExtents(), kf.rotation(), kf.shape()));
+        }
+    }
+
+    /**
+     * Applies a Z-axis delta to every keyframe's local position.
+     *
+     * @param session the active editing session
+     * @param delta   amount to add to each keyframe's {@code localPosition.z}
+     */
+    private static void shiftAllZ(AttackDevSession session, float delta) {
+        List<VolumeKeyframe> kfs = session.getEditKeyframes();
+        for (int i = 0; i < kfs.size(); i++) {
+            VolumeKeyframe kf = kfs.get(i);
+            Vector3f pos = new Vector3f(kf.localPosition());
+            pos.z += delta;
             kfs.set(i, new VolumeKeyframe(kf.t(), pos, kf.halfExtents(), kf.rotation(), kf.shape()));
         }
     }

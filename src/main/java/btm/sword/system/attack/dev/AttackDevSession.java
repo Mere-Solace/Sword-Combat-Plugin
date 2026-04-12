@@ -2,6 +2,7 @@ package btm.sword.system.attack.dev;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -97,6 +98,16 @@ public final class AttackDevSession {
     private HitValuePacket editHitValue = null;
     /** Index of the currently selected keyframe in {@link #editKeyframes}. */
     private int currentKeyframeIndex = 0;
+    /**
+     * Secondary selection set used for multi-keyframe operations.
+     * When non-empty, nudge and adjustment operations apply to every index in this
+     * set as well as to {@link #currentKeyframeIndex}. Populated via shift-click
+     * range select or the "Select Before / After" buttons. Cleared on single-click
+     * or when starting a new editing session.
+     */
+    @Getter
+    @Setter
+    private LinkedHashSet<Integer> selectedKeyframeIndices = new LinkedHashSet<>();
     /**
      * The most recently built {@link AttackDef} loaded into the test wand.
      * {@code null} means the wand fires the default {@code test_volume_attack}.
@@ -206,6 +217,7 @@ public final class AttackDevSession {
         this.editDurationMs = durationMs;
         this.editHitValue = hitValue;
         this.currentKeyframeIndex = 0;
+        this.selectedKeyframeIndices.clear();
         this.mode = DevMode.EDITING;
         VolumeEditorMode.startForSession(this);
     }
@@ -247,6 +259,15 @@ public final class AttackDevSession {
      */
     public void setCurrentKeyframeIndex(int index) {
         this.currentKeyframeIndex = index;
+    }
+
+    /**
+     * Clears the multi-selection set, reverting to single-keyframe selection mode.
+     * Call this on a normal (non-shift) click or after any operation that invalidates
+     * the current range.
+     */
+    public void clearSelectedKeyframeIndices() {
+        this.selectedKeyframeIndices.clear();
     }
 
     /**

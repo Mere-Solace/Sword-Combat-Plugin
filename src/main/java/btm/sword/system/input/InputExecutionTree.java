@@ -134,7 +134,9 @@ public class InputExecutionTree {
             InputActionExecutor.ReadinessState readiness;
 
             if (action != null) {
-                if (entry.getKey().equals(InputType.DROP) && owner.getItemTypeInHand(true).isAir()) {
+                if (entry.getKey().equals(InputType.DROP)
+                        && owner.getItemTypeInHand(true).isAir()
+                        && !owner.isPerformedDropAction()) {
                     readiness = InputActionExecutor.ReadinessState.DISABLED;
                 }
                 else {

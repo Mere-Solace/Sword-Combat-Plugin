@@ -1218,9 +1218,17 @@ public class SwordPlayer extends Combatant {
         return normalActState() && (holdingSoulLink() || holdingUmbralBlade());
     }
 
-    /** Returns {@code true} if the player's held item has the given persistent data key. */
+    /**
+     * Returns {@code true} if the player's held item has the given persistent data key.
+     *
+     * <p>During a drop event the item is temporarily removed from the hand before the
+     * event is cancelled. When {@link #isPerformedDropAction()} is {@code true}, the
+     * pre-drop item stored in {@link #getLastHeldItemBeforeDrop()} is checked instead,
+     * matching the same pattern used by {@link #holdingUmbralBlade()}.</p>
+     */
     public boolean heldItemHasKey(NamespacedKey key) {
-        return KeyRegistry.hasKey(getItemStackInHand(true), key);
+        ItemStack item = isPerformedDropAction() ? getLastHeldItemBeforeDrop() : getItemStackInHand(true);
+        return KeyRegistry.hasKey(item, key);
     }
 
     /**
