@@ -184,7 +184,7 @@ public final class SweepRecordingAction {
                 s.worldPosition().y - refOrigin.y,
                 s.worldPosition().z - refOrigin.z);
             Vector3f localPos = toLocal.transform(offset, new Vector3f());
-            keyframes.add(new VolumeKeyframe(t, localPos, defaultHalfExtents, new Quaternionf(), VolumeShape.SPHERE));
+            keyframes.add(new VolumeKeyframe(t, localPos, defaultHalfExtents, new Quaternionf(), VolumeShape.SPHERE, null));
         }
 
         // Placeholder hit values — intended to be edited in the saved YAML

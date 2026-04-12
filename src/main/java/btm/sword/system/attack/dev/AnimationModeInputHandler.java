@@ -108,7 +108,7 @@ public final class AnimationModeInputHandler {
             case Y -> pos.y += delta;
             case Z -> pos.z += delta;
         }
-        kfs.set(idx, new VolumeKeyframe(kf.t(), pos, kf.halfExtents(), kf.rotation(), kf.shape()));
+        kfs.set(idx, new VolumeKeyframe(kf.t(), pos, kf.halfExtents(), kf.rotation(), kf.shape(), kf.effect()));
         session.setEditCount(session.getEditCount() + 1);
     }
 
@@ -132,7 +132,7 @@ public final class AnimationModeInputHandler {
             he.y = Math.max(0.05f, he.y + delta);
             he.z = Math.max(0.05f, he.z + delta);
         }
-        kfs.set(idx, new VolumeKeyframe(kf.t(), kf.localPosition(), he, kf.rotation(), kf.shape()));
+        kfs.set(idx, new VolumeKeyframe(kf.t(), kf.localPosition(), he, kf.rotation(), kf.shape(), kf.effect()));
         session.setEditCount(session.getEditCount() + 1);
     }
 
@@ -147,7 +147,7 @@ public final class AnimationModeInputHandler {
         VolumeKeyframe kf = kfs.get(idx);
         VolumeShape[] shapes = VolumeShape.values();
         VolumeShape next = shapes[(kf.shape().ordinal() + 1) % shapes.length];
-        kfs.set(idx, new VolumeKeyframe(kf.t(), kf.localPosition(), kf.halfExtents(), kf.rotation(), next));
+        kfs.set(idx, new VolumeKeyframe(kf.t(), kf.localPosition(), kf.halfExtents(), kf.rotation(), next, kf.effect()));
         session.setEditCount(session.getEditCount() + 1);
     }
 

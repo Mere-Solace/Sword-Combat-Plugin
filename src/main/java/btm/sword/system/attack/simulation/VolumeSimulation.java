@@ -11,6 +11,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import org.bukkit.Bukkit;
+import org.bukkit.World;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
@@ -111,14 +112,30 @@ public final class VolumeSimulation {
                 continue;
             }
 
-            EntitySnapshotMap.EntityBoundingBoxSnapshot snap =
-                EntitySnapshotMap.INSTANCE.get(attack.getAttackerUuid());
-            if (snap == null) continue;
+            // Determine origin: locked (captured at fire time) or live snapshot
+            Vector3f origin;
+            float yaw;
+            float pitch;
+            if (attack.isLockOriginOnFire() && attack.getLockedCenter() != null) {
+                origin = attack.getLockedCenter();
+                yaw = attack.getLockedYaw() != null ? attack.getLockedYaw() : 0f;
+                pitch = attack.getLockedPitch() != null ? attack.getLockedPitch() : 0f;
+            } else {
+                EntitySnapshotMap.EntityBoundingBoxSnapshot snap =
+                    EntitySnapshotMap.INSTANCE.get(attack.getAttackerUuid());
+                if (snap == null) continue;
+                origin = snap.center();
+                yaw = snap.yaw();
+                pitch = snap.pitch();
+            }
 
             // Minecraft yaw is clockwise from south; negate for JOML's counter-clockwise rotateY
             Matrix4f worldTransform = new Matrix4f()
-                .translate(snap.center())
-                .rotateY(-(float) Math.toRadians(snap.yaw()));
+                .translate(origin)
+                .rotateY(-(float) Math.toRadians(yaw));
+            if (attack.isOrientWithPitch()) {
+                worldTransform.rotateX((float) Math.toRadians(pitch));
+            }
 
             attack.getTrajectory().sample(t, worldTransform, attack.getVolume());
             spatialGrid.insert(
@@ -126,6 +143,13 @@ public final class VolumeSimulation {
                 attack.getVolume().aabbMin,
                 attack.getVolume().aabbMax
             );
+
+            // ── Effects dispatch ──────────────────────────────────────────────
+            if (attack.getTrajectory() instanceof KeyframedTrajectory kt) {
+                World world = Bukkit.getWorlds().getFirst();
+                EffectsDispatcher.dispatch(kt, attack.getPrevT(), t, worldTransform, world);
+            }
+            attack.setPrevT(t);
 
             Debug.attackVolume("TICK t=" + String.format("%.2f", t)
                 + " aabbMin=" + fmtVec(attack.getVolume().aabbMin)

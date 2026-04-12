@@ -5,6 +5,7 @@ import java.util.function.BiFunction;
 
 import org.joml.Vector3f;
 
+import btm.sword.config.Config;
 import btm.sword.system.attack.HitValuePacket;
 import btm.sword.system.attack.simulation.KeyframedTrajectory;
 import btm.sword.system.attack.simulation.SweepCurve;
@@ -41,6 +42,8 @@ public final class AttackDef {
     private final VolumeTrajectory trajectory;
     private final HitValuePacket hitValue;
     private final BiFunction<Vector3f, SwordEntity, Vector3f> knockbackFunction;
+    private final boolean orientWithPitch;
+    private final boolean lockOriginOnFire;
 
     private AttackDef(Builder b) {
         this.id = b.id;
@@ -49,6 +52,8 @@ public final class AttackDef {
         this.trajectory = b.trajectory;
         this.hitValue = b.hitValue;
         this.knockbackFunction = b.knockbackFunction;
+        this.orientWithPitch = b.orientWithPitch;
+        this.lockOriginOnFire = b.lockOriginOnFire;
     }
 
     /**
@@ -76,6 +81,8 @@ public final class AttackDef {
         private HitValuePacket hitValue;
         private BiFunction<Vector3f, SwordEntity, Vector3f> knockbackFunction =
             (contact, src) -> new Vector3f();
+        private boolean orientWithPitch = Config.Combat.ATTACKS_ORIENT_WITH_PITCH;
+        private boolean lockOriginOnFire = Config.Combat.ATTACKS_LOCK_ORIGIN_ON_FIRE;
 
         /**
          * @param id unique attack identifier; must not be null or empty
@@ -166,6 +173,32 @@ public final class AttackDef {
          */
         public Builder knockback(BiFunction<Vector3f, SwordEntity, Vector3f> knockbackFunction) {
             this.knockbackFunction = knockbackFunction;
+            return this;
+        }
+
+        /**
+         * Overrides whether OBBs are tilted by the attacker's pitch angle.
+         * Defaults to {@link Config.Combat#ATTACKS_ORIENT_WITH_PITCH}.
+         *
+         * @param orientWithPitch {@code true} to apply pitch rotation to the world transform
+         * @return this builder
+         */
+        public Builder orientWithPitch(boolean orientWithPitch) {
+            this.orientWithPitch = orientWithPitch;
+            return this;
+        }
+
+        /**
+         * Overrides whether the attack origin is locked at fire time.
+         * When {@code true} the OBBs travel in the direction the player was facing when
+         * the attack was launched, regardless of subsequent movement.
+         * Defaults to {@link Config.Combat#ATTACKS_LOCK_ORIGIN_ON_FIRE}.
+         *
+         * @param lockOriginOnFire {@code true} to lock origin and direction at fire time
+         * @return this builder
+         */
+        public Builder lockOriginOnFire(boolean lockOriginOnFire) {
+            this.lockOriginOnFire = lockOriginOnFire;
             return this;
         }
 

@@ -734,6 +734,30 @@ public final class Config {
             ConfigurationSection::getDouble
         ); }
 
+        /**
+         * Default: whether volume attack OBBs are tilted by the attacker's pitch angle.
+         * Per-attack overrides are stored in the attack's YAML definition.
+         */
+        public static boolean ATTACKS_ORIENT_WITH_PITCH = false;
+        static { register("combat.attacks_orient_with_pitch",
+            ATTACKS_ORIENT_WITH_PITCH, Boolean.class,
+            v -> ATTACKS_ORIENT_WITH_PITCH = v,
+            ConfigurationSection::getBoolean
+        ); }
+
+        /**
+         * Default: whether volume attacks lock their origin and direction at fire time.
+         * When {@code true} the OBBs move in the direction the player faced when attacking,
+         * regardless of where the player moves afterwards.
+         * Per-attack overrides are stored in the attack's YAML definition.
+         */
+        public static boolean ATTACKS_LOCK_ORIGIN_ON_FIRE = true;
+        static { register("combat.attacks_lock_origin_on_fire",
+            ATTACKS_LOCK_ORIGIN_ON_FIRE, Boolean.class,
+            v -> ATTACKS_LOCK_ORIGIN_ON_FIRE = v,
+            ConfigurationSection::getBoolean
+        ); }
+
         // Attacks range multipliers configuration
         public static double ATTACKS_RANGE_MULTIPLIERS_BASIC_1 = 1.4;
         static { register("combat.attacks_range_multipliers_basic_1",

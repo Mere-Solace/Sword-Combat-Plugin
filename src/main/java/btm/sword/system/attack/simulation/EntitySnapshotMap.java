@@ -30,15 +30,16 @@ public final class EntitySnapshotMap {
      * Writes an immutable AABB snapshot for the given entity.
      * Must be called from the main thread.
      *
-     * @param uuid entity UUID
-     * @param bb   current Bukkit bounding box for the entity
-     * @param yaw  entity yaw in degrees (Bukkit convention), used to build world transforms
+     * @param uuid  entity UUID
+     * @param bb    current Bukkit bounding box for the entity
+     * @param yaw   entity yaw in degrees (Bukkit convention), used to build world transforms
+     * @param pitch entity pitch in degrees (Bukkit convention), used when orient-with-pitch is on
      */
-    public void snapshot(UUID uuid, BoundingBox bb, float yaw) {
+    public void snapshot(UUID uuid, BoundingBox bb, float yaw, float pitch) {
         Vector3f min = new Vector3f((float) bb.getMinX(), (float) bb.getMinY(), (float) bb.getMinZ());
         Vector3f max = new Vector3f((float) bb.getMaxX(), (float) bb.getMaxY(), (float) bb.getMaxZ());
         Vector3f center = new Vector3f((float) bb.getCenterX(), (float) bb.getCenterY(), (float) bb.getCenterZ());
-        snapshots.put(uuid, new EntityBoundingBoxSnapshot(min, max, center, yaw));
+        snapshots.put(uuid, new EntityBoundingBoxSnapshot(min, max, center, yaw, pitch));
     }
 
     /**
@@ -69,6 +70,9 @@ public final class EntitySnapshotMap {
      * @param max    maximum corner in world space
      * @param center center point in world space
      * @param yaw    entity yaw in degrees (Bukkit convention)
+     * @param pitch  entity pitch in degrees (Bukkit convention; −90 = up, +90 = down)
      */
-    public record EntityBoundingBoxSnapshot(Vector3f min, Vector3f max, Vector3f center, float yaw) {}
+    public record EntityBoundingBoxSnapshot(
+        Vector3f min, Vector3f max, Vector3f center, float yaw, float pitch
+    ) {}
 }

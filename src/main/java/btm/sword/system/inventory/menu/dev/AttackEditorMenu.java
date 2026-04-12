@@ -41,12 +41,12 @@ import xyz.xenondevs.invui.window.Window;
  *
  * <h2>Layout (6 rows × 9)</h2>
  * <pre>
- * Row 0: Back | Dur- | Info | Dur+ | — | — | LoadWand | Save | —
+ * Row 0: Back | SelBefore | Dur- | Info | Dur+ | SelAfter | LoadWand | Save | PitchToggle
  * Row 1: keyframe list (paged content) ×9
  * Row 2: keyframe list (paged content) ×9
- * Row 3: &lt; prev | next &gt; | — | Add | Delete | — | — | — | —
- * Row 4: Pos -X | +X | -Y | +Y | -Z | +Z | — | — | —
- * Row 5: HalfExt -X | +X | -Y | +Y | -Z | +Z | — | — | —
+ * Row 3: &lt; prev | next &gt; | Effects | Add | Delete | Shape | ShiftY- | ShiftY+ | LockToggle
+ * Row 4: Pos -X | +X | -Y | +Y | -Z | +Z | ShiftX- | ShiftX+ | —
+ * Row 5: HalfExt -X | +X | -Y | +Y | -Z | +Z | ShiftZ- | ShiftZ+ | —
  * </pre>
  *
  * <p>Left-click adjustment buttons move by ±0.1 blocks/degrees;
@@ -207,11 +207,64 @@ public class AttackEditorMenu extends Menu {
             }
         );
 
+        boolean pitchOn = session.isEditOrientWithPitch();
+        SimpleItem pitchToggle = new SimpleItem(
+            new ItemStackBuilder(pitchOn ? Material.CYAN_DYE : Material.GRAY_DYE)
+                .name(Component.text("Orient With Pitch", pitchOn ? NamedTextColor.AQUA : NamedTextColor.GRAY,
+                    TextDecoration.BOLD))
+                .lore(List.of(
+                    Component.text("OBBs tilt with the player's view angle.", NamedTextColor.DARK_GRAY),
+                    Component.text("Currently: ", NamedTextColor.DARK_GRAY)
+                        .append(Component.text(pitchOn ? "ON" : "OFF",
+                            pitchOn ? NamedTextColor.GREEN : NamedTextColor.RED, TextDecoration.BOLD))
+                ))
+                .build(),
+            click -> {
+                session.setEditOrientWithPitch(!session.isEditOrientWithPitch());
+                new AttackEditorMenu(swordPlayer).open();
+            }
+        );
+
+        boolean lockOn = session.isEditLockOriginOnFire();
+        SimpleItem lockToggle = new SimpleItem(
+            new ItemStackBuilder(lockOn ? Material.LODESTONE : Material.COMPASS)
+                .name(Component.text("Lock Origin On Fire", lockOn ? NamedTextColor.GOLD : NamedTextColor.GRAY,
+                    TextDecoration.BOLD))
+                .lore(List.of(
+                    Component.text("Freeze the attack origin at launch.", NamedTextColor.DARK_GRAY),
+                    Component.text("Currently: ", NamedTextColor.DARK_GRAY)
+                        .append(Component.text(lockOn ? "ON" : "OFF",
+                            lockOn ? NamedTextColor.GREEN : NamedTextColor.RED, TextDecoration.BOLD))
+                ))
+                .build(),
+            click -> {
+                session.setEditLockOriginOnFire(!session.isEditLockOriginOnFire());
+                new AttackEditorMenu(swordPlayer).open();
+            }
+        );
+
         // ── Keyframe items (paged content) ────────────────────────────────────
 
         List<Item> kfItems = buildKeyframeItems(session);
 
         // ── Row 3 controls ────────────────────────────────────────────────────
+
+        SimpleItem effectsButton = new SimpleItem(
+            new ItemStackBuilder(Material.BLAZE_POWDER)
+                .name(Component.text("Effects...", NamedTextColor.LIGHT_PURPLE, TextDecoration.BOLD))
+                .lore(List.of(
+                    Component.text("Edit particle and sound effects", NamedTextColor.DARK_GRAY),
+                    Component.text("for the selected keyframe.", NamedTextColor.DARK_GRAY)
+                ))
+                .build(),
+            click -> {
+                if (keyframes.isEmpty()) {
+                    swordPlayer.message(Component.text("No keyframe selected.", NamedTextColor.RED));
+                    return;
+                }
+                new KeyframeEffectsMenu(swordPlayer).open();
+            }
+        );
 
         SimpleItem addFrame = new SimpleItem(
             new ItemStackBuilder(Material.LIME_TERRACOTTA)
@@ -355,7 +408,7 @@ public class AttackEditorMenu extends Menu {
                 VolumeKeyframe kf = kfs.get(idx);
                 VolumeShape[] shapes = VolumeShape.values();
                 VolumeShape next = shapes[(kf.shape().ordinal() + 1) % shapes.length];
-                kfs.set(idx, new VolumeKeyframe(kf.t(), kf.localPosition(), kf.halfExtents(), kf.rotation(), next));
+                kfs.set(idx, new VolumeKeyframe(kf.t(), kf.localPosition(), kf.halfExtents(), kf.rotation(), next, kf.effect()));
                 new AttackEditorMenu(swordPlayer).open();
             }
         );
@@ -382,10 +435,10 @@ public class AttackEditorMenu extends Menu {
 
         PagedGui<Item> gui = PagedGui.items()
             .setStructure(
-                "B c D I U d L S #",
+                "B c D I U d L S P",
                 "x x x x x x x x x",
                 "x x x x x x x x x",
-                "< > # A F V J K #",
+                "< > E A F V J K T",
                 "q w e r t y m n #",
                 "u i o p g h a b #")
             .addIngredient('#', BORDER)
@@ -399,12 +452,15 @@ public class AttackEditorMenu extends Menu {
             .addIngredient('d', selectAfter)
             .addIngredient('L', loadWand)
             .addIngredient('S', saveButton)
+            .addIngredient('P', pitchToggle)
             .addIngredient('x', Markers.CONTENT_LIST_SLOT_HORIZONTAL)
+            .addIngredient('E', effectsButton)
             .addIngredient('A', addFrame)
             .addIngredient('F', deleteFrame)
             .addIngredient('V', setShape)
             .addIngredient('J', shiftAllYDec)
             .addIngredient('K', shiftAllYInc)
+            .addIngredient('T', lockToggle)
             // pos row
             .addIngredient('q', posXDec)
             .addIngredient('w', posXInc)
@@ -589,7 +645,7 @@ public class AttackEditorMenu extends Menu {
                 case POS_Y -> he.y = Math.max(0.05f, he.y + delta);
                 case POS_Z -> he.z = Math.max(0.05f, he.z + delta);
             }
-            return new VolumeKeyframe(kf.t(), kf.localPosition(), he, kf.rotation(), kf.shape());
+            return new VolumeKeyframe(kf.t(), kf.localPosition(), he, kf.rotation(), kf.shape(), kf.effect());
         } else {
             Vector3f pos = new Vector3f(kf.localPosition());
             switch (axis) {
@@ -597,7 +653,7 @@ public class AttackEditorMenu extends Menu {
                 case POS_Y -> pos.y += delta;
                 case POS_Z -> pos.z += delta;
             }
-            return new VolumeKeyframe(kf.t(), pos, kf.halfExtents(), kf.rotation(), kf.shape());
+            return new VolumeKeyframe(kf.t(), pos, kf.halfExtents(), kf.rotation(), kf.shape(), kf.effect());
         }
     }
 
@@ -614,7 +670,7 @@ public class AttackEditorMenu extends Menu {
     private static void insertFrameAfterSelected(AttackDevSession session) {
         List<VolumeKeyframe> kfs = session.getEditKeyframes();
         if (kfs.isEmpty()) {
-            kfs.add(new VolumeKeyframe(0f, new Vector3f(0f, 1f, 1f), new Vector3f(0.5f, 0.5f, 0.5f), new Quaternionf(), VolumeShape.SPHERE));
+            kfs.add(new VolumeKeyframe(0f, new Vector3f(0f, 1f, 1f), new Vector3f(0.5f, 0.5f, 0.5f), new Quaternionf(), VolumeShape.SPHERE, null));
             session.setCurrentKeyframeIndex(0);
             return;
         }
@@ -629,14 +685,14 @@ public class AttackEditorMenu extends Menu {
             Vector3f pos = new Vector3f(cur.localPosition()).lerp(next.localPosition(), 0.5f);
             Vector3f he = new Vector3f(cur.halfExtents()).lerp(next.halfExtents(), 0.5f);
             Quaternionf rot = new Quaternionf(cur.rotation()).slerp(next.rotation(), 0.5f);
-            newFrame = new VolumeKeyframe(t, pos, he, rot, cur.shape());
+            newFrame = new VolumeKeyframe(t, pos, he, rot, cur.shape(), null);
         } else {
             float t = Math.min(1.0f, cur.t() + 0.1f);
             newFrame = new VolumeKeyframe(t,
                 new Vector3f(cur.localPosition()),
                 new Vector3f(cur.halfExtents()),
                 new Quaternionf(cur.rotation()),
-                cur.shape());
+                cur.shape(), null);
         }
 
         kfs.add(idx + 1, newFrame);
@@ -657,7 +713,7 @@ public class AttackEditorMenu extends Menu {
             VolumeKeyframe kf = kfs.get(i);
             Vector3f pos = new Vector3f(kf.localPosition());
             pos.x += delta;
-            kfs.set(i, new VolumeKeyframe(kf.t(), pos, kf.halfExtents(), kf.rotation(), kf.shape()));
+            kfs.set(i, new VolumeKeyframe(kf.t(), pos, kf.halfExtents(), kf.rotation(), kf.shape(), kf.effect()));
         }
     }
 
@@ -673,7 +729,7 @@ public class AttackEditorMenu extends Menu {
             VolumeKeyframe kf = kfs.get(i);
             Vector3f pos = new Vector3f(kf.localPosition());
             pos.y += delta;
-            kfs.set(i, new VolumeKeyframe(kf.t(), pos, kf.halfExtents(), kf.rotation(), kf.shape()));
+            kfs.set(i, new VolumeKeyframe(kf.t(), pos, kf.halfExtents(), kf.rotation(), kf.shape(), kf.effect()));
         }
     }
 
@@ -689,7 +745,7 @@ public class AttackEditorMenu extends Menu {
             VolumeKeyframe kf = kfs.get(i);
             Vector3f pos = new Vector3f(kf.localPosition());
             pos.z += delta;
-            kfs.set(i, new VolumeKeyframe(kf.t(), pos, kf.halfExtents(), kf.rotation(), kf.shape()));
+            kfs.set(i, new VolumeKeyframe(kf.t(), pos, kf.halfExtents(), kf.rotation(), kf.shape(), kf.effect()));
         }
     }
 

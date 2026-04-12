@@ -13,9 +13,11 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.BoundingBox;
 import org.joml.Vector3f;
 
+import btm.sword.config.Config;
 import btm.sword.system.attack.HitValuePacket;
 import btm.sword.system.attack.def.AttackDef;
 import btm.sword.system.attack.def.AttackPrimitive;
+import btm.sword.system.attack.simulation.KeyframeEffect;
 import btm.sword.system.attack.simulation.KeyframedTrajectory;
 import btm.sword.system.attack.simulation.VolumeKeyframe;
 import lombok.Getter;
@@ -113,6 +115,19 @@ public final class AttackDevSession {
      * {@code null} means the wand fires the default {@code test_volume_attack}.
      */
     private AttackDef loadedAttackDef = null;
+
+    // ── Orientation flags for the current edit session ────────────────────────
+    /**
+     * Whether OBBs are tilted by the player's pitch angle. Defaults to the global config
+     * value; overridable per-attack via the editor toggle.
+     */
+    @Getter @Setter private boolean editOrientWithPitch = Config.Combat.ATTACKS_ORIENT_WITH_PITCH;
+
+    /**
+     * Whether the attack origin is locked at fire time. Defaults to the global config value;
+     * overridable per-attack via the editor toggle.
+     */
+    @Getter @Setter private boolean editLockOriginOnFire = Config.Combat.ATTACKS_LOCK_ORIGIN_ON_FIRE;
 
     private AttackDevSession(Player player) {
         this.player = player;
@@ -293,6 +308,17 @@ public final class AttackDevSession {
     }
 
     /**
+     * Replaces the {@link KeyframeEffect} on the keyframe at {@code index}.
+     * Pass {@code null} to clear effects from that keyframe.
+     *
+     * @param index  keyframe index; must be within {@code [0, editKeyframes.size())}
+     * @param effect the new effect bundle, or {@code null} to clear
+     */
+    public void setKeyframeEffect(int index, KeyframeEffect effect) {
+        editKeyframes.set(index, editKeyframes.get(index).withEffect(effect));
+    }
+
+    /**
      * Constructs an immutable {@link AttackDef} from the current edit state (keyframes,
      * duration, hit value). Does not modify session state.
      *
@@ -309,6 +335,8 @@ public final class AttackDevSession {
             .duration(editDurationMs)
             .onHit(editHitValue != null ? editHitValue
                 : new HitValuePacket(() -> 0f, () -> 10, () -> 2, () -> 0f, () -> 0f))
+            .orientWithPitch(editOrientWithPitch)
+            .lockOriginOnFire(editLockOriginOnFire)
             .build();
     }
 
@@ -334,6 +362,8 @@ public final class AttackDevSession {
             throw new IllegalArgumentException("Cannot edit non-keyframed attack: " + def.getId());
         }
         startEditing(def.getId(), kt.getKeyframes(), def.getDurationMs(), def.getHitValue());
+        this.editOrientWithPitch = def.isOrientWithPitch();
+        this.editLockOriginOnFire = def.isLockOriginOnFire();
     }
 
     /**

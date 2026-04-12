@@ -65,8 +65,10 @@ combat:
   attacks_cast_timing_max_duration: 200
   attacks_cast_timing_reduction_rate: 0.2
   attacks_cooldown_mult: 2.0
-  
-  
+  attacks_orient_with_pitch: false
+  attacks_lock_origin_on_fire: true
+
+
   attacks_duration_multiplier: 500
   
   attacks_range_multipliers_basic_1: 1.4

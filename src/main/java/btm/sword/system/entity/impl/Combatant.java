@@ -15,6 +15,7 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
+import org.joml.Vector3f;
 
 import btm.sword.config.Config;
 import btm.sword.system.action.ActionCaster;
@@ -22,6 +23,7 @@ import btm.sword.system.action.movement.MovementAction;
 import btm.sword.system.action.throwing.types.ThrownItem;
 import btm.sword.system.attack.ActiveAttack;
 import btm.sword.system.attack.def.AttackDef;
+import btm.sword.system.attack.simulation.EntitySnapshotMap;
 import btm.sword.system.attack.simulation.SimulationAttack;
 import btm.sword.system.attack.simulation.VolumeSimulation;
 import btm.sword.system.control.PredicateRunnablePair;
@@ -652,6 +654,20 @@ public abstract class Combatant extends SwordEntity {
             + " duration=" + def.getDurationMs() + "ms"
             + " type=" + def.getType());
 
+        // Capture locked origin if the attack requires it
+        Vector3f lockedCenter = null;
+        Float lockedYaw = null;
+        Float lockedPitch = null;
+        if (def.isLockOriginOnFire()) {
+            EntitySnapshotMap.EntityBoundingBoxSnapshot snap =
+                EntitySnapshotMap.INSTANCE.get(uuid);
+            if (snap != null) {
+                lockedCenter = new Vector3f(snap.center());
+                lockedYaw = snap.yaw();
+                lockedPitch = snap.pitch();
+            }
+        }
+
         SimulationAttack simAttack = new SimulationAttack(
             uuid,
             def.getTrajectory(),
@@ -660,7 +676,12 @@ public abstract class Combatant extends SwordEntity {
             def.getDurationMs(),
             def.getHitValue(),
             hitThisAttack,
-            this::onAttackEnd
+            this::onAttackEnd,
+            def.isOrientWithPitch(),
+            def.isLockOriginOnFire(),
+            lockedCenter,
+            lockedYaw,
+            lockedPitch
         );
         VolumeSimulation.INSTANCE.addAttack(simAttack);
     }

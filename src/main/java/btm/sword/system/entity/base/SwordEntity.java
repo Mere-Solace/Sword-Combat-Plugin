@@ -241,7 +241,7 @@ public abstract class SwordEntity {
             restartStatusDisplay();
         }
 
-        EntitySnapshotMap.INSTANCE.snapshot(uuid, self.getBoundingBox(), self.getYaw());
+        EntitySnapshotMap.INSTANCE.snapshot(uuid, self.getBoundingBox(), self.getYaw(), self.getPitch());
     }
 
     protected void updateStatus() {

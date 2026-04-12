@@ -3,16 +3,26 @@ package btm.sword.system.attack.def;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.bukkit.Color;
+import org.bukkit.NamespacedKey;
+import org.bukkit.Particle;
+import org.bukkit.Registry;
+import org.bukkit.Sound;
+import org.bukkit.SoundCategory;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 import btm.sword.system.attack.HitValuePacket;
+import btm.sword.system.attack.simulation.KeyframeEffect;
 import btm.sword.system.attack.simulation.KeyframedTrajectory;
+import btm.sword.system.attack.simulation.ParticleEffect;
+import btm.sword.system.attack.simulation.SoundCue;
 import btm.sword.system.attack.simulation.SweepCurve;
 import btm.sword.system.attack.simulation.SweepTrajectory;
 import btm.sword.system.attack.simulation.VolumeKeyframe;
@@ -51,9 +61,14 @@ public final class AttackDefSerializer {
         int duration = section.getInt("duration");
         HitValuePacket hitValue = loadHitValue(section.getConfigurationSection("hit-value"), id);
 
+        boolean orientWithPitch = section.getBoolean("orient-with-pitch", false);
+        boolean lockOriginOnFire = section.getBoolean("lock-origin-on-fire", true);
+
         AttackDef.Builder builder = new AttackDef.Builder(id)
             .duration(duration)
-            .onHit(hitValue);
+            .onHit(hitValue)
+            .orientWithPitch(orientWithPitch)
+            .lockOriginOnFire(lockOriginOnFire);
 
         switch (type) {
             case SWEEP -> builder.sweep(loadSweepCurve(section.getConfigurationSection("curve"), id));
@@ -103,9 +118,63 @@ public final class AttackDefSerializer {
             Vector3f halfExtents = readVector3f((Map<?, ?>) map.get("half-extents"));
             Quaternionf rotation = readQuaternionf((Map<?, ?>) map.get("rotation"));
             VolumeShape shape = readShape(map.get("shape"));
-            keyframes.add(new VolumeKeyframe(t, position, halfExtents, rotation, shape));
+            KeyframeEffect effect = null;
+            if (map.get("effect") instanceof Map<?, ?> effectMap) {
+                effect = loadKeyframeEffect(effectMap);
+            }
+            keyframes.add(new VolumeKeyframe(t, position, halfExtents, rotation, shape, effect));
         }
         return keyframes;
+    }
+
+    private static KeyframeEffect loadKeyframeEffect(Map<?, ?> map) {
+        List<ParticleEffect> particles = new ArrayList<>();
+        if (map.get("particles") instanceof List<?> list) {
+            for (Object item : list) {
+                if (item instanceof Map<?, ?> pMap) {
+                    particles.add(loadParticleEffect(pMap));
+                }
+            }
+        }
+        SoundCue sound = null;
+        if (map.get("sound") instanceof Map<?, ?> soundMap) {
+            sound = loadSoundCue(soundMap);
+        }
+        return new KeyframeEffect(particles, sound);
+    }
+
+    private static ParticleEffect loadParticleEffect(Map<?, ?> map) {
+        Particle type = Particle.valueOf(String.valueOf(map.get("type")).toUpperCase());
+        int count = map.get("count") instanceof Number n ? n.intValue() : 1;
+        Vector3f offset = map.get("offset") instanceof Map<?, ?> offMap
+            ? readVector3f(offMap) : new Vector3f();
+        float spread = map.get("spread") instanceof Number n ? n.floatValue() : 0.1f;
+        Particle.DustOptions dust = null;
+        if (map.get("dust") instanceof Map<?, ?> dustMap) {
+            int r = dustMap.get("r") instanceof Number rn ? rn.intValue() : 255;
+            int g = dustMap.get("g") instanceof Number gn ? gn.intValue() : 255;
+            int b = dustMap.get("b") instanceof Number bn ? bn.intValue() : 255;
+            float size = dustMap.get("size") instanceof Number sn ? sn.floatValue() : 1.0f;
+            dust = new Particle.DustOptions(Color.fromRGB(r, g, b), size);
+        }
+        return new ParticleEffect(type, count, offset, spread, dust);
+    }
+
+    private static SoundCue loadSoundCue(Map<?, ?> map) {
+        String keyStr = String.valueOf(map.get("key"));
+        // Support both "minecraft:entity.player.attack.sweep" and bare "entity.player.attack.sweep"
+        NamespacedKey namespacedKey = keyStr.contains(":")
+            ? NamespacedKey.fromString(keyStr)
+            : NamespacedKey.minecraft(keyStr);
+        if (namespacedKey == null) throw new IllegalArgumentException("Invalid sound key: " + keyStr);
+        @SuppressWarnings("deprecation")
+        Sound sound = Registry.SOUNDS.get(namespacedKey);
+        if (sound == null) throw new IllegalArgumentException("Unknown sound: " + keyStr);
+        SoundCategory category = map.get("category") instanceof String s
+            ? SoundCategory.valueOf(s.toUpperCase()) : SoundCategory.PLAYERS;
+        float volume = map.get("volume") instanceof Number n ? n.floatValue() : 1.0f;
+        float pitch = map.get("pitch") instanceof Number n ? n.floatValue() : 1.0f;
+        return new SoundCue(sound, category, volume, pitch);
     }
 
     private static VolumeShape readShape(Object value) {
@@ -136,6 +205,8 @@ public final class AttackDefSerializer {
 
         yaml.set(path + ".type", attack.getType().name());
         yaml.set(path + ".duration", attack.getDurationMs());
+        yaml.set(path + ".orient-with-pitch", attack.isOrientWithPitch());
+        yaml.set(path + ".lock-origin-on-fire", attack.isLockOriginOnFire());
 
         saveHitValue(yaml, path + ".hit-value", attack.getHitValue());
 
@@ -183,15 +254,60 @@ public final class AttackDefSerializer {
         }
         List<Map<String, Object>> kfMaps = new ArrayList<>();
         for (VolumeKeyframe kf : kt.getKeyframes()) {
-            kfMaps.add(Map.of(
-                "t", (double) kf.t(),
-                "position", vecMap(kf.localPosition()),
-                "half-extents", vecMap(kf.halfExtents()),
-                "rotation", quatMap(kf.rotation()),
-                "shape", kf.shape().name()
-            ));
+            Map<String, Object> kfMap = new LinkedHashMap<>();
+            kfMap.put("t", (double) kf.t());
+            kfMap.put("position", vecMap(kf.localPosition()));
+            kfMap.put("half-extents", vecMap(kf.halfExtents()));
+            kfMap.put("rotation", quatMap(kf.rotation()));
+            kfMap.put("shape", kf.shape().name());
+            if (kf.effect() != null) {
+                kfMap.put("effect", serializeEffect(kf.effect()));
+            }
+            kfMaps.add(kfMap);
         }
         yaml.set(path + ".keyframes", kfMaps);
+    }
+
+    private static Map<String, Object> serializeEffect(KeyframeEffect effect) {
+        Map<String, Object> map = new LinkedHashMap<>();
+        if (!effect.particles().isEmpty()) {
+            List<Map<String, Object>> pList = new ArrayList<>();
+            for (ParticleEffect p : effect.particles()) {
+                pList.add(serializeParticle(p));
+            }
+            map.put("particles", pList);
+        }
+        if (effect.sound() != null) {
+            map.put("sound", serializeSound(effect.sound()));
+        }
+        return map;
+    }
+
+    private static Map<String, Object> serializeParticle(ParticleEffect p) {
+        Map<String, Object> map = new LinkedHashMap<>();
+        map.put("type", p.type().name());
+        map.put("count", p.count());
+        map.put("offset", vecMap(p.offset()));
+        map.put("spread", (double) p.spread());
+        if (p.dustOptions() != null) {
+            Particle.DustOptions d = p.dustOptions();
+            map.put("dust", Map.of(
+                "r", d.getColor().getRed(),
+                "g", d.getColor().getGreen(),
+                "b", d.getColor().getBlue(),
+                "size", (double) d.getSize()
+            ));
+        }
+        return map;
+    }
+
+    private static Map<String, Object> serializeSound(SoundCue sc) {
+        return Map.of(
+            "key", sc.sound().key().asString(),
+            "category", sc.category().name(),
+            "volume", (double) sc.volume(),
+            "pitch", (double) sc.pitch()
+        );
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────

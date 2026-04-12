@@ -1,6 +1,10 @@
 package btm.sword.system.attack.dev;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.bukkit.Color;
 import org.bukkit.Location;
@@ -8,6 +12,7 @@ import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.TextDisplay;
 import org.bukkit.util.BoundingBox;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
@@ -24,6 +29,7 @@ import btm.sword.system.control.TimeArbiter;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 
 /**
  * Renders volume keyframe wireframes for all active {@link AttackDevSession}s in
@@ -62,6 +68,9 @@ public final class VolumeEditorMode {
     private static final Particle.DustOptions DUST_LIVE =
         new Particle.DustOptions(Color.fromRGB(100, 220, 255), 1.0f);
 
+    /** Text display entities spawned per editing session, keyed by player UUID. */
+    private static final Map<UUID, List<TextDisplay>> SESSION_LABELS = new ConcurrentHashMap<>();
+
     private VolumeEditorMode() {}
 
     /**
@@ -94,7 +103,8 @@ public final class VolumeEditorMode {
 
                 World world = player.getWorld();
                 Location loc = player.getLocation();
-                Matrix4f worldTransform = buildWorldTransform(player.getBoundingBox(), loc.getYaw());
+                Matrix4f worldTransform = buildWorldTransform(
+                    player.getBoundingBox(), loc.getYaw(), loc.getPitch(), false);
 
                 trajectory.sample(t, worldTransform, buffer);
                 renderObbWireframe(world, buffer.center, buffer.halfExtents, buffer.rotation, DUST_LIVE);
@@ -144,6 +154,11 @@ public final class VolumeEditorMode {
         String modeLabel = expectedMode == DevMode.EDITING ? "Edit" : "View";
         notifyOn(player, modeLabel);
 
+        // Spawn TextDisplay labels for each keyframe (EDITING mode only)
+        if (expectedMode == DevMode.EDITING) {
+            spawnLabels(session);
+        }
+
         // Show a boss bar for the duration of the wireframe session
         BossBar.Color barColor = expectedMode == DevMode.EDITING ? BossBar.Color.YELLOW : BossBar.Color.GREEN;
         BossBar bossBar = BossBar.bossBar(
@@ -167,6 +182,9 @@ public final class VolumeEditorMode {
                 }
                 if (session.getMode() != expectedMode || !player.isOnline()) return;
                 renderSession(session, tickCount[0]);
+                if (expectedMode == DevMode.EDITING) {
+                    updateLabels(session);
+                }
             },
             null,
             0, TICK_MS,
@@ -175,6 +193,7 @@ public final class VolumeEditorMode {
                 () -> session.getMode() != expectedMode || !player.isOnline(),
                 () -> {
                     Sword.print("[VolumeEditorMode] render loop ended for " + player.getName());
+                    removeLabels(session.getPlayer().getUniqueId());
                     if (player.isOnline()) {
                         player.hideBossBar(bossBar);
                         notifyOff(player, modeLabel);
@@ -203,7 +222,8 @@ public final class VolumeEditorMode {
         }
 
         BoundingBox bb = session.getPlayer().getBoundingBox();
-        Matrix4f worldTransform = buildWorldTransform(bb, loc.getYaw());
+        Matrix4f worldTransform = buildWorldTransform(
+            bb, loc.getYaw(), loc.getPitch(), session.isEditOrientWithPitch());
 
         Quaternionf worldBaseRot = worldTransform.getNormalizedRotation(new Quaternionf());
 
@@ -261,14 +281,115 @@ public final class VolumeEditorMode {
      * Builds the local-to-world transform for a player, matching the origin used by
      * {@link btm.sword.system.attack.simulation.VolumeSimulation} exactly.
      *
-     * @param bb  the player's current bounding box
-     * @param yaw the player's current yaw in degrees
-     * @return a Matrix4f: translate to BB centre, then rotate by negated yaw
+     * <p>When {@code orientWithPitch} is {@code true}, a pitch rotation is applied after
+     * the yaw rotation so OBBs tilt with the player's view angle.</p>
+     *
+     * @param bb               the player's current bounding box
+     * @param yaw              the player's current yaw in degrees
+     * @param pitch            the player's current pitch in degrees
+     * @param orientWithPitch  whether to apply pitch rotation
+     * @return a Matrix4f: translate to BB centre → rotate by negated yaw → optionally rotate by pitch
      */
-    private static Matrix4f buildWorldTransform(BoundingBox bb, float yaw) {
-        return new Matrix4f()
+    private static Matrix4f buildWorldTransform(BoundingBox bb, float yaw, float pitch,
+            boolean orientWithPitch) {
+        Matrix4f m = new Matrix4f()
             .translate((float) bb.getCenterX(), (float) bb.getCenterY(), (float) bb.getCenterZ())
             .rotateY(-(float) Math.toRadians(yaw));
+        if (orientWithPitch) {
+            m.rotateX((float) Math.toRadians(pitch));
+        }
+        return m;
+    }
+
+    // ── TextDisplay label management ─────────────────────────────────────────
+
+    private static void spawnLabels(AttackDevSession session) {
+        Player player = session.getPlayer();
+        World world = player.getWorld();
+        if (world == null) return;
+
+        List<VolumeKeyframe> keyframes = session.getEditKeyframes();
+        List<TextDisplay> labels = new ArrayList<>(keyframes.size());
+        Location spawnLoc = player.getLocation();
+
+        for (int i = 0; i < keyframes.size(); i++) {
+            final int idx = i;
+            TextDisplay td = world.spawn(spawnLoc, TextDisplay.class, display -> {
+                display.text(Component.text("#" + idx, NamedTextColor.GRAY, TextDecoration.BOLD));
+                display.setSeeThrough(true);
+            });
+            labels.add(td);
+        }
+
+        SESSION_LABELS.put(player.getUniqueId(), labels);
+    }
+
+    private static void updateLabels(AttackDevSession session) {
+        Player player = session.getPlayer();
+        List<TextDisplay> labels = SESSION_LABELS.get(player.getUniqueId());
+        if (labels == null) return;
+
+        List<VolumeKeyframe> keyframes = session.getEditKeyframes();
+
+        // Reconcile: if keyframe count changed (add/remove), rebuild labels
+        if (labels.size() != keyframes.size()) {
+            removeLabels(player.getUniqueId());
+            spawnLabels(session);
+            return;
+        }
+
+        Location loc = player.getLocation();
+        BoundingBox bb = player.getBoundingBox();
+        Matrix4f worldTransform = buildWorldTransform(
+            bb, loc.getYaw(), loc.getPitch(), session.isEditOrientWithPitch());
+
+        int cursor = session.getCurrentKeyframeIndex();
+        java.util.LinkedHashSet<Integer> sel = session.getSelectedKeyframeIndices();
+        boolean hasSelection = !sel.isEmpty();
+
+        for (int i = 0; i < keyframes.size(); i++) {
+            TextDisplay td = labels.get(i);
+            if (!td.isValid()) continue;
+
+            VolumeKeyframe kf = keyframes.get(i);
+            Vector3f worldCenter = worldTransform.transformPosition(
+                new Vector3f(kf.localPosition()), new Vector3f());
+            float labelY = worldCenter.y + kf.halfExtents().y + 0.3f;
+            td.teleport(new Location(loc.getWorld(), worldCenter.x, labelY, worldCenter.z));
+
+            boolean inSel = sel.contains(i);
+            boolean isPrimary = (i == cursor);
+
+            // When a selection is active: only show label on first and last selected index
+            boolean show;
+            if (hasSelection) {
+                show = isPrimary || (inSel && isFirstOrLastInSelection(i, session));
+            } else {
+                show = true;
+            }
+
+            td.setVisibleByDefault(show);
+
+            NamedTextColor color = isPrimary ? NamedTextColor.GOLD
+                : inSel ? NamedTextColor.YELLOW
+                : NamedTextColor.GRAY;
+            td.text(Component.text("#" + i, color, TextDecoration.BOLD));
+        }
+    }
+
+    private static void removeLabels(UUID playerUuid) {
+        List<TextDisplay> labels = SESSION_LABELS.remove(playerUuid);
+        if (labels != null) {
+            labels.forEach(td -> { if (td.isValid()) td.remove(); });
+        }
+    }
+
+    private static boolean isFirstOrLastInSelection(int index, AttackDevSession session) {
+        java.util.LinkedHashSet<Integer> sel = session.getSelectedKeyframeIndices();
+        if (sel.isEmpty()) return false;
+        int first = sel.stream().mapToInt(Integer::intValue).min().orElse(-1);
+        int last = sel.stream().mapToInt(Integer::intValue).max().orElse(-1);
+        return index == first || index == last;
     }
 
     // ── OBB wireframe renderer ────────────────────────────────────────────────
