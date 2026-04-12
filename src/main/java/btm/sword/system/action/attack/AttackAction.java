@@ -8,9 +8,11 @@ import btm.sword.Sword;
 import btm.sword.config.Config;
 import btm.sword.system.action.SwordAction;
 import btm.sword.system.attack.SweepAttack;
+import btm.sword.system.attack.def.AttackDef;
 import btm.sword.system.attack.def.AttackRegistry;
 import btm.sword.system.attack.dev.AttackDevSession;
 import btm.sword.system.attack.dev.DevMode;
+import btm.sword.system.attack.dev.VolumeEditorMode;
 import btm.sword.system.attack.style.AttackProfile;
 import btm.sword.system.attack.style.AttackType;
 import btm.sword.system.attack.style.WeaponAttackStyle;
@@ -60,11 +62,11 @@ public class AttackAction extends SwordAction {
                         + " duration=" + devSession.getEditDurationMs() + "ms");
                 }
                 if (devSession != null && devSession.getLoadedAttackDef() != null) {
-                    executor.launchAttackDef(devSession.getLoadedAttackDef());
+                    fireWandDef(executor, devSession.getLoadedAttackDef());
                     return;
                 }
             }
-            executor.launchAttackDef(AttackRegistry.get("test_volume_attack"));
+            fireWandDef(executor, AttackRegistry.get("test_volume_attack"));
             return;
         }
 
@@ -120,6 +122,15 @@ public class AttackAction extends SwordAction {
                 )
             )
             .execute(executor);
+    }
+
+    private static void fireWandDef(Combatant executor, AttackDef def) {
+        long startMs = System.currentTimeMillis();
+        executor.launchAttackDef(def);
+        if (executor instanceof SwordPlayer sp) {
+            VolumeEditorMode.startPlaybackVisualization(
+                sp.player(), def.getTrajectory(), startMs, def.getDurationMs());
+        }
     }
 
     // basic Thrust, and Bash coming later

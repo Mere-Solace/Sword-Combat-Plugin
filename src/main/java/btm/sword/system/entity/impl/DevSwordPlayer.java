@@ -12,12 +12,15 @@ import java.util.logging.Level;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
 
 import btm.sword.system.attack.dev.AnimationModeInputHandler;
 import btm.sword.system.attack.dev.AttackDevSession;
 import btm.sword.system.attack.dev.SaveConfirmDialog;
 import btm.sword.system.input.InputType;
+import btm.sword.system.inventory.menu.dev.SweepGeneratorMenu;
+import btm.sword.system.item.KeyRegistry;
 import btm.sword.system.playerdata.PlayerData;
 import lombok.Getter;
 import lombok.Setter;
@@ -162,7 +165,17 @@ public final class DevSwordPlayer extends SwordPlayer {
      */
     @Override
     public boolean handleInventoryInput(InventoryClickEvent e) {
-        if (!inAnimationMode) return super.handleInventoryInput(e);
+        if (!inAnimationMode) {
+            // Volume-attack wand click → open Sweep Generator
+            if (e.getClickedInventory() == player().getInventory()) {
+                ItemStack clicked = e.getCurrentItem();
+                if (clicked != null && KeyRegistry.hasKey(clicked, KeyRegistry.TEST_VOLUME_ATTACK_KEY)) {
+                    new SweepGeneratorMenu(this).open();
+                    return true;
+                }
+            }
+            return super.handleInventoryInput(e);
+        }
 
         if (e.getClickedInventory() != player().getInventory()) {
             return super.handleInventoryInput(e);

@@ -271,6 +271,19 @@ public final class AttackDevSession {
     }
 
     /**
+     * Replaces the keyframe list for the current edit session.
+     * Intended for in-place regeneration (e.g. the sweep generator replacing all frames
+     * without restarting the session). Clears the multi-selection set.
+     *
+     * @param keyframes the new keyframe list; copied into a mutable list
+     */
+    public void setEditKeyframes(List<VolumeKeyframe> keyframes) {
+        this.editKeyframes = new ArrayList<>(keyframes);
+        this.selectedKeyframeIndices.clear();
+        this.currentKeyframeIndex = 0;
+    }
+
+    /**
      * Updates the attack duration for the current edit session.
      *
      * @param durationMs new duration in milliseconds; must be &gt; 0

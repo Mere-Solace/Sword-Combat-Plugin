@@ -14,8 +14,11 @@ import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 import btm.sword.Sword;
+import btm.sword.system.attack.simulation.KeyframedTrajectory;
+import btm.sword.system.attack.simulation.ObbVolume;
 import btm.sword.system.attack.simulation.VolumeKeyframe;
 import btm.sword.system.attack.simulation.VolumeShape;
+import btm.sword.system.attack.simulation.VolumeTrajectory;
 import btm.sword.system.control.PredicateRunnablePair;
 import btm.sword.system.control.TimeArbiter;
 import net.kyori.adventure.bossbar.BossBar;
@@ -55,8 +58,56 @@ public final class VolumeEditorMode {
         new Particle.DustOptions(Color.fromRGB(255, 170, 0), 0.7f);
     private static final Particle.DustOptions DUST_DEFAULT =
         new Particle.DustOptions(Color.fromRGB(160, 160, 160), 0.2f);
+    /** Bright cyan used for the live-playback hitbox outline. */
+    private static final Particle.DustOptions DUST_LIVE =
+        new Particle.DustOptions(Color.fromRGB(100, 220, 255), 1.0f);
 
     private VolumeEditorMode() {}
+
+    /**
+     * Starts a 50 ms main-thread loop that renders the live interpolated OBB of a wand
+     * test attack as it plays out.
+     *
+     * <p>Only supports {@link KeyframedTrajectory} — silently no-ops for other trajectory
+     * types. The OBB is rendered with a bright cyan outline at each tick, following the
+     * player's current position and yaw so it matches where the hitbox actually is.</p>
+     *
+     * <p>The loop self-cancels when the attack duration has elapsed or the player goes offline.
+     * No cleanup is required by the caller.</p>
+     *
+     * @param player     the player who fired the wand attack
+     * @param trajectory the attack's trajectory (must be {@link KeyframedTrajectory})
+     * @param startMs    wall-clock start time matching the {@link btm.sword.system.attack.simulation.SimulationAttack}
+     * @param durationMs total attack duration in milliseconds
+     */
+    public static void startPlaybackVisualization(Player player, VolumeTrajectory trajectory,
+            long startMs, long durationMs) {
+        if (!(trajectory instanceof KeyframedTrajectory)) return;
+
+        ObbVolume buffer = new ObbVolume();
+
+        TimeArbiter.runTimeIndependentBukkitTaskOnTimer(
+            () -> {
+                if (!player.isOnline()) return;
+                long now = System.currentTimeMillis();
+                float t = Math.min(1.0f, (now - startMs) / (float) durationMs);
+
+                World world = player.getWorld();
+                Location loc = player.getLocation();
+                Matrix4f worldTransform = buildWorldTransform(player.getBoundingBox(), loc.getYaw());
+
+                trajectory.sample(t, worldTransform, buffer);
+                renderObbWireframe(world, buffer.center, buffer.halfExtents, buffer.rotation, DUST_LIVE);
+            },
+            null,
+            0, 50,
+            VolumeEditorMode.class, "playback-" + player.getName(),
+            new PredicateRunnablePair(
+                () -> !player.isOnline() || System.currentTimeMillis() - startMs >= durationMs,
+                () -> { }
+            )
+        );
+    }
 
     /**
      * Starts the per-session visualization loop for an EDITING session.
@@ -151,13 +202,8 @@ public final class VolumeEditorMode {
             return;
         }
 
-        // Use bounding-box centre as the transform origin — matches VolumeSimulation exactly
         BoundingBox bb = session.getPlayer().getBoundingBox();
-
-        // Minecraft yaw is clockwise from south; negate for JOML's counter-clockwise rotateY
-        Matrix4f worldTransform = new Matrix4f()
-            .translate((float) bb.getCenterX(), (float) bb.getCenterY(), (float) bb.getCenterZ())
-            .rotateY(-(float) Math.toRadians(loc.getYaw()));
+        Matrix4f worldTransform = buildWorldTransform(bb, loc.getYaw());
 
         Quaternionf worldBaseRot = worldTransform.getNormalizedRotation(new Quaternionf());
 
@@ -207,6 +253,22 @@ public final class VolumeEditorMode {
         if (log && !keyframes.isEmpty()) {
             Sword.print("[VolumeEditorMode] spawned " + totalParticles + " particles this tick");
         }
+    }
+
+    // ── Transform helpers ─────────────────────────────────────────────────────
+
+    /**
+     * Builds the local-to-world transform for a player, matching the origin used by
+     * {@link btm.sword.system.attack.simulation.VolumeSimulation} exactly.
+     *
+     * @param bb  the player's current bounding box
+     * @param yaw the player's current yaw in degrees
+     * @return a Matrix4f: translate to BB centre, then rotate by negated yaw
+     */
+    private static Matrix4f buildWorldTransform(BoundingBox bb, float yaw) {
+        return new Matrix4f()
+            .translate((float) bb.getCenterX(), (float) bb.getCenterY(), (float) bb.getCenterZ())
+            .rotateY(-(float) Math.toRadians(yaw));
     }
 
     // ── OBB wireframe renderer ────────────────────────────────────────────────

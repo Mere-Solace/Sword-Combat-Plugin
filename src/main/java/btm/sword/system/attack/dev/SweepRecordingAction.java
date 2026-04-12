@@ -219,7 +219,7 @@ public final class SweepRecordingAction {
      * @param dir  the attacks directory to check for existing YAML files
      * @return the first available name
      */
-    static String nextAvailableName(String base, File dir) {
+    public static String nextAvailableName(String base, File dir) {
         if (!AttackRegistry.contains(base) && !new File(dir, base + ".yml").exists()) {
             return base;
         }
