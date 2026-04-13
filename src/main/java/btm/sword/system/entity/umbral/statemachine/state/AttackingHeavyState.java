@@ -12,6 +12,7 @@ import btm.sword.system.attack.UmbralBladeAttack;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.umbral.UmbralBlade;
 import btm.sword.system.entity.umbral.statemachine.UmbralStateFacade;
+import btm.sword.utility.Debug;
 import btm.sword.utility.Prefab;
 import btm.sword.utility.display.DrawUtil;
 import btm.sword.utility.math.Basis;
@@ -129,7 +130,7 @@ public class AttackingHeavyState extends UmbralStateFacade {
         GeneratedAttackProfile profile = new GeneratedAttackProfile(ctrl, e -> Attack::getTo);
 
         int duration = 20 * (int) Math.log(Math.max(1, dist * dist));
-
+        Debug.attack("Attack Duration:="+duration);
         Attack attackObj = new UmbralBladeAttack(blade.getDisplay(), profile,
             true, true, 1,
             30, 1, (int) (duration * 1.75),

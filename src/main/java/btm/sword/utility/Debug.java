@@ -6,15 +6,16 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.bukkit.Bukkit;
 import org.bukkit.Location;
-import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
 
 import btm.sword.Sword;
 import btm.sword.config.Config;
+import btm.sword.system.entity.SwordEntityArbiter;
+import btm.sword.system.entity.base.SwordEntity;
+import btm.sword.system.entity.impl.DevSwordPlayer;
 import btm.sword.utility.display.DrawUtil;
 import btm.sword.utility.math.Basis;
 import btm.sword.utility.math.VectorUtil;
@@ -258,10 +259,9 @@ public final class Debug {
         String line = "[" + tag + "][" + location + "] " + message;
         Sword.print(line);
 
-        for (String devName : DEV_NAMES) {
-            Player dev = Bukkit.getPlayer(devName);
-            if (dev != null && dev.isValid()) {
-                dev.sendMessage(line);
+        for (SwordEntity se : SwordEntityArbiter.getONLINE_SWORD_PLAYERS().values()) {
+            if (se instanceof DevSwordPlayer dsp) {
+                dsp.message(line);
             }
         }
     }

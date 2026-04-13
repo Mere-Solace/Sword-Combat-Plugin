@@ -27,6 +27,7 @@ import btm.sword.system.entity.mob.MobTypeDefinition;
 import btm.sword.system.entity.mob.MobTypeRegistry;
 import btm.sword.system.playerdata.PlayerData;
 import btm.sword.system.playerdata.PlayerDataManager;
+import lombok.Getter;
 
 /**
  * Manages registration, storage, and retrieval of SwordEntity instances,
@@ -42,6 +43,7 @@ public final class SwordEntityArbiter {
     private SwordEntityArbiter() {}
 
     private static final HashMap<UUID, SwordEntity> EXISTING_SWORD_NPCS = new HashMap<>();
+    @Getter
     private static final HashMap<UUID, SwordEntity> ONLINE_SWORD_PLAYERS = new HashMap<>();
 
     /**

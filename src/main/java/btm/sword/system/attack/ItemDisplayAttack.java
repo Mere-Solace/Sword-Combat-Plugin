@@ -80,8 +80,6 @@ public class ItemDisplayAttack extends Attack {
 
     @Override
     protected void startupLogic() {
-
-
         if (ticksSpentMovingToInitialLocation != 0) {
             TimeArbiter.teleportDisplay(
                 weaponDisplay,
@@ -104,7 +102,7 @@ public class ItemDisplayAttack extends Attack {
     /** Sets how many ticks the display will spend moving to its initial position before the attack begins. */
     public ItemDisplayAttack setInitialMovementTicks(int ticksSpentMovingToInitialLocation) {
         this.ticksSpentMovingToInitialLocation = ticksSpentMovingToInitialLocation;
-        return this; // for builder pattern, pretty cool GOF
+        return this;
     }
 
     /** Controls whether hit particles are drawn during the attack sweep. */
