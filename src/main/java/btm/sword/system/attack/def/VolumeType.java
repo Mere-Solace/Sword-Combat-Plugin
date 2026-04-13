@@ -8,7 +8,7 @@ import btm.sword.system.attack.simulation.Volume;
  * Classifies the collision primitive used by an {@link AttackDef}.
  * Determines which {@link Volume} subtype is allocated when the attack is activated.
  */
-public enum AttackPrimitive {
+public enum VolumeType {
 
     /** Oriented bounding box volume — used with {@code KeyframedTrajectory}. Allocates {@link ObbVolume}. */
     VOLUME {
@@ -27,7 +27,7 @@ public enum AttackPrimitive {
     };
 
     /**
-     * Allocates a fresh {@link Volume} buffer appropriate for this primitive type.
+     * Allocates a fresh {@link Volume} buffer appropriate for this volume type.
      *
      * @return a new, empty volume buffer
      */

@@ -27,6 +27,7 @@ import btm.sword.system.attack.simulation.VolumeShape;
 import btm.sword.system.attack.simulation.VolumeTrajectory;
 import btm.sword.system.control.PredicateRunnablePair;
 import btm.sword.system.control.TimeArbiter;
+import btm.sword.utility.Debug;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -130,7 +131,7 @@ public final class VolumeEditorMode {
      * @param session the session that just entered EDITING mode
      */
     public static void startForSession(AttackDevSession session) {
-        Sword.print("[VolumeEditorMode] starting edit loop for " + session.getPlayer().getName()
+        Debug.attackVolume("[VolumeEditorMode] starting edit loop for " + session.getPlayer().getName()
             + " attack=" + session.getCurrentAttackName());
         startLoop(session, DevMode.EDITING);
     }
@@ -145,7 +146,7 @@ public final class VolumeEditorMode {
      * @param session the session that just entered VIEWING mode
      */
     public static void startViewingForSession(AttackDevSession session) {
-        Sword.print("[VolumeEditorMode] starting view loop for " + session.getPlayer().getName()
+        Debug.attackVolume("[VolumeEditorMode] starting view loop for " + session.getPlayer().getName()
             + " attack=" + session.getCurrentAttackName());
         startLoop(session, DevMode.VIEWING);
     }
@@ -176,7 +177,7 @@ public final class VolumeEditorMode {
             () -> {
                 tickCount[0]++;
                 if (tickCount[0] % 40 == 0) {
-                    Sword.print("[VolumeEditorMode] tick #" + tickCount[0]
+                    Debug.attackVolume("[VolumeEditorMode] tick #" + tickCount[0]
                         + " mode=" + session.getMode()
                         + " keyframes=" + session.getEditKeyframes().size()
                         + " online=" + player.isOnline());
@@ -193,7 +194,7 @@ public final class VolumeEditorMode {
             new PredicateRunnablePair(
                 () -> session.getMode() != expectedMode || !player.isOnline(),
                 () -> {
-                    Sword.print("[VolumeEditorMode] render loop ended for " + player.getName());
+                    Debug.attackVolume("[VolumeEditorMode] render loop ended for " + player.getName());
                     removeLabels(session.getPlayer().getUniqueId());
                     if (player.isOnline()) {
                         player.hideBossBar(bossBar);
@@ -218,7 +219,7 @@ public final class VolumeEditorMode {
         Location loc = session.getPlayer().getLocation();
         World world = loc.getWorld();
         if (world == null) {
-            Sword.print("[VolumeEditorMode] world is null for player " + session.getPlayer().getName());
+            Debug.attackVolume("[VolumeEditorMode] world is null for player " + session.getPlayer().getName());
             return;
         }
 
@@ -234,7 +235,7 @@ public final class VolumeEditorMode {
 
         boolean log = tickCount % 40 == 0;
         if (log) {
-            Sword.print("[VolumeEditorMode] rendering " + keyframes.size() + " keyframes for "
+            Debug.attackVolume("[VolumeEditorMode] rendering " + keyframes.size() + " keyframes for "
                 + session.getPlayer().getName()
                 + " bbCenter=(" + String.format("%.1f,%.1f,%.1f",
                     bb.getCenterX(), bb.getCenterY(), bb.getCenterZ()) + ")"
@@ -262,7 +263,7 @@ public final class VolumeEditorMode {
                 // OBB
                 Quaternionf worldRot = new Quaternionf(worldBaseRot).mul(kf.rotation());
                 if (log) {
-                    Sword.print("[VolumeEditorMode]   kf[" + i + "] local=" + fmtVec(kf.localPosition())
+                    Debug.attackVolume("[VolumeEditorMode]   kf[" + i + "] local=" + fmtVec(kf.localPosition())
                         + " → world=" + fmtVec(worldCenter)
                         + " half=" + fmtVec(kf.halfExtents())
                         + (isSelected ? " [SELECTED]" : ""));
@@ -272,7 +273,7 @@ public final class VolumeEditorMode {
         }
 
         if (log && !keyframes.isEmpty()) {
-            Sword.print("[VolumeEditorMode] spawned " + totalParticles + " particles this tick");
+            Debug.attackVolume("[VolumeEditorMode] spawned " + totalParticles + " particles this tick");
         }
     }
 

@@ -90,7 +90,8 @@ combat:
   hitboxes_down_air_height: 2.5
   
   hitboxes_secant_radius: 1.0
-  
+  umbral_blade_attack_range_squared: 20.0
+
   thrown_damage_sword_damage_multiplier: 1.0
   thrown_damage_item_velocity_multiplier: 1.5
   thrown_damage_base_thrown_damage: 12.0

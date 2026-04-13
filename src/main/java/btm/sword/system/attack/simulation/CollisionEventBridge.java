@@ -3,6 +3,7 @@ package btm.sword.system.attack.simulation;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.bukkit.util.Vector;
+import org.joml.Vector3f;
 
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.base.SwordEntity;
@@ -67,7 +68,13 @@ public final class CollisionEventBridge {
                 + " victim=" + victim.self().getName()
                 + " shards=" + event.hitValue().shardDamage()
                 + " toughness=" + event.hitValue().toughnessDamage());
-            victim.hit(combatant, event.hitValue(), ZERO_KNOCKBACK);
+
+            Vector knockback = ZERO_KNOCKBACK;
+            if (event.knockbackFunction() != null) {
+                Vector3f kb = event.knockbackFunction().apply(event.contactPoint(), combatant);
+                knockback = new Vector(kb.x, kb.y, kb.z);
+            }
+            victim.hit(combatant, event.hitValue(), knockback);
         }
     }
 }

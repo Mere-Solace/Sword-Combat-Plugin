@@ -886,6 +886,14 @@ public final class Config {
                 ConfigurationSection::getDouble
         ); }
 
+        /** Squared distance filter applied to UmbralBlade secant hit detection. */
+        public static double UMBRAL_BLADE_ATTACK_RANGE_SQUARED = 20;
+        static { register("combat.umbral_blade_attack_range_squared",
+                UMBRAL_BLADE_ATTACK_RANGE_SQUARED, Double.class,
+                v -> UMBRAL_BLADE_ATTACK_RANGE_SQUARED = v,
+                ConfigurationSection::getDouble
+        ); }
+
         // Thrown damage configuration
         public static double THROWN_DAMAGE_SWORD_DAMAGE_MULTIPLIER = 1.0;
         static { register("combat.thrown_damage_sword_damage_multiplier",

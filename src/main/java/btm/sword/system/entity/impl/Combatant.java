@@ -664,6 +664,8 @@ public abstract class Combatant extends SwordEntity {
             startMs,
             def.getDurationMs(),
             def.getHitValue(),
+            def.getKnockbackFunction(),
+            self().getWorld().getUID(),
             hitThisAttack,
             this::onAttackEnd,
             def.isOrientWithPitch(),

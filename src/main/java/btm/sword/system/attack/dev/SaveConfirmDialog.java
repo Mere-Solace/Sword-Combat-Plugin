@@ -1,7 +1,6 @@
 package btm.sword.system.attack.dev;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.List;
 
 import org.bukkit.Material;
@@ -146,8 +145,7 @@ public final class SaveConfirmDialog {
                         try {
                             AttackDef loaded = AttackDefSerializer.load(section, name);
                             if (loaded.getTrajectory() instanceof KeyframedTrajectory kt) {
-                                session.getEditKeyframes().clear();
-                                session.getEditKeyframes().addAll(new ArrayList<>(kt.getKeyframes()));
+                                session.setEditKeyframes(kt.getKeyframes());
                             }
                         } catch (Exception e) {
                             player.message(Component.text(

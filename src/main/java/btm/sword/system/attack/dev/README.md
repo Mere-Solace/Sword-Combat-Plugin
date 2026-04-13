@@ -14,7 +14,7 @@ are the test wand (bound in `InputRegistrar`) and the `AttackBrowserMenu` / `Att
 | `AnimationModeInputHandler` | Routes `InputType` events to the correct hotbar-tool slot action while `AnimationMode` is active on a `DevSwordPlayer`. Handles keyframe navigation, position nudging, extent nudging, shape cycling, preview playback, and editor open. |
 | `VolumeEditorMode` | Renders OBB/sphere wireframes for all active sessions via a 100 ms main-thread repeating task. Also renders a live playback hitbox (cyan) for wand test fires. Manages per-session `TextDisplay` label entities. |
 | `WandActions` | Static helpers bound to wand input combos in `InputRegistrar`. `exitSession` stops the current session; `openEditor` transitions to `EDITING` and opens `AttackEditorMenu`. |
-| `SweepRecordingAction` | Records a sweep path by sampling the player's look direction at 10 Hz while blocking. Converts world-space samples to local-space `VolumeKeyframe` list and saves to `attacks/<name>.yml`. Also handles `holdingRight` speed boost during recording. |
+| `SweepRecordingAction` | Records a sweep path by sampling the player's look direction at 10 Hz while blocking. Converts world-space samples to local-space `VolumeKeyframe` list and saves to `attacks/<name>.yml`. Also handles `applyRecordingSpeedBoost` speed boost during recording. |
 | `SaveConfirmDialog` | Non-escapable InvUI dialog shown when the player presses the BARRIER exit button in AnimationMode. Offers "Save & Exit" (writes YAML, registers in `AttackRegistry`) and "Discard & Exit" (reloads from disk). |
 | `RecordedSample` | Record: world-space tip position + absolute timestamp. Accumulated during a `RECORDING` session. |
 
