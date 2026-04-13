@@ -27,6 +27,7 @@ import btm.sword.system.control.TimeArbiter;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.impl.Combatant;
+import btm.sword.utility.Debug;
 import btm.sword.utility.Prefab;
 import btm.sword.utility.display.ParticleWrapper;
 import btm.sword.utility.entity.HitboxUtil;
@@ -283,6 +284,8 @@ public class Attack extends SwordAction implements Runnable {
         interpolationValueRange = attackEndValue - attackStartValue;
         interpolationStep = interpolationValueRange / attackIterations;
         int msPerIteration = Math.max(1, attackMilliseconds / attackIterations);
+        Debug.attack("attackMilliseconds="+attackMilliseconds);
+        Debug.attack("msPerIteration="+msPerIteration);
 
         generatePathFunction();
         determineOrigin();
@@ -291,8 +294,23 @@ public class Attack extends SwordAction implements Runnable {
 
         curIteration.set(0);
 
+        final long attackStartMs = System.currentTimeMillis();
+        final long[] lastIterationMs = {attackStartMs};
+        final int finalMsPerIteration = msPerIteration;
+
         attackIterationTask = TimeArbiter.runTimeBoundBukkitTaskOnTimer(
             () -> {
+                long iterNow = System.currentTimeMillis();
+                long actualDeltaMs = iterNow - lastIterationMs[0];
+                long elapsedMs = iterNow - attackStartMs;
+                int iter = curIteration.get();
+                long expectedElapsedMs = (long) iter * finalMsPerIteration;
+                Debug.attack("ITER " + iter
+                    + " | actualDelta=" + actualDeltaMs + "ms (expected " + finalMsPerIteration + "ms)"
+                    + " | elapsed=" + elapsedMs + "ms (expected " + expectedElapsedMs + "ms)"
+                    + " | lag=" + (elapsedMs - expectedElapsedMs) + "ms");
+                lastIterationMs[0] = iterNow;
+
                 applyConsistentEffects();
                 // curIteration is incremented HERE----------------------------------------\/
                 cur = weaponPathFunction.apply(attackStartValue + (interpolationStep * curIteration.getAndIncrement()));
@@ -313,9 +331,8 @@ public class Attack extends SwordAction implements Runnable {
                     handleCallback();
                     endingLogic();
                     if (nextAttackExists()) {
-                        SwordScheduler.runBukkitTaskLater(() -> {
-                            nextAttack.execute(attacker);
-                            }, millisecondDelayBeforeNextAttack, TimeUnit.MILLISECONDS
+                        SwordScheduler.runBukkitTaskLater(() -> nextAttack.execute(attacker),
+                            millisecondDelayBeforeNextAttack, TimeUnit.MILLISECONDS
                         );
                     }
                 }

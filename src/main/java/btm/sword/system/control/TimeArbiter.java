@@ -140,10 +140,18 @@ public final class TimeArbiter {
                     return;
                 }
                 Bukkit.getScheduler().runTask(Sword.getInstance(), () -> {
+                    long mainThreadNow = System.currentTimeMillis();
+                    long drainToExecMs = mainThreadNow - now;
+                    if (drainToExecMs > 10) {
+                        Debug.system("BUCKET_LAG drainMs=" + drainToExecMs
+                            + " bucket=" + pollRate + pollUnit.name().charAt(0)
+                            + " batchSize=" + batch.size()
+                            + " (stale 'now' passed to scheduleNextFire — task will re-fire immediately)");
+                    }
                     for (TaskHandle t : batch) {
                         if (t.isCancelled()) continue;
                         try {
-                            t.tick(now);
+                            t.tick(mainThreadNow);
                         } catch (Exception e) {
                             Debug.system("Task [" + t.getTaskID() + "] threw during execution: " + e.getMessage());
                             t.cancel();
@@ -421,6 +429,8 @@ public final class TimeArbiter {
             callingClass, callingMethodName);
 
         ALL_TASKS.put(taskID, handle);
+
+        Debug.debug("Bucket Assignment | periodMs="+periodMs);
 
         TaskHandleBucket bucket = bucketFor(periodMs);
         handle.ownerBucket = bucket;
