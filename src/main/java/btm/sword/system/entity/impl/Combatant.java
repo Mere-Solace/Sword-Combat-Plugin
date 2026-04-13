@@ -1,5 +1,8 @@
 package btm.sword.system.entity.impl;
 
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 import org.bukkit.Location;
@@ -8,13 +11,21 @@ import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
+import org.joml.Vector3f;
 
 import btm.sword.config.Config;
 import btm.sword.system.action.ActionCaster;
 import btm.sword.system.action.movement.MovementAction;
 import btm.sword.system.action.throwing.types.ThrownItem;
+import btm.sword.system.attack.ActiveAttack;
+import btm.sword.system.attack.def.AttackDef;
+import btm.sword.system.attack.simulation.EntitySnapshotMap;
+import btm.sword.system.attack.simulation.SimulationAttack;
+import btm.sword.system.attack.simulation.VolumeSimulation;
 import btm.sword.system.control.PredicateRunnablePair;
 import btm.sword.system.control.SwordScheduler;
 import btm.sword.system.control.TimeArbiter;
@@ -48,6 +59,17 @@ import lombok.Setter;
 @Setter
 public abstract class Combatant extends SwordEntity {
     private BukkitTask abilityCastTask = null;
+
+    private ActiveAttack currentAttack = null;
+    /**
+     * -- GETTER --
+     *  Returns
+     *  if an
+     * -driven attack is currently running.
+     *
+     * @return {@code true} while an attack is active
+     */
+    private boolean isAttacking = false;
 
     private int airDashesPerformed;
     protected Vector dashDirection;
@@ -591,5 +613,78 @@ public abstract class Combatant extends SwordEntity {
     public boolean canPerformShadowBlink() {
         return canPerformAction() &&
             (getUmbralBlade().inState(LodgedState.class));
+    }
+
+    /**
+     * Launches an {@link AttackDef}-driven attack for this combatant.
+     *
+     * <p>Builds a shared {@code hitThisAttack} set, records the game-layer
+     * {@link ActiveAttack}, and registers a {@link SimulationAttack} with
+     * {@link VolumeSimulation} to begin the 200 Hz collision loop.
+     * {@link #onAttackEnd()} is posted back to the main thread when the attack expires.</p>
+     *
+     * @param def the attack definition to execute
+     */
+    public void launchAttackDef(AttackDef def) {
+        long startMs = System.currentTimeMillis();
+        Set<UUID> hitThisAttack = ConcurrentHashMap.newKeySet();
+
+        currentAttack = new ActiveAttack(def, uuid, startMs, hitThisAttack);
+        isAttacking = true;
+
+        // Damp XZ momentum and apply slow-falling for the attack window
+        Vector vel = self().getVelocity();
+        self().setVelocity(new Vector(vel.getX() * 0.3, vel.getY(), vel.getZ() * 0.3));
+        int durationTicks = def.getDurationMs() / 50;
+        self().addPotionEffect(new PotionEffect(PotionEffectType.SLOW_FALLING, durationTicks, 0, true, false));
+
+        Debug.attackVolume("LAUNCH id=" + def.getId()
+            + " owner=" + self().getName()
+            + " duration=" + def.getDurationMs() + "ms"
+            + " type=" + def.getType());
+
+        // Capture locked origin if the attack requires it
+        Vector3f lockedCenter = null;
+        Float lockedYaw = null;
+        Float lockedPitch = null;
+        if (def.isLockOriginOnFire()) {
+            EntitySnapshotMap.EntityBoundingBoxSnapshot snap =
+                EntitySnapshotMap.INSTANCE.get(uuid);
+            if (snap != null) {
+                lockedCenter = new Vector3f(snap.center());
+                lockedYaw = snap.yaw();
+                lockedPitch = snap.pitch();
+            }
+        }
+
+        SimulationAttack simAttack = new SimulationAttack(
+            uuid,
+            def.getTrajectory(),
+            def.createVolume(),
+            startMs,
+            def.getDurationMs(),
+            def.getHitValue(),
+            hitThisAttack,
+            this::onAttackEnd,
+            def.isOrientWithPitch(),
+            def.isLockOriginOnFire(),
+            lockedCenter,
+            lockedYaw,
+            lockedPitch
+        );
+        VolumeSimulation.INSTANCE.addAttack(simAttack);
+    }
+
+    /**
+     * Called on the main thread when the simulation attack expires.
+     * Clears the active attack state.
+     */
+    protected void onAttackEnd() {
+        Debug.attackVolume("END id=" + (currentAttack != null ? currentAttack.def().getId() : "?")
+            + " owner=" + self().getName()
+            + " hits=" + (currentAttack != null ? currentAttack.hitThisAttack().size() : 0));
+        self().removePotionEffect(PotionEffectType.SLOW_FALLING);
+        currentAttack = null;
+        isAttacking = false;
     }
 }

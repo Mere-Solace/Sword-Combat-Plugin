@@ -7,6 +7,8 @@ import java.util.function.Function;
 import org.bukkit.Color;
 import org.bukkit.Material;
 import org.bukkit.Particle;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 
@@ -15,17 +17,22 @@ import btm.sword.system.attack.Attack;
 import btm.sword.system.attack.Blockability;
 import btm.sword.system.attack.HitValuePacket;
 import btm.sword.system.entity.base.SwordEntity;
+import btm.sword.system.item.ItemStackBuilder;
+import btm.sword.system.item.KeyRegistry;
 import btm.sword.utility.display.ParticleWrapper;
 import btm.sword.utility.entity.PotionEffectWrapper;
 import btm.sword.utility.sound.SoundWrapper;
 import btm.sword.utility.sound.SwordSoundType;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 
+/** Central registry of pre-configured particles, sounds, attacks, potion effects, items, and text used across the plugin. */
 public final class Prefab {
 
     private Prefab() {}
 
+    /** Pre-configured {@link ParticleWrapper} constants for effects used throughout the plugin. */
     public static class Particles {
         public static final ParticleWrapper TEST_FLAME = new ParticleWrapper(
             () -> Particle.FLAME, () -> 2, () -> 0.025, () -> 0.025, () -> 0.025).withSpeed(() -> 0.0);
@@ -278,7 +285,7 @@ public final class Prefab {
         );
     }
 
-    /** Pre-built {@link btm.sword.utility.PotionEffectWrapper} instances for common status effects. */
+    /** Pre-built {@link PotionEffectWrapper} instances for common status effects. */
     public static class PotionEffects {
         public static final PotionEffectWrapper DASH_SPEED =
             new PotionEffectWrapper(PotionEffectType.SPEED, Config.Movement.SPEED_DURATION, Config.Movement.SPEED_AMPLIFIER);
@@ -345,6 +352,37 @@ public final class Prefab {
         );
     }
 
+
+    /** Pre-built dev and test {@link ItemStack} factories. */
+    public static class Items {
+
+        /**
+         * Builds a test volume attack wand — a blaze rod tagged with
+         * {@link KeyRegistry#TEST_VOLUME_ATTACK_KEY} that triggers
+         * {@code test_volume_attack} on left click.
+         *
+         * @return a new ItemStack ready to give to a player
+         */
+        public static ItemStack testVolumeWand() {
+            return new ItemStackBuilder(Material.BLAZE_ROD)
+                .name(Component.text("✦ Volume Attack Wand", NamedTextColor.GOLD, TextDecoration.BOLD))
+                .lore(List.of(
+                    Component.text("Dev test item", NamedTextColor.DARK_GRAY).decorate(TextDecoration.ITALIC),
+                    Component.empty(),
+                    Component.text("Shift+Left  ", NamedTextColor.YELLOW)
+                        .append(Component.text("— start / stop recording", NamedTextColor.GRAY)),
+                    Component.text("Left        ", NamedTextColor.YELLOW)
+                        .append(Component.text("— fire loaded attack", NamedTextColor.GRAY)),
+                    Component.text("Shift+Swap  ", NamedTextColor.YELLOW)
+                        .append(Component.text("— open editor", NamedTextColor.GRAY)),
+                    Component.text("Drop+Drop   ", NamedTextColor.YELLOW)
+                        .append(Component.text("— exit session", NamedTextColor.GRAY))
+                ))
+                .unbreakable(true)
+                .tag(KeyRegistry.TEST_VOLUME_ATTACK_KEY, PersistentDataType.BOOLEAN, true)
+                .build();
+        }
+    }
 
     public static final Material[] MODERN_MATERIALS = {
         Material.ACACIA_BOAT,

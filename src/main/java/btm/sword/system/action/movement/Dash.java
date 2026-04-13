@@ -141,6 +141,7 @@ public class Dash {
         dash();
     }
 
+    /** Determines whether the dash should be flat (horizontal) based on pitch and ground state. */
     public void checkFlatDash() {
         //          |__  < flat always
         //          |/   < flat when backwards and not targeting item, otherwise not flat
@@ -156,6 +157,7 @@ public class Dash {
         );
     }
 
+    /** Raycasts forward to detect a thrown UmbralBlade display entity the executor can retrieve. */
     public ItemDisplay raycastForUmbralBlade() {
         ItemDisplay itemDisplay = (ItemDisplay) HitboxUtil.ray(
             executor.eyeLoc(),
@@ -183,6 +185,7 @@ public class Dash {
         return itemDisplay;
     }
 
+    /** Raycasts forward to detect any non-blade interactive item display entity within dash range. */
     public ItemDisplay raycastForNormalItem() {
         ItemDisplay itemDisplay = (ItemDisplay) HitboxUtil.ray(
             executor.eyeLoc(),
@@ -364,6 +367,7 @@ public class Dash {
                 impedanceCheck.getHitBlock().isCollidable();
     }
 
+    /** Schedules a burst of cloud and smoke particles at the executor's location to visualise a dash. */
     public static void scheduleParticleDisplay(Combatant executor) {
         int maxIterations = 5;
         int[] iteration = {0};

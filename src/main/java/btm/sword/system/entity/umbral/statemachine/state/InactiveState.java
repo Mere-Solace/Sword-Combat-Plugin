@@ -3,6 +3,7 @@ package btm.sword.system.entity.umbral.statemachine.state;
 import btm.sword.system.entity.umbral.UmbralBlade;
 import btm.sword.system.entity.umbral.statemachine.UmbralStateFacade;
 
+/** State representing a fully deactivated UmbralBlade with no display entity or active behaviour. */
 public class InactiveState extends UmbralStateFacade {
     @Override
     public String name() {

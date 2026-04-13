@@ -50,6 +50,7 @@ public class InputExecutionTree {
     private Component potentialInputSelectionText;
     private ScheduledFuture<?> timeoutTimer;
 
+    /** Constructs an input execution tree for the given player, initialising the cursor to the root node. */
     public InputExecutionTree(SwordPlayer owner) {
         this.owner = owner;
         currentNode = root;
@@ -133,7 +134,9 @@ public class InputExecutionTree {
             InputActionExecutor.ReadinessState readiness;
 
             if (action != null) {
-                if (entry.getKey().equals(InputType.DROP) && owner.getItemTypeInHand(true).isAir()) {
+                if (entry.getKey().equals(InputType.DROP)
+                        && owner.getItemTypeInHand(true).isAir()
+                        && !owner.isPerformedDropAction()) {
                     readiness = InputActionExecutor.ReadinessState.DISABLED;
                 }
                 else {
@@ -244,10 +247,12 @@ public class InputExecutionTree {
         return currentNode.children.isEmpty();
     }
 
+    /** Returns the current input sequence combined with the potential next-input display, as a single Component. */
     public Component getInputSequenceAsComponent() {
         return Component.textOfChildren(baseSequenceToDisplay, potentialInputSelectionText);
     }
 
+    /** Returns the current input sequence as a plain text string, stripping all Adventure formatting. */
     public String getPlainTextInputSequence() {
         return PlainTextComponentSerializer.plainText().serialize(baseSequenceToDisplay) +
             PlainTextComponentSerializer.plainText().serialize(potentialInputSelectionText);
@@ -319,6 +324,7 @@ public class InputExecutionTree {
         return next.getMinHoldTime();
     }
 
+    /** Returns the timeout in ticks configured on the current input node. */
     public long timeoutTicks() {
         return currentNode.timeoutTicks;
     }
@@ -350,6 +356,7 @@ public class InputExecutionTree {
             c -> 0),
         c -> true);
 
+    /** Pairs an {@link InputAction} supplier with a context predicate that must pass for the action to be eligible. */
     public record ActionContextPair(Supplier<InputAction> action, Predicate<SwordPlayer> context) {}
 
     /**
@@ -571,6 +578,7 @@ public class InputExecutionTree {
             this.visibleIf = visibleIf;
         }
 
+        /** Returns {@code true} if this node (and all its children) are invisible or inaccessible for the player. */
         public boolean hiddenFor(SwordPlayer player) {
             if (visibleIf != null && !visibleIf.test(player)) return true;
             if (actions == null || actions.isEmpty()) {
@@ -603,41 +611,49 @@ public class InputExecutionTree {
         private Boolean dynamic = null;
         private Predicate<SwordPlayer> visibleIf = null;
 
+        /** Constructs a builder for the given root node and input sequence path. */
         public InputNodeBuilder(InputNode root, List<InputType> inputSequence) {
             this.root = root;
             this.inputSequence = inputSequence;
         }
 
+        /** Sets a single action-context pair on the terminal node. */
         public InputNodeBuilder action(ActionContextPair action) {
             this.actions = new LinkedList<>(List.of(action));
             return this;
         }
 
+        /** Sets an ordered list of action-context pairs on the terminal node. */
         public InputNodeBuilder action(LinkedList<ActionContextPair> actions) {
             this.actions = actions;
             return this;
         }
 
+        /** Sets the number of ticks the tree will wait without further input before resetting. */
         public InputNodeBuilder timeoutTicks(int timeoutTicks) {
             this.timeoutTicks = timeoutTicks;
             return this;
         }
 
+        /** Sets the minimum hold time in milliseconds required before this node's action can trigger. */
         public InputNodeBuilder minHoldTime(int minHoldTime) {
             this.minHoldTime = minHoldTime;
             return this;
         }
 
+        /** When {@code true}, the action on this node requires the same item to be held across the whole input sequence. */
         public InputNodeBuilder sameItemRequired(boolean sameItemRequired) {
             this.sameItemRequired = sameItemRequired;
             return this;
         }
 
+        /** When {@code true}, a failed child match retries the sequence from root with the same input. */
         public InputNodeBuilder cancellable(boolean cancellable) {
             this.cancellable = cancellable;
             return this;
         }
 
+        /** Controls whether this node's action is shown in the player's input HUD. */
         public InputNodeBuilder display(boolean display) {
             this.display = display;
             return this;

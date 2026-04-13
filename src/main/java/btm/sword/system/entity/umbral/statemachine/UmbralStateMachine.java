@@ -37,6 +37,7 @@ import btm.sword.utility.statemachine.Transition;
 import lombok.Getter;
 import lombok.Setter;
 
+/** Specialised FSM for {@link UmbralBlade} that handles {@link btm.sword.system.entity.umbral.statemachine.state.PreviousState} restoration and display transformations. */
 public class UmbralStateMachine extends StateMachine<UmbralBlade> {
     @Getter
     private UmbralStateFacade previousState;
@@ -47,6 +48,7 @@ public class UmbralStateMachine extends StateMachine<UmbralBlade> {
     private int recoveryTick = 0;
     private static final int RECOVERY_CHECK_INTERVAL = 20;
 
+    /** Constructs the state machine with the given blade context and initial state. */
     public UmbralStateMachine(UmbralBlade context, State<UmbralBlade> initialState) {
         super(context, initialState);
     }

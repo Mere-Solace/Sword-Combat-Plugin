@@ -41,6 +41,7 @@ import xyz.xenondevs.invui.window.Window;
  */
 public class MaterialPouchMenu extends Menu {
 
+    /** Constructs the material pouch menu for the given player. */
     public MaterialPouchMenu(SwordPlayer player) {
         super(player);
     }

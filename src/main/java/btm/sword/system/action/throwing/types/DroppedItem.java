@@ -22,6 +22,7 @@ import btm.sword.system.control.TimeArbiter;
 import btm.sword.utility.Prefab;
 import btm.sword.utility.display.ParticleWrapper;
 
+/** A physics-simulated item display that falls under gravity and sticks to surfaces when it lands. */
 public class DroppedItem extends SimulatedDisplay {
     private final World world;
 
@@ -41,6 +42,7 @@ public class DroppedItem extends SimulatedDisplay {
 
     private boolean stuck = false;
 
+    /** Spawns a dropped item display at the given location with the provided initial velocity and stack. */
     public DroppedItem(Location start, Vector initialVelocity, ItemStack stack) {
         this.world = start.getWorld();
         this.pos = start.clone();
@@ -67,6 +69,7 @@ public class DroppedItem extends SimulatedDisplay {
         return display;
     }
 
+    /** Registers this item with {@link InteractiveItemArbiter} so it can be targeted by the dash system. */
     public void register() {
         if (display != null) {
             InteractiveItemArbiter.put(this);

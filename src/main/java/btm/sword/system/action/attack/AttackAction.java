@@ -4,9 +4,14 @@ import static btm.sword.system.action.attack.PunchAction.throwPunch;
 
 import org.bukkit.inventory.ItemStack;
 
+import btm.sword.Sword;
 import btm.sword.config.Config;
 import btm.sword.system.action.SwordAction;
 import btm.sword.system.attack.SweepAttack;
+import btm.sword.system.attack.def.AttackDef;
+import btm.sword.system.attack.dev.AttackDevSession;
+import btm.sword.system.attack.dev.DevMode;
+import btm.sword.system.attack.dev.VolumeEditorMode;
 import btm.sword.system.attack.style.AttackProfile;
 import btm.sword.system.attack.style.AttackType;
 import btm.sword.system.attack.style.WeaponAttackStyle;
@@ -14,6 +19,7 @@ import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.impl.Combatant;
 import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.item.ItemUsageManager;
+import btm.sword.system.item.KeyRegistry;
 import btm.sword.utility.misc.ConsumerToConsumePair;
 
 
@@ -41,6 +47,32 @@ public class AttackAction extends SwordAction {
      */
     public static void basicAttack(Combatant executor, int comboStep) {
         ItemStack itemUsedInAttack = executor.getItemStackInHand(true);
+
+        if (KeyRegistry.hasKey(itemUsedInAttack, KeyRegistry.TEST_VOLUME_ATTACK_KEY)) {
+            if (executor instanceof SwordPlayer sp) {
+                AttackDevSession devSession = AttackDevSession.get(sp.player().getUniqueId());
+                Sword.print("[AttackAction] wand fired by " + sp.player().getName()
+                    + " — devSession=" + (devSession == null ? "null" : devSession.getMode())
+                    + " loadedAttack=" + (devSession == null || devSession.getLoadedAttackDef() == null
+                        ? "null" : devSession.getLoadedAttackDef().getId())
+                    + " editingSessions=" + AttackDevSession.getEditingSessions().size());
+                if (devSession != null && devSession.getMode() == DevMode.EDITING) {
+                    Sword.print("[AttackAction]   keyframes=" + devSession.getEditKeyframes().size()
+                        + " duration=" + devSession.getEditDurationMs() + "ms");
+                }
+                if (devSession != null && devSession.getLoadedAttackDef() != null) {
+                    fireWandDef(executor, devSession.getLoadedAttackDef());
+                    return;
+                }
+            }
+            if (executor instanceof SwordPlayer sp2) {
+                sp2.message(net.kyori.adventure.text.Component.text(
+                    "[Dev] No attack loaded — open the browser and select one.",
+                    net.kyori.adventure.text.format.NamedTextColor.YELLOW));
+            }
+            return;
+        }
+
         WeaponAttackStyle weaponAttackStyle = WeaponAttackStyle.fromString(itemUsedInAttack);
 
         if (weaponAttackStyle.equals(WeaponAttackStyle.PUNCH)) { // catch any untagged items and perform a punch with it
@@ -78,6 +110,7 @@ public class AttackAction extends SwordAction {
         }
     }
 
+    /** Executes a basic sweep slash attack using the provided profile and item. */
     public static void basicSlash(Combatant executor, ItemStack itemUsedInAttack, AttackProfile profile, Boolean orientWithPitch) {
         new SweepAttack(itemUsedInAttack, profile, orientWithPitch)
             .setAttackDuration(attacker -> (int) attacker.calcValueReductive(
@@ -92,6 +125,15 @@ public class AttackAction extends SwordAction {
                 )
             )
             .execute(executor);
+    }
+
+    private static void fireWandDef(Combatant executor, AttackDef def) {
+        long startMs = System.currentTimeMillis();
+        executor.launchAttackDef(def);
+        if (executor instanceof SwordPlayer sp) {
+            VolumeEditorMode.startPlaybackVisualization(
+                sp.player(), def.getTrajectory(), startMs, def.getDurationMs());
+        }
     }
 
     // basic Thrust, and Bash coming later

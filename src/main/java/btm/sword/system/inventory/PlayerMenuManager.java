@@ -13,11 +13,13 @@ import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.inventory.menu.Menu;
 import btm.sword.system.item.KeyRegistry;
 
+/** Manages a player's menu navigation history, supporting forward and backward navigation between menus. */
 public class PlayerMenuManager {
     private final SwordPlayer swordPlayer;
     private final LinkedList<Menu> menuHistory = new LinkedList<>();
     private int currentMenuIndex;
 
+    /** Constructs a menu manager for the given player with an empty history. */
     public PlayerMenuManager(SwordPlayer swordPlayer) {
         this.swordPlayer = swordPlayer;
         currentMenuIndex = -1;
@@ -93,6 +95,7 @@ public class PlayerMenuManager {
         }
     }
 
+    /** Opens the given menu type, reusing history entries where possible before creating a new instance. */
     public <T extends Menu> void openNewMenu(Class<T> menuClass) {
         // if current menu exists and is the same as the potential new menu, simply refresh the menu
         if (currentMenuIndex >= 0
@@ -119,24 +122,29 @@ public class PlayerMenuManager {
         currentMenuIndex = menuHistory.size() - 1;
     }
 
+    /** Navigates back in menu history, opening the previous menu. Does nothing if at the start. */
     public void openPreviousMenu() {
         if (noPreviousMenu()) return;
         performOpen(menuHistory.get(--currentMenuIndex));
     }
 
+    /** Re-opens the currently active menu, refreshing its contents. */
     public void reopenCurrentMenu() {
         performOpen(menuHistory.get(currentMenuIndex));
     }
 
+    /** Navigates forward in menu history, opening the next menu. Does nothing if at the end. */
     public void openForwardPreviousMenu() {
         if (noForwardPreviousMenu()) return;
         performOpen(menuHistory.get(++currentMenuIndex));
     }
 
+    /** Returns {@code true} if there is no earlier menu in the navigation history. */
     public boolean noPreviousMenu() {
         return currentMenuIndex < 1;
     }
 
+    /** Returns {@code true} if there is no later menu in the navigation history. */
     public boolean noForwardPreviousMenu() {
         return currentMenuIndex == menuHistory.size() - 1;
     }

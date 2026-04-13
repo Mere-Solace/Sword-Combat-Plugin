@@ -14,6 +14,7 @@ import org.bukkit.Color;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Display;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Item;
@@ -467,6 +468,7 @@ public class SwordPlayer extends Combatant {
         );
     }
 
+    /** Returns {@code true} if the player is both sneaking and currently blocking (holding right). */
     public boolean isSneakingAndHoldingRight() {
         return player.isSneaking() && player.isBlocking();
     }
@@ -579,6 +581,7 @@ public class SwordPlayer extends Combatant {
         }
     }
 
+    /** Returns {@code true} if the player's currently held item has an active cooldown. */
     public boolean isHeldItemOnCooldown() {
         return getItemStackInHand(true) instanceof ItemStack item && player.getCooldown(item) > 0;
     }
@@ -1061,6 +1064,7 @@ public class SwordPlayer extends Combatant {
         }
     }
 
+    /** Synchronises the player's visual stat bars (health, food, experience) with current aspect values. */
     public void updateVisualStats() {
         player.setAbsorptionAmount(aspects.toughnessCur());
         HudRenderState state = new HudRenderState(
@@ -1116,6 +1120,7 @@ public class SwordPlayer extends Combatant {
         return player;
     }
 
+    /** Returns a player-head item stack with the player's skin and the provided display name and lore. */
     public ItemStack getPlayerHeadItemWithCustomText(Component title, List<Component> lore) {
         ItemStack temp = ItemStack.of(Material.PLAYER_HEAD);
         SkullMeta skullMeta = (SkullMeta) temp.getItemMeta();
@@ -1138,11 +1143,13 @@ public class SwordPlayer extends Combatant {
         return performedDropAction;
     }
 
+    /** Clears the active item and applies a cooldown to the off-hand item for the given number of ticks. */
     public void disableShield(int ticks) {
         self.clearActiveItem();
         player.setCooldown(getItemStackInHand(false), ticks);
     }
 
+    /** Returns {@code true} if the player's off-hand item has an active cooldown (shield is on cooldown). */
     public boolean isUnableToBlock() {
         return player.getCooldown(getItemStackInHand(false)) > 0;
     }
@@ -1159,16 +1166,19 @@ public class SwordPlayer extends Combatant {
             (isPerformedDropAction() && KeyRegistry.hasKey(getLastHeldItemBeforeDrop(), KeyRegistry.SOUL_LINK_KEY));
     }
 
+    /** Returns {@code true} if the player's currently held slot is not an ability slot. */
     public boolean notHoldingAbilityItem() {
         return !abilitySlotManager.isAbilityHeldSlot(player.getInventory().getHeldItemSlot());
     }
 
+    /** Returns {@code true} if the player is in a normal, non-channelling, non-ability-item state. */
     public boolean normalNonAbilityState() {
      return normalActState() &&
         !ChargeAction.isHoldingChargeable(this) &&
         notHoldingAbilityItem();
     }
 
+    /** Returns {@code true} if the player's activation context is {@link ActivationContext#NORMAL}. */
     public boolean normalActState() {
         return activationContext == ActivationContext.NORMAL;
     }
@@ -1178,28 +1188,47 @@ public class SwordPlayer extends Combatant {
         return activationContext == ActivationContext.THROWING;
     }
 
+    /** Returns {@code true} if the player is throwing or in a normal non-umbral state. */
     public boolean throwingNonUmbralState() {
         return (throwingState() || nonUmbralState());
     }
 
+    /** Returns {@code true} if the player can initiate a throw (non-umbral and not in an ability slot). */
     public boolean canBeginThrow() {
         return nonUmbralState() && notHoldingAbilityItem();
     }
 
+    /** Returns {@code true} if the player is in normal state without holding any umbral weapon. */
     public boolean nonUmbralState() {
         return normalActState() && !holdingSoulLink() && !holdingUmbralBlade();
     }
 
+    /** Returns {@code true} if the player is in normal state while holding a soul link. */
     public boolean soulLinkState() {
         return normalActState() && holdingSoulLink();
     }
 
+    /** Returns {@code true} if the player is in normal state while holding the UmbralBlade. */
     public boolean umbralBladeState() {
         return normalActState() && holdingUmbralBlade();
     }
 
+    /** Returns {@code true} if the player is in normal state while holding any umbral weapon. */
     public boolean umbralState() {
         return normalActState() && (holdingSoulLink() || holdingUmbralBlade());
+    }
+
+    /**
+     * Returns {@code true} if the player's held item has the given persistent data key.
+     *
+     * <p>During a drop event the item is temporarily removed from the hand before the
+     * event is cancelled. When {@link #isPerformedDropAction()} is {@code true}, the
+     * pre-drop item stored in {@link #getLastHeldItemBeforeDrop()} is checked instead,
+     * matching the same pattern used by {@link #holdingUmbralBlade()}.</p>
+     */
+    public boolean heldItemHasKey(NamespacedKey key) {
+        ItemStack item = isPerformedDropAction() ? getLastHeldItemBeforeDrop() : getItemStackInHand(true);
+        return KeyRegistry.hasKey(item, key);
     }
 
     /**
@@ -1265,6 +1294,7 @@ public class SwordPlayer extends Combatant {
             .append(Component.text("  «", TextColor.color(80, 80, 80), TextDecoration.BOLD)), null);
     }
 
+    /** Displays a title showing the player's current soulfire versus the required amount. */
     public void displayLackOfSoulfire(float required) {
         self.showTitle(Title.title(
             Component.text("✖", Config.SwordColor.TEXT_COOL_DARK),
@@ -1327,6 +1357,7 @@ public class SwordPlayer extends Combatant {
     }
 
     // TODO: Some way to cache this new itemStack and just send the equipment change each time
+    /** Temporarily updates the held item's display name and material to show a contextual label. */
     public void itemNameDisplay(Component displayName, Material newMaterial) {
         ItemStack stack = getItemStackInHand(true).clone();
         if (newMaterial != null && (stack.isEmpty() || stack.getType().isAir())) {
@@ -1397,6 +1428,7 @@ public class SwordPlayer extends Combatant {
         return newTarget;
     }
 
+    /** Updates the targeted entity, removing target indicators from the previous one if it differs. */
     public void setTargetedEntity(SwordEntity newTarget) {
         if (newTarget == null) return;
 
@@ -1445,6 +1477,7 @@ public class SwordPlayer extends Combatant {
         );
     }
 
+    /** Removes all target indicators from the currently targeted entity. */
     public void endIndicatorDisplay() {
         removeTargetIndicators();
     }
@@ -1479,7 +1512,8 @@ public class SwordPlayer extends Combatant {
 
         if (!mainItemStackAtTimeOfHold.isEmpty() &&
             !holdingUmbralItemInMainHand() &&
-            notHoldingAbilityItem()) {
+            notHoldingAbilityItem() &&
+            !heldItemHasKey(KeyRegistry.TEST_VOLUME_ATTACK_KEY)) {
             setItemStackInHand(ItemStack.of(Material.GUNPOWDER), true); // can change the logic here later
         }
 
@@ -1665,6 +1699,7 @@ public class SwordPlayer extends Combatant {
         return inventoryMode == InventoryMode.SWAPPING;
     }
 
+    /** Marks that the player has performed a drop action; automatically resets after 100 ms. */
     public void setPerformedDropAction() {
         performedDropAction = true;
         SwordScheduler.runBukkitTaskLater(
@@ -1673,10 +1708,12 @@ public class SwordPlayer extends Combatant {
         );
     }
 
+    /** Increments the count of training dummies currently owned by this player. */
     public void incrementNumDummies() {
         curNumDummies++;
     }
 
+    /** Decrements the count of training dummies, clamped to a minimum of zero. */
     public void decrementNumDummies() {
         curNumDummies = Math.max(0, curNumDummies - 1);
     }

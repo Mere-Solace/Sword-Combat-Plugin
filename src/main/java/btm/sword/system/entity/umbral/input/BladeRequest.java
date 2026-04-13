@@ -1,5 +1,6 @@
 package btm.sword.system.entity.umbral.input;
 
+/** Enumerates all requests that can be pushed into an UmbralBlade's {@link InputBuffer} to drive state transitions. */
 public enum BladeRequest {
     SHEATH,
     STANDBY,

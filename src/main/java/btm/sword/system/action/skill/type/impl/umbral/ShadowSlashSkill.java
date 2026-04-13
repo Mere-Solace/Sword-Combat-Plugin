@@ -13,6 +13,7 @@ import btm.sword.system.entity.impl.Combatant;
 import btm.sword.system.item.ItemStackBuilder;
 import net.kyori.adventure.text.Component;
 
+/** Active skill that executes a shadow slash combo for UmbralBlade combatants. */
 public class ShadowSlashSkill extends ActiveSkill {
     @Override
     public void execute(Combatant combatant) {

@@ -42,6 +42,7 @@ public class Dummy extends Passive {
         combatProfile.setStat(AspectType.SHARDS, new ResourceValue(10, 2000, 1));
     }
 
+    /** Returns the underlying {@link ArmorStand} entity for this dummy. */
     public ArmorStand armorStand() {
         return (ArmorStand) self;
     }

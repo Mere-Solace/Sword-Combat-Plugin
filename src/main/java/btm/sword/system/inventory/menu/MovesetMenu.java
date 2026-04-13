@@ -23,6 +23,7 @@ import xyz.xenondevs.invui.window.Window;
  */
 public class MovesetMenu extends Menu {
 
+    /** Constructs the moveset reference menu for the given player. */
     public MovesetMenu(SwordPlayer player) {
         super(player);
     }

@@ -4,10 +4,10 @@ import java.util.List;
 
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
 
 import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.inventory.menu.ItemLibraryMenu;
+import btm.sword.system.inventory.menu.MainMenu;
 import btm.sword.system.inventory.menu.Menu;
 import btm.sword.system.item.ItemStackBuilder;
 import net.kyori.adventure.text.Component;
@@ -74,6 +74,7 @@ public class DevMenu extends Menu {
 
         SimpleItem woodenAxe = giveItem(Material.WOODEN_AXE, "Wooden Axe");
         SimpleItem witherSkeletonEgg = giveItem(Material.WITHER_SKELETON_SPAWN_EGG, "Wither Skeleton Spawn Egg");
+        SimpleItem blockDisplayEntitySpawnEgg = giveItem(Material.PILLAGER_SPAWN_EGG, "Pillager Spawn Egg");
 
         SimpleItem creativeMode;
         if (swordPlayer.isInCreativeDevMode()) {
@@ -152,13 +153,22 @@ public class DevMenu extends Menu {
             click -> new WeaponDisplayEditorMenu(swordPlayer).open()
         );
 
+        SimpleItem attackEditor = new SimpleItem(
+            new ItemStackBuilder(Material.GOLDEN_SWORD)
+                .name(Component.text("Attack Editor", NamedTextColor.GOLD, TextDecoration.BOLD))
+                .lore(List.of(Component.text("Browse and edit VOLUME attack definitions", NamedTextColor.DARK_GRAY)))
+                .build(),
+            click -> new AttackBrowserMenu(swordPlayer).open()
+        );
+
+
         Gui gui = Gui.normal()
             .setStructure(
                 "# # # . . . # # #",
                 "# J N . T . L C #",
-                ". H . . ? . . E .",
-                ". . . . A . . W .",
-                "# R I . . . M . #",
+                ". H V . ? . . E .",
+                ". . . . A . . P .",
+                "# R I . . . M W #",
                 "< > # . . . # # #")
             .addIngredient('#', BORDER)
             .addIngredient('T', toggles)
@@ -171,9 +181,11 @@ public class DevMenu extends Menu {
             .addIngredient('C', creativeInventory)
             .addIngredient('W', woodenAxe)
             .addIngredient('E', witherSkeletonEgg)
+            .addIngredient('P', blockDisplayEntitySpawnEgg)
             .addIngredient('I', reloadProfile)
             .addIngredient('M', creativeMode)
             .addIngredient('H', weaponDisplay)
+            .addIngredient('V', attackEditor)
             .addIngredient('<', generatePreviousButtonOrDefault())
             .addIngredient('>', generateForwardPreviousButtonOrDefault())
             .build();
@@ -185,21 +197,5 @@ public class DevMenu extends Menu {
             .build();
 
         window.open();
-    }
-
-    /**
-     * Builds a {@link SimpleItem} that gives the player one stack of the given material on click.
-     *
-     * @param material the material to give
-     * @param label    display name for the item button
-     * @return a {@link SimpleItem} that gives the item on click
-     */
-    private SimpleItem giveItem(Material material, String label) {
-        return new SimpleItem(
-            new ItemStackBuilder(material)
-                .name(Component.text(label, NamedTextColor.WHITE))
-                .build(),
-            click -> click.getPlayer().getInventory().addItem(ItemStack.of(material))
-        );
     }
 }

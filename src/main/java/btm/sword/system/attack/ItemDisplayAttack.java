@@ -9,6 +9,7 @@ import btm.sword.system.control.TimeArbiter;
 import btm.sword.utility.Prefab;
 import lombok.Setter;
 
+/** An attack that moves an existing {@link ItemDisplay} along the Bezier path rather than using hit particles alone. */
 public class ItemDisplayAttack extends Attack {
     @Setter
     protected ItemDisplay weaponDisplay;
@@ -22,9 +23,10 @@ public class ItemDisplayAttack extends Attack {
     private int ticksSpentMovingToInitialLocation = 0;
     private boolean drawParticles = true;
 
-    // Takes in an already created weapon display and changes it's position around.
-    // once the attack is done, the display should either be removed or control of
-    // its movement should be handed back to previous controller.
+    /**
+     * Constructs an attack that animates the given display entity along the attack profile path.
+     * When complete, the caller is responsible for removing or re-taking control of the display.
+     */
     public ItemDisplayAttack(ItemDisplay weaponDisplay, AttackProfile profile,
                              boolean orientWithPitch,
                              boolean displayOnly, int tpDuration) {
@@ -37,6 +39,7 @@ public class ItemDisplayAttack extends Attack {
         this.tpDuration = tpDuration;
     }
 
+    /** Full-parameter constructor allowing explicit control over display steps, iteration count, and timing. */
     public ItemDisplayAttack(ItemDisplay weaponDisplay, AttackProfile profile,
                              boolean orientWithPitch, boolean displayOnly,
                              int tpDuration, int displaySteps,
@@ -98,11 +101,13 @@ public class ItemDisplayAttack extends Attack {
         return ticksSpentMovingToInitialLocation + (i * msPerIteration);
     }
 
+    /** Sets how many ticks the display will spend moving to its initial position before the attack begins. */
     public ItemDisplayAttack setInitialMovementTicks(int ticksSpentMovingToInitialLocation) {
         this.ticksSpentMovingToInitialLocation = ticksSpentMovingToInitialLocation;
         return this; // for builder pattern, pretty cool GOF
     }
 
+    /** Controls whether hit particles are drawn during the attack sweep. */
     public ItemDisplayAttack setDrawParticles(boolean drawParticles) {
         this.drawParticles = drawParticles;
         return this;

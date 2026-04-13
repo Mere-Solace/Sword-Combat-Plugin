@@ -107,6 +107,7 @@ public class Resource extends Aspect {
         startRegenTask();
     }
 
+    /** Cancels any pending regen restart and schedules a new one to fire after the given number of ticks. */
     public void restartRegenTaskLater(int ticks) {
         if (restartRegenTask != null && !restartRegenTask.isCancelled())
             restartRegenTask.cancel(false);
@@ -149,6 +150,7 @@ public class Resource extends Aspect {
         curValue = percent * effectiveMaxValue();
     }
 
+    /** Returns {@code true} if the current value is below the effective maximum. */
     public boolean belowMax() {
         return curValue < effectiveMaxValue();
     }

@@ -34,6 +34,7 @@ import xyz.xenondevs.invui.gui.Gui;
 import xyz.xenondevs.invui.item.impl.SimpleItem;
 import xyz.xenondevs.invui.window.Window;
 
+/** Developer menu providing quick access to testing utilities such as volume wands and dummy spawning. */
 public class TestingMenu extends Menu {
 
     /**
@@ -220,7 +221,7 @@ public class TestingMenu extends Menu {
             click -> {
                 ItemStack falchion = WeaponType.FALCHION.buildItemStack();
                 player.getInventory().addItem(falchion);
-                player.openSmithingTable(null, true);
+                player.openSmithingTable(null, true); // TODO: Deprecated!!!
                 swordPlayer.message(Component.text("Smithing test ready: place the Falchion into the base slot.", NamedTextColor.GREEN));
             }
         );
@@ -229,7 +230,7 @@ public class TestingMenu extends Menu {
             .setStructure(
                 "# # # . . . # # #",
                 "# P X . F . B K #",
-                ". D . H . M . . .",
+                ". D . H . M . V .",
                 "# O . . . . . . #",
                 "< > # . . . # # #")
             .addIngredient('#', BORDER)

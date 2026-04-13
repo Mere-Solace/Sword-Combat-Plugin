@@ -15,6 +15,7 @@ import btm.sword.config.Config;
 import btm.sword.system.attack.style.AttackProfile;
 import btm.sword.utility.math.VectorUtil;
 
+/** A sweep attack variant; display visualisation is stubbed out and currently behaves identically to {@link Attack}. */
 public class SweepAttack extends Attack {
     private ItemDisplay sweepTail;
     private ItemDisplay sweepBody;
@@ -37,10 +38,12 @@ public class SweepAttack extends Attack {
     private float displayRollRotation;
 
 
+    /** Constructs a sweep attack with default timing and iteration values from the profile. */
     public SweepAttack(ItemStack itemUsedInAttack, AttackProfile profile, boolean orientWithPitch) {
         super(itemUsedInAttack, profile, orientWithPitch);
     }
 
+    /** Constructs a sweep attack with explicit timing, iteration count, and Bezier range. */
     public SweepAttack(ItemStack itemUsedInAttack, AttackProfile profile, boolean orientWithPitch, int attackMilliseconds, int attackIterations, double attackStartValue, double attackEndValue) {
         super(itemUsedInAttack, profile, orientWithPitch, attackMilliseconds, attackIterations, attackStartValue, attackEndValue);
     }

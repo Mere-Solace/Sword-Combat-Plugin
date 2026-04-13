@@ -85,6 +85,7 @@ public class MainMenu extends Menu {
         .lore(HOW_TO_PLAY)
         .build();
 
+    /** Constructs the main navigation menu for the given player. */
     public MainMenu(SwordPlayer player) {
         super(player);
     }

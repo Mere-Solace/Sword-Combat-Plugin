@@ -7,8 +7,10 @@ import xyz.xenondevs.invui.item.ItemProvider;
 import xyz.xenondevs.invui.item.builder.ItemBuilder;
 import xyz.xenondevs.invui.item.impl.controlitem.PageItem;
 
+/** A paged GUI control item that advances to the next page. */
 public class ForwardItem extends PageItem {
 
+    /** Constructs a forward page-navigation item. */
     public ForwardItem() {
         super(true);
     }

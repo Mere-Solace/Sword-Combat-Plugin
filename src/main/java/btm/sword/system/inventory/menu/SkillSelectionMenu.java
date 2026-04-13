@@ -26,11 +26,13 @@ import xyz.xenondevs.invui.item.Item;
 import xyz.xenondevs.invui.item.impl.SimpleItem;
 import xyz.xenondevs.invui.window.Window;
 
+/** Menu allowing the player to browse and equip skills for a specific skill slot. */
 public class SkillSelectionMenu extends Menu {
     private final PlayerSkillContainer skillContainer;
     private final SkillSlot slot;
     private final SkillType type;
 
+    /** Constructs the skill selection menu for the given player and target skill slot. */
     public SkillSelectionMenu(SwordPlayer swordPlayer, SkillSlot slot) {
         super(swordPlayer);
         this.skillContainer = swordPlayer.getCombatProfile().getPlayerSkillContainer();

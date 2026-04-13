@@ -5,6 +5,7 @@ import btm.sword.system.attack.style.AttackType;
 import btm.sword.system.entity.umbral.UmbralBlade;
 import btm.sword.system.entity.umbral.statemachine.UmbralStateFacade;
 
+/** State that propels the wielder forward along a Bezier trajectory toward a targeted entity. */
 public class LungingState extends UmbralStateFacade {
     @Override
     public String name() {

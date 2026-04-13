@@ -240,21 +240,25 @@ public class InputAction {
         private boolean resetIfCannotPerform = false;
         private Function<Combatant, Integer> castDuration = c -> 0;
 
+        /** Sets the display name for this action, used in HUD and debug output. */
         public Builder name(String name) {
             this.name = name;
             return this;
         }
 
+        /** Sets the consumer that is invoked when the action fires. */
         public Builder action(Consumer<Combatant> action) {
             this.action = action;
             return this;
         }
 
+        /** Sets the combatant-dependent cooldown calculation for this action. */
         public Builder cooldown(Function<Combatant, Integer> cooldownCalculation) {
             this.cooldownCalculation = cooldownCalculation;
             return this;
         }
 
+        /** Sets the predicate that must return {@code true} for the action to be eligible to fire. */
         public Builder canCast(Predicate<Combatant> canCastAbility) {
             this.canCastAbility = canCastAbility;
             return this;
@@ -272,26 +276,31 @@ public class InputAction {
             return this;
         }
 
+        /** Sets a constant soulfire cost using a supplier evaluated at execution time. */
         public Builder requiredSoulfire(Supplier<Float> requiredSoulfire) {
             this.requiredSoulfire = requiredSoulfire != null ? c -> requiredSoulfire.get() : c -> 0f;
             return this;
         }
 
+        /** Sets a combatant-dependent soulfire cost for this action. */
         public Builder requiredSoulfire(Function<Combatant, Float> requiredSoulfire) {
             this.requiredSoulfire = requiredSoulfire != null ? requiredSoulfire : c -> 0f;
             return this;
         }
 
+        /** Controls whether the cooldown state is shown to the player. */
         public Builder displayCooldown(boolean displayCooldown) {
             this.displayCooldown = displayCooldown;
             return this;
         }
 
+        /** Controls whether a visual disabled effect is shown when the action cannot be performed. */
         public Builder displayDisabled(boolean displayDisabled) {
             this.displayDisabled = displayDisabled;
             return this;
         }
 
+        /** When {@code true}, resets the input tree if the action's cast condition fails. */
         public Builder resetIfCannotPerform(boolean resetIfCannotPerform) {
             this.resetIfCannotPerform = resetIfCannotPerform;
             return this;
@@ -303,11 +312,13 @@ public class InputAction {
             return this;
         }
 
+        /** Sets a combatant-dependent cast duration in milliseconds. */
         public Builder castDuration(Function<Combatant, Integer> castDurationFunction) {
             this.castDuration = castDurationFunction != null ? castDurationFunction : c -> 0;
             return this;
         }
 
+        /** Builds and returns the configured {@link InputAction}. */
         public InputAction build() {
             if (action == null) throw new IllegalStateException("InputAction requires an action consumer");
             Function<Combatant, Integer> cooldown = cooldownCalculation != null ? cooldownCalculation : (c -> 0);

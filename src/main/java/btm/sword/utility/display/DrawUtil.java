@@ -7,6 +7,7 @@ import org.bukkit.util.Vector;
 
 import btm.sword.utility.math.Basis;
 
+/** Utility methods for drawing particle sequences between world locations. */
 public final class DrawUtil {
 
     private DrawUtil() {}

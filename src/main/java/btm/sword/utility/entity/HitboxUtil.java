@@ -147,6 +147,7 @@ public final class HitboxUtil {
         return hit;
     }
 
+    /** Steps from origin to end at intervals of {@code thickness}, collecting all living entities that match the filter. */
     public static HashSet<LivingEntity> secant(Location origin, Location end, double thickness, Predicate<Entity> filter) {
         HashSet<LivingEntity> hit = new HashSet<>();
 

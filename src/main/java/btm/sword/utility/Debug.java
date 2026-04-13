@@ -41,8 +41,9 @@ import btm.sword.utility.math.VectorUtil;
  *   <li>{@link #skill}    – Skill slot resolution          ({@code VERBOSE_SKILL})</li>
  *   <li>{@link #ability}  – Ability lifecycle              ({@code VERBOSE_ABILITY})</li>
  *   <li>{@link #grab}     – Grab action lifecycle          ({@code VERBOSE_GRAB})</li>
- *   <li>{@link #attack}   – Attack sweeps / hitbox         ({@code VERBOSE_ATTACK})</li>
- *   <li>{@link #throwing} – Thrown-item lifecycle          ({@code VERBOSE_THROWING})</li>
+ *   <li>{@link #attack}        – Attack sweeps / hitbox         ({@code VERBOSE_ATTACK})</li>
+ *   <li>{@link #throwing}      – Thrown-item lifecycle          ({@code VERBOSE_THROWING})</li>
+ *   <li>{@link #attackVolume}  – AttackDef volume simulation    ({@code VERBOSE_ATTACK_VOLUME})</li>
  * </ul>
  */
 public final class Debug {
@@ -163,6 +164,11 @@ public final class Debug {
     /** Thrown-item lifecycle debug (spawn, flight, collision, recall). Gated by {@link Config.Debug#LOGGING_VERBOSE_THROWING}. */
     public static void throwing(String message) {
         emit(Config.Debug.LOGGING_VERBOSE_THROWING, "Throwing", message);
+    }
+
+    /** AttackDef volume simulation debug (launch, hit confirmation, expiry). Gated by {@link Config.Debug#LOGGING_VERBOSE_ATTACK_VOLUME}. */
+    public static void attackVolume(String message) {
+        emit(Config.Debug.LOGGING_VERBOSE_ATTACK_VOLUME, "AttackVolume", message);
     }
 
     // =========================================================================

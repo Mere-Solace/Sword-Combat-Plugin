@@ -4,6 +4,7 @@ import btm.sword.system.control.TimeArbiter;
 import btm.sword.system.entity.umbral.UmbralBlade;
 import btm.sword.system.entity.umbral.statemachine.UmbralStateFacade;
 
+/** State where the blade is actively held in the wielder's hand, ready to attack. */
 public class WieldState extends UmbralStateFacade {
     @Override
     public String name() { return "WIELD"; }

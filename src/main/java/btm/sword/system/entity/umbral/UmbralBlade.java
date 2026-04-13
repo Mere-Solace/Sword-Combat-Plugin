@@ -69,6 +69,7 @@ import net.kyori.adventure.text.format.TextDecoration;
 
 // while flying and attacking on its own, no soulfire is reaped on attacks
 // while in hand, higher soulfire intake on hit
+/** The signature UmbralBlade weapon — a thrown item backed by a full FSM managing all combat states and visual transitions. */
 public class UmbralBlade extends ThrownItem {
     /** Type of dash-reclaim attack to perform on the next quick or heavy attack entry. */
     public enum ReclaimType {
@@ -194,6 +195,7 @@ public class UmbralBlade extends ThrownItem {
         }
     }
 
+    /** Constructs the UmbralBlade, spawning its display entity and initialising the FSM and attack chains. */
     public UmbralBlade(Combatant thrower, ItemStack weapon) {
         super(thrower, display -> {
             display.setItemStack(weapon);
@@ -225,26 +227,32 @@ public class UmbralBlade extends ThrownItem {
         endHoverPredicate = blade -> !bladeStateMachine.inState(new StandbyState());
     }
 
+    /** Pushes the given request into the input buffer for evaluation on the next FSM tick. */
     public void request(BladeRequest request) {
         inputBuffer.push(request);
     }
 
+    /** Returns {@code true} and consumes the request if it is present in the input buffer. */
     public boolean isRequested(BladeRequest request) {
         return inputBuffer.consumeIfPresent(request);
     }
 
+    /** Returns {@code true} and consumes the request if present and the blade is not in {@link InactiveState}. */
     public boolean isRequestedAndActive(BladeRequest request) {
         return isRequested(request) && !inState(InactiveState.class);
     }
 
+    /** Returns {@code true} if this blade belongs to the given combatant. */
     public boolean isOwnedBy(Combatant combatant) {
         return combatant.getUniqueId().equals(thrower.getUniqueId());
     }
 
+    /** Returns {@code true} if the FSM is currently in the given state class. */
     public boolean inState(Class<? extends State<UmbralBlade>> clazz) {
         return bladeStateMachine.getState().getClass().equals(clazz);
     }
 
+    /** Ticks the blade: disposes if the thrower is invalid, then advances the FSM by one tick. */
     public void onTick() {
         if (thrower.isInvalid()) {
 //            thrower.message("Ending Umbral Blade");
@@ -256,6 +264,7 @@ public class UmbralBlade extends ThrownItem {
     }
 
     // TODO: #240 - Make a method for calculating correct orientation of blade for edge to align with plane of swing on attack
+    /** Applies the display transformation for the given state class after a 50 ms delay. */
     public void setDisplayTransformation(Class<? extends State<UmbralBlade>> state) {
         if (display == null) return;
 
@@ -284,6 +293,7 @@ public class UmbralBlade extends ThrownItem {
         return 4;
     }
 
+    /** Returns the display {@link Transformation} to apply when entering the given state. */
     public Transformation getStateDisplayTransformation(Class<? extends State<UmbralBlade>> state) {
         if (state == SheathedState.class) {
             return new Transformation(
@@ -334,6 +344,7 @@ public class UmbralBlade extends ThrownItem {
         }
     }
 
+    /** Starts the cosine idle bobbing animation on the blade's display entity. */
     public void startIdleMovement() {
         if (idleMovementTask != null) {
             idleMovementTask.cancel();
@@ -360,6 +371,7 @@ public class UmbralBlade extends ThrownItem {
         );
     }
 
+    /** Cancels the idle bobbing animation task if it is currently running. */
     public void endIdleMovement() {
         if (idleMovementTask != null) {
             idleMovementTask.cancel();
@@ -473,6 +485,7 @@ public class UmbralBlade extends ThrownItem {
             .build();
     }
 
+    /** Removes the existing display entity and respawns a fresh one at the thrower's eye level. */
     public void resetWeaponDisplay() {
         if (display != null) {
             display.remove();
@@ -520,6 +533,7 @@ public class UmbralBlade extends ThrownItem {
         this.velocityFunction = t -> dir.clone().multiply(0.5);
     }
 
+    /** Sets the reclaim type and schedules a reset to {@link ReclaimType#NONE} after the given duration. */
     public void setReclaimType(ReclaimType type, int durationMilliseconds) {
         reclaimType = type;
         SwordScheduler.runBukkitTaskLater(
@@ -528,6 +542,7 @@ public class UmbralBlade extends ThrownItem {
         );
     }
 
+    /** Called when a combatant grabs the blade; sets reclaim type and requests the appropriate follow-up state. */
     public void onGrab(Combatant combatant) {
         Debug.umbral("onGrab. inState()=" + bladeStateMachine.getState().name());
 
@@ -626,6 +641,7 @@ public class UmbralBlade extends ThrownItem {
         bladeStateMachine.setDeactivated(true);
     }
 
+    /** Clears all mid-flight flags so the blade can be launched again cleanly. */
     public void resetFlightState() {
         hit = false;
         grounded = false;
@@ -634,6 +650,7 @@ public class UmbralBlade extends ThrownItem {
         timeScalingFactor = -1;
     }
 
+    /** Sets the active dash direction and resets it to {@link DashDirection#NONE} after 250 ms. */
     public void setDashingDirection(DashDirection direction) {
         this.dashDirection = direction;
 
@@ -643,10 +660,12 @@ public class UmbralBlade extends ThrownItem {
         );
     }
 
+    /** Returns {@code true} if the blade currently has an active dash direction. */
     public boolean isDashing() {
         return !dashDirection.equals(DashDirection.NONE);
     }
 
+    /** Sets the combo step and pushes an {@link BladeRequest#ATTACK_QUICK} to the input buffer. */
     public void requestQuickAttack(int comboStep) {
         currentComboStep = comboStep;
         request(BladeRequest.ATTACK_QUICK);

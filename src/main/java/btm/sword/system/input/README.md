@@ -492,3 +492,68 @@ Register in `SkillIds` and `SkillRegistry`, implement `ActiveSkill`, then the ex
 - The `dynamic` flag disables cooldown persistence. Skills with per-player cooldowns need an external tracker.
 - `SwordPlayer.act()` contains a pre-deduction soulfire check that is separate from the consumption inside `handlePerformAttempt`. If `handlePerformAttempt` fails after soulfire was already displayed as insufficient, no soulfire is actually consumed (correct behavior), but the logic is split across two call sites which makes it easy to diverge.
 - `SHIFT` and `RIGHT` hold detection depends on `player.isHandRaised()` polling. This works as long as the player has a shield in offhand. A future context-aware solution is tracked in issue #5.
+
+---
+
+## Architectural Notes — Consumer Typing
+
+### Current state
+
+`InputAction.action` is typed `Consumer<Combatant>`. All lambda values registered in `InputRegistrar` are written against `SwordPlayer` methods, accessed via `instanceof` casts, `(SwordPlayer) c` hard-casts, or `c instanceof SwordPlayer sp` patterns. `InputAction.handlePerformAttempt()` also hard-casts the executor to `SwordPlayer` to call `displayCooldown()`, `displayDisablingEffect()`, and `resetTree()`.
+
+The execution domain is exclusively `SwordPlayer`:
+- `InputExecutionTree` is owned by `SwordPlayer`
+- `InputRegistrar.initializeInputTree()` receives a `SwordPlayer`
+- `InputActionExecutor.execute()` is called from `SwordPlayer.act()`
+- No `Combatant` subclass other than `SwordPlayer` owns an input tree
+
+### Recommended fix
+
+Change all `Consumer<Combatant>` / `Predicate<Combatant>` / `Function<Combatant, T>` fields and builder methods in `InputAction` to `Consumer<SwordPlayer>` / `Predicate<SwordPlayer>` / `Function<SwordPlayer, T>`.
+
+Impact:
+- Eliminates every `(SwordPlayer) c` cast and `c instanceof SwordPlayer sp` guard in `InputRegistrar`
+- Eliminates the three unsafe casts in `InputAction.handlePerformAttempt()` for HUD calls
+- Eliminates the `instanceof` guards in `InputActionExecutor.readiness()` for the soulfire check
+- `ActionConstraint` (currently `Predicate<Combatant>`) would similarly widen to `Predicate<SwordPlayer>` — or remain `Predicate<Combatant>` and be consumed via covariance, depending on whether constraints need to be usable for non-player combatants in the future
+- No behavior change: `SwordPlayer` extends `Combatant`, so all existing method references (`Combatant::canAirDash`, `Combatant::canPerformAction`) are still valid when the type becomes `SwordPlayer`
+
+### What to keep as `Combatant`
+
+`ActionConstraint` predicates that test purely combat-state conditions (`canPerformAction`, `canAirDash`, etc.) could reasonably remain `Predicate<Combatant>` if future AI input systems reuse them. If the input system is permanently player-only, there is no reason to preserve the `Combatant` type.
+
+---
+
+## `initializeInputTree()` — Modularization Opportunities
+
+`InputRegistrar.initializeInputTree()` is ~500 lines of sequential `InputNodeBuilder` registrations. The following groupings are natural extraction targets:
+
+| Group | Approximate size | Suggested extraction |
+|---|---|---|
+| Grab (`SHIFT+LEFT`) | ~20 lines | `registerGrab(root)` |
+| Block / Parry (`RIGHT`, `RIGHT+SWAP`) | ~40 lines | `registerBlockAndParry(root)` |
+| Basic attack combo (`L`, `LL`, `LLL`) | Already extracted | `registerBasicAttackCombo(root)` (exists) |
+| Throw lifecycle (`RIGHT+DROP`, `RIGHT+DROP+RIGHT_HOLD`) | ~40 lines | `registerThrow(root)` |
+| Lunge (`RIGHT+DROP` with soul link) | Shares node with throw | Fold into `registerThrow(root)` |
+| Charge ability (`LEFT+RIGHT`, `LEFT+RIGHT+RIGHT_HOLD`) | ~50 lines | `registerChargeAbility(root)` |
+| UmbralBlade commands (`SHIFT+SWAP`, `SHIFT+DROP`, `DROP+SWAP`, `DROP+LEFT` chain, channel) | ~100 lines | `registerUmbralBladeInputs(root)` |
+| Umbral skills (`SWAP+LL`, `SWAP+LR`, `SWAP+LF`) | ~50 lines | `registerUmbralSkills(root, owner)` |
+| Debug actions (`DROP+DROP`) | ~20 lines | `registerDebugInputs(root)` |
+
+Each extracted method follows the `private static void register*(InputExecutionTree.InputNode root)` signature already established by `registerBasicAttackCombo` and `initializeMovementInputs`. The `owner` parameter is only needed by `registerUmbralSkills` (for `SkillSlotActionFactory.create(owner, slot)` calls).
+
+This is a pure refactor — no behavior change, no new coupling. The extraction makes the intent of each registration block obvious and makes adding, removing, or reordering input groups safe.
+
+### Current architectural violation in `initializeInputTree()`
+
+The `canCast` predicate for throw-ready contains:
+```java
+c -> c.canPerformAction() &&
+    (!(c instanceof SwordPlayer sp) ||
+        sp.nonUmbralState() && sp.notHoldingAbilityItem())
+```
+
+The `instanceof SwordPlayer` guard is required because `action` is typed `Combatant`. After the consumer type change described above, this becomes:
+```java
+sp -> sp.canPerformAction() && sp.nonUmbralState() && sp.notHoldingAbilityItem()
+```

@@ -61,9 +61,8 @@ public final class TimeArbiter {
     /** Guards against re-entrant {@link #setGlobalTimeScale} calls. */
     public static boolean updatingTimeScale = false;
 
-    /** Lookup maps kept for O(1) cleanup by task ID. */
-    private static final Map<Integer, TaskHandle> TIME_BOUND_TASKS = new ConcurrentHashMap<>();
-    private static final Map<Integer, TaskHandle> TIME_INDEPENDENT_TASKS = new ConcurrentHashMap<>();
+    /** Lookup map for O(1) cleanup by task ID. */
+    private static final Map<Integer, TaskHandle> ALL_TASKS = new ConcurrentHashMap<>();
 
     private static final AtomicInteger TASK_COUNTER = new AtomicInteger();
 
@@ -421,11 +420,7 @@ public final class TimeArbiter {
             precheck, postcheck, paused, callbacks, periodMs,
             callingClass, callingMethodName);
 
-        if (timeBound) {
-            TIME_BOUND_TASKS.put(taskID, handle);
-        } else {
-            TIME_INDEPENDENT_TASKS.put(taskID, handle);
-        }
+        ALL_TASKS.put(taskID, handle);
 
         TaskHandleBucket bucket = bucketFor(periodMs);
         handle.ownerBucket = bucket;
@@ -435,8 +430,7 @@ public final class TimeArbiter {
     }
 
     private static void cleanupTask(int taskId) {
-        if (TIME_BOUND_TASKS.remove(taskId) == null)
-            TIME_INDEPENDENT_TASKS.remove(taskId);
+        ALL_TASKS.remove(taskId);
     }
 
     // ── Public factory methods ─────────────────────────────────────────────────
@@ -559,8 +553,7 @@ public final class TimeArbiter {
         BUCKET_1S.stop();
         BUCKET_5S.stop();
         BUCKET_30S.stop();
-        TIME_BOUND_TASKS.clear();
-        TIME_INDEPENDENT_TASKS.clear();
+        ALL_TASKS.clear();
     }
 
     // ── Display / physics utilities ───────────────────────────────────────────

@@ -34,6 +34,7 @@ import xyz.xenondevs.invui.window.Window;
  */
 public class ArtifactPouchMenu extends Menu {
 
+    /** Constructs the artifact pouch menu for the given player. */
     public ArtifactPouchMenu(SwordPlayer player) {
         super(player);
     }

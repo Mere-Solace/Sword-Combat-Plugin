@@ -201,6 +201,13 @@ public final class KeyRegistry {
     /** Cached {@link NamespacedKey} for {@link #ABILITY_SLOT}. */
     public static final NamespacedKey ABILITY_SLOT_KEY = key(ABILITY_SLOT);
 
+
+    /** Persistent data key marking an item as a volume-attack dev test item. */
+    public static final String TEST_VOLUME_ATTACK = "test_volume_attack";
+
+    /** Cached {@link NamespacedKey} for {@link #TEST_VOLUME_ATTACK}. */
+    public static final NamespacedKey TEST_VOLUME_ATTACK_KEY = key(TEST_VOLUME_ATTACK);
+
     // ------------------------------
     //  Utility Methods
     // ------------------------------
@@ -243,6 +250,7 @@ public final class KeyRegistry {
         itemStack.editPersistentDataContainer(pdc -> pdc.set(key, dataType, value));
     }
 
+    /** Returns the value stored under the given key on the item stack, or {@code null} if absent. */
     public static <T, Z> Z getKeyField(ItemStack itemStack, @NotNull NamespacedKey key, PersistentDataType<T, Z> dataType) {
         return itemStack.getPersistentDataContainer().get(key, dataType);
     }

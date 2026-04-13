@@ -28,11 +28,13 @@ public final class HudOverrideManager {
 
     private HudOverrideManager() {}
 
+    /** Registers a HUD override for the player under the given key, replacing any existing entry with the same key. */
     public static void register(Player player, String key, int priority, HudOverride override) {
         OVERRIDES.computeIfAbsent(player.getUniqueId(), ignored -> new ConcurrentHashMap<>())
             .put(key, new RegisteredOverride(key, priority, override));
     }
 
+    /** Removes the override registered under the given key for the player. */
     public static void clear(Player player, String key) {
         Map<String, RegisteredOverride> playerOverrides = OVERRIDES.get(player.getUniqueId());
         if (playerOverrides == null) {
@@ -44,18 +46,22 @@ public final class HudOverrideManager {
         }
     }
 
+    /** Removes all registered HUD overrides for the player. */
     public static void clearAll(Player player) {
         OVERRIDES.remove(player.getUniqueId());
     }
 
+    /** Registers the custom smithing-interaction HUD override for the player. */
     public static void enableCustomInteractionOverride(Player player) {
         register(player, CUSTOM_INTERACTION_KEY, 100, CUSTOM_INTERACTION_OVERRIDE);
     }
 
+    /** Removes the custom smithing-interaction HUD override for the player. */
     public static void disableCustomInteractionOverride(Player player) {
         clear(player, CUSTOM_INTERACTION_KEY);
     }
 
+    /** Applies all registered overrides in priority order to the base state, returning the final resolved state. */
     public static HudRenderState resolve(Player player, HudRenderState baseState) {
         Map<String, RegisteredOverride> playerOverrides = OVERRIDES.get(player.getUniqueId());
         if (playerOverrides == null || playerOverrides.isEmpty()) {
@@ -71,6 +77,7 @@ public final class HudOverrideManager {
         return resolved;
     }
 
+    /** Sends the resolved HUD render state to the player, updating health, food, saturation, and air. */
     public static void apply(Player player, HudRenderState state) {
         player.sendHealthUpdate(state.health(), state.food(), state.saturation());
         player.setRemainingAir(state.air());

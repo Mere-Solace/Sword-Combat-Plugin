@@ -23,6 +23,7 @@ import btm.sword.utility.display.DrawUtil;
 import btm.sword.utility.math.Basis;
 import net.kyori.adventure.text.Component;
 
+/** Active skill that triggers a void lunge, propelling the combatant forward with the UmbralBlade. */
 public class VoidLungeSkill extends ActiveSkill {
 
     private static final Component NAME = Component.text("Void Lunge");

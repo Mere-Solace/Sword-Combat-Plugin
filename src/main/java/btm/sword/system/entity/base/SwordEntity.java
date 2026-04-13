@@ -36,6 +36,7 @@ import btm.sword.system.action.BlockAction;
 import btm.sword.system.action.throwing.impale.Impalement;
 import btm.sword.system.action.throwing.types.DroppedItem;
 import btm.sword.system.attack.HitValuePacket;
+import btm.sword.system.attack.simulation.EntitySnapshotMap;
 import btm.sword.system.combat.Affliction;
 import btm.sword.system.control.EntityController;
 import btm.sword.system.control.PredicateRunnablePair;
@@ -229,7 +230,7 @@ public abstract class SwordEntity {
 
 
         if (isImpaled()) {
-            self.addPotionEffect(IMPALE_SLOW);
+            addPotionEffect(IMPALE_SLOW);
         }
 
         if (statusDisplay != null && isStatusActive()) {
@@ -239,6 +240,12 @@ public abstract class SwordEntity {
         if ((statusDisplay == null || statusDisplay.isDead()) && isStatusActive()) {
             restartStatusDisplay();
         }
+
+        EntitySnapshotMap.INSTANCE.snapshot(uuid, self.getBoundingBox(), self.getYaw(), self.getPitch());
+    }
+
+    public void addPotionEffect(PotionEffect effect) {
+        self.addPotionEffect(IMPALE_SLOW);
     }
 
     protected void updateStatus() {

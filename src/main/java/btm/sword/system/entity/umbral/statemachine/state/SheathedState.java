@@ -6,6 +6,7 @@ import btm.sword.system.entity.umbral.UmbralBlade;
 import btm.sword.system.entity.umbral.statemachine.UmbralStateFacade;
 
 
+/** State representing the blade tucked away on the wielder's back with reduced visual presence. */
 public class SheathedState extends UmbralStateFacade {
     @Override
     public String name() { return "SHEATHED"; }

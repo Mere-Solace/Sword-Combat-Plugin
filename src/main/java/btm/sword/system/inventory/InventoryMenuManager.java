@@ -26,16 +26,19 @@ import btm.sword.system.inventory.menu.dev.DevMenu;
 import btm.sword.system.inventory.menu.dev.TestingMenu;
 import btm.sword.system.inventory.menu.dev.WeaponDisplayEditorMenu;
 
+/** Registry and factory for all InvUI-backed menus; maps menu types to their player-scoped constructors. */
 public final class InventoryMenuManager {
 
     private InventoryMenuManager() {}
 
     private static final Map<Class<? extends Menu>, Function<SwordPlayer, ? extends Menu>> MENU_REGISTRY = new ConcurrentHashMap<>();
 
+    /** Registers a menu type with its player-scoped factory function. */
     public static <T extends Menu> void register(Class<T> menuType, Function<SwordPlayer, T> creator) {
         MENU_REGISTRY.put(menuType, creator);
     }
 
+    /** Registers all known menu types with their default factory functions. */
     public static void registerAll() {
         register(MainMenu.class, MainMenu::new);
         register(CharacterMenu.class, CharacterMenu::new);
@@ -56,6 +59,7 @@ public final class InventoryMenuManager {
         // SkillSelectionMenu is constructed with a slot index and is opened directly
     }
 
+    /** Creates and returns a menu instance of the given type for the player. */
     @SuppressWarnings("unchecked")
     public static <T extends Menu> T create(Class<T> menuType, SwordPlayer player) {
         Function<SwordPlayer, ? extends Menu> menuCreationFunc = MENU_REGISTRY.get(menuType);
@@ -63,6 +67,7 @@ public final class InventoryMenuManager {
         return (T) menuCreationFunc.apply(player);
     }
 
+    /** Delegates to the player's {@link PlayerMenuManager} to open a new instance of the given menu type. */
     public static void openMenu(Class<? extends Menu> menuType, SwordPlayer swordPlayer) {
         swordPlayer.getPlayerMenuManager().openNewMenu(menuType);
     }

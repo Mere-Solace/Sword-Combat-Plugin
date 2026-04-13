@@ -2,6 +2,7 @@ package btm.sword.utility.display;
 
 import org.bukkit.Color;
 
+/** Utility methods for colour conversions between hex strings and Bukkit/JOML colour types. */
 public final class ColorUtil {
 
     private ColorUtil() {}

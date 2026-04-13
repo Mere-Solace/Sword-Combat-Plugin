@@ -4,6 +4,7 @@ import btm.sword.system.control.TimeArbiter;
 import btm.sword.system.entity.umbral.UmbralBlade;
 import btm.sword.system.entity.umbral.statemachine.UmbralStateFacade;
 
+/** State entered after a throw, removing the thrown display and resetting the blade's visual to the hand slot. */
 public class RecoverState extends UmbralStateFacade {
     private UmbralBlade blade;
     private final Runnable recoverBlade = () -> {

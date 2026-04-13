@@ -13,8 +13,10 @@ import btm.sword.utility.entity.HitboxUtil;
 import btm.sword.utility.math.Basis;
 import btm.sword.utility.math.VectorUtil;
 
+/** Handles unarmed punch attacks including hitbox detection and connect feedback. */
 public class PunchAction extends SwordAction {
 
+    /** Performs a punch in the given direction, checking for hit entities along a ray from the executor's chest. */
     public static void punch(Combatant executor, boolean right, double distance) {
         double dist = distance < 0 ? 2.5 : distance;
         double spacing = 0.33;
@@ -47,6 +49,7 @@ public class PunchAction extends SwordAction {
         }
     }
 
+    /** Applies an attack cooldown and immediately executes a punch. */
     public static void throwPunch(Combatant executor, boolean right, double distance) {
         executor.applyAttackCooldown();
         punch(executor, right, distance);

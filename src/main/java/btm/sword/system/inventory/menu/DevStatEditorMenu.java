@@ -8,6 +8,7 @@ import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.jetbrains.annotations.NotNull;
 
 import btm.sword.system.entity.aspect.Aspect;
 import btm.sword.system.entity.aspect.AspectType;
@@ -41,6 +42,7 @@ import xyz.xenondevs.invui.window.Window;
  */
 public class DevStatEditorMenu extends Menu {
 
+    /** Constructs the developer stat editor menu for the given player. */
     public DevStatEditorMenu(SwordPlayer player) {
         super(player);
     }
@@ -131,7 +133,7 @@ public class DevStatEditorMenu extends Menu {
             }
 
             @Override
-            public void handleClick(ClickType clickType, Player p, InventoryClickEvent event) {
+            public void handleClick(@NotNull ClickType clickType, @NotNull Player p, @NotNull InventoryClickEvent event) {
                 if (isResource) {
                     Resource r = (Resource) aspect;
                     if (clickType == ClickType.LEFT) {

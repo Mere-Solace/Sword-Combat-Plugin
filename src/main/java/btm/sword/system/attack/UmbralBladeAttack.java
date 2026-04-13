@@ -11,9 +11,11 @@ import btm.sword.system.entity.umbral.UmbralBlade;
 import btm.sword.utility.entity.HitboxUtil;
 
 
+/** An {@link ItemDisplayAttack} that moves the UmbralBlade display and uses secant-based hit detection. */
 public class UmbralBladeAttack extends ItemDisplayAttack {
     protected UmbralBlade blade;
 
+    /** Full-parameter constructor forwarded to {@link ItemDisplayAttack}. */
     public UmbralBladeAttack(ItemDisplay weaponDisplay, AttackProfile profile,
                              boolean orientWithPitch, boolean displayOnly,
                              int tpDuration, int displaySteps,
@@ -27,11 +29,13 @@ public class UmbralBladeAttack extends ItemDisplayAttack {
             attackStartValue, attackEndValue);
     }
 
+    /** Convenience constructor using default display step count from config. */
     public UmbralBladeAttack(ItemDisplay weaponDisplay, AttackProfile profile, boolean orientWithPitch, boolean displayOnly, int tpDuration) {
         super(weaponDisplay, profile, orientWithPitch, displayOnly, tpDuration);
     }
 
 
+    /** Associates an {@link UmbralBlade} with this attack for state callbacks. */
     public UmbralBladeAttack setBlade(UmbralBlade blade) {
         this.blade = blade;
         return this;

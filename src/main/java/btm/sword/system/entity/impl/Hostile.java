@@ -345,6 +345,7 @@ public class Hostile extends Combatant {
         }
     }
 
+    /** Logs a debug message for all nearby players within the given radius. */
     public void broadcastMessage(double radius, String message) {
         for (Entity entity : self().getNearbyEntities(radius, radius, radius)) {
             if (entity instanceof Player player) {
@@ -409,15 +410,18 @@ public class Hostile extends Combatant {
         }
     }
 
+    /** Returns the remaining cooldown in ticks for the named ability slot, or 0 if not found. */
     public int getAbilityCooldown(String name) {
         AbilitySlot slot = AbilitySlot.fromName(name);
         return slot == null ? 0 : abilityCooldowns[slot.ordinal()];
     }
 
+    /** Returns {@code true} on ticks where the aggro scan should run, staggered by UUID hash. */
     public boolean shouldRunAggroScan() {
         return shouldRunStaggeredScan(AGGRO_SCAN_CADENCE);
     }
 
+    /** Returns {@code true} on ticks where the ally scan should run, staggered by UUID hash. */
     public boolean shouldRunAllyScan() {
         return shouldRunStaggeredScan(ALLY_SCAN_CADENCE);
     }
@@ -478,6 +482,7 @@ public class Hostile extends Combatant {
         if (displayRig != null) displayRig.setWeaponSlotItem(itemInRightHand);
     }
 
+    /** Returns a clone of this hostile's spawn origin location. */
     public Location getOrigin() {
         return this.origin.clone();
     }
