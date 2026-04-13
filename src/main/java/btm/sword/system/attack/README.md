@@ -1,57 +1,270 @@
 # system/attack
 
-This package implements all melee attack execution in Sword: Combat Evolved. Attacks define a cubic Bezier sweep path through 3D space, iterate along that path to detect hits, apply damage via `HitValuePacket`, and optionally drive a visual `ItemDisplay` entity.
+This package and its sub-packages implement all melee attack execution in Sword: Combat Evolved.
+There are two distinct attack systems active in the codebase simultaneously:
 
-## Package Contents
+- **Legacy sweep system** — `Attack`, `SweepAttack`, `ItemDisplayAttack`, etc. Drives time-sliced
+  Bezier sweeps on the Bukkit main thread. Used by all current player combos and mob attacks.
+- **Volume simulation system** — `def/`, `simulation/`, and associated classes in `Combatant`.
+  Drives an off-thread 200 Hz OBB/capsule collision loop. Currently wired only to the dev wand.
 
-| Class | Description |
-|-------|-------------|
-| `Attack` | Base attack class. Owns the Bezier path, iteration loop via `TimeArbiter`, hit detection via `HitboxUtil.secant()`, and damage dispatch to `SwordEntity.hit()`. |
-| `SweepAttack` | Extends `Attack`. Intended to manage a sweep visual display; display code is currently commented out. Inherits all hit detection from `Attack`. |
-| `ItemDisplayAttack` | Extends `Attack`. Moves an existing `ItemDisplay` entity along the Bezier path each `displaySteps` iterations. Supports `displayOnly` mode to skip hit detection. |
-| `UmbralBladeAttack` | Extends `ItemDisplayAttack`. Adds a distance guard (entity must be within 20 blocks of the attack location) to the secant hit check. Used for all UmbralBlade melee swings. |
-| `ImpalingUmbralBladeAttack` | Extends `UmbralBladeAttack`. Replaces the secant check with a single `HitboxUtil.ray()` call. On hit, sets `blade.hitEntity` and issues `BladeRequest.IMPALE`. Cancels the iteration task immediately after the first hit. |
-| `GeneratedAttackProfile` | Implements `AttackProfile` with a runtime-computed, world-space `BezierShape`. Used when the sweep geometry is built dynamically at attack time (e.g., the heavy sweep targeting a specific entity). |
-| `HitValuePacket` | Bundles the five damage values (`reapedSoulfire`, `invulnerableTicks`, `shardDamage`, `toughnessDamage`, `soulfireLoss`) passed to `SwordEntity.hit()`. Each value is a `Supplier<T>` for Config hot-reload compatibility. |
+---
 
-## Sub-package: style
+## Package-level class inventory
 
-| Class | Description |
-|-------|-------------|
-| `AttackProfile` | Interface: `shape()`, `knockbackFunction()`, `normalVector()`. Implemented by both `AttackType` and `GeneratedAttackProfile`. |
-| `AttackShape` | Interface for parametric sweep paths. `resolve(Basis, double)` returns a `Function<Double, Vector>` mapping `t ∈ [0, 1]` to world-space offsets. |
-| `BezierShape` | Implements `AttackShape` using a cubic Bézier curve. Local-space (default) applies `ControlVectors.adjustToBasis` at resolve time; world-space mode skips transformation. |
-| `ArcShape` | Sweeps a circular arc in the attacker's horizontal plane. Parameters: `radius`, `startAngle`, `endAngle` (radians, 0=forward), `height`. Use `endAngle - startAngle = 2π` for a full 360° circle. |
-| `ConeShape` | Sweeps along the rim of a cone aligned to the attacker's forward axis. Parameters: `halfAngle` (polar offset from forward), `range`, `startSweepAngle`, `endSweepAngle`. `ConeShape.symmetric()` fans left/right equally. |
-| `AttackType` | Enum of named attack curves. Each entry owns a `BezierShape` and a knockback function. Also exposes `controlVectors()` for non-attack consumers (e.g., blade lunge). |
-| `WeaponAttackStyle` | Enum mapping weapon item tags to their ground combo chain, aerial moves, and directional dash attacks. Read from item PDC via `KeyRegistry.ATTACK_STYLE_KEY`. |
+| Class | Role |
+|-------|------|
+| `Attack` | Base class for all legacy sweep attacks. Drives a time-sliced Bezier iteration loop via `TimeArbiter`. Handles hit detection via `HitboxUtil.secant`, applies `HitValuePacket`, draws particles, checks ground collision, and chains to `nextAttack`. |
+| `SweepAttack` | Extends `Attack`. All sweep display code is commented out — behaves identically to `Attack` today. Dead fields: `sweepDisplays`, `sweepTail`, `sweepBody`, `sweepFront`, `tpDuration`, etc. |
+| `ItemDisplayAttack` | Extends `Attack`. Moves an existing `ItemDisplay` entity along the Bezier path. `displayOnly=true` skips hit detection (used for windup animations). |
+| `UmbralBladeAttack` | Extends `ItemDisplayAttack`. Adds a 20-block distance guard to hit detection. Associates an `UmbralBlade` for state callbacks. |
+| `MobSweepAttack` | Extends `SweepAttack`. Overrides `hit()` to apply `Prefab.Attacks.DEFAULT_MOB_HIT` instead of the default player packet. |
+| `GeneratedAttackProfile` | Implements `AttackProfile` with runtime world-space `ControlVectors`. Wraps a world-space `BezierShape` — skips basis adjustment. Used for heavy sweeps targeting a specific entity. |
+| `HitValuePacket` | Bundles all five damage values as `Supplier<T>` for hot-reload compatibility. Also carries `Blockability` and `bypassPower`. |
+| `Blockability` | Enum: `BLOCKABLE` (fully negated by block/parry) or `SHIELD_PASSING` (scaled by `bypassPower`). |
+| `ActiveAttack` | Record: game-layer view of an in-progress `AttackDef` attack. Holds the definition, owner UUID, start time, and shared `hitThisAttack` set. Lives on `Combatant`. |
 
-## How an Attack Works
+## Sub-package summary
 
-1. An `AttackAction` (or blade state) creates an `Attack` subclass instance with a chosen `AttackProfile` and calls `execute(combatant)`.
-2. `execute()` captures the attacker, builds an entity filter, and calls `cast()` → `onRun()` → `startAttack()`.
-3. `startAttack()` captures the attacker's current `Basis` (local coordinate frame) and calls `attackProfile.shape().resolve(basis, rangeMultiplier)` to obtain a `Function<Double, Vector>` path function. Shape implementations handle their own world-space transformation internally.
-4. A repeating task fires every `msPerIteration` ms, advancing parameter `t` from `attackStartValue` to `attackEndValue`. Each step calls `drawAttackEffects()`, `performHitLogic()` (secant or ray intersection), and `swingTest()` (ground collision).
-5. Each entity hit is passed to `SwordEntity.hit()` with the appropriate `HitValuePacket`.
-6. When `curIteration >= attackIterations`, the task ends, the optional callback fires, and the next chained attack (if any) is scheduled.
+| Package | Purpose |
+|---------|---------|
+| `style/` | `AttackProfile` interface, `AttackShape` interface, `AttackType` enum, `WeaponAttackStyle` enum, and the three shape implementations (`BezierShape`, `ArcShape`, `ConeShape`). |
+| `def/` | Immutable `AttackDef` data model, `AttackPrimitive` enum, `AttackDefSerializer` (YAML ↔ `AttackDef`), `AttackRegistry` (global static map). See `def/README.md`. |
+| `simulation/` | Off-thread 200 Hz collision loop, volume primitives, trajectories, spatial grid, collision detection, thread-safe bridges. See `simulation/README.md`. |
+| `dev/` | Dev-only tooling: recording, editing, visualizing, and testing volume attacks with a wand. See `dev/README.md`. |
 
-## Action Layer (system/action/attack)
+---
 
-This package contains the static action classes that are the external entry points into the attack system:
+## Dependency graph
 
-| Class | Description |
-|-------|-------------|
-| `AttackAction` | Called by `InputExecutionTree` for basic combo attacks. Reads `WeaponAttackStyle`, checks grounded/aerial state, selects the `AttackProfile` for the current combo step, and creates a `SweepAttack`. |
-| `DashAttackAction` | Called during dash inputs. Routes to the UmbralBlade quick-attack shortcut if conditions are met, otherwise creates a directional `Attack` with the dash origin locked to the dash direction. |
-| `PunchAction` | Unarmed attack. Uses `HitboxUtil.ray()` directly from the chest position; no Bezier path. |
+```mermaid
+graph TD
+    subgraph External callers
+        AC["AttackAction\n(action/attack/)"]
+        DA["DashAttackAction\n(action/attack/)"]
+        PA["PunchAction\n(action/attack/)"]
+        UBS["UmbralBlade states\n(entity/umbral/statemachine/state/)"]
+        Comb["Combatant\n(entity/impl/)"]
+        SE["SwordEntity\n(entity/base/)"]
+        PL["PlayerListener\n(listeners/)"]
+        Sword["Sword.java"]
+        IR["InputRegistrar\n(input/)"]
+        Menus["dev menus\n(inventory/menu/dev/)"]
+    end
 
-## Extension
+    subgraph "system/attack (root)"
+        Attack
+        SweepAttack
+        ItemDisplayAttack
+        UmbralBladeAttack
+        MobSweepAttack
+        GeneratedAttackProfile
+        HitValuePacket
+        Blockability
+        ActiveAttack
+    end
 
-- Add a new named curve: add an entry to `AttackType` with a `ControlVectors` (automatically wrapped in `BezierShape`).
-- Add a new weapon category: add an entry to `WeaponAttackStyle` with the appropriate chain of `AttackType` references.
-- Add a new shape type: implement `AttackShape` and return the appropriate path function from `resolve()`.
-- Sphere/AOE attacks: extend `Attack`, override `generatePathFunction()` (trivial constant path), `collectHitEntities()` (use `HitboxUtil.sphere()`), and `drawAttackEffects()`. No `AttackShape` needed — the hit volume is expressed through the override, not the shape.
-- Custom hit geometry: extend `Attack` and override `collectHitEntities()`.
-- Custom damage: override `hit()` and use a different `HitValuePacket` from `Prefab.Attacks`.
+    subgraph "system/attack/style"
+        AttackProfile
+        AttackShape
+        AttackType
+        WeaponAttackStyle
+        BezierShape
+        ArcShape
+        ConeShape
+    end
 
-For full architecture details see `docs/systems/attack-system.md`.
+    subgraph "system/attack/def"
+        AttackDef
+        AttackPrimitive
+        AttackDefSerializer
+        AttackRegistry
+    end
+
+    subgraph "system/attack/simulation"
+        VolumeSimulation
+        SimulationAttack
+        VolumeTrajectory
+        KeyframedTrajectory
+        SweepTrajectory
+        Volume
+        ObbVolume
+        CapsuleVolume
+        VolumeKeyframe
+        VolumeShape
+        SweepCurve
+        SpatialGrid
+        CollisionDetector
+        CollisionEvent
+        CollisionEventBridge
+        EntitySnapshotMap
+        EffectsDispatcher
+        KeyframeEffect
+        ParticleEffect
+        SoundCue
+    end
+
+    subgraph "system/attack/dev"
+        AttackDevSession
+        DevMode
+        AnimationMode
+        AnimationModeInputHandler
+        VolumeEditorMode
+        WandActions
+        SweepRecordingAction
+        SaveConfirmDialog
+        RecordedSample
+    end
+
+    %% Legacy sweep path
+    AC --> SweepAttack
+    AC --> AttackType
+    AC --> WeaponAttackStyle
+    DA --> Attack
+    UBS --> ItemDisplayAttack
+    UBS --> UmbralBladeAttack
+    UBS --> GeneratedAttackProfile
+    Comb --> MobSweepAttack
+    Attack --> AttackProfile
+    Attack --> HitValuePacket
+    SweepAttack --> Attack
+    ItemDisplayAttack --> Attack
+    UmbralBladeAttack --> ItemDisplayAttack
+    MobSweepAttack --> SweepAttack
+    GeneratedAttackProfile --> AttackProfile
+    GeneratedAttackProfile --> BezierShape
+    AttackType --> BezierShape
+    WeaponAttackStyle --> AttackType
+
+    %% Volume / def path
+    AC -->|wand| AttackDef
+    Sword -->|onEnable| AttackRegistry
+    Sword -->|onEnable| VolumeSimulation
+    Sword -->|onEnable| CollisionEventBridge
+    Comb -->|launchAttackDef| AttackDef
+    Comb -->|launchAttackDef| SimulationAttack
+    Comb -->|launchAttackDef| VolumeSimulation
+    Comb -->|launchAttackDef| ActiveAttack
+    SE -->|onTick| EntitySnapshotMap
+    AttackDef --> AttackPrimitive
+    AttackDef --> VolumeTrajectory
+    AttackPrimitive --> ObbVolume
+    AttackPrimitive --> CapsuleVolume
+    VolumeSimulation --> SimulationAttack
+    VolumeSimulation --> SpatialGrid
+    VolumeSimulation --> CollisionDetector
+    VolumeSimulation --> CollisionEventBridge
+    VolumeSimulation --> EntitySnapshotMap
+    VolumeSimulation --> EffectsDispatcher
+    KeyframedTrajectory --> VolumeKeyframe
+    KeyframedTrajectory --> VolumeShape
+    SweepTrajectory --> SweepCurve
+    CollisionEventBridge -->|drainToMain| SE
+
+    %% Dev path
+    IR --> WandActions
+    IR --> SweepRecordingAction
+    PL -->|PlayerMoveEvent| AttackDevSession
+    Menus --> AttackDevSession
+    AC -->|wand| AttackDevSession
+    AC -->|wand| VolumeEditorMode
+    AttackDevSession --> DevMode
+    AttackDevSession --> VolumeEditorMode
+    AnimationMode --> AttackDevSession
+    AnimationModeInputHandler --> AttackDevSession
+    SaveConfirmDialog --> AttackDef
+    SaveConfirmDialog --> AttackDefSerializer
+    SaveConfirmDialog --> AttackRegistry
+    SweepRecordingAction --> AttackDef
+    SweepRecordingAction --> AttackDefSerializer
+    SweepRecordingAction --> AttackRegistry
+    VolumeEditorMode --> VolumeKeyframe
+    VolumeEditorMode --> VolumeShape
+    VolumeEditorMode --> SimulationAttack
+    WandActions --> AttackDevSession
+```
+
+---
+
+## How a legacy sweep attack works
+
+1. An `AttackAction` (or blade state) constructs a `SweepAttack`/`ItemDisplayAttack`/`UmbralBladeAttack`
+   and calls `execute(combatant)`.
+2. `execute()` stores the attacker, builds the entity filter, and calls `cast()`.
+3. `cast()` calls `applyAttackCooldown()`, resolves optional duration scaling, then calls `startAttack()`.
+4. `startAttack()` captures the attacker's `Basis`, calls `attackProfile.shape().resolve(basis, range)`
+   to produce a `Function<Double, Vector>` path function, and starts a repeating `TimeArbiter` task.
+5. Each task tick advances `t`, computes `cur`, draws particles (`drawAttackEffects`), performs hit
+   detection (`performHitLogic` → `collectHitEntities` → `HitboxUtil.secant`), and checks ground
+   collision (`swingTest`).
+6. Each new entity hit calls `hit()` which invokes `SwordEntity.hit(attacker, packet, knockback)`.
+7. When `curIteration >= attackIterations`, the task ends, the callback fires, and a chained
+   `nextAttack` (if any) is scheduled.
+
+## How a volume attack works
+
+1. `Combatant.launchAttackDef(def)` is called (from `AttackAction.fireWandDef` or directly).
+2. A shared `hitThisAttack` set is created. An `ActiveAttack` record is stored on `Combatant`.
+3. A `SimulationAttack` is built with locked-origin capture if needed and handed to
+   `VolumeSimulation.addAttack()`.
+4. The 200 Hz simulation thread evaluates `VolumeTrajectory.sample(t, worldTransform, volume)` each
+   tick, inserts the volume AABB into `SpatialGrid`, then tests all entity snapshots from
+   `EntitySnapshotMap` via `Volume.intersects()`.
+5. Hits post `CollisionEvent` to `CollisionEventBridge`. The main thread drains this queue each tick
+   and resolves damage.
+6. At `t=1.0`, the attack expires; the `onEnd` callback clears `Combatant.currentAttack`.
+
+## Extension points
+
+**Legacy system:**
+- New named curve: add an entry to `AttackType` with a `ControlVectors`.
+- New weapon category: add an entry to `WeaponAttackStyle`.
+- New shape type: implement `AttackShape`.
+- AOE / sphere: extend `Attack`, override `collectHitEntities()`.
+
+**Volume system:**
+- New attack: build an `AttackDef` with the builder and register it, or create a YAML file in
+  `plugins/sword/attacks/`.
+- New volume shape: add a `Volume` subclass, a `VolumeTrajectory` implementation, and an
+  `AttackPrimitive` enum entry. See `simulation/README.md`.
+
+---
+
+## Known issues (root package)
+
+**`SweepAttack` is dead weight today.**
+All display logic is commented out. Every field (`sweepDisplays`, `sweepTail`, `sweepBody`,
+`sweepFront`, `tpDuration`, `xScale`, `yScale`, `zScale`, `tail`, `front`, `dynamicNormal`,
+`displayRollRotation`, `iterationsBetweenDisplaySpawn`) is dead. `SweepAttack` is functionally
+identical to `Attack`. Consider removing these fields and deferring the display feature until a
+concrete implementation is ready, or deleting `SweepAttack` and using `Attack` directly.
+(`SweepAttack:20–38`, all overrides are no-ops or empty)
+
+**`UmbralBladeAttack.drawAttackEffects()` is a pass-through override.**
+It calls `super.drawAttackEffects()` and does nothing else. The override exists only to mark
+intent but adds no behaviour. It can be removed. (`UmbralBladeAttack:45–47`)
+
+**Distance check in `UmbralBladeAttack.collectHitEntities` is squared incorrectly.**
+The condition `entity.getLocation().distanceSquared(attackLocation) < 20` compares
+distance-squared against 20, which is a radius of ~4.5 blocks — not 20 blocks as documented.
+The check probably intends `< 400` (20 blocks squared). (`UmbralBladeAttack:58`)
+
+**`ActiveAttack` exists but has no unique responsibilities today.**
+`Combatant.launchAttackDef` creates an `ActiveAttack` record and stores it in `currentAttack`,
+but only reads it in the debug log in `onAttackEnd()` and to clear it. The `hitThisAttack` set
+is shared directly with `SimulationAttack` — `ActiveAttack` is redundant middle layer. Consider
+eliminating it and storing the fields directly on `Combatant`, or giving it a real role (e.g.,
+exposing `def()` for external queries like `canInterruptAttack()`).
+
+**`Attack.drawAttackEffects` hardcodes `Prefab.Particles.TEST_SWING`.**
+Particle selection is not driven by the attack type or profile. TODO #128 tracks this.
+(`Attack:386`)
+
+**`Attack.hit()` hardcodes `Prefab.Attacks.BASIC_ATTACK`.**
+The `HitValuePacket` on the `attackProfile` is never used in `Attack.hit()`. Subclasses
+(`ItemDisplayAttack`, `MobSweepAttack`) each hardcode their own packet. A cleaner design would
+pass the packet through `AttackProfile` or a constructor argument. (`Attack:416`)
+
+**`ImpalingUmbralBladeAttack` no longer exists in the codebase.**
+It is referenced in the previous README and in agent memory notes but has been removed. The previous
+README entry for it should not be considered authoritative.
