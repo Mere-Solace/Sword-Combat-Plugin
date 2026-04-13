@@ -86,16 +86,24 @@ public class AttackEditorMenu extends Menu {
             }
         );
 
+        boolean hasSelectionForDur = !session.getSelectedKeyframeIndices().isEmpty();
         SimpleItem durDecrease = new SimpleItem(
             new ItemStackBuilder(Material.RED_DYE)
                 .name(Component.text("Duration −", NamedTextColor.RED, TextDecoration.BOLD))
-                .lore(List.of(
-                    Component.text("Left: −100ms  Right: −500ms", NamedTextColor.DARK_GRAY)
-                ))
+                .lore(hasSelectionForDur
+                    ? List.of(
+                        Component.text("Left: −100ms  Right: −500ms", NamedTextColor.DARK_GRAY),
+                        Component.text("With selection: compresses selected frame timing", NamedTextColor.YELLOW))
+                    : List.of(
+                        Component.text("Left: −100ms  Right: −500ms", NamedTextColor.DARK_GRAY)))
                 .build(),
             click -> {
                 int delta = click.getClickType().isRightClick() ? 500 : 100;
-                session.setEditDurationMs(Math.max(50, session.getEditDurationMs() - delta));
+                if (!session.getSelectedKeyframeIndices().isEmpty()) {
+                    scaleSelectionTimes(session, -delta);
+                } else {
+                    session.setEditDurationMs(Math.max(50, session.getEditDurationMs() - delta));
+                }
                 new AttackEditorMenu(swordPlayer).open();
             }
         );
@@ -125,13 +133,20 @@ public class AttackEditorMenu extends Menu {
         SimpleItem durIncrease = new SimpleItem(
             new ItemStackBuilder(Material.LIME_DYE)
                 .name(Component.text("Duration +", NamedTextColor.GREEN, TextDecoration.BOLD))
-                .lore(List.of(
-                    Component.text("Left: +100ms  Right: +500ms", NamedTextColor.DARK_GRAY)
-                ))
+                .lore(hasSelectionForDur
+                    ? List.of(
+                        Component.text("Left: +100ms  Right: +500ms", NamedTextColor.DARK_GRAY),
+                        Component.text("With selection: stretches selected frame timing", NamedTextColor.YELLOW))
+                    : List.of(
+                        Component.text("Left: +100ms  Right: +500ms", NamedTextColor.DARK_GRAY)))
                 .build(),
             click -> {
                 int delta = click.getClickType().isRightClick() ? 500 : 100;
-                session.setEditDurationMs(session.getEditDurationMs() + delta);
+                if (!session.getSelectedKeyframeIndices().isEmpty()) {
+                    scaleSelectionTimes(session, delta);
+                } else {
+                    session.setEditDurationMs(session.getEditDurationMs() + delta);
+                }
                 new AttackEditorMenu(swordPlayer).open();
             }
         );
@@ -408,7 +423,32 @@ public class AttackEditorMenu extends Menu {
                 VolumeKeyframe kf = kfs.get(idx);
                 VolumeShape[] shapes = VolumeShape.values();
                 VolumeShape next = shapes[(kf.shape().ordinal() + 1) % shapes.length];
-                kfs.set(idx, new VolumeKeyframe(kf.t(), kf.localPosition(), kf.halfExtents(), kf.rotation(), next, kf.effect()));
+                kfs.set(idx, new VolumeKeyframe(kf.t(), kf.localPosition(), kf.halfExtents(), kf.rotation(), next, kf.effect(), kf.jump()));
+                new AttackEditorMenu(swordPlayer).open();
+            }
+        );
+
+        // ── Jump toggle ───────────────────────────────────────────────────────
+
+        boolean jumpOn = !keyframes.isEmpty() && keyframes.get(session.getCurrentKeyframeIndex()).jump();
+        SimpleItem jumpToggle = new SimpleItem(
+            new ItemStackBuilder(jumpOn ? Material.LIGHTNING_ROD : Material.TRIPWIRE_HOOK)
+                .name(Component.text("Jump", jumpOn ? NamedTextColor.GOLD : NamedTextColor.GRAY,
+                    TextDecoration.BOLD))
+                .lore(List.of(
+                    Component.text("Toggle instant cut for this keyframe.", NamedTextColor.DARK_GRAY),
+                    Component.text("When ON, no interpolation occurs entering", NamedTextColor.DARK_GRAY),
+                    Component.text("this frame — the animation snaps.", NamedTextColor.DARK_GRAY),
+                    Component.text("Currently: ", NamedTextColor.DARK_GRAY)
+                        .append(Component.text(jumpOn ? "ON" : "OFF",
+                            jumpOn ? NamedTextColor.GREEN : NamedTextColor.RED, TextDecoration.BOLD))
+                ))
+                .build(),
+            click -> {
+                List<VolumeKeyframe> kfs = session.getEditKeyframes();
+                if (kfs.isEmpty()) return;
+                int idx = session.getCurrentKeyframeIndex();
+                kfs.set(idx, kfs.get(idx).withJump(!kfs.get(idx).jump()));
                 new AttackEditorMenu(swordPlayer).open();
             }
         );
@@ -439,7 +479,7 @@ public class AttackEditorMenu extends Menu {
                 "x x x x x x x x x",
                 "x x x x x x x x x",
                 "< > E A F V J K T",
-                "q w e r t y m n #",
+                "q w e r t y m n j",
                 "u i o p g h a b #")
             .addIngredient('#', BORDER)
             .addIngredient('>', new ForwardItem())
@@ -470,6 +510,7 @@ public class AttackEditorMenu extends Menu {
             .addIngredient('y', posZInc)
             .addIngredient('m', shiftAllXDec)
             .addIngredient('n', shiftAllXInc)
+            .addIngredient('j', jumpToggle)
             // half-extents row
             .addIngredient('u', heXDec)
             .addIngredient('i', heXInc)
@@ -645,7 +686,7 @@ public class AttackEditorMenu extends Menu {
                 case POS_Y -> he.y = Math.max(0.05f, he.y + delta);
                 case POS_Z -> he.z = Math.max(0.05f, he.z + delta);
             }
-            return new VolumeKeyframe(kf.t(), kf.localPosition(), he, kf.rotation(), kf.shape(), kf.effect());
+            return new VolumeKeyframe(kf.t(), kf.localPosition(), he, kf.rotation(), kf.shape(), kf.effect(), kf.jump());
         } else {
             Vector3f pos = new Vector3f(kf.localPosition());
             switch (axis) {
@@ -653,7 +694,7 @@ public class AttackEditorMenu extends Menu {
                 case POS_Y -> pos.y += delta;
                 case POS_Z -> pos.z += delta;
             }
-            return new VolumeKeyframe(kf.t(), pos, kf.halfExtents(), kf.rotation(), kf.shape(), kf.effect());
+            return new VolumeKeyframe(kf.t(), pos, kf.halfExtents(), kf.rotation(), kf.shape(), kf.effect(), kf.jump());
         }
     }
 
@@ -670,7 +711,7 @@ public class AttackEditorMenu extends Menu {
     private static void insertFrameAfterSelected(AttackDevSession session) {
         List<VolumeKeyframe> kfs = session.getEditKeyframes();
         if (kfs.isEmpty()) {
-            kfs.add(new VolumeKeyframe(0f, new Vector3f(0f, 1f, 1f), new Vector3f(0.5f, 0.5f, 0.5f), new Quaternionf(), VolumeShape.SPHERE, null));
+            kfs.add(new VolumeKeyframe(0f, new Vector3f(0f, 1f, 1f), new Vector3f(0.5f, 0.5f, 0.5f), new Quaternionf(), VolumeShape.SPHERE, null, false));
             session.setCurrentKeyframeIndex(0);
             return;
         }
@@ -685,14 +726,14 @@ public class AttackEditorMenu extends Menu {
             Vector3f pos = new Vector3f(cur.localPosition()).lerp(next.localPosition(), 0.5f);
             Vector3f he = new Vector3f(cur.halfExtents()).lerp(next.halfExtents(), 0.5f);
             Quaternionf rot = new Quaternionf(cur.rotation()).slerp(next.rotation(), 0.5f);
-            newFrame = new VolumeKeyframe(t, pos, he, rot, cur.shape(), null);
+            newFrame = new VolumeKeyframe(t, pos, he, rot, cur.shape(), null, false);
         } else {
             float t = Math.min(1.0f, cur.t() + 0.1f);
             newFrame = new VolumeKeyframe(t,
                 new Vector3f(cur.localPosition()),
                 new Vector3f(cur.halfExtents()),
                 new Quaternionf(cur.rotation()),
-                cur.shape(), null);
+                cur.shape(), null, false);
         }
 
         kfs.add(idx + 1, newFrame);
@@ -713,7 +754,7 @@ public class AttackEditorMenu extends Menu {
             VolumeKeyframe kf = kfs.get(i);
             Vector3f pos = new Vector3f(kf.localPosition());
             pos.x += delta;
-            kfs.set(i, new VolumeKeyframe(kf.t(), pos, kf.halfExtents(), kf.rotation(), kf.shape(), kf.effect()));
+            kfs.set(i, new VolumeKeyframe(kf.t(), pos, kf.halfExtents(), kf.rotation(), kf.shape(), kf.effect(), kf.jump()));
         }
     }
 
@@ -729,7 +770,7 @@ public class AttackEditorMenu extends Menu {
             VolumeKeyframe kf = kfs.get(i);
             Vector3f pos = new Vector3f(kf.localPosition());
             pos.y += delta;
-            kfs.set(i, new VolumeKeyframe(kf.t(), pos, kf.halfExtents(), kf.rotation(), kf.shape(), kf.effect()));
+            kfs.set(i, new VolumeKeyframe(kf.t(), pos, kf.halfExtents(), kf.rotation(), kf.shape(), kf.effect(), kf.jump()));
         }
     }
 
@@ -745,7 +786,34 @@ public class AttackEditorMenu extends Menu {
             VolumeKeyframe kf = kfs.get(i);
             Vector3f pos = new Vector3f(kf.localPosition());
             pos.z += delta;
-            kfs.set(i, new VolumeKeyframe(kf.t(), pos, kf.halfExtents(), kf.rotation(), kf.shape(), kf.effect()));
+            kfs.set(i, new VolumeKeyframe(kf.t(), pos, kf.halfExtents(), kf.rotation(), kf.shape(), kf.effect(), kf.jump()));
+        }
+    }
+
+    // ── Scale selection times ─────────────────────────────────────────────────
+
+    /**
+     * Stretches or compresses the normalized {@code t} values of the selected keyframes
+     * around their collective midpoint by {@code deltaMs} milliseconds, leaving the total
+     * attack duration and all unselected keyframes untouched.
+     *
+     * @param session the active editing session
+     * @param deltaMs positive to stretch, negative to compress (in milliseconds)
+     */
+    private static void scaleSelectionTimes(AttackDevSession session, int deltaMs) {
+        List<VolumeKeyframe> kfs = session.getEditKeyframes();
+        Set<Integer> sel = session.getSelectedKeyframeIndices();
+        float durationMs = session.getEditDurationMs();
+        float minT = (float) sel.stream().mapToDouble(i -> kfs.get(i).t()).min().orElse(0);
+        float maxT = (float) sel.stream().mapToDouble(i -> kfs.get(i).t()).max().orElse(1);
+        float centerT = (minT + maxT) / 2f;
+        float spanMs = (maxT - minT) * durationMs;
+        float newSpanMs = Math.max(50f, spanMs + deltaMs);
+        float scale = spanMs > 1e-4f ? newSpanMs / spanMs : 1f;
+        for (int idx : sel) {
+            VolumeKeyframe kf = kfs.get(idx);
+            float newT = Math.max(0f, Math.min(1f, centerT + (kf.t() - centerT) * scale));
+            kfs.set(idx, kf.withT(newT));
         }
     }
 

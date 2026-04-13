@@ -61,6 +61,14 @@ public abstract class Combatant extends SwordEntity {
     private BukkitTask abilityCastTask = null;
 
     private ActiveAttack currentAttack = null;
+    /**
+     * -- GETTER --
+     *  Returns
+     *  if an
+     * -driven attack is currently running.
+     *
+     * @return {@code true} while an attack is active
+     */
     private boolean isAttacking = false;
 
     private int airDashesPerformed;
@@ -605,25 +613,6 @@ public abstract class Combatant extends SwordEntity {
     public boolean canPerformShadowBlink() {
         return canPerformAction() &&
             (getUmbralBlade().inState(LodgedState.class));
-    }
-
-    /**
-     * Returns the currently active {@link ActiveAttack}, or {@code null} if no
-     * {@link AttackDef}-driven attack is in progress.
-     *
-     * @return current active attack, or {@code null}
-     */
-    public ActiveAttack getCurrentAttack() {
-        return currentAttack;
-    }
-
-    /**
-     * Returns {@code true} if an {@link AttackDef}-driven attack is currently running.
-     *
-     * @return {@code true} while an attack is active
-     */
-    public boolean isAttacking() {
-        return isAttacking;
     }
 
     /**

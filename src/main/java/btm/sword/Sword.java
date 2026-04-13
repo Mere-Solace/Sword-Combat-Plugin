@@ -129,8 +129,8 @@ public final class Sword extends JavaPlugin {
             .onHit(new HitValuePacket(
                 () -> 0f, () -> 10, () -> 2, () -> 0f, () -> 0f))
             .keyframes(List.of(
-                new VolumeKeyframe(0f, new Vector3f(0f, 1f, 1f), new Vector3f(0.5f, 0.5f, 0.5f), new Quaternionf(), VolumeShape.SPHERE, null),
-                new VolumeKeyframe(1f, new Vector3f(0f, 1f, 2f), new Vector3f(0.5f, 0.5f, 0.5f), new Quaternionf(), VolumeShape.SPHERE, null)
+                new VolumeKeyframe(0f, new Vector3f(0f, 1f, 1f), new Vector3f(0.5f, 0.5f, 0.5f), new Quaternionf(), VolumeShape.SPHERE, null, false),
+                new VolumeKeyframe(1f, new Vector3f(0f, 1f, 2f), new Vector3f(0.5f, 0.5f, 0.5f), new Quaternionf(), VolumeShape.SPHERE, null, false)
             ))
             .build());
 

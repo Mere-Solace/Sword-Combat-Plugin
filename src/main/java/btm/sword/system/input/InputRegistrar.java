@@ -130,6 +130,16 @@ public final class InputRegistrar {
             new InputExecutionTree.ActionContextPair(
                 () -> InputAction.builder()
                     .name("Block")
+                    .action(SweepRecordingAction::holdingRight)
+                    .cooldown(executor -> 0)
+                    .canCast(c -> true)
+                    .displayDisabled(false)
+                    .resetIfCannotPerform(false)
+                    .build(),
+                sp -> sp.heldItemHasKey(KeyRegistry.TEST_VOLUME_ATTACK_KEY)),
+            new InputExecutionTree.ActionContextPair(
+                () -> InputAction.builder()
+                    .name("Block")
                     .action(c -> BlockAction.startBlock((SwordPlayer) c))
                     .cooldown(executor -> 0)
                     .canCast(c -> true)

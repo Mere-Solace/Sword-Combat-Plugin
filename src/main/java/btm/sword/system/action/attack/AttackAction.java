@@ -9,7 +9,6 @@ import btm.sword.config.Config;
 import btm.sword.system.action.SwordAction;
 import btm.sword.system.attack.SweepAttack;
 import btm.sword.system.attack.def.AttackDef;
-import btm.sword.system.attack.def.AttackRegistry;
 import btm.sword.system.attack.dev.AttackDevSession;
 import btm.sword.system.attack.dev.DevMode;
 import btm.sword.system.attack.dev.VolumeEditorMode;
@@ -66,7 +65,11 @@ public class AttackAction extends SwordAction {
                     return;
                 }
             }
-            fireWandDef(executor, AttackRegistry.get("test_volume_attack"));
+            if (executor instanceof SwordPlayer sp2) {
+                sp2.message(net.kyori.adventure.text.Component.text(
+                    "[Dev] No attack loaded — open the browser and select one.",
+                    net.kyori.adventure.text.format.NamedTextColor.YELLOW));
+            }
             return;
         }
 

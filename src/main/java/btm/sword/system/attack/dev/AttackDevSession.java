@@ -94,11 +94,21 @@ public final class AttackDevSession {
     // ── Editing state ─────────────────────────────────────────────────────────
     /** Mutable list of OBB keyframes being edited. Directly mutated by the editor menu. */
     private List<VolumeKeyframe> editKeyframes = new ArrayList<>();
-    /** Attack duration in milliseconds for the current edit session. */
+    /** Attack duration in milliseconds for the current edit session.
+     * -- SETTER --
+     *  Updates the attack duration for the current edit session.
+     *
+     */
+    @Setter
     private int editDurationMs = 600;
     /** Hit-value packet for the current edit session. Carried over from the loaded definition. */
     private HitValuePacket editHitValue = null;
-    /** Index of the currently selected keyframe in {@link #editKeyframes}. */
+    /** Index of the currently selected keyframe in {@link #editKeyframes}.
+     * -- SETTER --
+     *  Sets the currently selected keyframe index. Clamped to valid range by callers.
+     *
+     */
+    @Setter
     private int currentKeyframeIndex = 0;
     /**
      * Secondary selection set used for multi-keyframe operations.
@@ -196,7 +206,7 @@ public final class AttackDevSession {
         this.mode = DevMode.RECORDING;
 
         // Capture position lock and reference frame at recording start
-        this.lockedOrigin = player.getLocation().clone();
+        this.lockedOrigin = player.getLocation().clone().setDirection(Config.Direction.north());
         BoundingBox bb = player.getBoundingBox();
         this.recordingRefOrigin = new Vector3f(
             (float) bb.getCenterX(), (float) bb.getCenterY(), (float) bb.getCenterZ());
@@ -268,15 +278,6 @@ public final class AttackDevSession {
     }
 
     /**
-     * Sets the currently selected keyframe index. Clamped to valid range by callers.
-     *
-     * @param index the new selected index
-     */
-    public void setCurrentKeyframeIndex(int index) {
-        this.currentKeyframeIndex = index;
-    }
-
-    /**
      * Clears the multi-selection set, reverting to single-keyframe selection mode.
      * Call this on a normal (non-shift) click or after any operation that invalidates
      * the current range.
@@ -296,15 +297,6 @@ public final class AttackDevSession {
         this.editKeyframes = new ArrayList<>(keyframes);
         this.selectedKeyframeIndices.clear();
         this.currentKeyframeIndex = 0;
-    }
-
-    /**
-     * Updates the attack duration for the current edit session.
-     *
-     * @param durationMs new duration in milliseconds; must be &gt; 0
-     */
-    public void setEditDurationMs(int durationMs) {
-        this.editDurationMs = durationMs;
     }
 
     /**

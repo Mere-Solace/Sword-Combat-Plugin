@@ -1,5 +1,6 @@
 package btm.sword.system.inventory.menu.dev;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -7,7 +8,9 @@ import java.util.List;
 import org.bukkit.Material;
 import org.bukkit.event.inventory.ClickType;
 
+import btm.sword.Sword;
 import btm.sword.system.attack.def.AttackDef;
+import btm.sword.system.attack.def.AttackRegistry;
 import btm.sword.system.attack.dev.AnimationMode;
 import btm.sword.system.attack.dev.AttackDevSession;
 import btm.sword.system.attack.dev.DevMode;
@@ -51,6 +54,9 @@ public class AttackBrowserMenu extends Menu {
 
     @Override
     public void open() {
+        // Sync registry with the attacks directory so the list is always up-to-date
+        AttackRegistry.syncDirectory(new File(Sword.getInstance().getDataFolder(), "attacks"));
+
         // Stop any active viewing session so the player can re-open the browser cleanly
         AttackDevSession existing = AttackDevSession.get(swordPlayer.player().getUniqueId());
         if (existing != null && existing.getMode() == DevMode.VIEWING) {
@@ -109,7 +115,7 @@ public class AttackBrowserMenu extends Menu {
     }
 
     private List<Item> buildAttackItems() {
-        List<AttackDef> sorted = btm.sword.system.attack.def.AttackRegistry.getAll().stream()
+        List<AttackDef> sorted = AttackRegistry.getAll().stream()
             .sorted(Comparator.comparing(AttackDef::getId))
             .toList();
 

@@ -27,6 +27,9 @@ import org.joml.Vector3f;
  * @param shape         the volume shape — determines rendering and collision geometry
  * @param effect        optional particle/sound effects fired when {@code t} is crossed;
  *                      {@code null} for no effects
+ * @param jump          when {@code true}, the trajectory holds at the previous keyframe's
+ *                      value until {@code t} is crossed — no interpolation occurs entering
+ *                      this keyframe
  */
 public record VolumeKeyframe(
     float t,
@@ -34,7 +37,8 @@ public record VolumeKeyframe(
     Vector3f halfExtents,
     Quaternionf rotation,
     VolumeShape shape,
-    @Nullable KeyframeEffect effect
+    @Nullable KeyframeEffect effect,
+    boolean jump
 ) {
 
     /**
@@ -44,6 +48,26 @@ public record VolumeKeyframe(
      * @return a new {@link VolumeKeyframe} identical to this one except for the effect
      */
     public VolumeKeyframe withEffect(@Nullable KeyframeEffect newEffect) {
-        return new VolumeKeyframe(t, localPosition, halfExtents, rotation, shape, newEffect);
+        return new VolumeKeyframe(t, localPosition, halfExtents, rotation, shape, newEffect, jump);
+    }
+
+    /**
+     * Returns a copy of this keyframe with the {@code jump} flag set to {@code j}.
+     *
+     * @param j the new jump value
+     * @return a new {@link VolumeKeyframe} identical to this one except for the jump flag
+     */
+    public VolumeKeyframe withJump(boolean j) {
+        return new VolumeKeyframe(t, localPosition, halfExtents, rotation, shape, effect, j);
+    }
+
+    /**
+     * Returns a copy of this keyframe with the normalized time set to {@code newT}.
+     *
+     * @param newT the new normalized time
+     * @return a new {@link VolumeKeyframe} identical to this one except for the time value
+     */
+    public VolumeKeyframe withT(float newT) {
+        return new VolumeKeyframe(newT, localPosition, halfExtents, rotation, shape, effect, jump);
     }
 }

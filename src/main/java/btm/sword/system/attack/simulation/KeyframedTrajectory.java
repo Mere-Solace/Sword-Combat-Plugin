@@ -79,6 +79,12 @@ public final class KeyframedTrajectory implements VolumeTrajectory {
         VolumeKeyframe kc = keyframes.get(i + 1);
         VolumeKeyframe kd = keyframes.get(Math.min(n - 1, i + 2));
 
+        // Jump: hold at kb until kc's t is crossed — no interpolation into this keyframe
+        if (kc.jump()) {
+            writeKeyframe(kb, worldTransform, obbOut);
+            return;
+        }
+
         float span = kc.t() - kb.t();
         float localT = span > 1e-6f ? (t - kb.t()) / span : 0f;
 

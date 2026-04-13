@@ -3,6 +3,8 @@ package btm.sword.system.attack.def;
 import java.io.File;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.bukkit.configuration.ConfigurationSection;
@@ -86,6 +88,33 @@ public final class AttackRegistry {
         for (File file : files) {
             loadAll(file);
         }
+    }
+
+    /**
+     * Synchronises the registry with the given directory.
+     *
+     * <p>Any entry currently in the registry whose id is not present in any {@code .yml} file
+     * inside {@code dir} is removed. All files are then (re-)loaded, adding or replacing entries.
+     * The net result is that the registry exactly mirrors what is on disk.</p>
+     *
+     * @param dir the directory to sync against (must exist and be a directory)
+     */
+    public static void syncDirectory(File dir) {
+        Set<String> fileIds = new HashSet<>();
+        if (dir.isDirectory()) {
+            File[] files = dir.listFiles((d, name) -> name.endsWith(".yml"));
+            if (files != null) {
+                for (File f : files) {
+                    YamlConfiguration yaml = YamlConfiguration.loadConfiguration(f);
+                    ConfigurationSection attacks = yaml.getConfigurationSection("attacks");
+                    if (attacks != null) {
+                        fileIds.addAll(attacks.getKeys(false));
+                    }
+                }
+            }
+        }
+        REGISTRY.keySet().removeIf(id -> !fileIds.contains(id));
+        loadDirectory(dir);
     }
 
     /**

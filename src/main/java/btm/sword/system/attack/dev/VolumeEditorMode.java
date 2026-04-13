@@ -11,6 +11,7 @@ import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.World;
+import org.bukkit.entity.Display;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.TextDisplay;
 import org.bukkit.util.BoundingBox;
@@ -306,7 +307,6 @@ public final class VolumeEditorMode {
     private static void spawnLabels(AttackDevSession session) {
         Player player = session.getPlayer();
         World world = player.getWorld();
-        if (world == null) return;
 
         List<VolumeKeyframe> keyframes = session.getEditKeyframes();
         List<TextDisplay> labels = new ArrayList<>(keyframes.size());
@@ -317,6 +317,7 @@ public final class VolumeEditorMode {
             TextDisplay td = world.spawn(spawnLoc, TextDisplay.class, display -> {
                 display.text(Component.text("#" + idx, NamedTextColor.GRAY, TextDecoration.BOLD));
                 display.setSeeThrough(true);
+                display.setBillboard(Display.Billboard.CENTER);
             });
             labels.add(td);
         }
@@ -345,8 +346,8 @@ public final class VolumeEditorMode {
 
         int cursor = session.getCurrentKeyframeIndex();
         java.util.LinkedHashSet<Integer> sel = session.getSelectedKeyframeIndices();
-        boolean hasSelection = !sel.isEmpty();
 
+        int last = getLastInSelection(session);
         for (int i = 0; i < keyframes.size(); i++) {
             TextDisplay td = labels.get(i);
             if (!td.isValid()) continue;
@@ -357,21 +358,18 @@ public final class VolumeEditorMode {
             float labelY = worldCenter.y + kf.halfExtents().y + 0.3f;
             td.teleport(new Location(loc.getWorld(), worldCenter.x, labelY, worldCenter.z));
 
-            boolean inSel = sel.contains(i);
             boolean isPrimary = (i == cursor);
+            boolean isLast = (i == last);
 
             // When a selection is active: only show label on first and last selected index
-            boolean show;
-            if (hasSelection) {
-                show = isPrimary || (inSel && isFirstOrLastInSelection(i, session));
-            } else {
-                show = true;
-            }
+            boolean show = isPrimary || isLast;
 
             td.setVisibleByDefault(show);
+            if (show) {
+                player.showEntity(Sword.getInstance(), td);
+            }
 
-            NamedTextColor color = isPrimary ? NamedTextColor.GOLD
-                : inSel ? NamedTextColor.YELLOW
+            NamedTextColor color = show ? NamedTextColor.GOLD
                 : NamedTextColor.GRAY;
             td.text(Component.text("#" + i, color, TextDecoration.BOLD));
         }
@@ -384,12 +382,9 @@ public final class VolumeEditorMode {
         }
     }
 
-    private static boolean isFirstOrLastInSelection(int index, AttackDevSession session) {
-        java.util.LinkedHashSet<Integer> sel = session.getSelectedKeyframeIndices();
-        if (sel.isEmpty()) return false;
-        int first = sel.stream().mapToInt(Integer::intValue).min().orElse(-1);
-        int last = sel.stream().mapToInt(Integer::intValue).max().orElse(-1);
-        return index == first || index == last;
+    private static int getLastInSelection(AttackDevSession session) {
+        return session.getSelectedKeyframeIndices().stream()
+            .mapToInt(Integer::intValue).max().orElse(-1);
     }
 
     // ── OBB wireframe renderer ────────────────────────────────────────────────

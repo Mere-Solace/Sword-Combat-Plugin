@@ -262,7 +262,8 @@ public class SweepGeneratorMenu extends Menu {
                 new Vector3f(he, he, zHalfExt),
                 new Quaternionf(),
                 VolumeShape.OBB,
-                null
+                null,
+                false
             ));
             sizeMult *= multScale;
         }

@@ -230,7 +230,7 @@ public abstract class SwordEntity {
 
 
         if (isImpaled()) {
-            self.addPotionEffect(IMPALE_SLOW);
+            addPotionEffect(IMPALE_SLOW);
         }
 
         if (statusDisplay != null && isStatusActive()) {
@@ -242,6 +242,10 @@ public abstract class SwordEntity {
         }
 
         EntitySnapshotMap.INSTANCE.snapshot(uuid, self.getBoundingBox(), self.getYaw(), self.getPitch());
+    }
+
+    public void addPotionEffect(PotionEffect effect) {
+        self.addPotionEffect(IMPALE_SLOW);
     }
 
     protected void updateStatus() {

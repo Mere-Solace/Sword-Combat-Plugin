@@ -25,6 +25,7 @@ import btm.sword.system.entity.impl.Combatant;
 import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.inventory.menu.dev.AttackEditorMenu;
 import btm.sword.utility.Debug;
+import btm.sword.utility.Prefab;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 
@@ -66,13 +67,13 @@ public final class SweepRecordingAction {
     /** Length of the north-arrow rendered at the recording origin, in blocks. */
     private static final float ARROW_LENGTH = 1.5f;
 
-    /** Dust colour for the origin crosshair (white). */
+    /** Dust colour for the origin crosshair (red). */
     private static final Particle.DustOptions ORIGIN_DUST =
-        new Particle.DustOptions(Color.fromRGB(255, 255, 255), 0.3f);
+        new Particle.DustOptions(Color.fromRGB(220, 30, 30), 0.7f);
 
-    /** Dust colour for the forward reference arrow (gold). */
+    /** Dust colour for the north-reference arrow (red). */
     private static final Particle.DustOptions ARROW_DUST =
-        new Particle.DustOptions(Color.fromRGB(255, 200, 0), 0.25f);
+        new Particle.DustOptions(Color.fromRGB(220, 30, 30), 0.7f);
 
     private SweepRecordingAction() {}
 
@@ -170,21 +171,19 @@ public final class SweepRecordingAction {
         long lastMs = samples.getLast().capturedAtMs();
         long spanMs = lastMs - firstMs;
 
-        // World→local conversion using the reference frame captured at recording start
+        // Reference frame is always world-aligned (+Z = forward, matching the arrow).
+        // No yaw rotation applied — local space == world-offset space.
         Vector3f refOrigin = session.getRecordingRefOrigin();
-        float refYawRad = (float) Math.toRadians(session.getRecordingRefYaw());
-        Quaternionf toLocal = new Quaternionf().rotateY(refYawRad);
 
         List<VolumeKeyframe> keyframes = new ArrayList<>(samples.size());
         Vector3f defaultHalfExtents = new Vector3f(0.4f, 0.4f, 0.4f);
         for (RecordedSample s : samples) {
             float t = spanMs == 0 ? 0f : (float) (s.capturedAtMs() - firstMs) / spanMs;
-            Vector3f offset = new Vector3f(
+            Vector3f localPos = new Vector3f(
                 s.worldPosition().x - refOrigin.x,
                 s.worldPosition().y - refOrigin.y,
                 s.worldPosition().z - refOrigin.z);
-            Vector3f localPos = toLocal.transform(offset, new Vector3f());
-            keyframes.add(new VolumeKeyframe(t, localPos, defaultHalfExtents, new Quaternionf(), VolumeShape.SPHERE, null));
+            keyframes.add(new VolumeKeyframe(t, localPos, defaultHalfExtents, new Quaternionf(), VolumeShape.SPHERE, null, false));
         }
 
         // Placeholder hit values — intended to be edited in the saved YAML
@@ -220,13 +219,13 @@ public final class SweepRecordingAction {
      * @return the first available name
      */
     public static String nextAvailableName(String base, File dir) {
-        if (!AttackRegistry.contains(base) && !new File(dir, base + ".yml").exists()) {
+        if (!new File(dir, base + ".yml").exists()) {
             return base;
         }
         int n = 1;
         while (true) {
             String candidate = base + "_" + n;
-            if (!AttackRegistry.contains(candidate) && !new File(dir, candidate + ".yml").exists()) {
+            if (!new File(dir, candidate + ".yml").exists()) {
                 return candidate;
             }
             n++;
@@ -267,8 +266,8 @@ public final class SweepRecordingAction {
     }
 
     /**
-     * Renders a crosshair at the locked origin and a forward-pointing arrow showing the
-     * recording's reference direction. Visible throughout the recording session.
+     * Renders a crosshair at the locked origin and a fixed north-pointing arrow (-Z axis).
+     * Visible throughout the recording session.
      */
     private static void renderOriginArrow(World world, AttackDevSession session) {
         Location origin = session.getLockedOrigin();
@@ -284,14 +283,10 @@ public final class SweepRecordingAction {
         world.spawnParticle(Particle.DUST, ox, oy, oz + 0.3f, 1, 0, 0, 0, 0, ORIGIN_DUST);
         world.spawnParticle(Particle.DUST, ox, oy, oz - 0.3f, 1, 0, 0, 0, 0, ORIGIN_DUST);
 
-        // Forward arrow along recording reference direction (rotateY(-yawRad) * (0,0,1))
-        float yaw = session.getRecordingRefYaw();
-        float yawRad = (float) Math.toRadians(yaw);
-        float fwdX = -(float) Math.sin(yawRad);
-        float fwdZ = (float) Math.cos(yawRad);
+        // North arrow: fixed world-space north direction (+Z in Minecraft)
         for (float t = 0.2f; t <= ARROW_LENGTH; t += 0.2f) {
             world.spawnParticle(Particle.DUST,
-                ox + fwdX * t, oy, oz + fwdZ * t,
+                ox, oy, oz - t,
                 1, 0, 0, 0, 0, ARROW_DUST);
         }
     }
@@ -307,5 +302,24 @@ public final class SweepRecordingAction {
             (float) (eye.getX() + dir.getX() * TIP_DISTANCE),
             (float) (eye.getY() + dir.getY() * TIP_DISTANCE),
             (float) (eye.getZ() + dir.getZ() * TIP_DISTANCE));
+    }
+
+    /**
+     * Applies a dash-speed potion effect to the combatant for as long as they continue
+     * blocking (right-click holding). Stops automatically when blocking ends.
+     *
+     * @param c the combatant holding right-click
+     */
+    public static void holdingRight(Combatant c) {
+        TimeArbiter.runTimeIndependentBukkitTaskOnTimer(
+            null,
+            () -> Prefab.PotionEffects.DASH_SPEED.apply(c),
+            50, 200,
+            SweepRecordingAction.class, "holdingRight",
+            new PredicateRunnablePair(
+                () -> c instanceof SwordPlayer sp && !sp.player().isBlocking(),
+                () -> Debug.attackVolume("Stopped Recording")
+            )
+        );
     }
 }

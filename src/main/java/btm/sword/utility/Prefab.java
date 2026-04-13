@@ -285,7 +285,7 @@ public final class Prefab {
         );
     }
 
-    /** Pre-built {@link btm.sword.utility.PotionEffectWrapper} instances for common status effects. */
+    /** Pre-built {@link PotionEffectWrapper} instances for common status effects. */
     public static class PotionEffects {
         public static final PotionEffectWrapper DASH_SPEED =
             new PotionEffectWrapper(PotionEffectType.SPEED, Config.Movement.SPEED_DURATION, Config.Movement.SPEED_AMPLIFIER);

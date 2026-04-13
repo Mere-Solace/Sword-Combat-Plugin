@@ -122,7 +122,8 @@ public final class AttackDefSerializer {
             if (map.get("effect") instanceof Map<?, ?> effectMap) {
                 effect = loadKeyframeEffect(effectMap);
             }
-            keyframes.add(new VolumeKeyframe(t, position, halfExtents, rotation, shape, effect));
+            boolean jump = Boolean.TRUE.equals(map.get("jump"));
+            keyframes.add(new VolumeKeyframe(t, position, halfExtents, rotation, shape, effect, jump));
         }
         return keyframes;
     }
@@ -260,6 +261,9 @@ public final class AttackDefSerializer {
             kfMap.put("half-extents", vecMap(kf.halfExtents()));
             kfMap.put("rotation", quatMap(kf.rotation()));
             kfMap.put("shape", kf.shape().name());
+            if (kf.jump()) {
+                kfMap.put("jump", true);
+            }
             if (kf.effect() != null) {
                 kfMap.put("effect", serializeEffect(kf.effect()));
             }
