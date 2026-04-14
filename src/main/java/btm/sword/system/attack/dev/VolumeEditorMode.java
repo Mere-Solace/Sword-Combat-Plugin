@@ -3,6 +3,7 @@ package btm.sword.system.attack.dev;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -275,6 +276,7 @@ public final class VolumeEditorMode {
         List<VolumeKeyframe> keyframes = session.getEditKeyframes();
         // In VIEWING mode currentKeyframeIndex is -1; no highlight
         int selectedIdx = session.getMode() == DevMode.EDITING ? session.getCurrentKeyframeIndex() : -1;
+        Set<Integer> rangeSelection = session.getSelectedKeyframeIndices();
 
         boolean log = tickCount % 40 == 0;
         if (log) {
@@ -289,7 +291,7 @@ public final class VolumeEditorMode {
         int totalParticles = 0;
         for (int i = 0; i < keyframes.size(); i++) {
             VolumeKeyframe kf = keyframes.get(i);
-            boolean isSelected = (i == selectedIdx);
+            boolean isSelected = (i == selectedIdx) || rangeSelection.contains(i);
 
             // Grey keyframes render at a reduced rate to keep particle count low
             if (!isSelected && tickCount % GREY_RENDER_PERIOD != 0) continue;
