@@ -268,8 +268,7 @@ public final class VolumeEditorMode {
         }
 
         BoundingBox bb = session.getPlayer().getBoundingBox();
-        Matrix4f worldTransform = buildWorldTransform(
-            bb, loc.getYaw(), loc.getPitch(), session.isEditOrientWithPitch());
+        Matrix4f worldTransform = buildWorldTransform(bb, loc.getYaw(), loc.getPitch(), false);
 
         Quaternionf worldBaseRot = worldTransform.getNormalizedRotation(new Quaternionf());
 
@@ -387,8 +386,7 @@ public final class VolumeEditorMode {
 
         Location loc = player.getLocation();
         BoundingBox bb = player.getBoundingBox();
-        Matrix4f worldTransform = buildWorldTransform(
-            bb, loc.getYaw(), loc.getPitch(), session.isEditOrientWithPitch());
+        Matrix4f worldTransform = buildWorldTransform(bb, loc.getYaw(), loc.getPitch(), false);
 
         int cursor = session.getCurrentKeyframeIndex();
         java.util.LinkedHashSet<Integer> sel = session.getSelectedKeyframeIndices();
