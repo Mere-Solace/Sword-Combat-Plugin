@@ -340,6 +340,13 @@ debug:
   visualization_show_hitboxes: false
   visualization_show_raytraces: false
 
+  wireframe_selected_color: "#FFAA00"
+  wireframe_selected_size: 0.7
+  wireframe_default_color: "#A0A0A0"
+  wireframe_default_size: 0.2
+  wireframe_live_color: "#64DCFF"
+  wireframe_live_size: 1.0
+
 
 grab:
   

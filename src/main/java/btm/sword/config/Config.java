@@ -18,6 +18,7 @@ import org.jetbrains.annotations.Nullable;
 import btm.sword.system.action.attack.AttackAction;
 import btm.sword.system.action.movement.MovementAction;
 import btm.sword.system.action.throwing.types.ThrownItem;
+import btm.sword.system.attack.dev.VolumeEditorMode;
 import btm.sword.system.attack.style.AttackType;
 import btm.sword.utility.sound.SwordSoundType;
 import net.kyori.adventure.text.format.TextColor;
@@ -2905,6 +2906,61 @@ public final class Config {
             VISUALIZATION_SHOW_RAYTRACES, Boolean.class,
             v -> VISUALIZATION_SHOW_RAYTRACES = v,
             ConfigurationSection::getBoolean); }
+
+        // Wireframe particle colors and sizes for the attack volume editor/playback visualization
+        /** Particle color for the currently selected keyframe wireframe (orange by default). */
+        public static Color WIREFRAME_SELECTED_COLOR = Color.fromRGB(255, 170, 0);
+        static { register(
+            "debug.wireframe_selected_color",
+            WIREFRAME_SELECTED_COLOR, Color.class,
+            v -> { WIREFRAME_SELECTED_COLOR = v;
+                VolumeEditorMode.rebuildDust(); },
+            Config::loadColor); }
+
+        /** Dust particle size for the selected keyframe wireframe. */
+        public static double WIREFRAME_SELECTED_SIZE = 0.7;
+        static { register(
+            "debug.wireframe_selected_size",
+            WIREFRAME_SELECTED_SIZE, Double.class,
+            v -> { WIREFRAME_SELECTED_SIZE = v;
+                VolumeEditorMode.rebuildDust(); },
+            ConfigurationSection::getDouble); }
+
+        /** Particle color for unselected keyframe wireframes (gray by default). */
+        public static Color WIREFRAME_DEFAULT_COLOR = Color.fromRGB(160, 160, 160);
+        static { register(
+            "debug.wireframe_default_color",
+            WIREFRAME_DEFAULT_COLOR, Color.class,
+            v -> { WIREFRAME_DEFAULT_COLOR = v;
+                VolumeEditorMode.rebuildDust(); },
+            Config::loadColor); }
+
+        /** Dust particle size for unselected keyframe wireframes. */
+        public static double WIREFRAME_DEFAULT_SIZE = 0.2;
+        static { register(
+            "debug.wireframe_default_size",
+            WIREFRAME_DEFAULT_SIZE, Double.class,
+            v -> { WIREFRAME_DEFAULT_SIZE = v;
+                VolumeEditorMode.rebuildDust(); },
+            ConfigurationSection::getDouble); }
+
+        /** Particle color for the live simulation playback wireframe (cyan by default). */
+        public static Color WIREFRAME_LIVE_COLOR = Color.fromRGB(100, 220, 255);
+        static { register(
+            "debug.wireframe_live_color",
+            WIREFRAME_LIVE_COLOR, Color.class,
+            v -> { WIREFRAME_LIVE_COLOR = v;
+                VolumeEditorMode.rebuildDust(); },
+            Config::loadColor); }
+
+        /** Dust particle size for the live simulation playback wireframe. */
+        public static double WIREFRAME_LIVE_SIZE = 1.0;
+        static { register(
+            "debug.wireframe_live_size",
+            WIREFRAME_LIVE_SIZE, Double.class,
+            v -> { WIREFRAME_LIVE_SIZE = v;
+                VolumeEditorMode.rebuildDust(); },
+            ConfigurationSection::getDouble); }
 
         /**
          * When {@code true}, {@link btm.sword.system.playerdata.PlayerDataManager#register} skips

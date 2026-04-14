@@ -20,6 +20,7 @@ import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 import btm.sword.Sword;
+import btm.sword.config.Config;
 import btm.sword.system.attack.simulation.KeyframedTrajectory;
 import btm.sword.system.attack.simulation.ObbVolume;
 import btm.sword.system.attack.simulation.VolumeKeyframe;
@@ -62,13 +63,30 @@ public final class VolumeEditorMode {
     /** How many ticks to skip between grey (non-selected) keyframe renders. */
     private static final int GREY_RENDER_PERIOD = 3;
 
-    private static final Particle.DustOptions DUST_SELECTED =
+    private static Particle.DustOptions DUST_SELECTED =
         new Particle.DustOptions(Color.fromRGB(255, 170, 0), 0.7f);
-    private static final Particle.DustOptions DUST_DEFAULT =
+    private static Particle.DustOptions DUST_DEFAULT =
         new Particle.DustOptions(Color.fromRGB(160, 160, 160), 0.2f);
     /** Bright cyan used for the live-playback hitbox outline. */
-    private static final Particle.DustOptions DUST_LIVE =
+    private static Particle.DustOptions DUST_LIVE =
         new Particle.DustOptions(Color.fromRGB(100, 220, 255), 1.0f);
+
+    /**
+     * Rebuilds {@link #DUST_SELECTED}, {@link #DUST_DEFAULT}, and {@link #DUST_LIVE} from the
+     * current {@link btm.sword.config.Config.Debug} wireframe color/size entries.
+     * Called by config consumers on load and hot-reload.
+     */
+    public static void rebuildDust() {
+        DUST_SELECTED = new Particle.DustOptions(
+            Config.Debug.WIREFRAME_SELECTED_COLOR,
+            (float) Config.Debug.WIREFRAME_SELECTED_SIZE);
+        DUST_DEFAULT = new Particle.DustOptions(
+            Config.Debug.WIREFRAME_DEFAULT_COLOR,
+            (float) Config.Debug.WIREFRAME_DEFAULT_SIZE);
+        DUST_LIVE = new Particle.DustOptions(
+            Config.Debug.WIREFRAME_LIVE_COLOR,
+            (float) Config.Debug.WIREFRAME_LIVE_SIZE);
+    }
 
     /** Text display entities spawned per editing session, keyed by player UUID. */
     private static final Map<UUID, List<TextDisplay>> SESSION_LABELS = new ConcurrentHashMap<>();
@@ -80,22 +98,38 @@ public final class VolumeEditorMode {
      * test attack as it plays out.
      *
      * <p>Only supports {@link KeyframedTrajectory} — silently no-ops for other trajectory
-     * types. The OBB is rendered with a bright cyan outline at each tick, following the
-     * player's current position and yaw so it matches where the hitbox actually is.</p>
+     * types. The OBB is rendered with a bright cyan outline at each tick.</p>
+     *
+     * <p>When {@code lockOriginOnFire} is {@code true}, the world transform is captured once
+     * at call time and reused every tick — matching the simulation's frozen origin behaviour.
+     * Otherwise the player's live position and yaw are sampled each tick.</p>
      *
      * <p>The loop self-cancels when the attack duration has elapsed or the player goes offline.
      * No cleanup is required by the caller.</p>
      *
-     * @param player     the player who fired the wand attack
-     * @param trajectory the attack's trajectory (must be {@link KeyframedTrajectory})
-     * @param startMs    wall-clock start time matching the {@link btm.sword.system.attack.simulation.SimulationAttack}
-     * @param durationMs total attack duration in milliseconds
+     * @param player           the player who fired the wand attack
+     * @param trajectory       the attack's trajectory (must be {@link KeyframedTrajectory})
+     * @param startMs          wall-clock start time matching the {@link btm.sword.system.attack.simulation.SimulationAttack}
+     * @param durationMs       total attack duration in milliseconds
+     * @param lockOriginOnFire when {@code true}, origin is frozen at call time instead of
+     *                         following the player each tick
+     * @param orientWithPitch  whether the world transform should include pitch rotation
      */
     public static void startPlaybackVisualization(Player player, VolumeTrajectory trajectory,
-            long startMs, long durationMs) {
+            long startMs, long durationMs, boolean lockOriginOnFire, boolean orientWithPitch) {
         if (!(trajectory instanceof KeyframedTrajectory)) return;
 
         ObbVolume buffer = new ObbVolume();
+
+        // Capture a frozen transform now if origin is locked; null means sample live each tick.
+        final Matrix4f frozenTransform;
+        if (lockOriginOnFire) {
+            Location loc = player.getLocation();
+            frozenTransform = buildWorldTransform(
+                player.getBoundingBox(), loc.getYaw(), loc.getPitch(), orientWithPitch);
+        } else {
+            frozenTransform = null;
+        }
 
         TimeArbiter.runTimeIndependentBukkitTaskOnTimer(
             () -> {
@@ -104,12 +138,21 @@ public final class VolumeEditorMode {
                 float t = Math.min(1.0f, (now - startMs) / (float) durationMs);
 
                 World world = player.getWorld();
-                Location loc = player.getLocation();
-                Matrix4f worldTransform = buildWorldTransform(
-                    player.getBoundingBox(), loc.getYaw(), loc.getPitch(), false);
+                Matrix4f worldTransform;
+                if (frozenTransform != null) {
+                    worldTransform = frozenTransform;
+                } else {
+                    Location loc = player.getLocation();
+                    worldTransform = buildWorldTransform(
+                        player.getBoundingBox(), loc.getYaw(), loc.getPitch(), orientWithPitch);
+                }
 
                 trajectory.sample(t, worldTransform, buffer);
-                renderObbWireframe(world, buffer.center, buffer.halfExtents, buffer.rotation, DUST_LIVE);
+                if (buffer.isSphere) {
+                    renderSphereWireframe(world, buffer.center, buffer.halfExtents.x, DUST_LIVE);
+                } else {
+                    renderObbWireframe(world, buffer.center, buffer.halfExtents, buffer.rotation, DUST_LIVE);
+                }
             },
             null,
             0, 50,
