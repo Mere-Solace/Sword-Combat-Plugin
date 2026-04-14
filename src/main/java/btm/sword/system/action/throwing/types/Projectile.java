@@ -118,10 +118,7 @@ public class Projectile {
      */
     public boolean tick() {
         double time = timeScalingFactor < 0 ? tick : tick * timeScalingFactor;
-        previousPosition = position.clone();
-        position = origin.clone().add(positionFunction.apply(time));
-        velocity = velocityFunction.apply(time);
-
+        updatePositions(time);
         evaluate();
         tick++;
 
@@ -131,6 +128,12 @@ public class Projectile {
         }
 
         return !grounded && !hit && !expired;
+    }
+
+    protected void updatePositions(double time) {
+        previousPosition = position.clone();
+        position = origin.clone().add(positionFunction.apply(time));
+        velocity = velocityFunction.apply(time);
     }
 
     /**

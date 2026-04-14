@@ -76,8 +76,13 @@ public final class TimeArbiter {
     /**
      * Tasks whose {@link TaskHandle#effectivePeriodMs()} is below this threshold are handled
      * by {@link HyperBucket}; tasks at or above it go into a {@link TaskHandleBucket}.
+     *
+     * <p>Set to 51 so that 50 ms (one-tick) tasks land in {@link HyperBucket} and fire exactly
+     * once per Bukkit tick. {@link TaskHandleBucket} dispatches via
+     * {@code Bukkit.getScheduler().runTask()}, which delays execution until the next tick and
+     * effectively doubles the period for tasks registered at exactly 50 ms.</p>
      */
-    static final int HYPER_THRESHOLD_MS = 50;
+    static final int HYPER_THRESHOLD_MS = 51;
 
     // ── Range ─────────────────────────────────────────────────────────────────
 
@@ -139,7 +144,7 @@ public final class TimeArbiter {
 
                 long effPeriod = handle.effectivePeriodMs();
 
-                // Migrate to TaskHandleBucket if time scale slowed this task past the hyper threshold
+                // Migrate to TaskHandleBucket if timescale slowed this task past the hyper threshold
                 if (effPeriod >= HYPER_THRESHOLD_MS) {
                     handles.remove(handle);
                     handle.nextFireTimeMs = now + effPeriod;
@@ -257,7 +262,7 @@ public final class TimeArbiter {
                     for (TaskHandle t : batch) {
                         if (t.isCancelled()) continue;
 
-                        // Migrate to HyperBucket if time scale sped this task into sub-tick territory
+                        // Migrate to HyperBucket if timescale sped this task into sub-tick territory
                         long effPeriod = t.effectivePeriodMs();
                         if (effPeriod < HYPER_THRESHOLD_MS) {
                             t.ownerBucket = null;
