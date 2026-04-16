@@ -3,8 +3,11 @@ package btm.sword.system.inventory.menu.dev;
 import java.util.List;
 import java.util.function.Consumer;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.inventory.ItemStack;
 
+import btm.sword.Sword;
 import btm.sword.system.attack.dev.AttackDevSession;
 import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.inventory.menu.Menu;
@@ -15,6 +18,7 @@ import net.kyori.adventure.text.format.TextDecoration;
 import xyz.xenondevs.invui.gui.Gui;
 import xyz.xenondevs.invui.item.Click;
 import xyz.xenondevs.invui.item.impl.SimpleItem;
+import xyz.xenondevs.invui.window.AnvilWindow;
 import xyz.xenondevs.invui.window.Window;
 
 /**
@@ -27,8 +31,8 @@ import xyz.xenondevs.invui.window.Window;
  *   <li><b>Raycast Dist</b> — maximum block-raycast range for RAYCAST placement mode.</li>
  *   <li><b>Placement Size</b> — uniform half-extent applied to each recorded keyframe.</li>
  *   <li><b>Duration</b> — attack duration written when the recording is saved.</li>
- *   <li><b>Ray Offset</b> — distance along look direction where the ray starts (negative = behind eye).</li>
- *   <li><b>Height Offset</b> — vertical shift of the eye start position for ORIGIN_RAY mode.</li>
+ *   <li><b>Ray Offset</b> — minimum distance from origin for ORIGIN_RAY mode (negative = behind eye for RAYCAST).</li>
+ *   <li><b>Height Offset</b> — vertical shift of the eye start position (legacy, kept for config).</li>
  * </ul>
  *
  * <h2>Layout (3 rows × 9)</h2>
@@ -38,6 +42,12 @@ import xyz.xenondevs.invui.window.Window;
  * Row 2: [#]  [#]  [#]  [#]  [#]  [#]  [#]  [#]  [#]
  * </pre>
  * <p>T=tipDistance, R=raycastDist, S=placementSize, D=duration, O=rayOriginOffset, H=heightOffset.</p>
+ *
+ * <h2>Controls</h2>
+ * <ul>
+ *   <li>Dec/Inc buttons: Left-click = ±small, Right-click = ±medium, Shift+Left = ±large.</li>
+ *   <li>Display item click: opens Anvil dialog for direct numeric input.</li>
+ * </ul>
  */
 public class SweepGeneratorMenu extends Menu {
 
@@ -63,75 +73,97 @@ public class SweepGeneratorMenu extends Menu {
 
         // ── Tip distance ─────────────────────────────────────────────────────
         SimpleItem tipDec = dec(click -> {
-            session.setTipDistance(clampTip(tip - 0.1f));
+            float delta = stepFloat(click, 0.1f, 0.5f, 2.0f);
+            session.setTipDistance(clampTip(tip - delta));
             open();
         });
         SimpleItem tipDisplay = paramDisplay("Tip Dist", fmt1(tip),
-            "Eye-to-tip distance for non-raycast modes (blocks).", Material.FEATHER);
+            "Eye-to-tip distance for non-raycast modes (blocks).", Material.FEATHER,
+            v -> { session.setTipDistance(clampTip(v)); open(); });
         SimpleItem tipInc = inc(click -> {
-            session.setTipDistance(clampTip(tip + 0.1f));
+            float delta = stepFloat(click, 0.1f, 0.5f, 2.0f);
+            session.setTipDistance(clampTip(tip + delta));
             open();
         });
 
         // ── Raycast distance ─────────────────────────────────────────────────
         SimpleItem rayDec = dec(click -> {
-            session.setRaycastMaxDistance(clampRay(ray - 0.5f));
+            float delta = stepFloat(click, 0.5f, 2.0f, 5.0f);
+            session.setRaycastMaxDistance(clampRay(ray - delta));
             open();
         });
         SimpleItem rayDisplay = paramDisplay("Raycast Dist", fmt1(ray),
-            "Maximum block raycast range in RAYCAST mode (blocks).", Material.SPYGLASS);
+            "Maximum block raycast range in RAYCAST mode (blocks).", Material.SPYGLASS,
+            v -> { session.setRaycastMaxDistance(clampRay(v)); open(); });
         SimpleItem rayInc = inc(click -> {
-            session.setRaycastMaxDistance(clampRay(ray + 0.5f));
+            float delta = stepFloat(click, 0.5f, 2.0f, 5.0f);
+            session.setRaycastMaxDistance(clampRay(ray + delta));
             open();
         });
 
         // ── Placement size ───────────────────────────────────────────────────
         SimpleItem sizeDec = dec(click -> {
-            float s = Math.max(0.05f, round2(size - 0.05f));
+            float delta = stepFloat(click, 0.05f, 0.25f, 1.0f);
+            float s = Math.max(0.05f, round2(size - delta));
             session.getCurrentPlacementSize().set(s, s, s);
             open();
         });
         SimpleItem sizeDisplay = paramDisplay("Placement Size", fmt2(size),
-            "Uniform half-extent applied to each recorded keyframe.", Material.PISTON);
+            "Uniform half-extent applied to each recorded keyframe.", Material.PISTON,
+            v -> {
+                float s = Math.max(0.05f, Math.min(3.0f, round2(v)));
+                session.getCurrentPlacementSize().set(s, s, s);
+                open();
+            });
         SimpleItem sizeInc = inc(click -> {
-            float s = Math.min(3.0f, round2(size + 0.05f));
+            float delta = stepFloat(click, 0.05f, 0.25f, 1.0f);
+            float s = Math.min(3.0f, round2(size + delta));
             session.getCurrentPlacementSize().set(s, s, s);
             open();
         });
 
         // ── Ray origin offset ─────────────────────────────────────────────────
         SimpleItem rayOffDec = dec(click -> {
-            session.setRaycastOriginOffset(clampRayOff(rayOff - 0.1f));
+            float delta = stepFloat(click, 0.1f, 0.5f, 2.0f);
+            session.setRaycastOriginOffset(clampRayOff(rayOff - delta));
             open();
         });
         SimpleItem rayOffDisplay = paramDisplay("Ray Offset", fmt1(rayOff),
-            "Ray start offset along look direction (negative = behind eye).", Material.BLAZE_ROD);
+            "Min dist from origin (ORIGIN_RAY) / ray start offset along look dir (RAYCAST).", Material.BLAZE_ROD,
+            v -> { session.setRaycastOriginOffset(clampRayOff(v)); open(); });
         SimpleItem rayOffInc = inc(click -> {
-            session.setRaycastOriginOffset(clampRayOff(rayOff + 0.1f));
+            float delta = stepFloat(click, 0.1f, 0.5f, 2.0f);
+            session.setRaycastOriginOffset(clampRayOff(rayOff + delta));
             open();
         });
 
         // ── Duration ─────────────────────────────────────────────────────────
         SimpleItem durDec = dec(click -> {
-            session.setEditDurationMs(Math.max(100, dur - 50));
+            int delta = stepInt(click, 50, 100, 500);
+            session.setEditDurationMs(Math.max(100, dur - delta));
             open();
         });
-        SimpleItem durDisplay = paramDisplay("Duration", dur + " ms",
-            "Attack duration written when the recording is saved.", Material.CLOCK);
+        SimpleItem durDisplay = paramDisplayInt("Duration", dur + " ms",
+            "Attack duration written when the recording is saved.", Material.CLOCK,
+            v -> { session.setEditDurationMs(Math.max(100, Math.min(3000, v))); open(); });
         SimpleItem durInc = inc(click -> {
-            session.setEditDurationMs(Math.min(3000, dur + 50));
+            int delta = stepInt(click, 50, 100, 500);
+            session.setEditDurationMs(Math.min(3000, dur + delta));
             open();
         });
 
         // ── Height offset (ORIGIN_RAY) ────────────────────────────────────────
         SimpleItem heightOffDec = dec(click -> {
-            session.setOriginRayHeightOffset(clampHeightOff(heightOff - 0.1f));
+            float delta = stepFloat(click, 0.1f, 0.5f, 2.0f);
+            session.setOriginRayHeightOffset(clampHeightOff(heightOff - delta));
             open();
         });
         SimpleItem heightOffDisplay = paramDisplay("Height Offset", fmt1(heightOff),
-            "Vertical eye offset for ORIGIN_RAY mode (negative = lower start).", Material.LADDER);
+            "Vertical eye offset for ORIGIN_RAY mode (legacy, kept for config).", Material.LADDER,
+            v -> { session.setOriginRayHeightOffset(clampHeightOff(v)); open(); });
         SimpleItem heightOffInc = inc(click -> {
-            session.setOriginRayHeightOffset(clampHeightOff(heightOff + 0.1f));
+            float delta = stepFloat(click, 0.1f, 0.5f, 2.0f);
+            session.setOriginRayHeightOffset(clampHeightOff(heightOff + delta));
             open();
         });
 
@@ -170,12 +202,52 @@ public class SweepGeneratorMenu extends Menu {
             .open();
     }
 
-    // ── Item helpers ───────────────────────────────────────────────────────
+    // ── Anvil dialog ───────────────────────────────────────────────────────────
+
+    /**
+     * Opens an InvUI AnvilWindow that lets the player type a float value directly.
+     * On confirm the value is passed to {@code onInput}; the main menu reopens afterward.
+     */
+    private void openAnvilDialog(String label, String currentVal, Consumer<Float> onInput) {
+        ItemStack inputItem = new ItemStackBuilder(Material.PAPER)
+            .name(Component.text(currentVal, NamedTextColor.WHITE))
+            .build();
+        Gui gui = Gui.normal()
+            .setStructure("X # #")
+            .addIngredient('X', new SimpleItem(inputItem))
+            .addIngredient('#', BORDER)
+            .build();
+        AnvilWindow.single()
+            .setViewer(swordPlayer.player())
+            .setTitle(label)
+            .setGui(gui)
+            .addRenameHandler(text -> {
+                try {
+                    float val = Float.parseFloat(text.trim());
+                    onInput.accept(val);
+                } catch (NumberFormatException ignored) {
+                    // invalid input — just reopen
+                }
+                Bukkit.getScheduler().runTask(Sword.getInstance(), this::open);
+            })
+            .build()
+            .open();
+    }
+
+    /** Opens an Anvil dialog for integer input (e.g. duration). */
+    private void openAnvilDialogInt(String label, String currentVal, Consumer<Integer> onInput) {
+        openAnvilDialog(label, currentVal, v -> onInput.accept(Math.round(v)));
+    }
+
+    // ── Item helpers ───────────────────────────────────────────────────────────
 
     private static SimpleItem dec(Consumer<Click> handler) {
         return new SimpleItem(
             new ItemStackBuilder(Material.RED_DYE)
                 .name(Component.text("−", NamedTextColor.RED, TextDecoration.BOLD))
+                .lore(List.of(
+                    Component.text("Left: −small  Right: −medium  Shift+Left: −large", NamedTextColor.DARK_GRAY)
+                ))
                 .build(),
             handler
         );
@@ -185,19 +257,62 @@ public class SweepGeneratorMenu extends Menu {
         return new SimpleItem(
             new ItemStackBuilder(Material.LIME_DYE)
                 .name(Component.text("+", NamedTextColor.GREEN, TextDecoration.BOLD))
+                .lore(List.of(
+                    Component.text("Left: +small  Right: +medium  Shift+Left: +large", NamedTextColor.DARK_GRAY)
+                ))
                 .build(),
             handler
         );
     }
 
-    private static SimpleItem paramDisplay(String label, String value, String description, Material material) {
+    private SimpleItem paramDisplay(String label, String value, String description,
+                                    Material material, Consumer<Float> onInput) {
         return new SimpleItem(
             new ItemStackBuilder(material)
                 .name(Component.text(label + ": ", NamedTextColor.GRAY)
                     .append(Component.text(value, NamedTextColor.GOLD, TextDecoration.BOLD)))
-                .lore(List.of(Component.text(description, NamedTextColor.DARK_GRAY)))
-                .build()
+                .lore(List.of(
+                    Component.text(description, NamedTextColor.DARK_GRAY),
+                    Component.text("Click to type a value directly.", NamedTextColor.GRAY)
+                ))
+                .build(),
+            click -> openAnvilDialog(label, value, onInput)
         );
+    }
+
+    private SimpleItem paramDisplayInt(String label, String value, String description,
+                                       Material material, Consumer<Integer> onInput) {
+        return new SimpleItem(
+            new ItemStackBuilder(material)
+                .name(Component.text(label + ": ", NamedTextColor.GRAY)
+                    .append(Component.text(value, NamedTextColor.GOLD, TextDecoration.BOLD)))
+                .lore(List.of(
+                    Component.text(description, NamedTextColor.DARK_GRAY),
+                    Component.text("Click to type a value directly.", NamedTextColor.GRAY)
+                ))
+                .build(),
+            click -> openAnvilDialogInt(label, value, onInput)
+        );
+    }
+
+    // ── Step-size helpers ──────────────────────────────────────────────────────
+
+    /** Returns the delta for a float parameter based on click type. */
+    private static float stepFloat(Click click, float small, float medium, float large) {
+        return switch (click.getClickType()) {
+            case RIGHT -> medium;
+            case SHIFT_LEFT -> large;
+            default -> small;
+        };
+    }
+
+    /** Returns the delta for an int parameter based on click type. */
+    private static int stepInt(Click click, int small, int medium, int large) {
+        return switch (click.getClickType()) {
+            case RIGHT -> medium;
+            case SHIFT_LEFT -> large;
+            default -> small;
+        };
     }
 
     // ── Clamp / format helpers ─────────────────────────────────────────────

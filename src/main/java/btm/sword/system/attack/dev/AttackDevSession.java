@@ -278,7 +278,7 @@ public final class AttackDevSession {
         this.mode = DevMode.RECORDING;
 
         // Capture position lock and reference frame at recording start
-        this.lockedOrigin = player.getLocation().clone().setDirection(Config.Direction.north());
+        this.lockedOrigin = player.getLocation().clone().add(0, 1.0, 0).setDirection(Config.Direction.north());
         BoundingBox bb = player.getBoundingBox();
         this.recordingRefOrigin = new Vector3f(
             (float) bb.getCenterX(), (float) bb.getCenterY(), (float) bb.getCenterZ());

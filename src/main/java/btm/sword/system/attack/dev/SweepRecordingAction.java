@@ -4,6 +4,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.Particle;
@@ -24,6 +25,7 @@ import btm.sword.system.entity.impl.Combatant;
 import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.inventory.menu.dev.AttackEditorMenu;
 import btm.sword.utility.Debug;
+import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 
@@ -139,9 +141,30 @@ public final class SweepRecordingAction {
         AttackDevSession session = AttackDevSession.get(player.player().getUniqueId());
         if (session == null || session.getMode() != DevMode.RECORDING) return;
 
+        if (session.getPlacementMode() == PlacementMode.ORIGIN_RAY) {
+            Vector3f tip = computeOriginRayTip(player.player(), session);
+            Location origin = session.getLockedOrigin();
+            if (origin != null) {
+                float dx = tip.x - (float) origin.getX();
+                float dy = tip.y - (float) origin.getY();
+                float dz = tip.z - (float) origin.getZ();
+                float dist = (float) Math.sqrt(dx * dx + dy * dy + dz * dz);
+                if (dist < session.getRaycastOriginOffset()) {
+                    showTooShortError(player.player());
+                    return;
+                }
+            }
+            session.addPendingPoint(tip);
+            player.player().getWorld().spawnParticle(
+                Particle.DUST, tip.x, tip.y, tip.z, 1, 0, 0, 0, 0, DUST_AGE_0);
+            Debug.attackVolume("PLACED POINT (ORIGIN_RAY) player=" + player.player().getName()
+                + " count=" + session.getPendingPoints().size()
+                + " pos=[" + String.format("%.2f,%.2f,%.2f", tip.x, tip.y, tip.z) + "]");
+            return;
+        }
+
         Vector3f tip = switch (session.getPlacementMode()) {
             case RAYCAST -> computeRaycastTip(player, session.getRaycastMaxDistance(), session.getRaycastOriginOffset());
-            case ORIGIN_RAY -> computeOriginRayTip(player.player(), session);
             default -> computeWorldTip(player, session.getTipDistance());
         };
         session.addPendingPoint(tip);
@@ -378,9 +401,11 @@ public final class SweepRecordingAction {
 
         if (session.getPlacementMode() == PlacementMode.ORIGIN_RAY) {
             Vector3f tip = computeOriginRayTip(player, session);
-            ox = (float) eye.getX();
-            oy = (float) eye.getY() + session.getOriginRayHeightOffset();
-            oz = (float) eye.getZ();
+            Location origin = session.getLockedOrigin();
+            if (origin == null) return;
+            ox = (float) origin.getX();
+            oy = (float) origin.getY();
+            oz = (float) origin.getZ();
             ex = tip.x;
             ey = tip.y;
             ez = tip.z;
@@ -430,36 +455,33 @@ public final class SweepRecordingAction {
     /**
      * Returns the world-space tip position for {@link PlacementMode#ORIGIN_RAY}.
      *
-     * <p>The ray starts at the player's eye with a vertical offset of
-     * {@link AttackDevSession#getOriginRayHeightOffset()} blocks, then shoots toward the
-     * locked recording origin. The returned point is {@link AttackDevSession#getTipDistance()}
-     * blocks along that direction from the adjusted eye. Falls back to the adjusted eye
-     * position if no recording origin is locked.</p>
+     * <p>The ray is defined from the locked recording origin toward the spot in front of the
+     * player's eyes ({@code eye + lookDir * tipDistance}). The keyframe is placed at that
+     * spot — {@link AttackDevSession#getTipDistance()} blocks along the player's current look
+     * direction from the eye. The origin anchors the ray for visualization and the
+     * "too short" distance check; it does not affect where the keyframe lands.</p>
      */
     static Vector3f computeOriginRayTip(Player player, AttackDevSession session) {
         Location eye = player.getEyeLocation();
-        float eyeX = (float) eye.getX();
-        float eyeY = (float) eye.getY() + session.getOriginRayHeightOffset();
-        float eyeZ = (float) eye.getZ();
-
-        Location lockedOrigin = session.getLockedOrigin();
-        if (lockedOrigin == null) {
-            return new Vector3f(eyeX, eyeY, eyeZ);
-        }
-
-        float dx = (float) lockedOrigin.getX() - eyeX;
-        float dy = (float) lockedOrigin.getY() - eyeY;
-        float dz = (float) lockedOrigin.getZ() - eyeZ;
-        float len = (float) Math.sqrt(dx * dx + dy * dy + dz * dz);
-        if (len < 1e-4f) {
-            return new Vector3f(eyeX, eyeY, eyeZ);
-        }
-
+        Vector dir = player.getLocation().getDirection();
         float dist = session.getTipDistance();
         return new Vector3f(
-            eyeX + (dx / len) * dist,
-            eyeY + (dy / len) * dist,
-            eyeZ + (dz / len) * dist);
+            (float) (eye.getX() + dir.getX() * dist),
+            (float) (eye.getY() + dir.getY() * dist),
+            (float) (eye.getZ() + dir.getZ() * dist));
+    }
+
+    /**
+     * Shows a transient red boss bar informing the player their ORIGIN_RAY placement
+     * was rejected because the distance to the locked origin is shorter than the configured
+     * minimum (raycastOriginOffset). The bar auto-hides after 2 seconds.
+     */
+    private static void showTooShortError(Player player) {
+        BossBar bar = BossBar.bossBar(
+            Component.text("[Dev] Too short — move further from the origin.", NamedTextColor.RED),
+            1.0f, BossBar.Color.RED, BossBar.Overlay.PROGRESS);
+        player.showBossBar(bar);
+        Bukkit.getScheduler().runTaskLater(Sword.getInstance(), () -> player.hideBossBar(bar), 40L);
     }
 
     /**
