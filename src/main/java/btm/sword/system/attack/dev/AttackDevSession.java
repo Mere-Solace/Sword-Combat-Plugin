@@ -122,6 +122,13 @@ public final class AttackDevSession {
      */
     @Getter @Setter private float raycastOriginOffset = 0.0f;
 
+    /**
+     * Vertical offset applied to the eye position when computing an {@link PlacementMode#ORIGIN_RAY}
+     * tip. Positive shifts the ray start upward; negative shifts it downward.
+     * Adjusted via the Recording Settings menu.
+     */
+    @Getter @Setter private float originRayHeightOffset = 0.0f;
+
     /** Boss bar shown to the player while in {@link DevMode#RECORDING}. Hidden on stop. */
     @Getter(AccessLevel.NONE)
     private BossBar recordingBossBar = null;

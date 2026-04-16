@@ -10,9 +10,13 @@ package btm.sword.system.attack.dev;
  * <ul>
  *   <li>{@link #SINGLE_KEYFRAME} — each right-click places one independent keyframe.
  *       Any number of points may be accumulated before stopping.</li>
- *   <li>{@link #RAYCAST} — each right-click raycasts from the player's eye to the first
- *       solid block and places a keyframe at the hit position. Falls back to tip distance
- *       if nothing is hit.</li>
+ *   <li>{@link #RAYCAST} — each right-click raycasts from the player's eye (plus an
+ *       optional origin offset) in the look direction and places a keyframe at the hit
+ *       position. Falls back to max distance if nothing is hit.</li>
+ *   <li>{@link #ORIGIN_RAY} — each right-click places a point at {@code tipDistance}
+ *       blocks along the direction from the adjusted eye toward the locked recording
+ *       origin, regardless of look direction. An optional height offset shifts the eye
+ *       start position vertically.</li>
  *   <li>{@link #LINE_SEGMENT} — two right-clicks define the start and end of a linear
  *       segment; the saved keyframes use linear interpolation between them.</li>
  *   <li>{@link #BEZIER_CURVE} — four right-clicks define the four control points of a
@@ -23,6 +27,7 @@ public enum PlacementMode {
 
     SINGLE_KEYFRAME("Single Keyframe", 1),
     RAYCAST("Raycast", 1),
+    ORIGIN_RAY("Origin Ray", 1),
     LINE_SEGMENT("Line Segment", 2),
     BEZIER_CURVE("Bezier Curve", 4);
 

@@ -28,14 +28,16 @@ import xyz.xenondevs.invui.window.Window;
  *   <li><b>Placement Size</b> — uniform half-extent applied to each recorded keyframe.</li>
  *   <li><b>Duration</b> — attack duration written when the recording is saved.</li>
  *   <li><b>Ray Offset</b> — distance along look direction where the ray starts (negative = behind eye).</li>
+ *   <li><b>Height Offset</b> — vertical shift of the eye start position for ORIGIN_RAY mode.</li>
  * </ul>
  *
- * <h2>Layout (2 rows × 9)</h2>
+ * <h2>Layout (3 rows × 9)</h2>
  * <pre>
  * Row 0: [T-] [T]  [T+] [R-] [R]  [R+] [S-] [S]  [S+]
- * Row 1: [D-] [D]  [D+] [O-] [O]  [O+] [#]  [#]  [#]
+ * Row 1: [D-] [D]  [D+] [O-] [O]  [O+] [H-] [H]  [H+]
+ * Row 2: [#]  [#]  [#]  [#]  [#]  [#]  [#]  [#]  [#]
  * </pre>
- * <p>T=tipDistance, R=raycastDist, S=placementSize, D=duration, O=rayOriginOffset.</p>
+ * <p>T=tipDistance, R=raycastDist, S=placementSize, D=duration, O=rayOriginOffset, H=heightOffset.</p>
  */
 public class SweepGeneratorMenu extends Menu {
 
@@ -55,6 +57,7 @@ public class SweepGeneratorMenu extends Menu {
         float tip = session.getTipDistance();
         float ray = session.getRaycastMaxDistance();
         float rayOff = session.getRaycastOriginOffset();
+        float heightOff = session.getOriginRayHeightOffset();
         float size = session.getCurrentPlacementSize().x;
         int dur = session.getEditDurationMs();
 
@@ -120,10 +123,23 @@ public class SweepGeneratorMenu extends Menu {
             open();
         });
 
+        // ── Height offset (ORIGIN_RAY) ────────────────────────────────────────
+        SimpleItem heightOffDec = dec(click -> {
+            session.setOriginRayHeightOffset(clampHeightOff(heightOff - 0.1f));
+            open();
+        });
+        SimpleItem heightOffDisplay = paramDisplay("Height Offset", fmt1(heightOff),
+            "Vertical eye offset for ORIGIN_RAY mode (negative = lower start).", Material.LADDER);
+        SimpleItem heightOffInc = inc(click -> {
+            session.setOriginRayHeightOffset(clampHeightOff(heightOff + 0.1f));
+            open();
+        });
+
         Gui gui = Gui.normal()
             .setStructure(
                 "1 T 2 3 R 4 5 S 6",
-                "7 D 8 9 O 0 # # #"
+                "7 D 8 9 O 0 A H B",
+                "# # # # # # # # #"
             )
             .addIngredient('1', tipDec)
             .addIngredient('T', tipDisplay)
@@ -140,6 +156,9 @@ public class SweepGeneratorMenu extends Menu {
             .addIngredient('9', rayOffDec)
             .addIngredient('O', rayOffDisplay)
             .addIngredient('0', rayOffInc)
+            .addIngredient('A', heightOffDec)
+            .addIngredient('H', heightOffDisplay)
+            .addIngredient('B', heightOffInc)
             .addIngredient('#', BORDER)
             .build();
 
@@ -188,6 +207,8 @@ public class SweepGeneratorMenu extends Menu {
     private static float clampRay(float v) { return Math.max(1.0f, Math.min(32.0f, round1(v))); }
 
     private static float clampRayOff(float v) { return Math.max(-5.0f, Math.min(5.0f, round1(v))); }
+
+    private static float clampHeightOff(float v) { return Math.max(-3.0f, Math.min(3.0f, round1(v))); }
 
     private static float round1(float v) { return Math.round(v * 10f) / 10f; }
 

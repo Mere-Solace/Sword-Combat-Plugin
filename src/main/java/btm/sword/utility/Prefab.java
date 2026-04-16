@@ -368,6 +368,8 @@ public final class Prefab {
                 .name(Component.text("✦ Volume Attack Wand", NamedTextColor.GOLD, TextDecoration.BOLD))
                 .lore(List.of(
                     Component.text("Dev test item", NamedTextColor.DARK_GRAY).decorate(TextDecoration.ITALIC),
+                    Component.text("Click in inventory  ", NamedTextColor.YELLOW)
+                        .append(Component.text("— open recording settings", NamedTextColor.GRAY)),
                     Component.empty(),
                     Component.text("Shift+Left  ", NamedTextColor.YELLOW)
                         .append(Component.text("— start / stop recording", NamedTextColor.GRAY)),

@@ -141,9 +141,11 @@ public final class SweepRecordingAction {
         AttackDevSession session = AttackDevSession.get(player.player().getUniqueId());
         if (session == null || session.getMode() != DevMode.RECORDING) return;
 
-        Vector3f tip = session.getPlacementMode() == PlacementMode.RAYCAST
-            ? computeRaycastTip(player, session.getRaycastMaxDistance(), session.getRaycastOriginOffset())
-            : computeWorldTip(player, session.getTipDistance());
+        Vector3f tip = switch (session.getPlacementMode()) {
+            case RAYCAST -> computeRaycastTip(player, session.getRaycastMaxDistance(), session.getRaycastOriginOffset());
+            case ORIGIN_RAY -> computeOriginRayTip(player, session);
+            default -> computeWorldTip(player, session.getTipDistance());
+        };
         session.addPendingPoint(tip);
 
         // Immediate placement marker — color matches what the render loop assigns this point
@@ -173,6 +175,11 @@ public final class SweepRecordingAction {
         session.cyclePlacementMode();
         player.player().sendActionBar(Component.text(
             "[Dev] Mode: " + session.getPlacementMode().label(), NamedTextColor.YELLOW));
+        if (session.getPlacementMode() == PlacementMode.LINE_SEGMENT) {
+            player.player().sendMessage(Component.text(
+                "[Dev] Tip: stand still and wait ~0.5s before placing each Line Segment point.",
+                NamedTextColor.GRAY));
+        }
         Debug.attackVolume("CYCLE MODE player=" + player.player().getName()
             + " mode=" + session.getPlacementMode().name());
     }
@@ -272,7 +279,8 @@ public final class SweepRecordingAction {
             () -> {
                 renderOriginArrow(player.player().getWorld(), session);
                 renderPlacedPoints(player.player().getWorld(), session.getPendingPoints());
-                if (session.getPlacementMode() == PlacementMode.RAYCAST) {
+                PlacementMode mode = session.getPlacementMode();
+                if (mode == PlacementMode.RAYCAST || mode == PlacementMode.ORIGIN_RAY) {
                     renderRayCursor(player, session);
                 }
             },
@@ -367,24 +375,47 @@ public final class SweepRecordingAction {
     }
 
     /**
-     * Renders a yellow line from the ray origin to the raycast hit point (or max distance)
-     * each render tick, giving live feedback of where the next RAYCAST point would land.
+     * Renders a yellow ray cursor each tick.
+     *
+     * <ul>
+     *   <li>{@link PlacementMode#RAYCAST} — draws from the offset eye origin to the
+     *       raycast hit (or max distance) in the look direction.</li>
+     *   <li>{@link PlacementMode#ORIGIN_RAY} — draws from the height-adjusted eye to the
+     *       tip point computed by {@link #computeOriginRayTip}.</li>
+     * </ul>
      */
     private static void renderRayCursor(SwordPlayer player, AttackDevSession session) {
         Location eye = player.player().getEyeLocation();
-        Vector dir = eye.getDirection();
-        float offset = session.getRaycastOriginOffset();
-        float maxDist = session.getRaycastMaxDistance();
-        Location origin = eye.clone().add(dir.clone().multiply(offset));
-
-        RayTraceResult result = player.player().getWorld().rayTraceBlocks(origin, dir, maxDist);
-        Location end = (result != null && result.getHitPosition() != null)
-            ? result.getHitPosition().toLocation(player.player().getWorld())
-            : origin.clone().add(dir.clone().multiply(maxDist));
-
         World world = player.player().getWorld();
-        float ox = (float) origin.getX(), oy = (float) origin.getY(), oz = (float) origin.getZ();
-        float ex = (float) end.getX(), ey = (float) end.getY(), ez = (float) end.getZ();
+
+        float ox, oy, oz, ex, ey, ez;
+
+        if (session.getPlacementMode() == PlacementMode.ORIGIN_RAY) {
+            Vector3f tip = computeOriginRayTip(player, session);
+            ox = (float) eye.getX();
+            oy = (float) eye.getY() + session.getOriginRayHeightOffset();
+            oz = (float) eye.getZ();
+            ex = tip.x;
+            ey = tip.y;
+            ez = tip.z;
+        } else {
+            // RAYCAST
+            Vector dir = eye.getDirection();
+            float offset = session.getRaycastOriginOffset();
+            float maxDist = session.getRaycastMaxDistance();
+            Location rayOrigin = eye.clone().add(dir.clone().multiply(offset));
+            RayTraceResult result = world.rayTraceBlocks(rayOrigin, dir, maxDist);
+            Location end = (result != null && result.getHitPosition() != null)
+                ? result.getHitPosition().toLocation(world)
+                : rayOrigin.clone().add(dir.clone().multiply(maxDist));
+            ox = (float) rayOrigin.getX();
+            oy = (float) rayOrigin.getY();
+            oz = (float) rayOrigin.getZ();
+            ex = (float) end.getX();
+            ey = (float) end.getY();
+            ez = (float) end.getZ();
+        }
+
         float dx = ex - ox, dy = ey - oy, dz = ez - oz;
         float len = (float) Math.sqrt(dx * dx + dy * dy + dz * dz);
         if (len < 1e-4f) return;
@@ -408,6 +439,41 @@ public final class SweepRecordingAction {
             (float) (eye.getX() + dir.getX() * distance),
             (float) (eye.getY() + dir.getY() * distance),
             (float) (eye.getZ() + dir.getZ() * distance));
+    }
+
+    /**
+     * Returns the world-space tip position for {@link PlacementMode#ORIGIN_RAY}.
+     *
+     * <p>The ray starts at the player's eye with a vertical offset of
+     * {@link AttackDevSession#getOriginRayHeightOffset()} blocks, then shoots toward the
+     * locked recording origin. The returned point is {@link AttackDevSession#getTipDistance()}
+     * blocks along that direction from the adjusted eye. Falls back to the adjusted eye
+     * position if no recording origin is locked.</p>
+     */
+    static Vector3f computeOriginRayTip(SwordPlayer player, AttackDevSession session) {
+        Location eye = player.player().getEyeLocation();
+        float eyeX = (float) eye.getX();
+        float eyeY = (float) eye.getY() + session.getOriginRayHeightOffset();
+        float eyeZ = (float) eye.getZ();
+
+        Location lockedOrigin = session.getLockedOrigin();
+        if (lockedOrigin == null) {
+            return new Vector3f(eyeX, eyeY, eyeZ);
+        }
+
+        float dx = (float) lockedOrigin.getX() - eyeX;
+        float dy = (float) lockedOrigin.getY() - eyeY;
+        float dz = (float) lockedOrigin.getZ() - eyeZ;
+        float len = (float) Math.sqrt(dx * dx + dy * dy + dz * dz);
+        if (len < 1e-4f) {
+            return new Vector3f(eyeX, eyeY, eyeZ);
+        }
+
+        float dist = session.getTipDistance();
+        return new Vector3f(
+            eyeX + (dx / len) * dist,
+            eyeY + (dy / len) * dist,
+            eyeZ + (dz / len) * dist);
     }
 
     /**
