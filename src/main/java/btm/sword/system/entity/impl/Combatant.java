@@ -142,7 +142,7 @@ public abstract class Combatant extends SwordEntity {
             message("Display is null.");
         }
         umbralBlade.dispose();
-        // TODO: #122 - On death umbral blade logic... What should happen here?
+        umbralBlade = null;
     }
 
     @Override
@@ -151,6 +151,7 @@ public abstract class Combatant extends SwordEntity {
         if (umbralBlade != null && umbralBlade.getDisplay().isValid()) {
             Prefab.Particles.UMBRAL_BLADE_POOF.display(umbralBlade.getDisplay().getLocation());
             umbralBlade.dispose();
+            umbralBlade = null;
         }
     }
 

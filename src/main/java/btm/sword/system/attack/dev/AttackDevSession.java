@@ -114,6 +114,14 @@ public final class AttackDevSession {
      */
     @Getter @Setter private float raycastMaxDistance = 8.0f;
 
+    /**
+     * Offset along the look direction applied to the raycast origin before firing, in blocks.
+     * {@code 0} starts from the eye. Positive values push the origin forward; negative values
+     * pull it behind the eye (useful for modeling attacks that originate behind the player).
+     * Adjusted via the Recording Settings menu.
+     */
+    @Getter @Setter private float raycastOriginOffset = 0.0f;
+
     /** Boss bar shown to the player while in {@link DevMode#RECORDING}. Hidden on stop. */
     @Getter(AccessLevel.NONE)
     private BossBar recordingBossBar = null;

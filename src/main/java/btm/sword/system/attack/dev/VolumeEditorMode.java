@@ -158,6 +158,15 @@ public final class VolumeEditorMode {
                         player.getBoundingBox(), loc.getYaw(), loc.getPitch(), orientWithPitch);
                 }
 
+                // Ghost path — full trajectory sampled at 20 points
+                for (int i = 0; i <= 20; i++) {
+                    trajectory.sample(i / 20.0f, worldTransform, buffer);
+                    world.spawnParticle(Particle.DUST,
+                        buffer.center.x, buffer.center.y, buffer.center.z,
+                        1, 0, 0, 0, 0, DUST_GHOST_PATH);
+                }
+
+                // Live position wireframe
                 trajectory.sample(t, worldTransform, buffer);
                 if (buffer.isSphere) {
                     renderSphereWireframe(world, buffer.center, buffer.halfExtents.x, DUST_LIVE);
@@ -373,6 +382,19 @@ public final class VolumeEditorMode {
 
         if (log && !keyframes.isEmpty()) {
             Debug.attackVolume("[VolumeEditorMode] spawned " + totalParticles + " particles this tick");
+        }
+
+        // Ghost path — sample the full trajectory and draw the interpolated sweep line
+        if (keyframes.size() >= 2 && tickCount % GREY_RENDER_PERIOD == 0) {
+            KeyframedTrajectory ghostTraj = new KeyframedTrajectory(keyframes);
+            ObbVolume ghostBuffer = new ObbVolume();
+            for (int i = 0; i <= 20; i++) {
+                float t = i / 20.0f;
+                ghostTraj.sample(t, worldTransform, ghostBuffer);
+                world.spawnParticle(Particle.DUST,
+                    ghostBuffer.center.x, ghostBuffer.center.y, ghostBuffer.center.z,
+                    1, 0, 0, 0, 0, DUST_GHOST_PATH);
+            }
         }
     }
 

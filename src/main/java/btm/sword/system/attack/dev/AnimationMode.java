@@ -6,6 +6,7 @@ import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 
 import btm.sword.system.entity.impl.DevSwordPlayer;
+import btm.sword.system.entity.umbral.input.BladeRequest;
 import btm.sword.system.inventory.menu.dev.AttackBrowserMenu;
 import btm.sword.system.item.ItemStackBuilder;
 import net.kyori.adventure.text.Component;
@@ -46,7 +47,7 @@ public final class AnimationMode {
      * Enters AnimationMode on the given {@link DevSwordPlayer}.
      *
      * <ol>
-     *   <li>Deactivates the UmbralBlade to prevent an orphan display entity.</li>
+     *   <li>Requests {@link BladeRequest#DEACTIVATE} to hide the blade via {@code InactiveState} (blade FSM keeps ticking; display viewRange set to 0).</li>
      *   <li>Saves the current inventory to {@link AttackDevSession#getSavedAnimationInventory()}.</li>
      *   <li>Suppresses all anchored-item upkeep so managed items cannot refill the hotbar.</li>
      *   <li>Clears the inventory and populates the animation hotbar (slots 0–8).</li>
@@ -60,8 +61,8 @@ public final class AnimationMode {
      * @param session   the active attack editing session
      */
     public static void enter(DevSwordPlayer devPlayer, AttackDevSession session) {
-        // 1. Deactivate blade — prevents orphan display entity
-        devPlayer.deactivateUmbralBlade();
+        // 1. Request INACTIVE — hides blade via InactiveState without destroying it
+        devPlayer.requestUmbralBladeState(BladeRequest.DEACTIVATE);
 
         // 2. Snapshot the current creative-dev inventory
         session.setSavedAnimationInventory(devPlayer.player().getInventory().getContents().clone());
@@ -92,7 +93,7 @@ public final class AnimationMode {
      *   <li>Clears the AnimationMode flag.</li>
      *   <li>Restores the inventory from {@link AttackDevSession#getSavedAnimationInventory()}.</li>
      *   <li>Keeps anchored-item upkeep suppressed (player is still in creative dev mode).</li>
-     *   <li>Reactivates the UmbralBlade.</li>
+     *   <li>Requests {@link BladeRequest#ACTIVATE_TO_PREVIOUS} to restore blade from {@code InactiveState} → {@code StandbyState}.</li>
      *   <li>Opens {@link AttackBrowserMenu}.</li>
      * </ol>
      *
@@ -112,8 +113,8 @@ public final class AnimationMode {
         // Remain suppressed — still in creative dev mode
         devPlayer.setAllAnchoredItemUpkeep(false);
 
-        // Reactivate blade (creative dev mode deactivates it again if needed)
-        devPlayer.activateUmbralBlade();
+        // Restore blade from InactiveState → StandbyState
+        devPlayer.requestUmbralBladeState(BladeRequest.ACTIVATE_TO_PREVIOUS);
 
         new AttackBrowserMenu(devPlayer).open();
     }

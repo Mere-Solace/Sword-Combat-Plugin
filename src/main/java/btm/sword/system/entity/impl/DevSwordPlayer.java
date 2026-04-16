@@ -34,10 +34,11 @@ import lombok.Setter;
  * flag ({@link #inAnimationMode}), mirroring the {@code inCreativeDevMode} pattern
  * already present on {@link SwordPlayer}.</p>
  *
- * <h2>Combat suppression</h2>
+ * <h2>AnimationMode behaviour</h2>
  * <ul>
- *   <li>{@link #handleUmbralBladeTick()} is always a no-op — the UmbralBlade state
- *       machine never ticks while this wrapper is active.</li>
+ *   <li>The UmbralBlade FSM ticks identically to a normal {@link SwordPlayer} at all times.
+ *       When AnimationMode is entered, {@link BladeRequest#DEACTIVATE} hides the blade via
+ *       {@code InactiveState}; {@link BladeRequest#ACTIVATE_TO_PREVIOUS} restores it on exit.</li>
  *   <li>{@link #act(InputType)} routes to {@link AnimationModeInputHandler} when
  *       {@link #isInAnimationMode()} is {@code true}; otherwise falls through to the
  *       normal input execution tree so non-animation dev interactions still work.</li>
@@ -119,18 +120,6 @@ public final class DevSwordPlayer extends SwordPlayer {
      */
     public DevSwordPlayer(LivingEntity associatedEntity, PlayerData data) {
         super(associatedEntity, data);
-    }
-
-    /**
-     * Suppresses {@link btm.sword.system.entity.umbral.UmbralBlade} state-machine ticks
-     * only while {@link AnimationMode} is active. Outside AnimationMode the dev player
-     * drives the blade normally.
-     */
-    @Override
-    public void handleUmbralBladeTick() {
-        if (!inAnimationMode) {
-            super.handleUmbralBladeTick();
-        }
     }
 
     /**

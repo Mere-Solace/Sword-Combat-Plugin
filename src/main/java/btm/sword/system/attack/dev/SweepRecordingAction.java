@@ -71,6 +71,10 @@ public final class SweepRecordingAction {
     private static final Particle.DustOptions DUST_AGE_OLD =
         new Particle.DustOptions(Color.fromRGB(160, 160, 160), 1.5f);
 
+    /** Yellow dust used to draw the live raycast ray cursor in RAYCAST mode. */
+    private static final Particle.DustOptions DUST_RAY_CURSOR =
+        new Particle.DustOptions(Color.fromRGB(255, 230, 60), 0.7f);
+
     // ── BEZIER_CURVE role colors: start, c1, c2, end ─────────────────────────
     private static final Particle.DustOptions DUST_BEZIER_START =
         new Particle.DustOptions(Color.fromRGB(30, 200, 60), 1.5f);
@@ -138,7 +142,7 @@ public final class SweepRecordingAction {
         if (session == null || session.getMode() != DevMode.RECORDING) return;
 
         Vector3f tip = session.getPlacementMode() == PlacementMode.RAYCAST
-            ? computeRaycastTip(player, session.getRaycastMaxDistance())
+            ? computeRaycastTip(player, session.getRaycastMaxDistance(), session.getRaycastOriginOffset())
             : computeWorldTip(player, session.getTipDistance());
         session.addPendingPoint(tip);
 
@@ -268,6 +272,9 @@ public final class SweepRecordingAction {
             () -> {
                 renderOriginArrow(player.player().getWorld(), session);
                 renderPlacedPoints(player.player().getWorld(), session.getPendingPoints());
+                if (session.getPlacementMode() == PlacementMode.RAYCAST) {
+                    renderRayCursor(player, session);
+                }
             },
             null,
             0, RENDER_PERIOD_MS,
@@ -360,6 +367,37 @@ public final class SweepRecordingAction {
     }
 
     /**
+     * Renders a yellow line from the ray origin to the raycast hit point (or max distance)
+     * each render tick, giving live feedback of where the next RAYCAST point would land.
+     */
+    private static void renderRayCursor(SwordPlayer player, AttackDevSession session) {
+        Location eye = player.player().getEyeLocation();
+        Vector dir = eye.getDirection();
+        float offset = session.getRaycastOriginOffset();
+        float maxDist = session.getRaycastMaxDistance();
+        Location origin = eye.clone().add(dir.clone().multiply(offset));
+
+        RayTraceResult result = player.player().getWorld().rayTraceBlocks(origin, dir, maxDist);
+        Location end = (result != null && result.getHitPosition() != null)
+            ? result.getHitPosition().toLocation(player.player().getWorld())
+            : origin.clone().add(dir.clone().multiply(maxDist));
+
+        World world = player.player().getWorld();
+        float ox = (float) origin.getX(), oy = (float) origin.getY(), oz = (float) origin.getZ();
+        float ex = (float) end.getX(), ey = (float) end.getY(), ez = (float) end.getZ();
+        float dx = ex - ox, dy = ey - oy, dz = ez - oz;
+        float len = (float) Math.sqrt(dx * dx + dy * dy + dz * dz);
+        if (len < 1e-4f) return;
+        int steps = Math.max(1, (int) (len / 0.2f));
+        for (int i = 0; i <= steps; i++) {
+            float frac = (float) i / steps;
+            world.spawnParticle(Particle.DUST,
+                ox + dx * frac, oy + dy * frac, oz + dz * frac,
+                1, 0, 0, 0, 0, DUST_RAY_CURSOR);
+        }
+    }
+
+    /**
      * Returns the world-space tip position at {@code distance} blocks from the player's eye
      * along the current look direction.
      */
@@ -373,19 +411,27 @@ public final class SweepRecordingAction {
     }
 
     /**
-     * Returns the world-space hit position of a block raycast from the player's eye.
-     * Falls back to {@code computeWorldTip} at {@code maxDistance} if nothing is hit.
+     * Returns the world-space hit position of a block raycast from an offset origin.
+     *
+     * <p>The ray starts at the player's eye position offset by {@code originOffset} blocks
+     * along the look direction. Positive offsets move the origin forward; negative offsets
+     * pull it behind the eye. Falls back to the offset origin at {@code maxDistance} if
+     * nothing is hit within range.</p>
      */
-    static Vector3f computeRaycastTip(SwordPlayer player, float maxDistance) {
+    static Vector3f computeRaycastTip(SwordPlayer player, float maxDistance, float originOffset) {
         Location eye = player.player().getEyeLocation();
         Vector dir = eye.getDirection();
-        RayTraceResult result = player.player().getWorld().rayTraceBlocks(eye, dir, maxDistance);
+        Location origin = eye.clone().add(dir.clone().multiply(originOffset));
+        RayTraceResult result = player.player().getWorld().rayTraceBlocks(origin, dir, maxDistance);
         if (result != null && result.getHitPosition() != null) {
             return new Vector3f(
                 (float) result.getHitPosition().getX(),
                 (float) result.getHitPosition().getY(),
                 (float) result.getHitPosition().getZ());
         }
-        return computeWorldTip(player, maxDistance);
+        return new Vector3f(
+            (float) (origin.getX() + dir.getX() * maxDistance),
+            (float) (origin.getY() + dir.getY() * maxDistance),
+            (float) (origin.getZ() + dir.getZ() * maxDistance));
     }
 }
