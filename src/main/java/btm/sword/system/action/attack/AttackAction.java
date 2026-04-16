@@ -132,7 +132,8 @@ public class AttackAction extends SwordAction {
         executor.launchAttackDef(def);
         if (executor instanceof SwordPlayer sp) {
             VolumeEditorMode.startPlaybackVisualization(
-                sp.player(), def.getTrajectory(), startMs, def.getDurationMs());
+                sp.player(), def.getTrajectory(), startMs, def.getDurationMs(),
+                def.isLockOriginOnFire(), def.isOrientWithPitch());
         }
     }
 

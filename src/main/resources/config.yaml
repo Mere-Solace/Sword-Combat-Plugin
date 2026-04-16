@@ -65,10 +65,8 @@ combat:
   attacks_cast_timing_max_duration: 200
   attacks_cast_timing_reduction_rate: 0.2
   attacks_cooldown_mult: 2.0
-  attacks_orient_with_pitch: false
-  attacks_lock_origin_on_fire: true
-
-
+  
+  
   attacks_duration_multiplier: 500
   
   attacks_range_multipliers_basic_1: 1.4
@@ -338,6 +336,9 @@ debug:
   
   visualization_show_hitboxes: false
   visualization_show_raytraces: false
+  wireframe_selected_size: 0.5
+  wireframe_default_size: 0.5
+  wireframe_live_size: 0.3
 
 
 grab:

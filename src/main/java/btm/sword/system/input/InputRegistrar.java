@@ -130,7 +130,7 @@ public final class InputRegistrar {
             new InputExecutionTree.ActionContextPair(
                 () -> InputAction.builder()
                     .name("Block")
-                    .action(SweepRecordingAction::holdingRight)
+                    .action(SweepRecordingAction::applyRecordingSpeedBoost)
                     .cooldown(executor -> 0)
                     .canCast(c -> true)
                     .displayDisabled(false)

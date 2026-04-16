@@ -42,11 +42,6 @@ public class UmbralBladeAttack extends ItemDisplayAttack {
     }
 
     @Override
-    protected void drawAttackEffects() {
-        super.drawAttackEffects();
-    }
-
-    @Override
     protected HashSet<LivingEntity> collectHitEntities() {
         if (origin == null || origin.toVector().isZero() || !origin.isFinite() ||
             weaponDisplay == null || !weaponDisplay.isValid()) {
@@ -54,7 +49,8 @@ public class UmbralBladeAttack extends ItemDisplayAttack {
         }
 
         double secantRadius = Config.Combat.HITBOXES_SECANT_RADIUS;
+        double rangeSquared = Config.Combat.UMBRAL_BLADE_ATTACK_RANGE_SQUARED;
         return HitboxUtil.secant(origin, attackLocation, secantRadius,
-            entity -> filter.test(entity) && entity.getLocation().distanceSquared(attackLocation) < 20);
+            entity -> filter.test(entity) && entity.getLocation().distanceSquared(attackLocation) < rangeSquared);
     }
 }

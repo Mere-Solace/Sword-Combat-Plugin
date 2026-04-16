@@ -2,11 +2,13 @@ package btm.sword.system.attack.simulation;
 
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.BiFunction;
 
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
 
 import btm.sword.system.attack.HitValuePacket;
+import btm.sword.system.entity.base.SwordEntity;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -36,6 +38,14 @@ public final class SimulationAttack {
     private final long startMs;
     private final long durationMs;
     private final HitValuePacket hitValue;
+    /** Optional knockback function evaluated on the main thread; {@code null} means no knockback. */
+    @Nullable
+    private final BiFunction<Vector3f, SwordEntity, Vector3f> knockbackFunction;
+    /**
+     * UUID of the world the attacker was in when the attack was launched.
+     * Used to resolve the correct world for {@link EffectsDispatcher} particle and sound calls.
+     */
+    private final UUID worldUuid;
     private final Set<UUID> hitThisAttack;
     @Nullable
     private final Runnable onEnd;
@@ -67,20 +77,25 @@ public final class SimulationAttack {
     /**
      * Constructs a simulation attack.
      *
-     * @param attackerUuid     UUID of the entity performing the attack
-     * @param trajectory       trajectory that populates {@code volume} each tick
-     * @param volume           pre-allocated mutable volume buffer (reused every tick)
-     * @param startMs          wall-clock start time in milliseconds
-     * @param durationMs       total attack duration in milliseconds
-     * @param hitValue         damage values applied on collision
-     * @param hitThisAttack    thread-safe set of already-hit entity UUIDs
-     * @param onEnd            optional main-thread callback fired when the attack expires
-     * @param orientWithPitch  whether to apply the attacker's pitch to the world transform
-     * @param lockOriginOnFire whether to lock the origin at fire time (ignored if true and
-     *                         no snapshot is available)
-     * @param lockedCenter     pre-captured locked origin centre; {@code null} if not locking
-     * @param lockedYaw        pre-captured locked yaw in degrees; {@code null} if not locking
-     * @param lockedPitch      pre-captured locked pitch in degrees; {@code null} if not locking
+     * @param attackerUuid      UUID of the entity performing the attack
+     * @param trajectory        trajectory that populates {@code volume} each tick
+     * @param volume            pre-allocated mutable volume buffer (reused every tick)
+     * @param startMs           wall-clock start time in milliseconds
+     * @param durationMs        total attack duration in milliseconds
+     * @param hitValue          damage values applied on collision
+     * @param knockbackFunction optional function evaluated on the main thread to produce knockback;
+     *                          receives the contact point and the attacking entity; {@code null}
+     *                          for no knockback
+     * @param worldUuid         UUID of the world the attacker was in at launch; used to fire
+     *                          keyframe particle/sound effects in the correct world
+     * @param hitThisAttack     thread-safe set of already-hit entity UUIDs
+     * @param onEnd             optional main-thread callback fired when the attack expires
+     * @param orientWithPitch   whether to apply the attacker's pitch to the world transform
+     * @param lockOriginOnFire  whether to lock the origin at fire time (ignored if true and
+     *                          no snapshot is available)
+     * @param lockedCenter      pre-captured locked origin centre; {@code null} if not locking
+     * @param lockedYaw         pre-captured locked yaw in degrees; {@code null} if not locking
+     * @param lockedPitch       pre-captured locked pitch in degrees; {@code null} if not locking
      */
     public SimulationAttack(
             UUID attackerUuid,
@@ -89,6 +104,8 @@ public final class SimulationAttack {
             long startMs,
             long durationMs,
             HitValuePacket hitValue,
+            @Nullable BiFunction<Vector3f, SwordEntity, Vector3f> knockbackFunction,
+            UUID worldUuid,
             Set<UUID> hitThisAttack,
             @Nullable Runnable onEnd,
             boolean orientWithPitch,
@@ -102,6 +119,8 @@ public final class SimulationAttack {
         this.startMs = startMs;
         this.durationMs = durationMs;
         this.hitValue = hitValue;
+        this.knockbackFunction = knockbackFunction;
+        this.worldUuid = worldUuid;
         this.hitThisAttack = hitThisAttack;
         this.onEnd = onEnd;
         this.orientWithPitch = orientWithPitch;

@@ -37,7 +37,7 @@ import lombok.Getter;
 public final class AttackDef {
 
     private final String id;
-    private final AttackPrimitive type;
+    private final VolumeType type;
     private final int durationMs;
     private final VolumeTrajectory trajectory;
     private final HitValuePacket hitValue;
@@ -57,7 +57,7 @@ public final class AttackDef {
     }
 
     /**
-     * Allocates a fresh {@link Volume} buffer appropriate for this attack's {@link AttackPrimitive}.
+     * Allocates a fresh {@link Volume} buffer appropriate for this attack's {@link VolumeType}.
      * Call once per activation and pass the result to
      * {@link btm.sword.system.attack.simulation.ActiveAttack}.
      *
@@ -75,7 +75,7 @@ public final class AttackDef {
     public static final class Builder {
 
         private final String id;
-        private AttackPrimitive type;
+        private VolumeType type;
         private int durationMs;
         private VolumeTrajectory trajectory;
         private HitValuePacket hitValue;
@@ -110,7 +110,7 @@ public final class AttackDef {
          * @param type the collision primitive
          * @return this builder
          */
-        public Builder type(AttackPrimitive type) {
+        public Builder type(VolumeType type) {
             this.type = type;
             return this;
         }
@@ -123,7 +123,7 @@ public final class AttackDef {
          * @return this builder
          */
         public Builder keyframes(List<VolumeKeyframe> keyframes) {
-            this.type = AttackPrimitive.VOLUME;
+            this.type = VolumeType.VOLUME;
             this.trajectory = new KeyframedTrajectory(keyframes);
             return this;
         }
@@ -136,7 +136,7 @@ public final class AttackDef {
          * @return this builder
          */
         public Builder sweep(SweepCurve curve) {
-            this.type = AttackPrimitive.SWEEP;
+            this.type = VolumeType.SWEEP;
             this.trajectory = new SweepTrajectory(curve);
             return this;
         }

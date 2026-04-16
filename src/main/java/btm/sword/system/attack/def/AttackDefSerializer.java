@@ -56,7 +56,7 @@ public final class AttackDefSerializer {
     public static AttackDef load(ConfigurationSection section, String id) {
         String typeStr = section.getString("type");
         if (typeStr == null) throw new IllegalArgumentException("Attack '" + id + "' missing 'type'");
-        AttackPrimitive type = AttackPrimitive.valueOf(typeStr.toUpperCase());
+        VolumeType type = VolumeType.valueOf(typeStr.toUpperCase());
 
         int duration = section.getInt("duration");
         HitValuePacket hitValue = loadHitValue(section.getConfigurationSection("hit-value"), id);

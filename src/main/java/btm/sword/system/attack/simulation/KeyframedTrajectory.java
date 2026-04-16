@@ -49,6 +49,11 @@ public final class KeyframedTrajectory implements VolumeTrajectory {
     /**
      * {@inheritDoc}
      *
+     * <p>When the governing keyframe has {@link VolumeShape#SPHERE} shape, half-extents are
+     * normalized to a uniform radius (using {@code x}) and {@link ObbVolume#isSphere} is set
+     * so that the narrow-phase uses {@link CollisionDetector#sphereVsAabb} instead of the
+     * full OBB SAT test.</p>
+     *
      * @param out must be an {@link ObbVolume}
      */
     @Override
@@ -88,33 +93,52 @@ public final class KeyframedTrajectory implements VolumeTrajectory {
         float span = kc.t() - kb.t();
         float localT = span > 1e-6f ? (t - kb.t()) / span : 0f;
 
-        // Interpolate in local space
+        // Interpolate in local space; use the target keyframe's shape to decide collision type
+        boolean sphere = kc.shape() == VolumeShape.SPHERE;
         Vector3f localPos = BezierUtil.catmullRom(
             ka.localPosition(), kb.localPosition(), kc.localPosition(), kd.localPosition(), localT
         );
         Quaternionf localRot = new Quaternionf(kb.rotation()).slerp(kc.rotation(), localT);
         Vector3f he = new Vector3f(kb.halfExtents()).lerp(kc.halfExtents(), localT);
+        if (sphere) {
+            he.set(he.x, he.x, he.x);
+        }
 
-        applyToOutput(localPos, localRot, he, worldTransform, obbOut);
+        applyToOutput(localPos, localRot, he, sphere, worldTransform, obbOut);
     }
 
     private static void writeKeyframe(VolumeKeyframe kf, Matrix4fc worldTransform, ObbVolume out) {
+        boolean sphere = kf.shape() == VolumeShape.SPHERE;
+        Vector3f he = new Vector3f(kf.halfExtents());
+        if (sphere) {
+            he.set(he.x, he.x, he.x);
+        }
         applyToOutput(
             new Vector3f(kf.localPosition()),
             new Quaternionf(kf.rotation()),
-            new Vector3f(kf.halfExtents()),
+            he,
+            sphere,
             worldTransform,
             out
         );
     }
 
     private static void applyToOutput(Vector3f localPos, Quaternionf localRot, Vector3f he,
-                                      Matrix4fc worldTransform, ObbVolume out) {
+                                      boolean isSphere, Matrix4fc worldTransform, ObbVolume out) {
         // Transform position and rotation to world space
         worldTransform.transformPosition(localPos, out.center);
         Quaternionf worldRot = worldTransform.getNormalizedRotation(new Quaternionf());
         worldRot.mul(localRot, out.rotation);
         out.halfExtents.set(he);
+        out.isSphere = isSphere;
+
+        // Derive world AABB — for a sphere this is just center ± radius on each axis
+        if (isSphere) {
+            float r = he.x;
+            out.aabbMin.set(out.center.x - r, out.center.y - r, out.center.z - r);
+            out.aabbMax.set(out.center.x + r, out.center.y + r, out.center.z + r);
+            return;
+        }
 
         // Derive world AABB from OBB — project half-extents through absolute rotation matrix
         Matrix3f rot = new Matrix3f().rotation(out.rotation);

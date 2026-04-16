@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -20,6 +21,8 @@ import org.bukkit.entity.Display;
 import org.bukkit.entity.Entity;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Transformation;
 import org.bukkit.util.Vector;
 
@@ -35,18 +38,22 @@ import lombok.Getter;
 /**
  * Central scheduling arbiter for all repeating Sword tasks.
  *
- * <p>Tasks are routed into one of seven {@link TaskHandleBucket}s based on their
- * base period. Each bucket owns a {@link PriorityBlockingQueue} ordered by
- * {@code nextFireTimeMs} and is driven by a {@link ScheduledFuture} on the shared
- * async executor. When a bucket fires, it drains all due tasks into a single
- * {@code Bukkit.runTask()} batch so task bodies always execute on the main thread.</p>
+ * <p>Tasks are routed into one of two scheduling tiers based on their effective period:</p>
+ * <ul>
+ *   <li><b>HyperBucket</b> (period &lt; {@value #HYPER_THRESHOLD_MS} ms): a single Bukkit
+ *   1-tick {@link BukkitRunnable} running every server tick on the main thread. Each tick it
+ *   computes {@code catchupCount = max(1, floor(elapsed / effectivePeriodMs))} and calls
+ *   {@link TaskHandle#executeBody()} that many times — deterministic sub-tick iteration rates
+ *   with no async scheduling jitter.</li>
+ *   <li><b>TaskHandleBucket</b> (period &ge; {@value #HYPER_THRESHOLD_MS} ms): a
+ *   {@link PriorityBlockingQueue} ordered by {@code nextFireTimeMs}, driven by a lazy
+ *   {@link ScheduledFuture}. Due tasks are drained into a single {@code Bukkit.runTask()} batch
+ *   so bodies always execute on the main thread.</li>
+ * </ul>
  *
- * <p>Bucket schedulers start lazily on the first {@link TaskHandleBucket#offer} and
- * stop automatically when the queue empties, so idle buckets consume no executor
- * resources.</p>
- *
- * <p>Time-bound tasks automatically apply {@link #GLOBAL_TIME_SCALE} to their
- * effective period on every fire — no rescheduling needed when the scale changes.</p>
+ * <p>Time-bound tasks apply {@link #GLOBAL_TIME_SCALE} to their effective period on every fire.
+ * If the scale shifts a task's effective period across the {@value #HYPER_THRESHOLD_MS} ms boundary,
+ * it migrates between tiers automatically on its next fire.</p>
  */
 public final class TimeArbiter {
 
@@ -66,34 +73,139 @@ public final class TimeArbiter {
 
     private static final AtomicInteger TASK_COUNTER = new AtomicInteger();
 
+    /**
+     * Tasks whose {@link TaskHandle#effectivePeriodMs()} is below this threshold are handled
+     * by {@link HyperBucket}; tasks at or above it go into a {@link TaskHandleBucket}.
+     *
+     * <p>Set to 51 so that 50 ms (one-tick) tasks land in {@link HyperBucket} and fire exactly
+     * once per Bukkit tick. {@link TaskHandleBucket} dispatches via
+     * {@code Bukkit.getScheduler().runTask()}, which delays execution until the next tick and
+     * effectively doubles the period for tasks registered at exactly 50 ms.</p>
+     */
+    static final int HYPER_THRESHOLD_MS = 51;
+
     // ── Range ─────────────────────────────────────────────────────────────────
 
     /**
-     * A half-open millisecond interval [{@code low}, {@code high}) used to route
-     * tasks to the appropriate {@link TaskHandleBucket}.
+     * A half-open millisecond interval [{@code low}, {@code high}) documenting
+     * the period range each {@link TaskHandleBucket} covers.
      */
-    private record Range(int low, int high) {
-        /** @return {@code true} if {@code val} falls in [{@code low}, {@code high}) */
-        public boolean in(int val) {
-            return val >= low && val < high;
+    private record Range(int low, int high) {}
+
+    // ── HyperBucket ───────────────────────────────────────────────────────────
+
+    /**
+     * Scheduling tier for tasks whose effective period is below {@value TimeArbiter#HYPER_THRESHOLD_MS} ms.
+     *
+     * <p>A single {@link BukkitRunnable} runs every Bukkit tick on the main thread. For each live handle
+     * it computes {@code catchupCount = max(1, floor(elapsed / effectivePeriodMs))} and calls
+     * {@link TaskHandle#executeBody()} that many times, delivering the correct iteration rate even when
+     * the main thread was delayed. The runnable starts lazily on the first {@link #offer} call and
+     * cancels itself when the handle list empties.</p>
+     */
+    private static final class HyperBucket {
+
+        private final List<TaskHandle> handles = new CopyOnWriteArrayList<>();
+        private volatile BukkitTask tickTask;
+        private final AtomicBoolean active = new AtomicBoolean(false);
+
+        /**
+         * Adds a handle and starts the tick loop if it was idle.
+         *
+         * @param handle the task to add
+         */
+        void offer(TaskHandle handle) {
+            handles.add(handle);
+            if (active.compareAndSet(false, true)) {
+                tickTask = new BukkitRunnable() {
+                    @Override
+                    public void run() {
+                        tick();
+                    }
+                }.runTaskTimer(Sword.getInstance(), 0L, 1L);
+            }
+        }
+
+        private void tick() {
+            long now = System.currentTimeMillis();
+            boolean anyAlive = false;
+
+            for (TaskHandle handle : handles) {
+                if (handle.isCancelled()) {
+                    handles.remove(handle);
+                    continue;
+                }
+
+                // Initial delay not yet elapsed — nextFireTimeMs holds the first-fire epoch
+                if (now < handle.nextFireTimeMs) {
+                    anyAlive = true;
+                    continue;
+                }
+
+                long effPeriod = handle.effectivePeriodMs();
+
+                // Migrate to TaskHandleBucket if timescale slowed this task past the hyper threshold
+                if (effPeriod >= HYPER_THRESHOLD_MS) {
+                    handles.remove(handle);
+                    handle.nextFireTimeMs = now + effPeriod;
+                    TaskHandleBucket bucket = bucketFor(effPeriod);
+                    handle.ownerBucket = bucket;
+                    bucket.offer(handle);
+                    anyAlive = true;
+                    continue;
+                }
+
+                long elapsed = now - handle.lastHyperFireMs;
+                int catchupCount = (int) Math.max(1, elapsed / effPeriod);
+
+                for (int i = 0; i < catchupCount; i++) {
+                    if (handle.isCancelled()) break;
+                    handle.executeBody();
+                }
+
+                handle.lastHyperFireMs = now;
+
+                if (!handle.isCancelled()) {
+                    anyAlive = true;
+                } else {
+                    handles.remove(handle);
+                }
+            }
+
+            // Self-cancel when no live handles remain
+            if (!anyAlive && active.compareAndSet(true, false)) {
+                tickTask.cancel();
+            }
+        }
+
+        /**
+         * Cancels the tick loop and marks all handles cancelled. Called on plugin shutdown.
+         */
+        void stop() {
+            active.set(false);
+            if (tickTask != null) tickTask.cancel();
+            handles.forEach(h -> h.cancelled.set(true));
+            handles.clear();
         }
     }
+
+    private static final HyperBucket HYPER_BUCKET = new HyperBucket();
 
     // ── TaskHandleBucket ──────────────────────────────────────────────────────
 
     /**
-     * A single scheduling tier. Tasks whose base period falls within this bucket's
-     * {@link Range} are placed here. A {@link ScheduledFuture} fires at {@code pollRate}
-     * in {@code pollUnit}, drains all due tasks from the {@link PriorityBlockingQueue},
-     * and dispatches them as a single batch to the Bukkit main thread.
+     * Scheduling tier for tasks with an effective period at or above {@value TimeArbiter#HYPER_THRESHOLD_MS} ms.
      *
-     * <p>The scheduler starts lazily on the first {@link #offer} call and cancels itself
+     * <p>A {@link ScheduledFuture} fires at {@code pollRate} in {@code pollUnit}, drains all due tasks
+     * from the {@link PriorityBlockingQueue}, and dispatches them as a single batch to the Bukkit main
+     * thread. The scheduler starts lazily on the first {@link #offer} call and cancels itself
      * automatically when the queue empties.</p>
      */
     private static final class TaskHandleBucket {
 
         private final int pollRate;
         private final TimeUnit pollUnit;
+        @SuppressWarnings("unused")
         private final Range range;
         private final PriorityBlockingQueue<TaskHandle> pq = new PriorityBlockingQueue<>();
         private volatile ScheduledFuture<?> scheduler;
@@ -140,10 +252,27 @@ public final class TimeArbiter {
                     return;
                 }
                 Bukkit.getScheduler().runTask(Sword.getInstance(), () -> {
+                    long mainThreadNow = System.currentTimeMillis();
+                    long drainToExecMs = mainThreadNow - now;
+                    if (drainToExecMs > 10) {
+                        Debug.system("BUCKET_LAG drainMs=" + drainToExecMs
+                            + " bucket=" + pollRate + pollUnit.name().charAt(0)
+                            + " batchSize=" + batch.size());
+                    }
                     for (TaskHandle t : batch) {
                         if (t.isCancelled()) continue;
+
+                        // Migrate to HyperBucket if timescale sped this task into sub-tick territory
+                        long effPeriod = t.effectivePeriodMs();
+                        if (effPeriod < HYPER_THRESHOLD_MS) {
+                            t.ownerBucket = null;
+                            t.lastHyperFireMs = mainThreadNow;
+                            HYPER_BUCKET.offer(t);
+                            continue;
+                        }
+
                         try {
-                            t.tick(now);
+                            t.tick(mainThreadNow);
                         } catch (Exception e) {
                             Debug.system("Task [" + t.getTaskID() + "] threw during execution: " + e.getMessage());
                             t.cancel();
@@ -184,12 +313,8 @@ public final class TimeArbiter {
 
     // ── Buckets ───────────────────────────────────────────────────────────────
 
-    private static final TaskHandleBucket BUCKET_1MS = new TaskHandleBucket(
-        1, TimeUnit.MILLISECONDS, new Range(1, 5));
-    private static final TaskHandleBucket BUCKET_5MS = new TaskHandleBucket(
-        5, TimeUnit.MILLISECONDS, new Range(5, 25));
-    private static final TaskHandleBucket BUCKET_25MS = new TaskHandleBucket(
-        25, TimeUnit.MILLISECONDS, new Range(25, 100));
+    private static final TaskHandleBucket BUCKET_50MS = new TaskHandleBucket(
+        50, TimeUnit.MILLISECONDS, new Range(50, 100));
     private static final TaskHandleBucket BUCKET_100MS = new TaskHandleBucket(
         100, TimeUnit.MILLISECONDS, new Range(100, 1000));
     private static final TaskHandleBucket BUCKET_1S = new TaskHandleBucket(
@@ -199,13 +324,11 @@ public final class TimeArbiter {
     private static final TaskHandleBucket BUCKET_30S = new TaskHandleBucket(
         30, TimeUnit.SECONDS, new Range(30000, Integer.MAX_VALUE));
 
-    private static TaskHandleBucket bucketFor(int periodMs) {
-        if (BUCKET_1MS.range.in(periodMs))   return BUCKET_1MS;
-        if (BUCKET_5MS.range.in(periodMs))   return BUCKET_5MS;
-        if (BUCKET_25MS.range.in(periodMs))  return BUCKET_25MS;
-        if (BUCKET_100MS.range.in(periodMs)) return BUCKET_100MS;
-        if (BUCKET_1S.range.in(periodMs))    return BUCKET_1S;
-        if (BUCKET_5S.range.in(periodMs))    return BUCKET_5S;
+    private static TaskHandleBucket bucketFor(long periodMs) {
+        if (periodMs < 100)   return BUCKET_50MS;
+        if (periodMs < 1000)  return BUCKET_100MS;
+        if (periodMs < 5000)  return BUCKET_1S;
+        if (periodMs < 30000) return BUCKET_5S;
         return BUCKET_30S;
     }
 
@@ -214,7 +337,7 @@ public final class TimeArbiter {
     /**
      * Sets the global time scale (0.0–2.0, where 1.0 is normal speed).
      * Time-bound tasks apply the new scale automatically on their next fire;
-     * no rescheduling is required.
+     * tasks near the {@value #HYPER_THRESHOLD_MS} ms boundary migrate between tiers lazily.
      *
      * @param timeScale the new time scale
      * @return {@code true} if applied successfully
@@ -276,13 +399,12 @@ public final class TimeArbiter {
     /**
      * A handle to a registered repeating task.
      *
-     * <p>Each handle tracks {@code nextFireTimeMs} and is placed in the appropriate
-     * {@link TaskHandleBucket} based on its {@code originalPeriodMs}. After executing
-     * on the Bukkit main thread, non-cancelled handles are re-inserted into their
-     * bucket's queue via {@link TaskHandleBucket#offer}.</p>
+     * <p>Handles in {@link TaskHandleBucket} are ordered by {@code nextFireTimeMs} in a
+     * {@link PriorityBlockingQueue}. Handles in {@link HyperBucket} use {@code nextFireTimeMs}
+     * only to enforce the initial delay; catch-up timing is tracked via {@code lastHyperFireMs}.</p>
      *
-     * <p>Implements {@link Comparable} so {@link PriorityBlockingQueue} can order
-     * handles by next fire time.</p>
+     * <p>Implements {@link Comparable} so {@link PriorityBlockingQueue} can order handles by
+     * next fire time.</p>
      */
     public static final class TaskHandle implements Comparable<TaskHandle> {
 
@@ -290,8 +412,20 @@ public final class TimeArbiter {
         private final int taskID;
         private final boolean timeBound;
 
-        /** Absolute epoch-ms at which this task should next fire. */
-        private long nextFireTimeMs;
+        /**
+         * Absolute epoch-ms at which this task should next fire.
+         * For {@link HyperBucket} handles this is set once at creation (the first-fire epoch) and
+         * is not updated afterwards. For {@link TaskHandleBucket} handles it is advanced on every
+         * fire via {@code scheduleNextFire}.
+         */
+        long nextFireTimeMs;
+
+        /**
+         * Last epoch-ms at which {@link HyperBucket} executed this handle.
+         * Initialized to the first-fire epoch; updated to {@code now} after each catch-up batch.
+         * Unused by {@link TaskHandleBucket} handles.
+         */
+        long lastHyperFireMs;
 
         @Getter
         private volatile boolean paused = false;
@@ -307,8 +441,8 @@ public final class TimeArbiter {
         private final Class<?> callingClass;
         private final String callingMethodName;
 
-        /** The bucket this task belongs to — used for re-insertion after main-thread execution. */
-        private TaskHandleBucket ownerBucket;
+        /** The {@link TaskHandleBucket} this handle belongs to; {@code null} when in {@link HyperBucket}. */
+        TaskHandleBucket ownerBucket;
 
         TaskHandle(int taskID, boolean timeBound, long nextFireTimeMs,
                    Runnable precheck, Runnable postcheck, Runnable paused,
@@ -332,41 +466,60 @@ public final class TimeArbiter {
         }
 
         /**
-         * Called by the bucket's main-thread batch runner.
-         * Fires the task body if due and reschedules the next fire time.
+         * Returns the effective period in milliseconds. Applies {@link TimeArbiter#GLOBAL_TIME_SCALE}
+         * for time-bound tasks; returns {@code originalPeriodMs} unchanged for time-independent tasks.
          *
-         * @param now {@code System.currentTimeMillis()} captured at batch-drain time
+         * @return effective period in milliseconds, always &ge; 1
          */
-        void tick(long now) {
-            if (cancelled.get() || now < nextFireTimeMs) return;
+        long effectivePeriodMs() {
+            return timeBound
+                ? Math.max(1L, (long) (originalPeriodMs / GLOBAL_TIME_SCALE))
+                : originalPeriodMs;
+        }
 
+        /**
+         * Executes the task body once. Runs the precheck, evaluates conditional callbacks
+         * (cancelling this handle if any trigger), then runs the postcheck. For paused time-bound
+         * tasks, runs the paused runnable instead.
+         *
+         * <p>Called directly by {@link HyperBucket} in its catch-up loop, and by {@link #tick}
+         * when dispatched via {@link TaskHandleBucket}.</p>
+         */
+        void executeBody() {
             if (timeBound && paused) {
                 if (pausedRunnable != null) pausedRunnable.run();
-                scheduleNextFire(now);
                 return;
             }
-
             if (precheckRunnable != null) precheckRunnable.run();
-
             for (PredicateRunnablePair callback : conditionalCallbacks) {
                 if (callback.testAndAccept()) {
                     cancel();
                     return;
                 }
             }
-
             if (postcheckRunnable != null) postcheckRunnable.run();
-            scheduleNextFire(now);
+        }
+
+        /**
+         * Called by the {@link TaskHandleBucket} main-thread batch runner.
+         * Fires the task body if due and advances {@code nextFireTimeMs}.
+         *
+         * @param now {@code System.currentTimeMillis()} captured at main-thread dispatch time
+         */
+        void tick(long now) {
+            if (cancelled.get() || now < nextFireTimeMs) return;
+            executeBody();
+            if (!cancelled.get()) scheduleNextFire(now);
         }
 
         private void scheduleNextFire(long now) {
-            long effectivePeriod = timeBound
-                ? Math.max(1L, (long) (originalPeriodMs / GLOBAL_TIME_SCALE))
-                : originalPeriodMs;
-            nextFireTimeMs = now + effectivePeriod;
+            nextFireTimeMs = now + effectivePeriodMs();
         }
 
-        /** Pauses this task (time-bound tasks only — runs {@code pausedRunnable} instead). */
+        /**
+         * Pauses this task. Time-bound tasks run the {@code pausedRunnable} each fire instead of
+         * the normal body.
+         */
         public void pause() {
             paused = true;
         }
@@ -377,7 +530,8 @@ public final class TimeArbiter {
         }
 
         /**
-         * Cancels this task. The bucket lazily removes it on the next poll.
+         * Cancels this task. Both {@link HyperBucket} and {@link TaskHandleBucket} lazily remove
+         * it on their next iteration.
          *
          * @return {@code true} if this call performed the cancellation
          */
@@ -420,11 +574,19 @@ public final class TimeArbiter {
             precheck, postcheck, paused, callbacks, periodMs,
             callingClass, callingMethodName);
 
+        handle.lastHyperFireMs = firstFireMs;
+
         ALL_TASKS.put(taskID, handle);
 
-        TaskHandleBucket bucket = bucketFor(periodMs);
-        handle.ownerBucket = bucket;
-        bucket.offer(handle);
+        long effPeriod = handle.effectivePeriodMs();
+        if (effPeriod < HYPER_THRESHOLD_MS) {
+            handle.ownerBucket = null;
+            HYPER_BUCKET.offer(handle);
+        } else {
+            TaskHandleBucket bucket = bucketFor(effPeriod);
+            handle.ownerBucket = bucket;
+            bucket.offer(handle);
+        }
 
         return handle;
     }
@@ -439,13 +601,13 @@ public final class TimeArbiter {
      * Registers a repeating task that is affected by the global time scale.
      * Supports pause/resume via {@code pausedRunnable}.
      *
-     * @param precheckRunnable    runs before condition checks each fire; may be null
-     * @param postcheckRunnable   runs after condition checks each fire; may be null
-     * @param pausedRunnable      runs instead of the normal body when paused; may be null
-     * @param delayMs             initial delay in milliseconds before the first fire
-     * @param periodMs            repeat interval in milliseconds
-     * @param callingClass        class registering this task (for debug logging)
-     * @param callingMethodName   method registering this task (for debug logging)
+     * @param precheckRunnable     runs before condition checks each fire; may be null
+     * @param postcheckRunnable    runs after condition checks each fire; may be null
+     * @param pausedRunnable       runs instead of the normal body when paused; may be null
+     * @param delayMs              initial delay in milliseconds before the first fire
+     * @param periodMs             repeat interval in milliseconds
+     * @param callingClass         class registering this task (for debug logging)
+     * @param callingMethodName    method registering this task (for debug logging)
      * @param conditionalCallbacks auto-cancel conditions checked each fire
      * @return a {@link TaskHandle} that can be paused, resumed, or cancelled
      */
@@ -464,12 +626,12 @@ public final class TimeArbiter {
     /**
      * Registers a repeating task that is <em>not</em> affected by the global time scale.
      *
-     * @param precheckRunnable    runs before condition checks each fire; may be null
-     * @param postcheckRunnable   runs after condition checks each fire; may be null
-     * @param delayMs             initial delay in milliseconds before the first fire
-     * @param periodMs            repeat interval in milliseconds
-     * @param callingClass        class registering this task (for debug logging)
-     * @param callingMethod       method registering this task (for debug logging)
+     * @param precheckRunnable     runs before condition checks each fire; may be null
+     * @param postcheckRunnable    runs after condition checks each fire; may be null
+     * @param delayMs              initial delay in milliseconds before the first fire
+     * @param periodMs             repeat interval in milliseconds
+     * @param callingClass         class registering this task (for debug logging)
+     * @param callingMethod        method registering this task (for debug logging)
      * @param conditionalCallbacks auto-cancel conditions checked each fire
      * @return a {@link TaskHandle} that can be cancelled
      */
@@ -488,13 +650,13 @@ public final class TimeArbiter {
      * Registers a repeating task that automatically cancels after {@code maxIterations} fires.
      * Scales with {@link #GLOBAL_TIME_SCALE}.
      *
-     * @param precheckRunnable     runs before condition checks each fire; may be null
-     * @param postcheckRunnable    runs after condition checks each fire; may be null
-     * @param delayMs              initial delay in milliseconds
-     * @param periodMs             repeat interval in milliseconds
-     * @param maxIterations        maximum number of times to fire before auto-cancel
-     * @param callingClass         class registering this task
-     * @param callingMethod        method registering this task
+     * @param precheckRunnable      runs before condition checks each fire; may be null
+     * @param postcheckRunnable     runs after condition checks each fire; may be null
+     * @param delayMs               initial delay in milliseconds
+     * @param periodMs              repeat interval in milliseconds
+     * @param maxIterations         maximum number of times to fire before auto-cancel
+     * @param callingClass          class registering this task
+     * @param callingMethod         method registering this task
      * @param lastIterationCallback runs on the final iteration; may be null
      * @param conditionalCallbacks  additional auto-cancel conditions
      * @return a {@link TaskHandle} that can be cancelled early
@@ -534,21 +696,20 @@ public final class TimeArbiter {
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
     /**
-     * No-op hook called from {@link Sword#onEnable()}. Bucket schedulers start
-     * lazily on the first task registration; no explicit initialization is needed.
+     * No-op hook called from {@link Sword#onEnable()}. Both scheduling tiers start lazily on the
+     * first task registration; no explicit initialization is needed.
      */
     public static void beginAll() {
-        // Buckets are lazy — they start automatically when the first task is offered.
+        // Both HyperBucket and TaskHandleBuckets start lazily on first offer.
     }
 
     /**
-     * Cancels all active bucket schedulers and marks all queued tasks cancelled.
+     * Cancels all active schedulers and marks all queued tasks cancelled.
      * Must be called from {@link Sword#onDisable()}.
      */
     public static void shutdown() {
-        BUCKET_1MS.stop();
-        BUCKET_5MS.stop();
-        BUCKET_25MS.stop();
+        HYPER_BUCKET.stop();
+        BUCKET_50MS.stop();
         BUCKET_100MS.stop();
         BUCKET_1S.stop();
         BUCKET_5S.stop();
@@ -573,12 +734,12 @@ public final class TimeArbiter {
     /**
      * Teleports a display entity with a smooth teleport duration scaled by the global time scale.
      *
-     * @param display           the display to teleport
-     * @param destination       target location
-     * @param direction         optional facing direction; if null the display keeps its current facing
-     * @param teleportDuration  base teleport duration (ms)
-     * @param clazz             calling class (for tracing)
-     * @param lineNum           calling line number (for tracing)
+     * @param display          the display to teleport
+     * @param destination      target location
+     * @param direction        optional facing direction; if null the display keeps its current facing
+     * @param teleportDuration base teleport duration in milliseconds
+     * @param clazz            calling class (for tracing)
+     * @param lineNum          calling line number (for tracing)
      */
     public static void teleportDisplay(Display display, Location destination, @Nullable Vector direction,
                                        int teleportDuration, Class<?> clazz, int lineNum) {
@@ -609,7 +770,4 @@ public final class TimeArbiter {
         DisplayUtil.setInterpolationValues(display, 0, effectiveDuration);
         display.setTransformation(transformation);
     }
-
-
-
 }

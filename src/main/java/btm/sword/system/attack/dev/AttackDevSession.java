@@ -16,7 +16,7 @@ import org.joml.Vector3f;
 import btm.sword.config.Config;
 import btm.sword.system.attack.HitValuePacket;
 import btm.sword.system.attack.def.AttackDef;
-import btm.sword.system.attack.def.AttackPrimitive;
+import btm.sword.system.attack.def.VolumeType;
 import btm.sword.system.attack.simulation.KeyframeEffect;
 import btm.sword.system.attack.simulation.KeyframedTrajectory;
 import btm.sword.system.attack.simulation.VolumeKeyframe;
@@ -322,7 +322,7 @@ public final class AttackDevSession {
             throw new IllegalStateException("Cannot build AttackDef: no keyframes defined");
         }
         return new AttackDef.Builder(currentAttackName)
-            .type(AttackPrimitive.VOLUME)
+            .type(VolumeType.VOLUME)
             .keyframes(editKeyframes)
             .duration(editDurationMs)
             .onHit(editHitValue != null ? editHitValue

@@ -310,12 +310,12 @@ public final class SweepRecordingAction {
      *
      * @param c the combatant holding right-click
      */
-    public static void holdingRight(Combatant c) {
+    public static void applyRecordingSpeedBoost(Combatant c) {
         TimeArbiter.runTimeIndependentBukkitTaskOnTimer(
             null,
             () -> Prefab.PotionEffects.DASH_SPEED.apply(c),
             50, 200,
-            SweepRecordingAction.class, "holdingRight",
+            SweepRecordingAction.class, "applyRecordingSpeedBoost",
             new PredicateRunnablePair(
                 () -> c instanceof SwordPlayer sp && !sp.player().isBlocking(),
                 () -> Debug.attackVolume("Stopped Recording")

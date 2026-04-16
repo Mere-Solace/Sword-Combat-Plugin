@@ -103,8 +103,17 @@ public final class VolumeSimulation {
         spatialGrid.clear();
 
         List<SimulationAttack> finished = new ArrayList<>();
+        processBroadPhase(now, finished);
+        processNarrowPhase();
+        expireFinished(finished);
+    }
 
-        // ── Trajectory evaluation + broad phase ──────────────────────────────
+    /**
+     * Evaluates each active attack's trajectory at normalized time {@code t}, inserts its
+     * volume into the {@link SpatialGrid}, and dispatches any keyframe effects.
+     * Attacks whose {@code t >= 1.0} are added to {@code finished} and skipped.
+     */
+    private void processBroadPhase(long now, List<SimulationAttack> finished) {
         for (SimulationAttack attack : activeAttacks) {
             float t = (float) ((now - attack.getStartMs()) / (double) attack.getDurationMs());
             if (t >= 1.0f) {
@@ -144,10 +153,11 @@ public final class VolumeSimulation {
                 attack.getVolume().aabbMax
             );
 
-            // ── Effects dispatch ──────────────────────────────────────────────
             if (attack.getTrajectory() instanceof KeyframedTrajectory kt) {
-                World world = Bukkit.getWorlds().getFirst();
-                EffectsDispatcher.dispatch(kt, attack.getPrevT(), t, worldTransform, world);
+                World world = Bukkit.getWorld(attack.getWorldUuid());
+                if (world != null) {
+                    EffectsDispatcher.dispatch(kt, attack.getPrevT(), t, worldTransform, world);
+                }
             }
             attack.setPrevT(t);
 
@@ -156,8 +166,13 @@ public final class VolumeSimulation {
                 + " aabbMax=" + fmtVec(attack.getVolume().aabbMax)
                 + " entities_in_map=" + EntitySnapshotMap.INSTANCE.entrySet().size());
         }
+    }
 
-        // ── Narrow phase ─────────────────────────────────────────────────────
+    /**
+     * Queries the {@link SpatialGrid} for each tracked entity, runs the narrow-phase
+     * intersection test, and posts {@link CollisionEvent}s to {@link CollisionEventBridge}.
+     */
+    private void processNarrowPhase() {
         for (Map.Entry<UUID, EntitySnapshotMap.EntityBoundingBoxSnapshot> entry :
                 EntitySnapshotMap.INSTANCE.entrySet()) {
 
@@ -186,21 +201,26 @@ public final class VolumeSimulation {
                     + " volAABB=[" + fmtVec(attack.getVolume().aabbMin) + " → " + fmtVec(attack.getVolume().aabbMax) + "]");
 
                 CollisionEventBridge.INSTANCE.post(
-                    new CollisionEvent(attack.getAttackerUuid(), entityUuid, contact, attack.getHitValue())
+                    new CollisionEvent(attack.getAttackerUuid(), entityUuid, contact,
+                        attack.getHitValue(), attack.getKnockbackFunction())
                 );
             }
         }
+    }
 
-        // ── Expire finished attacks ───────────────────────────────────────────
-        if (!finished.isEmpty()) {
-            activeAttacks.removeAll(finished);
-            for (SimulationAttack attack : finished) {
-                attackByOwner.remove(attack.getAttackerUuid());
-                Debug.attackVolume("EXPIRE attacker=" + attack.getAttackerUuid()
-                    + " hits=" + attack.getHitThisAttack().size());
-                if (attack.getOnEnd() != null) {
-                    Bukkit.getScheduler().runTask(Sword.getInstance(), attack.getOnEnd());
-                }
+    /**
+     * Removes expired attacks from both the active list and the owner map, then
+     * schedules any {@code onEnd} callbacks on the main thread.
+     */
+    private void expireFinished(List<SimulationAttack> finished) {
+        if (finished.isEmpty()) return;
+        activeAttacks.removeAll(finished);
+        for (SimulationAttack attack : finished) {
+            attackByOwner.remove(attack.getAttackerUuid());
+            Debug.attackVolume("EXPIRE attacker=" + attack.getAttackerUuid()
+                + " hits=" + attack.getHitThisAttack().size());
+            if (attack.getOnEnd() != null) {
+                Bukkit.getScheduler().runTask(Sword.getInstance(), attack.getOnEnd());
             }
         }
     }
