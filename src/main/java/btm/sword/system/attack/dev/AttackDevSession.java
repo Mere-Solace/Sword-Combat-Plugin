@@ -20,8 +20,12 @@ import btm.sword.system.attack.def.VolumeType;
 import btm.sword.system.attack.simulation.KeyframeEffect;
 import btm.sword.system.attack.simulation.KeyframedTrajectory;
 import btm.sword.system.attack.simulation.VolumeKeyframe;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
+import net.kyori.adventure.bossbar.BossBar;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 
 /**
  * Tracks per-player state during an attack creation or editing session.
@@ -36,6 +40,10 @@ import lombok.Setter;
  * {@link #startEditing(String, List, int, HitValuePacket)}, and {@link #stopEditing()}
  * methods. While in any non-{@link DevMode#IDLE} state, {@link #isActive()} returns
  * {@code true}.</p>
+ *
+ * <p>During RECORDING, right-click places world-space tip points into {@link #pendingPoints}.
+ * DROP+SWAP cycles the active {@link PlacementMode}. On stop, the pending points are
+ * converted to keyframes by {@code SweepRecordingAction.saveDraft}.</p>
  *
  * <p>During EDITING, the mutable {@link #editKeyframes} list and {@link #editDurationMs}
  * field are the primary working state. Call {@link #buildCurrentAttack()} to materialise
@@ -72,8 +80,25 @@ public final class AttackDevSession {
     @Setter private boolean playingPreview = false;
 
     // ── Recording state ───────────────────────────────────────────────────────
-    /** World-space tip samples captured during the current recording. */
-    private final List<RecordedSample> recordingBuffer = new ArrayList<>();
+    /** Current placement mode — determines how right-click deposits points. */
+    private PlacementMode placementMode = PlacementMode.SINGLE_KEYFRAME;
+
+    /** World-space tip positions deposited by right-click during the current recording. */
+    private final List<Vector3f> pendingPoints = new ArrayList<>();
+
+    /**
+     * Half-extents applied to each placed keyframe when the recording is saved.
+     * Defaults to {@code 0.4 × 0.4 × 0.4} blocks.
+     * -- SETTER --
+     *  Replaces the half-extents used for newly placed keyframe volumes.
+     */
+    @Setter
+    private Vector3f currentPlacementSize = new Vector3f(0.4f, 0.4f, 0.4f);
+
+    /** Boss bar shown to the player while in {@link DevMode#RECORDING}. Hidden on stop. */
+    @Getter(AccessLevel.NONE)
+    private BossBar recordingBossBar = null;
+
     /**
      * Player {@link Location} (feet) captured at the start of recording.
      * Used to lock the player in place via {@code PlayerMoveEvent} and as the
@@ -82,7 +107,7 @@ public final class AttackDevSession {
     private Location lockedOrigin = null;
     /**
      * Bounding-box centre of the player at the moment {@link #startRecording} was called.
-     * Used as the local-space origin when converting recorded world positions to keyframes.
+     * Used as the local-space origin when converting pending points to keyframes.
      */
     private Vector3f recordingRefOrigin = null;
     /**
@@ -195,14 +220,15 @@ public final class AttackDevSession {
     // ── Instance API — Recording ──────────────────────────────────────────────
 
     /**
-     * Transitions to {@link DevMode#RECORDING} and clears all recording buffers.
-     * Any previous recording data is discarded.
+     * Transitions to {@link DevMode#RECORDING} and resets all recording state.
+     * Any previous pending points are discarded. A red boss bar is shown to the player
+     * indicating the current placement mode and point count.
      *
      * @param name the name of the attack being recorded
      */
     public void startRecording(String name) {
         this.currentAttackName = name;
-        this.recordingBuffer.clear();
+        this.pendingPoints.clear();
         this.mode = DevMode.RECORDING;
 
         // Capture position lock and reference frame at recording start
@@ -211,18 +237,70 @@ public final class AttackDevSession {
         this.recordingRefOrigin = new Vector3f(
             (float) bb.getCenterX(), (float) bb.getCenterY(), (float) bb.getCenterZ());
         this.recordingRefYaw = player.getLocation().getYaw();
+
+        this.recordingBossBar = BossBar.bossBar(
+            recordingBossBarTitle(), 1.0f, BossBar.Color.RED, BossBar.Overlay.PROGRESS);
+        player.showBossBar(recordingBossBar);
     }
 
     /**
-     * Transitions back to {@link DevMode#IDLE} and returns a snapshot of the captured samples.
-     * The internal buffer is not cleared, so {@link #getRecordingBuffer()} remains accessible
-     * after this call.
-     *
-     * @return immutable snapshot of the recorded {@link RecordedSample}s
+     * Transitions back to {@link DevMode#IDLE} and hides the recording boss bar.
+     * The pending points list remains accessible via {@link #getPendingPoints()} until
+     * the next {@link #startRecording} call.
      */
-    public List<RecordedSample> stopRecording() {
+    public void stopRecording() {
         this.mode = DevMode.IDLE;
-        return List.copyOf(recordingBuffer);
+        if (recordingBossBar != null) {
+            player.hideBossBar(recordingBossBar);
+            recordingBossBar = null;
+        }
+    }
+
+    /**
+     * Advances to the next {@link PlacementMode}, clears any incomplete pending points,
+     * and refreshes the recording boss bar.
+     *
+     * <p>Points are considered incomplete when the current count is greater than zero
+     * but less than the mode's {@link PlacementMode#requiredPoints()}. They are always
+     * cleared on a mode switch so the new mode starts from a clean slate.</p>
+     */
+    public void cyclePlacementMode() {
+        this.placementMode = placementMode.next();
+        this.pendingPoints.clear();
+        updateRecordingBossBar();
+    }
+
+    /**
+     * Appends a world-space point to the pending points buffer and updates the boss bar.
+     *
+     * @param point the world-space position to record
+     */
+    public void addPendingPoint(Vector3f point) {
+        pendingPoints.add(point);
+        updateRecordingBossBar();
+    }
+
+    /** Clears all pending points and refreshes the boss bar count. */
+    public void clearPendingPoints() {
+        pendingPoints.clear();
+        updateRecordingBossBar();
+    }
+
+    /** Updates the recording boss bar title to reflect the current mode and point count. */
+    public void updateRecordingBossBar() {
+        if (recordingBossBar != null) {
+            recordingBossBar.name(recordingBossBarTitle());
+        }
+    }
+
+    private Component recordingBossBarTitle() {
+        int placed = pendingPoints.size();
+        String ptsLabel = placementMode == PlacementMode.SINGLE_KEYFRAME
+            ? "(" + placed + " pts)"
+            : "(" + placed + "/" + placementMode.requiredPoints() + " pts)";
+        return Component.text("[Dev] Recording — ", NamedTextColor.RED)
+            .append(Component.text(placementMode.label(), NamedTextColor.WHITE))
+            .append(Component.text("  " + ptsLabel, NamedTextColor.GRAY));
     }
 
     // ── Instance API — Editing ────────────────────────────────────────────────
