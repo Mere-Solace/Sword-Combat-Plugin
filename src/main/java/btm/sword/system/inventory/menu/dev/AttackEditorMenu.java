@@ -423,7 +423,7 @@ public class AttackEditorMenu extends Menu {
                 VolumeKeyframe kf = kfs.get(idx);
                 VolumeShape[] shapes = VolumeShape.values();
                 VolumeShape next = shapes[(kf.shape().ordinal() + 1) % shapes.length];
-                kfs.set(idx, new VolumeKeyframe(kf.t(), kf.localPosition(), kf.halfExtents(), kf.rotation(), next, kf.effect(), kf.jump()));
+                kfs.set(idx, new VolumeKeyframe(kf.t(), kf.localPosition(), kf.halfExtents(), kf.rotation(), next, kf.effect(), kf.jump(), kf.linearToNext()));
                 new AttackEditorMenu(swordPlayer).open();
             }
         );
@@ -686,7 +686,7 @@ public class AttackEditorMenu extends Menu {
                 case POS_Y -> he.y = Math.max(0.05f, he.y + delta);
                 case POS_Z -> he.z = Math.max(0.05f, he.z + delta);
             }
-            return new VolumeKeyframe(kf.t(), kf.localPosition(), he, kf.rotation(), kf.shape(), kf.effect(), kf.jump());
+            return new VolumeKeyframe(kf.t(), kf.localPosition(), he, kf.rotation(), kf.shape(), kf.effect(), kf.jump(), kf.linearToNext());
         } else {
             Vector3f pos = new Vector3f(kf.localPosition());
             switch (axis) {
@@ -694,7 +694,7 @@ public class AttackEditorMenu extends Menu {
                 case POS_Y -> pos.y += delta;
                 case POS_Z -> pos.z += delta;
             }
-            return new VolumeKeyframe(kf.t(), pos, kf.halfExtents(), kf.rotation(), kf.shape(), kf.effect(), kf.jump());
+            return new VolumeKeyframe(kf.t(), pos, kf.halfExtents(), kf.rotation(), kf.shape(), kf.effect(), kf.jump(), kf.linearToNext());
         }
     }
 
@@ -711,7 +711,7 @@ public class AttackEditorMenu extends Menu {
     private static void insertFrameAfterSelected(AttackDevSession session) {
         List<VolumeKeyframe> kfs = session.getEditKeyframes();
         if (kfs.isEmpty()) {
-            kfs.add(new VolumeKeyframe(0f, new Vector3f(0f, 1f, 1f), new Vector3f(0.5f, 0.5f, 0.5f), new Quaternionf(), VolumeShape.SPHERE, null, false));
+            kfs.add(new VolumeKeyframe(0f, new Vector3f(0f, 1f, 1f), new Vector3f(0.5f, 0.5f, 0.5f), new Quaternionf(), VolumeShape.SPHERE, null, false, false));
             session.setCurrentKeyframeIndex(0);
             return;
         }
@@ -726,14 +726,14 @@ public class AttackEditorMenu extends Menu {
             Vector3f pos = new Vector3f(cur.localPosition()).lerp(next.localPosition(), 0.5f);
             Vector3f he = new Vector3f(cur.halfExtents()).lerp(next.halfExtents(), 0.5f);
             Quaternionf rot = new Quaternionf(cur.rotation()).slerp(next.rotation(), 0.5f);
-            newFrame = new VolumeKeyframe(t, pos, he, rot, cur.shape(), null, false);
+            newFrame = new VolumeKeyframe(t, pos, he, rot, cur.shape(), null, false, false);
         } else {
             float t = Math.min(1.0f, cur.t() + 0.1f);
             newFrame = new VolumeKeyframe(t,
                 new Vector3f(cur.localPosition()),
                 new Vector3f(cur.halfExtents()),
                 new Quaternionf(cur.rotation()),
-                cur.shape(), null, false);
+                cur.shape(), null, false, false);
         }
 
         kfs.add(idx + 1, newFrame);
@@ -754,7 +754,7 @@ public class AttackEditorMenu extends Menu {
             VolumeKeyframe kf = kfs.get(i);
             Vector3f pos = new Vector3f(kf.localPosition());
             pos.x += delta;
-            kfs.set(i, new VolumeKeyframe(kf.t(), pos, kf.halfExtents(), kf.rotation(), kf.shape(), kf.effect(), kf.jump()));
+            kfs.set(i, new VolumeKeyframe(kf.t(), pos, kf.halfExtents(), kf.rotation(), kf.shape(), kf.effect(), kf.jump(), kf.linearToNext()));
         }
     }
 
@@ -770,7 +770,7 @@ public class AttackEditorMenu extends Menu {
             VolumeKeyframe kf = kfs.get(i);
             Vector3f pos = new Vector3f(kf.localPosition());
             pos.y += delta;
-            kfs.set(i, new VolumeKeyframe(kf.t(), pos, kf.halfExtents(), kf.rotation(), kf.shape(), kf.effect(), kf.jump()));
+            kfs.set(i, new VolumeKeyframe(kf.t(), pos, kf.halfExtents(), kf.rotation(), kf.shape(), kf.effect(), kf.jump(), kf.linearToNext()));
         }
     }
 
@@ -786,7 +786,7 @@ public class AttackEditorMenu extends Menu {
             VolumeKeyframe kf = kfs.get(i);
             Vector3f pos = new Vector3f(kf.localPosition());
             pos.z += delta;
-            kfs.set(i, new VolumeKeyframe(kf.t(), pos, kf.halfExtents(), kf.rotation(), kf.shape(), kf.effect(), kf.jump()));
+            kfs.set(i, new VolumeKeyframe(kf.t(), pos, kf.halfExtents(), kf.rotation(), kf.shape(), kf.effect(), kf.jump(), kf.linearToNext()));
         }
     }
 

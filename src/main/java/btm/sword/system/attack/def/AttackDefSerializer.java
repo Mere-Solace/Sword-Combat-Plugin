@@ -127,7 +127,8 @@ public final class AttackDefSerializer {
                 effect = loadKeyframeEffect(effectMap);
             }
             boolean jump = Boolean.TRUE.equals(map.get("jump"));
-            keyframes.add(new VolumeKeyframe(t, position, halfExtents, rotation, shape, effect, jump));
+            boolean linearToNext = Boolean.TRUE.equals(map.get("linear-to-next"));
+            keyframes.add(new VolumeKeyframe(t, position, halfExtents, rotation, shape, effect, jump, linearToNext));
         }
         return keyframes;
     }
@@ -286,6 +287,9 @@ public final class AttackDefSerializer {
             kfMap.put("shape", kf.shape().name());
             if (kf.jump()) {
                 kfMap.put("jump", true);
+            }
+            if (kf.linearToNext()) {
+                kfMap.put("linear-to-next", true);
             }
             if (kf.effect() != null) {
                 kfMap.put("effect", serializeEffect(kf.effect()));

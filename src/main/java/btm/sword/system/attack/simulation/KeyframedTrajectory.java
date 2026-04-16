@@ -95,9 +95,10 @@ public final class KeyframedTrajectory implements VolumeTrajectory {
 
         // Interpolate in local space; use the target keyframe's shape to decide collision type
         boolean sphere = kc.shape() == VolumeShape.SPHERE;
-        Vector3f localPos = BezierUtil.catmullRom(
-            ka.localPosition(), kb.localPosition(), kc.localPosition(), kd.localPosition(), localT
-        );
+        Vector3f localPos = kb.linearToNext()
+            ? new Vector3f(kb.localPosition()).lerp(kc.localPosition(), localT)
+            : BezierUtil.catmullRom(
+                ka.localPosition(), kb.localPosition(), kc.localPosition(), kd.localPosition(), localT);
         Quaternionf localRot = new Quaternionf(kb.rotation()).slerp(kc.rotation(), localT);
         Vector3f he = new Vector3f(kb.halfExtents()).lerp(kc.halfExtents(), localT);
         if (sphere) {

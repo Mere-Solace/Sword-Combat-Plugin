@@ -30,6 +30,8 @@ import org.joml.Vector3f;
  * @param jump          when {@code true}, the trajectory holds at the previous keyframe's
  *                      value until {@code t} is crossed — no interpolation occurs entering
  *                      this keyframe
+ * @param linearToNext  when {@code true}, the segment from this keyframe to the next uses
+ *                      linear interpolation instead of Catmull-Rom
  */
 public record VolumeKeyframe(
     float t,
@@ -38,7 +40,8 @@ public record VolumeKeyframe(
     Quaternionf rotation,
     VolumeShape shape,
     @Nullable KeyframeEffect effect,
-    boolean jump
+    boolean jump,
+    boolean linearToNext
 ) {
 
     /**
@@ -48,7 +51,7 @@ public record VolumeKeyframe(
      * @return a new {@link VolumeKeyframe} identical to this one except for the effect
      */
     public VolumeKeyframe withEffect(@Nullable KeyframeEffect newEffect) {
-        return new VolumeKeyframe(t, localPosition, halfExtents, rotation, shape, newEffect, jump);
+        return new VolumeKeyframe(t, localPosition, halfExtents, rotation, shape, newEffect, jump, linearToNext);
     }
 
     /**
@@ -58,7 +61,7 @@ public record VolumeKeyframe(
      * @return a new {@link VolumeKeyframe} identical to this one except for the jump flag
      */
     public VolumeKeyframe withJump(boolean j) {
-        return new VolumeKeyframe(t, localPosition, halfExtents, rotation, shape, effect, j);
+        return new VolumeKeyframe(t, localPosition, halfExtents, rotation, shape, effect, j, linearToNext);
     }
 
     /**
@@ -68,6 +71,16 @@ public record VolumeKeyframe(
      * @return a new {@link VolumeKeyframe} identical to this one except for the time value
      */
     public VolumeKeyframe withT(float newT) {
-        return new VolumeKeyframe(newT, localPosition, halfExtents, rotation, shape, effect, jump);
+        return new VolumeKeyframe(newT, localPosition, halfExtents, rotation, shape, effect, jump, linearToNext);
+    }
+
+    /**
+     * Returns a copy of this keyframe with the {@code linearToNext} flag set to {@code linear}.
+     *
+     * @param linear {@code true} to use linear interpolation to the following keyframe
+     * @return a new {@link VolumeKeyframe} identical to this one except for the linearToNext flag
+     */
+    public VolumeKeyframe withLinearToNext(boolean linear) {
+        return new VolumeKeyframe(t, localPosition, halfExtents, rotation, shape, effect, jump, linear);
     }
 }

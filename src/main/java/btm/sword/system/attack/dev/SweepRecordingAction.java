@@ -8,6 +8,7 @@ import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.World;
+import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
@@ -47,8 +48,8 @@ import net.kyori.adventure.text.format.NamedTextColor;
  */
 public final class SweepRecordingAction {
 
-    /** Distance from the player's eye at which the tip sample is placed, in blocks. */
-    private static final float TIP_DISTANCE = 1.5f;
+    /** Default tip distance, used as fallback when the session has no custom value. */
+    private static final float DEFAULT_TIP_DISTANCE = 1.5f;
 
     /** Length of the north-arrow rendered at the recording origin, in blocks. */
     private static final float ARROW_LENGTH = 1.5f;
@@ -136,7 +137,9 @@ public final class SweepRecordingAction {
         AttackDevSession session = AttackDevSession.get(player.player().getUniqueId());
         if (session == null || session.getMode() != DevMode.RECORDING) return;
 
-        Vector3f tip = computeWorldTip(player);
+        Vector3f tip = session.getPlacementMode() == PlacementMode.RAYCAST
+            ? computeRaycastTip(player, session.getRaycastMaxDistance())
+            : computeWorldTip(player, session.getTipDistance());
         session.addPendingPoint(tip);
 
         // Immediate placement marker — color matches what the render loop assigns this point
@@ -203,8 +206,9 @@ public final class SweepRecordingAction {
                 world.x - refOrigin.x,
                 world.y - refOrigin.y,
                 world.z - refOrigin.z);
+            boolean linearToNext = points.get(i).mode() == PlacementMode.LINE_SEGMENT;
             keyframes.add(new VolumeKeyframe(
-                t, local, new Vector3f(size), new Quaternionf(), VolumeShape.SPHERE, null, false));
+                t, local, new Vector3f(size), new Quaternionf(), VolumeShape.SPHERE, null, false, linearToNext));
         }
 
         int durationMs = 600;
@@ -356,15 +360,32 @@ public final class SweepRecordingAction {
     }
 
     /**
-     * Returns the world-space tip position: player eye offset by {@link #TIP_DISTANCE}
-     * blocks along the current look direction.
+     * Returns the world-space tip position at {@code distance} blocks from the player's eye
+     * along the current look direction.
      */
-    static Vector3f computeWorldTip(SwordPlayer player) {
+    static Vector3f computeWorldTip(SwordPlayer player, float distance) {
         Location eye = player.player().getEyeLocation();
         Vector dir = player.player().getLocation().getDirection();
         return new Vector3f(
-            (float) (eye.getX() + dir.getX() * TIP_DISTANCE),
-            (float) (eye.getY() + dir.getY() * TIP_DISTANCE),
-            (float) (eye.getZ() + dir.getZ() * TIP_DISTANCE));
+            (float) (eye.getX() + dir.getX() * distance),
+            (float) (eye.getY() + dir.getY() * distance),
+            (float) (eye.getZ() + dir.getZ() * distance));
+    }
+
+    /**
+     * Returns the world-space hit position of a block raycast from the player's eye.
+     * Falls back to {@code computeWorldTip} at {@code maxDistance} if nothing is hit.
+     */
+    static Vector3f computeRaycastTip(SwordPlayer player, float maxDistance) {
+        Location eye = player.player().getEyeLocation();
+        Vector dir = eye.getDirection();
+        RayTraceResult result = player.player().getWorld().rayTraceBlocks(eye, dir, maxDistance);
+        if (result != null && result.getHitPosition() != null) {
+            return new Vector3f(
+                (float) result.getHitPosition().getX(),
+                (float) result.getHitPosition().getY(),
+                (float) result.getHitPosition().getZ());
+        }
+        return computeWorldTip(player, maxDistance);
     }
 }

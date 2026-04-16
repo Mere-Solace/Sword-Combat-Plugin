@@ -102,6 +102,18 @@ public final class AttackDevSession {
     @Setter
     private Vector3f currentPlacementSize = new Vector3f(0.4f, 0.4f, 0.4f);
 
+    /**
+     * Distance from the player's eye at which a non-raycast point is placed, in blocks.
+     * Adjusted via the Recording Settings menu.
+     */
+    @Getter @Setter private float tipDistance = 1.5f;
+
+    /**
+     * Maximum raycast distance for {@link PlacementMode#RAYCAST} point placement, in blocks.
+     * Adjusted via the Recording Settings menu.
+     */
+    @Getter @Setter private float raycastMaxDistance = 8.0f;
+
     /** Boss bar shown to the player while in {@link DevMode#RECORDING}. Hidden on stop. */
     @Getter(AccessLevel.NONE)
     private BossBar recordingBossBar = null;
