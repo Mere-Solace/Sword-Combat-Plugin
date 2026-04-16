@@ -102,17 +102,14 @@ public final class SweepRecordingAction {
 
         if (session.getMode() == DevMode.RECORDING) {
             int placed = session.getPendingPoints().size();
-            int required = session.getPlacementMode().requiredPoints();
             session.stopRecording();
             Debug.attackVolume("RECORDING STOPPED player=" + player.player().getName()
                 + " points=" + placed);
-            if (placed >= required) {
+            if (placed >= 1) {
                 saveDraft(session, player);
             } else {
                 player.player().sendActionBar(Component.text(
-                    "[Dev] Not enough points — need " + required
-                        + " for " + session.getPlacementMode().label(),
-                    NamedTextColor.RED));
+                    "[Dev] No points placed — nothing to save.", NamedTextColor.RED));
             }
         } else if (session.getMode() == DevMode.IDLE) {
             session.startRecording("sweep_draft");
@@ -142,9 +139,8 @@ public final class SweepRecordingAction {
         Vector3f tip = computeWorldTip(player);
         session.addPendingPoint(tip);
 
-        // Immediate placement marker — color matches what the render loop assigns this index
-        int placedIndex = session.getPendingPoints().size() - 1;
-        Particle.DustOptions dust = dustForIndex(placedIndex, 0, session.getPlacementMode());
+        // Immediate placement marker — color matches what the render loop assigns this point
+        Particle.DustOptions dust = dustForNewPoint(session.getPendingPoints());
         player.player().getWorld().spawnParticle(
             Particle.DUST, tip.x, tip.y, tip.z, 1, 0, 0, 0, 0, dust);
 
@@ -189,7 +185,7 @@ public final class SweepRecordingAction {
      * once that type is available.</p>
      */
     private static void saveDraft(AttackDevSession session, SwordPlayer player) {
-        List<Vector3f> points = session.getPendingPoints();
+        List<PlacedPoint> points = session.getPendingPoints();
         int n = points.size();
 
         File attacksDir = new File(Sword.getInstance().getDataFolder(), "attacks");
@@ -202,7 +198,7 @@ public final class SweepRecordingAction {
         List<VolumeKeyframe> keyframes = new ArrayList<>(n);
         for (int i = 0; i < n; i++) {
             float t = n == 1 ? 0f : (float) i / (n - 1);
-            Vector3f world = points.get(i);
+            Vector3f world = points.get(i).position();
             Vector3f local = new Vector3f(
                 world.x - refOrigin.x,
                 world.y - refOrigin.y,
@@ -267,8 +263,7 @@ public final class SweepRecordingAction {
         TimeArbiter.runTimeIndependentBukkitTaskOnTimer(
             () -> {
                 renderOriginArrow(player.player().getWorld(), session);
-                renderPlacedPoints(player.player().getWorld(), session.getPendingPoints(),
-                    session.getPlacementMode());
+                renderPlacedPoints(player.player().getWorld(), session.getPendingPoints());
             },
             null,
             0, RENDER_PERIOD_MS,
@@ -280,33 +275,56 @@ public final class SweepRecordingAction {
     }
 
     /**
-     * Spawns {@link Particle#DUST} at each placed world position using mode-appropriate colors.
+     * Spawns {@link Particle#DUST} at each placed world position using per-point colors.
      *
-     * <p>For {@link PlacementMode#BEZIER_CURVE}: fixed role colors by index
+     * <p>For {@link PlacementMode#BEZIER_CURVE} points: role color based on
+     * {@code bezierPointIndex % 4} across all bezier points, cycling every 4
      * (start→green, c1→muted green, c2→muted red, end→red).</p>
      *
      * <p>For all other modes: age-based gradient where the newest point is dark blue,
      * the two preceding points step toward mid-gray, and anything older is flat mid-gray.</p>
      */
-    private static void renderPlacedPoints(World world, List<Vector3f> positions, PlacementMode mode) {
-        int n = positions.size();
+    private static void renderPlacedPoints(World world, List<PlacedPoint> points) {
+        int n = points.size();
+        int bezierIndex = 0;
         for (int i = 0; i < n; i++) {
-            int age = n - 1 - i;
-            Particle.DustOptions dust = dustForIndex(i, age, mode);
-            Vector3f p = positions.get(i);
+            PlacedPoint pp = points.get(i);
+            Particle.DustOptions dust;
+            if (pp.mode() == PlacementMode.BEZIER_CURVE) {
+                dust = bezierRoleDust(bezierIndex % 4);
+                bezierIndex++;
+            } else {
+                dust = ageDust(n - 1 - i);
+            }
+            Vector3f p = pp.position();
             world.spawnParticle(Particle.DUST, p.x, p.y, p.z, 1, 0, 0, 0, 0, dust);
         }
     }
 
-    private static Particle.DustOptions dustForIndex(int index, int age, PlacementMode mode) {
-        if (mode == PlacementMode.BEZIER_CURVE) {
-            return switch (index) {
-                case 0 -> DUST_BEZIER_START;
-                case 1 -> DUST_BEZIER_C1;
-                case 2 -> DUST_BEZIER_C2;
-                default -> DUST_BEZIER_END;
-            };
+    /**
+     * Returns the dust color for the most recently added point — used for the instant
+     * placement marker so it matches what the render loop will assign to that point.
+     */
+    private static Particle.DustOptions dustForNewPoint(List<PlacedPoint> points) {
+        if (points.isEmpty()) return DUST_AGE_0;
+        PlacedPoint newest = points.getLast();
+        if (newest.mode() == PlacementMode.BEZIER_CURVE) {
+            long bezierCount = points.stream().filter(p -> p.mode() == PlacementMode.BEZIER_CURVE).count();
+            return bezierRoleDust((int) ((bezierCount - 1) % 4));
         }
+        return DUST_AGE_0;
+    }
+
+    private static Particle.DustOptions bezierRoleDust(int roleIndex) {
+        return switch (roleIndex) {
+            case 0 -> DUST_BEZIER_START;
+            case 1 -> DUST_BEZIER_C1;
+            case 2 -> DUST_BEZIER_C2;
+            default -> DUST_BEZIER_END;
+        };
+    }
+
+    private static Particle.DustOptions ageDust(int age) {
         return switch (age) {
             case 0 -> DUST_AGE_0;
             case 1 -> DUST_AGE_1;

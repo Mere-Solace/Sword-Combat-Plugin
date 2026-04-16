@@ -86,8 +86,12 @@ public final class AttackDevSession {
     /** Current placement mode — determines how right-click deposits points. */
     private PlacementMode placementMode = PlacementMode.SINGLE_KEYFRAME;
 
-    /** World-space tip positions deposited by right-click during the current recording. */
-    private final List<Vector3f> pendingPoints = new ArrayList<>();
+    /**
+     * Points deposited by right-click during the current recording, each tagged with the
+     * {@link PlacementMode} active at placement time. Mode switching no longer clears this
+     * list, allowing mixed-mode trajectories to accumulate freely.
+     */
+    private final List<PlacedPoint> pendingPoints = new ArrayList<>();
 
     /**
      * Half-extents applied to each placed keyframe when the recording is saved.
@@ -272,26 +276,23 @@ public final class AttackDevSession {
     }
 
     /**
-     * Advances to the next {@link PlacementMode}, clears any incomplete pending points,
-     * and refreshes the recording boss bar.
-     *
-     * <p>Points are considered incomplete when the current count is greater than zero
-     * but less than the mode's {@link PlacementMode#requiredPoints()}. They are always
-     * cleared on a mode switch so the new mode starts from a clean slate.</p>
+     * Advances to the next {@link PlacementMode} and refreshes the recording boss bar.
+     * Previously placed points are preserved — mode switching no longer resets the session,
+     * allowing mixed-mode trajectories to accumulate across multiple mode changes.
      */
     public void cyclePlacementMode() {
         this.placementMode = placementMode.next();
-        this.pendingPoints.clear();
         updateRecordingBossBar();
     }
 
     /**
-     * Appends a world-space point to the pending points buffer and updates the boss bar.
+     * Appends a world-space point to the pending points buffer, tagged with the current
+     * placement mode, and updates the boss bar.
      *
      * @param point the world-space position to record
      */
     public void addPendingPoint(Vector3f point) {
-        pendingPoints.add(point);
+        pendingPoints.add(new PlacedPoint(point, placementMode));
         updateRecordingBossBar();
     }
 
