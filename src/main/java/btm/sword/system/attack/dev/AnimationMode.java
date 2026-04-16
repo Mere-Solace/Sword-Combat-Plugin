@@ -176,7 +176,10 @@ public final class AnimationMode {
         dev.player().getInventory().setItem(8,
             new ItemStackBuilder(Material.WRITABLE_BOOK)
                 .name(Component.text("Open Editor", NamedTextColor.WHITE, TextDecoration.BOLD))
-                .lore(List.of(Component.text("Any click — open AttackEditorMenu", NamedTextColor.DARK_GRAY)))
+                .lore(List.of(
+                    Component.text("Any click — open AttackEditorMenu", NamedTextColor.DARK_GRAY),
+                    Component.text("Shortcut: SHIFT+SWAP with the wand", NamedTextColor.DARK_GRAY)
+                ))
                 .build());
     }
 
@@ -185,7 +188,10 @@ public final class AnimationMode {
             .name(Component.text("Exit Animation Mode", NamedTextColor.RED, TextDecoration.BOLD))
             .lore(List.of(
                 Component.text("Left-click — save & exit", NamedTextColor.DARK_GRAY),
-                Component.text("Opens the save confirm dialog.", NamedTextColor.GRAY)
+                Component.text("Opens the save confirm dialog.", NamedTextColor.GRAY),
+                Component.empty(),
+                Component.text("This is the ONLY way to exit —", NamedTextColor.GRAY),
+                Component.text("closing the inventory does not stop keyframe display.", NamedTextColor.GRAY)
             ))
             .build();
     }
