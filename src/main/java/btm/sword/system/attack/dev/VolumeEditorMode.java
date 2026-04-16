@@ -158,14 +158,6 @@ public final class VolumeEditorMode {
                         player.getBoundingBox(), loc.getYaw(), loc.getPitch(), orientWithPitch);
                 }
 
-                // Ghost path — full trajectory sampled at 20 points
-                for (int i = 0; i <= 20; i++) {
-                    trajectory.sample(i / 20.0f, worldTransform, buffer);
-                    world.spawnParticle(Particle.DUST,
-                        buffer.center.x, buffer.center.y, buffer.center.z,
-                        1, 0, 0, 0, 0, DUST_GHOST_PATH);
-                }
-
                 // Live position wireframe
                 trajectory.sample(t, worldTransform, buffer);
                 if (buffer.isSphere) {
@@ -293,6 +285,10 @@ public final class VolumeEditorMode {
                 renderSession(session, tickCount[0]);
                 if (expectedMode == DevMode.EDITING) {
                     updateLabels(session);
+                    PlacementMode pm = session.getPlacementMode();
+                    if (pm == PlacementMode.RAYCAST || pm == PlacementMode.ORIGIN_RAY) {
+                        SweepRecordingAction.renderRayCursorForSession(player, session);
+                    }
                 }
             },
             null,

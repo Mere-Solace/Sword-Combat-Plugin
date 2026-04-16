@@ -8,6 +8,7 @@ import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.World;
+import org.bukkit.entity.Player;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
 import org.joml.Quaternionf;
@@ -15,9 +16,6 @@ import org.joml.Vector3f;
 
 import btm.sword.Sword;
 import btm.sword.system.attack.HitValuePacket;
-import btm.sword.system.attack.def.AttackDef;
-import btm.sword.system.attack.def.AttackDefSerializer;
-import btm.sword.system.attack.def.AttackRegistry;
 import btm.sword.system.attack.simulation.VolumeKeyframe;
 import btm.sword.system.attack.simulation.VolumeShape;
 import btm.sword.system.control.PredicateRunnablePair;
@@ -143,7 +141,7 @@ public final class SweepRecordingAction {
 
         Vector3f tip = switch (session.getPlacementMode()) {
             case RAYCAST -> computeRaycastTip(player, session.getRaycastMaxDistance(), session.getRaycastOriginOffset());
-            case ORIGIN_RAY -> computeOriginRayTip(player, session);
+            case ORIGIN_RAY -> computeOriginRayTip(player.player(), session);
             default -> computeWorldTip(player, session.getTipDistance());
         };
         session.addPendingPoint(tip);
@@ -187,23 +185,20 @@ public final class SweepRecordingAction {
     // ── Saving ────────────────────────────────────────────────────────────────
 
     /**
-     * Converts the session's pending points into a VOLUME {@link AttackDef} and writes it
-     * to {@code plugins/sword/attacks/<name>.yml} via {@link AttackDefSerializer}.
+     * Converts the session's pending points into a {@link KeyframedTrajectory} edit session.
      *
-     * <p>Each pending point is converted to local space using the reference origin captured
-     * at recording start, then wrapped in a {@link VolumeKeyframe} using the session's
-     * {@link AttackDevSession#getCurrentPlacementSize()}. T-values are distributed evenly
-     * across {@code [0, 1]}.</p>
-     *
-     * <p><b>TODO #368:</b> Replace this placeholder mapping with a {@code ControlPointTrajectory}
-     * once that type is available.</p>
+     * <p>No YAML is written here — the file is only persisted when the user explicitly saves
+     * via {@link btm.sword.system.attack.dev.SaveConfirmDialog}. Each pending point is
+     * converted to local space using the reference origin captured at recording start, then
+     * wrapped in a {@link VolumeKeyframe}. T-values are distributed evenly across
+     * {@code [0, 1]}. Points placed in {@link PlacementMode#LINE_SEGMENT} set
+     * {@code linearToNext=true} on their keyframe.</p>
      */
     private static void saveDraft(AttackDevSession session, SwordPlayer player) {
         List<PlacedPoint> points = session.getPendingPoints();
         int n = points.size();
 
         File attacksDir = new File(Sword.getInstance().getDataFolder(), "attacks");
-        attacksDir.mkdirs();
         String name = nextAvailableName("sweep_draft", attacksDir);
 
         Vector3f refOrigin = session.getRecordingRefOrigin();
@@ -222,23 +217,14 @@ public final class SweepRecordingAction {
                 t, local, new Vector3f(size), new Quaternionf(), VolumeShape.SPHERE, null, false, linearToNext));
         }
 
-        int durationMs = 600;
+        int durationMs = session.getEditDurationMs();
         HitValuePacket placeholder = new HitValuePacket(() -> 0f, () -> 10, () -> 0, () -> 0f, () -> 0f);
 
-        AttackDef draft = new AttackDef.Builder(name)
-            .duration(durationMs)
-            .onHit(placeholder)
-            .keyframes(keyframes)
-            .build();
-
-        File file = new File(attacksDir, name + ".yml");
-        AttackDefSerializer.save(file, draft);
-        AttackRegistry.register(draft);
-
-        Debug.attackVolume("SAVED draft '" + name + "' → " + file.getPath()
-            + " keyframes=" + n + " mode=" + session.getPlacementMode().name());
+        Debug.attackVolume("DRAFT ready '" + name + "' keyframes=" + n
+            + " mode=" + session.getPlacementMode().name());
         player.player().sendMessage(Component.text(
-            "[Dev] Saved to attacks/" + name + ".yml — opening editor.", NamedTextColor.AQUA));
+            "[Dev] " + n + " point" + (n == 1 ? "" : "s") + " recorded — opening editor. Save when done.",
+            NamedTextColor.AQUA));
 
         session.startEditing(name, keyframes, durationMs, placeholder);
         new AttackEditorMenu(player).open();
@@ -281,7 +267,7 @@ public final class SweepRecordingAction {
                 renderPlacedPoints(player.player().getWorld(), session.getPendingPoints());
                 PlacementMode mode = session.getPlacementMode();
                 if (mode == PlacementMode.RAYCAST || mode == PlacementMode.ORIGIN_RAY) {
-                    renderRayCursor(player, session);
+                    renderRayCursorForSession(player.player(), session);
                 }
             },
             null,
@@ -384,9 +370,9 @@ public final class SweepRecordingAction {
      *       tip point computed by {@link #computeOriginRayTip}.</li>
      * </ul>
      */
-    private static void renderRayCursor(SwordPlayer player, AttackDevSession session) {
-        Location eye = player.player().getEyeLocation();
-        World world = player.player().getWorld();
+    static void renderRayCursorForSession(Player player, AttackDevSession session) {
+        Location eye = player.getEyeLocation();
+        World world = player.getWorld();
 
         float ox, oy, oz, ex, ey, ez;
 
@@ -450,8 +436,8 @@ public final class SweepRecordingAction {
      * blocks along that direction from the adjusted eye. Falls back to the adjusted eye
      * position if no recording origin is locked.</p>
      */
-    static Vector3f computeOriginRayTip(SwordPlayer player, AttackDevSession session) {
-        Location eye = player.player().getEyeLocation();
+    static Vector3f computeOriginRayTip(Player player, AttackDevSession session) {
+        Location eye = player.getEyeLocation();
         float eyeX = (float) eye.getX();
         float eyeY = (float) eye.getY() + session.getOriginRayHeightOffset();
         float eyeZ = (float) eye.getZ();
