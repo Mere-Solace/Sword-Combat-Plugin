@@ -60,9 +60,25 @@ public final class SweepRecordingAction {
     private static final Particle.DustOptions ORIGIN_DUST =
         new Particle.DustOptions(Color.fromRGB(220, 30, 30), 0.7f);
 
-    /** Dust colour for manually placed control points (dark blue, large). */
-    private static final Particle.DustOptions PLACED_POINT_DUST =
+    // ── Age-based gradient: newest (age 0) = dark blue → mid-gray (age 3+) ────
+    private static final Particle.DustOptions DUST_AGE_0 =
         new Particle.DustOptions(Color.fromRGB(30, 80, 220), 1.5f);
+    private static final Particle.DustOptions DUST_AGE_1 =
+        new Particle.DustOptions(Color.fromRGB(73, 107, 193), 1.5f);
+    private static final Particle.DustOptions DUST_AGE_2 =
+        new Particle.DustOptions(Color.fromRGB(117, 133, 167), 1.5f);
+    private static final Particle.DustOptions DUST_AGE_OLD =
+        new Particle.DustOptions(Color.fromRGB(160, 160, 160), 1.5f);
+
+    // ── BEZIER_CURVE role colors: start, c1, c2, end ─────────────────────────
+    private static final Particle.DustOptions DUST_BEZIER_START =
+        new Particle.DustOptions(Color.fromRGB(30, 200, 60), 1.5f);
+    private static final Particle.DustOptions DUST_BEZIER_C1 =
+        new Particle.DustOptions(Color.fromRGB(80, 150, 100), 1.5f);
+    private static final Particle.DustOptions DUST_BEZIER_C2 =
+        new Particle.DustOptions(Color.fromRGB(150, 100, 80), 1.5f);
+    private static final Particle.DustOptions DUST_BEZIER_END =
+        new Particle.DustOptions(Color.fromRGB(200, 50, 50), 1.5f);
 
     private SweepRecordingAction() {}
 
@@ -126,9 +142,11 @@ public final class SweepRecordingAction {
         Vector3f tip = computeWorldTip(player);
         session.addPendingPoint(tip);
 
-        // Immediate placement marker
+        // Immediate placement marker — color matches what the render loop assigns this index
+        int placedIndex = session.getPendingPoints().size() - 1;
+        Particle.DustOptions dust = dustForIndex(placedIndex, 0, session.getPlacementMode());
         player.player().getWorld().spawnParticle(
-            Particle.DUST, tip.x, tip.y, tip.z, 1, 0, 0, 0, 0, PLACED_POINT_DUST);
+            Particle.DUST, tip.x, tip.y, tip.z, 1, 0, 0, 0, 0, dust);
 
         Debug.attackVolume("PLACED POINT player=" + player.player().getName()
             + " count=" + session.getPendingPoints().size()
@@ -249,7 +267,8 @@ public final class SweepRecordingAction {
         TimeArbiter.runTimeIndependentBukkitTaskOnTimer(
             () -> {
                 renderOriginArrow(player.player().getWorld(), session);
-                renderPlacedPoints(player.player().getWorld(), session.getPendingPoints());
+                renderPlacedPoints(player.player().getWorld(), session.getPendingPoints(),
+                    session.getPlacementMode());
             },
             null,
             0, RENDER_PERIOD_MS,
@@ -260,11 +279,40 @@ public final class SweepRecordingAction {
         );
     }
 
-    /** Spawns {@link Particle#DUST} in dark blue at each placed world position. */
-    private static void renderPlacedPoints(World world, List<Vector3f> positions) {
-        for (Vector3f p : positions) {
-            world.spawnParticle(Particle.DUST, p.x, p.y, p.z, 1, 0, 0, 0, 0, PLACED_POINT_DUST);
+    /**
+     * Spawns {@link Particle#DUST} at each placed world position using mode-appropriate colors.
+     *
+     * <p>For {@link PlacementMode#BEZIER_CURVE}: fixed role colors by index
+     * (start→green, c1→muted green, c2→muted red, end→red).</p>
+     *
+     * <p>For all other modes: age-based gradient where the newest point is dark blue,
+     * the two preceding points step toward mid-gray, and anything older is flat mid-gray.</p>
+     */
+    private static void renderPlacedPoints(World world, List<Vector3f> positions, PlacementMode mode) {
+        int n = positions.size();
+        for (int i = 0; i < n; i++) {
+            int age = n - 1 - i;
+            Particle.DustOptions dust = dustForIndex(i, age, mode);
+            Vector3f p = positions.get(i);
+            world.spawnParticle(Particle.DUST, p.x, p.y, p.z, 1, 0, 0, 0, 0, dust);
         }
+    }
+
+    private static Particle.DustOptions dustForIndex(int index, int age, PlacementMode mode) {
+        if (mode == PlacementMode.BEZIER_CURVE) {
+            return switch (index) {
+                case 0 -> DUST_BEZIER_START;
+                case 1 -> DUST_BEZIER_C1;
+                case 2 -> DUST_BEZIER_C2;
+                default -> DUST_BEZIER_END;
+            };
+        }
+        return switch (age) {
+            case 0 -> DUST_AGE_0;
+            case 1 -> DUST_AGE_1;
+            case 2 -> DUST_AGE_2;
+            default -> DUST_AGE_OLD;
+        };
     }
 
     /**
