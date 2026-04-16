@@ -7,6 +7,9 @@ import org.joml.Vector3f;
 
 import btm.sword.config.Config;
 import btm.sword.system.attack.HitValuePacket;
+import btm.sword.system.attack.simulation.ControlMode;
+import btm.sword.system.attack.simulation.ControlPoint;
+import btm.sword.system.attack.simulation.ControlPointTrajectory;
 import btm.sword.system.attack.simulation.KeyframedTrajectory;
 import btm.sword.system.attack.simulation.SweepCurve;
 import btm.sword.system.attack.simulation.SweepTrajectory;
@@ -138,6 +141,21 @@ public final class AttackDef {
         public Builder sweep(SweepCurve curve) {
             this.type = VolumeType.SWEEP;
             this.trajectory = new SweepTrajectory(curve);
+            return this;
+        }
+
+        /**
+         * Builds a {@link ControlPointTrajectory} from the given control points and mode,
+         * and sets {@code type = CTRL_POINT}. Overridden by a subsequent {@link #trajectory} call.
+         *
+         * @param points ordered list of control points; must be 2 for {@link ControlMode#LINEAR}
+         *               or 4 for {@link ControlMode#BEZIER}
+         * @param mode   interpolation mode
+         * @return this builder
+         */
+        public Builder controlPoints(List<ControlPoint> points, ControlMode mode) {
+            this.type = VolumeType.CTRL_POINT;
+            this.trajectory = new ControlPointTrajectory(points, mode);
             return this;
         }
 

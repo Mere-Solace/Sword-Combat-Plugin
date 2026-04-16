@@ -17,6 +17,9 @@ import btm.sword.config.Config;
 import btm.sword.system.attack.HitValuePacket;
 import btm.sword.system.attack.def.AttackDef;
 import btm.sword.system.attack.def.VolumeType;
+import btm.sword.system.attack.simulation.ControlMode;
+import btm.sword.system.attack.simulation.ControlPoint;
+import btm.sword.system.attack.simulation.ControlPointTrajectory;
 import btm.sword.system.attack.simulation.KeyframeEffect;
 import btm.sword.system.attack.simulation.KeyframedTrajectory;
 import btm.sword.system.attack.simulation.VolumeKeyframe;
@@ -150,6 +153,18 @@ public final class AttackDevSession {
      * {@code null} means the wand fires the default {@code test_volume_attack}.
      */
     private AttackDef loadedAttackDef = null;
+
+    /**
+     * Control points for the current CTRL_POINT edit session, or {@code null} when
+     * the session is keyframe-based. Set by {@link #startEditingCtrlPoint}.
+     */
+    @Getter @Setter private List<ControlPoint> editControlPoints = null;
+
+    /**
+     * Interpolation mode for the current CTRL_POINT edit session, or {@code null}
+     * when the session is keyframe-based.
+     */
+    @Getter @Setter private ControlMode editControlMode = null;
 
     // ── Orientation flags for the current edit session ────────────────────────
     /**
@@ -317,12 +332,38 @@ public final class AttackDevSession {
     public void startEditing(String name, List<VolumeKeyframe> keyframes, int durationMs, HitValuePacket hitValue) {
         this.currentAttackName = name;
         this.editKeyframes = new ArrayList<>(keyframes);
+        this.editControlPoints = null;
+        this.editControlMode = null;
         this.editDurationMs = durationMs;
         this.editHitValue = hitValue;
         this.currentKeyframeIndex = 0;
         this.selectedKeyframeIndices.clear();
         this.mode = DevMode.EDITING;
         VolumeEditorMode.startForSession(this);
+    }
+
+    /**
+     * Transitions to {@link DevMode#EDITING} with control-point trajectory data.
+     * Clears any previous keyframe editing state.
+     *
+     * @param name       the attack id being edited
+     * @param points     the control points (2 for LINEAR, 4 for BEZIER)
+     * @param mode       the interpolation mode
+     * @param durationMs the attack duration in milliseconds
+     * @param hitValue   the hit-value packet to preserve when saving
+     */
+    public void startEditingCtrlPoint(String name, List<ControlPoint> points, ControlMode mode,
+                                      int durationMs, HitValuePacket hitValue) {
+        this.currentAttackName = name;
+        this.editKeyframes = new ArrayList<>();
+        this.editControlPoints = new ArrayList<>(points);
+        this.editControlMode = mode;
+        this.editDurationMs = durationMs;
+        this.editHitValue = hitValue;
+        this.currentKeyframeIndex = 0;
+        this.selectedKeyframeIndices.clear();
+        this.mode = DevMode.EDITING;
+        VolumeEditorMode.startCtrlPointForSession(this);
     }
 
     /**
@@ -389,13 +430,24 @@ public final class AttackDevSession {
     }
 
     /**
-     * Constructs an immutable {@link AttackDef} from the current edit state (keyframes,
-     * duration, hit value). Does not modify session state.
+     * Constructs an immutable {@link AttackDef} from the current edit state.
+     * Delegates to a control-point build when the session holds CTRL_POINT data;
+     * otherwise builds a keyframe-based VOLUME attack.
      *
      * @return the built attack definition
-     * @throws IllegalStateException if the session is not in EDITING mode or has no keyframes
+     * @throws IllegalStateException if there is neither keyframe nor control-point data
      */
     public AttackDef buildCurrentAttack() {
+        if (editControlPoints != null && !editControlPoints.isEmpty()) {
+            return new AttackDef.Builder(currentAttackName)
+                .controlPoints(editControlPoints, editControlMode)
+                .duration(editDurationMs)
+                .onHit(editHitValue != null ? editHitValue
+                    : new HitValuePacket(() -> 0f, () -> 10, () -> 2, () -> 0f, () -> 0f))
+                .orientWithPitch(editOrientWithPitch)
+                .lockOriginOnFire(editLockOriginOnFire)
+                .build();
+        }
         if (editKeyframes.isEmpty()) {
             throw new IllegalStateException("Cannot build AttackDef: no keyframes defined");
         }
@@ -420,16 +472,22 @@ public final class AttackDevSession {
     }
 
     /**
-     * Starts an editing session from an existing {@link AttackDef}, extracting keyframes and
-     * duration from its {@link KeyframedTrajectory}. Convenience wrapper over
-     * {@link #startEditing(String, List, int, HitValuePacket)} for wand-based re-entry.
+     * Starts an editing session from an existing {@link AttackDef}.
+     * Supports {@link KeyframedTrajectory} and {@link ControlPointTrajectory}.
      *
-     * @param def the attack definition to edit; must have a {@link KeyframedTrajectory}
-     * @throws IllegalArgumentException if the trajectory is not a {@link KeyframedTrajectory}
+     * @param def the attack definition to edit
+     * @throws IllegalArgumentException if the trajectory type is not editable
      */
     public void startEditingFromDef(AttackDef def) {
+        if (def.getTrajectory() instanceof ControlPointTrajectory cpt) {
+            startEditingCtrlPoint(def.getId(), cpt.getPoints(), cpt.getMode(),
+                def.getDurationMs(), def.getHitValue());
+            this.editOrientWithPitch = def.isOrientWithPitch();
+            this.editLockOriginOnFire = def.isLockOriginOnFire();
+            return;
+        }
         if (!(def.getTrajectory() instanceof KeyframedTrajectory kt)) {
-            throw new IllegalArgumentException("Cannot edit non-keyframed attack: " + def.getId());
+            throw new IllegalArgumentException("Cannot edit attack with unsupported trajectory: " + def.getId());
         }
         startEditing(def.getId(), kt.getKeyframes(), def.getDurationMs(), def.getHitValue());
         this.editOrientWithPitch = def.isOrientWithPitch();

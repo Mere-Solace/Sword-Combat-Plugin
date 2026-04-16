@@ -22,6 +22,8 @@ import org.joml.Vector3f;
 
 import btm.sword.Sword;
 import btm.sword.config.Config;
+import btm.sword.system.attack.simulation.ControlPoint;
+import btm.sword.system.attack.simulation.ControlPointTrajectory;
 import btm.sword.system.attack.simulation.KeyframedTrajectory;
 import btm.sword.system.attack.simulation.ObbVolume;
 import btm.sword.system.attack.simulation.VolumeKeyframe;
@@ -72,6 +74,14 @@ public final class VolumeEditorMode {
     private static Particle.DustOptions DUST_LIVE =
         new Particle.DustOptions(Color.fromRGB(100, 220, 255), 1.0f);
 
+    /** Dark blue used for CTRL_POINT control-point handles in EDITING mode. */
+    private static final Particle.DustOptions DUST_CTRL_POINT =
+        new Particle.DustOptions(Color.fromRGB(30, 80, 220), 1.5f);
+
+    /** Light blue used for the CTRL_POINT ghost interpolated path in EDITING mode. */
+    private static final Particle.DustOptions DUST_GHOST_PATH =
+        new Particle.DustOptions(Color.fromRGB(100, 180, 255), 0.5f);
+
     /**
      * Rebuilds {@link #DUST_SELECTED}, {@link #DUST_DEFAULT}, and {@link #DUST_LIVE} from the
      * current {@link btm.sword.config.Config.Debug} wireframe color/size entries.
@@ -118,7 +128,7 @@ public final class VolumeEditorMode {
      */
     public static void startPlaybackVisualization(Player player, VolumeTrajectory trajectory,
             long startMs, long durationMs, boolean lockOriginOnFire, boolean orientWithPitch) {
-        if (!(trajectory instanceof KeyframedTrajectory)) return;
+        if (!(trajectory instanceof KeyframedTrajectory) && !(trajectory instanceof ControlPointTrajectory)) return;
 
         ObbVolume buffer = new ObbVolume();
 
@@ -193,6 +203,50 @@ public final class VolumeEditorMode {
         Debug.attackVolume("[VolumeEditorMode] starting view loop for " + session.getPlayer().getName()
             + " attack=" + session.getCurrentAttackName());
         startLoop(session, DevMode.VIEWING);
+    }
+
+    /**
+     * Starts the per-session visualization loop for a CTRL_POINT EDITING session.
+     * Renders control-point handles as dark blue dust with {@code [CP#n]} labels,
+     * and a ghost interpolated path as light blue dust every 3rd tick.
+     *
+     * <p>Called from {@link AttackDevSession#startEditingCtrlPoint} — not from plugin startup.</p>
+     *
+     * @param session the session that just entered CTRL_POINT EDITING mode
+     */
+    public static void startCtrlPointForSession(AttackDevSession session) {
+        Player player = session.getPlayer();
+        notifyOn(player, "Edit");
+
+        spawnCtrlPointLabels(session);
+
+        BossBar bossBar = BossBar.bossBar(
+            Component.text("[Dev] Edit (CP) — " + session.getCurrentAttackName(), NamedTextColor.GOLD),
+            1.0f, BossBar.Color.YELLOW, BossBar.Overlay.PROGRESS);
+        player.showBossBar(bossBar);
+
+        int[] tickCount = {0};
+        TimeArbiter.runTimeIndependentBukkitTaskOnTimer(
+            () -> {
+                tickCount[0]++;
+                if (session.getMode() != DevMode.EDITING || !player.isOnline()) return;
+                renderCtrlPointSession(session, tickCount[0]);
+                updateCtrlPointLabels(session);
+            },
+            null,
+            0, TICK_MS,
+            VolumeEditorMode.class, "ctrlPointLoop",
+            new PredicateRunnablePair(
+                () -> session.getMode() != DevMode.EDITING || !player.isOnline(),
+                () -> {
+                    removeLabels(session.getPlayer().getUniqueId());
+                    if (player.isOnline()) {
+                        player.hideBossBar(bossBar);
+                        notifyOff(player, "Edit");
+                    }
+                }
+            )
+        );
     }
 
     private static void startLoop(AttackDevSession session, DevMode expectedMode) {
@@ -319,6 +373,88 @@ public final class VolumeEditorMode {
 
         if (log && !keyframes.isEmpty()) {
             Debug.attackVolume("[VolumeEditorMode] spawned " + totalParticles + " particles this tick");
+        }
+    }
+
+    private static void renderCtrlPointSession(AttackDevSession session, int tickCount) {
+        Location loc = session.getPlayer().getLocation();
+        World world = loc.getWorld();
+        if (world == null) return;
+
+        BoundingBox bb = session.getPlayer().getBoundingBox();
+        Matrix4f worldTransform = buildWorldTransform(
+            bb, loc.getYaw(), loc.getPitch(), session.isEditOrientWithPitch());
+        Quaternionf worldBaseRot = worldTransform.getNormalizedRotation(new Quaternionf());
+
+        List<ControlPoint> points = session.getEditControlPoints();
+        if (points == null || points.isEmpty()) return;
+
+        // Render each control point handle as a dark blue OBB
+        for (ControlPoint cp : points) {
+            Vector3f worldCenter = worldTransform.transformPosition(
+                new Vector3f(cp.position()), new Vector3f());
+            renderObbWireframe(world, worldCenter, cp.halfExtents(), worldBaseRot, DUST_CTRL_POINT);
+        }
+
+        // Ghost interpolated path at 10 t-values, rendered every 3rd tick
+        if (tickCount % GREY_RENDER_PERIOD == 0) {
+            ControlPointTrajectory traj = new ControlPointTrajectory(points, session.getEditControlMode());
+            ObbVolume buffer = new ObbVolume();
+            for (int i = 0; i <= 9; i++) {
+                float t = i / 9.0f;
+                traj.sample(t, worldTransform, buffer);
+                renderObbWireframe(world, buffer.center, buffer.halfExtents, buffer.rotation, DUST_GHOST_PATH);
+            }
+        }
+    }
+
+    private static void spawnCtrlPointLabels(AttackDevSession session) {
+        Player player = session.getPlayer();
+        World world = player.getWorld();
+        List<ControlPoint> points = session.getEditControlPoints();
+        if (points == null) return;
+
+        List<TextDisplay> labels = new ArrayList<>(points.size());
+        Location spawnLoc = player.getLocation();
+        for (int i = 0; i < points.size(); i++) {
+            final int idx = i;
+            TextDisplay td = world.spawn(spawnLoc, TextDisplay.class, display -> {
+                display.text(Component.text("[CP#" + idx + "]", NamedTextColor.GOLD, TextDecoration.BOLD));
+                display.setSeeThrough(true);
+                display.setBillboard(Display.Billboard.CENTER);
+            });
+            labels.add(td);
+        }
+        SESSION_LABELS.put(player.getUniqueId(), labels);
+    }
+
+    private static void updateCtrlPointLabels(AttackDevSession session) {
+        Player player = session.getPlayer();
+        List<TextDisplay> labels = SESSION_LABELS.get(player.getUniqueId());
+        if (labels == null) return;
+
+        List<ControlPoint> points = session.getEditControlPoints();
+        if (points == null || labels.size() != points.size()) {
+            removeLabels(player.getUniqueId());
+            spawnCtrlPointLabels(session);
+            return;
+        }
+
+        Location loc = player.getLocation();
+        BoundingBox bb = player.getBoundingBox();
+        Matrix4f worldTransform = buildWorldTransform(
+            bb, loc.getYaw(), loc.getPitch(), session.isEditOrientWithPitch());
+
+        for (int i = 0; i < points.size(); i++) {
+            TextDisplay td = labels.get(i);
+            if (!td.isValid()) continue;
+            ControlPoint cp = points.get(i);
+            Vector3f worldCenter = worldTransform.transformPosition(
+                new Vector3f(cp.position()), new Vector3f());
+            float labelY = worldCenter.y + cp.halfExtents().y + 0.3f;
+            td.teleport(new Location(loc.getWorld(), worldCenter.x, labelY, worldCenter.z));
+            td.setVisibleByDefault(true);
+            player.showEntity(Sword.getInstance(), td);
         }
     }
 

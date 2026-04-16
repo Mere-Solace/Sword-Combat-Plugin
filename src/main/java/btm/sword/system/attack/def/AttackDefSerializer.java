@@ -19,6 +19,9 @@ import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 import btm.sword.system.attack.HitValuePacket;
+import btm.sword.system.attack.simulation.ControlMode;
+import btm.sword.system.attack.simulation.ControlPoint;
+import btm.sword.system.attack.simulation.ControlPointTrajectory;
 import btm.sword.system.attack.simulation.KeyframeEffect;
 import btm.sword.system.attack.simulation.KeyframedTrajectory;
 import btm.sword.system.attack.simulation.ParticleEffect;
@@ -73,6 +76,7 @@ public final class AttackDefSerializer {
         switch (type) {
             case SWEEP -> builder.sweep(loadSweepCurve(section.getConfigurationSection("curve"), id));
             case VOLUME -> builder.keyframes(loadKeyframes(section, id));
+            case CTRL_POINT -> builder.controlPoints(loadControlPoints(section, id), loadControlMode(section, id));
         }
 
         return builder.build();
@@ -126,6 +130,24 @@ public final class AttackDefSerializer {
             keyframes.add(new VolumeKeyframe(t, position, halfExtents, rotation, shape, effect, jump));
         }
         return keyframes;
+    }
+
+    private static List<ControlPoint> loadControlPoints(ConfigurationSection s, String id) {
+        List<Map<?, ?>> maps = s.getMapList("ctrl-points");
+        if (maps.isEmpty()) throw new IllegalArgumentException("Attack '" + id + "' has no ctrl-points");
+        List<ControlPoint> points = new ArrayList<>(maps.size());
+        for (Map<?, ?> map : maps) {
+            Vector3f position = readVector3f((Map<?, ?>) map.get("position"));
+            Vector3f halfExtents = readVector3f((Map<?, ?>) map.get("half-extents"));
+            points.add(new ControlPoint(position, halfExtents));
+        }
+        return points;
+    }
+
+    private static ControlMode loadControlMode(ConfigurationSection s, String id) {
+        String modeStr = s.getString("control-mode");
+        if (modeStr == null) throw new IllegalArgumentException("Attack '" + id + "' missing 'control-mode'");
+        return ControlMode.valueOf(modeStr.toUpperCase());
     }
 
     private static KeyframeEffect loadKeyframeEffect(Map<?, ?> map) {
@@ -214,6 +236,7 @@ public final class AttackDefSerializer {
         switch (attack.getType()) {
             case SWEEP -> saveSweepCurve(yaml, path, attack);
             case VOLUME -> saveKeyframes(yaml, path, attack);
+            case CTRL_POINT -> saveControlPoints(yaml, path, attack);
         }
 
         try {
@@ -270,6 +293,22 @@ public final class AttackDefSerializer {
             kfMaps.add(kfMap);
         }
         yaml.set(path + ".keyframes", kfMaps);
+    }
+
+    private static void saveControlPoints(YamlConfiguration yaml, String path, AttackDef attack) {
+        if (!(attack.getTrajectory() instanceof ControlPointTrajectory cpt)) {
+            throw new UnsupportedOperationException(
+                "Cannot serialize non-ControlPointTrajectory as CTRL_POINT for: " + attack.getId());
+        }
+        List<Map<String, Object>> ptMaps = new ArrayList<>();
+        for (ControlPoint cp : cpt.getPoints()) {
+            Map<String, Object> ptMap = new LinkedHashMap<>();
+            ptMap.put("position", vecMap(cp.position()));
+            ptMap.put("half-extents", vecMap(cp.halfExtents()));
+            ptMaps.add(ptMap);
+        }
+        yaml.set(path + ".ctrl-points", ptMaps);
+        yaml.set(path + ".control-mode", cpt.getMode().name());
     }
 
     private static Map<String, Object> serializeEffect(KeyframeEffect effect) {
