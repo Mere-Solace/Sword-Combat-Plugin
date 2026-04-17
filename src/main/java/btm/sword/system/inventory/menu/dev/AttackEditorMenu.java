@@ -12,6 +12,7 @@ import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 import btm.sword.Sword;
+import btm.sword.system.attack.HitValuePacket;
 import btm.sword.system.attack.def.AttackDef;
 import btm.sword.system.attack.def.AttackDefSerializer;
 import btm.sword.system.attack.def.AttackRegistry;
@@ -239,6 +240,36 @@ public class AttackEditorMenu extends Menu {
                 session.setEditOrientWithPitch(!session.isEditOrientWithPitch());
                 new AttackEditorMenu(swordPlayer).open();
             }
+        );
+
+        HitValuePacket curHit = session.getEditHitValue();
+        List<Component> hitLore = new ArrayList<>();
+        if (curHit == null) {
+            hitLore.add(Component.text("No hit packet selected.", NamedTextColor.GRAY));
+        } else {
+            hitLore.add(Component.text("shard: ", NamedTextColor.DARK_GRAY)
+                .append(Component.text(String.valueOf(curHit.shardDamage()), NamedTextColor.WHITE)));
+            hitLore.add(Component.text("tough: ", NamedTextColor.DARK_GRAY)
+                .append(Component.text(String.format("%.2f", curHit.toughnessDamage()), NamedTextColor.WHITE)));
+            hitLore.add(Component.text("soul loss: ", NamedTextColor.DARK_GRAY)
+                .append(Component.text(String.format("%.2f", curHit.soulfireLoss()), NamedTextColor.WHITE)));
+            hitLore.add(Component.text("reaped: ", NamedTextColor.DARK_GRAY)
+                .append(Component.text(String.format("%.2f", curHit.reapedSoulfire()), NamedTextColor.WHITE)));
+            hitLore.add(Component.text("invul: ", NamedTextColor.DARK_GRAY)
+                .append(Component.text(curHit.invulnerableTicks() + "t", NamedTextColor.WHITE)));
+            hitLore.add(Component.text("block: ", NamedTextColor.DARK_GRAY)
+                .append(Component.text(curHit.blockability().name(), NamedTextColor.WHITE)));
+            hitLore.add(Component.text("bypass: ", NamedTextColor.DARK_GRAY)
+                .append(Component.text(String.format("%.2f", curHit.bypassPower()), NamedTextColor.WHITE)));
+        }
+        hitLore.add(Component.empty());
+        hitLore.add(Component.text("Click to open the hit-packet library.", NamedTextColor.YELLOW));
+        SimpleItem hitPacketButton = new SimpleItem(
+            new ItemStackBuilder(Material.NETHERITE_SWORD)
+                .name(Component.text("Hit Packet", NamedTextColor.LIGHT_PURPLE, TextDecoration.BOLD))
+                .lore(hitLore)
+                .build(),
+            click -> new HitPacketLibraryMenu(swordPlayer).open()
         );
 
         boolean lockOn = session.isEditLockOriginOnFire();
@@ -481,7 +512,7 @@ public class AttackEditorMenu extends Menu {
                 "x x x x x x x x x",
                 "< > E A F V J K T",
                 "q w e r t y m n j",
-                "u i o p g h a b #")
+                "u i o p g h a b H")
             .addIngredient('#', BORDER)
             .addIngredient('>', new ForwardItem())
             .addIngredient('<', new PreviousItem())
@@ -521,6 +552,7 @@ public class AttackEditorMenu extends Menu {
             .addIngredient('h', heZInc)
             .addIngredient('a', shiftAllZDec)
             .addIngredient('b', shiftAllZInc)
+            .addIngredient('H', hitPacketButton)
             .setContent(kfItems)
             .build();
 

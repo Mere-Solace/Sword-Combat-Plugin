@@ -30,6 +30,7 @@ import btm.sword.listeners.packet.EntityPacketListener;
 import btm.sword.listeners.packet.MovementListener;
 import btm.sword.system.action.throwing.InteractiveItemArbiter;
 import btm.sword.system.action.throwing.ProjectileManager;
+import btm.sword.system.attack.HitPacketRegistry;
 import btm.sword.system.attack.HitValuePacket;
 import btm.sword.system.attack.def.AttackDef;
 import btm.sword.system.attack.def.AttackRegistry;
@@ -123,6 +124,9 @@ public final class Sword extends JavaPlugin {
 
         // Load any saved attack definitions from plugins/sword/attacks/
         AttackRegistry.loadDirectory(new File(getDataFolder(), "attacks"));
+
+        // Load hit-packet presets from plugins/sword/hit-packets.yaml
+        HitPacketRegistry.bootstrap(this);
 
         // Register dev test AttackDef used by the TEST_VOLUME_ATTACK test item
         AttackRegistry.register(new AttackDef.Builder("test_volume_attack")

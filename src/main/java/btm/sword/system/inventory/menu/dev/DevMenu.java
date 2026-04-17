@@ -161,13 +161,21 @@ public class DevMenu extends Menu {
             click -> new AttackBrowserMenu(swordPlayer).open()
         );
 
+        SimpleItem hitPackets = new SimpleItem(
+            new ItemStackBuilder(Material.NETHERITE_SWORD)
+                .name(Component.text("Hit Packets", NamedTextColor.LIGHT_PURPLE, TextDecoration.BOLD))
+                .lore(List.of(Component.text("Browse and edit named hit-packet presets", NamedTextColor.DARK_GRAY)))
+                .build(),
+            click -> new HitPacketLibraryMenu(swordPlayer).open()
+        );
+
 
         Gui gui = Gui.normal()
             .setStructure(
                 "# # # . . . # # #",
                 "# J N . T . L C #",
                 ". H V . ? . . E .",
-                ". . . . A . . P .",
+                ". . K . A . . P .",
                 "# R I . . . M W #",
                 "< > # . . . # # #")
             .addIngredient('#', BORDER)
@@ -186,6 +194,7 @@ public class DevMenu extends Menu {
             .addIngredient('M', creativeMode)
             .addIngredient('H', weaponDisplay)
             .addIngredient('V', attackEditor)
+            .addIngredient('K', hitPackets)
             .addIngredient('<', generatePreviousButtonOrDefault())
             .addIngredient('>', generateForwardPreviousButtonOrDefault())
             .build();

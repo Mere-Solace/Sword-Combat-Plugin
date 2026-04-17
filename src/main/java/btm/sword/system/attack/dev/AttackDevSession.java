@@ -157,6 +157,7 @@ public final class AttackDevSession {
     @Setter
     private int editDurationMs = 600;
     /** Hit-value packet for the current edit session. Carried over from the loaded definition. */
+    @Setter
     private HitValuePacket editHitValue = null;
     /** Index of the currently selected keyframe in {@link #editKeyframes}.
      * -- SETTER --
