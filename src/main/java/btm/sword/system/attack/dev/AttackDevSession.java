@@ -103,31 +103,27 @@ public final class AttackDevSession {
     private Vector3f currentPlacementSize = new Vector3f(0.4f, 0.4f, 0.4f);
 
     /**
-     * Distance from the player's eye at which a non-raycast point is placed, in blocks.
-     * Adjusted via the Recording Settings menu.
+     * Distance from the player's eye along the look direction used for tip placement
+     * across all placement modes, in blocks.
+     *
+     * <ul>
+     *   <li>{@link PlacementMode#SINGLE_KEYFRAME}, {@link PlacementMode#LINE_SEGMENT},
+     *       {@link PlacementMode#BEZIER_CURVE}, {@link PlacementMode#ORIGIN_RAY} —
+     *       tip position is {@code eye + lookDir}, and origin location is sessionOrigin
+     *       + rayOffset * (tipPos - sessionOrigin).</li>
+     *   <li>{@link PlacementMode#RAYCAST} — the block raycast starts at
+     *       {@code eye + lookDir * rayOffset} (0 starts from the eye, negative pulls it back).</li>
+     * </ul>
+     *
+     * <p>Adjusted via the Recording Settings menu.</p>
      */
-    @Getter @Setter private float tipDistance = 1.5f;
+    @Getter @Setter private float rayOffset = 1.5f;
 
     /**
      * Maximum raycast distance for {@link PlacementMode#RAYCAST} point placement, in blocks.
      * Adjusted via the Recording Settings menu.
      */
     @Getter @Setter private float raycastMaxDistance = 8.0f;
-
-    /**
-     * Offset along the look direction applied to the raycast origin before firing, in blocks.
-     * {@code 0} starts from the eye. Positive values push the origin forward; negative values
-     * pull it behind the eye (useful for modeling attacks that originate behind the player).
-     * Adjusted via the Recording Settings menu.
-     */
-    @Getter @Setter private float raycastOriginOffset = 0.0f;
-
-    /**
-     * Vertical offset applied to the eye position when computing an {@link PlacementMode#ORIGIN_RAY}
-     * tip. Positive shifts the ray start upward; negative shifts it downward.
-     * Adjusted via the Recording Settings menu.
-     */
-    @Getter @Setter private float originRayHeightOffset = 0.0f;
 
     /** Boss bar shown to the player while in {@link DevMode#RECORDING}. Hidden on stop. */
     @Getter(AccessLevel.NONE)
@@ -316,10 +312,22 @@ public final class AttackDevSession {
      * Appends a world-space point to the pending points buffer, tagged with the current
      * placement mode, and updates the boss bar.
      *
-     * @param point the world-space position to record
+     * @param location the world-space position to record
      */
-    public void addPendingPoint(Vector3f point) {
-        pendingPoints.add(new PlacedPoint(point, placementMode));
+    public void addPendingPoint(Location location) {
+        pendingPoints.add(new PlacedPoint(location, placementMode));
+        updateRecordingBossBar();
+    }
+
+    /**
+     * Appends a pre-constructed {@link PlacedPoint} to the pending points buffer and updates
+     * the boss bar. Use this overload when the caller needs to supply additional data such as
+     * a ray origin for {@link PlacementMode#RAYCAST} points.
+     *
+     * @param point the fully constructed point to record
+     */
+    public void addPendingPoint(PlacedPoint point) {
+        pendingPoints.add(point);
         updateRecordingBossBar();
     }
 

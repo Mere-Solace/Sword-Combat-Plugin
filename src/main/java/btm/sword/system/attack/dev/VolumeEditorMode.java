@@ -24,6 +24,7 @@ import btm.sword.Sword;
 import btm.sword.config.Config;
 import btm.sword.system.attack.simulation.ControlPoint;
 import btm.sword.system.attack.simulation.ControlPointTrajectory;
+import btm.sword.system.attack.simulation.KeyframeType;
 import btm.sword.system.attack.simulation.KeyframedTrajectory;
 import btm.sword.system.attack.simulation.ObbVolume;
 import btm.sword.system.attack.simulation.VolumeKeyframe;
@@ -31,7 +32,10 @@ import btm.sword.system.attack.simulation.VolumeShape;
 import btm.sword.system.attack.simulation.VolumeTrajectory;
 import btm.sword.system.control.PredicateRunnablePair;
 import btm.sword.system.control.TimeArbiter;
+import btm.sword.system.item.KeyRegistry;
 import btm.sword.utility.Debug;
+import btm.sword.utility.Prefab;
+import btm.sword.utility.display.DrawUtil;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -78,9 +82,27 @@ public final class VolumeEditorMode {
     private static final Particle.DustOptions DUST_CTRL_POINT =
         new Particle.DustOptions(Color.fromRGB(30, 80, 220), 1.5f);
 
-    /** Light blue used for the CTRL_POINT ghost interpolated path in EDITING mode. */
+    /** Yellow used for the ghost interpolated trajectory path in EDITING mode and playback. */
     private static final Particle.DustOptions DUST_GHOST_PATH =
-        new Particle.DustOptions(Color.fromRGB(100, 180, 255), 0.5f);
+        new Particle.DustOptions(Color.fromRGB(255, 230, 60), 0.7f);
+
+    // ── Per-KeyframeType wireframe colours ────────────────────────────────────
+    private static final Particle.DustOptions DUST_TYPE_BEZIER_START =
+        new Particle.DustOptions(Color.fromRGB(30, 200, 60), 1.0f);
+    private static final Particle.DustOptions DUST_TYPE_BEZIER_C1 =
+        new Particle.DustOptions(Color.fromRGB(80, 150, 100), 1.0f);
+    private static final Particle.DustOptions DUST_TYPE_BEZIER_C2 =
+        new Particle.DustOptions(Color.fromRGB(150, 100, 80), 1.0f);
+    private static final Particle.DustOptions DUST_TYPE_BEZIER_END =
+        new Particle.DustOptions(Color.fromRGB(200, 50, 50), 1.0f);
+    private static final Particle.DustOptions DUST_TYPE_LINE =
+        new Particle.DustOptions(Color.fromRGB(100, 190, 255), 1.0f);
+    /** Dark blue wireframe for RAYCAST tip volumes. */
+    private static final Particle.DustOptions DUST_TYPE_RAYCAST_TIP =
+        new Particle.DustOptions(Color.fromRGB(30, 80, 220), 1.0f);
+    /** Orange marker for RAYCAST ray origin points. */
+    private static final Particle.DustOptions DUST_TYPE_RAYCAST_ORIGIN =
+        new Particle.DustOptions(Color.fromRGB(255, 130, 0), 1.5f);
 
     /**
      * Rebuilds {@link #DUST_SELECTED}, {@link #DUST_DEFAULT}, and {@link #DUST_LIVE} from the
@@ -104,6 +126,19 @@ public final class VolumeEditorMode {
 
     private VolumeEditorMode() {}
 
+    /** Returns the wireframe dust colour for a given {@link KeyframeType}. */
+    private static Particle.DustOptions dustForType(KeyframeType type) {
+        return switch (type) {
+            case BEZIER_START -> DUST_TYPE_BEZIER_START;
+            case BEZIER_C1 -> DUST_TYPE_BEZIER_C1;
+            case BEZIER_C2 -> DUST_TYPE_BEZIER_C2;
+            case BEZIER_END -> DUST_TYPE_BEZIER_END;
+            case LINE -> DUST_TYPE_LINE;
+            case RAYCAST -> DUST_TYPE_RAYCAST_TIP;
+            default -> DUST_DEFAULT;
+        };
+    }
+
     /**
      * Starts a 50 ms main-thread loop that renders the live interpolated OBB of a wand
      * test attack as it plays out.
@@ -114,6 +149,11 @@ public final class VolumeEditorMode {
      * <p>When {@code lockOriginOnFire} is {@code true}, the world transform is captured once
      * at call time and reused every tick — matching the simulation's frozen origin behaviour.
      * Otherwise the player's live position and yaw are sampled each tick.</p>
+     *
+     * <p>The attack ray is drawn from the attacker's bounding-box centre (the simulation
+     * origin) to the current volume centre — it does <b>not</b> track the player's eye or
+     * look direction. This matches the capsule line-of-attack detection built by
+     * {@link btm.sword.system.attack.simulation.VolumeSimulation}.</p>
      *
      * <p>The loop self-cancels when the attack duration has elapsed or the player goes offline.
      * No cleanup is required by the caller.</p>
@@ -165,6 +205,10 @@ public final class VolumeEditorMode {
                 } else {
                     renderObbWireframe(world, buffer.center, buffer.halfExtents, buffer.rotation, DUST_LIVE);
                 }
+
+                // Attack ray: BB centre → volume centre. Matches the simulation capsule.
+                Vector3f rayStart = worldTransform.getTranslation(new Vector3f());
+                drawEdge(world, rayStart, new Vector3f(buffer.center), DUST_GHOST_PATH);
             },
             null,
             0, 50,
@@ -285,10 +329,6 @@ public final class VolumeEditorMode {
                 renderSession(session, tickCount[0]);
                 if (expectedMode == DevMode.EDITING) {
                     updateLabels(session);
-                    PlacementMode pm = session.getPlacementMode();
-                    if (pm == PlacementMode.RAYCAST || pm == PlacementMode.ORIGIN_RAY) {
-                        SweepRecordingAction.renderRayCursorForSession(player, session);
-                    }
                 }
             },
             null,
@@ -359,7 +399,7 @@ public final class VolumeEditorMode {
             Vector3f worldCenter = worldTransform.transformPosition(
                 new Vector3f(kf.localPosition()), new Vector3f());
 
-            Particle.DustOptions dust = isSelected ? DUST_SELECTED : DUST_DEFAULT;
+            Particle.DustOptions dust = isSelected ? DUST_SELECTED : dustForType(kf.keyframeType());
 
             if (kf.shape() == VolumeShape.SPHERE) {
                 totalParticles += renderSphereWireframe(world, worldCenter, kf.halfExtents().x, dust);
@@ -374,22 +414,33 @@ public final class VolumeEditorMode {
                 }
                 totalParticles += renderObbWireframe(world, worldCenter, kf.halfExtents(), worldRot, dust);
             }
+
+            // RAYCAST: orange dot at ray origin + secant from origin to tip
+            if (kf.keyframeType() == KeyframeType.RAYCAST && kf.localRayOrigin() != null) {
+                Vector3f worldOrigin = worldTransform.transformPosition(
+                    new Vector3f(kf.localRayOrigin()), new Vector3f());
+                Location originLoc = new Location(world, worldOrigin.x, worldOrigin.y, worldOrigin.z);
+                Location tipLoc = new Location(world, worldCenter.x, worldCenter.y, worldCenter.z);
+                Prefab.Particles.CREATE_DUST.apply(DUST_TYPE_RAYCAST_ORIGIN).display(originLoc);
+                DrawUtil.secant(List.of(Prefab.Particles.CREATE_DUST.apply(DUST_TYPE_RAYCAST_ORIGIN)),
+                    originLoc, tipLoc, 0.2);
+            }
         }
 
         if (log && !keyframes.isEmpty()) {
             Debug.attackVolume("[VolumeEditorMode] spawned " + totalParticles + " particles this tick");
         }
 
-        // Ghost path — sample the full trajectory and draw the interpolated sweep line
-        if (keyframes.size() >= 2 && tickCount % GREY_RENDER_PERIOD == 0) {
-            KeyframedTrajectory ghostTraj = new KeyframedTrajectory(keyframes);
-            ObbVolume ghostBuffer = new ObbVolume();
-            for (int i = 0; i <= 20; i++) {
-                float t = i / 20.0f;
-                ghostTraj.sample(t, worldTransform, ghostBuffer);
-                world.spawnParticle(Particle.DUST,
-                    ghostBuffer.center.x, ghostBuffer.center.y, ghostBuffer.center.z,
-                    1, 0, 0, 0, 0, DUST_GHOST_PATH);
+        // Ghost rays from BB centre (origin) to each keyframe — only while holding the wand.
+        boolean holdingWand = KeyRegistry.hasKey(
+            session.getPlayer().getInventory().getItemInMainHand(),
+            KeyRegistry.TEST_VOLUME_ATTACK_KEY);
+        if (holdingWand && keyframes.size() >= 2 && tickCount % GREY_RENDER_PERIOD == 0) {
+            Vector3f rayStart = worldTransform.getTranslation(new Vector3f());
+            for (VolumeKeyframe kf : keyframes) {
+                Vector3f worldCenter = worldTransform.transformPosition(
+                    new Vector3f(kf.localPosition()), new Vector3f());
+                drawEdge(world, rayStart, worldCenter, DUST_GHOST_PATH);
             }
         }
     }
@@ -569,9 +620,10 @@ public final class VolumeEditorMode {
                 player.showEntity(Sword.getInstance(), td);
             }
 
-            NamedTextColor color = show ? NamedTextColor.GOLD
-                : NamedTextColor.GRAY;
-            td.text(Component.text("#" + i, color, TextDecoration.BOLD));
+            NamedTextColor color = show ? NamedTextColor.GOLD : NamedTextColor.GRAY;
+            String typeLabel = kf.keyframeType() != KeyframeType.STANDARD
+                ? " " + kf.keyframeType().name() : "";
+            td.text(Component.text("#" + i + typeLabel, color, TextDecoration.BOLD));
         }
     }
 

@@ -23,6 +23,7 @@ import btm.sword.system.attack.simulation.ControlMode;
 import btm.sword.system.attack.simulation.ControlPoint;
 import btm.sword.system.attack.simulation.ControlPointTrajectory;
 import btm.sword.system.attack.simulation.KeyframeEffect;
+import btm.sword.system.attack.simulation.KeyframeType;
 import btm.sword.system.attack.simulation.KeyframedTrajectory;
 import btm.sword.system.attack.simulation.ParticleEffect;
 import btm.sword.system.attack.simulation.SoundCue;
@@ -128,7 +129,19 @@ public final class AttackDefSerializer {
             }
             boolean jump = Boolean.TRUE.equals(map.get("jump"));
             boolean linearToNext = Boolean.TRUE.equals(map.get("linear-to-next"));
-            keyframes.add(new VolumeKeyframe(t, position, halfExtents, rotation, shape, effect, jump, linearToNext));
+            KeyframeType keyframeType = KeyframeType.STANDARD;
+            if (map.get("keyframe-type") instanceof String ktStr) {
+                try {
+                    keyframeType = KeyframeType.valueOf(ktStr.toUpperCase());
+                } catch (IllegalArgumentException ignored) { }
+            }
+            float originRayOffset = keyframeType == KeyframeType.ORIGIN_RAY
+                && map.get("origin-ray-offset") instanceof Number n ? n.floatValue() : 0f;
+            Vector3f localRayOrigin = null;
+            if (keyframeType == KeyframeType.RAYCAST && map.get("ray-origin") instanceof Map<?, ?> roMap) {
+                localRayOrigin = readVector3f(roMap);
+            }
+            keyframes.add(new VolumeKeyframe(t, position, halfExtents, rotation, shape, effect, jump, linearToNext, keyframeType, originRayOffset, localRayOrigin));
         }
         return keyframes;
     }
@@ -191,7 +204,6 @@ public final class AttackDefSerializer {
             ? NamespacedKey.fromString(keyStr)
             : NamespacedKey.minecraft(keyStr);
         if (namespacedKey == null) throw new IllegalArgumentException("Invalid sound key: " + keyStr);
-        @SuppressWarnings("deprecation")
         Sound sound = Registry.SOUNDS.get(namespacedKey);
         if (sound == null) throw new IllegalArgumentException("Unknown sound: " + keyStr);
         SoundCategory category = map.get("category") instanceof String s
@@ -285,6 +297,15 @@ public final class AttackDefSerializer {
             kfMap.put("half-extents", vecMap(kf.halfExtents()));
             kfMap.put("rotation", quatMap(kf.rotation()));
             kfMap.put("shape", kf.shape().name());
+            if (kf.keyframeType() != KeyframeType.STANDARD) {
+                kfMap.put("keyframe-type", kf.keyframeType().name());
+            }
+            if (kf.keyframeType() == KeyframeType.ORIGIN_RAY) {
+                kfMap.put("origin-ray-offset", (double) kf.originRayOffset());
+            }
+            if (kf.keyframeType() == KeyframeType.RAYCAST && kf.localRayOrigin() != null) {
+                kfMap.put("ray-origin", vecMap(kf.localRayOrigin()));
+            }
             if (kf.jump()) {
                 kfMap.put("jump", true);
             }
@@ -350,7 +371,7 @@ public final class AttackDefSerializer {
 
     private static Map<String, Object> serializeSound(SoundCue sc) {
         return Map.of(
-            "key", sc.sound().key().asString(),
+            "key", Registry.SOUNDS.getKey(sc.sound()).asString(),
             "category", sc.category().name(),
             "volume", (double) sc.volume(),
             "pitch", (double) sc.pitch()

@@ -4,19 +4,17 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.bukkit.Bukkit;
 import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.World;
-import org.bukkit.entity.Player;
-import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 import btm.sword.Sword;
 import btm.sword.system.attack.HitValuePacket;
+import btm.sword.system.attack.simulation.KeyframeType;
 import btm.sword.system.attack.simulation.VolumeKeyframe;
 import btm.sword.system.attack.simulation.VolumeShape;
 import btm.sword.system.control.PredicateRunnablePair;
@@ -25,7 +23,9 @@ import btm.sword.system.entity.impl.Combatant;
 import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.inventory.menu.dev.AttackEditorMenu;
 import btm.sword.utility.Debug;
-import net.kyori.adventure.bossbar.BossBar;
+import btm.sword.utility.Prefab;
+import btm.sword.utility.display.DrawUtil;
+import btm.sword.utility.display.ParticleWrapper;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 
@@ -48,14 +48,11 @@ import net.kyori.adventure.text.format.NamedTextColor;
  */
 public final class SweepRecordingAction {
 
-    /** Default tip distance, used as fallback when the session has no custom value. */
-    private static final float DEFAULT_TIP_DISTANCE = 1.5f;
-
     /** Length of the north-arrow rendered at the recording origin, in blocks. */
     private static final float ARROW_LENGTH = 1.5f;
 
-    /** Render tick period for the recording visualization loop, in milliseconds (10 Hz). */
-    private static final int RENDER_PERIOD_MS = 100;
+    /** Render tick period for the recording visualization loop, in milliseconds (20 Hz). */
+    private static final int RENDER_PERIOD_MS = 50;
 
     /** Dust colour for the origin crosshair and north arrow (red). */
     private static final Particle.DustOptions ORIGIN_DUST =
@@ -74,6 +71,10 @@ public final class SweepRecordingAction {
     /** Yellow dust used to draw the live raycast ray cursor in RAYCAST mode. */
     private static final Particle.DustOptions DUST_RAY_CURSOR =
         new Particle.DustOptions(Color.fromRGB(255, 230, 60), 0.7f);
+
+    /** Orange dust used to mark the ray origin point of a placed RAYCAST point. */
+    private static final Particle.DustOptions DUST_RAYCAST_ORIGIN =
+        new Particle.DustOptions(Color.fromRGB(255, 130, 0), 1.5f);
 
     // ── BEZIER_CURVE role colors: start, c1, c2, end ─────────────────────────
     private static final Particle.DustOptions DUST_BEZIER_START =
@@ -130,8 +131,9 @@ public final class SweepRecordingAction {
 
     /**
      * Places a world-space tip point during an active recording session.
-     * The point is computed at {@link #TIP_DISTANCE} blocks from the player's eye along
-     * the current look direction. A dark-blue dust particle marks the placement.
+     * The tip is computed at {@link AttackDevSession#getRayOffset()} blocks from the player's
+     * eye along the current look direction (or at the raycast hit for
+     * {@link PlacementMode#RAYCAST}). A dust particle marks the placement.
      * No-op if the session is not in {@link DevMode#RECORDING}.
      *
      * @param executor the combatant holding the volume-attack wand
@@ -141,42 +143,20 @@ public final class SweepRecordingAction {
         AttackDevSession session = AttackDevSession.get(player.player().getUniqueId());
         if (session == null || session.getMode() != DevMode.RECORDING) return;
 
-        if (session.getPlacementMode() == PlacementMode.ORIGIN_RAY) {
-            Vector3f tip = computeOriginRayTip(player.player(), session);
-            Location origin = session.getLockedOrigin();
-            if (origin != null) {
-                float dx = tip.x - (float) origin.getX();
-                float dy = tip.y - (float) origin.getY();
-                float dz = tip.z - (float) origin.getZ();
-                float dist = (float) Math.sqrt(dx * dx + dy * dy + dz * dz);
-                if (dist < session.getRaycastOriginOffset()) {
-                    showTooShortError(player.player());
-                    return;
-                }
-            }
+        PlacementMode mode = session.getPlacementMode();
+        Location tip;
+        if (mode == PlacementMode.RAYCAST) {
+            Location rayOrigin = player.locFromEyeDir(session.getRayOffset());
+            tip = computeRaycastTip(player, session.getRaycastMaxDistance());
+            session.addPendingPoint(new PlacedPoint(tip, mode, rayOrigin));
+            Prefab.Particles.CREATE_DUST.apply(dustForNewPoint(session.getPendingPoints())).display(tip);
+            Prefab.Particles.CREATE_DUST.apply(DUST_RAYCAST_ORIGIN).display(rayOrigin);
+        } else {
+            tip = computeWorldTip(player, session.getRayOffset());
             session.addPendingPoint(tip);
-            player.player().getWorld().spawnParticle(
-                Particle.DUST, tip.x, tip.y, tip.z, 1, 0, 0, 0, 0, DUST_AGE_0);
-            Debug.attackVolume("PLACED POINT (ORIGIN_RAY) player=" + player.player().getName()
-                + " count=" + session.getPendingPoints().size()
-                + " pos=[" + String.format("%.2f,%.2f,%.2f", tip.x, tip.y, tip.z) + "]");
-            return;
+            // Immediate placement marker — color matches what the render loop assigns this point
+            Prefab.Particles.CREATE_DUST.apply(dustForNewPoint(session.getPendingPoints())).display(tip);
         }
-
-        Vector3f tip = switch (session.getPlacementMode()) {
-            case RAYCAST -> computeRaycastTip(player, session.getRaycastMaxDistance(), session.getRaycastOriginOffset());
-            default -> computeWorldTip(player, session.getTipDistance());
-        };
-        session.addPendingPoint(tip);
-
-        // Immediate placement marker — color matches what the render loop assigns this point
-        Particle.DustOptions dust = dustForNewPoint(session.getPendingPoints());
-        player.player().getWorld().spawnParticle(
-            Particle.DUST, tip.x, tip.y, tip.z, 1, 0, 0, 0, 0, dust);
-
-        Debug.attackVolume("PLACED POINT player=" + player.player().getName()
-            + " count=" + session.getPendingPoints().size()
-            + " pos=[" + String.format("%.2f,%.2f,%.2f", tip.x, tip.y, tip.z) + "]");
     }
 
     // ── DROP+SWAP ─────────────────────────────────────────────────────────────
@@ -227,17 +207,54 @@ public final class SweepRecordingAction {
         Vector3f refOrigin = session.getRecordingRefOrigin();
         Vector3f size = session.getCurrentPlacementSize();
 
+        // Pre-compute inverse yaw rotation to convert world-space offsets to local space.
+        // The world transform during playback applies rotateY(-yaw), so local positions must
+        // be stored as rotateY(+yaw) applied to the world offset.
+        float refYawRad = (float) Math.toRadians(session.getRecordingRefYaw());
+        float cosY = (float) Math.cos(refYawRad);
+        float sinY = (float) Math.sin(refYawRad);
+
         List<VolumeKeyframe> keyframes = new ArrayList<>(n);
+        int bezierCount = 0;
         for (int i = 0; i < n; i++) {
             float t = n == 1 ? 0f : (float) i / (n - 1);
-            Vector3f world = points.get(i).position();
-            Vector3f local = new Vector3f(
-                world.x - refOrigin.x,
-                world.y - refOrigin.y,
-                world.z - refOrigin.z);
-            boolean linearToNext = points.get(i).mode() == PlacementMode.LINE_SEGMENT;
+            Location world = points.get(i).location();
+            float wx = (float) world.getX() - refOrigin.x;
+            float wy = (float) world.getY() - refOrigin.y;
+            float wz = (float) world.getZ() - refOrigin.z;
+            // Apply rotateY(refYaw): x' = cos*wx + sin*wz,  z' = -sin*wx + cos*wz
+            Vector3f local = new Vector3f(cosY * wx + sinY * wz, wy, -sinY * wx + cosY * wz);
+            PlacementMode pointMode = points.get(i).mode();
+            boolean linearToNext = pointMode == PlacementMode.LINE_SEGMENT;
+            KeyframeType kfType;
+            if (pointMode == PlacementMode.BEZIER_CURVE) {
+                kfType = switch (bezierCount % 4) {
+                    case 0 -> KeyframeType.BEZIER_START;
+                    case 1 -> KeyframeType.BEZIER_C1;
+                    case 2 -> KeyframeType.BEZIER_C2;
+                    default -> KeyframeType.BEZIER_END;
+                };
+                bezierCount++;
+            } else if (pointMode == PlacementMode.LINE_SEGMENT) {
+                kfType = KeyframeType.LINE;
+            } else if (pointMode == PlacementMode.ORIGIN_RAY) {
+                kfType = KeyframeType.ORIGIN_RAY;
+            } else if (pointMode == PlacementMode.RAYCAST) {
+                kfType = KeyframeType.RAYCAST;
+            } else {
+                kfType = KeyframeType.STANDARD;
+            }
+            float rayOffset = kfType == KeyframeType.ORIGIN_RAY ? session.getRayOffset() : 0f;
+            Vector3f localRayOrigin = null;
+            if (kfType == KeyframeType.RAYCAST && points.get(i).rayOrigin() != null) {
+                Location worldRayOrigin = points.get(i).rayOrigin();
+                float rox = (float) worldRayOrigin.getX() - refOrigin.x;
+                float roy = (float) worldRayOrigin.getY() - refOrigin.y;
+                float roz = (float) worldRayOrigin.getZ() - refOrigin.z;
+                localRayOrigin = new Vector3f(cosY * rox + sinY * roz, roy, -sinY * rox + cosY * roz);
+            }
             keyframes.add(new VolumeKeyframe(
-                t, local, new Vector3f(size), new Quaternionf(), VolumeShape.SPHERE, null, false, linearToNext));
+                t, local, new Vector3f(size), new Quaternionf(), VolumeShape.SPHERE, null, false, linearToNext, kfType, rayOffset, localRayOrigin));
         }
 
         int durationMs = session.getEditDurationMs();
@@ -286,11 +303,11 @@ public final class SweepRecordingAction {
     private static void launchRenderLoop(SwordPlayer player, AttackDevSession session) {
         TimeArbiter.runTimeIndependentBukkitTaskOnTimer(
             () -> {
-                renderOriginArrow(player.player().getWorld(), session);
-                renderPlacedPoints(player.player().getWorld(), session.getPendingPoints());
+                renderOriginArrow(session);
+                renderPlacedPoints(session.getPendingPoints());
                 PlacementMode mode = session.getPlacementMode();
                 if (mode == PlacementMode.RAYCAST || mode == PlacementMode.ORIGIN_RAY) {
-                    renderRayCursorForSession(player.player(), session);
+                    renderRayCursorForSession(player, session);
                 }
             },
             null,
@@ -312,20 +329,24 @@ public final class SweepRecordingAction {
      * <p>For all other modes: age-based gradient where the newest point is dark blue,
      * the two preceding points step toward mid-gray, and anything older is flat mid-gray.</p>
      */
-    private static void renderPlacedPoints(World world, List<PlacedPoint> points) {
+    private static void renderPlacedPoints(List<PlacedPoint> points) {
         int n = points.size();
         int bezierIndex = 0;
         for (int i = 0; i < n; i++) {
-            PlacedPoint pp = points.get(i);
+            PlacedPoint point = points.get(i);
             Particle.DustOptions dust;
-            if (pp.mode() == PlacementMode.BEZIER_CURVE) {
+            if (point.mode() == PlacementMode.BEZIER_CURVE) {
                 dust = bezierRoleDust(bezierIndex % 4);
                 bezierIndex++;
             } else {
                 dust = ageDust(n - 1 - i);
             }
-            Vector3f p = pp.position();
-            world.spawnParticle(Particle.DUST, p.x, p.y, p.z, 1, 0, 0, 0, 0, dust);
+            Prefab.Particles.CREATE_DUST.apply(dust).display(point.location());
+            if (point.mode() == PlacementMode.RAYCAST && point.rayOrigin() != null) {
+                ParticleWrapper originDust = Prefab.Particles.CREATE_DUST.apply(DUST_RAYCAST_ORIGIN);
+                originDust.display(point.rayOrigin());
+                DrawUtil.secant(List.of(originDust), point.rayOrigin(), point.location(), 0.25);
+            }
         }
     }
 
@@ -365,22 +386,17 @@ public final class SweepRecordingAction {
      * Renders a crosshair at the locked origin and a fixed north-pointing arrow (−Z axis).
      * Visible throughout the recording session.
      */
-    private static void renderOriginArrow(World world, AttackDevSession session) {
+    private static void renderOriginArrow(AttackDevSession session) {
         Location origin = session.getLockedOrigin();
         if (origin == null) return;
 
-        float ox = (float) origin.getX();
-        float oy = (float) origin.getY() + 0.9f;
-        float oz = (float) origin.getZ();
-
-        world.spawnParticle(Particle.DUST, ox + 0.3f, oy, oz, 1, 0, 0, 0, 0, ORIGIN_DUST);
-        world.spawnParticle(Particle.DUST, ox - 0.3f, oy, oz, 1, 0, 0, 0, 0, ORIGIN_DUST);
-        world.spawnParticle(Particle.DUST, ox, oy, oz + 0.3f, 1, 0, 0, 0, 0, ORIGIN_DUST);
-        world.spawnParticle(Particle.DUST, ox, oy, oz - 0.3f, 1, 0, 0, 0, 0, ORIGIN_DUST);
-
-        for (float t = 0.2f; t <= ARROW_LENGTH; t += 0.2f) {
-            world.spawnParticle(Particle.DUST, ox, oy, oz - t, 1, 0, 0, 0, 0, ORIGIN_DUST);
-        }
+        ParticleWrapper dust = Prefab.Particles.CREATE_DUST.apply(ORIGIN_DUST);
+        Location center = origin.clone().add(0, 0.9, 0);
+        dust.display(center.clone().add(0.3, 0, 0));
+        dust.display(center.clone().add(-0.3, 0, 0));
+        dust.display(center.clone().add(0, 0, 0.3));
+        dust.display(center.clone().add(0, 0, -0.3));
+        DrawUtil.line(List.of(dust), center, new Vector(0, 0, -1), ARROW_LENGTH, 0.2);
     }
 
     /**
@@ -390,122 +406,45 @@ public final class SweepRecordingAction {
      *   <li>{@link PlacementMode#RAYCAST} — draws from the offset eye origin to the
      *       raycast hit (or max distance) in the look direction.</li>
      *   <li>{@link PlacementMode#ORIGIN_RAY} — draws from the height-adjusted eye to the
-     *       tip point computed by {@link #computeOriginRayTip}.</li>
+     *       tip point.</li>
      * </ul>
      */
-    static void renderRayCursorForSession(Player player, AttackDevSession session) {
-        Location eye = player.getEyeLocation();
-        World world = player.getWorld();
+    static void renderRayCursorForSession(SwordPlayer player, AttackDevSession session) {
+        World world = player.world();
 
-        float ox, oy, oz, ex, ey, ez;
+        Location start, end;
 
         if (session.getPlacementMode() == PlacementMode.ORIGIN_RAY) {
-            Vector3f tip = computeOriginRayTip(player, session);
-            Location origin = session.getLockedOrigin();
-            if (origin == null) return;
-            ox = (float) origin.getX();
-            oy = (float) origin.getY();
-            oz = (float) origin.getZ();
-            ex = tip.x;
-            ey = tip.y;
-            ez = tip.z;
+            // Anchor the visual ray at the locked recording origin so it doesn't wobble
+            // as the player looks around. The tip tracks the current look direction.
+            Location lockedOrigin = session.getLockedOrigin();
+            if (lockedOrigin == null) return;
+            Vector tip = player.locFromEyeDir(1).toVector();
+            Vector toLookPos = tip.clone().subtract(lockedOrigin.toVector());
+            start = lockedOrigin.clone().add(toLookPos.normalize().multiply(session.getRayOffset()));
+            end = tip.toLocation(world);
         } else {
-            // RAYCAST
-            Vector dir = eye.getDirection();
-            float offset = session.getRaycastOriginOffset();
-            float maxDist = session.getRaycastMaxDistance();
-            Location rayOrigin = eye.clone().add(dir.clone().multiply(offset));
-            RayTraceResult result = world.rayTraceBlocks(rayOrigin, dir, maxDist);
-            Location end = (result != null && result.getHitPosition() != null)
-                ? result.getHitPosition().toLocation(world)
-                : rayOrigin.clone().add(dir.clone().multiply(maxDist));
-            ox = (float) rayOrigin.getX();
-            oy = (float) rayOrigin.getY();
-            oz = (float) rayOrigin.getZ();
-            ex = (float) end.getX();
-            ey = (float) end.getY();
-            ez = (float) end.getZ();
+            // RAYCAST — ray start is eye + lookDir * rayOffset, end is raycast hit or max distance.
+            start = player.locFromEyeDir(session.getRayOffset());
+            end = player.locFromEyeDir(session.getRaycastMaxDistance());
         }
 
-        float dx = ex - ox, dy = ey - oy, dz = ez - oz;
-        float len = (float) Math.sqrt(dx * dx + dy * dy + dz * dz);
-        if (len < 1e-4f) return;
-        int steps = Math.max(1, (int) (len / 0.2f));
-        for (int i = 0; i <= steps; i++) {
-            float frac = (float) i / steps;
-            world.spawnParticle(Particle.DUST,
-                ox + dx * frac, oy + dy * frac, oz + dz * frac,
-                1, 0, 0, 0, 0, DUST_RAY_CURSOR);
-        }
+        DrawUtil.secant(List.of(Prefab.Particles.CREATE_DUST.apply(DUST_RAY_CURSOR)),
+            start, end, 0.25);
     }
 
     /**
      * Returns the world-space tip position at {@code distance} blocks from the player's eye
      * along the current look direction.
      */
-    static Vector3f computeWorldTip(SwordPlayer player, float distance) {
-        Location eye = player.player().getEyeLocation();
-        Vector dir = player.player().getLocation().getDirection();
-        return new Vector3f(
-            (float) (eye.getX() + dir.getX() * distance),
-            (float) (eye.getY() + dir.getY() * distance),
-            (float) (eye.getZ() + dir.getZ() * distance));
+    static Location computeWorldTip(SwordPlayer player, float distance) {
+        return player.locFromEyeDir(distance);
     }
 
     /**
-     * Returns the world-space tip position for {@link PlacementMode#ORIGIN_RAY}.
-     *
-     * <p>The ray is defined from the locked recording origin toward the spot in front of the
-     * player's eyes ({@code eye + lookDir * tipDistance}). The keyframe is placed at that
-     * spot — {@link AttackDevSession#getTipDistance()} blocks along the player's current look
-     * direction from the eye. The origin anchors the ray for visualization and the
-     * "too short" distance check; it does not affect where the keyframe lands.</p>
+     * returns the point
      */
-    static Vector3f computeOriginRayTip(Player player, AttackDevSession session) {
-        Location eye = player.getEyeLocation();
-        Vector dir = player.getLocation().getDirection();
-        float dist = session.getTipDistance();
-        return new Vector3f(
-            (float) (eye.getX() + dir.getX() * dist),
-            (float) (eye.getY() + dir.getY() * dist),
-            (float) (eye.getZ() + dir.getZ() * dist));
-    }
-
-    /**
-     * Shows a transient red boss bar informing the player their ORIGIN_RAY placement
-     * was rejected because the distance to the locked origin is shorter than the configured
-     * minimum (raycastOriginOffset). The bar auto-hides after 2 seconds.
-     */
-    private static void showTooShortError(Player player) {
-        BossBar bar = BossBar.bossBar(
-            Component.text("[Dev] Too short — move further from the origin.", NamedTextColor.RED),
-            1.0f, BossBar.Color.RED, BossBar.Overlay.PROGRESS);
-        player.showBossBar(bar);
-        Bukkit.getScheduler().runTaskLater(Sword.getInstance(), () -> player.hideBossBar(bar), 40L);
-    }
-
-    /**
-     * Returns the world-space hit position of a block raycast from an offset origin.
-     *
-     * <p>The ray starts at the player's eye position offset by {@code originOffset} blocks
-     * along the look direction. Positive offsets move the origin forward; negative offsets
-     * pull it behind the eye. Falls back to the offset origin at {@code maxDistance} if
-     * nothing is hit within range.</p>
-     */
-    static Vector3f computeRaycastTip(SwordPlayer player, float maxDistance, float originOffset) {
-        Location eye = player.player().getEyeLocation();
-        Vector dir = eye.getDirection();
-        Location origin = eye.clone().add(dir.clone().multiply(originOffset));
-        RayTraceResult result = player.player().getWorld().rayTraceBlocks(origin, dir, maxDistance);
-        if (result != null && result.getHitPosition() != null) {
-            return new Vector3f(
-                (float) result.getHitPosition().getX(),
-                (float) result.getHitPosition().getY(),
-                (float) result.getHitPosition().getZ());
-        }
-        return new Vector3f(
-            (float) (origin.getX() + dir.getX() * maxDistance),
-            (float) (origin.getY() + dir.getY() * maxDistance),
-            (float) (origin.getZ() + dir.getZ() * maxDistance));
+    static Location computeRaycastTip(SwordPlayer player, float maxDistance) {
+        return player.locFromEyeDir(maxDistance);
     }
 }

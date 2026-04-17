@@ -32,6 +32,15 @@ import org.joml.Vector3f;
  *                      this keyframe
  * @param linearToNext  when {@code true}, the segment from this keyframe to the next uses
  *                      linear interpolation instead of Catmull-Rom
+ * @param keyframeType    semantic role of this keyframe, used for colour-coding in the editor;
+ *                        {@link KeyframeType#STANDARD} for untagged frames
+ * @param originRayOffset for {@link KeyframeType#ORIGIN_RAY} keyframes: the hitbox ray starts at
+ *                        {@code origin + normalize(origin → tip) * originRayOffset}, not at the
+ *                        origin itself. {@code 0f} for all other keyframe types.
+ * @param localRayOrigin  for {@link KeyframeType#RAYCAST} keyframes: the local-space position
+ *                        where the ray started when this point was placed. {@code null} for all
+ *                        other keyframe types. The trajectory independently splines origins and
+ *                        tips during playback.
  */
 public record VolumeKeyframe(
     float t,
@@ -41,8 +50,22 @@ public record VolumeKeyframe(
     VolumeShape shape,
     @Nullable KeyframeEffect effect,
     boolean jump,
-    boolean linearToNext
+    boolean linearToNext,
+    KeyframeType keyframeType,
+    float originRayOffset,
+    @Nullable Vector3f localRayOrigin
 ) {
+
+    /**
+     * Convenience constructor — {@code originRayOffset} defaults to {@code 0f},
+     * {@code localRayOrigin} defaults to {@code null}.
+     * All existing call sites that don't need these fields use this form.
+     */
+    public VolumeKeyframe(float t, Vector3f localPosition, Vector3f halfExtents,
+            Quaternionf rotation, VolumeShape shape, @Nullable KeyframeEffect effect,
+            boolean jump, boolean linearToNext, KeyframeType keyframeType) {
+        this(t, localPosition, halfExtents, rotation, shape, effect, jump, linearToNext, keyframeType, 0f, null);
+    }
 
     /**
      * Returns a copy of this keyframe with the given effect bundle replacing the current one.
@@ -51,7 +74,7 @@ public record VolumeKeyframe(
      * @return a new {@link VolumeKeyframe} identical to this one except for the effect
      */
     public VolumeKeyframe withEffect(@Nullable KeyframeEffect newEffect) {
-        return new VolumeKeyframe(t, localPosition, halfExtents, rotation, shape, newEffect, jump, linearToNext);
+        return new VolumeKeyframe(t, localPosition, halfExtents, rotation, shape, newEffect, jump, linearToNext, keyframeType, originRayOffset, localRayOrigin);
     }
 
     /**
@@ -61,7 +84,7 @@ public record VolumeKeyframe(
      * @return a new {@link VolumeKeyframe} identical to this one except for the jump flag
      */
     public VolumeKeyframe withJump(boolean j) {
-        return new VolumeKeyframe(t, localPosition, halfExtents, rotation, shape, effect, j, linearToNext);
+        return new VolumeKeyframe(t, localPosition, halfExtents, rotation, shape, effect, j, linearToNext, keyframeType, originRayOffset, localRayOrigin);
     }
 
     /**
@@ -71,7 +94,7 @@ public record VolumeKeyframe(
      * @return a new {@link VolumeKeyframe} identical to this one except for the time value
      */
     public VolumeKeyframe withT(float newT) {
-        return new VolumeKeyframe(newT, localPosition, halfExtents, rotation, shape, effect, jump, linearToNext);
+        return new VolumeKeyframe(newT, localPosition, halfExtents, rotation, shape, effect, jump, linearToNext, keyframeType, originRayOffset, localRayOrigin);
     }
 
     /**
@@ -81,6 +104,6 @@ public record VolumeKeyframe(
      * @return a new {@link VolumeKeyframe} identical to this one except for the linearToNext flag
      */
     public VolumeKeyframe withLinearToNext(boolean linear) {
-        return new VolumeKeyframe(t, localPosition, halfExtents, rotation, shape, effect, jump, linear);
+        return new VolumeKeyframe(t, localPosition, halfExtents, rotation, shape, effect, jump, linear, keyframeType, originRayOffset, localRayOrigin);
     }
 }
