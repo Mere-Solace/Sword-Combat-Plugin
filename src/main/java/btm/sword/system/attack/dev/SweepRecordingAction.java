@@ -74,7 +74,11 @@ public final class SweepRecordingAction {
 
     /** Orange dust used to mark the ray origin point of a placed RAYCAST point. */
     private static final Particle.DustOptions DUST_RAYCAST_ORIGIN =
-        new Particle.DustOptions(Color.fromRGB(255, 130, 0), 1.5f);
+        new Particle.DustOptions(Color.fromRGB(255, 130, 0), 0.75f);
+
+    /** Yellow dust used to mark the ray origin point of a placed ORIGIN_RAY point. */
+    private static final Particle.DustOptions DUST_ORIGIN_RAY =
+        new Particle.DustOptions(Color.fromRGB(255, 210, 40), 0.75f);
 
     // ── BEZIER_CURVE role colors: start, c1, c2, end ─────────────────────────
     private static final Particle.DustOptions DUST_BEZIER_START =
@@ -140,7 +144,7 @@ public final class SweepRecordingAction {
      */
     public static void placePoint(Combatant executor) {
         if (!(executor instanceof SwordPlayer player)) return;
-        AttackDevSession session = AttackDevSession.get(player.player().getUniqueId());
+        AttackDevSession session = AttackDevSession.get(player.getUuid());
         if (session == null || session.getMode() != DevMode.RECORDING) return;
 
         PlacementMode mode = session.getPlacementMode();
@@ -151,8 +155,15 @@ public final class SweepRecordingAction {
             session.addPendingPoint(new PlacedPoint(tip, mode, rayOrigin));
             Prefab.Particles.CREATE_DUST.apply(dustForNewPoint(session.getPendingPoints())).display(tip);
             Prefab.Particles.CREATE_DUST.apply(DUST_RAYCAST_ORIGIN).display(rayOrigin);
+        } else if (mode == PlacementMode.ORIGIN_RAY) {
+            tip = computeWorldTip(player, 1);
+            Vector to = tip.toVector().subtract(session.getLockedOrigin().toVector()).normalize();
+            Location rayOrigin = session.getLockedOrigin().clone().add(to.multiply(session.getRayOffset()));
+            session.addPendingPoint(new PlacedPoint(tip, mode, rayOrigin));
+            Prefab.Particles.CREATE_DUST.apply(dustForNewPoint(session.getPendingPoints())).display(tip);
+            Prefab.Particles.CREATE_DUST.apply(DUST_RAYCAST_ORIGIN).display(rayOrigin);
         } else {
-            tip = computeWorldTip(player, session.getRayOffset());
+            tip = computeWorldTip(player, 1);
             session.addPendingPoint(tip);
             // Immediate placement marker — color matches what the render loop assigns this point
             Prefab.Particles.CREATE_DUST.apply(dustForNewPoint(session.getPendingPoints())).display(tip);
@@ -252,6 +263,8 @@ public final class SweepRecordingAction {
                 float roy = (float) worldRayOrigin.getY() - refOrigin.y;
                 float roz = (float) worldRayOrigin.getZ() - refOrigin.z;
                 localRayOrigin = new Vector3f(cosY * rox + sinY * roz, roy, -sinY * rox + cosY * roz);
+            } else if (kfType == KeyframeType.ORIGIN_RAY && rayOffset > 0f) {
+                localRayOrigin = new Vector3f(local).normalize().mul(rayOffset);
             }
             keyframes.add(new VolumeKeyframe(
                 t, local, new Vector3f(size), new Quaternionf(), VolumeShape.SPHERE, null, false, linearToNext, kfType, rayOffset, localRayOrigin));
@@ -344,6 +357,10 @@ public final class SweepRecordingAction {
             Prefab.Particles.CREATE_DUST.apply(dust).display(point.location());
             if (point.mode() == PlacementMode.RAYCAST && point.rayOrigin() != null) {
                 ParticleWrapper originDust = Prefab.Particles.CREATE_DUST.apply(DUST_RAYCAST_ORIGIN);
+                originDust.display(point.rayOrigin());
+                DrawUtil.secant(List.of(originDust), point.rayOrigin(), point.location(), 0.25);
+            } else if (point.mode() == PlacementMode.ORIGIN_RAY && point.rayOrigin() != null) {
+                ParticleWrapper originDust = Prefab.Particles.CREATE_DUST.apply(DUST_ORIGIN_RAY);
                 originDust.display(point.rayOrigin());
                 DrawUtil.secant(List.of(originDust), point.rayOrigin(), point.location(), 0.25);
             }

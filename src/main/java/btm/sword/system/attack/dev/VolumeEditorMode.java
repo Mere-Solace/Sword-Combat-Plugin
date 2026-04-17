@@ -103,6 +103,9 @@ public final class VolumeEditorMode {
     /** Orange marker for RAYCAST ray origin points. */
     private static final Particle.DustOptions DUST_TYPE_RAYCAST_ORIGIN =
         new Particle.DustOptions(Color.fromRGB(255, 130, 0), 1.5f);
+    /** Yellow wireframe for ORIGIN_RAY tip volumes and ray line. */
+    private static final Particle.DustOptions DUST_TYPE_ORIGIN_RAY =
+        new Particle.DustOptions(Color.fromRGB(255, 210, 40), 1.2f);
 
     /**
      * Rebuilds {@link #DUST_SELECTED}, {@link #DUST_DEFAULT}, and {@link #DUST_LIVE} from the
@@ -135,6 +138,7 @@ public final class VolumeEditorMode {
             case BEZIER_END -> DUST_TYPE_BEZIER_END;
             case LINE -> DUST_TYPE_LINE;
             case RAYCAST -> DUST_TYPE_RAYCAST_TIP;
+            case ORIGIN_RAY -> DUST_TYPE_ORIGIN_RAY;
             default -> DUST_DEFAULT;
         };
     }
@@ -150,9 +154,9 @@ public final class VolumeEditorMode {
      * at call time and reused every tick — matching the simulation's frozen origin behaviour.
      * Otherwise the player's live position and yaw are sampled each tick.</p>
      *
-     * <p>The attack ray is drawn from the attacker's bounding-box centre (the simulation
-     * origin) to the current volume centre — it does <b>not</b> track the player's eye or
-     * look direction. This matches the capsule line-of-attack detection built by
+     * <p>The attack ray is drawn from the keyframe's stored ray origin (or the attacker's
+     * bounding-box centre when none is stored) to the current volume centre. This matches
+     * the capsule line-of-attack detection built by
      * {@link btm.sword.system.attack.simulation.VolumeSimulation}.</p>
      *
      * <p>The loop self-cancels when the attack duration has elapsed or the player goes offline.
@@ -206,8 +210,9 @@ public final class VolumeEditorMode {
                     renderObbWireframe(world, buffer.center, buffer.halfExtents, buffer.rotation, DUST_LIVE);
                 }
 
-                // Attack ray: BB centre → volume centre. Matches the simulation capsule.
-                Vector3f rayStart = worldTransform.getTranslation(new Vector3f());
+                // Attack ray: recorded origin (or BB centre) → volume centre.
+                Vector3f rayStart = buffer.rayOrigin != null
+                    ? buffer.rayOrigin : worldTransform.getTranslation(new Vector3f());
                 drawEdge(world, rayStart, new Vector3f(buffer.center), DUST_GHOST_PATH);
             },
             null,
@@ -425,21 +430,35 @@ public final class VolumeEditorMode {
                 DrawUtil.secant(List.of(Prefab.Particles.CREATE_DUST.apply(DUST_TYPE_RAYCAST_ORIGIN)),
                     originLoc, tipLoc, 0.2);
             }
+
+            // ORIGIN_RAY: yellow secant from stored ray origin to tip
+            if (kf.keyframeType() == KeyframeType.ORIGIN_RAY && kf.localRayOrigin() != null) {
+                Vector3f worldOrigin = worldTransform.transformPosition(
+                    new Vector3f(kf.localRayOrigin()), new Vector3f());
+                Location originLoc = new Location(world, worldOrigin.x, worldOrigin.y, worldOrigin.z);
+                Location tipLoc = new Location(world, worldCenter.x, worldCenter.y, worldCenter.z);
+                Prefab.Particles.CREATE_DUST.apply(DUST_TYPE_ORIGIN_RAY).display(originLoc);
+                DrawUtil.secant(List.of(Prefab.Particles.CREATE_DUST.apply(DUST_TYPE_ORIGIN_RAY)),
+                    originLoc, tipLoc, 0.2);
+            }
         }
 
         if (log && !keyframes.isEmpty()) {
             Debug.attackVolume("[VolumeEditorMode] spawned " + totalParticles + " particles this tick");
         }
 
-        // Ghost rays from BB centre (origin) to each keyframe — only while holding the wand.
+        // Ghost rays from recorded origin (or BB centre) to each keyframe — only while holding the wand.
         boolean holdingWand = KeyRegistry.hasKey(
             session.getPlayer().getInventory().getItemInMainHand(),
             KeyRegistry.TEST_VOLUME_ATTACK_KEY);
         if (holdingWand && keyframes.size() >= 2 && tickCount % GREY_RENDER_PERIOD == 0) {
-            Vector3f rayStart = worldTransform.getTranslation(new Vector3f());
+            Vector3f bbCenter = worldTransform.getTranslation(new Vector3f());
             for (VolumeKeyframe kf : keyframes) {
                 Vector3f worldCenter = worldTransform.transformPosition(
                     new Vector3f(kf.localPosition()), new Vector3f());
+                Vector3f rayStart = kf.localRayOrigin() != null
+                    ? worldTransform.transformPosition(new Vector3f(kf.localRayOrigin()), new Vector3f())
+                    : bbCenter;
                 drawEdge(world, rayStart, worldCenter, DUST_GHOST_PATH);
             }
         }

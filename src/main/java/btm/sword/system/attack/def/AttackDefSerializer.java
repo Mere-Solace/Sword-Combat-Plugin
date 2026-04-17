@@ -140,6 +140,8 @@ public final class AttackDefSerializer {
             Vector3f localRayOrigin = null;
             if (keyframeType == KeyframeType.RAYCAST && map.get("ray-origin") instanceof Map<?, ?> roMap) {
                 localRayOrigin = readVector3f(roMap);
+            } else if (keyframeType == KeyframeType.ORIGIN_RAY && originRayOffset > 0f) {
+                localRayOrigin = new Vector3f(position).normalize().mul(originRayOffset);
             }
             keyframes.add(new VolumeKeyframe(t, position, halfExtents, rotation, shape, effect, jump, linearToNext, keyframeType, originRayOffset, localRayOrigin));
         }

@@ -147,11 +147,35 @@ public final class VolumeSimulation {
             }
 
             attack.getTrajectory().sample(t, worldTransform, attack.getVolume());
-            spatialGrid.insert(
-                attack.getAttackerUuid(),
-                attack.getVolume().aabbMin,
-                attack.getVolume().aabbMax
-            );
+
+            // For OBB-based trajectories, also build a thin ray capsule from the world
+            // origin (player BB centre) to the keyframe tip for line-of-attack detection.
+            if (attack.getVolume() instanceof ObbVolume obbVol) {
+                if (attack.getRayVolume() == null) {
+                    attack.setRayVolume(new CapsuleVolume());
+                }
+                CapsuleVolume ray = attack.getRayVolume();
+                Vector3f rayStart = obbVol.rayOrigin != null ? obbVol.rayOrigin : origin;
+                ray.start.set(rayStart);
+                ray.end.set(obbVol.center);
+                ray.radius = 0.1f;
+                float r = ray.radius;
+                ray.aabbMin.set(
+                    Math.min(rayStart.x, obbVol.center.x) - r,
+                    Math.min(rayStart.y, obbVol.center.y) - r,
+                    Math.min(rayStart.z, obbVol.center.z) - r);
+                ray.aabbMax.set(
+                    Math.max(rayStart.x, obbVol.center.x) + r,
+                    Math.max(rayStart.y, obbVol.center.y) + r,
+                    Math.max(rayStart.z, obbVol.center.z) + r);
+                // Insert the capsule AABB — it encloses the tip sphere, so one insert suffices
+                spatialGrid.insert(attack.getAttackerUuid(), ray.aabbMin, ray.aabbMax);
+            } else {
+                spatialGrid.insert(
+                    attack.getAttackerUuid(),
+                    attack.getVolume().aabbMin,
+                    attack.getVolume().aabbMax);
+            }
 
             if (attack.getTrajectory() instanceof KeyframedTrajectory kt) {
                 World world = Bukkit.getWorld(attack.getWorldUuid());
@@ -187,7 +211,10 @@ public final class VolumeSimulation {
                 if (attack == null) continue;
                 if (!attack.getHitThisAttack().add(entityUuid)) continue;
 
-                if (!attack.getVolume().intersects(snap.min(), snap.max())) {
+                CapsuleVolume ray = attack.getRayVolume();
+                boolean hit = attack.getVolume().intersects(snap.min(), snap.max())
+                    || (ray != null && ray.intersects(snap.min(), snap.max()));
+                if (!hit) {
                     attack.getHitThisAttack().remove(entityUuid);
                     continue;
                 }
