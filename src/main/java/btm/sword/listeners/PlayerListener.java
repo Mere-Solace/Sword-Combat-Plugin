@@ -31,10 +31,12 @@ import btm.sword.Sword;
 import btm.sword.config.Config;
 import btm.sword.gamemode.QueueManager;
 import btm.sword.gamemode.type.CaptureTheFlag1v1;
+import btm.sword.system.attack.dev.AnimationMode;
 import btm.sword.system.attack.dev.AttackDevSession;
 import btm.sword.system.attack.dev.DevMode;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.base.SwordEntity;
+import btm.sword.system.entity.impl.DevSwordPlayer;
 import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.entity.umbral.UmbralBlade;
 import btm.sword.system.entity.umbral.input.BladeRequest;
@@ -73,12 +75,22 @@ public class PlayerListener implements Listener {
      */
     @EventHandler
     public void onPlayerDeath(PlayerDeathEvent event) {
-        SwordEntityArbiter.getOrAdd(event.getPlayer()).onDeath();
+        Player player = event.getPlayer();
+        SwordEntity entity = SwordEntityArbiter.getOrAdd(player);
+        entity.onDeath();
 
-        CaptureTheFlag1v1 match = QueueManager.getActiveCtfMatch(event.getPlayer().getUniqueId());
+        AttackDevSession session = AttackDevSession.get(player.getUniqueId());
+        if (session != null) {
+            if (entity instanceof DevSwordPlayer devPlayer && devPlayer.isInAnimationMode()) {
+                AnimationMode.exitSilent(devPlayer);
+            }
+            session.stopCurrentSession();
+            AttackDevSession.remove(player.getUniqueId());
+        }
+
+        CaptureTheFlag1v1 match = QueueManager.getActiveCtfMatch(player.getUniqueId());
         if (match != null) {
-            SwordPlayer dead = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer());
-            match.onPlayerDeath(dead);
+            match.onPlayerDeath((SwordPlayer) entity);
         }
     }
 

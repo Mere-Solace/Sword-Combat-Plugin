@@ -34,6 +34,7 @@ import btm.sword.system.attack.HitValuePacket;
 import btm.sword.system.attack.def.AttackDef;
 import btm.sword.system.attack.def.AttackRegistry;
 import btm.sword.system.attack.simulation.CollisionEventBridge;
+import btm.sword.system.attack.simulation.KeyframeType;
 import btm.sword.system.attack.simulation.VolumeKeyframe;
 import btm.sword.system.attack.simulation.VolumeShape;
 import btm.sword.system.attack.simulation.VolumeSimulation;
@@ -129,8 +130,8 @@ public final class Sword extends JavaPlugin {
             .onHit(new HitValuePacket(
                 () -> 0f, () -> 10, () -> 2, () -> 0f, () -> 0f))
             .keyframes(List.of(
-                new VolumeKeyframe(0f, new Vector3f(0f, 1f, 1f), new Vector3f(0.5f, 0.5f, 0.5f), new Quaternionf(), VolumeShape.SPHERE, null, false, false),
-                new VolumeKeyframe(1f, new Vector3f(0f, 1f, 2f), new Vector3f(0.5f, 0.5f, 0.5f), new Quaternionf(), VolumeShape.SPHERE, null, false, false)
+                new VolumeKeyframe(0f, new Vector3f(0f, 1f, 1f), new Vector3f(0.5f, 0.5f, 0.5f), new Quaternionf(), VolumeShape.SPHERE, null, false, false, KeyframeType.STANDARD),
+                new VolumeKeyframe(1f, new Vector3f(0f, 1f, 2f), new Vector3f(0.5f, 0.5f, 0.5f), new Quaternionf(), VolumeShape.SPHERE, null, false, false, KeyframeType.STANDARD)
             ))
             .build());
 

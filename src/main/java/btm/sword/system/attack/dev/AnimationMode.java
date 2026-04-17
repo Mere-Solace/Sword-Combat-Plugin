@@ -87,36 +87,40 @@ public final class AnimationMode {
     }
 
     /**
-     * Exits AnimationMode on the given {@link DevSwordPlayer}.
+     * Exits AnimationMode on the given {@link DevSwordPlayer} and opens {@link AttackBrowserMenu}.
+     *
+     * @param devPlayer the currently active {@link DevSwordPlayer} in AnimationMode
+     */
+    public static void exit(DevSwordPlayer devPlayer) {
+        exitSilent(devPlayer);
+        new AttackBrowserMenu(devPlayer).open();
+    }
+
+    /**
+     * Exits AnimationMode without opening any menu — use when the player cannot interact
+     * with a menu (e.g. death, forced abort).
      *
      * <ol>
      *   <li>Clears the AnimationMode flag.</li>
      *   <li>Restores the inventory from {@link AttackDevSession#getSavedAnimationInventory()}.</li>
      *   <li>Keeps anchored-item upkeep suppressed (player is still in creative dev mode).</li>
-     *   <li>Requests {@link BladeRequest#ACTIVATE_TO_PREVIOUS} to restore blade from {@code InactiveState} → {@code StandbyState}.</li>
-     *   <li>Opens {@link AttackBrowserMenu}.</li>
+     *   <li>Requests {@link BladeRequest#ACTIVATE_TO_PREVIOUS} to restore blade.</li>
      * </ol>
      *
      * @param devPlayer the currently active {@link DevSwordPlayer} in AnimationMode
      */
-    public static void exit(DevSwordPlayer devPlayer) {
+    public static void exitSilent(DevSwordPlayer devPlayer) {
         devPlayer.setInAnimationMode(false);
 
         AttackDevSession session = AttackDevSession.get(devPlayer.player().getUniqueId());
 
-        // Restore inventory to the creative-dev state
         if (session != null && session.getSavedAnimationInventory() != null) {
             devPlayer.player().getInventory().setContents(session.getSavedAnimationInventory());
             session.setSavedAnimationInventory(null);
         }
 
-        // Remain suppressed — still in creative dev mode
         devPlayer.setAllAnchoredItemUpkeep(false);
-
-        // Restore blade from InactiveState → StandbyState
         devPlayer.requestUmbralBladeState(BladeRequest.ACTIVATE_TO_PREVIOUS);
-
-        new AttackBrowserMenu(devPlayer).open();
     }
 
     // ── Private helpers ───────────────────────────────────────────────────────

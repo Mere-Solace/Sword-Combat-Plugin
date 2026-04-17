@@ -27,21 +27,20 @@ import xyz.xenondevs.invui.window.Window;
  * <p>Opened when the player clicks the volume-attack wand item in their inventory.
  * Exposes four per-session parameters:</p>
  * <ul>
- *   <li><b>Tip Distance</b> — how far from the eye non-raycast points are placed.</li>
+ *   <li><b>Ray Offset</b> — distance from the eye along look direction used as the tip
+ *       position for every placement mode (or ray start offset for RAYCAST).</li>
  *   <li><b>Raycast Dist</b> — maximum block-raycast range for RAYCAST placement mode.</li>
  *   <li><b>Placement Size</b> — uniform half-extent applied to each recorded keyframe.</li>
  *   <li><b>Duration</b> — attack duration written when the recording is saved.</li>
- *   <li><b>Ray Offset</b> — minimum distance from origin for ORIGIN_RAY mode (negative = behind eye for RAYCAST).</li>
- *   <li><b>Height Offset</b> — vertical shift of the eye start position (legacy, kept for config).</li>
  * </ul>
  *
  * <h2>Layout (3 rows × 9)</h2>
  * <pre>
- * Row 0: [T-] [T]  [T+] [R-] [R]  [R+] [S-] [S]  [S+]
- * Row 1: [D-] [D]  [D+] [O-] [O]  [O+] [H-] [H]  [H+]
+ * Row 0: [O-] [O]  [O+] [R-] [R]  [R+] [S-] [S]  [S+]
+ * Row 1: [ ]  [ ]  [ ]  [D-] [D]  [D+] [ ]  [ ]  [ ]
  * Row 2: [#]  [#]  [#]  [#]  [#]  [#]  [#]  [#]  [#]
  * </pre>
- * <p>T=tipDistance, R=raycastDist, S=placementSize, D=duration, O=rayOriginOffset, H=heightOffset.</p>
+ * <p>O=rayOffset, R=raycastDist, S=placementSize, D=duration.</p>
  *
  * <h2>Controls</h2>
  * <ul>
@@ -64,25 +63,24 @@ public class SweepGeneratorMenu extends Menu {
     public void open() {
         AttackDevSession session = AttackDevSession.getOrCreate(swordPlayer.player());
 
-        float tip = session.getTipDistance();
         float ray = session.getRaycastMaxDistance();
-        float rayOff = session.getRaycastOriginOffset();
-        float heightOff = session.getOriginRayHeightOffset();
+        float rayOff = session.getRayOffset();
         float size = session.getCurrentPlacementSize().x;
         int dur = session.getEditDurationMs();
 
-        // ── Tip distance ─────────────────────────────────────────────────────
-        SimpleItem tipDec = dec(click -> {
+        // ── Ray offset (tip distance / ray start) ────────────────────────────
+        SimpleItem rayOffDec = dec(click -> {
             float delta = stepFloat(click, 0.1f, 0.5f, 2.0f);
-            session.setTipDistance(clampTip(tip - delta));
+            session.setRayOffset(clampRayOff(rayOff - delta));
             open();
         });
-        SimpleItem tipDisplay = paramDisplay("Tip Dist", fmt1(tip),
-            "Eye-to-tip distance for non-raycast modes (blocks).", Material.FEATHER,
-            v -> { session.setTipDistance(clampTip(v)); open(); });
-        SimpleItem tipInc = inc(click -> {
+        SimpleItem rayOffDisplay = paramDisplay("Ray Offset", fmt1(rayOff),
+            "Distance from origin ray will begin. Also raycast start offset in RAYCAST mode.",
+            Material.BLAZE_ROD,
+            v -> { session.setRayOffset(clampRayOff(v)); open(); });
+        SimpleItem rayOffInc = inc(click -> {
             float delta = stepFloat(click, 0.1f, 0.5f, 2.0f);
-            session.setTipDistance(clampTip(tip + delta));
+            session.setRayOffset(clampRayOff(rayOff + delta));
             open();
         });
 
@@ -122,21 +120,6 @@ public class SweepGeneratorMenu extends Menu {
             open();
         });
 
-        // ── Ray origin offset ─────────────────────────────────────────────────
-        SimpleItem rayOffDec = dec(click -> {
-            float delta = stepFloat(click, 0.1f, 0.5f, 2.0f);
-            session.setRaycastOriginOffset(clampRayOff(rayOff - delta));
-            open();
-        });
-        SimpleItem rayOffDisplay = paramDisplay("Ray Offset", fmt1(rayOff),
-            "Min dist from origin (ORIGIN_RAY) / ray start offset along look dir (RAYCAST).", Material.BLAZE_ROD,
-            v -> { session.setRaycastOriginOffset(clampRayOff(v)); open(); });
-        SimpleItem rayOffInc = inc(click -> {
-            float delta = stepFloat(click, 0.1f, 0.5f, 2.0f);
-            session.setRaycastOriginOffset(clampRayOff(rayOff + delta));
-            open();
-        });
-
         // ── Duration ─────────────────────────────────────────────────────────
         SimpleItem durDec = dec(click -> {
             int delta = stepInt(click, 50, 100, 500);
@@ -152,30 +135,15 @@ public class SweepGeneratorMenu extends Menu {
             open();
         });
 
-        // ── Height offset (ORIGIN_RAY) ────────────────────────────────────────
-        SimpleItem heightOffDec = dec(click -> {
-            float delta = stepFloat(click, 0.1f, 0.5f, 2.0f);
-            session.setOriginRayHeightOffset(clampHeightOff(heightOff - delta));
-            open();
-        });
-        SimpleItem heightOffDisplay = paramDisplay("Height Offset", fmt1(heightOff),
-            "Vertical eye offset for ORIGIN_RAY mode (legacy, kept for config).", Material.LADDER,
-            v -> { session.setOriginRayHeightOffset(clampHeightOff(v)); open(); });
-        SimpleItem heightOffInc = inc(click -> {
-            float delta = stepFloat(click, 0.1f, 0.5f, 2.0f);
-            session.setOriginRayHeightOffset(clampHeightOff(heightOff + delta));
-            open();
-        });
-
         Gui gui = Gui.normal()
             .setStructure(
-                "1 T 2 3 R 4 5 S 6",
-                "7 D 8 9 O 0 A H B",
+                "1 O 2 3 R 4 5 S 6",
+                "# # # 7 D 8 # # #",
                 "# # # # # # # # #"
             )
-            .addIngredient('1', tipDec)
-            .addIngredient('T', tipDisplay)
-            .addIngredient('2', tipInc)
+            .addIngredient('1', rayOffDec)
+            .addIngredient('O', rayOffDisplay)
+            .addIngredient('2', rayOffInc)
             .addIngredient('3', rayDec)
             .addIngredient('R', rayDisplay)
             .addIngredient('4', rayInc)
@@ -185,12 +153,6 @@ public class SweepGeneratorMenu extends Menu {
             .addIngredient('7', durDec)
             .addIngredient('D', durDisplay)
             .addIngredient('8', durInc)
-            .addIngredient('9', rayOffDec)
-            .addIngredient('O', rayOffDisplay)
-            .addIngredient('0', rayOffInc)
-            .addIngredient('A', heightOffDec)
-            .addIngredient('H', heightOffDisplay)
-            .addIngredient('B', heightOffInc)
             .addIngredient('#', BORDER)
             .build();
 
@@ -317,13 +279,9 @@ public class SweepGeneratorMenu extends Menu {
 
     // ── Clamp / format helpers ─────────────────────────────────────────────
 
-    private static float clampTip(float v) { return Math.max(0.1f, Math.min(10.0f, round1(v))); }
-
     private static float clampRay(float v) { return Math.max(1.0f, Math.min(32.0f, round1(v))); }
 
-    private static float clampRayOff(float v) { return Math.max(-5.0f, Math.min(5.0f, round1(v))); }
-
-    private static float clampHeightOff(float v) { return Math.max(-3.0f, Math.min(3.0f, round1(v))); }
+    private static float clampRayOff(float v) { return Math.max(-5.0f, Math.min(10.0f, round1(v))); }
 
     private static float round1(float v) { return Math.round(v * 10f) / 10f; }
 
