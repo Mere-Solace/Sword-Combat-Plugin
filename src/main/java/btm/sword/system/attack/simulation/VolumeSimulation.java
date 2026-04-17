@@ -148,14 +148,15 @@ public final class VolumeSimulation {
 
             attack.getTrajectory().sample(t, worldTransform, attack.getVolume());
 
-            // For OBB-based trajectories, also build a thin ray capsule from the world
-            // origin (player BB centre) to the keyframe tip for line-of-attack detection.
-            if (attack.getVolume() instanceof ObbVolume obbVol) {
+            // For RAYCAST / ORIGIN_RAY keyframes only, build a thin ray capsule from the
+            // recorded origin to the keyframe tip for line-of-attack detection. obbVol.rayOrigin
+            // is non-null only for those keyframe types (written by KeyframedTrajectory.sample).
+            if (attack.getVolume() instanceof ObbVolume obbVol && obbVol.rayOrigin != null) {
                 if (attack.getRayVolume() == null) {
                     attack.setRayVolume(new CapsuleVolume());
                 }
                 CapsuleVolume ray = attack.getRayVolume();
-                Vector3f rayStart = obbVol.rayOrigin != null ? obbVol.rayOrigin : origin;
+                Vector3f rayStart = obbVol.rayOrigin;
                 ray.start.set(rayStart);
                 ray.end.set(obbVol.center);
                 ray.radius = 0.1f;
@@ -168,9 +169,15 @@ public final class VolumeSimulation {
                     Math.max(rayStart.x, obbVol.center.x) + r,
                     Math.max(rayStart.y, obbVol.center.y) + r,
                     Math.max(rayStart.z, obbVol.center.z) + r);
-                // Insert the capsule AABB — it encloses the tip sphere, so one insert suffices
                 spatialGrid.insert(attack.getAttackerUuid(), ray.aabbMin, ray.aabbMax);
+                // Also insert the volume AABB — the capsule AABB does not fully enclose the OBB
+                spatialGrid.insert(
+                    attack.getAttackerUuid(),
+                    attack.getVolume().aabbMin,
+                    attack.getVolume().aabbMax);
             } else {
+                // Non-ray keyframe: clear any stale capsule so narrow phase does not test it
+                attack.setRayVolume(null);
                 spatialGrid.insert(
                     attack.getAttackerUuid(),
                     attack.getVolume().aabbMin,

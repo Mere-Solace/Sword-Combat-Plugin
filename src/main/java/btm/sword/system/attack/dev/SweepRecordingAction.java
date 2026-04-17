@@ -14,7 +14,9 @@ import org.joml.Vector3f;
 
 import btm.sword.Sword;
 import btm.sword.system.attack.HitValuePacket;
+import btm.sword.system.attack.def.AttackRegistry;
 import btm.sword.system.attack.simulation.KeyframeType;
+import btm.sword.system.attack.simulation.KeyframedTrajectory;
 import btm.sword.system.attack.simulation.VolumeKeyframe;
 import btm.sword.system.attack.simulation.VolumeShape;
 import btm.sword.system.control.PredicateRunnablePair;
@@ -259,6 +261,7 @@ public final class SweepRecordingAction {
             Vector3f localRayOrigin = null;
             if (kfType == KeyframeType.RAYCAST && points.get(i).rayOrigin() != null) {
                 Location worldRayOrigin = points.get(i).rayOrigin();
+                if (worldRayOrigin == null) return;
                 float rox = (float) worldRayOrigin.getX() - refOrigin.x;
                 float roy = (float) worldRayOrigin.getY() - refOrigin.y;
                 float roz = (float) worldRayOrigin.getZ() - refOrigin.z;
@@ -287,7 +290,7 @@ public final class SweepRecordingAction {
 
     /**
      * Returns a name not already occupied in the {@link AttackRegistry} or on the filesystem.
-     * If {@code base} is free, returns it unchanged. Otherwise appends {@code _1}, {@code _2}, …
+     * If {@code base} is free, returns it unchanged. Otherwise, appends {@code _1}, {@code _2}, …
      *
      * @param base the desired base name (e.g. {@code "sweep_draft"})
      * @param dir  the attacks directory to check for existing YAML files

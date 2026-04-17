@@ -210,10 +210,11 @@ public final class VolumeEditorMode {
                     renderObbWireframe(world, buffer.center, buffer.halfExtents, buffer.rotation, DUST_LIVE);
                 }
 
-                // Attack ray: recorded origin (or BB centre) → volume centre.
-                Vector3f rayStart = buffer.rayOrigin != null
-                    ? buffer.rayOrigin : worldTransform.getTranslation(new Vector3f());
-                drawEdge(world, rayStart, new Vector3f(buffer.center), DUST_GHOST_PATH);
+                // Attack ray: only drawn when the sampled keyframe is RAYCAST or ORIGIN_RAY
+                // (buffer.rayOrigin is non-null only for those types).
+                if (buffer.rayOrigin != null) {
+                    drawEdge(world, buffer.rayOrigin, new Vector3f(buffer.center), DUST_GHOST_PATH);
+                }
             },
             null,
             0, 50,
@@ -447,18 +448,20 @@ public final class VolumeEditorMode {
             Debug.attackVolume("[VolumeEditorMode] spawned " + totalParticles + " particles this tick");
         }
 
-        // Ghost rays from recorded origin (or BB centre) to each keyframe — only while holding the wand.
+        // Ghost rays from recorded origin to each RAYCAST/ORIGIN_RAY keyframe — only while holding the wand.
         boolean holdingWand = KeyRegistry.hasKey(
             session.getPlayer().getInventory().getItemInMainHand(),
             KeyRegistry.TEST_VOLUME_ATTACK_KEY);
         if (holdingWand && keyframes.size() >= 2 && tickCount % GREY_RENDER_PERIOD == 0) {
-            Vector3f bbCenter = worldTransform.getTranslation(new Vector3f());
             for (VolumeKeyframe kf : keyframes) {
+                if (kf.keyframeType() != KeyframeType.RAYCAST && kf.keyframeType() != KeyframeType.ORIGIN_RAY) {
+                    continue;
+                }
+                if (kf.localRayOrigin() == null) continue;
                 Vector3f worldCenter = worldTransform.transformPosition(
                     new Vector3f(kf.localPosition()), new Vector3f());
-                Vector3f rayStart = kf.localRayOrigin() != null
-                    ? worldTransform.transformPosition(new Vector3f(kf.localRayOrigin()), new Vector3f())
-                    : bbCenter;
+                Vector3f rayStart = worldTransform.transformPosition(
+                    new Vector3f(kf.localRayOrigin()), new Vector3f());
                 drawEdge(world, rayStart, worldCenter, DUST_GHOST_PATH);
             }
         }
