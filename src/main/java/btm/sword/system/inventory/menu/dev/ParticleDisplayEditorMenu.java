@@ -40,6 +40,7 @@ public class ParticleDisplayEditorMenu extends Menu {
 
     private final int kfIndex;
     private final int displayIndex;
+    private final List<Integer> extraKfTargets;
 
     /**
      * @param player       the player opening the editor
@@ -47,9 +48,22 @@ public class ParticleDisplayEditorMenu extends Menu {
      * @param displayIndex display index within the keyframe's display list
      */
     public ParticleDisplayEditorMenu(SwordPlayer player, int kfIndex, int displayIndex) {
+        this(player, kfIndex, displayIndex, List.of());
+    }
+
+    /**
+     * @param player         the player opening the editor
+     * @param kfIndex        keyframe index within the edit session
+     * @param displayIndex   display index within the keyframe's display list
+     * @param extraKfTargets additional keyframe indices to receive a copy of the final
+     *                       display when the player clicks Back (initial multi-kf creation)
+     */
+    public ParticleDisplayEditorMenu(SwordPlayer player, int kfIndex, int displayIndex,
+                                     List<Integer> extraKfTargets) {
         super(player);
         this.kfIndex = kfIndex;
         this.displayIndex = displayIndex;
+        this.extraKfTargets = extraKfTargets;
     }
 
     @Override
@@ -64,7 +78,18 @@ public class ParticleDisplayEditorMenu extends Menu {
         SimpleItem back = new SimpleItem(
             new ItemStackBuilder(Material.COPPER_TRAPDOOR)
                 .name(Component.text("Back", NamedTextColor.GRAY)).build(),
-            click -> new KeyframeVisualsMenu(swordPlayer).open()
+            click -> {
+                if (!extraKfTargets.isEmpty()) {
+                    AttackDevSession s = AttackDevSession.getOrCreate(swordPlayer.player());
+                    ParticleDisplay snap = fetch(s);
+                    if (snap != null) {
+                        for (int idx : extraKfTargets) {
+                            s.addKeyframeDisplay(idx, snap.copy());
+                        }
+                    }
+                }
+                new KeyframeVisualsMenu(swordPlayer).open();
+            }
         );
 
         SimpleItem save = new SimpleItem(

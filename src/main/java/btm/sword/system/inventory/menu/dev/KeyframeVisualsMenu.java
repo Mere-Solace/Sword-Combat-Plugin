@@ -272,14 +272,11 @@ public class KeyframeVisualsMenu extends Menu {
                 int kfIdx = session.getCurrentKeyframeIndex();
                 ParticleDisplay fresh = ParticleDisplayEditorMenu.createDefault(shape);
                 session.addKeyframeDisplay(kfIdx, fresh);
-                Set<Integer> sel = session.getSelectedKeyframeIndices();
-                for (int selIdx : sel) {
-                    if (selIdx != kfIdx) {
-                        session.addKeyframeDisplay(selIdx, fresh.copy());
-                    }
-                }
                 int newIndex = session.getEditKeyframes().get(kfIdx).effect().displays().size() - 1;
-                new ParticleDisplayEditorMenu(swordPlayer, kfIdx, newIndex).open();
+                List<Integer> extras = session.getSelectedKeyframeIndices().stream()
+                    .filter(idx -> idx != kfIdx)
+                    .toList();
+                new ParticleDisplayEditorMenu(swordPlayer, kfIdx, newIndex, extras).open();
             });
     }
 
@@ -303,14 +300,11 @@ public class KeyframeVisualsMenu extends Menu {
                 rayLine.setAnchor(OriginAnchor.raycastOrigin());
                 rayLine.setEndAnchor(OriginAnchor.owning());
                 session.addKeyframeDisplay(kfIdx, rayLine);
-                Set<Integer> sel = session.getSelectedKeyframeIndices();
-                for (int selIdx : sel) {
-                    if (selIdx != kfIdx) {
-                        session.addKeyframeDisplay(selIdx, rayLine.copy());
-                    }
-                }
                 int newIndex = session.getEditKeyframes().get(kfIdx).effect().displays().size() - 1;
-                new ParticleDisplayEditorMenu(swordPlayer, kfIdx, newIndex).open();
+                List<Integer> extras = session.getSelectedKeyframeIndices().stream()
+                    .filter(idx -> idx != kfIdx)
+                    .toList();
+                new ParticleDisplayEditorMenu(swordPlayer, kfIdx, newIndex, extras).open();
             });
     }
 

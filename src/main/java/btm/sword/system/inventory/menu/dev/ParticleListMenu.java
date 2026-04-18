@@ -107,6 +107,14 @@ public class ParticleListMenu extends Menu {
             ).open()
         );
 
+        SimpleItem fromPreset = new SimpleItem(
+            new ItemStackBuilder(Material.NETHER_STAR)
+                .name(Component.text("Add from Preset", NamedTextColor.AQUA, TextDecoration.BOLD))
+                .lore(List.of(Component.text("Pick a pre-configured particle effect.", NamedTextColor.DARK_GRAY)))
+                .build(),
+            click -> new ParticlePresetPickerMenu(swordPlayer, kfIndex, displayIndex).open()
+        );
+
         SimpleItem clearButton = new SimpleItem(
             new ItemStackBuilder(Material.BARRIER)
                 .name(Component.text("Clear All", NamedTextColor.RED, TextDecoration.BOLD))
@@ -126,7 +134,7 @@ public class ParticleListMenu extends Menu {
 
         PagedGui<Item> gui = PagedGui.items()
             .setStructure(
-                "B V I # A # X # #",
+                "B V I # A P X # #",
                 "x x x x x x x x x",
                 "x x x x x x x x x",
                 "x x x x x x x x x",
@@ -139,6 +147,7 @@ public class ParticleListMenu extends Menu {
             .addIngredient('I', info)
             .addIngredient('X', clearButton)
             .addIngredient('A', addButton)
+            .addIngredient('P', fromPreset)
             .addIngredient('<', new btm.sword.system.inventory.item.PreviousItem())
             .addIngredient('>', new btm.sword.system.inventory.item.ForwardItem())
             .setContent(items)

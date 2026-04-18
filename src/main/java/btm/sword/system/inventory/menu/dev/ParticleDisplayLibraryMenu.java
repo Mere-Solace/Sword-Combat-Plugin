@@ -1,8 +1,6 @@
 package btm.sword.system.inventory.menu.dev;
 
 import java.io.File;
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -17,16 +15,14 @@ import btm.sword.system.attack.dev.AttackDevSession;
 import btm.sword.system.attack.simulation.KeyframedTrajectory;
 import btm.sword.system.attack.simulation.ParticleEffect;
 import btm.sword.system.attack.simulation.VolumeKeyframe;
+import btm.sword.system.attack.visuals.OriginAnchor;
 import btm.sword.system.attack.visuals.ParticleDisplay;
-import btm.sword.system.attack.visuals.PointDisplay;
 import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.inventory.item.ForwardItem;
 import btm.sword.system.inventory.item.PreviousItem;
 import btm.sword.system.inventory.menu.Menu;
 import btm.sword.system.item.ItemStackBuilder;
 import btm.sword.utility.ChatInputCapture;
-import btm.sword.utility.Prefab;
-import btm.sword.utility.display.ParticleWrapper;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -92,7 +88,6 @@ public class ParticleDisplayLibraryMenu extends Menu {
         buildLibraryEntries(entries, session);
         buildCurrentAttackEntries(entries, session);
         buildOtherAttackEntries(entries, session);
-        buildPrefabEntries(entries, session);
 
         PagedGui<Item> gui = PagedGui.items()
             .setStructure(
@@ -177,35 +172,6 @@ public class ParticleDisplayLibraryMenu extends Menu {
         out.addAll(items);
     }
 
-    private void buildPrefabEntries(List<Item> out, AttackDevSession session) {
-        List<Item> items = new ArrayList<>();
-        for (Field field : Prefab.Particles.class.getDeclaredFields()) {
-            if (!Modifier.isStatic(field.getModifiers())) continue;
-            if (!Modifier.isFinal(field.getModifiers())) continue;
-            if (!ParticleWrapper.class.isAssignableFrom(field.getType())) continue;
-            try {
-                ParticleWrapper wrapper = (ParticleWrapper) field.get(null);
-                ParticleEffect effect = ParticleEffect.fromWrapper(wrapper);
-                PointDisplay starter = effect.toPointDisplay(null);
-                String name = field.getName();
-                List<Component> lore = buildDisplayLore(starter);
-                lore.add(Component.text("Particle: " + effect.type().name(), NamedTextColor.DARK_GRAY));
-                lore.add(Component.empty());
-                lore.add(Component.text("LEFT / SWAP: copy to keyframe + edit", NamedTextColor.YELLOW));
-                items.add(new SimpleItem(
-                    new ItemStackBuilder(Material.REDSTONE)
-                        .name(Component.text("⬡ " + name, NamedTextColor.GREEN, TextDecoration.BOLD))
-                        .lore(lore)
-                        .build(),
-                    click -> copyToKeyframeAndEdit(session, starter.copy())));
-            } catch (IllegalAccessException ignored) {
-                // skip inaccessible fields
-            }
-        }
-        if (items.isEmpty()) return;
-        out.add(sectionHeader("Prefab Starters  (" + items.size() + ")", Material.NETHER_STAR));
-        out.addAll(items);
-    }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
@@ -275,10 +241,34 @@ public class ParticleDisplayLibraryMenu extends Menu {
     private static List<Component> buildDisplayLore(ParticleDisplay d) {
         List<Component> lore = new ArrayList<>();
         lore.add(Component.text("Shape: " + d.shapeTypeLabel(), NamedTextColor.GRAY));
-        lore.add(Component.text("Particles: " + d.getParticles().size(), NamedTextColor.GRAY));
+        lore.add(Component.text("Anchor: " + anchorLabel(d.getAnchor()), NamedTextColor.GRAY));
+        lore.add(Component.text(String.format("Origin offset: %.2f / %.2f / %.2f",
+            d.getOriginOffset().x, d.getOriginOffset().y, d.getOriginOffset().z), NamedTextColor.DARK_GRAY));
+        lore.add(Component.text(String.format("Rand range:   %.2f / %.2f / %.2f",
+            d.getRandomOffsetRange().x, d.getRandomOffsetRange().y, d.getRandomOffsetRange().z), NamedTextColor.DARK_GRAY));
         lore.add(Component.text("Repeat: " + d.getRepeatCount()
             + " × " + d.getRepeatPeriodTicks() + "t", NamedTextColor.GRAY));
+        lore.add(Component.text("Particles: " + d.getParticles().size(), NamedTextColor.GRAY));
+        for (ParticleEffect pe : d.getParticles()) {
+            String dust = pe.dustOptions() != null
+                ? String.format(" dust:#%06X sz%.1f", pe.dustOptions().getColor().asRGB(), pe.dustOptions().getSize())
+                : "";
+            lore.add(Component.text(String.format("  %s ×%d spr(%.2f,%.2f,%.2f) spd%.2f%s",
+                pe.type().name(), pe.count(),
+                pe.spreadOffset().x, pe.spreadOffset().y, pe.spreadOffset().z,
+                pe.speed(), dust), NamedTextColor.DARK_GRAY));
+        }
         return lore;
+    }
+
+    private static String anchorLabel(OriginAnchor a) {
+        return switch (a) {
+            case OriginAnchor.OwningKeyframe ignored -> "Owning";
+            case OriginAnchor.KeyframeIndex ki -> "KF#" + ki.index();
+            case OriginAnchor.EntityBodyPoint ebp -> "Body." + ebp.point().name();
+            case OriginAnchor.FireLockedOrigin ignored -> "Locked";
+            case OriginAnchor.RaycastOrigin ignored -> "RayOrigin";
+        };
     }
 
     private static Material iconFor(ParticleDisplay d) {
