@@ -208,6 +208,41 @@ public final class AttackDevSession {
      */
     @Getter @Setter private boolean editLockOriginOnFire = Config.Combat.ATTACKS_LOCK_ORIGIN_ON_FIRE;
 
+    // ── Pending multi-kf display copy ─────────────────────────────────────────
+    /**
+     * Keyframe indices to receive a copy of the display at {@link #pendingCopyDisplayIndex}
+     * when {@link btm.sword.system.inventory.menu.dev.KeyframeVisualsMenu} next opens.
+     * Set by add-shape actions that span multiple selected keyframes; consumed and cleared
+     * immediately by the menu so the copy only happens once.
+     */
+    @Getter private final List<Integer> pendingCopyTargets = new ArrayList<>();
+    /** Source keyframe index for the pending multi-kf copy. {@code -1} = none pending. */
+    @Getter @Setter private int pendingCopySourceKfIndex = -1;
+    /** Display index within the source keyframe for the pending multi-kf copy. {@code -1} = none pending. */
+    @Getter @Setter private int pendingCopyDisplayIndex = -1;
+
+    /**
+     * Stores a pending multi-kf display copy: sets the source kf/display indices and
+     * populates the target list.
+     *
+     * @param targets     keyframe indices that should receive a copy of the display
+     * @param sourceKfIdx source keyframe index
+     * @param displayIdx  display index within the source keyframe
+     */
+    public void setPendingCopy(List<Integer> targets, int sourceKfIdx, int displayIdx) {
+        pendingCopyTargets.clear();
+        pendingCopyTargets.addAll(targets);
+        pendingCopySourceKfIndex = sourceKfIdx;
+        pendingCopyDisplayIndex = displayIdx;
+    }
+
+    /** Clears all pending multi-kf copy state. */
+    public void clearPendingCopy() {
+        pendingCopyTargets.clear();
+        pendingCopySourceKfIndex = -1;
+        pendingCopyDisplayIndex = -1;
+    }
+
     private AttackDevSession(Player player) {
         this.player = player;
     }

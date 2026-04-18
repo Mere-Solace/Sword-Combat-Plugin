@@ -116,10 +116,8 @@ public final class VolumeSimulation {
     private void processBroadPhase(long now, List<SimulationAttack> finished) {
         for (SimulationAttack attack : activeAttacks) {
             float t = (float) ((now - attack.getStartMs()) / (double) attack.getDurationMs());
-            if (t >= 1.0f) {
-                finished.add(attack);
-                continue;
-            }
+            boolean expired = t >= 1.0f;
+            if (expired) t = 1.0f;
 
             // Determine origin: locked (captured at fire time) or live snapshot
             Vector3f origin;
@@ -189,6 +187,10 @@ public final class VolumeSimulation {
                 if (world != null) {
                     EffectsDispatcher.dispatch(kt, attack, attack.getPrevT(), t, worldTransform, world);
                 }
+            }
+            if (expired) {
+                finished.add(attack);
+                continue;
             }
             attack.setPrevT(t);
 

@@ -49,6 +49,9 @@ public final class EffectsDispatcher {
             Vector3f worldPos = worldTransform.transformPosition(new Vector3f(kf.localPosition()));
             Location loc = new Location(world, worldPos.x, worldPos.y, worldPos.z);
 
+            float nextT = (i + 1 < keyframes.size()) ? keyframes.get(i + 1).t() : 1.0f;
+            long windowMs = (long) ((nextT - kf.t()) * attack.getDurationMs());
+
             EffectsContext ctx = new EffectsContext(
                 new Matrix4f(worldTransform),
                 world,
@@ -61,6 +64,16 @@ public final class EffectsDispatcher {
                 if (effect.displays() != null) {
                     for (ParticleDisplay display : effect.displays()) {
                         display.render(ctx);
+                        int bkr = display.getBetweenKfRepeat();
+                        if (bkr > 1 && windowMs > 0) {
+                            for (int r = 1; r < bkr; r++) {
+                                long delayTicks = Math.max(1, (windowMs * r / bkr) / 50);
+                                Bukkit.getScheduler().runTaskLater(
+                                    Sword.getInstance(),
+                                    () -> display.renderOnce(ctx),
+                                    delayTicks);
+                            }
+                        }
                     }
                 }
                 if (effect.sound() != null) {

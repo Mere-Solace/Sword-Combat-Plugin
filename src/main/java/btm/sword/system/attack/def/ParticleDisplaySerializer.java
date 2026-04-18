@@ -45,6 +45,7 @@ public final class ParticleDisplaySerializer {
             ? readVec(rMap) : new Vector3f();
         int repeatCount = map.get("repeat-count") instanceof Number n ? n.intValue() : 1;
         int repeatPeriodTicks = map.get("repeat-period-ticks") instanceof Number n ? n.intValue() : 0;
+        int betweenKfRepeat = map.get("between-kf-repeat") instanceof Number n ? n.intValue() : 0;
         List<ParticleEffect> particles = new ArrayList<>();
         if (map.get("particles") instanceof List<?> pList) {
             for (Object item : pList) {
@@ -53,7 +54,7 @@ public final class ParticleDisplaySerializer {
                 }
             }
         }
-        return switch (shape) {
+        ParticleDisplay display = switch (shape) {
             case "LINE" -> {
                 OriginAnchor endAnchor = loadAnchor(map.get("end-anchor"));
                 Vector3f endOffset = map.get("end-offset") instanceof Map<?, ?> eo
@@ -92,6 +93,8 @@ public final class ParticleDisplaySerializer {
             default -> new PointDisplay(anchor, originOffset, randomRange,
                 repeatCount, repeatPeriodTicks, particles);
         };
+        display.setBetweenKfRepeat(betweenKfRepeat);
+        return display;
     }
 
     /**
@@ -114,6 +117,7 @@ public final class ParticleDisplaySerializer {
         map.put("random-offset-range", vecMap(d.getRandomOffsetRange()));
         map.put("repeat-count", d.getRepeatCount());
         map.put("repeat-period-ticks", d.getRepeatPeriodTicks());
+        if (d.getBetweenKfRepeat() > 0) map.put("between-kf-repeat", d.getBetweenKfRepeat());
         List<Map<String, Object>> pList = new ArrayList<>();
         for (ParticleEffect p : d.getParticles()) {
             pList.add(serializeParticle(p));

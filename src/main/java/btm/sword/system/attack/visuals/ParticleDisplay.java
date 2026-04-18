@@ -41,6 +41,13 @@ public abstract sealed class ParticleDisplay
     protected int repeatCount;
     /** Ticks between repeat emissions. Ignored when {@link #repeatCount} &lt;= 1. */
     protected int repeatPeriodTicks;
+    /**
+     * When &gt; 1, fire this display this many total times evenly distributed across the window
+     * from this keyframe's {@code t} to the next keyframe's {@code t} (scheduled by
+     * {@link btm.sword.system.attack.simulation.EffectsDispatcher}).
+     * {@code 0} means inactive — normal {@link #repeatCount}/{@link #repeatPeriodTicks} logic applies.
+     */
+    protected int betweenKfRepeat = 0;
     /** Particles to display at each point this shape emits to. Never {@code null}. */
     protected List<ParticleEffect> particles;
 
@@ -77,6 +84,11 @@ public abstract sealed class ParticleDisplay
             int delayMs = i * repeatPeriodTicks * 50;
             SwordScheduler.runBukkitTaskLater(() -> emitOnce(ctx), delayMs, TimeUnit.MILLISECONDS);
         }
+    }
+
+    /** Fires a single emission without scheduling any repeats — used by between-kf repeat scheduling. */
+    public final void renderOnce(EffectsContext ctx) {
+        emitOnce(ctx);
     }
 
     private void emitOnce(EffectsContext ctx) {

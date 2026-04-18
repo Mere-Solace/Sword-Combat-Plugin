@@ -14,6 +14,7 @@ import btm.sword.system.attack.dev.AttackDevSession;
 import btm.sword.system.attack.simulation.KeyframeEffect;
 import btm.sword.system.attack.simulation.KeyframeType;
 import btm.sword.system.attack.simulation.SoundCue;
+import btm.sword.system.attack.simulation.VolumeKeyframe;
 import btm.sword.system.attack.visuals.LineDisplay;
 import btm.sword.system.attack.visuals.OriginAnchor;
 import btm.sword.system.attack.visuals.ParticleDisplay;
@@ -61,6 +62,25 @@ public class KeyframeVisualsMenu extends Menu {
     @Override
     public void open() {
         AttackDevSession session = AttackDevSession.getOrCreate(swordPlayer.player());
+
+        // Execute any pending multi-kf display copy (deferred from initial addShape creation)
+        if (!session.getPendingCopyTargets().isEmpty()) {
+            int srcKf = session.getPendingCopySourceKfIndex();
+            int srcDi = session.getPendingCopyDisplayIndex();
+            List<VolumeKeyframe> kfsSnap = session.getEditKeyframes();
+            if (kfsSnap != null && srcKf >= 0 && srcKf < kfsSnap.size()) {
+                var effSnap = kfsSnap.get(srcKf).effect();
+                if (effSnap != null && effSnap.displays() != null
+                        && srcDi >= 0 && srcDi < effSnap.displays().size()) {
+                    ParticleDisplay srcDisplay = effSnap.displays().get(srcDi);
+                    for (int tgt : session.getPendingCopyTargets()) {
+                        session.addKeyframeDisplay(tgt, srcDisplay.copy());
+                    }
+                }
+            }
+            session.clearPendingCopy();
+        }
+
         int kfIdx = session.getCurrentKeyframeIndex();
         if (session.getEditKeyframes() == null || kfIdx < 0 || kfIdx >= session.getEditKeyframes().size()) {
             new AttackEditorMenu(swordPlayer).open();
@@ -276,7 +296,8 @@ public class KeyframeVisualsMenu extends Menu {
                 List<Integer> extras = session.getSelectedKeyframeIndices().stream()
                     .filter(idx -> idx != kfIdx)
                     .toList();
-                new ParticleDisplayEditorMenu(swordPlayer, kfIdx, newIndex, extras).open();
+                if (!extras.isEmpty()) session.setPendingCopy(extras, kfIdx, newIndex);
+                new ParticleDisplayEditorMenu(swordPlayer, kfIdx, newIndex).open();
             });
     }
 
@@ -304,7 +325,8 @@ public class KeyframeVisualsMenu extends Menu {
                 List<Integer> extras = session.getSelectedKeyframeIndices().stream()
                     .filter(idx -> idx != kfIdx)
                     .toList();
-                new ParticleDisplayEditorMenu(swordPlayer, kfIdx, newIndex, extras).open();
+                if (!extras.isEmpty()) session.setPendingCopy(extras, kfIdx, newIndex);
+                new ParticleDisplayEditorMenu(swordPlayer, kfIdx, newIndex).open();
             });
     }
 

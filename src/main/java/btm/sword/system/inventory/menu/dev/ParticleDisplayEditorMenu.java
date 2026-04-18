@@ -40,7 +40,6 @@ public class ParticleDisplayEditorMenu extends Menu {
 
     private final int kfIndex;
     private final int displayIndex;
-    private final List<Integer> extraKfTargets;
 
     /**
      * @param player       the player opening the editor
@@ -48,22 +47,9 @@ public class ParticleDisplayEditorMenu extends Menu {
      * @param displayIndex display index within the keyframe's display list
      */
     public ParticleDisplayEditorMenu(SwordPlayer player, int kfIndex, int displayIndex) {
-        this(player, kfIndex, displayIndex, List.of());
-    }
-
-    /**
-     * @param player         the player opening the editor
-     * @param kfIndex        keyframe index within the edit session
-     * @param displayIndex   display index within the keyframe's display list
-     * @param extraKfTargets additional keyframe indices to receive a copy of the final
-     *                       display when the player clicks Back (initial multi-kf creation)
-     */
-    public ParticleDisplayEditorMenu(SwordPlayer player, int kfIndex, int displayIndex,
-                                     List<Integer> extraKfTargets) {
         super(player);
         this.kfIndex = kfIndex;
         this.displayIndex = displayIndex;
-        this.extraKfTargets = extraKfTargets;
     }
 
     @Override
@@ -78,18 +64,7 @@ public class ParticleDisplayEditorMenu extends Menu {
         SimpleItem back = new SimpleItem(
             new ItemStackBuilder(Material.COPPER_TRAPDOOR)
                 .name(Component.text("Back", NamedTextColor.GRAY)).build(),
-            click -> {
-                if (!extraKfTargets.isEmpty()) {
-                    AttackDevSession s = AttackDevSession.getOrCreate(swordPlayer.player());
-                    ParticleDisplay snap = fetch(s);
-                    if (snap != null) {
-                        for (int idx : extraKfTargets) {
-                            s.addKeyframeDisplay(idx, snap.copy());
-                        }
-                    }
-                }
-                new KeyframeVisualsMenu(swordPlayer).open();
-            }
+            click -> new KeyframeVisualsMenu(swordPlayer).open()
         );
 
         SimpleItem save = new SimpleItem(
@@ -176,6 +151,8 @@ public class ParticleDisplayEditorMenu extends Menu {
         SimpleItem pdDec = dec(click -> { display.setRepeatPeriodTicks(Math.max(0, display.getRepeatPeriodTicks() - stepInt(click))); open(); });
         SimpleItem pdDisp = displayInt("Period", display.getRepeatPeriodTicks(), Material.CLOCK, v -> { display.setRepeatPeriodTicks(Math.max(0, v)); open(); });
         SimpleItem pdInc = inc(click -> { display.setRepeatPeriodTicks(display.getRepeatPeriodTicks() + stepInt(click)); open(); });
+        SimpleItem bkrItem = displayInt("BtwKf", display.getBetweenKfRepeat(), Material.HOPPER,
+            v -> { display.setBetweenKfRepeat(Math.max(0, v)); open(); });
 
         Gui.Builder<?, ?> builder = Gui.normal()
             .setStructure(
@@ -200,7 +177,7 @@ public class ParticleDisplayEditorMenu extends Menu {
             .addIngredient('u', rndZDec).addIngredient('i', rndZDisp).addIngredient('o', rndZInc)
             .addIngredient('R', rcDec).addIngredient('+', rcDisp).addIngredient('M', rcInc)
             .addIngredient('P', pdDec).addIngredient('p', pdDisp).addIngredient('m', pdInc)
-            .addIngredient('N', anchor).addIngredient('K', BORDER);
+            .addIngredient('N', anchor).addIngredient('K', bkrItem);
 
         addShapeRows(builder, display, back, save);
 

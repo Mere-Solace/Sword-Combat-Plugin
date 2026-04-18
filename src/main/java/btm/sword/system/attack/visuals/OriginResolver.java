@@ -69,7 +69,9 @@ public final class OriginResolver {
         if (kfs.isEmpty()) return new Location(ctx.world(), 0, 0, 0);
         int clamped = Math.max(0, Math.min(ctx.owningKeyframeIndex(), kfs.size() - 1));
         VolumeKeyframe kf = kfs.get(clamped);
-        Vector3f local = kf.localRayOrigin() != null ? new Vector3f(kf.localRayOrigin()) : new Vector3f(kf.localPosition());
+        // Null fallback: use body-center (0,0,0 in local space) rather than the tip so the
+        // line has a non-zero length if localRayOrigin was never recorded.
+        Vector3f local = kf.localRayOrigin() != null ? new Vector3f(kf.localRayOrigin()) : new Vector3f();
         Vector3f world = ctx.worldTransform().transformPosition(local);
         return toLoc(ctx, world);
     }

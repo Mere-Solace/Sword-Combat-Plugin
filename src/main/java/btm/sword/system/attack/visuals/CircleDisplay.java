@@ -106,9 +106,11 @@ public final class CircleDisplay extends ParticleDisplay {
 
     @Override
     public CircleDisplay copy() {
-        return new CircleDisplay(anchor,
+        CircleDisplay c = new CircleDisplay(anchor,
             new Vector3f(originOffset), new Vector3f(randomOffsetRange),
             repeatCount, repeatPeriodTicks, copyParticles(),
             outerRadius, innerRadius, spacingRadial, spacingArc, normal);
+        c.betweenKfRepeat = betweenKfRepeat;
+        return c;
     }
 }
