@@ -1,6 +1,7 @@
 package btm.sword.utility.display;
 
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 
 import org.bukkit.Location;
 import org.bukkit.util.Vector;
@@ -81,6 +82,35 @@ public final class DrawUtil {
             for (int i = radialIterations; i > 0; i--) {
                 ParticleWrapper.displayAll(particles, origin.clone().add(rotator.clone().multiply(innerRadius + (i * spacingRadial))));
             }
+        }
+    }
+
+    /**
+     * Displays particles distributed on a sphere surface (shell) or throughout its volume.
+     *
+     * <p>Uses Gaussian-trick sampling for uniform direction, then scales by {@code radius}
+     * (for shell) or {@code radius * cbrt(uniform(0,1))} (for filled ball).</p>
+     *
+     * @param particles the particle wrappers to display at each sample point
+     * @param origin    the sphere centre
+     * @param radius    the sphere radius in blocks
+     * @param density   the number of sample points to draw
+     * @param filled    {@code true} for filled-volume distribution; {@code false} for surface shell
+     */
+    public static void sphere(List<ParticleWrapper> particles, Location origin, double radius, int density, boolean filled) {
+        ThreadLocalRandom r = ThreadLocalRandom.current();
+        for (int i = 0; i < density; i++) {
+            double x = r.nextGaussian();
+            double y = r.nextGaussian();
+            double z = r.nextGaussian();
+            double norm = Math.sqrt(x * x + y * y + z * z);
+            if (norm == 0.0) continue;
+            double scale = radius / norm;
+            if (filled) {
+                scale *= Math.cbrt(r.nextDouble());
+            }
+            Location cur = origin.clone().add(x * scale, y * scale, z * scale);
+            ParticleWrapper.displayAll(particles, cur);
         }
     }
 }

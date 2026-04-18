@@ -309,7 +309,7 @@ public class AttackEditorMenu extends Menu {
                     swordPlayer.message(Component.text("No keyframe selected.", NamedTextColor.RED));
                     return;
                 }
-                new KeyframeEffectsMenu(swordPlayer).open();
+                new KeyframeVisualsMenu(swordPlayer).open();
             }
         );
 
@@ -626,6 +626,12 @@ public class AttackEditorMenu extends Menu {
                     .build(),
                 click -> {
                     ClickType type = click.getClickType();
+                    if (type == ClickType.SWAP_OFFHAND) {
+                        session.clearSelectedKeyframeIndices();
+                        session.setCurrentKeyframeIndex(idx);
+                        new KeyframeVisualsMenu(swordPlayer).open();
+                        return;
+                    }
                     if (type == ClickType.SHIFT_LEFT || type == ClickType.SHIFT_RIGHT) {
                         int lo = Math.min(cursor, idx);
                         int hi = Math.max(cursor, idx);

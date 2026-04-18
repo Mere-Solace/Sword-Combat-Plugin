@@ -187,7 +187,7 @@ public final class VolumeSimulation {
             if (attack.getTrajectory() instanceof KeyframedTrajectory kt) {
                 World world = Bukkit.getWorld(attack.getWorldUuid());
                 if (world != null) {
-                    EffectsDispatcher.dispatch(kt, attack.getPrevT(), t, worldTransform, world);
+                    EffectsDispatcher.dispatch(kt, attack, attack.getPrevT(), t, worldTransform, world);
                 }
             }
             attack.setPrevT(t);

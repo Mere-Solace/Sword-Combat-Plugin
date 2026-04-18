@@ -23,6 +23,7 @@ import btm.sword.system.attack.simulation.ControlPointTrajectory;
 import btm.sword.system.attack.simulation.KeyframeEffect;
 import btm.sword.system.attack.simulation.KeyframedTrajectory;
 import btm.sword.system.attack.simulation.VolumeKeyframe;
+import btm.sword.system.attack.visuals.ParticleDisplay;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
@@ -464,6 +465,53 @@ public final class AttackDevSession {
      */
     public void setKeyframeEffect(int index, KeyframeEffect effect) {
         editKeyframes.set(index, editKeyframes.get(index).withEffect(effect));
+    }
+
+    /**
+     * Appends a {@link ParticleDisplay} to the keyframe at {@code index}.
+     * Creates a new effect bundle if the keyframe has none.
+     *
+     * @param index   keyframe index; must be within {@code [0, editKeyframes.size())}
+     * @param display the display to append
+     */
+    public void addKeyframeDisplay(int index, ParticleDisplay display) {
+        KeyframeEffect current = editKeyframes.get(index).effect();
+        List<ParticleDisplay> updated = new ArrayList<>(
+            current != null && current.displays() != null ? current.displays() : List.of());
+        updated.add(display);
+        KeyframeEffect next = new KeyframeEffect(updated, current != null ? current.sound() : null);
+        setKeyframeEffect(index, next);
+    }
+
+    /**
+     * Replaces the {@link ParticleDisplay} at {@code displayIndex} on the keyframe at {@code kfIndex}.
+     *
+     * @param kfIndex      keyframe index
+     * @param displayIndex display index within the keyframe's display list
+     * @param display      the replacement display
+     */
+    public void updateKeyframeDisplay(int kfIndex, int displayIndex, ParticleDisplay display) {
+        KeyframeEffect current = editKeyframes.get(kfIndex).effect();
+        if (current == null || current.displays() == null) return;
+        if (displayIndex < 0 || displayIndex >= current.displays().size()) return;
+        List<ParticleDisplay> updated = new ArrayList<>(current.displays());
+        updated.set(displayIndex, display);
+        setKeyframeEffect(kfIndex, new KeyframeEffect(updated, current.sound()));
+    }
+
+    /**
+     * Removes the {@link ParticleDisplay} at {@code displayIndex} from the keyframe at {@code kfIndex}.
+     *
+     * @param kfIndex      keyframe index
+     * @param displayIndex display index within the keyframe's display list
+     */
+    public void removeKeyframeDisplay(int kfIndex, int displayIndex) {
+        KeyframeEffect current = editKeyframes.get(kfIndex).effect();
+        if (current == null || current.displays() == null) return;
+        if (displayIndex < 0 || displayIndex >= current.displays().size()) return;
+        List<ParticleDisplay> updated = new ArrayList<>(current.displays());
+        updated.remove(displayIndex);
+        setKeyframeEffect(kfIndex, new KeyframeEffect(updated, current.sound()));
     }
 
     /**

@@ -31,6 +31,12 @@ import btm.sword.system.attack.simulation.SweepCurve;
 import btm.sword.system.attack.simulation.SweepTrajectory;
 import btm.sword.system.attack.simulation.VolumeKeyframe;
 import btm.sword.system.attack.simulation.VolumeShape;
+import btm.sword.system.attack.visuals.CircleDisplay;
+import btm.sword.system.attack.visuals.LineDisplay;
+import btm.sword.system.attack.visuals.OriginAnchor;
+import btm.sword.system.attack.visuals.ParticleDisplay;
+import btm.sword.system.attack.visuals.PointDisplay;
+import btm.sword.system.attack.visuals.SphereDisplay;
 import btm.sword.utility.Debug;
 
 /**
@@ -167,11 +173,18 @@ public final class AttackDefSerializer {
     }
 
     private static KeyframeEffect loadKeyframeEffect(Map<?, ?> map) {
-        List<ParticleEffect> particles = new ArrayList<>();
-        if (map.get("particles") instanceof List<?> list) {
-            for (Object item : list) {
+        List<ParticleDisplay> displays = new ArrayList<>();
+        if (map.get("displays") instanceof List<?> dList) {
+            for (Object item : dList) {
+                if (item instanceof Map<?, ?> dMap) {
+                    ParticleDisplay d = loadDisplay(dMap);
+                    if (d != null) displays.add(d);
+                }
+            }
+        } else if (map.get("particles") instanceof List<?> legacyList) {
+            for (Object item : legacyList) {
                 if (item instanceof Map<?, ?> pMap) {
-                    particles.add(loadParticleEffect(pMap));
+                    displays.add(loadParticleEffect(pMap).toPointDisplay());
                 }
             }
         }
@@ -179,7 +192,89 @@ public final class AttackDefSerializer {
         if (map.get("sound") instanceof Map<?, ?> soundMap) {
             sound = loadSoundCue(soundMap);
         }
-        return new KeyframeEffect(particles, sound);
+        return new KeyframeEffect(displays, sound);
+    }
+
+    private static ParticleDisplay loadDisplay(Map<?, ?> map) {
+        Object shapeRaw = map.get("shape");
+        String shape = (shapeRaw != null ? shapeRaw.toString() : "POINT").toUpperCase();
+        OriginAnchor anchor = loadAnchor(map.get("anchor"));
+        Vector3f originOffset = map.get("origin-offset") instanceof Map<?, ?> oMap
+            ? readVector3f(oMap) : new Vector3f();
+        Vector3f randomRange = map.get("random-offset-range") instanceof Map<?, ?> rMap
+            ? readVector3f(rMap) : new Vector3f();
+        int repeatCount = map.get("repeat-count") instanceof Number n ? n.intValue() : 1;
+        int repeatPeriodTicks = map.get("repeat-period-ticks") instanceof Number n ? n.intValue() : 0;
+        List<ParticleEffect> particles = new ArrayList<>();
+        if (map.get("particles") instanceof List<?> pList) {
+            for (Object item : pList) {
+                if (item instanceof Map<?, ?> pMap) {
+                    particles.add(loadParticleEffect(pMap));
+                }
+            }
+        }
+        return switch (shape) {
+            case "LINE" -> {
+                OriginAnchor endAnchor = loadAnchor(map.get("end-anchor"));
+                Vector3f endOffset = map.get("end-offset") instanceof Map<?, ?> eo
+                    ? readVector3f(eo) : new Vector3f();
+                Vector3f endRandom = map.get("end-random-range") instanceof Map<?, ?> er
+                    ? readVector3f(er) : new Vector3f();
+                double spacing = map.get("spacing") instanceof Number n ? n.doubleValue() : 0.25;
+                yield new LineDisplay(anchor, originOffset, randomRange,
+                    repeatCount, repeatPeriodTicks, particles,
+                    endAnchor, endOffset, endRandom, spacing);
+            }
+            case "SPHERE" -> {
+                double radius = map.get("radius") instanceof Number n ? n.doubleValue() : 1.0;
+                int density = map.get("density") instanceof Number n ? n.intValue() : 30;
+                boolean filled = Boolean.TRUE.equals(map.get("filled"));
+                yield new SphereDisplay(anchor, originOffset, randomRange,
+                    repeatCount, repeatPeriodTicks, particles, radius, density, filled);
+            }
+            case "CIRCLE" -> {
+                double outer = map.get("outer-radius") instanceof Number n ? n.doubleValue() : 1.0;
+                double inner = map.get("inner-radius") instanceof Number n ? n.doubleValue() : 0.8;
+                double sr = map.get("spacing-radial") instanceof Number n ? n.doubleValue() : 0.25;
+                double sa = map.get("spacing-arc") instanceof Number n ? n.doubleValue() : Math.PI / 16;
+                CircleDisplay.Normal normal;
+                Object normalRaw = map.get("normal");
+                String normalStr = (normalRaw != null ? normalRaw.toString() : "ATTACK_UP").toUpperCase();
+                try {
+                    normal = CircleDisplay.Normal.valueOf(normalStr);
+                } catch (IllegalArgumentException e) {
+                    normal = CircleDisplay.Normal.ATTACK_UP;
+                }
+                yield new CircleDisplay(anchor, originOffset, randomRange,
+                    repeatCount, repeatPeriodTicks, particles,
+                    outer, inner, sr, sa, normal);
+            }
+            default -> new PointDisplay(anchor, originOffset, randomRange,
+                repeatCount, repeatPeriodTicks, particles);
+        };
+    }
+
+    private static OriginAnchor loadAnchor(Object raw) {
+        if (!(raw instanceof Map<?, ?> map)) return OriginAnchor.owning();
+        Object kindRaw = map.get("kind");
+        String kind = (kindRaw != null ? kindRaw.toString() : "OWNING").toUpperCase();
+        return switch (kind) {
+            case "KEYFRAME" -> OriginAnchor.keyframe(
+                map.get("index") instanceof Number n ? n.intValue() : 0);
+            case "BODY" -> {
+                Object pointRaw = map.get("point");
+                String pointStr = (pointRaw != null ? pointRaw.toString() : "EYE").toUpperCase();
+                OriginAnchor.BodyPoint bp;
+                try {
+                    bp = OriginAnchor.BodyPoint.valueOf(pointStr);
+                } catch (IllegalArgumentException e) {
+                    bp = OriginAnchor.BodyPoint.EYE;
+                }
+                yield OriginAnchor.body(bp);
+            }
+            case "LOCKED" -> OriginAnchor.fireLocked();
+            default -> OriginAnchor.owning();
+        };
     }
 
     private static ParticleEffect loadParticleEffect(Map<?, ?> map) {
@@ -340,17 +435,73 @@ public final class AttackDefSerializer {
 
     private static Map<String, Object> serializeEffect(KeyframeEffect effect) {
         Map<String, Object> map = new LinkedHashMap<>();
-        if (!effect.particles().isEmpty()) {
-            List<Map<String, Object>> pList = new ArrayList<>();
-            for (ParticleEffect p : effect.particles()) {
-                pList.add(serializeParticle(p));
+        if (effect.displays() != null && !effect.displays().isEmpty()) {
+            List<Map<String, Object>> dList = new ArrayList<>();
+            for (ParticleDisplay d : effect.displays()) {
+                dList.add(serializeDisplay(d));
             }
-            map.put("particles", pList);
+            map.put("displays", dList);
         }
         if (effect.sound() != null) {
             map.put("sound", serializeSound(effect.sound()));
         }
         return map;
+    }
+
+    private static Map<String, Object> serializeDisplay(ParticleDisplay d) {
+        Map<String, Object> map = new LinkedHashMap<>();
+        String shape = switch (d) {
+            case LineDisplay ignored -> "LINE";
+            case SphereDisplay ignored -> "SPHERE";
+            case CircleDisplay ignored -> "CIRCLE";
+            default -> "POINT";
+        };
+        map.put("shape", shape);
+        map.put("anchor", serializeAnchor(d.getAnchor()));
+        map.put("origin-offset", vecMap(d.getOriginOffset()));
+        map.put("random-offset-range", vecMap(d.getRandomOffsetRange()));
+        map.put("repeat-count", d.getRepeatCount());
+        map.put("repeat-period-ticks", d.getRepeatPeriodTicks());
+        List<Map<String, Object>> pList = new ArrayList<>();
+        for (ParticleEffect p : d.getParticles()) {
+            pList.add(serializeParticle(p));
+        }
+        map.put("particles", pList);
+        if (d instanceof LineDisplay ld) {
+            map.put("end-anchor", serializeAnchor(ld.getEndAnchor()));
+            map.put("end-offset", vecMap(ld.getEndOffset()));
+            map.put("end-random-range", vecMap(ld.getEndRandomRange()));
+            map.put("spacing", ld.getSpacing());
+        } else if (d instanceof SphereDisplay sd) {
+            map.put("radius", sd.getRadius());
+            map.put("density", sd.getDensity());
+            map.put("filled", sd.isFilled());
+        } else if (d instanceof CircleDisplay cd) {
+            map.put("outer-radius", cd.getOuterRadius());
+            map.put("inner-radius", cd.getInnerRadius());
+            map.put("spacing-radial", cd.getSpacingRadial());
+            map.put("spacing-arc", cd.getSpacingArc());
+            map.put("normal", cd.getNormal().name());
+        }
+        return map;
+    }
+
+    private static Map<String, Object> serializeAnchor(OriginAnchor anchor) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        switch (anchor) {
+            case OriginAnchor.OwningKeyframe ignored -> m.put("kind", "OWNING");
+            case OriginAnchor.KeyframeIndex ki -> {
+                m.put("kind", "KEYFRAME");
+                m.put("index", ki.index());
+            }
+            case OriginAnchor.EntityBodyPoint ebp -> {
+                m.put("kind", "BODY");
+                m.put("point", ebp.point().name());
+            }
+            case OriginAnchor.FireLockedOrigin ignored -> m.put("kind", "LOCKED");
+            default -> m.put("kind", "OWNING");
+        }
+        return m;
     }
 
     private static Map<String, Object> serializeParticle(ParticleEffect p) {
