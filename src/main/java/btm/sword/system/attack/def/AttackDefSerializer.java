@@ -278,6 +278,7 @@ public final class AttackDefSerializer {
                 yield OriginAnchor.body(bp);
             }
             case "LOCKED" -> OriginAnchor.fireLocked();
+            case "RAYCAST_ORIGIN" -> OriginAnchor.raycastOrigin();
             default -> OriginAnchor.owning();
         };
     }
@@ -511,6 +512,7 @@ public final class AttackDefSerializer {
                 m.put("point", ebp.point().name());
             }
             case OriginAnchor.FireLockedOrigin ignored -> m.put("kind", "LOCKED");
+            case OriginAnchor.RaycastOrigin ignored -> m.put("kind", "RAYCAST_ORIGIN");
             default -> m.put("kind", "OWNING");
         }
         return m;

@@ -371,6 +371,7 @@ public class ParticleDisplayEditorMenu extends Menu {
             case OriginAnchor.KeyframeIndex ki -> "KF #" + ki.index();
             case OriginAnchor.EntityBodyPoint ebp -> "Body " + ebp.point().name();
             case OriginAnchor.FireLockedOrigin ignored -> "Locked";
+            case OriginAnchor.RaycastOrigin ignored -> "Ray Origin";
         };
     }
 

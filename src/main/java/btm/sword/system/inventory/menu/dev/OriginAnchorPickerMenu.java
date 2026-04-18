@@ -25,9 +25,9 @@ import xyz.xenondevs.invui.window.Window;
 /**
  * Picker menu for selecting an {@link OriginAnchor}.
  *
- * <p>Presents the four anchor kinds: owning keyframe, fire-locked origin, three body
- * points on the attacker, and a paged list of keyframe indices. Picking any entry
- * calls the supplied {@link Consumer} with the chosen anchor and then runs the
+ * <p>Presents the five anchor kinds: owning keyframe, fire-locked origin, raycast origin,
+ * three body points on the attacker, and a paged list of keyframe indices. Picking any
+ * entry calls the supplied {@link Consumer} with the chosen anchor and then runs the
  * {@code returnTo} runnable to restore the previous screen.</p>
  */
 public class OriginAnchorPickerMenu extends Menu {
@@ -84,6 +84,20 @@ public class OriginAnchorPickerMenu extends Menu {
             }
         );
 
+        SimpleItem raycastOriginButton = new SimpleItem(
+            new ItemStackBuilder(Material.LEAD)
+                .name(Component.text("Raycast Origin", NamedTextColor.GREEN, TextDecoration.BOLD))
+                .lore(List.of(
+                    Component.text("Resolves to the ray start point of a", NamedTextColor.DARK_GRAY),
+                    Component.text("RAYCAST keyframe. Falls back to the", NamedTextColor.DARK_GRAY),
+                    Component.text("keyframe tip for other types.", NamedTextColor.DARK_GRAY)))
+                .build(),
+            click -> {
+                onPick.accept(OriginAnchor.raycastOrigin());
+                returnTo.run();
+            }
+        );
+
         SimpleItem bodyEye = bodyButton(OriginAnchor.BodyPoint.EYE, Material.ENDER_EYE, "Attacker Eye");
         SimpleItem bodyChest = bodyButton(OriginAnchor.BodyPoint.CHEST, Material.IRON_CHESTPLATE, "Attacker Chest");
         SimpleItem bodyFeet = bodyButton(OriginAnchor.BodyPoint.FEET, Material.IRON_BOOTS, "Attacker Feet");
@@ -105,12 +119,13 @@ public class OriginAnchorPickerMenu extends Menu {
 
         PagedGui<Item> gui = PagedGui.items()
             .setStructure(
-                "B . O . E C F . L",
+                "B . O R E C F . L",
                 "x x x x x x x x x",
                 "< # # # # # # # >")
             .addIngredient('#', BORDER)
             .addIngredient('B', back)
             .addIngredient('O', owning)
+            .addIngredient('R', raycastOriginButton)
             .addIngredient('E', bodyEye)
             .addIngredient('C', bodyChest)
             .addIngredient('F', bodyFeet)

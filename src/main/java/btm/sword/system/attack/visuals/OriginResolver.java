@@ -38,6 +38,7 @@ public final class OriginResolver {
             case OriginAnchor.FireLockedOrigin ignored -> ctx.lockedOrigin() != null
                 ? toLoc(ctx, ctx.lockedOrigin())
                 : resolveKeyframe(ctx.owningKeyframeIndex(), ctx);
+            case OriginAnchor.RaycastOrigin ignored -> resolveRaycastOrigin(ctx);
         };
     }
 
@@ -61,6 +62,16 @@ public final class OriginResolver {
             case CHEST -> swordEntity.getChestLocation();
             case FEET -> living.getLocation();
         };
+    }
+
+    private static Location resolveRaycastOrigin(EffectsContext ctx) {
+        List<VolumeKeyframe> kfs = ctx.trajectory().getKeyframes();
+        if (kfs.isEmpty()) return new Location(ctx.world(), 0, 0, 0);
+        int clamped = Math.max(0, Math.min(ctx.owningKeyframeIndex(), kfs.size() - 1));
+        VolumeKeyframe kf = kfs.get(clamped);
+        Vector3f local = kf.localRayOrigin() != null ? new Vector3f(kf.localRayOrigin()) : new Vector3f(kf.localPosition());
+        Vector3f world = ctx.worldTransform().transformPosition(local);
+        return toLoc(ctx, world);
     }
 
     private static Location toLoc(EffectsContext ctx, Vector3f v) {

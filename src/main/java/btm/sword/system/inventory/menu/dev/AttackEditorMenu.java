@@ -8,6 +8,7 @@ import java.util.Set;
 
 import org.bukkit.Material;
 import org.bukkit.event.inventory.ClickType;
+import org.bukkit.inventory.ItemStack;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
@@ -619,11 +620,15 @@ public class AttackEditorMenu extends Menu {
 
             String typeTag = kf.keyframeType() != KeyframeType.STANDARD
                 ? " [" + kf.keyframeType().name() + "]" : "";
+            int effectCount = kf.effect() != null && kf.effect().displays() != null
+                ? kf.effect().displays().size() : 0;
+            ItemStack kfItem = new ItemStackBuilder(mat)
+                .name(Component.text("Frame " + idx + typeTag, nameColor, TextDecoration.BOLD))
+                .lore(lore)
+                .build();
+            if (effectCount > 0) kfItem.setAmount(Math.min(effectCount, 64));
             items.add(new SimpleItem(
-                new ItemStackBuilder(mat)
-                    .name(Component.text("Frame " + idx + typeTag, nameColor, TextDecoration.BOLD))
-                    .lore(lore)
-                    .build(),
+                kfItem,
                 click -> {
                     ClickType type = click.getClickType();
                     if (type == ClickType.SWAP_OFFHAND) {

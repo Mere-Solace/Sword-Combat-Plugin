@@ -6,6 +6,9 @@ package btm.sword.system.attack.visuals;
  * point on the attacker's body, or the origin captured when the attack was fired.
  *
  * <p>Resolved by {@link OriginResolver} against an {@link EffectsContext} at dispatch time.</p>
+ *
+ * <p>The {@link RaycastOrigin} variant is only meaningful for {@link btm.sword.system.attack.simulation.KeyframeType#RAYCAST}
+ * keyframes — it resolves to the local-space start of the cast ray rather than the tip.</p>
  */
 public sealed interface OriginAnchor {
 
@@ -27,6 +30,15 @@ public sealed interface OriginAnchor {
         public static final FireLockedOrigin INSTANCE = new FireLockedOrigin();
     }
 
+    /**
+     * Resolves to the ray-cast origin ({@code localRayOrigin}) of the owning RAYCAST keyframe.
+     * Falls back to the owning keyframe tip position for non-RAYCAST keyframes.
+     */
+    record RaycastOrigin() implements OriginAnchor {
+        /** Shared singleton — all RaycastOrigin anchors are equivalent. */
+        public static final RaycastOrigin INSTANCE = new RaycastOrigin();
+    }
+
     /** Points on the attacker's body that an anchor can reference. */
     enum BodyPoint { EYE, CHEST, FEET }
 
@@ -41,4 +53,7 @@ public sealed interface OriginAnchor {
 
     /** Convenience factory: fire-locked origin anchor. */
     static OriginAnchor fireLocked() { return FireLockedOrigin.INSTANCE; }
+
+    /** Convenience factory: raycast-origin anchor (start of ray on RAYCAST keyframes). */
+    static OriginAnchor raycastOrigin() { return RaycastOrigin.INSTANCE; }
 }
