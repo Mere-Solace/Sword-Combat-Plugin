@@ -208,13 +208,22 @@ public class KeyframeVisualsMenu extends Menu {
                 .build(),
             click -> new AllKeyframeEffectsMenu(swordPlayer).open());
 
+        SimpleItem fromLibrary = new SimpleItem(
+            new ItemStackBuilder(Material.BOOKSHELF)
+                .name(Component.text("From Library...", NamedTextColor.AQUA, TextDecoration.BOLD))
+                .lore(List.of(
+                    Component.text("Browse and copy particle display presets", NamedTextColor.DARK_GRAY),
+                    Component.text("from the library, current attack, or Prefab.", NamedTextColor.DARK_GRAY)))
+                .build(),
+            click -> new ParticleDisplayLibraryMenu(swordPlayer, this::open).open());
+
         Gui gui = Gui.normal()
             .setStructure(
                 "B V I . . . . C L",
                 "1 2 3 4 5 6 7 8 9",
                 "a b c d e f g h i",
-                "Q P . N . S . R .",
-                "< # # # M # # # >")
+                "Q P . N . S . R F",
+                "# # # < M > # # #")
             .addIngredient('#', BORDER)
             .addIngredient('.', BORDER)
             .addIngredient('B', back)
@@ -231,6 +240,7 @@ public class KeyframeVisualsMenu extends Menu {
             .addIngredient('Q', addRaycastLine)
             .addIngredient('P', addPoint).addIngredient('N', addLine)
             .addIngredient('S', addSphere).addIngredient('R', addCircle)
+            .addIngredient('F', fromLibrary)
             .addIngredient('<', prevKf)
             .addIngredient('M', allEffects)
             .addIngredient('>', nextKf)

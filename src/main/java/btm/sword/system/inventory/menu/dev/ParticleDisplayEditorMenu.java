@@ -1,11 +1,14 @@
 package btm.sword.system.inventory.menu.dev;
 
+import java.io.File;
 import java.util.List;
 import java.util.function.Consumer;
 
 import org.bukkit.Material;
 import org.joml.Vector3f;
 
+import btm.sword.Sword;
+import btm.sword.system.attack.def.ParticleDisplayLibrary;
 import btm.sword.system.attack.dev.AttackDevSession;
 import btm.sword.system.attack.visuals.CircleDisplay;
 import btm.sword.system.attack.visuals.LineDisplay;
@@ -16,6 +19,7 @@ import btm.sword.system.attack.visuals.SphereDisplay;
 import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.inventory.menu.Menu;
 import btm.sword.system.item.ItemStackBuilder;
+import btm.sword.utility.ChatInputCapture;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -99,6 +103,26 @@ public class ParticleDisplayEditorMenu extends Menu {
             }
         );
 
+        SimpleItem saveToLibrary = new SimpleItem(
+            new ItemStackBuilder(Material.BOOKSHELF)
+                .name(Component.text("Save to Library", NamedTextColor.AQUA, TextDecoration.BOLD))
+                .lore(List.of(
+                    Component.text("Saves a copy of this display to particles.yml.", NamedTextColor.DARK_GRAY)))
+                .build(),
+            click -> ChatInputCapture.prompt(
+                swordPlayer.player(),
+                Component.text("Enter a name for this preset:", NamedTextColor.AQUA),
+                name -> {
+                    if (name.equalsIgnoreCase("cancel")) return;
+                    String key = name.trim().toLowerCase().replace(' ', '_');
+                    if (key.isEmpty()) return;
+                    ParticleDisplayLibrary.register(key, display,
+                        new File(Sword.getInstance().getDataFolder(), "particles.yml"));
+                    swordPlayer.message(Component.text(
+                        "[Dev] Saved preset '" + key + "' to particles.yml", NamedTextColor.GREEN));
+                })
+        );
+
         Vector3f off = display.getOriginOffset();
         SimpleItem offXDec = dec(click -> { off.x -= stepFloat(click); display.setOriginOffset(off); open(); });
         SimpleItem offXDisp = displayFloat("Off X", off.x, Material.RED_STAINED_GLASS, v -> { off.x = v; display.setOriginOffset(off); open(); });
@@ -141,7 +165,7 @@ public class ParticleDisplayEditorMenu extends Menu {
             .addIngredient('V', save)
             .addIngredient('I', info)
             .addIngredient('a', editParticles)
-            .addIngredient('c', BORDER)
+            .addIngredient('c', saveToLibrary)
             .addIngredient('D', deleteDisplay)
             .addIngredient('1', offXDec).addIngredient('2', offXDisp).addIngredient('3', offXInc)
             .addIngredient('4', offYDec).addIngredient('5', offYDisp).addIngredient('6', offYInc)

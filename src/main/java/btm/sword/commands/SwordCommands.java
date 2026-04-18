@@ -1,5 +1,6 @@
 package btm.sword.commands;
 
+import java.io.File;
 import java.util.List;
 import java.util.Map;
 
@@ -13,8 +14,10 @@ import com.mojang.brigadier.arguments.DoubleArgumentType;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 
+import btm.sword.Sword;
 import btm.sword.config.Config;
 import btm.sword.config.ConfigManager;
+import btm.sword.system.attack.def.ParticleDisplayLibrary;
 import btm.sword.system.control.TimeArbiter;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.display.WeaponDisplayRegistry;
@@ -162,6 +165,7 @@ public final class SwordCommands {
         try {
             MobTypeRegistry.reload();
             WeaponDisplayRegistry.reload();
+            ParticleDisplayLibrary.load(new File(Sword.getInstance().getDataFolder(), "particles.yml"));
             boolean success = ConfigManager.getInstance().reload();
 
             if (success) {

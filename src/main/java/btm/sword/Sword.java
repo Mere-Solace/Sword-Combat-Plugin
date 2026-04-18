@@ -34,6 +34,7 @@ import btm.sword.system.attack.HitPacketRegistry;
 import btm.sword.system.attack.HitValuePacket;
 import btm.sword.system.attack.def.AttackDef;
 import btm.sword.system.attack.def.AttackRegistry;
+import btm.sword.system.attack.def.ParticleDisplayLibrary;
 import btm.sword.system.attack.simulation.CollisionEventBridge;
 import btm.sword.system.attack.simulation.KeyframeType;
 import btm.sword.system.attack.simulation.VolumeKeyframe;
@@ -127,6 +128,9 @@ public final class Sword extends JavaPlugin {
 
         // Load hit-packet presets from plugins/sword/hit-packets.yaml
         HitPacketRegistry.bootstrap(this);
+
+        // Load particle display library presets from plugins/sword/particles.yml
+        ParticleDisplayLibrary.load(new File(getDataFolder(), "particles.yml"));
 
         // Register dev test AttackDef used by the TEST_VOLUME_ATTACK test item
         AttackRegistry.register(new AttackDef.Builder("test_volume_attack")

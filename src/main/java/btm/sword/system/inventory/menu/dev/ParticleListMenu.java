@@ -126,7 +126,7 @@ public class ParticleListMenu extends Menu {
 
         PagedGui<Item> gui = PagedGui.items()
             .setStructure(
-                "B V I # # # X # A",
+                "B V I # A # X # #",
                 "x x x x x x x x x",
                 "x x x x x x x x x",
                 "x x x x x x x x x",

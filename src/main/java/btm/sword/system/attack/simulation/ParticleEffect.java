@@ -92,4 +92,20 @@ public record ParticleEffect(
         Vector3f origin = originOffset != null ? new Vector3f(originOffset) : new Vector3f();
         return new PointDisplay(OriginAnchor.owning(), origin, new Vector3f(), 1, 0, list);
     }
+
+    /**
+     * Snapshots a {@link ParticleWrapper}'s current supplier values into a {@link ParticleEffect}.
+     * Config-driven suppliers are evaluated once at call time.
+     *
+     * @param w the wrapper to convert
+     * @return a new {@link ParticleEffect} capturing the wrapper's current values
+     */
+    public static ParticleEffect fromWrapper(ParticleWrapper w) {
+        return new ParticleEffect(
+            w.getParticle(),
+            w.getCount(),
+            new Vector3f((float) w.getXOffset(), (float) w.getYOffset(), (float) w.getZOffset()),
+            w.getSpeed(),
+            w.getDustOptions());
+    }
 }

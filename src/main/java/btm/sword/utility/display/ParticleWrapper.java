@@ -129,6 +129,29 @@ public class ParticleWrapper {
         return this;
     }
 
+    // ── Snapshot getters (call suppliers once, used for serialization) ──────
+
+    /** Returns the current particle type by calling the supplier. */
+    public Particle getParticle() { return particle.get(); }
+
+    /** Returns the current particle count by calling the supplier. */
+    public int getCount() { return count.get(); }
+
+    /** Returns the current X-axis spawn offset by calling the supplier. */
+    public double getXOffset() { return xOffset.get(); }
+
+    /** Returns the current Y-axis spawn offset by calling the supplier. */
+    public double getYOffset() { return yOffset.get(); }
+
+    /** Returns the current Z-axis spawn offset by calling the supplier. */
+    public double getZOffset() { return zOffset.get(); }
+
+    /** Returns the current speed by calling the supplier. */
+    public double getSpeed() { return speed.get(); }
+
+    /** Returns the current dust options by calling the supplier, or {@code null} if none. */
+    public Particle.DustOptions getDustOptions() { return options.get(); }
+
     /**
      * Displays the particle effect at the specified location in the world.
      * Suppliers are evaluated at display time, enabling runtime-resolved values.
