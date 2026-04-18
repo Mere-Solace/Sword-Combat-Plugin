@@ -1,5 +1,6 @@
 package btm.sword.system.attack.simulation;
 
+import org.jetbrains.annotations.Nullable;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
@@ -30,6 +31,15 @@ public final class ObbVolume extends Volume {
      * Written each tick by {@link KeyframedTrajectory#sample}.
      */
     public boolean isSphere = false;
+
+    /**
+     * World-space ray start for {@link KeyframeType#ORIGIN_RAY} and
+     * {@link KeyframeType#RAYCAST} keyframes, written each tick by
+     * {@link KeyframedTrajectory#sample}. {@code null} when the keyframe has no stored
+     * ray origin — the simulation falls back to the player BB center.
+     */
+    @Nullable
+    public Vector3f rayOrigin = null;
 
     /**
      * {@inheritDoc}

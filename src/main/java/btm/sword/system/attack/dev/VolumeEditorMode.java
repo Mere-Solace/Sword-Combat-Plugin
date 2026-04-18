@@ -22,6 +22,9 @@ import org.joml.Vector3f;
 
 import btm.sword.Sword;
 import btm.sword.config.Config;
+import btm.sword.system.attack.simulation.ControlPoint;
+import btm.sword.system.attack.simulation.ControlPointTrajectory;
+import btm.sword.system.attack.simulation.KeyframeType;
 import btm.sword.system.attack.simulation.KeyframedTrajectory;
 import btm.sword.system.attack.simulation.ObbVolume;
 import btm.sword.system.attack.simulation.VolumeKeyframe;
@@ -29,7 +32,10 @@ import btm.sword.system.attack.simulation.VolumeShape;
 import btm.sword.system.attack.simulation.VolumeTrajectory;
 import btm.sword.system.control.PredicateRunnablePair;
 import btm.sword.system.control.TimeArbiter;
+import btm.sword.system.item.KeyRegistry;
 import btm.sword.utility.Debug;
+import btm.sword.utility.Prefab;
+import btm.sword.utility.display.DrawUtil;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -72,6 +78,35 @@ public final class VolumeEditorMode {
     private static Particle.DustOptions DUST_LIVE =
         new Particle.DustOptions(Color.fromRGB(100, 220, 255), 1.0f);
 
+    /** Dark blue used for CTRL_POINT control-point handles in EDITING mode. */
+    private static final Particle.DustOptions DUST_CTRL_POINT =
+        new Particle.DustOptions(Color.fromRGB(30, 80, 220), 1.5f);
+
+    /** Yellow used for the ghost interpolated trajectory path in EDITING mode and playback. */
+    private static final Particle.DustOptions DUST_GHOST_PATH =
+        new Particle.DustOptions(Color.fromRGB(255, 230, 60), 0.7f);
+
+    // ── Per-KeyframeType wireframe colours ────────────────────────────────────
+    private static final Particle.DustOptions DUST_TYPE_BEZIER_START =
+        new Particle.DustOptions(Color.fromRGB(30, 200, 60), 1.0f);
+    private static final Particle.DustOptions DUST_TYPE_BEZIER_C1 =
+        new Particle.DustOptions(Color.fromRGB(80, 150, 100), 1.0f);
+    private static final Particle.DustOptions DUST_TYPE_BEZIER_C2 =
+        new Particle.DustOptions(Color.fromRGB(150, 100, 80), 1.0f);
+    private static final Particle.DustOptions DUST_TYPE_BEZIER_END =
+        new Particle.DustOptions(Color.fromRGB(200, 50, 50), 1.0f);
+    private static final Particle.DustOptions DUST_TYPE_LINE =
+        new Particle.DustOptions(Color.fromRGB(100, 190, 255), 1.0f);
+    /** Dark blue wireframe for RAYCAST tip volumes. */
+    private static final Particle.DustOptions DUST_TYPE_RAYCAST_TIP =
+        new Particle.DustOptions(Color.fromRGB(30, 80, 220), 1.0f);
+    /** Orange marker for RAYCAST ray origin points. */
+    private static final Particle.DustOptions DUST_TYPE_RAYCAST_ORIGIN =
+        new Particle.DustOptions(Color.fromRGB(255, 130, 0), 1.5f);
+    /** Yellow wireframe for ORIGIN_RAY tip volumes and ray line. */
+    private static final Particle.DustOptions DUST_TYPE_ORIGIN_RAY =
+        new Particle.DustOptions(Color.fromRGB(255, 210, 40), 1.2f);
+
     /**
      * Rebuilds {@link #DUST_SELECTED}, {@link #DUST_DEFAULT}, and {@link #DUST_LIVE} from the
      * current {@link btm.sword.config.Config.Debug} wireframe color/size entries.
@@ -94,6 +129,20 @@ public final class VolumeEditorMode {
 
     private VolumeEditorMode() {}
 
+    /** Returns the wireframe dust colour for a given {@link KeyframeType}. */
+    private static Particle.DustOptions dustForType(KeyframeType type) {
+        return switch (type) {
+            case BEZIER_START -> DUST_TYPE_BEZIER_START;
+            case BEZIER_C1 -> DUST_TYPE_BEZIER_C1;
+            case BEZIER_C2 -> DUST_TYPE_BEZIER_C2;
+            case BEZIER_END -> DUST_TYPE_BEZIER_END;
+            case LINE -> DUST_TYPE_LINE;
+            case RAYCAST -> DUST_TYPE_RAYCAST_TIP;
+            case ORIGIN_RAY -> DUST_TYPE_ORIGIN_RAY;
+            default -> DUST_DEFAULT;
+        };
+    }
+
     /**
      * Starts a 50 ms main-thread loop that renders the live interpolated OBB of a wand
      * test attack as it plays out.
@@ -104,6 +153,11 @@ public final class VolumeEditorMode {
      * <p>When {@code lockOriginOnFire} is {@code true}, the world transform is captured once
      * at call time and reused every tick — matching the simulation's frozen origin behaviour.
      * Otherwise the player's live position and yaw are sampled each tick.</p>
+     *
+     * <p>The attack ray is drawn from the keyframe's stored ray origin (or the attacker's
+     * bounding-box centre when none is stored) to the current volume centre. This matches
+     * the capsule line-of-attack detection built by
+     * {@link btm.sword.system.attack.simulation.VolumeSimulation}.</p>
      *
      * <p>The loop self-cancels when the attack duration has elapsed or the player goes offline.
      * No cleanup is required by the caller.</p>
@@ -118,7 +172,7 @@ public final class VolumeEditorMode {
      */
     public static void startPlaybackVisualization(Player player, VolumeTrajectory trajectory,
             long startMs, long durationMs, boolean lockOriginOnFire, boolean orientWithPitch) {
-        if (!(trajectory instanceof KeyframedTrajectory)) return;
+        if (!(trajectory instanceof KeyframedTrajectory) && !(trajectory instanceof ControlPointTrajectory)) return;
 
         ObbVolume buffer = new ObbVolume();
 
@@ -148,11 +202,18 @@ public final class VolumeEditorMode {
                         player.getBoundingBox(), loc.getYaw(), loc.getPitch(), orientWithPitch);
                 }
 
+                // Live position wireframe
                 trajectory.sample(t, worldTransform, buffer);
                 if (buffer.isSphere) {
                     renderSphereWireframe(world, buffer.center, buffer.halfExtents.x, DUST_LIVE);
                 } else {
                     renderObbWireframe(world, buffer.center, buffer.halfExtents, buffer.rotation, DUST_LIVE);
+                }
+
+                // Attack ray: only drawn when the sampled keyframe is RAYCAST or ORIGIN_RAY
+                // (buffer.rayOrigin is non-null only for those types).
+                if (buffer.rayOrigin != null) {
+                    drawEdge(world, buffer.rayOrigin, new Vector3f(buffer.center), DUST_GHOST_PATH);
                 }
             },
             null,
@@ -193,6 +254,50 @@ public final class VolumeEditorMode {
         Debug.attackVolume("[VolumeEditorMode] starting view loop for " + session.getPlayer().getName()
             + " attack=" + session.getCurrentAttackName());
         startLoop(session, DevMode.VIEWING);
+    }
+
+    /**
+     * Starts the per-session visualization loop for a CTRL_POINT EDITING session.
+     * Renders control-point handles as dark blue dust with {@code [CP#n]} labels,
+     * and a ghost interpolated path as light blue dust every 3rd tick.
+     *
+     * <p>Called from {@link AttackDevSession#startEditingCtrlPoint} — not from plugin startup.</p>
+     *
+     * @param session the session that just entered CTRL_POINT EDITING mode
+     */
+    public static void startCtrlPointForSession(AttackDevSession session) {
+        Player player = session.getPlayer();
+        notifyOn(player, "Edit");
+
+        spawnCtrlPointLabels(session);
+
+        BossBar bossBar = BossBar.bossBar(
+            Component.text("[Dev] Edit (CP) — " + session.getCurrentAttackName(), NamedTextColor.GOLD),
+            1.0f, BossBar.Color.YELLOW, BossBar.Overlay.PROGRESS);
+        player.showBossBar(bossBar);
+
+        int[] tickCount = {0};
+        TimeArbiter.runTimeIndependentBukkitTaskOnTimer(
+            () -> {
+                tickCount[0]++;
+                if (session.getMode() != DevMode.EDITING || !player.isOnline()) return;
+                renderCtrlPointSession(session, tickCount[0]);
+                updateCtrlPointLabels(session);
+            },
+            null,
+            0, TICK_MS,
+            VolumeEditorMode.class, "ctrlPointLoop",
+            new PredicateRunnablePair(
+                () -> session.getMode() != DevMode.EDITING || !player.isOnline(),
+                () -> {
+                    removeLabels(session.getPlayer().getUniqueId());
+                    if (player.isOnline()) {
+                        player.hideBossBar(bossBar);
+                        notifyOff(player, "Edit");
+                    }
+                }
+            )
+        );
     }
 
     private static void startLoop(AttackDevSession session, DevMode expectedMode) {
@@ -300,7 +405,7 @@ public final class VolumeEditorMode {
             Vector3f worldCenter = worldTransform.transformPosition(
                 new Vector3f(kf.localPosition()), new Vector3f());
 
-            Particle.DustOptions dust = isSelected ? DUST_SELECTED : DUST_DEFAULT;
+            Particle.DustOptions dust = isSelected ? DUST_SELECTED : dustForType(kf.keyframeType());
 
             if (kf.shape() == VolumeShape.SPHERE) {
                 totalParticles += renderSphereWireframe(world, worldCenter, kf.halfExtents().x, dust);
@@ -315,10 +420,132 @@ public final class VolumeEditorMode {
                 }
                 totalParticles += renderObbWireframe(world, worldCenter, kf.halfExtents(), worldRot, dust);
             }
+
+            // RAYCAST: orange dot at ray origin + secant from origin to tip
+            if (kf.keyframeType() == KeyframeType.RAYCAST && kf.localRayOrigin() != null) {
+                Vector3f worldOrigin = worldTransform.transformPosition(
+                    new Vector3f(kf.localRayOrigin()), new Vector3f());
+                Location originLoc = new Location(world, worldOrigin.x, worldOrigin.y, worldOrigin.z);
+                Location tipLoc = new Location(world, worldCenter.x, worldCenter.y, worldCenter.z);
+                Prefab.Particles.CREATE_DUST.apply(DUST_TYPE_RAYCAST_ORIGIN).display(originLoc);
+                DrawUtil.secant(List.of(Prefab.Particles.CREATE_DUST.apply(DUST_TYPE_RAYCAST_ORIGIN)),
+                    originLoc, tipLoc, 0.2);
+            }
+
+            // ORIGIN_RAY: yellow secant from stored ray origin to tip
+            if (kf.keyframeType() == KeyframeType.ORIGIN_RAY && kf.localRayOrigin() != null) {
+                Vector3f worldOrigin = worldTransform.transformPosition(
+                    new Vector3f(kf.localRayOrigin()), new Vector3f());
+                Location originLoc = new Location(world, worldOrigin.x, worldOrigin.y, worldOrigin.z);
+                Location tipLoc = new Location(world, worldCenter.x, worldCenter.y, worldCenter.z);
+                Prefab.Particles.CREATE_DUST.apply(DUST_TYPE_ORIGIN_RAY).display(originLoc);
+                DrawUtil.secant(List.of(Prefab.Particles.CREATE_DUST.apply(DUST_TYPE_ORIGIN_RAY)),
+                    originLoc, tipLoc, 0.2);
+            }
         }
 
         if (log && !keyframes.isEmpty()) {
             Debug.attackVolume("[VolumeEditorMode] spawned " + totalParticles + " particles this tick");
+        }
+
+        // Ghost rays from recorded origin to each RAYCAST/ORIGIN_RAY keyframe — only while holding the wand.
+        boolean holdingWand = KeyRegistry.hasKey(
+            session.getPlayer().getInventory().getItemInMainHand(),
+            KeyRegistry.TEST_VOLUME_ATTACK_KEY);
+        if (holdingWand && keyframes.size() >= 2 && tickCount % GREY_RENDER_PERIOD == 0) {
+            for (VolumeKeyframe kf : keyframes) {
+                if (kf.keyframeType() != KeyframeType.RAYCAST && kf.keyframeType() != KeyframeType.ORIGIN_RAY) {
+                    continue;
+                }
+                if (kf.localRayOrigin() == null) continue;
+                Vector3f worldCenter = worldTransform.transformPosition(
+                    new Vector3f(kf.localPosition()), new Vector3f());
+                Vector3f rayStart = worldTransform.transformPosition(
+                    new Vector3f(kf.localRayOrigin()), new Vector3f());
+                drawEdge(world, rayStart, worldCenter, DUST_GHOST_PATH);
+            }
+        }
+    }
+
+    private static void renderCtrlPointSession(AttackDevSession session, int tickCount) {
+        Location loc = session.getPlayer().getLocation();
+        World world = loc.getWorld();
+        if (world == null) return;
+
+        BoundingBox bb = session.getPlayer().getBoundingBox();
+        Matrix4f worldTransform = buildWorldTransform(
+            bb, loc.getYaw(), loc.getPitch(), session.isEditOrientWithPitch());
+        Quaternionf worldBaseRot = worldTransform.getNormalizedRotation(new Quaternionf());
+
+        List<ControlPoint> points = session.getEditControlPoints();
+        if (points == null || points.isEmpty()) return;
+
+        // Render each control point handle as a dark blue OBB
+        for (ControlPoint cp : points) {
+            Vector3f worldCenter = worldTransform.transformPosition(
+                new Vector3f(cp.position()), new Vector3f());
+            renderObbWireframe(world, worldCenter, cp.halfExtents(), worldBaseRot, DUST_CTRL_POINT);
+        }
+
+        // Ghost interpolated path at 10 t-values, rendered every 3rd tick
+        if (tickCount % GREY_RENDER_PERIOD == 0) {
+            ControlPointTrajectory traj = new ControlPointTrajectory(points, session.getEditControlMode());
+            ObbVolume buffer = new ObbVolume();
+            for (int i = 0; i <= 9; i++) {
+                float t = i / 9.0f;
+                traj.sample(t, worldTransform, buffer);
+                renderObbWireframe(world, buffer.center, buffer.halfExtents, buffer.rotation, DUST_GHOST_PATH);
+            }
+        }
+    }
+
+    private static void spawnCtrlPointLabels(AttackDevSession session) {
+        Player player = session.getPlayer();
+        World world = player.getWorld();
+        List<ControlPoint> points = session.getEditControlPoints();
+        if (points == null) return;
+
+        List<TextDisplay> labels = new ArrayList<>(points.size());
+        Location spawnLoc = player.getLocation();
+        for (int i = 0; i < points.size(); i++) {
+            final int idx = i;
+            TextDisplay td = world.spawn(spawnLoc, TextDisplay.class, display -> {
+                display.text(Component.text("[CP#" + idx + "]", NamedTextColor.GOLD, TextDecoration.BOLD));
+                display.setSeeThrough(true);
+                display.setBillboard(Display.Billboard.CENTER);
+            });
+            labels.add(td);
+        }
+        SESSION_LABELS.put(player.getUniqueId(), labels);
+    }
+
+    private static void updateCtrlPointLabels(AttackDevSession session) {
+        Player player = session.getPlayer();
+        List<TextDisplay> labels = SESSION_LABELS.get(player.getUniqueId());
+        if (labels == null) return;
+
+        List<ControlPoint> points = session.getEditControlPoints();
+        if (points == null || labels.size() != points.size()) {
+            removeLabels(player.getUniqueId());
+            spawnCtrlPointLabels(session);
+            return;
+        }
+
+        Location loc = player.getLocation();
+        BoundingBox bb = player.getBoundingBox();
+        Matrix4f worldTransform = buildWorldTransform(
+            bb, loc.getYaw(), loc.getPitch(), session.isEditOrientWithPitch());
+
+        for (int i = 0; i < points.size(); i++) {
+            TextDisplay td = labels.get(i);
+            if (!td.isValid()) continue;
+            ControlPoint cp = points.get(i);
+            Vector3f worldCenter = worldTransform.transformPosition(
+                new Vector3f(cp.position()), new Vector3f());
+            float labelY = worldCenter.y + cp.halfExtents().y + 0.3f;
+            td.teleport(new Location(loc.getWorld(), worldCenter.x, labelY, worldCenter.z));
+            td.setVisibleByDefault(true);
+            player.showEntity(Sword.getInstance(), td);
         }
     }
 
@@ -415,9 +642,10 @@ public final class VolumeEditorMode {
                 player.showEntity(Sword.getInstance(), td);
             }
 
-            NamedTextColor color = show ? NamedTextColor.GOLD
-                : NamedTextColor.GRAY;
-            td.text(Component.text("#" + i, color, TextDecoration.BOLD));
+            NamedTextColor color = show ? NamedTextColor.GOLD : NamedTextColor.GRAY;
+            String typeLabel = kf.keyframeType() != KeyframeType.STANDARD
+                ? " " + kf.keyframeType().name() : "";
+            td.text(Component.text("#" + i + typeLabel, color, TextDecoration.BOLD));
         }
     }
 

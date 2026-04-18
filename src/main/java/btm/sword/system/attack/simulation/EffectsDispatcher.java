@@ -1,5 +1,7 @@
 package btm.sword.system.attack.simulation;
 
+import java.util.List;
+
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -7,6 +9,8 @@ import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
 import btm.sword.Sword;
+import btm.sword.system.attack.visuals.EffectsContext;
+import btm.sword.system.attack.visuals.ParticleDisplay;
 
 /**
  * Fires per-keyframe particle and sound effects during a {@link VolumeSimulation} tick.
@@ -26,15 +30,18 @@ public final class EffectsDispatcher {
      * Checks all keyframes in {@code trajectory} for effects that should fire in the
      * {@code (prevT, currentT]} window and schedules them on the main thread.
      *
-     * @param trajectory    the keyframed trajectory to scan
-     * @param prevT         normalized time at the previous tick (negative on the first tick)
-     * @param currentT      normalized time at the current tick
+     * @param trajectory     the keyframed trajectory to scan
+     * @param attack         the running attack — source of attacker UUID and locked origin
+     * @param prevT          normalized time at the previous tick (negative on the first tick)
+     * @param currentT       normalized time at the current tick
      * @param worldTransform local-to-world transform at this tick
-     * @param world         world in which to spawn effects
+     * @param world          world in which to spawn effects
      */
-    public static void dispatch(KeyframedTrajectory trajectory, float prevT, float currentT,
-            Matrix4f worldTransform, World world) {
-        for (VolumeKeyframe kf : trajectory.getKeyframes()) {
+    public static void dispatch(KeyframedTrajectory trajectory, SimulationAttack attack,
+            float prevT, float currentT, Matrix4f worldTransform, World world) {
+        List<VolumeKeyframe> keyframes = trajectory.getKeyframes();
+        for (int i = 0; i < keyframes.size(); i++) {
+            VolumeKeyframe kf = keyframes.get(i);
             if (kf.t() <= prevT || kf.t() > currentT) continue;
             KeyframeEffect effect = kf.effect();
             if (effect == null) continue;
@@ -42,30 +49,25 @@ public final class EffectsDispatcher {
             Vector3f worldPos = worldTransform.transformPosition(new Vector3f(kf.localPosition()));
             Location loc = new Location(world, worldPos.x, worldPos.y, worldPos.z);
 
+            EffectsContext ctx = new EffectsContext(
+                new Matrix4f(worldTransform),
+                world,
+                attack.getAttackerUuid(),
+                trajectory,
+                attack.getLockedCenter(),
+                i);
+
             Bukkit.getScheduler().runTask(Sword.getInstance(), () -> {
-                for (ParticleEffect pe : effect.particles()) {
-                    fireParticle(pe, loc, worldTransform, world);
+                if (effect.displays() != null) {
+                    for (ParticleDisplay display : effect.displays()) {
+                        display.render(ctx);
+                    }
                 }
                 if (effect.sound() != null) {
                     SoundCue sc = effect.sound();
                     world.playSound(loc, sc.sound(), sc.category(), sc.volume(), sc.pitch());
                 }
             });
-        }
-    }
-
-    private static void fireParticle(ParticleEffect pe, Location baseLoc,
-            Matrix4f worldTransform, World world) {
-        Vector3f worldOffset = worldTransform.transformDirection(new Vector3f(pe.offset()));
-        Location spawnLoc = baseLoc.clone().add(worldOffset.x, worldOffset.y, worldOffset.z);
-        double spread = pe.spread();
-
-        if (pe.dustOptions() != null) {
-            world.spawnParticle(pe.type(), spawnLoc, pe.count(),
-                spread, spread, spread, 0, pe.dustOptions());
-        } else {
-            world.spawnParticle(pe.type(), spawnLoc, pe.count(),
-                spread, spread, spread, 0);
         }
     }
 }

@@ -67,6 +67,16 @@ public final class SimulationAttack {
     private final Float lockedPitch;
 
     /**
+     * Pre-allocated capsule buffer for the origin-to-tip ray collision check.
+     * Populated each simulation tick for {@link ObbVolume}-based trajectories.
+     * {@code null} for other trajectory types (e.g. {@link SweepTrajectory}).
+     */
+    @Nullable
+    @Setter
+    @Getter
+    private CapsuleVolume rayVolume;
+
+    /**
      * Previous normalized time ({@code t}) evaluated in the last tick.
      * Initialized to {@code -1} so the first tick's {@code t=0} triggers {@code t=0} effects.
      * Updated by the simulation each tick via {@link #setPrevT(float)}.

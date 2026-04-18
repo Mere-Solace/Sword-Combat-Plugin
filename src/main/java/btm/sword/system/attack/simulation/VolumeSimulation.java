@@ -147,16 +147,47 @@ public final class VolumeSimulation {
             }
 
             attack.getTrajectory().sample(t, worldTransform, attack.getVolume());
-            spatialGrid.insert(
-                attack.getAttackerUuid(),
-                attack.getVolume().aabbMin,
-                attack.getVolume().aabbMax
-            );
+
+            // For RAYCAST / ORIGIN_RAY keyframes only, build a thin ray capsule from the
+            // recorded origin to the keyframe tip for line-of-attack detection. obbVol.rayOrigin
+            // is non-null only for those keyframe types (written by KeyframedTrajectory.sample).
+            if (attack.getVolume() instanceof ObbVolume obbVol && obbVol.rayOrigin != null) {
+                if (attack.getRayVolume() == null) {
+                    attack.setRayVolume(new CapsuleVolume());
+                }
+                CapsuleVolume ray = attack.getRayVolume();
+                Vector3f rayStart = obbVol.rayOrigin;
+                ray.start.set(rayStart);
+                ray.end.set(obbVol.center);
+                ray.radius = 0.1f;
+                float r = ray.radius;
+                ray.aabbMin.set(
+                    Math.min(rayStart.x, obbVol.center.x) - r,
+                    Math.min(rayStart.y, obbVol.center.y) - r,
+                    Math.min(rayStart.z, obbVol.center.z) - r);
+                ray.aabbMax.set(
+                    Math.max(rayStart.x, obbVol.center.x) + r,
+                    Math.max(rayStart.y, obbVol.center.y) + r,
+                    Math.max(rayStart.z, obbVol.center.z) + r);
+                spatialGrid.insert(attack.getAttackerUuid(), ray.aabbMin, ray.aabbMax);
+                // Also insert the volume AABB — the capsule AABB does not fully enclose the OBB
+                spatialGrid.insert(
+                    attack.getAttackerUuid(),
+                    attack.getVolume().aabbMin,
+                    attack.getVolume().aabbMax);
+            } else {
+                // Non-ray keyframe: clear any stale capsule so narrow phase does not test it
+                attack.setRayVolume(null);
+                spatialGrid.insert(
+                    attack.getAttackerUuid(),
+                    attack.getVolume().aabbMin,
+                    attack.getVolume().aabbMax);
+            }
 
             if (attack.getTrajectory() instanceof KeyframedTrajectory kt) {
                 World world = Bukkit.getWorld(attack.getWorldUuid());
                 if (world != null) {
-                    EffectsDispatcher.dispatch(kt, attack.getPrevT(), t, worldTransform, world);
+                    EffectsDispatcher.dispatch(kt, attack, attack.getPrevT(), t, worldTransform, world);
                 }
             }
             attack.setPrevT(t);
@@ -187,7 +218,10 @@ public final class VolumeSimulation {
                 if (attack == null) continue;
                 if (!attack.getHitThisAttack().add(entityUuid)) continue;
 
-                if (!attack.getVolume().intersects(snap.min(), snap.max())) {
+                CapsuleVolume ray = attack.getRayVolume();
+                boolean hit = attack.getVolume().intersects(snap.min(), snap.max())
+                    || (ray != null && ray.intersects(snap.min(), snap.max()));
+                if (!hit) {
                     attack.getHitThisAttack().remove(entityUuid);
                     continue;
                 }

@@ -1,20 +1,14 @@
 package btm.sword.system.inventory.menu.dev;
 
-import java.io.File;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
-import org.joml.Quaternionf;
-import org.joml.Vector3f;
+import org.bukkit.inventory.ItemStack;
 
 import btm.sword.Sword;
 import btm.sword.system.attack.dev.AttackDevSession;
-import btm.sword.system.attack.dev.DevMode;
-import btm.sword.system.attack.dev.SweepRecordingAction;
-import btm.sword.system.attack.simulation.VolumeKeyframe;
-import btm.sword.system.attack.simulation.VolumeShape;
 import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.inventory.menu.Menu;
 import btm.sword.system.item.ItemStackBuilder;
@@ -24,258 +18,198 @@ import net.kyori.adventure.text.format.TextDecoration;
 import xyz.xenondevs.invui.gui.Gui;
 import xyz.xenondevs.invui.item.Click;
 import xyz.xenondevs.invui.item.impl.SimpleItem;
+import xyz.xenondevs.invui.window.AnvilWindow;
 import xyz.xenondevs.invui.window.Window;
 
 /**
- * Dev-only menu for procedurally generating a series of OBB keyframes along the player's
- * forward (local Z) axis.
+ * Dev-only menu for adjusting recording session constants.
  *
- * <p>Provides seven configurable parameters: keyframe count, start distance, inter-frame
- * spacing, base half-extent, multiplicative scale-per-step, additive scale-per-step, and
- * attack duration. Clicking "Generate" inserts the resulting keyframes into the current
- * {@link AttackDevSession} and opens {@link AttackEditorMenu} for fine-tuning.</p>
+ * <p>Opened when the player clicks the volume-attack wand item in their inventory.
+ * Exposes four per-session parameters:</p>
+ * <ul>
+ *   <li><b>Ray Offset</b> — distance from the eye along look direction used as the tip
+ *       position for every placement mode (or ray start offset for RAYCAST).</li>
+ *   <li><b>Raycast Dist</b> — maximum block-raycast range for RAYCAST placement mode.</li>
+ *   <li><b>Placement Size</b> — uniform half-extent applied to each recorded keyframe.</li>
+ *   <li><b>Duration</b> — attack duration written when the recording is saved.</li>
+ * </ul>
  *
  * <h2>Layout (3 rows × 9)</h2>
  * <pre>
- * Row 0: [N-] [N]  [N+] [D-] [D]  [D+] [S-] [S]  [S+]
- * Row 1: [B-] [B]  [B+] [M-] [M]  [M+] [A-] [A]  [A+]
- * Row 2: [u-] [u]  [u+] [#]  [#]  [#]  [#]  [G]  [#]
+ * Row 0: [O-] [O]  [O+] [R-] [R]  [R+] [S-] [S]  [S+]
+ * Row 1: [ ]  [ ]  [ ]  [D-] [D]  [D+] [ ]  [ ]  [ ]
+ * Row 2: [#]  [#]  [#]  [#]  [#]  [#]  [#]  [#]  [#]
  * </pre>
- * <p>N=keyframe count, D=startDist, S=spacing, B=baseSize, M=multScale, A=addScale,
- * u=duration, G=Generate.</p>
+ * <p>O=rayOffset, R=raycastDist, S=placementSize, D=duration.</p>
  *
- * <h2>Temporal behaviour</h2>
- * <p>Generated frames are placed at evenly-spaced {@code t} values. The
- * {@code VolumeSimulation} (200 Hz) interpolates position via Catmull-Rom between adjacent
- * keyframes, so the hitbox travels from the nearest frame to the farthest over the full
- * {@code durationMs}. No immediate between-OBB detection is used — the temporal sweep is
- * already precise enough at 200 Hz.</p>
- *
- * <p>Trigger: open player inventory and click the volume-attack wand item.</p>
+ * <h2>Controls</h2>
+ * <ul>
+ *   <li>Dec/Inc buttons: Left-click = ±small, Right-click = ±medium, Shift+Left = ±large.</li>
+ *   <li>Display item click: opens Anvil dialog for direct numeric input.</li>
+ * </ul>
  */
 public class SweepGeneratorMenu extends Menu {
 
-    /** Y offset from bounding-box centre to approximate eye level. */
-    private static final float EYE_Y_OFFSET = 0.6f;
-
-    // ── Parameters ──────────────────────────────────────────────────────────
-    private final int n;
-    private final float startDist;
-    private final float spacing;
-    private final float baseSize;
-    private final float multScale;
-    private final float addScale;
-    private final int durationMs;
-
     /**
-     * Creates the menu with default parameters.
+     * Creates the Recording Settings menu for the given player.
      *
      * @param player the player opening the menu
      */
     public SweepGeneratorMenu(SwordPlayer player) {
-        this(player, 4, 1.0f, 0.75f, 0.5f, 1.0f, 0.0f, 500);
-    }
-
-    /**
-     * Creates the menu with explicit parameters (used when refreshing after a +/- click).
-     *
-     * @param player     the player opening the menu
-     * @param n          keyframe count (2–16)
-     * @param startDist  distance to first frame (0.25–10.0)
-     * @param spacing    distance between frames (0.1–5.0)
-     * @param baseSize   initial half-extent X/Y (0.05–3.0)
-     * @param multScale  size multiplier per step (0.5–3.0)
-     * @param addScale   additive size per step (-0.5–2.0)
-     * @param durationMs attack duration in milliseconds (100–3000)
-     */
-    public SweepGeneratorMenu(SwordPlayer player, int n, float startDist, float spacing,
-            float baseSize, float multScale, float addScale, int durationMs) {
         super(player);
-        this.n = n;
-        this.startDist = startDist;
-        this.spacing = spacing;
-        this.baseSize = baseSize;
-        this.multScale = multScale;
-        this.addScale = addScale;
-        this.durationMs = durationMs;
     }
 
     @Override
     public void open() {
-        // ── Row 0: keyframe count, startDist, spacing ────────────────────────
+        AttackDevSession session = AttackDevSession.getOrCreate(swordPlayer.player());
 
-        SimpleItem nDec = dec(click ->
-            new SweepGeneratorMenu(swordPlayer, clampN(n - 1), startDist, spacing,
-                baseSize, multScale, addScale, durationMs).open());
-        SimpleItem nDisplay = paramDisplay("Keyframes", String.valueOf(n),
-            "Number of OBB keyframes to generate.");
-        SimpleItem nInc = inc(click ->
-            new SweepGeneratorMenu(swordPlayer, clampN(n + 1), startDist, spacing,
-                baseSize, multScale, addScale, durationMs).open());
+        float ray = session.getRaycastMaxDistance();
+        float rayOff = session.getRayOffset();
+        float size = session.getCurrentPlacementSize().x;
+        int dur = session.getEditDurationMs();
 
-        SimpleItem distDec = dec(click ->
-            new SweepGeneratorMenu(swordPlayer, n, clampDist(startDist - 0.25f), spacing,
-                baseSize, multScale, addScale, durationMs).open());
-        SimpleItem distDisplay = paramDisplay("Start Dist", fmt1(startDist),
-            "Z offset of the first frame from the player's body centre.");
-        SimpleItem distInc = inc(click ->
-            new SweepGeneratorMenu(swordPlayer, n, clampDist(startDist + 0.25f), spacing,
-                baseSize, multScale, addScale, durationMs).open());
+        // ── Ray offset (tip distance / ray start) ────────────────────────────
+        SimpleItem rayOffDec = dec(click -> {
+            float delta = stepFloat(click, 0.1f, 0.5f, 2.0f);
+            session.setRayOffset(clampRayOff(rayOff - delta));
+            open();
+        });
+        SimpleItem rayOffDisplay = paramDisplay("Ray Offset", fmt1(rayOff),
+            "Distance from origin ray will begin. Also raycast start offset in RAYCAST mode.",
+            Material.BLAZE_ROD,
+            v -> { session.setRayOffset(clampRayOff(v)); open(); });
+        SimpleItem rayOffInc = inc(click -> {
+            float delta = stepFloat(click, 0.1f, 0.5f, 2.0f);
+            session.setRayOffset(clampRayOff(rayOff + delta));
+            open();
+        });
 
-        SimpleItem spacingDec = dec(click ->
-            new SweepGeneratorMenu(swordPlayer, n, startDist, clampSpacing(spacing - 0.1f),
-                baseSize, multScale, addScale, durationMs).open());
-        SimpleItem spacingDisplay = paramDisplay("Spacing", fmt1(spacing),
-            "Z distance between consecutive keyframes.");
-        SimpleItem spacingInc = inc(click ->
-            new SweepGeneratorMenu(swordPlayer, n, startDist, clampSpacing(spacing + 0.1f),
-                baseSize, multScale, addScale, durationMs).open());
+        // ── Raycast distance ─────────────────────────────────────────────────
+        SimpleItem rayDec = dec(click -> {
+            float delta = stepFloat(click, 0.5f, 2.0f, 5.0f);
+            session.setRaycastMaxDistance(clampRay(ray - delta));
+            open();
+        });
+        SimpleItem rayDisplay = paramDisplay("Raycast Dist", fmt1(ray),
+            "Maximum block raycast range in RAYCAST mode (blocks).", Material.SPYGLASS,
+            v -> { session.setRaycastMaxDistance(clampRay(v)); open(); });
+        SimpleItem rayInc = inc(click -> {
+            float delta = stepFloat(click, 0.5f, 2.0f, 5.0f);
+            session.setRaycastMaxDistance(clampRay(ray + delta));
+            open();
+        });
 
-        // ── Row 1: baseSize, multScale, addScale ─────────────────────────────
+        // ── Placement size ───────────────────────────────────────────────────
+        SimpleItem sizeDec = dec(click -> {
+            float delta = stepFloat(click, 0.05f, 0.25f, 1.0f);
+            float s = Math.max(0.05f, round2(size - delta));
+            session.getCurrentPlacementSize().set(s, s, s);
+            open();
+        });
+        SimpleItem sizeDisplay = paramDisplay("Placement Size", fmt2(size),
+            "Uniform half-extent applied to each recorded keyframe.", Material.PISTON,
+            v -> {
+                float s = Math.max(0.05f, Math.min(3.0f, round2(v)));
+                session.getCurrentPlacementSize().set(s, s, s);
+                open();
+            });
+        SimpleItem sizeInc = inc(click -> {
+            float delta = stepFloat(click, 0.05f, 0.25f, 1.0f);
+            float s = Math.min(3.0f, round2(size + delta));
+            session.getCurrentPlacementSize().set(s, s, s);
+            open();
+        });
 
-        SimpleItem sizeDec = dec(click ->
-            new SweepGeneratorMenu(swordPlayer, n, startDist, spacing,
-                clampSize(baseSize - 0.05f), multScale, addScale, durationMs).open());
-        SimpleItem sizeDisplay = paramDisplay("Base Size", fmt2(baseSize),
-            "Initial half-extent (X and Y) of the first frame.");
-        SimpleItem sizeInc = inc(click ->
-            new SweepGeneratorMenu(swordPlayer, n, startDist, spacing,
-                clampSize(baseSize + 0.05f), multScale, addScale, durationMs).open());
-
-        SimpleItem multDec = dec(click ->
-            new SweepGeneratorMenu(swordPlayer, n, startDist, spacing,
-                baseSize, clampMult(multScale - 0.1f), addScale, durationMs).open());
-        SimpleItem multDisplay = paramDisplay("Mult Scale", fmt2(multScale),
-            "Size multiplier per step — >1 widens frames toward the far end.");
-        SimpleItem multInc = inc(click ->
-            new SweepGeneratorMenu(swordPlayer, n, startDist, spacing,
-                baseSize, clampMult(multScale + 0.1f), addScale, durationMs).open());
-
-        SimpleItem addDec = dec(click ->
-            new SweepGeneratorMenu(swordPlayer, n, startDist, spacing,
-                baseSize, multScale, clampAdd(addScale - 0.05f), durationMs).open());
-        SimpleItem addDisplay = paramDisplay("Add Scale", fmt2(addScale),
-            "Flat half-extent added each step.");
-        SimpleItem addInc = inc(click ->
-            new SweepGeneratorMenu(swordPlayer, n, startDist, spacing,
-                baseSize, multScale, clampAdd(addScale + 0.05f), durationMs).open());
-
-        // ── Row 2: duration, generate ─────────────────────────────────────────
-
-        SimpleItem durDec = dec(click ->
-            new SweepGeneratorMenu(swordPlayer, n, startDist, spacing,
-                baseSize, multScale, addScale, clampDur(durationMs - 50)).open());
-        SimpleItem durDisplay = paramDisplay("Duration", durationMs + " ms",
-            "Total attack duration. Shorter = faster sweep.");
-        SimpleItem durInc = inc(click ->
-            new SweepGeneratorMenu(swordPlayer, n, startDist, spacing,
-                baseSize, multScale, addScale, clampDur(durationMs + 50)).open());
-
-        SimpleItem generate = new SimpleItem(
-            new ItemStackBuilder(Material.EMERALD)
-                .name(Component.text("Generate", NamedTextColor.GREEN, TextDecoration.BOLD))
-                .lore(List.of(
-                    Component.text("Creates " + n + " keyframes along the", NamedTextColor.DARK_GRAY),
-                    Component.text("forward axis and opens the editor.", NamedTextColor.DARK_GRAY)
-                ))
-                .build(),
-            click -> generate()
-        );
+        // ── Duration ─────────────────────────────────────────────────────────
+        SimpleItem durDec = dec(click -> {
+            int delta = stepInt(click, 50, 100, 500);
+            session.setEditDurationMs(Math.max(100, dur - delta));
+            open();
+        });
+        SimpleItem durDisplay = paramDisplayInt("Duration", dur + " ms",
+            "Attack duration written when the recording is saved.", Material.CLOCK,
+            v -> { session.setEditDurationMs(Math.max(100, Math.min(3000, v))); open(); });
+        SimpleItem durInc = inc(click -> {
+            int delta = stepInt(click, 50, 100, 500);
+            session.setEditDurationMs(Math.min(3000, dur + delta));
+            open();
+        });
 
         Gui gui = Gui.normal()
             .setStructure(
-                "1 N 2 3 E 4 5 S 6",
-                "7 B 8 9 M 0 a A b",
-                "c D d # # # # G #"
+                "1 O 2 3 R 4 5 S 6",
+                "# # # 7 D 8 # # #",
+                "# # # # # # # # #"
             )
-            .addIngredient('1', nDec)
-            .addIngredient('N', nDisplay)
-            .addIngredient('2', nInc)
-            .addIngredient('3', distDec)
-            .addIngredient('E', distDisplay)
-            .addIngredient('4', distInc)
-            .addIngredient('5', spacingDec)
-            .addIngredient('S', spacingDisplay)
-            .addIngredient('6', spacingInc)
-            .addIngredient('7', sizeDec)
-            .addIngredient('B', sizeDisplay)
-            .addIngredient('8', sizeInc)
-            .addIngredient('9', multDec)
-            .addIngredient('M', multDisplay)
-            .addIngredient('0', multInc)
-            .addIngredient('a', addDec)
-            .addIngredient('A', addDisplay)
-            .addIngredient('b', addInc)
-            .addIngredient('c', durDec)
+            .addIngredient('1', rayOffDec)
+            .addIngredient('O', rayOffDisplay)
+            .addIngredient('2', rayOffInc)
+            .addIngredient('3', rayDec)
+            .addIngredient('R', rayDisplay)
+            .addIngredient('4', rayInc)
+            .addIngredient('5', sizeDec)
+            .addIngredient('S', sizeDisplay)
+            .addIngredient('6', sizeInc)
+            .addIngredient('7', durDec)
             .addIngredient('D', durDisplay)
-            .addIngredient('d', durInc)
+            .addIngredient('8', durInc)
             .addIngredient('#', BORDER)
-            .addIngredient('G', generate)
             .build();
 
         Window.single()
             .setViewer(swordPlayer.player())
-            .setTitle("Sweep Generator")
+            .setTitle("Recording Settings")
             .setGui(gui)
             .build()
             .open();
     }
 
-    // ── Generation ─────────────────────────────────────────────────────────
+    // ── Anvil dialog ───────────────────────────────────────────────────────────
 
-    private void generate() {
-        List<VolumeKeyframe> frames = buildFrames();
-        AttackDevSession session = AttackDevSession.getOrCreate(swordPlayer.player());
-
-        if (session.getMode() == DevMode.EDITING) {
-            session.setEditKeyframes(frames);
-            session.setEditDurationMs(durationMs);
-            session.loadIntoWand();
-            new AttackEditorMenu(swordPlayer).open();
-            return;
-        }
-
-        if (session.getMode() == DevMode.VIEWING) {
-            session.stopViewing();
-        }
-
-        File attacksDir = new File(Sword.getInstance().getDataFolder(), "attacks");
-        attacksDir.mkdirs();
-        String name = SweepRecordingAction.nextAvailableName("sweep_gen", attacksDir);
-        session.startEditing(name, frames, durationMs, null);
-        session.loadIntoWand();
-        new AttackEditorMenu(swordPlayer).open();
+    /**
+     * Opens an InvUI AnvilWindow that lets the player type a float value directly.
+     * On confirm the value is passed to {@code onInput}; the main menu reopens afterward.
+     */
+    private void openAnvilDialog(String label, String currentVal, Consumer<Float> onInput) {
+        ItemStack inputItem = new ItemStackBuilder(Material.PAPER)
+            .name(Component.text(currentVal, NamedTextColor.WHITE))
+            .build();
+        Gui gui = Gui.normal()
+            .setStructure("X # #")
+            .addIngredient('X', new SimpleItem(inputItem))
+            .addIngredient('#', BORDER)
+            .build();
+        AnvilWindow.single()
+            .setViewer(swordPlayer.player())
+            .setTitle(label)
+            .setGui(gui)
+            .addRenameHandler(text -> {
+                try {
+                    float val = Float.parseFloat(text.trim());
+                    onInput.accept(val);
+                } catch (NumberFormatException ignored) {
+                    // invalid input — just reopen
+                }
+                Bukkit.getScheduler().runTask(Sword.getInstance(), this::open);
+            })
+            .build()
+            .open();
     }
 
-    private List<VolumeKeyframe> buildFrames() {
-        List<VolumeKeyframe> frames = new ArrayList<>(n);
-        float zHalfExt = spacing / 2f;
-        float sizeMult = 1f;
-        for (int i = 0; i < n; i++) {
-            float t = (n == 1) ? 0f : (float) i / (n - 1);
-            float z = startDist + i * spacing;
-            float rawSize = baseSize * sizeMult + addScale * i;
-            float he = Math.max(0.05f, rawSize);
-            frames.add(new VolumeKeyframe(
-                t,
-                new Vector3f(0f, EYE_Y_OFFSET, z),
-                new Vector3f(he, he, zHalfExt),
-                new Quaternionf(),
-                VolumeShape.OBB,
-                null,
-                false
-            ));
-            sizeMult *= multScale;
-        }
-        return frames;
+    /** Opens an Anvil dialog for integer input (e.g. duration). */
+    private void openAnvilDialogInt(String label, String currentVal, Consumer<Integer> onInput) {
+        openAnvilDialog(label, currentVal, v -> onInput.accept(Math.round(v)));
     }
 
-    // ── Item helpers ───────────────────────────────────────────────────────
+    // ── Item helpers ───────────────────────────────────────────────────────────
 
     private static SimpleItem dec(Consumer<Click> handler) {
         return new SimpleItem(
             new ItemStackBuilder(Material.RED_DYE)
                 .name(Component.text("−", NamedTextColor.RED, TextDecoration.BOLD))
+                .lore(List.of(
+                    Component.text("Left: −small  Right: −medium  Shift+Left: −large", NamedTextColor.DARK_GRAY)
+                ))
                 .build(),
             handler
         );
@@ -285,41 +219,72 @@ public class SweepGeneratorMenu extends Menu {
         return new SimpleItem(
             new ItemStackBuilder(Material.LIME_DYE)
                 .name(Component.text("+", NamedTextColor.GREEN, TextDecoration.BOLD))
+                .lore(List.of(
+                    Component.text("Left: +small  Right: +medium  Shift+Left: +large", NamedTextColor.DARK_GRAY)
+                ))
                 .build(),
             handler
         );
     }
 
-    private static SimpleItem paramDisplay(String label, String value, String description) {
+    private SimpleItem paramDisplay(String label, String value, String description,
+                                    Material material, Consumer<Float> onInput) {
         return new SimpleItem(
-            new ItemStackBuilder(Material.PAPER)
+            new ItemStackBuilder(material)
                 .name(Component.text(label + ": ", NamedTextColor.GRAY)
                     .append(Component.text(value, NamedTextColor.GOLD, TextDecoration.BOLD)))
-                .lore(List.of(Component.text(description, NamedTextColor.DARK_GRAY)))
-                .build()
+                .lore(List.of(
+                    Component.text(description, NamedTextColor.DARK_GRAY),
+                    Component.text("Click to type a value directly.", NamedTextColor.GRAY)
+                ))
+                .build(),
+            click -> openAnvilDialog(label, value, onInput)
         );
     }
 
-    // ── Clamp helpers ──────────────────────────────────────────────────────
+    private SimpleItem paramDisplayInt(String label, String value, String description,
+                                       Material material, Consumer<Integer> onInput) {
+        return new SimpleItem(
+            new ItemStackBuilder(material)
+                .name(Component.text(label + ": ", NamedTextColor.GRAY)
+                    .append(Component.text(value, NamedTextColor.GOLD, TextDecoration.BOLD)))
+                .lore(List.of(
+                    Component.text(description, NamedTextColor.DARK_GRAY),
+                    Component.text("Click to type a value directly.", NamedTextColor.GRAY)
+                ))
+                .build(),
+            click -> openAnvilDialogInt(label, value, onInput)
+        );
+    }
 
-    private static int clampN(int v) { return Math.max(2, Math.min(16, v)); }
+    // ── Step-size helpers ──────────────────────────────────────────────────────
 
-    private static float clampDist(float v) { return Math.max(0.25f, Math.min(10.0f, round1(v))); }
+    /** Returns the delta for a float parameter based on click type. */
+    private static float stepFloat(Click click, float small, float medium, float large) {
+        return switch (click.getClickType()) {
+            case RIGHT -> medium;
+            case SHIFT_LEFT -> large;
+            default -> small;
+        };
+    }
 
-    private static float clampSpacing(float v) { return Math.max(0.1f, Math.min(5.0f, round1(v))); }
+    /** Returns the delta for an int parameter based on click type. */
+    private static int stepInt(Click click, int small, int medium, int large) {
+        return switch (click.getClickType()) {
+            case RIGHT -> medium;
+            case SHIFT_LEFT -> large;
+            default -> small;
+        };
+    }
 
-    private static float clampSize(float v) { return Math.max(0.05f, Math.min(3.0f, round2(v))); }
+    // ── Clamp / format helpers ─────────────────────────────────────────────
 
-    private static float clampMult(float v) { return Math.max(0.5f, Math.min(3.0f, round2(v))); }
+    private static float clampRay(float v) { return Math.max(1.0f, Math.min(32.0f, round1(v))); }
 
-    private static float clampAdd(float v) { return Math.max(-0.5f, Math.min(2.0f, round2(v))); }
+    private static float clampRayOff(float v) { return Math.max(-5.0f, Math.min(10.0f, round1(v))); }
 
-    private static int clampDur(int v) { return Math.max(100, Math.min(3000, v)); }
-
-    /** Rounds to 1 decimal place to avoid floating-point accumulation. */
     private static float round1(float v) { return Math.round(v * 10f) / 10f; }
 
-    /** Rounds to 2 decimal places. */
     private static float round2(float v) { return Math.round(v * 100f) / 100f; }
 
     private static String fmt1(float v) { return String.format("%.1f", v); }

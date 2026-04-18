@@ -129,8 +129,8 @@ public final class InputRegistrar {
         )).action(new LinkedList<>(List.of(
             new InputExecutionTree.ActionContextPair(
                 () -> InputAction.builder()
-                    .name("Block")
-                    .action(SweepRecordingAction::applyRecordingSpeedBoost)
+                    .name("Place Point")
+                    .action(SweepRecordingAction::placePoint)
                     .cooldown(executor -> 0)
                     .canCast(c -> true)
                     .displayDisabled(false)
@@ -431,6 +431,15 @@ public final class InputRegistrar {
             InputType.DROP,
             InputType.SWAP
         )).action(new LinkedList<>(List.of(
+            new InputExecutionTree.ActionContextPair(
+                () -> InputAction.builder()
+                .action(SweepRecordingAction::cyclePlacementMode)
+                .cooldown(executor -> 0)
+                .canCast(c -> true)
+                .displayDisabled(false)
+                .resetIfCannotPerform(false)
+                .build(),
+                p -> p.heldItemHasKey(KeyRegistry.TEST_VOLUME_ATTACK_KEY)),
             new InputExecutionTree.ActionContextPair(
                 () -> InputAction.builder()
                 .name("Hover Blade")

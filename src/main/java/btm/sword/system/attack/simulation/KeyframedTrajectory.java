@@ -95,9 +95,10 @@ public final class KeyframedTrajectory implements VolumeTrajectory {
 
         // Interpolate in local space; use the target keyframe's shape to decide collision type
         boolean sphere = kc.shape() == VolumeShape.SPHERE;
-        Vector3f localPos = BezierUtil.catmullRom(
-            ka.localPosition(), kb.localPosition(), kc.localPosition(), kd.localPosition(), localT
-        );
+        Vector3f localPos = kb.linearToNext()
+            ? new Vector3f(kb.localPosition()).lerp(kc.localPosition(), localT)
+            : BezierUtil.catmullRom(
+                ka.localPosition(), kb.localPosition(), kc.localPosition(), kd.localPosition(), localT);
         Quaternionf localRot = new Quaternionf(kb.rotation()).slerp(kc.rotation(), localT);
         Vector3f he = new Vector3f(kb.halfExtents()).lerp(kc.halfExtents(), localT);
         if (sphere) {
@@ -105,6 +106,23 @@ public final class KeyframedTrajectory implements VolumeTrajectory {
         }
 
         applyToOutput(localPos, localRot, he, sphere, worldTransform, obbOut);
+
+        // Interpolate world-space ray start for ORIGIN_RAY / RAYCAST keyframes
+        Vector3f originA = kb.localRayOrigin();
+        Vector3f originB = kc.localRayOrigin();
+        if (originA != null && originB != null) {
+            Vector3f interp = kb.linearToNext()
+                ? new Vector3f(originA).lerp(originB, localT)
+                : BezierUtil.catmullRom(
+                    ka.localRayOrigin() != null ? ka.localRayOrigin() : originA,
+                    originA, originB,
+                    kd.localRayOrigin() != null ? kd.localRayOrigin() : originB, localT);
+            obbOut.rayOrigin = worldTransform.transformPosition(interp, new Vector3f());
+        } else if (originB != null) {
+            obbOut.rayOrigin = worldTransform.transformPosition(new Vector3f(originB), new Vector3f());
+        } else {
+            obbOut.rayOrigin = null;
+        }
     }
 
     private static void writeKeyframe(VolumeKeyframe kf, Matrix4fc worldTransform, ObbVolume out) {
@@ -121,6 +139,9 @@ public final class KeyframedTrajectory implements VolumeTrajectory {
             worldTransform,
             out
         );
+        out.rayOrigin = kf.localRayOrigin() != null
+            ? worldTransform.transformPosition(new Vector3f(kf.localRayOrigin()), new Vector3f())
+            : null;
     }
 
     private static void applyToOutput(Vector3f localPos, Quaternionf localRot, Vector3f he,

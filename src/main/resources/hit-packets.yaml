@@ -1,0 +1,30 @@
+hit-packets:
+  light_hit:
+    display-name: "Light Hit"
+    shard-damage: 3
+    toughness-damage: 1.5
+    soulfire-loss: 0.5
+    reaped-soulfire: 0.25
+    invulnerable-ticks: 8
+    blockability: BLOCKABLE
+    bypass-power: 0.0
+
+  heavy_hit:
+    display-name: "Heavy Hit"
+    shard-damage: 7
+    toughness-damage: 4.0
+    soulfire-loss: 1.0
+    reaped-soulfire: 0.5
+    invulnerable-ticks: 14
+    blockability: BLOCKABLE
+    bypass-power: 0.0
+
+  piercing_hit:
+    display-name: "Piercing Hit"
+    shard-damage: 5
+    toughness-damage: 2.0
+    soulfire-loss: 0.75
+    reaped-soulfire: 0.25
+    invulnerable-ticks: 10
+    blockability: SHIELD_PASSING
+    bypass-power: 0.5

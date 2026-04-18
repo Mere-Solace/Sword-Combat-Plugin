@@ -12,10 +12,12 @@ import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 import btm.sword.Sword;
+import btm.sword.system.attack.HitValuePacket;
 import btm.sword.system.attack.def.AttackDef;
 import btm.sword.system.attack.def.AttackDefSerializer;
 import btm.sword.system.attack.def.AttackRegistry;
 import btm.sword.system.attack.dev.AttackDevSession;
+import btm.sword.system.attack.simulation.KeyframeType;
 import btm.sword.system.attack.simulation.VolumeKeyframe;
 import btm.sword.system.attack.simulation.VolumeShape;
 import btm.sword.system.entity.impl.SwordPlayer;
@@ -240,6 +242,36 @@ public class AttackEditorMenu extends Menu {
             }
         );
 
+        HitValuePacket curHit = session.getEditHitValue();
+        List<Component> hitLore = new ArrayList<>();
+        if (curHit == null) {
+            hitLore.add(Component.text("No hit packet selected.", NamedTextColor.GRAY));
+        } else {
+            hitLore.add(Component.text("shard: ", NamedTextColor.DARK_GRAY)
+                .append(Component.text(String.valueOf(curHit.shardDamage()), NamedTextColor.WHITE)));
+            hitLore.add(Component.text("tough: ", NamedTextColor.DARK_GRAY)
+                .append(Component.text(String.format("%.2f", curHit.toughnessDamage()), NamedTextColor.WHITE)));
+            hitLore.add(Component.text("soul loss: ", NamedTextColor.DARK_GRAY)
+                .append(Component.text(String.format("%.2f", curHit.soulfireLoss()), NamedTextColor.WHITE)));
+            hitLore.add(Component.text("reaped: ", NamedTextColor.DARK_GRAY)
+                .append(Component.text(String.format("%.2f", curHit.reapedSoulfire()), NamedTextColor.WHITE)));
+            hitLore.add(Component.text("invul: ", NamedTextColor.DARK_GRAY)
+                .append(Component.text(curHit.invulnerableTicks() + "t", NamedTextColor.WHITE)));
+            hitLore.add(Component.text("block: ", NamedTextColor.DARK_GRAY)
+                .append(Component.text(curHit.blockability().name(), NamedTextColor.WHITE)));
+            hitLore.add(Component.text("bypass: ", NamedTextColor.DARK_GRAY)
+                .append(Component.text(String.format("%.2f", curHit.bypassPower()), NamedTextColor.WHITE)));
+        }
+        hitLore.add(Component.empty());
+        hitLore.add(Component.text("Click to open the hit-packet library.", NamedTextColor.YELLOW));
+        SimpleItem hitPacketButton = new SimpleItem(
+            new ItemStackBuilder(Material.NETHERITE_SWORD)
+                .name(Component.text("Hit Packet", NamedTextColor.LIGHT_PURPLE, TextDecoration.BOLD))
+                .lore(hitLore)
+                .build(),
+            click -> new HitPacketLibraryMenu(swordPlayer).open()
+        );
+
         boolean lockOn = session.isEditLockOriginOnFire();
         SimpleItem lockToggle = new SimpleItem(
             new ItemStackBuilder(lockOn ? Material.LODESTONE : Material.COMPASS)
@@ -277,7 +309,7 @@ public class AttackEditorMenu extends Menu {
                     swordPlayer.message(Component.text("No keyframe selected.", NamedTextColor.RED));
                     return;
                 }
-                new KeyframeEffectsMenu(swordPlayer).open();
+                new KeyframeVisualsMenu(swordPlayer).open();
             }
         );
 
@@ -423,7 +455,7 @@ public class AttackEditorMenu extends Menu {
                 VolumeKeyframe kf = kfs.get(idx);
                 VolumeShape[] shapes = VolumeShape.values();
                 VolumeShape next = shapes[(kf.shape().ordinal() + 1) % shapes.length];
-                kfs.set(idx, new VolumeKeyframe(kf.t(), kf.localPosition(), kf.halfExtents(), kf.rotation(), next, kf.effect(), kf.jump()));
+                kfs.set(idx, new VolumeKeyframe(kf.t(), kf.localPosition(), kf.halfExtents(), kf.rotation(), next, kf.effect(), kf.jump(), kf.linearToNext(), kf.keyframeType()));
                 new AttackEditorMenu(swordPlayer).open();
             }
         );
@@ -480,7 +512,7 @@ public class AttackEditorMenu extends Menu {
                 "x x x x x x x x x",
                 "< > E A F V J K T",
                 "q w e r t y m n j",
-                "u i o p g h a b #")
+                "u i o p g h a b H")
             .addIngredient('#', BORDER)
             .addIngredient('>', new ForwardItem())
             .addIngredient('<', new PreviousItem())
@@ -520,6 +552,7 @@ public class AttackEditorMenu extends Menu {
             .addIngredient('h', heZInc)
             .addIngredient('a', shiftAllZDec)
             .addIngredient('b', shiftAllZInc)
+            .addIngredient('H', hitPacketButton)
             .setContent(kfItems)
             .build();
 
@@ -580,17 +613,25 @@ public class AttackEditorMenu extends Menu {
                 mat = Material.YELLOW_STAINED_GLASS_PANE;
                 nameColor = NamedTextColor.YELLOW;
             } else {
-                mat = Material.WHITE_STAINED_GLASS_PANE;
-                nameColor = NamedTextColor.WHITE;
+                mat = paneForType(kf.keyframeType());
+                nameColor = nameColorForType(kf.keyframeType());
             }
 
+            String typeTag = kf.keyframeType() != KeyframeType.STANDARD
+                ? " [" + kf.keyframeType().name() + "]" : "";
             items.add(new SimpleItem(
                 new ItemStackBuilder(mat)
-                    .name(Component.text("Frame " + idx, nameColor, TextDecoration.BOLD))
+                    .name(Component.text("Frame " + idx + typeTag, nameColor, TextDecoration.BOLD))
                     .lore(lore)
                     .build(),
                 click -> {
                     ClickType type = click.getClickType();
+                    if (type == ClickType.SWAP_OFFHAND) {
+                        session.clearSelectedKeyframeIndices();
+                        session.setCurrentKeyframeIndex(idx);
+                        new KeyframeVisualsMenu(swordPlayer).open();
+                        return;
+                    }
                     if (type == ClickType.SHIFT_LEFT || type == ClickType.SHIFT_RIGHT) {
                         int lo = Math.min(cursor, idx);
                         int hi = Math.max(cursor, idx);
@@ -686,7 +727,7 @@ public class AttackEditorMenu extends Menu {
                 case POS_Y -> he.y = Math.max(0.05f, he.y + delta);
                 case POS_Z -> he.z = Math.max(0.05f, he.z + delta);
             }
-            return new VolumeKeyframe(kf.t(), kf.localPosition(), he, kf.rotation(), kf.shape(), kf.effect(), kf.jump());
+            return kf.withHalfExtents(he);
         } else {
             Vector3f pos = new Vector3f(kf.localPosition());
             switch (axis) {
@@ -694,7 +735,7 @@ public class AttackEditorMenu extends Menu {
                 case POS_Y -> pos.y += delta;
                 case POS_Z -> pos.z += delta;
             }
-            return new VolumeKeyframe(kf.t(), pos, kf.halfExtents(), kf.rotation(), kf.shape(), kf.effect(), kf.jump());
+            return kf.withLocalPosition(pos);
         }
     }
 
@@ -711,7 +752,7 @@ public class AttackEditorMenu extends Menu {
     private static void insertFrameAfterSelected(AttackDevSession session) {
         List<VolumeKeyframe> kfs = session.getEditKeyframes();
         if (kfs.isEmpty()) {
-            kfs.add(new VolumeKeyframe(0f, new Vector3f(0f, 1f, 1f), new Vector3f(0.5f, 0.5f, 0.5f), new Quaternionf(), VolumeShape.SPHERE, null, false));
+            kfs.add(new VolumeKeyframe(0f, new Vector3f(0f, 1f, 1f), new Vector3f(0.5f, 0.5f, 0.5f), new Quaternionf(), VolumeShape.SPHERE, null, false, false, KeyframeType.STANDARD));
             session.setCurrentKeyframeIndex(0);
             return;
         }
@@ -726,14 +767,14 @@ public class AttackEditorMenu extends Menu {
             Vector3f pos = new Vector3f(cur.localPosition()).lerp(next.localPosition(), 0.5f);
             Vector3f he = new Vector3f(cur.halfExtents()).lerp(next.halfExtents(), 0.5f);
             Quaternionf rot = new Quaternionf(cur.rotation()).slerp(next.rotation(), 0.5f);
-            newFrame = new VolumeKeyframe(t, pos, he, rot, cur.shape(), null, false);
+            newFrame = new VolumeKeyframe(t, pos, he, rot, cur.shape(), null, false, false, KeyframeType.STANDARD);
         } else {
             float t = Math.min(1.0f, cur.t() + 0.1f);
             newFrame = new VolumeKeyframe(t,
                 new Vector3f(cur.localPosition()),
                 new Vector3f(cur.halfExtents()),
                 new Quaternionf(cur.rotation()),
-                cur.shape(), null, false);
+                cur.shape(), null, false, false, KeyframeType.STANDARD);
         }
 
         kfs.add(idx + 1, newFrame);
@@ -754,7 +795,7 @@ public class AttackEditorMenu extends Menu {
             VolumeKeyframe kf = kfs.get(i);
             Vector3f pos = new Vector3f(kf.localPosition());
             pos.x += delta;
-            kfs.set(i, new VolumeKeyframe(kf.t(), pos, kf.halfExtents(), kf.rotation(), kf.shape(), kf.effect(), kf.jump()));
+            kfs.set(i, kf.withLocalPosition(pos));
         }
     }
 
@@ -770,7 +811,7 @@ public class AttackEditorMenu extends Menu {
             VolumeKeyframe kf = kfs.get(i);
             Vector3f pos = new Vector3f(kf.localPosition());
             pos.y += delta;
-            kfs.set(i, new VolumeKeyframe(kf.t(), pos, kf.halfExtents(), kf.rotation(), kf.shape(), kf.effect(), kf.jump()));
+            kfs.set(i, kf.withLocalPosition(pos));
         }
     }
 
@@ -786,7 +827,7 @@ public class AttackEditorMenu extends Menu {
             VolumeKeyframe kf = kfs.get(i);
             Vector3f pos = new Vector3f(kf.localPosition());
             pos.z += delta;
-            kfs.set(i, new VolumeKeyframe(kf.t(), pos, kf.halfExtents(), kf.rotation(), kf.shape(), kf.effect(), kf.jump()));
+            kfs.set(i, kf.withLocalPosition(pos));
         }
     }
 
@@ -817,6 +858,30 @@ public class AttackEditorMenu extends Menu {
         }
     }
 
+    // ── Keyframe type styling ─────────────────────────────────────────────────
+
+    private static Material paneForType(KeyframeType type) {
+        return switch (type) {
+            case BEZIER_START -> Material.GREEN_STAINED_GLASS_PANE;
+            case BEZIER_C1 -> Material.CYAN_STAINED_GLASS_PANE;
+            case BEZIER_C2 -> Material.ORANGE_STAINED_GLASS_PANE;
+            case BEZIER_END -> Material.RED_STAINED_GLASS_PANE;
+            case LINE -> Material.LIGHT_BLUE_STAINED_GLASS_PANE;
+            default -> Material.WHITE_STAINED_GLASS_PANE;
+        };
+    }
+
+    private static NamedTextColor nameColorForType(KeyframeType type) {
+        return switch (type) {
+            case BEZIER_START -> NamedTextColor.GREEN;
+            case BEZIER_C1 -> NamedTextColor.DARK_AQUA;
+            case BEZIER_C2 -> NamedTextColor.GOLD;
+            case BEZIER_END -> NamedTextColor.RED;
+            case LINE -> NamedTextColor.AQUA;
+            default -> NamedTextColor.WHITE;
+        };
+    }
+
     // ── Save ──────────────────────────────────────────────────────────────────
 
     /**
@@ -826,6 +891,17 @@ public class AttackEditorMenu extends Menu {
      * @param session the active editing session
      */
     private void save(AttackDevSession session) {
+        saveAttack(session, swordPlayer);
+    }
+
+    /**
+     * Builds the current attack, registers it in {@link AttackRegistry}, and writes it to
+     * {@code plugins/sword/attacks/<id>.yml}. Callable from any sub-menu in this package.
+     *
+     * @param session the active editing session
+     * @param player  the player to send feedback messages to
+     */
+    static void saveAttack(AttackDevSession session, SwordPlayer player) {
         try {
             AttackDef def = session.buildCurrentAttack();
             AttackRegistry.register(def);
@@ -835,11 +911,11 @@ public class AttackEditorMenu extends Menu {
             File file = new File(attacksDir, def.getId() + ".yml");
             AttackDefSerializer.save(file, def);
 
-            swordPlayer.message(Component.text(
+            player.message(Component.text(
                 "[Dev] Saved '" + def.getId() + "' → attacks/" + def.getId() + ".yml",
                 NamedTextColor.AQUA));
         } catch (Exception e) {
-            swordPlayer.message(Component.text("[Dev] Save failed: " + e.getMessage(), NamedTextColor.RED));
+            player.message(Component.text("[Dev] Save failed: " + e.getMessage(), NamedTextColor.RED));
         }
     }
 }

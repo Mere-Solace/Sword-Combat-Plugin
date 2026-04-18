@@ -18,6 +18,7 @@ import btm.sword.system.attack.style.WeaponAttackStyle;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.impl.Combatant;
 import btm.sword.system.entity.impl.SwordPlayer;
+import btm.sword.system.inventory.menu.dev.SweepGeneratorMenu;
 import btm.sword.system.item.ItemUsageManager;
 import btm.sword.system.item.KeyRegistry;
 import btm.sword.utility.misc.ConsumerToConsumePair;
@@ -59,6 +60,10 @@ public class AttackAction extends SwordAction {
                 if (devSession != null && devSession.getMode() == DevMode.EDITING) {
                     Sword.print("[AttackAction]   keyframes=" + devSession.getEditKeyframes().size()
                         + " duration=" + devSession.getEditDurationMs() + "ms");
+                }
+                if (devSession != null && devSession.getMode() == DevMode.RECORDING) {
+                    new SweepGeneratorMenu(sp).open();
+                    return;
                 }
                 if (devSession != null && devSession.getLoadedAttackDef() != null) {
                     fireWandDef(executor, devSession.getLoadedAttackDef());

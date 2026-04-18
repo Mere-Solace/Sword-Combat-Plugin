@@ -17,11 +17,19 @@ import btm.sword.config.Config;
 import btm.sword.system.attack.HitValuePacket;
 import btm.sword.system.attack.def.AttackDef;
 import btm.sword.system.attack.def.VolumeType;
+import btm.sword.system.attack.simulation.ControlMode;
+import btm.sword.system.attack.simulation.ControlPoint;
+import btm.sword.system.attack.simulation.ControlPointTrajectory;
 import btm.sword.system.attack.simulation.KeyframeEffect;
 import btm.sword.system.attack.simulation.KeyframedTrajectory;
 import btm.sword.system.attack.simulation.VolumeKeyframe;
+import btm.sword.system.attack.visuals.ParticleDisplay;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
+import net.kyori.adventure.bossbar.BossBar;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 
 /**
  * Tracks per-player state during an attack creation or editing session.
@@ -36,6 +44,10 @@ import lombok.Setter;
  * {@link #startEditing(String, List, int, HitValuePacket)}, and {@link #stopEditing()}
  * methods. While in any non-{@link DevMode#IDLE} state, {@link #isActive()} returns
  * {@code true}.</p>
+ *
+ * <p>During RECORDING, right-click places world-space tip points into {@link #pendingPoints}.
+ * DROP+SWAP cycles the active {@link PlacementMode}. On stop, the pending points are
+ * converted to keyframes by {@code SweepRecordingAction.saveDraft}.</p>
  *
  * <p>During EDITING, the mutable {@link #editKeyframes} list and {@link #editDurationMs}
  * field are the primary working state. Call {@link #buildCurrentAttack()} to materialise
@@ -72,8 +84,52 @@ public final class AttackDevSession {
     @Setter private boolean playingPreview = false;
 
     // ── Recording state ───────────────────────────────────────────────────────
-    /** World-space tip samples captured during the current recording. */
-    private final List<RecordedSample> recordingBuffer = new ArrayList<>();
+    /** Current placement mode — determines how right-click deposits points. */
+    private PlacementMode placementMode = PlacementMode.SINGLE_KEYFRAME;
+
+    /**
+     * Points deposited by right-click during the current recording, each tagged with the
+     * {@link PlacementMode} active at placement time. Mode switching no longer clears this
+     * list, allowing mixed-mode trajectories to accumulate freely.
+     */
+    private final List<PlacedPoint> pendingPoints = new ArrayList<>();
+
+    /**
+     * Half-extents applied to each placed keyframe when the recording is saved.
+     * Defaults to {@code 0.4 × 0.4 × 0.4} blocks.
+     * -- SETTER --
+     *  Replaces the half-extents used for newly placed keyframe volumes.
+     */
+    @Setter
+    private Vector3f currentPlacementSize = new Vector3f(0.4f, 0.4f, 0.4f);
+
+    /**
+     * Distance from the player's eye along the look direction used for tip placement
+     * across all placement modes, in blocks.
+     *
+     * <ul>
+     *   <li>{@link PlacementMode#SINGLE_KEYFRAME}, {@link PlacementMode#LINE_SEGMENT},
+     *       {@link PlacementMode#BEZIER_CURVE}, {@link PlacementMode#ORIGIN_RAY} —
+     *       tip position is {@code eye + lookDir}, and origin location is sessionOrigin
+     *       + rayOffset * (tipPos - sessionOrigin).</li>
+     *   <li>{@link PlacementMode#RAYCAST} — the block raycast starts at
+     *       {@code eye + lookDir * rayOffset} (0 starts from the eye, negative pulls it back).</li>
+     * </ul>
+     *
+     * <p>Adjusted via the Recording Settings menu.</p>
+     */
+    @Getter @Setter private float rayOffset = 1.5f;
+
+    /**
+     * Maximum raycast distance for {@link PlacementMode#RAYCAST} point placement, in blocks.
+     * Adjusted via the Recording Settings menu.
+     */
+    @Getter @Setter private float raycastMaxDistance = 8.0f;
+
+    /** Boss bar shown to the player while in {@link DevMode#RECORDING}. Hidden on stop. */
+    @Getter(AccessLevel.NONE)
+    private BossBar recordingBossBar = null;
+
     /**
      * Player {@link Location} (feet) captured at the start of recording.
      * Used to lock the player in place via {@code PlayerMoveEvent} and as the
@@ -82,7 +138,7 @@ public final class AttackDevSession {
     private Location lockedOrigin = null;
     /**
      * Bounding-box centre of the player at the moment {@link #startRecording} was called.
-     * Used as the local-space origin when converting recorded world positions to keyframes.
+     * Used as the local-space origin when converting pending points to keyframes.
      */
     private Vector3f recordingRefOrigin = null;
     /**
@@ -102,6 +158,7 @@ public final class AttackDevSession {
     @Setter
     private int editDurationMs = 600;
     /** Hit-value packet for the current edit session. Carried over from the loaded definition. */
+    @Setter
     private HitValuePacket editHitValue = null;
     /** Index of the currently selected keyframe in {@link #editKeyframes}.
      * -- SETTER --
@@ -125,6 +182,18 @@ public final class AttackDevSession {
      * {@code null} means the wand fires the default {@code test_volume_attack}.
      */
     private AttackDef loadedAttackDef = null;
+
+    /**
+     * Control points for the current CTRL_POINT edit session, or {@code null} when
+     * the session is keyframe-based. Set by {@link #startEditingCtrlPoint}.
+     */
+    @Getter @Setter private List<ControlPoint> editControlPoints = null;
+
+    /**
+     * Interpolation mode for the current CTRL_POINT edit session, or {@code null}
+     * when the session is keyframe-based.
+     */
+    @Getter @Setter private ControlMode editControlMode = null;
 
     // ── Orientation flags for the current edit session ────────────────────────
     /**
@@ -195,34 +264,96 @@ public final class AttackDevSession {
     // ── Instance API — Recording ──────────────────────────────────────────────
 
     /**
-     * Transitions to {@link DevMode#RECORDING} and clears all recording buffers.
-     * Any previous recording data is discarded.
+     * Transitions to {@link DevMode#RECORDING} and resets all recording state.
+     * Any previous pending points are discarded. A red boss bar is shown to the player
+     * indicating the current placement mode and point count.
      *
      * @param name the name of the attack being recorded
      */
     public void startRecording(String name) {
         this.currentAttackName = name;
-        this.recordingBuffer.clear();
+        this.pendingPoints.clear();
         this.mode = DevMode.RECORDING;
 
         // Capture position lock and reference frame at recording start
-        this.lockedOrigin = player.getLocation().clone().setDirection(Config.Direction.north());
+        this.lockedOrigin = player.getLocation().clone().add(0, 1.0, 0).setDirection(Config.Direction.north());
         BoundingBox bb = player.getBoundingBox();
         this.recordingRefOrigin = new Vector3f(
             (float) bb.getCenterX(), (float) bb.getCenterY(), (float) bb.getCenterZ());
         this.recordingRefYaw = player.getLocation().getYaw();
+
+        this.recordingBossBar = BossBar.bossBar(
+            recordingBossBarTitle(), 1.0f, BossBar.Color.RED, BossBar.Overlay.PROGRESS);
+        player.showBossBar(recordingBossBar);
     }
 
     /**
-     * Transitions back to {@link DevMode#IDLE} and returns a snapshot of the captured samples.
-     * The internal buffer is not cleared, so {@link #getRecordingBuffer()} remains accessible
-     * after this call.
-     *
-     * @return immutable snapshot of the recorded {@link RecordedSample}s
+     * Transitions back to {@link DevMode#IDLE} and hides the recording boss bar.
+     * The pending points list remains accessible via {@link #getPendingPoints()} until
+     * the next {@link #startRecording} call.
      */
-    public List<RecordedSample> stopRecording() {
+    public void stopRecording() {
         this.mode = DevMode.IDLE;
-        return List.copyOf(recordingBuffer);
+        if (recordingBossBar != null) {
+            player.hideBossBar(recordingBossBar);
+            recordingBossBar = null;
+        }
+    }
+
+    /**
+     * Advances to the next {@link PlacementMode} and refreshes the recording boss bar.
+     * Previously placed points are preserved — mode switching no longer resets the session,
+     * allowing mixed-mode trajectories to accumulate across multiple mode changes.
+     */
+    public void cyclePlacementMode() {
+        this.placementMode = placementMode.next();
+        updateRecordingBossBar();
+    }
+
+    /**
+     * Appends a world-space point to the pending points buffer, tagged with the current
+     * placement mode, and updates the boss bar.
+     *
+     * @param location the world-space position to record
+     */
+    public void addPendingPoint(Location location) {
+        pendingPoints.add(new PlacedPoint(location, placementMode));
+        updateRecordingBossBar();
+    }
+
+    /**
+     * Appends a pre-constructed {@link PlacedPoint} to the pending points buffer and updates
+     * the boss bar. Use this overload when the caller needs to supply additional data such as
+     * a ray origin for {@link PlacementMode#RAYCAST} points.
+     *
+     * @param point the fully constructed point to record
+     */
+    public void addPendingPoint(PlacedPoint point) {
+        pendingPoints.add(point);
+        updateRecordingBossBar();
+    }
+
+    /** Clears all pending points and refreshes the boss bar count. */
+    public void clearPendingPoints() {
+        pendingPoints.clear();
+        updateRecordingBossBar();
+    }
+
+    /** Updates the recording boss bar title to reflect the current mode and point count. */
+    public void updateRecordingBossBar() {
+        if (recordingBossBar != null) {
+            recordingBossBar.name(recordingBossBarTitle());
+        }
+    }
+
+    private Component recordingBossBarTitle() {
+        int placed = pendingPoints.size();
+        String ptsLabel = placementMode == PlacementMode.SINGLE_KEYFRAME
+            ? "(" + placed + " pts)"
+            : "(" + placed + "/" + placementMode.requiredPoints() + " pts)";
+        return Component.text("[Dev] Recording — ", NamedTextColor.RED)
+            .append(Component.text(placementMode.label(), NamedTextColor.WHITE))
+            .append(Component.text("  " + ptsLabel, NamedTextColor.GRAY));
     }
 
     // ── Instance API — Editing ────────────────────────────────────────────────
@@ -239,12 +370,38 @@ public final class AttackDevSession {
     public void startEditing(String name, List<VolumeKeyframe> keyframes, int durationMs, HitValuePacket hitValue) {
         this.currentAttackName = name;
         this.editKeyframes = new ArrayList<>(keyframes);
+        this.editControlPoints = null;
+        this.editControlMode = null;
         this.editDurationMs = durationMs;
         this.editHitValue = hitValue;
         this.currentKeyframeIndex = 0;
         this.selectedKeyframeIndices.clear();
         this.mode = DevMode.EDITING;
         VolumeEditorMode.startForSession(this);
+    }
+
+    /**
+     * Transitions to {@link DevMode#EDITING} with control-point trajectory data.
+     * Clears any previous keyframe editing state.
+     *
+     * @param name       the attack id being edited
+     * @param points     the control points (2 for LINEAR, 4 for BEZIER)
+     * @param mode       the interpolation mode
+     * @param durationMs the attack duration in milliseconds
+     * @param hitValue   the hit-value packet to preserve when saving
+     */
+    public void startEditingCtrlPoint(String name, List<ControlPoint> points, ControlMode mode,
+                                      int durationMs, HitValuePacket hitValue) {
+        this.currentAttackName = name;
+        this.editKeyframes = new ArrayList<>();
+        this.editControlPoints = new ArrayList<>(points);
+        this.editControlMode = mode;
+        this.editDurationMs = durationMs;
+        this.editHitValue = hitValue;
+        this.currentKeyframeIndex = 0;
+        this.selectedKeyframeIndices.clear();
+        this.mode = DevMode.EDITING;
+        VolumeEditorMode.startCtrlPointForSession(this);
     }
 
     /**
@@ -311,13 +468,71 @@ public final class AttackDevSession {
     }
 
     /**
-     * Constructs an immutable {@link AttackDef} from the current edit state (keyframes,
-     * duration, hit value). Does not modify session state.
+     * Appends a {@link ParticleDisplay} to the keyframe at {@code index}.
+     * Creates a new effect bundle if the keyframe has none.
+     *
+     * @param index   keyframe index; must be within {@code [0, editKeyframes.size())}
+     * @param display the display to append
+     */
+    public void addKeyframeDisplay(int index, ParticleDisplay display) {
+        KeyframeEffect current = editKeyframes.get(index).effect();
+        List<ParticleDisplay> updated = new ArrayList<>(
+            current != null && current.displays() != null ? current.displays() : List.of());
+        updated.add(display);
+        KeyframeEffect next = new KeyframeEffect(updated, current != null ? current.sound() : null);
+        setKeyframeEffect(index, next);
+    }
+
+    /**
+     * Replaces the {@link ParticleDisplay} at {@code displayIndex} on the keyframe at {@code kfIndex}.
+     *
+     * @param kfIndex      keyframe index
+     * @param displayIndex display index within the keyframe's display list
+     * @param display      the replacement display
+     */
+    public void updateKeyframeDisplay(int kfIndex, int displayIndex, ParticleDisplay display) {
+        KeyframeEffect current = editKeyframes.get(kfIndex).effect();
+        if (current == null || current.displays() == null) return;
+        if (displayIndex < 0 || displayIndex >= current.displays().size()) return;
+        List<ParticleDisplay> updated = new ArrayList<>(current.displays());
+        updated.set(displayIndex, display);
+        setKeyframeEffect(kfIndex, new KeyframeEffect(updated, current.sound()));
+    }
+
+    /**
+     * Removes the {@link ParticleDisplay} at {@code displayIndex} from the keyframe at {@code kfIndex}.
+     *
+     * @param kfIndex      keyframe index
+     * @param displayIndex display index within the keyframe's display list
+     */
+    public void removeKeyframeDisplay(int kfIndex, int displayIndex) {
+        KeyframeEffect current = editKeyframes.get(kfIndex).effect();
+        if (current == null || current.displays() == null) return;
+        if (displayIndex < 0 || displayIndex >= current.displays().size()) return;
+        List<ParticleDisplay> updated = new ArrayList<>(current.displays());
+        updated.remove(displayIndex);
+        setKeyframeEffect(kfIndex, new KeyframeEffect(updated, current.sound()));
+    }
+
+    /**
+     * Constructs an immutable {@link AttackDef} from the current edit state.
+     * Delegates to a control-point build when the session holds CTRL_POINT data;
+     * otherwise builds a keyframe-based VOLUME attack.
      *
      * @return the built attack definition
-     * @throws IllegalStateException if the session is not in EDITING mode or has no keyframes
+     * @throws IllegalStateException if there is neither keyframe nor control-point data
      */
     public AttackDef buildCurrentAttack() {
+        if (editControlPoints != null && !editControlPoints.isEmpty()) {
+            return new AttackDef.Builder(currentAttackName)
+                .controlPoints(editControlPoints, editControlMode)
+                .duration(editDurationMs)
+                .onHit(editHitValue != null ? editHitValue
+                    : new HitValuePacket(() -> 0f, () -> 10, () -> 2, () -> 0f, () -> 0f))
+                .orientWithPitch(editOrientWithPitch)
+                .lockOriginOnFire(editLockOriginOnFire)
+                .build();
+        }
         if (editKeyframes.isEmpty()) {
             throw new IllegalStateException("Cannot build AttackDef: no keyframes defined");
         }
@@ -342,16 +557,22 @@ public final class AttackDevSession {
     }
 
     /**
-     * Starts an editing session from an existing {@link AttackDef}, extracting keyframes and
-     * duration from its {@link KeyframedTrajectory}. Convenience wrapper over
-     * {@link #startEditing(String, List, int, HitValuePacket)} for wand-based re-entry.
+     * Starts an editing session from an existing {@link AttackDef}.
+     * Supports {@link KeyframedTrajectory} and {@link ControlPointTrajectory}.
      *
-     * @param def the attack definition to edit; must have a {@link KeyframedTrajectory}
-     * @throws IllegalArgumentException if the trajectory is not a {@link KeyframedTrajectory}
+     * @param def the attack definition to edit
+     * @throws IllegalArgumentException if the trajectory type is not editable
      */
     public void startEditingFromDef(AttackDef def) {
+        if (def.getTrajectory() instanceof ControlPointTrajectory cpt) {
+            startEditingCtrlPoint(def.getId(), cpt.getPoints(), cpt.getMode(),
+                def.getDurationMs(), def.getHitValue());
+            this.editOrientWithPitch = def.isOrientWithPitch();
+            this.editLockOriginOnFire = def.isLockOriginOnFire();
+            return;
+        }
         if (!(def.getTrajectory() instanceof KeyframedTrajectory kt)) {
-            throw new IllegalArgumentException("Cannot edit non-keyframed attack: " + def.getId());
+            throw new IllegalArgumentException("Cannot edit attack with unsupported trajectory: " + def.getId());
         }
         startEditing(def.getId(), kt.getKeyframes(), def.getDurationMs(), def.getHitValue());
         this.editOrientWithPitch = def.isOrientWithPitch();

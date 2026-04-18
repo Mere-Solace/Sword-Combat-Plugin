@@ -2926,8 +2926,8 @@ public final class Config {
                 VolumeEditorMode.rebuildDust(); },
             ConfigurationSection::getDouble); }
 
-        /** Particle color for unselected keyframe wireframes (gray by default). */
-        public static Color WIREFRAME_DEFAULT_COLOR = Color.fromRGB(160, 160, 160);
+        /** Particle color for unselected keyframe wireframes (yellow by default). */
+        public static Color WIREFRAME_DEFAULT_COLOR = Color.fromRGB(255, 230, 60);
         static { register(
             "debug.wireframe_default_color",
             WIREFRAME_DEFAULT_COLOR, Color.class,
@@ -2936,7 +2936,7 @@ public final class Config {
             Config::loadColor); }
 
         /** Dust particle size for unselected keyframe wireframes. */
-        public static double WIREFRAME_DEFAULT_SIZE = 0.2;
+        public static double WIREFRAME_DEFAULT_SIZE = 0.7;
         static { register(
             "debug.wireframe_default_size",
             WIREFRAME_DEFAULT_SIZE, Double.class,

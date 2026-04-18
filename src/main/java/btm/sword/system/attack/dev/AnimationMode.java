@@ -6,6 +6,7 @@ import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 
 import btm.sword.system.entity.impl.DevSwordPlayer;
+import btm.sword.system.entity.umbral.input.BladeRequest;
 import btm.sword.system.inventory.menu.dev.AttackBrowserMenu;
 import btm.sword.system.item.ItemStackBuilder;
 import net.kyori.adventure.text.Component;
@@ -46,7 +47,7 @@ public final class AnimationMode {
      * Enters AnimationMode on the given {@link DevSwordPlayer}.
      *
      * <ol>
-     *   <li>Deactivates the UmbralBlade to prevent an orphan display entity.</li>
+     *   <li>Requests {@link BladeRequest#DEACTIVATE} to hide the blade via {@code InactiveState} (blade FSM keeps ticking; display viewRange set to 0).</li>
      *   <li>Saves the current inventory to {@link AttackDevSession#getSavedAnimationInventory()}.</li>
      *   <li>Suppresses all anchored-item upkeep so managed items cannot refill the hotbar.</li>
      *   <li>Clears the inventory and populates the animation hotbar (slots 0–8).</li>
@@ -60,8 +61,8 @@ public final class AnimationMode {
      * @param session   the active attack editing session
      */
     public static void enter(DevSwordPlayer devPlayer, AttackDevSession session) {
-        // 1. Deactivate blade — prevents orphan display entity
-        devPlayer.deactivateUmbralBlade();
+        // 1. Request INACTIVE — hides blade via InactiveState without destroying it
+        devPlayer.requestUmbralBladeState(BladeRequest.DEACTIVATE);
 
         // 2. Snapshot the current creative-dev inventory
         session.setSavedAnimationInventory(devPlayer.player().getInventory().getContents().clone());
@@ -86,36 +87,40 @@ public final class AnimationMode {
     }
 
     /**
-     * Exits AnimationMode on the given {@link DevSwordPlayer}.
+     * Exits AnimationMode on the given {@link DevSwordPlayer} and opens {@link AttackBrowserMenu}.
+     *
+     * @param devPlayer the currently active {@link DevSwordPlayer} in AnimationMode
+     */
+    public static void exit(DevSwordPlayer devPlayer) {
+        exitSilent(devPlayer);
+        new AttackBrowserMenu(devPlayer).open();
+    }
+
+    /**
+     * Exits AnimationMode without opening any menu — use when the player cannot interact
+     * with a menu (e.g. death, forced abort).
      *
      * <ol>
      *   <li>Clears the AnimationMode flag.</li>
      *   <li>Restores the inventory from {@link AttackDevSession#getSavedAnimationInventory()}.</li>
      *   <li>Keeps anchored-item upkeep suppressed (player is still in creative dev mode).</li>
-     *   <li>Reactivates the UmbralBlade.</li>
-     *   <li>Opens {@link AttackBrowserMenu}.</li>
+     *   <li>Requests {@link BladeRequest#ACTIVATE_TO_PREVIOUS} to restore blade.</li>
      * </ol>
      *
      * @param devPlayer the currently active {@link DevSwordPlayer} in AnimationMode
      */
-    public static void exit(DevSwordPlayer devPlayer) {
+    public static void exitSilent(DevSwordPlayer devPlayer) {
         devPlayer.setInAnimationMode(false);
 
         AttackDevSession session = AttackDevSession.get(devPlayer.player().getUniqueId());
 
-        // Restore inventory to the creative-dev state
         if (session != null && session.getSavedAnimationInventory() != null) {
             devPlayer.player().getInventory().setContents(session.getSavedAnimationInventory());
             session.setSavedAnimationInventory(null);
         }
 
-        // Remain suppressed — still in creative dev mode
         devPlayer.setAllAnchoredItemUpkeep(false);
-
-        // Reactivate blade (creative dev mode deactivates it again if needed)
-        devPlayer.activateUmbralBlade();
-
-        new AttackBrowserMenu(devPlayer).open();
+        devPlayer.requestUmbralBladeState(BladeRequest.ACTIVATE_TO_PREVIOUS);
     }
 
     // ── Private helpers ───────────────────────────────────────────────────────
@@ -175,7 +180,10 @@ public final class AnimationMode {
         dev.player().getInventory().setItem(8,
             new ItemStackBuilder(Material.WRITABLE_BOOK)
                 .name(Component.text("Open Editor", NamedTextColor.WHITE, TextDecoration.BOLD))
-                .lore(List.of(Component.text("Any click — open AttackEditorMenu", NamedTextColor.DARK_GRAY)))
+                .lore(List.of(
+                    Component.text("Any click — open AttackEditorMenu", NamedTextColor.DARK_GRAY),
+                    Component.text("Shortcut: SHIFT+SWAP with the wand", NamedTextColor.DARK_GRAY)
+                ))
                 .build());
     }
 
@@ -184,7 +192,10 @@ public final class AnimationMode {
             .name(Component.text("Exit Animation Mode", NamedTextColor.RED, TextDecoration.BOLD))
             .lore(List.of(
                 Component.text("Left-click — save & exit", NamedTextColor.DARK_GRAY),
-                Component.text("Opens the save confirm dialog.", NamedTextColor.GRAY)
+                Component.text("Opens the save confirm dialog.", NamedTextColor.GRAY),
+                Component.empty(),
+                Component.text("This is the ONLY way to exit —", NamedTextColor.GRAY),
+                Component.text("closing the inventory does not stop keyframe display.", NamedTextColor.GRAY)
             ))
             .build();
     }

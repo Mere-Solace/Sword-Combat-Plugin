@@ -1,11 +1,13 @@
 package btm.sword.utility.math;
 
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 
 import org.bukkit.Location;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
+import org.joml.Vector3f;
 
 import btm.sword.config.Config;
 import btm.sword.system.entity.base.SwordEntity;
@@ -179,6 +181,22 @@ public final class VectorUtil {
 
         double cos = Math.max(-1.0, Math.min(1.0, v.dot(u) / (vNorm * uNorm)));
         return Math.acos(cos); // radians
+    }
+
+    /**
+     * Returns a random 3D vector uniformly distributed inside the axis-aligned box with
+     * the given half-extents. Each component is in {@code [-halfExtents.<axis>, halfExtents.<axis>]}.
+     * Axes whose half-extent is {@code 0} produce a component of {@code 0} exactly.
+     *
+     * @param halfExtents per-axis half-extents of the sampling box
+     * @return a fresh {@link Vector3f} sampled uniformly inside the box
+     */
+    public static Vector3f randomInBox(Vector3f halfExtents) {
+        ThreadLocalRandom r = ThreadLocalRandom.current();
+        return new Vector3f(
+            halfExtents.x == 0f ? 0f : (float) ((r.nextDouble() * 2.0 - 1.0) * halfExtents.x),
+            halfExtents.y == 0f ? 0f : (float) ((r.nextDouble() * 2.0 - 1.0) * halfExtents.y),
+            halfExtents.z == 0f ? 0f : (float) ((r.nextDouble() * 2.0 - 1.0) * halfExtents.z));
     }
 
     /** Returns a normalised vector from {@code from}'s chest to {@code to}'s chest, scaled by {@code scalar}. */

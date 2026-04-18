@@ -24,6 +24,14 @@ public enum VolumeType {
         public Volume createVolume() {
             return new CapsuleVolume();
         }
+    },
+
+    /** Control-point trajectory — used with {@code ControlPointTrajectory}. Allocates {@link ObbVolume}. */
+    CTRL_POINT {
+        @Override
+        public Volume createVolume() {
+            return new ObbVolume();
+        }
     };
 
     /**

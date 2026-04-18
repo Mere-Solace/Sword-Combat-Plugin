@@ -54,6 +54,33 @@ public final class BezierUtil {
     }
 
     /**
+     * Evaluates a cubic Bézier curve at parameter {@code t} using four JOML {@link Vector3f} points.
+     *
+     * <p>Points follow the standard Bézier order: {@code p0} is the start endpoint,
+     * {@code p1} and {@code p2} are the interior tangent handles, and {@code p3} is
+     * the end endpoint.</p>
+     *
+     * @param p0 start endpoint
+     * @param p1 first interior control point
+     * @param p2 second interior control point
+     * @param p3 end endpoint
+     * @param t  normalized parameter in [0, 1]
+     * @return the interpolated point on the curve
+     */
+    public static Vector3f cubicBezier(Vector3f p0, Vector3f p1, Vector3f p2, Vector3f p3, float t) {
+        float mt = 1f - t;
+        float mt2 = mt * mt;
+        float mt3 = mt2 * mt;
+        float t2 = t * t;
+        float t3 = t2 * t;
+        return new Vector3f(
+            mt3 * p0.x + 3f * mt2 * t * p1.x + 3f * mt * t2 * p2.x + t3 * p3.x,
+            mt3 * p0.y + 3f * mt2 * t * p1.y + 3f * mt * t2 * p2.y + t3 * p3.y,
+            mt3 * p0.z + 3f * mt2 * t * p1.z + 3f * mt * t2 * p2.z + t3 * p3.z
+        );
+    }
+
+    /**
      * Constructs a cubic Bézier curve function in 3D space.
      * Returns a function mapping parameter {@code t} (from 0 to 1) to a point on the curve
      * using the given start/end points and two control points.
