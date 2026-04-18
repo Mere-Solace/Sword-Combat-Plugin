@@ -65,4 +65,12 @@ public final class SphereDisplay extends ParticleDisplay {
     public String shapeTypeLabel() {
         return "Sphere";
     }
+
+    @Override
+    public SphereDisplay copy() {
+        return new SphereDisplay(anchor,
+            new Vector3f(originOffset), new Vector3f(randomOffsetRange),
+            repeatCount, repeatPeriodTicks, copyParticles(),
+            radius, density, filled);
+    }
 }

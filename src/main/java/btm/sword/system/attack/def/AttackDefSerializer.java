@@ -181,10 +181,15 @@ public final class AttackDefSerializer {
                     if (d != null) displays.add(d);
                 }
             }
-        } else if (map.get("particles") instanceof List<?> legacyList) {
-            for (Object item : legacyList) {
+        } else if (map.get("particles") instanceof List<?> flatList) {
+            // Pre-hierarchy YAML stored particles flat with an inline `offset`
+            // that was always the display's origin offset — lift it into the
+            // wrapping PointDisplay's originOffset.
+            for (Object item : flatList) {
                 if (item instanceof Map<?, ?> pMap) {
-                    displays.add(loadParticleEffect(pMap).toPointDisplay());
+                    Vector3f originOffset = pMap.get("offset") instanceof Map<?, ?> offMap
+                        ? readVector3f(offMap) : null;
+                    displays.add(loadParticleEffect(pMap).toPointDisplay(originOffset));
                 }
             }
         }
@@ -280,18 +285,25 @@ public final class AttackDefSerializer {
     private static ParticleEffect loadParticleEffect(Map<?, ?> map) {
         Particle type = Particle.valueOf(String.valueOf(map.get("type")).toUpperCase());
         int count = map.get("count") instanceof Number n ? n.intValue() : 1;
-        Vector3f offset = map.get("offset") instanceof Map<?, ?> offMap
-            ? readVector3f(offMap) : new Vector3f();
-        float spread = map.get("spread") instanceof Number n ? n.floatValue() : 0.1f;
+        Vector3f spreadOffset;
+        if (map.get("spreadOffset") instanceof Map<?, ?> soMap) {
+            spreadOffset = readVector3f(soMap);
+        } else if (map.get("spread") instanceof Number sn) {
+            float s = sn.floatValue();
+            spreadOffset = new Vector3f(s, s, s);
+        } else {
+            spreadOffset = new Vector3f(0.1f, 0.1f, 0.1f);
+        }
+        double speed = map.get("speed") instanceof Number sn ? sn.doubleValue() : -1.0;
         Particle.DustOptions dust = null;
         if (map.get("dust") instanceof Map<?, ?> dustMap) {
             int r = dustMap.get("r") instanceof Number rn ? rn.intValue() : 255;
             int g = dustMap.get("g") instanceof Number gn ? gn.intValue() : 255;
             int b = dustMap.get("b") instanceof Number bn ? bn.intValue() : 255;
-            float size = dustMap.get("size") instanceof Number sn ? sn.floatValue() : 1.0f;
+            float size = dustMap.get("size") instanceof Number sn2 ? sn2.floatValue() : 1.0f;
             dust = new Particle.DustOptions(Color.fromRGB(r, g, b), size);
         }
-        return new ParticleEffect(type, count, offset, spread, dust);
+        return new ParticleEffect(type, count, spreadOffset, speed, dust);
     }
 
     private static SoundCue loadSoundCue(Map<?, ?> map) {
@@ -508,8 +520,8 @@ public final class AttackDefSerializer {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("type", p.type().name());
         map.put("count", p.count());
-        map.put("offset", vecMap(p.offset()));
-        map.put("spread", (double) p.spread());
+        map.put("spreadOffset", vecMap(p.spreadOffset()));
+        map.put("speed", p.speed());
         if (p.dustOptions() != null) {
             Particle.DustOptions d = p.dustOptions();
             map.put("dust", Map.of(

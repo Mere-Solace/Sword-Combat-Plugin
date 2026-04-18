@@ -100,4 +100,22 @@ public abstract sealed class ParticleDisplay
 
     /** Returns a short identifier of this display's shape type — used in menus. */
     public abstract String shapeTypeLabel();
+
+    /**
+     * Returns a deep copy of this display — all mutable fields (Vector3fs, particle list,
+     * nested Vector3fs inside particles) are freshly allocated so the copy can be mutated
+     * without affecting the source. Used by dev editor menus that work on a draft and
+     * commit back to the session on save.
+     */
+    public abstract ParticleDisplay copy();
+
+    /** Shared helper for subclass {@code copy()} — deep-copies the particle list. */
+    protected final List<ParticleEffect> copyParticles() {
+        List<ParticleEffect> out = new ArrayList<>(particles.size());
+        for (ParticleEffect e : particles) {
+            out.add(new ParticleEffect(e.type(), e.count(),
+                new Vector3f(e.spreadOffset()), e.speed(), e.dustOptions()));
+        }
+        return out;
+    }
 }

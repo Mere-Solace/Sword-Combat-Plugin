@@ -106,4 +106,24 @@ public record VolumeKeyframe(
     public VolumeKeyframe withLinearToNext(boolean linear) {
         return new VolumeKeyframe(t, localPosition, halfExtents, rotation, shape, effect, jump, linear, keyframeType, originRayOffset, localRayOrigin);
     }
+
+    /**
+     * Returns a copy of this keyframe with {@code localPosition} replaced.
+     *
+     * @param pos the new local position
+     * @return a new {@link VolumeKeyframe} identical to this one except for the position
+     */
+    public VolumeKeyframe withLocalPosition(Vector3f pos) {
+        return new VolumeKeyframe(t, pos, halfExtents, rotation, shape, effect, jump, linearToNext, keyframeType, originRayOffset, localRayOrigin);
+    }
+
+    /**
+     * Returns a copy of this keyframe with {@code halfExtents} replaced.
+     *
+     * @param he the new half-extents
+     * @return a new {@link VolumeKeyframe} identical to this one except for the half-extents
+     */
+    public VolumeKeyframe withHalfExtents(Vector3f he) {
+        return new VolumeKeyframe(t, localPosition, he, rotation, shape, effect, jump, linearToNext, keyframeType, originRayOffset, localRayOrigin);
+    }
 }

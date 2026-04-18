@@ -46,4 +46,11 @@ public final class PointDisplay extends ParticleDisplay {
     public String shapeTypeLabel() {
         return "Point";
     }
+
+    @Override
+    public PointDisplay copy() {
+        return new PointDisplay(anchor,
+            new Vector3f(originOffset), new Vector3f(randomOffsetRange),
+            repeatCount, repeatPeriodTicks, copyParticles());
+    }
 }

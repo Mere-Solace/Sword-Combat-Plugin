@@ -1,19 +1,12 @@
 package btm.sword.system.inventory.menu.dev;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
-import org.bukkit.Bukkit;
-import org.bukkit.Color;
 import org.bukkit.Material;
-import org.bukkit.Particle;
-import org.bukkit.inventory.ItemStack;
 import org.joml.Vector3f;
 
-import btm.sword.Sword;
 import btm.sword.system.attack.dev.AttackDevSession;
-import btm.sword.system.attack.simulation.ParticleEffect;
 import btm.sword.system.attack.visuals.CircleDisplay;
 import btm.sword.system.attack.visuals.LineDisplay;
 import btm.sword.system.attack.visuals.OriginAnchor;
@@ -29,7 +22,6 @@ import net.kyori.adventure.text.format.TextDecoration;
 import xyz.xenondevs.invui.gui.Gui;
 import xyz.xenondevs.invui.item.Click;
 import xyz.xenondevs.invui.item.impl.SimpleItem;
-import xyz.xenondevs.invui.window.AnvilWindow;
 import xyz.xenondevs.invui.window.Window;
 
 /**
@@ -41,14 +33,6 @@ import xyz.xenondevs.invui.window.Window;
  * the picker as a shortcut alongside the normal left-click.</p>
  */
 public class ParticleDisplayEditorMenu extends Menu {
-
-    private static final List<ParticleEffect> PRESETS = List.of(
-        new ParticleEffect(Particle.CRIT, 8, new Vector3f(), 0.3f, null),
-        new ParticleEffect(Particle.ENCHANT, 12, new Vector3f(), 0.3f, null),
-        new ParticleEffect(Particle.SOUL_FIRE_FLAME, 5, new Vector3f(), 0.2f, null),
-        new ParticleEffect(Particle.FLASH, 1, new Vector3f(), 0f, null),
-        new ParticleEffect(Particle.DUST, 10, new Vector3f(), 0.2f,
-            new Particle.DustOptions(Color.fromRGB(255, 120, 0), 1.0f)));
 
     private final int kfIndex;
     private final int displayIndex;
@@ -79,6 +63,14 @@ public class ParticleDisplayEditorMenu extends Menu {
             click -> new KeyframeVisualsMenu(swordPlayer).open()
         );
 
+        SimpleItem save = new SimpleItem(
+            new ItemStackBuilder(Material.EMERALD)
+                .name(Component.text("Save", NamedTextColor.GREEN, TextDecoration.BOLD))
+                .lore(List.of(Component.text("Save to attacks/<id>.yml", NamedTextColor.DARK_GRAY)))
+                .build(),
+            click -> AttackEditorMenu.saveAttack(session, swordPlayer)
+        );
+
         SimpleItem info = new SimpleItem(
             new ItemStackBuilder(Material.PAPER)
                 .name(Component.text(display.shapeTypeLabel() + " Display", NamedTextColor.GOLD, TextDecoration.BOLD))
@@ -89,25 +81,14 @@ public class ParticleDisplayEditorMenu extends Menu {
         );
 
         SimpleItem anchor = anchorButton(display);
-        SimpleItem addParticle = new SimpleItem(
+        SimpleItem editParticles = new SimpleItem(
             new ItemStackBuilder(Material.BLAZE_POWDER)
-                .name(Component.text("+ Add Preset Particle", NamedTextColor.GREEN, TextDecoration.BOLD))
-                .lore(List.of(Component.text("Appends a cycling preset.", NamedTextColor.DARK_GRAY)))
+                .name(Component.text("Edit Particles", NamedTextColor.GREEN, TextDecoration.BOLD))
+                .lore(List.of(
+                    Component.text(display.getParticles().size() + " entries", NamedTextColor.GRAY),
+                    Component.text("Open particle list.", NamedTextColor.DARK_GRAY)))
                 .build(),
-            click -> {
-                List<ParticleEffect> updated = new ArrayList<>(display.getParticles());
-                updated.add(PRESETS.get(updated.size() % PRESETS.size()));
-                display.setParticles(updated);
-                open();
-            }
-        );
-        SimpleItem clearParticles = new SimpleItem(
-            new ItemStackBuilder(Material.BARRIER)
-                .name(Component.text("Clear Particles", NamedTextColor.RED, TextDecoration.BOLD)).build(),
-            click -> {
-                display.setParticles(new ArrayList<>());
-                open();
-            }
+            click -> new ParticleListMenu(swordPlayer, kfIndex, displayIndex).open()
         );
         SimpleItem deleteDisplay = new SimpleItem(
             new ItemStackBuilder(Material.TNT)
@@ -149,17 +130,18 @@ public class ParticleDisplayEditorMenu extends Menu {
 
         Gui.Builder<?, ?> builder = Gui.normal()
             .setStructure(
-                "B . I . . a c . D",
+                "B V I . . a c . D",
                 "1 2 3 4 5 6 7 8 9",
                 "q w e r t y u i o",
-                "R r M P p m N . K",
+                "R + M P p m N . K",
                 "z x c v b n , . .",
                 "Z X C V B N < > .")
             .addIngredient('.', BORDER)
             .addIngredient('B', back)
+            .addIngredient('V', save)
             .addIngredient('I', info)
-            .addIngredient('a', addParticle)
-            .addIngredient('c', clearParticles)
+            .addIngredient('a', editParticles)
+            .addIngredient('c', BORDER)
             .addIngredient('D', deleteDisplay)
             .addIngredient('1', offXDec).addIngredient('2', offXDisp).addIngredient('3', offXInc)
             .addIngredient('4', offYDec).addIngredient('5', offYDisp).addIngredient('6', offYInc)
@@ -167,11 +149,11 @@ public class ParticleDisplayEditorMenu extends Menu {
             .addIngredient('q', rndXDec).addIngredient('w', rndXDisp).addIngredient('e', rndXInc)
             .addIngredient('r', rndYDec).addIngredient('t', rndYDisp).addIngredient('y', rndYInc)
             .addIngredient('u', rndZDec).addIngredient('i', rndZDisp).addIngredient('o', rndZInc)
-            .addIngredient('R', rcDec).addIngredient('r', rcDisp).addIngredient('M', rcInc)
+            .addIngredient('R', rcDec).addIngredient('+', rcDisp).addIngredient('M', rcInc)
             .addIngredient('P', pdDec).addIngredient('p', pdDisp).addIngredient('m', pdInc)
             .addIngredient('N', anchor).addIngredient('K', BORDER);
 
-        addShapeRows(builder, display);
+        addShapeRows(builder, display, back, save);
 
         Window.single()
             .setViewer(swordPlayer.player())
@@ -181,59 +163,137 @@ public class ParticleDisplayEditorMenu extends Menu {
             .open();
     }
 
-    private void addShapeRows(Gui.Builder<?, ?> builder, ParticleDisplay display) {
-        if (display instanceof LineDisplay ld) {
-            builder.addIngredient('z', anchorEndButton(ld));
-            builder.addIngredient('x', scalarAnvil("End Off X", ld.getEndOffset().x,
-                Material.RED_DYE, v -> { ld.getEndOffset().x = v; open(); }));
-            builder.addIngredient('c', scalarAnvil("End Off Y", ld.getEndOffset().y,
-                Material.LIME_DYE, v -> { ld.getEndOffset().y = v; open(); }));
-            builder.addIngredient('v', scalarAnvil("End Off Z", ld.getEndOffset().z,
-                Material.LIGHT_BLUE_DYE, v -> { ld.getEndOffset().z = v; open(); }));
-            builder.addIngredient('b', scalarAnvil("End Rnd X", ld.getEndRandomRange().x,
-                Material.PINK_DYE, v -> { ld.getEndRandomRange().x = Math.max(0f, v); open(); }));
-            builder.addIngredient('n', scalarAnvil("End Rnd Y", ld.getEndRandomRange().y,
-                Material.GREEN_DYE, v -> { ld.getEndRandomRange().y = Math.max(0f, v); open(); }));
-            builder.addIngredient(',', scalarAnvil("End Rnd Z", ld.getEndRandomRange().z,
-                Material.CYAN_DYE, v -> { ld.getEndRandomRange().z = Math.max(0f, v); open(); }));
-            builder.addIngredient('Z', dec(click -> { ld.setSpacing(Math.max(0.05, ld.getSpacing() - stepFloat(click))); open(); }));
-            builder.addIngredient('X', displayFloatD("Spacing", ld.getSpacing(), Material.STRING, v -> { ld.setSpacing(Math.max(0.05, v)); open(); }));
-            builder.addIngredient('C', inc(click -> { ld.setSpacing(ld.getSpacing() + stepFloat(click)); open(); }));
-            builder.addIngredient('V', BORDER);
-            builder.addIngredient('B', BORDER);
-            builder.addIngredient('N', BORDER);
-            builder.addIngredient('<', BORDER);
-            builder.addIngredient('>', BORDER);
-        } else if (display instanceof SphereDisplay sd) {
-            builder.addIngredient('z', dec(click -> { sd.setRadius(Math.max(0.0, sd.getRadius() - stepFloat(click))); open(); }));
-            builder.addIngredient('x', displayFloatD("Radius", sd.getRadius(), Material.SLIME_BALL, v -> { sd.setRadius(Math.max(0.0, v)); open(); }));
-            builder.addIngredient('c', inc(click -> { sd.setRadius(sd.getRadius() + stepFloat(click)); open(); }));
-            builder.addIngredient('v', dec(click -> { sd.setDensity(Math.max(1, sd.getDensity() - stepInt(click))); open(); }));
-            builder.addIngredient('b', displayInt("Density", sd.getDensity(), Material.GUNPOWDER, v -> { sd.setDensity(Math.max(1, v)); open(); }));
-            builder.addIngredient('n', inc(click -> { sd.setDensity(sd.getDensity() + stepInt(click)); open(); }));
-            builder.addIngredient(',', toggleItem("Filled", sd.isFilled(), click -> { sd.setFilled(!sd.isFilled()); open(); }));
-            builder.addIngredient('Z', BORDER).addIngredient('X', BORDER).addIngredient('C', BORDER);
-            builder.addIngredient('V', BORDER).addIngredient('B', BORDER).addIngredient('N', BORDER);
-            builder.addIngredient('<', BORDER).addIngredient('>', BORDER);
-        } else if (display instanceof CircleDisplay cd) {
-            builder.addIngredient('z', dec(click -> { cd.setOuterRadius(Math.max(0.0, cd.getOuterRadius() - stepFloat(click))); open(); }));
-            builder.addIngredient('x', displayFloatD("Outer", cd.getOuterRadius(), Material.GOLDEN_HOE, v -> { cd.setOuterRadius(Math.max(0.0, v)); open(); }));
-            builder.addIngredient('c', inc(click -> { cd.setOuterRadius(cd.getOuterRadius() + stepFloat(click)); open(); }));
-            builder.addIngredient('v', dec(click -> { cd.setInnerRadius(Math.max(0.0, cd.getInnerRadius() - stepFloat(click))); open(); }));
-            builder.addIngredient('b', displayFloatD("Inner", cd.getInnerRadius(), Material.IRON_HOE, v -> { cd.setInnerRadius(Math.max(0.0, Math.min(v, cd.getOuterRadius()))); open(); }));
-            builder.addIngredient('n', inc(click -> { cd.setInnerRadius(Math.min(cd.getOuterRadius(), cd.getInnerRadius() + stepFloat(click))); open(); }));
-            builder.addIngredient(',', scalarAnvilD("Space Rad", cd.getSpacingRadial(), Material.COMPASS, v -> { cd.setSpacingRadial(Math.max(0.01, v)); open(); }));
-            builder.addIngredient('Z', scalarAnvilD("Space Arc", cd.getSpacingArc(), Material.RECOVERY_COMPASS, v -> { cd.setSpacingArc(Math.max(0.01, v)); open(); }));
-            builder.addIngredient('X', cycleNormal(cd));
-            builder.addIngredient('C', BORDER).addIngredient('V', BORDER).addIngredient('B', BORDER);
-            builder.addIngredient('N', BORDER).addIngredient('<', BORDER).addIngredient('>', BORDER);
-        } else {
-            builder.addIngredient('z', BORDER).addIngredient('x', BORDER).addIngredient('c', BORDER);
-            builder.addIngredient('v', BORDER).addIngredient('b', BORDER).addIngredient('n', BORDER);
-            builder.addIngredient(',', BORDER);
-            builder.addIngredient('Z', BORDER).addIngredient('X', BORDER).addIngredient('C', BORDER);
-            builder.addIngredient('V', BORDER).addIngredient('B', BORDER).addIngredient('N', BORDER);
-            builder.addIngredient('<', BORDER).addIngredient('>', BORDER);
+    private void addShapeRows(Gui.Builder<?, ?> builder, ParticleDisplay display,
+                              SimpleItem back, SimpleItem save) {
+        switch (display) {
+            case LineDisplay ld -> {
+                builder.addIngredient('z', anchorEndButton(ld));
+                builder.addIngredient('x', scalarAnvil("End Off X", ld.getEndOffset().x,
+                    Material.RED_DYE, v -> {
+                        ld.getEndOffset().x = v;
+                        open();
+                    }));
+                builder.addIngredient('c', scalarAnvil("End Off Y", ld.getEndOffset().y,
+                    Material.LIME_DYE, v -> {
+                        ld.getEndOffset().y = v;
+                        open();
+                    }));
+                builder.addIngredient('v', scalarAnvil("End Off Z", ld.getEndOffset().z,
+                    Material.LIGHT_BLUE_DYE, v -> {
+                        ld.getEndOffset().z = v;
+                        open();
+                    }));
+                builder.addIngredient('b', scalarAnvil("End Rnd X", ld.getEndRandomRange().x,
+                    Material.PINK_DYE, v -> {
+                        ld.getEndRandomRange().x = Math.max(0f, v);
+                        open();
+                    }));
+                builder.addIngredient('n', scalarAnvil("End Rnd Y", ld.getEndRandomRange().y,
+                    Material.GREEN_DYE, v -> {
+                        ld.getEndRandomRange().y = Math.max(0f, v);
+                        open();
+                    }));
+                builder.addIngredient(',', scalarAnvil("End Rnd Z", ld.getEndRandomRange().z,
+                    Material.CYAN_DYE, v -> {
+                        ld.getEndRandomRange().z = Math.max(0f, v);
+                        open();
+                    }));
+                builder.addIngredient('Z', dec(click -> {
+                    ld.setSpacing(Math.max(0.05, ld.getSpacing() - stepFloat(click)));
+                    open();
+                }));
+                builder.addIngredient('X', displayFloatD("Spacing", ld.getSpacing(), Material.STRING, v -> {
+                    ld.setSpacing(Math.max(0.05, v));
+                    open();
+                }));
+                builder.addIngredient('C', inc(click -> {
+                    ld.setSpacing(ld.getSpacing() + stepFloat(click));
+                    open();
+                }));
+                builder.addIngredient('V', BORDER);
+                builder.addIngredient('B', BORDER);
+                builder.addIngredient('N', BORDER);
+                builder.addIngredient('<', back);
+                builder.addIngredient('>', save);
+            }
+            case SphereDisplay sd -> {
+                builder.addIngredient('z', dec(click -> {
+                    sd.setRadius(Math.max(0.0, sd.getRadius() - stepFloat(click)));
+                    open();
+                }));
+                builder.addIngredient('x', displayFloatD("Radius", sd.getRadius(), Material.SLIME_BALL, v -> {
+                    sd.setRadius(Math.max(0.0, v));
+                    open();
+                }));
+                builder.addIngredient('c', inc(click -> {
+                    sd.setRadius(sd.getRadius() + stepFloat(click));
+                    open();
+                }));
+                builder.addIngredient('v', dec(click -> {
+                    sd.setDensity(Math.max(1, sd.getDensity() - stepInt(click)));
+                    open();
+                }));
+                builder.addIngredient('b', displayInt("Density", sd.getDensity(), Material.GUNPOWDER, v -> {
+                    sd.setDensity(Math.max(1, v));
+                    open();
+                }));
+                builder.addIngredient('n', inc(click -> {
+                    sd.setDensity(sd.getDensity() + stepInt(click));
+                    open();
+                }));
+                builder.addIngredient(',', toggleItem("Filled", sd.isFilled(), click -> {
+                    sd.setFilled(!sd.isFilled());
+                    open();
+                }));
+                builder.addIngredient('Z', BORDER).addIngredient('X', BORDER).addIngredient('C', BORDER);
+                builder.addIngredient('V', BORDER).addIngredient('B', BORDER).addIngredient('N', BORDER);
+                builder.addIngredient('<', back).addIngredient('>', save);
+            }
+            case CircleDisplay cd -> {
+                builder.addIngredient('z', dec(click -> {
+                    cd.setOuterRadius(Math.max(0.0, cd.getOuterRadius() - stepFloat(click)));
+                    open();
+                }));
+                builder.addIngredient('x', displayFloatD("Outer", cd.getOuterRadius(), Material.GOLDEN_HOE, v -> {
+                    cd.setOuterRadius(Math.max(0.0, v));
+                    open();
+                }));
+                builder.addIngredient('c', inc(click -> {
+                    cd.setOuterRadius(cd.getOuterRadius() + stepFloat(click));
+                    open();
+                }));
+                builder.addIngredient('v', dec(click -> {
+                    cd.setInnerRadius(Math.max(0.0, cd.getInnerRadius() - stepFloat(click)));
+                    open();
+                }));
+                builder.addIngredient('b', displayFloatD("Inner", cd.getInnerRadius(), Material.IRON_HOE, v -> {
+                    cd.setInnerRadius(Math.max(0.0, Math.min(v, cd.getOuterRadius())));
+                    open();
+                }));
+                builder.addIngredient('n', inc(click -> {
+                    cd.setInnerRadius(Math.min(cd.getOuterRadius(), cd.getInnerRadius() + stepFloat(click)));
+                    open();
+                }));
+                builder.addIngredient(',', scalarAnvilD("Space Rad", cd.getSpacingRadial(), Material.COMPASS, v -> {
+                    cd.setSpacingRadial(Math.max(0.01, v));
+                    open();
+                }));
+                builder.addIngredient('Z', scalarAnvilD("Space Arc", cd.getSpacingArc(), Material.RECOVERY_COMPASS, v -> {
+                    cd.setSpacingArc(Math.max(0.01, v));
+                    open();
+                }));
+                builder.addIngredient('X', cycleNormal(cd));
+                builder.addIngredient('C', BORDER).addIngredient('V', BORDER).addIngredient('B', BORDER);
+                builder.addIngredient('N', BORDER).addIngredient('<', back).addIngredient('>', save);
+            }
+            case null, default -> {
+                builder.addIngredient('z', BORDER).addIngredient('x', BORDER).addIngredient('c', BORDER);
+                builder.addIngredient('v', BORDER).addIngredient('b', BORDER).addIngredient('n', BORDER);
+                builder.addIngredient(',', BORDER);
+                builder.addIngredient('Z', BORDER).addIngredient('X', BORDER).addIngredient('C', BORDER);
+                builder.addIngredient('V', BORDER).addIngredient('B', BORDER).addIngredient('N', BORDER);
+                builder.addIngredient('<', back).addIngredient('>', save);
+            }
         }
     }
 
@@ -311,7 +371,6 @@ public class ParticleDisplayEditorMenu extends Menu {
             case OriginAnchor.KeyframeIndex ki -> "KF #" + ki.index();
             case OriginAnchor.EntityBodyPoint ebp -> "Body " + ebp.point().name();
             case OriginAnchor.FireLockedOrigin ignored -> "Locked";
-            default -> "?";
         };
     }
 
@@ -342,7 +401,7 @@ public class ParticleDisplayEditorMenu extends Menu {
                     .append(Component.text(String.format("%.2f", value), NamedTextColor.GOLD, TextDecoration.BOLD)))
                 .lore(List.of(Component.text("Click to type a value.", NamedTextColor.DARK_GRAY)))
                 .build(),
-            click -> openFloatAnvil(label, String.format("%.2f", value), onInput));
+            click -> openFloatAnvil(label, value, onInput, this::open));
     }
 
     private SimpleItem displayFloatD(String label, double value, Material mat, Consumer<Double> onInput) {
@@ -352,7 +411,7 @@ public class ParticleDisplayEditorMenu extends Menu {
                     .append(Component.text(String.format("%.3f", value), NamedTextColor.GOLD, TextDecoration.BOLD)))
                 .lore(List.of(Component.text("Click to type a value.", NamedTextColor.DARK_GRAY)))
                 .build(),
-            click -> openDoubleAnvil(label, String.format("%.3f", value), onInput));
+            click -> openDoubleAnvil(label, value, onInput, this::open));
     }
 
     private SimpleItem displayInt(String label, int value, Material mat, Consumer<Integer> onInput) {
@@ -362,7 +421,7 @@ public class ParticleDisplayEditorMenu extends Menu {
                     .append(Component.text(String.valueOf(value), NamedTextColor.GOLD, TextDecoration.BOLD)))
                 .lore(List.of(Component.text("Click to type a value.", NamedTextColor.DARK_GRAY)))
                 .build(),
-            click -> openIntAnvil(label, String.valueOf(value), onInput));
+            click -> openIntAnvil(label, value, onInput, this::open));
     }
 
     private SimpleItem scalarAnvil(String label, float value, Material mat, Consumer<Float> onInput) {
@@ -371,44 +430,6 @@ public class ParticleDisplayEditorMenu extends Menu {
 
     private SimpleItem scalarAnvilD(String label, double value, Material mat, Consumer<Double> onInput) {
         return displayFloatD(label, value, mat, onInput);
-    }
-
-    private void openFloatAnvil(String label, String currentVal, Consumer<Float> onInput) {
-        openAnvil(label, currentVal, text -> {
-            try { onInput.accept(Float.parseFloat(text.trim())); } catch (NumberFormatException ignored) { }
-        });
-    }
-
-    private void openDoubleAnvil(String label, String currentVal, Consumer<Double> onInput) {
-        openAnvil(label, currentVal, text -> {
-            try { onInput.accept(Double.parseDouble(text.trim())); } catch (NumberFormatException ignored) { }
-        });
-    }
-
-    private void openIntAnvil(String label, String currentVal, Consumer<Integer> onInput) {
-        openAnvil(label, currentVal, text -> {
-            try { onInput.accept(Integer.parseInt(text.trim())); } catch (NumberFormatException ignored) { }
-        });
-    }
-
-    private void openAnvil(String label, String currentVal, Consumer<String> handler) {
-        ItemStack inputItem = new ItemStackBuilder(Material.PAPER)
-            .name(Component.text(currentVal, NamedTextColor.WHITE)).build();
-        Gui gui = Gui.normal()
-            .setStructure("X # #")
-            .addIngredient('X', new SimpleItem(inputItem))
-            .addIngredient('#', BORDER)
-            .build();
-        AnvilWindow.single()
-            .setViewer(swordPlayer.player())
-            .setTitle(label)
-            .setGui(gui)
-            .addRenameHandler(text -> {
-                handler.accept(text);
-                Bukkit.getScheduler().runTask(Sword.getInstance(), this::open);
-            })
-            .build()
-            .open();
     }
 
     private static int stepInt(Click click) {

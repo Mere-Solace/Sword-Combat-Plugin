@@ -5,6 +5,10 @@ import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import org.bukkit.Material;
@@ -15,6 +19,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import btm.sword.config.Config;
 import btm.sword.config.ConfigManager;
@@ -27,6 +32,7 @@ import btm.sword.utility.sound.SoundUtil;
 import btm.sword.utility.sound.SwordSoundType;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import xyz.xenondevs.invui.gui.PagedGui;
 import xyz.xenondevs.invui.gui.structure.Markers;
 import xyz.xenondevs.invui.item.Item;
@@ -37,82 +43,115 @@ import xyz.xenondevs.invui.item.impl.SimpleItem;
 import xyz.xenondevs.invui.window.Window;
 
 /**
- * Paged browser for selecting an enum value for a {@link Config.ConfigEntry}.
- * <p>
- * All constants of the entry's enum type are shown as individual items.
- * The currently selected value is highlighted with a green checkmark prefix.
- * Left-click selects a value and returns to the parent menu. For
- * {@link SwordSoundType} entries the browser first shows a prefix category page
- * (AMBIENT, BLOCK, ENTITY, …); right-clicking a sound item previews it.
- * </p>
+ * Paged browser for selecting an enum value.
+ *
+ * <p>Two entry points:</p>
+ * <ul>
+ *   <li>{@link #EnumSelectionMenu(SwordPlayer, Config.ConfigEntry, Runnable)} — adapter
+ *       for {@link Config.ConfigEntry}. Picks a value and writes it through
+ *       {@link ConfigManager#setValue}. Used by the config GUI.</li>
+ *   <li>{@link #forEnum(SwordPlayer, Class, String, Supplier, Consumer, Runnable,
+ *       EnumPickerOptions)} — generic factory for any enum. Caller supplies current
+ *       value, commit callback, and optional presentation hooks.</li>
+ * </ul>
+ *
+ * <p>When {@link EnumPickerOptions#groupKey()} is non-null (or the legacy path is
+ * picking a {@link SwordSoundType}) a two-level browser is shown: group index first,
+ * then the members of the chosen group. Right-clicking a value invokes
+ * {@link EnumPickerOptions#onPreview()} if present.</p>
  */
 public class EnumSelectionMenu extends Menu {
 
-    private final Config.ConfigEntry<?> entry;
-    private final Runnable reopenParent;
-    /** Non-null only when showing a filtered sub-list of SoundType values. */
-    private final String soundPrefix;
+    private final PickContract contract;
+    /** Non-null only when showing a filtered sub-list of one group. */
+    private final String groupFilter;
     /** Non-null when a name filter is active. */
-    private final String filter;
+    private final String nameFilter;
 
     /**
-     * Opens the top-level browser for the entry's enum type. For {@link SwordSoundType}
-     * this shows prefix categories; for all other enums it shows a flat value list.
+     * Adapter constructor: wraps a {@link Config.ConfigEntry} in a {@link PickContract}
+     * and opens the picker. Used by the in-game config GUI.
      */
     public EnumSelectionMenu(SwordPlayer player, Config.ConfigEntry<?> entry, Runnable reopenParent) {
-        this(player, entry, reopenParent, null, null);
+        this(player, contractFromConfigEntry(player, entry, reopenParent), null, null);
     }
 
-    private EnumSelectionMenu(SwordPlayer player, Config.ConfigEntry<?> entry,
-                               Runnable reopenParent, String soundPrefix, String filter) {
+    private EnumSelectionMenu(SwordPlayer player, PickContract contract,
+                              @Nullable String groupFilter, @Nullable String nameFilter) {
         super(player);
-        this.entry = entry;
-        this.reopenParent = reopenParent;
-        this.soundPrefix = soundPrefix;
-        this.filter = filter;
+        this.contract = contract;
+        this.groupFilter = groupFilter;
+        this.nameFilter = nameFilter;
+    }
+
+    /**
+     * Opens an enum picker for any enum type. All presentation hooks are
+     * carried by {@code options}; pass {@link EnumPickerOptions#none()} for defaults.
+     *
+     * @param player       the player viewing the menu
+     * @param enumType     the enum class being picked
+     * @param titlePrefix  header shown in the window title
+     * @param current      supplies the currently-selected constant (highlighted with a check)
+     * @param onPick       invoked on selection; runs before {@code reopenParent}
+     * @param reopenParent invoked to return to the parent menu after pick/back
+     * @param options      optional presentation hooks; {@code null} treated as defaults
+     * @param <E>          the enum type
+     */
+    public static <E extends Enum<E>> EnumSelectionMenu forEnum(
+            SwordPlayer player,
+            Class<E> enumType,
+            String titlePrefix,
+            Supplier<E> current,
+            Consumer<E> onPick,
+            Runnable reopenParent,
+            @Nullable EnumPickerOptions<E> options) {
+        PickContract c = contractFromGeneric(enumType, titlePrefix, current, onPick, reopenParent,
+            options != null ? options : EnumPickerOptions.none());
+        return new EnumSelectionMenu(player, c, null, null);
     }
 
     @Override
     public void open() {
-        if (entry.type() == SwordSoundType.class && soundPrefix == null) {
-            openSoundPrefixBrowser();
+        if (contract.groupKey != null && groupFilter == null) {
+            openGroupBrowser();
         } else {
             openValueList();
         }
     }
 
     // -------------------------------------------------------------------------
-    //  Sound prefix browser
+    //  Group (top-level) browser
     // -------------------------------------------------------------------------
 
-    private void openSoundPrefixBrowser() {
+    private void openGroupBrowser() {
         Player player = swordPlayer.player();
 
-        // Group SoundType constants by their first underscore-delimited segment
-        Map<String, List<SwordSoundType>> byPrefix = new LinkedHashMap<>();
-        for (SwordSoundType st : SwordSoundType.values()) {
-            String prefix = prefixOf(st.name());
-            byPrefix.computeIfAbsent(prefix, k -> new ArrayList<>()).add(st);
+        Map<String, List<Enum<?>>> byGroup = new LinkedHashMap<>();
+        for (Enum<?> c : contract.values.get()) {
+            if (contract.filter != null && !contract.filter.test(c)) continue;
+            String g = contract.groupKey.apply(c);
+            byGroup.computeIfAbsent(g, k -> new ArrayList<>()).add(c);
         }
 
-        Map<String, List<SwordSoundType>> displayPrefixes = filter == null ? byPrefix
-            : byPrefix.entrySet().stream()
-                .filter(e -> e.getKey().toLowerCase().contains(filter))
+        Map<String, List<Enum<?>>> displayGroups = nameFilter == null ? byGroup
+            : byGroup.entrySet().stream()
+                .filter(e -> e.getKey().toLowerCase().contains(nameFilter))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue,
                     (a, b) -> a, LinkedHashMap::new));
 
-        List<Item> prefixItems = new ArrayList<>();
-        for (Map.Entry<String, List<SwordSoundType>> e : displayPrefixes.entrySet()) {
-            String prefix = e.getKey();
-            List<SwordSoundType> sounds = e.getValue();
-            Material mat = soundPrefixMaterial(prefix);
+        List<Item> groupItems = new ArrayList<>();
+        for (Map.Entry<String, List<Enum<?>>> e : displayGroups.entrySet()) {
+            String groupName = e.getKey();
+            List<Enum<?>> members = e.getValue();
+            Material mat = contract.groupMaterial != null
+                ? contract.groupMaterial.apply(groupName) : Material.NOTE_BLOCK;
 
-            prefixItems.add(new SimpleItem(
+            groupItems.add(new SimpleItem(
                 new ItemStackBuilder(mat)
-                    .name(Component.text(prefix, NamedTextColor.GOLD))
-                    .lore(List.of(Component.text(sounds.size() + " sounds", NamedTextColor.GRAY)))
+                    .name(Component.text(groupName, NamedTextColor.GOLD))
+                    .lore(List.of(Component.text(members.size() + " items", NamedTextColor.GRAY)))
                     .build(),
-                click -> new EnumSelectionMenu(swordPlayer, entry, reopenParent, prefix, null).open()
+                click -> new EnumSelectionMenu(swordPlayer, contract, groupName, null).open()
             ));
         }
 
@@ -120,34 +159,12 @@ public class EnumSelectionMenu extends Menu {
             new ItemStackBuilder(Material.COPPER_TRAPDOOR)
                 .name(Component.text("Back", NamedTextColor.GRAY))
                 .build(),
-            click -> reopenParent.run()
+            click -> contract.reopenParent.run()
         );
 
-        SimpleItem search = new SimpleItem(
-            new ItemStackBuilder(filter != null ? Material.FILLED_MAP : Material.MAP)
-                .name(filter != null
-                    ? Component.text("Filter: " + filter, NamedTextColor.YELLOW)
-                    : Component.text("Search", NamedTextColor.GRAY))
-                .lore(filter != null
-                    ? List.of(Component.text("Shift-click to clear", NamedTextColor.DARK_GRAY))
-                    : List.of(Component.text("Click to filter by name", NamedTextColor.DARK_GRAY)))
-                .build(),
-            click -> {
-                if (click.getClickType().isShiftClick() && filter != null) {
-                    new EnumSelectionMenu(swordPlayer, entry, reopenParent, null, null).open();
-                    return;
-                }
-                ChatInputCapture.prompt(swordPlayer.player(),
-                    Component.text("Filter categories (keyword or 'cancel'):", NamedTextColor.YELLOW),
-                    input -> {
-                        if (input.equalsIgnoreCase("cancel")) {
-                            new EnumSelectionMenu(swordPlayer, entry, reopenParent, null, null).open();
-                        } else {
-                            new EnumSelectionMenu(swordPlayer, entry, reopenParent, null, input.toLowerCase()).open();
-                        }
-                    });
-            }
-        );
+        SimpleItem search = buildSearchItem(() -> new EnumSelectionMenu(swordPlayer, contract, null, null).open(),
+            input -> new EnumSelectionMenu(swordPlayer, contract, null, input.toLowerCase()).open(),
+            "Filter categories (keyword or 'cancel'):");
 
         PagedGui<Item> gui = PagedGui.items()
             .setStructure(
@@ -163,12 +180,13 @@ public class EnumSelectionMenu extends Menu {
             .addIngredient('B', back)
             .addIngredient('<', new PreviousItem())
             .addIngredient('>', new ForwardItem())
-            .setContent(prefixItems)
+            .setContent(groupItems)
             .build();
 
-        String title = filter != null
-            ? entry.path() + "  |  SoundType  [" + filter + "]  (" + displayPrefixes.size() + "/" + byPrefix.size() + ")"
-            : entry.path() + "  |  SoundType — " + byPrefix.size() + " categories";
+        String title = nameFilter != null
+            ? contract.titlePrefix + "  [" + nameFilter + "]  ("
+                + displayGroups.size() + "/" + byGroup.size() + ")"
+            : contract.titlePrefix + " — " + byGroup.size() + " categories";
 
         Window.single()
             .setViewer(player)
@@ -179,42 +197,30 @@ public class EnumSelectionMenu extends Menu {
     }
 
     // -------------------------------------------------------------------------
-    //  Flat value list (all enums, or filtered SoundType by prefix)
+    //  Flat value list (all constants, or filtered by a group)
     // -------------------------------------------------------------------------
 
     private void openValueList() {
         Player player = swordPlayer.player();
-        FileConfiguration config = ConfigManager.getInstance().getConfig();
-        Class<?> type = entry.type();
-        boolean isSoundType = type == SwordSoundType.class;
+        Enum<?> currentValue = contract.current.get();
+        boolean hasPreview = contract.onPreview != null;
 
-        // Determine currently stored value name for selection highlight
-        String stored = config.getString(entry.path());
-        String currentName = stored != null ? stored.toUpperCase()
-            : (entry.defaultValue() instanceof Enum<?> e ? e.name() : "");
-
-        // Filter constants: by sound prefix, then by item validity for Material, then by search filter.
-        // For Material, use Registry.MATERIAL to exclude legacy (LEGACY_*) entries.
-        List<Object> allNonLegacy = type == Material.class
-            ? new ArrayList<>(Registry.MATERIAL.stream().toList())
-            : Arrays.asList(type.getEnumConstants());
-        List<Object> constants = allNonLegacy.stream()
-            .filter(c -> soundPrefix == null || prefixOf(((Enum<?>) c).name()).equals(soundPrefix))
-            .filter(c -> type != Material.class || (((Material) c).isItem() && !((Material) c).isAir()))
-            .filter(c -> filter == null || ((Enum<?>) c).name().toLowerCase().contains(filter))
+        List<? extends Enum<?>> constants = contract.values.get().stream()
+            .filter(c -> contract.filter == null || contract.filter.test(c))
+            .filter(c -> groupFilter == null
+                || (contract.groupKey != null && contract.groupKey.apply(c).equals(groupFilter)))
+            .filter(c -> nameFilter == null || c.name().toLowerCase().contains(nameFilter))
             .toList();
 
         List<Item> items = new ArrayList<>(constants.size());
-        for (Object constant : constants) {
-            Enum<?> value = (Enum<?>) constant;
-            boolean selected = value.name().equalsIgnoreCase(currentName);
-            items.add(buildValueItem(value, selected, isSoundType));
+        for (Enum<?> value : constants) {
+            boolean selected = currentValue != null && value == currentValue;
+            items.add(buildValueItem(value, selected, hasPreview));
         }
 
-        // Back: go to prefix browser for SoundType, otherwise to parent
-        Runnable goBack = isSoundType
-            ? () -> new EnumSelectionMenu(swordPlayer, entry, reopenParent).open()
-            : reopenParent;
+        Runnable goBack = contract.groupKey != null
+            ? () -> new EnumSelectionMenu(swordPlayer, contract, null, null).open()
+            : contract.reopenParent;
 
         SimpleItem back = new SimpleItem(
             new ItemStackBuilder(Material.COPPER_TRAPDOOR)
@@ -223,42 +229,21 @@ public class EnumSelectionMenu extends Menu {
             click -> goBack.run()
         );
 
-        SimpleItem search = new SimpleItem(
-            new ItemStackBuilder(filter != null ? Material.FILLED_MAP : Material.MAP)
-                .name(filter != null
-                    ? Component.text("Filter: " + filter, NamedTextColor.YELLOW)
-                    : Component.text("Search", NamedTextColor.GRAY))
-                .lore(filter != null
-                    ? List.of(Component.text("Shift-click to clear", NamedTextColor.DARK_GRAY))
-                    : List.of(Component.text("Click to filter by name", NamedTextColor.DARK_GRAY)))
-                .build(),
-            click -> {
-                if (click.getClickType().isShiftClick() && filter != null) {
-                    new EnumSelectionMenu(swordPlayer, entry, reopenParent, soundPrefix, null).open();
-                    return;
-                }
-                ChatInputCapture.prompt(swordPlayer.player(),
-                    Component.text("Filter values (keyword or 'cancel'):", NamedTextColor.YELLOW),
-                    input -> {
-                        if (input.equalsIgnoreCase("cancel")) {
-                            new EnumSelectionMenu(swordPlayer, entry, reopenParent, soundPrefix, null).open();
-                        } else {
-                            new EnumSelectionMenu(swordPlayer, entry, reopenParent, soundPrefix, input.toLowerCase()).open();
-                        }
-                    });
-            }
-        );
+        SimpleItem search = buildSearchItem(
+            () -> new EnumSelectionMenu(swordPlayer, contract, groupFilter, null).open(),
+            input -> new EnumSelectionMenu(swordPlayer, contract, groupFilter, input.toLowerCase()).open(),
+            "Filter values (keyword or 'cancel'):");
 
-        int totalInScope = (int) allNonLegacy.stream()
-            .filter(c -> soundPrefix == null || prefixOf(((Enum<?>) c).name()).equals(soundPrefix))
-            .filter(c -> type != Material.class || (((Material) c).isItem() && !((Material) c).isAir()))
+        int totalInScope = (int) contract.values.get().stream()
+            .filter(c -> contract.filter == null || contract.filter.test(c))
+            .filter(c -> groupFilter == null
+                || (contract.groupKey != null && contract.groupKey.apply(c).equals(groupFilter)))
             .count();
-        String title = filter != null
-            ? entry.path() + "  |  " + (soundPrefix != null ? soundPrefix : type.getSimpleName())
-                + "  [" + filter + "]  (" + constants.size() + "/" + totalInScope + ")"
-            : soundPrefix != null
-                ? entry.path() + "  |  " + soundPrefix + " (" + constants.size() + ")"
-                : entry.path() + "  |  " + type.getSimpleName() + " (" + constants.size() + ")";
+        String scopeLabel = groupFilter != null ? groupFilter : contract.enumType.getSimpleName();
+        String title = nameFilter != null
+            ? contract.titlePrefix + "  |  " + scopeLabel + "  [" + nameFilter + "]  ("
+                + constants.size() + "/" + totalInScope + ")"
+            : contract.titlePrefix + "  |  " + scopeLabel + " (" + constants.size() + ")";
 
         PagedGui<Item> gui = PagedGui.items()
             .setStructure(
@@ -286,24 +271,27 @@ public class EnumSelectionMenu extends Menu {
     }
 
     // -------------------------------------------------------------------------
-    //  Item builder per enum constant
+    //  Item builders & helpers
     // -------------------------------------------------------------------------
 
-    private Item buildValueItem(Enum<?> value, boolean selected, boolean isSoundType) {
-        Material mat = resolveItemMaterial(value);
+    private Item buildValueItem(Enum<?> value, boolean selected, boolean hasPreview) {
+        Material mat = contract.material != null ? contract.material.apply(value)
+            : resolveDefaultMaterial(value);
+        String labelText = contract.label != null ? contract.label.apply(value) : value.name();
 
         return new AbstractItem() {
             @Override
             public ItemProvider getItemProvider() {
                 Component name = selected
-                    ? Component.text("✔ ", NamedTextColor.GREEN).append(Component.text(value.name(), NamedTextColor.WHITE))
-                    : Component.text(value.name(), NamedTextColor.GRAY);
-                List<Component> lore = new java.util.ArrayList<>();
+                    ? Component.text("\u2714 ", NamedTextColor.GREEN)
+                        .append(Component.text(labelText, NamedTextColor.WHITE))
+                    : Component.text(labelText, NamedTextColor.GRAY);
+                List<Component> lore = new ArrayList<>();
                 if (selected) {
                     lore.add(Component.text("(currently selected)", NamedTextColor.GREEN)
-                        .decorate(net.kyori.adventure.text.format.TextDecoration.ITALIC));
+                        .decorate(TextDecoration.ITALIC));
                 }
-                if (isSoundType) {
+                if (hasPreview) {
                     lore.add(Component.text("L-click: select", NamedTextColor.DARK_GRAY));
                     lore.add(Component.text("R-click: preview", NamedTextColor.DARK_GRAY));
                 } else {
@@ -313,24 +301,167 @@ public class EnumSelectionMenu extends Menu {
             }
 
             @Override
-            @SuppressWarnings({"unchecked", "rawtypes"})
-            public void handleClick(@NotNull ClickType clickType, @NotNull Player p, @NotNull InventoryClickEvent event) {
-                if (isSoundType && clickType == ClickType.RIGHT) {
-                    SoundUtil.playSound(p, (SwordSoundType) value, 1.0f, 1.0f);
+            public void handleClick(@NotNull ClickType clickType, @NotNull Player p,
+                                    @NotNull InventoryClickEvent event) {
+                if (hasPreview && clickType == ClickType.RIGHT) {
+                    contract.onPreview.accept(value);
                     return;
                 }
-                ConfigManager.getInstance().setValue((Config.ConfigEntry) entry, value);
-                swordPlayer.message(Component.text("Set ", NamedTextColor.GREEN)
-                    .append(Component.text(entry.path(), NamedTextColor.WHITE))
-                    .append(Component.text(" = ", NamedTextColor.GREEN))
-                    .append(Component.text(value.name(), NamedTextColor.YELLOW)));
-                reopenParent.run();
+                contract.onPick.accept(value);
+                contract.reopenParent.run();
             }
         };
     }
 
+    private SimpleItem buildSearchItem(Runnable onClear, Consumer<String> onInput, String prompt) {
+        return new SimpleItem(
+            new ItemStackBuilder(nameFilter != null ? Material.FILLED_MAP : Material.MAP)
+                .name(nameFilter != null
+                    ? Component.text("Filter: " + nameFilter, NamedTextColor.YELLOW)
+                    : Component.text("Search", NamedTextColor.GRAY))
+                .lore(nameFilter != null
+                    ? List.of(Component.text("Shift-click to clear", NamedTextColor.DARK_GRAY))
+                    : List.of(Component.text("Click to filter by name", NamedTextColor.DARK_GRAY)))
+                .build(),
+            click -> {
+                if (click.getClickType().isShiftClick() && nameFilter != null) {
+                    onClear.run();
+                    return;
+                }
+                ChatInputCapture.prompt(swordPlayer.player(),
+                    Component.text(prompt, NamedTextColor.YELLOW),
+                    input -> {
+                        if (input.equalsIgnoreCase("cancel")) onClear.run();
+                        else onInput.accept(input);
+                    });
+            }
+        );
+    }
+
     // -------------------------------------------------------------------------
-    //  Helpers
+    //  PickContract — internal abstraction over both entry points
+    // -------------------------------------------------------------------------
+
+    private static final class PickContract {
+        final Class<? extends Enum<?>> enumType;
+        final String titlePrefix;
+        final Supplier<? extends Enum<?>> current;
+        final Consumer<Enum<?>> onPick;
+        final Runnable reopenParent;
+        final Supplier<List<? extends Enum<?>>> values;
+        @Nullable final Predicate<Enum<?>> filter;
+        @Nullable final Function<Enum<?>, String> label;
+        @Nullable final Consumer<Enum<?>> onPreview;
+        @Nullable final Function<Enum<?>, String> groupKey;
+        @Nullable final Function<String, Material> groupMaterial;
+        @Nullable final Function<Enum<?>, Material> material;
+
+        PickContract(Class<? extends Enum<?>> enumType, String titlePrefix,
+                     Supplier<? extends Enum<?>> current, Consumer<Enum<?>> onPick,
+                     Runnable reopenParent, Supplier<List<? extends Enum<?>>> values,
+                     @Nullable Predicate<Enum<?>> filter,
+                     @Nullable Function<Enum<?>, String> label,
+                     @Nullable Consumer<Enum<?>> onPreview,
+                     @Nullable Function<Enum<?>, String> groupKey,
+                     @Nullable Function<String, Material> groupMaterial,
+                     @Nullable Function<Enum<?>, Material> material) {
+            this.enumType = enumType;
+            this.titlePrefix = titlePrefix;
+            this.current = current;
+            this.onPick = onPick;
+            this.reopenParent = reopenParent;
+            this.values = values;
+            this.filter = filter;
+            this.label = label;
+            this.onPreview = onPreview;
+            this.groupKey = groupKey;
+            this.groupMaterial = groupMaterial;
+            this.material = material;
+        }
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private static PickContract contractFromConfigEntry(SwordPlayer player,
+                                                        Config.ConfigEntry<?> entry,
+                                                        Runnable reopenParent) {
+        Class<? extends Enum<?>> type = (Class<? extends Enum<?>>) entry.type();
+        boolean isMaterial = type == Material.class;
+        boolean isSoundType = type == SwordSoundType.class;
+
+        Supplier<List<? extends Enum<?>>> values = isMaterial
+            ? () -> Registry.MATERIAL.stream().toList()
+            : () -> Arrays.asList(type.getEnumConstants());
+
+        Predicate<Enum<?>> filter = isMaterial
+            ? e -> ((Material) e).isItem() && !((Material) e).isAir()
+            : null;
+
+        Supplier<Enum<?>> current = () -> {
+            FileConfiguration config = ConfigManager.getInstance().getConfig();
+            String stored = config.getString(entry.path());
+            String name = stored != null ? stored.toUpperCase()
+                : (entry.defaultValue() instanceof Enum<?> e ? e.name() : null);
+            if (name == null) return null;
+            try {
+                return Enum.valueOf((Class) type, name);
+            } catch (IllegalArgumentException ignored) {
+                return null;
+            }
+        };
+
+        Consumer<Enum<?>> onPick = value -> {
+            ConfigManager.getInstance().setValue((Config.ConfigEntry) entry, value);
+            player.message(Component.text("Set ", NamedTextColor.GREEN)
+                .append(Component.text(entry.path(), NamedTextColor.WHITE))
+                .append(Component.text(" = ", NamedTextColor.GREEN))
+                .append(Component.text(value.name(), NamedTextColor.YELLOW)));
+        };
+
+        Consumer<Enum<?>> onPreview = isSoundType
+            ? v -> SoundUtil.playSound(player.player(), (SwordSoundType) v, 1.0f, 1.0f)
+            : null;
+        Function<Enum<?>, String> groupKey = isSoundType
+            ? v -> prefixOf(v.name())
+            : null;
+        Function<String, Material> groupMaterial = isSoundType
+            ? EnumSelectionMenu::soundPrefixMaterial
+            : null;
+
+        return new PickContract(type, entry.path(), current, onPick, reopenParent, values,
+            filter, null, onPreview, groupKey, groupMaterial,
+            EnumSelectionMenu::resolveDefaultMaterial);
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private static <E extends Enum<E>> PickContract contractFromGeneric(
+            Class<E> enumType, String titlePrefix,
+            Supplier<E> current, Consumer<E> onPick, Runnable reopenParent,
+            EnumPickerOptions<E> options) {
+
+        Supplier<List<? extends Enum<?>>> values =
+            () -> Arrays.asList(enumType.getEnumConstants());
+
+        Predicate<Enum<?>> filter = options.filter() == null ? null
+            : e -> ((Predicate) options.filter()).test(e);
+        Function<Enum<?>, String> label = options.label() == null ? null
+            : e -> ((Function) options.label()).apply(e).toString();
+        Consumer<Enum<?>> onPreview = options.onPreview() == null ? null
+            : e -> ((Consumer) options.onPreview()).accept(e);
+        Function<Enum<?>, String> groupKey = options.groupKey() == null ? null
+            : e -> ((Function) options.groupKey()).apply(e).toString();
+        Function<Enum<?>, Material> material = options.material() == null
+            ? EnumSelectionMenu::resolveDefaultMaterial
+            : e -> (Material) ((Function) options.material()).apply(e);
+
+        return new PickContract(enumType, titlePrefix,
+            (Supplier<? extends Enum<?>>) current,
+            e -> ((Consumer) onPick).accept(e),
+            reopenParent, values, filter, label, onPreview,
+            groupKey, null, material);
+    }
+
+    // -------------------------------------------------------------------------
+    //  Default material-resolution helpers
     // -------------------------------------------------------------------------
 
     /** Returns the first underscore-delimited segment of an enum constant name. */
@@ -359,13 +490,11 @@ public class EnumSelectionMenu extends Menu {
     }
 
     /**
-     * Picks the display material for a given enum constant.
-     * {@link Material} constants use themselves; {@link SwordSoundType} dispatches to
-     * {@link #soundTypeMaterial(SwordSoundType)} for prefix-aware matching; {@link Particle}
-     * constants use {@link #particleMaterial(Particle)} for keyword-based matching;
-     * everything else uses paper.
+     * Picks a default display material for any enum constant. {@link Material} self-maps
+     * (filtered to items), {@link SwordSoundType} uses prefix-based matching, {@link Particle}
+     * uses keyword matching, everything else falls back to paper.
      */
-    private static Material resolveItemMaterial(Enum<?> value) {
+    private static Material resolveDefaultMaterial(Enum<?> value) {
         if (value instanceof Material m) return m.isItem() && !m.isAir() ? m : Material.PAPER;
         if (value instanceof SwordSoundType st) return soundTypeMaterial(st);
         if (value instanceof Particle p) return particleMaterial(p);
@@ -422,11 +551,11 @@ public class EnumSelectionMenu extends Menu {
         String rest = name.substring("BLOCK_".length());
         String[] parts = rest.split("_");
         for (int len = parts.length - 1; len >= 1; len--) {
-            String candidate = String.join("_", java.util.Arrays.copyOf(parts, len));
+            String candidate = String.join("_", Arrays.copyOf(parts, len));
             try {
                 Material mat = Material.valueOf(candidate);
                 if (!mat.isAir() && mat.isItem()) return mat;
-            } catch (IllegalArgumentException ignored) {}
+            } catch (IllegalArgumentException ignored) { }
         }
         return Material.STONE;
     }
@@ -439,11 +568,11 @@ public class EnumSelectionMenu extends Menu {
         String rest = name.substring("ITEM_".length());
         String[] parts = rest.split("_");
         for (int len = parts.length - 1; len >= 1; len--) {
-            String candidate = String.join("_", java.util.Arrays.copyOf(parts, len));
+            String candidate = String.join("_", Arrays.copyOf(parts, len));
             try {
                 Material mat = Material.valueOf(candidate);
                 if (mat.isItem() && !mat.isAir()) return mat;
-            } catch (IllegalArgumentException ignored) {}
+            } catch (IllegalArgumentException ignored) { }
         }
         return Material.CHEST;
     }
@@ -456,10 +585,10 @@ public class EnumSelectionMenu extends Menu {
         String rest = name.substring("ENTITY_".length());
         String[] parts = rest.split("_");
         for (int len = parts.length - 1; len >= 1; len--) {
-            String candidate = String.join("_", java.util.Arrays.copyOf(parts, len)) + "_SPAWN_EGG";
+            String candidate = String.join("_", Arrays.copyOf(parts, len)) + "_SPAWN_EGG";
             try {
                 return Material.valueOf(candidate);
-            } catch (IllegalArgumentException ignored) {}
+            } catch (IllegalArgumentException ignored) { }
         }
         return Material.SKELETON_SKULL;
     }

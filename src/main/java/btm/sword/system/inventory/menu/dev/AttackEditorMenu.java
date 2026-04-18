@@ -727,7 +727,7 @@ public class AttackEditorMenu extends Menu {
                 case POS_Y -> he.y = Math.max(0.05f, he.y + delta);
                 case POS_Z -> he.z = Math.max(0.05f, he.z + delta);
             }
-            return new VolumeKeyframe(kf.t(), kf.localPosition(), he, kf.rotation(), kf.shape(), kf.effect(), kf.jump(), kf.linearToNext(), kf.keyframeType());
+            return kf.withHalfExtents(he);
         } else {
             Vector3f pos = new Vector3f(kf.localPosition());
             switch (axis) {
@@ -735,7 +735,7 @@ public class AttackEditorMenu extends Menu {
                 case POS_Y -> pos.y += delta;
                 case POS_Z -> pos.z += delta;
             }
-            return new VolumeKeyframe(kf.t(), pos, kf.halfExtents(), kf.rotation(), kf.shape(), kf.effect(), kf.jump(), kf.linearToNext(), kf.keyframeType());
+            return kf.withLocalPosition(pos);
         }
     }
 
@@ -795,7 +795,7 @@ public class AttackEditorMenu extends Menu {
             VolumeKeyframe kf = kfs.get(i);
             Vector3f pos = new Vector3f(kf.localPosition());
             pos.x += delta;
-            kfs.set(i, new VolumeKeyframe(kf.t(), pos, kf.halfExtents(), kf.rotation(), kf.shape(), kf.effect(), kf.jump(), kf.linearToNext(), kf.keyframeType()));
+            kfs.set(i, kf.withLocalPosition(pos));
         }
     }
 
@@ -811,7 +811,7 @@ public class AttackEditorMenu extends Menu {
             VolumeKeyframe kf = kfs.get(i);
             Vector3f pos = new Vector3f(kf.localPosition());
             pos.y += delta;
-            kfs.set(i, new VolumeKeyframe(kf.t(), pos, kf.halfExtents(), kf.rotation(), kf.shape(), kf.effect(), kf.jump(), kf.linearToNext(), kf.keyframeType()));
+            kfs.set(i, kf.withLocalPosition(pos));
         }
     }
 
@@ -827,7 +827,7 @@ public class AttackEditorMenu extends Menu {
             VolumeKeyframe kf = kfs.get(i);
             Vector3f pos = new Vector3f(kf.localPosition());
             pos.z += delta;
-            kfs.set(i, new VolumeKeyframe(kf.t(), pos, kf.halfExtents(), kf.rotation(), kf.shape(), kf.effect(), kf.jump(), kf.linearToNext(), kf.keyframeType()));
+            kfs.set(i, kf.withLocalPosition(pos));
         }
     }
 
@@ -891,6 +891,17 @@ public class AttackEditorMenu extends Menu {
      * @param session the active editing session
      */
     private void save(AttackDevSession session) {
+        saveAttack(session, swordPlayer);
+    }
+
+    /**
+     * Builds the current attack, registers it in {@link AttackRegistry}, and writes it to
+     * {@code plugins/sword/attacks/<id>.yml}. Callable from any sub-menu in this package.
+     *
+     * @param session the active editing session
+     * @param player  the player to send feedback messages to
+     */
+    static void saveAttack(AttackDevSession session, SwordPlayer player) {
         try {
             AttackDef def = session.buildCurrentAttack();
             AttackRegistry.register(def);
@@ -900,11 +911,11 @@ public class AttackEditorMenu extends Menu {
             File file = new File(attacksDir, def.getId() + ".yml");
             AttackDefSerializer.save(file, def);
 
-            swordPlayer.message(Component.text(
+            player.message(Component.text(
                 "[Dev] Saved '" + def.getId() + "' → attacks/" + def.getId() + ".yml",
                 NamedTextColor.AQUA));
         } catch (Exception e) {
-            swordPlayer.message(Component.text("[Dev] Save failed: " + e.getMessage(), NamedTextColor.RED));
+            player.message(Component.text("[Dev] Save failed: " + e.getMessage(), NamedTextColor.RED));
         }
     }
 }

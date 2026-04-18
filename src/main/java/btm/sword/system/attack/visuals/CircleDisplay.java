@@ -103,4 +103,12 @@ public final class CircleDisplay extends ParticleDisplay {
     public String shapeTypeLabel() {
         return "Circle";
     }
+
+    @Override
+    public CircleDisplay copy() {
+        return new CircleDisplay(anchor,
+            new Vector3f(originOffset), new Vector3f(randomOffsetRange),
+            repeatCount, repeatPeriodTicks, copyParticles(),
+            outerRadius, innerRadius, spacingRadial, spacingArc, normal);
+    }
 }

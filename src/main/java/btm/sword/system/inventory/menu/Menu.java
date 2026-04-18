@@ -1,20 +1,33 @@
 package btm.sword.system.inventory.menu;
 
+import java.util.List;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.entity.Player;
+import org.bukkit.event.inventory.ClickType;
+import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.NotNull;
 
+import btm.sword.Sword;
 import btm.sword.config.Config;
 import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.item.ItemStackBuilder;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
+import xyz.xenondevs.invui.gui.Gui;
 import xyz.xenondevs.invui.item.Click;
+import xyz.xenondevs.invui.item.ItemProvider;
+import xyz.xenondevs.invui.item.ItemWrapper;
 import xyz.xenondevs.invui.item.builder.ItemBuilder;
+import xyz.xenondevs.invui.item.impl.AbstractItem;
 import xyz.xenondevs.invui.item.impl.SimpleItem;
+import xyz.xenondevs.invui.window.AnvilWindow;
 
 /**
  * Abstract base class for all InvUI-backed Sword menus.
@@ -115,6 +128,154 @@ public abstract class Menu {
      * @param toggle flips the flag
      * @return a {@link SimpleItem} representing the toggle button
      */
+    /**
+     * Opens an anvil window that accepts a {@code float} value.
+     *
+     * <p>Slot 0: paper showing the current/typed value. Slot 1: wool validity indicator.
+     * Slot 2: barrier cancel button. On close the parsed value is passed to {@code onAccept}
+     * (only if valid and not cancelled) and then {@code returnTo} is called.</p>
+     *
+     * @param label    displayed as the window title prefix and in the paper lore
+     * @param current  initial value pre-filled in the paper name
+     * @param onAccept called with the parsed value on valid accept
+     * @param returnTo called after the window closes regardless of outcome
+     */
+    protected void openFloatAnvil(String label, float current, Consumer<Float> onAccept, Runnable returnTo) {
+        openNumericAnvil(label, String.valueOf(current),
+            s -> { try { Float.parseFloat(s); return true; } catch (NumberFormatException e) { return false; } },
+            s -> onAccept.accept(Float.parseFloat(s)),
+            returnTo);
+    }
+
+    /**
+     * Opens an anvil window that accepts a {@code double} value.
+     *
+     * @param label    displayed as the window title prefix and in the paper lore
+     * @param current  initial value pre-filled in the paper name
+     * @param onAccept called with the parsed value on valid accept
+     * @param returnTo called after the window closes regardless of outcome
+     */
+    protected void openDoubleAnvil(String label, double current, Consumer<Double> onAccept, Runnable returnTo) {
+        openNumericAnvil(label, String.valueOf(current),
+            s -> { try { Double.parseDouble(s); return true; } catch (NumberFormatException e) { return false; } },
+            s -> onAccept.accept(Double.parseDouble(s)),
+            returnTo);
+    }
+
+    /**
+     * Opens an anvil window that accepts an {@code int} value.
+     *
+     * @param label    displayed as the window title prefix and in the paper lore
+     * @param current  initial value pre-filled in the paper name
+     * @param onAccept called with the parsed value on valid accept
+     * @param returnTo called after the window closes regardless of outcome
+     */
+    protected void openIntAnvil(String label, int current, Consumer<Integer> onAccept, Runnable returnTo) {
+        openNumericAnvil(label, String.valueOf(current),
+            s -> { try { Integer.parseInt(s); return true; } catch (NumberFormatException e) { return false; } },
+            s -> onAccept.accept(Integer.parseInt(s)),
+            returnTo);
+    }
+
+    private void openNumericAnvil(String label, String initialValue,
+                                   Predicate<String> isValid,
+                                   Consumer<String> onValidAccept,
+                                   Runnable returnTo) {
+        Player player = swordPlayer.player();
+        Bukkit.getScheduler().runTask(Sword.getInstance(), () -> {
+            String[] lastTyped = {initialValue};
+            boolean[] cancelled = {false};
+
+            AbstractItem indicator = new AbstractItem() {
+                @Override
+                public ItemProvider getItemProvider() {
+                    String text = lastTyped[0];
+                    if (isValid.test(text)) {
+                        return new ItemWrapper(new ItemStackBuilder(Material.LIME_WOOL)
+                            .name(Component.text("Valid: " + text, NamedTextColor.GREEN, TextDecoration.BOLD))
+                            .lore(List.of(Component.text("Click paper or Esc to accept", NamedTextColor.DARK_GRAY)))
+                            .build());
+                    }
+                    return new ItemWrapper(new ItemStackBuilder(Material.RED_WOOL)
+                        .name(Component.text("Invalid: not a number", NamedTextColor.RED, TextDecoration.BOLD))
+                        .lore(List.of(
+                            Component.text("\"" + text + "\" cannot be parsed", NamedTextColor.DARK_GRAY),
+                            Component.text("Type a valid number", NamedTextColor.DARK_GRAY)))
+                        .build());
+                }
+
+                @Override
+                public void handleClick(@NotNull ClickType ct, @NotNull Player p,
+                                        @NotNull InventoryClickEvent e) { }
+            };
+
+            AbstractItem paperInput = new AbstractItem() {
+                @Override
+                public ItemProvider getItemProvider() {
+                    return new ItemWrapper(new ItemStackBuilder(Material.PAPER)
+                        .name(Component.text(lastTyped[0], NamedTextColor.GOLD, TextDecoration.BOLD))
+                        .lore(List.of(
+                            Component.text(label, NamedTextColor.DARK_GRAY),
+                            Component.text("Click to accept if valid  |  Esc to accept & close",
+                                NamedTextColor.DARK_GRAY)))
+                        .build());
+                }
+
+                @Override
+                public void handleClick(@NotNull ClickType ct, @NotNull Player p,
+                                        @NotNull InventoryClickEvent e) {
+                    if (isValid.test(lastTyped[0])) p.closeInventory();
+                }
+            };
+
+            AbstractItem backArrow = new AbstractItem() {
+                @Override
+                public ItemProvider getItemProvider() {
+                    return new ItemWrapper(new ItemStackBuilder(Material.BARRIER)
+                        .name(Component.text("Cancel", NamedTextColor.RED, TextDecoration.BOLD))
+                        .lore(List.of(Component.text("Close without accepting", NamedTextColor.DARK_GRAY)))
+                        .build());
+                }
+
+                @Override
+                public void handleClick(@NotNull ClickType ct, @NotNull Player p,
+                                        @NotNull InventoryClickEvent e) {
+                    cancelled[0] = true;
+                    p.closeInventory();
+                }
+            };
+
+            Gui anvilGui = Gui.normal()
+                .setStructure("X M B")
+                .addIngredient('X', paperInput)
+                .addIngredient('M', indicator)
+                .addIngredient('B', backArrow)
+                .build();
+
+            AnvilWindow anvilWindow = AnvilWindow.single()
+                .setViewer(player)
+                .setTitle("Input a value | Esc. to accept")
+                .setGui(anvilGui)
+                .addRenameHandler(text -> {
+                    lastTyped[0] = text;
+                    indicator.notifyWindows();
+                    paperInput.notifyWindows();
+                })
+                .build();
+
+            anvilWindow.addCloseHandler(() -> {
+                String result = lastTyped[0];
+                boolean wasCancelled = cancelled[0];
+                Bukkit.getScheduler().runTask(Sword.getInstance(), () -> {
+                    if (!wasCancelled && isValid.test(result)) onValidAccept.accept(result);
+                    returnTo.run();
+                });
+            });
+
+            anvilWindow.open();
+        });
+    }
+
     protected SimpleItem toggle(String label, BooleanSupplier getter, Runnable toggle) {
         Consumer<Click> onClick = click -> {
             toggle.run();

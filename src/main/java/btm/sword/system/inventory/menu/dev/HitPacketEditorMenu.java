@@ -3,26 +3,22 @@ package btm.sword.system.inventory.menu.dev;
 import java.util.List;
 import java.util.function.Consumer;
 
-import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.event.inventory.ClickType;
-import org.bukkit.inventory.ItemStack;
 
-import btm.sword.Sword;
 import btm.sword.system.attack.Blockability;
 import btm.sword.system.attack.HitPacketPreset;
 import btm.sword.system.attack.HitPacketRegistry;
 import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.inventory.menu.Menu;
 import btm.sword.system.item.ItemStackBuilder;
-import btm.sword.utility.ChatInputCapture;
+import btm.sword.utility.ChatInput;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import xyz.xenondevs.invui.gui.Gui;
 import xyz.xenondevs.invui.item.Click;
 import xyz.xenondevs.invui.item.impl.SimpleItem;
-import xyz.xenondevs.invui.window.AnvilWindow;
 import xyz.xenondevs.invui.window.Window;
 
 /**
@@ -46,6 +42,7 @@ public class HitPacketEditorMenu extends Menu {
 
     private HitPacketPreset working;
     private final String originalId;
+    private boolean dirty;
 
     /**
      * Opens the editor for the given preset.
@@ -61,12 +58,24 @@ public class HitPacketEditorMenu extends Menu {
 
     @Override
     public void open() {
+        Runnable goBack = () -> new HitPacketLibraryMenu(swordPlayer).open();
         SimpleItem back = new SimpleItem(
             new ItemStackBuilder(Material.COPPER_TRAPDOOR)
                 .name(Component.text("Back", NamedTextColor.GRAY))
-                .lore(List.of(Component.text("Discards unsaved changes.", NamedTextColor.DARK_GRAY)))
+                .lore(List.of(dirty
+                    ? Component.text("Unsaved changes — confirm to discard.", NamedTextColor.YELLOW)
+                    : Component.text("Return to library.", NamedTextColor.DARK_GRAY)))
                 .build(),
-            click -> new HitPacketLibraryMenu(swordPlayer).open()
+            click -> {
+                if (!dirty) {
+                    goBack.run();
+                    return;
+                }
+                new ConfirmSaveMenu(swordPlayer, working.id(),
+                    () -> { commitSave(); goBack.run(); },
+                    goBack,
+                    this::open).open();
+            }
         );
 
         SimpleItem rename = new SimpleItem(
@@ -78,26 +87,22 @@ public class HitPacketEditorMenu extends Menu {
                     Component.text("Click to change display name.", NamedTextColor.GRAY)
                 ))
                 .build(),
-            click -> ChatInputCapture.prompt(
+            click -> ChatInput.promptString(
                 swordPlayer.player(),
-                Component.text("Type a new display name for '" + working.id() + "':",
-                    NamedTextColor.YELLOW),
+                "Display name for '" + working.id() + "'",
+                working.displayName(),
                 text -> {
-                    if (text.equalsIgnoreCase("cancel") || text.isEmpty()) {
-                        open();
-                        return;
-                    }
                     String newId = uniqueId(HitPacketPreset.slugify(text), originalId);
                     if (newId.isEmpty()) {
                         swordPlayer.message(Component.text(
                             "[Dev] Name must contain at least one alphanumeric character.",
                             NamedTextColor.RED));
-                        open();
                         return;
                     }
                     working = working.withDisplayName(text).withId(newId);
-                    open();
-                }
+                    dirty = true;
+                },
+                this::open
             )
         );
 
@@ -157,60 +162,51 @@ public class HitPacketEditorMenu extends Menu {
                     Component.text("writes hit-packets.yaml.", NamedTextColor.DARK_GRAY)
                 ))
                 .build(),
-            click -> {
-                if (!working.id().equals(originalId)) {
-                    HitPacketRegistry.remove(originalId);
-                }
-                HitPacketRegistry.register(working);
-                HitPacketRegistry.saveAll();
-                swordPlayer.message(Component.text(
-                    "[Dev] Saved preset '" + working.id() + "'.", NamedTextColor.GREEN));
-                new HitPacketLibraryMenu(swordPlayer).open();
-            }
+            click -> { commitSave(); new HitPacketLibraryMenu(swordPlayer).open(); }
         );
 
         // Field rows
         SimpleItem shardDec = dec(click -> { working = working.withShardDamage(
-            Math.max(0, working.shardDamage() - stepInt(click, 1, 5, 10))); open(); });
+            Math.max(0, working.shardDamage() - stepInt(click, 1, 5, 10))); dirty = true; open(); });
         SimpleItem shardDisplay = displayInt("Shard Damage", working.shardDamage(), Material.IRON_SWORD,
-            v -> { working = working.withShardDamage(Math.max(0, v)); open(); });
+            v -> { working = working.withShardDamage(Math.max(0, v)); dirty = true; open(); });
         SimpleItem shardInc = inc(click -> { working = working.withShardDamage(
-            working.shardDamage() + stepInt(click, 1, 5, 10)); open(); });
+            working.shardDamage() + stepInt(click, 1, 5, 10)); dirty = true; open(); });
 
         SimpleItem toughDec = dec(click -> { working = working.withToughnessDamage(
-            Math.max(0f, working.toughnessDamage() - stepFloat(click, 0.25f, 1.0f, 5.0f))); open(); });
+            Math.max(0f, working.toughnessDamage() - stepFloat(click, 0.25f, 1.0f, 5.0f))); dirty = true; open(); });
         SimpleItem toughDisplay = displayFloat("Toughness Damage", working.toughnessDamage(), Material.IRON_CHESTPLATE,
-            v -> { working = working.withToughnessDamage(Math.max(0f, v)); open(); });
+            v -> { working = working.withToughnessDamage(Math.max(0f, v)); dirty = true; open(); });
         SimpleItem toughInc = inc(click -> { working = working.withToughnessDamage(
-            working.toughnessDamage() + stepFloat(click, 0.25f, 1.0f, 5.0f)); open(); });
+            working.toughnessDamage() + stepFloat(click, 0.25f, 1.0f, 5.0f)); dirty = true; open(); });
 
         SimpleItem soulLossDec = dec(click -> { working = working.withSoulfireLoss(
-            Math.max(0f, working.soulfireLoss() - stepFloat(click, 0.1f, 0.5f, 2.0f))); open(); });
+            Math.max(0f, working.soulfireLoss() - stepFloat(click, 0.1f, 0.5f, 2.0f))); dirty = true; open(); });
         SimpleItem soulLossDisplay = displayFloat("Soulfire Loss", working.soulfireLoss(), Material.SOUL_LANTERN,
-            v -> { working = working.withSoulfireLoss(Math.max(0f, v)); open(); });
+            v -> { working = working.withSoulfireLoss(Math.max(0f, v)); dirty = true; open(); });
         SimpleItem soulLossInc = inc(click -> { working = working.withSoulfireLoss(
-            working.soulfireLoss() + stepFloat(click, 0.1f, 0.5f, 2.0f)); open(); });
+            working.soulfireLoss() + stepFloat(click, 0.1f, 0.5f, 2.0f)); dirty = true; open(); });
 
         SimpleItem reapedDec = dec(click -> { working = working.withReapedSoulfire(
-            Math.max(0f, working.reapedSoulfire() - stepFloat(click, 0.1f, 0.5f, 2.0f))); open(); });
+            Math.max(0f, working.reapedSoulfire() - stepFloat(click, 0.1f, 0.5f, 2.0f))); dirty = true; open(); });
         SimpleItem reapedDisplay = displayFloat("Reaped Soulfire", working.reapedSoulfire(), Material.SOUL_TORCH,
-            v -> { working = working.withReapedSoulfire(Math.max(0f, v)); open(); });
+            v -> { working = working.withReapedSoulfire(Math.max(0f, v)); dirty = true; open(); });
         SimpleItem reapedInc = inc(click -> { working = working.withReapedSoulfire(
-            working.reapedSoulfire() + stepFloat(click, 0.1f, 0.5f, 2.0f)); open(); });
+            working.reapedSoulfire() + stepFloat(click, 0.1f, 0.5f, 2.0f)); dirty = true; open(); });
 
         SimpleItem invulDec = dec(click -> { working = working.withInvulnerableTicks(
-            Math.max(0, working.invulnerableTicks() - stepInt(click, 1, 5, 10))); open(); });
+            Math.max(0, working.invulnerableTicks() - stepInt(click, 1, 5, 10))); dirty = true; open(); });
         SimpleItem invulDisplay = displayInt("Invulnerable Ticks", working.invulnerableTicks(), Material.CLOCK,
-            v -> { working = working.withInvulnerableTicks(Math.max(0, v)); open(); });
+            v -> { working = working.withInvulnerableTicks(Math.max(0, v)); dirty = true; open(); });
         SimpleItem invulInc = inc(click -> { working = working.withInvulnerableTicks(
-            working.invulnerableTicks() + stepInt(click, 1, 5, 10)); open(); });
+            working.invulnerableTicks() + stepInt(click, 1, 5, 10)); dirty = true; open(); });
 
         SimpleItem bypassDec = dec(click -> { working = working.withBypassPower(
-            clamp01(working.bypassPower() - stepFloat(click, 0.05f, 0.1f, 0.25f))); open(); });
+            clamp01(working.bypassPower() - stepFloat(click, 0.05f, 0.1f, 0.25f))); dirty = true; open(); });
         SimpleItem bypassDisplay = displayFloat("Bypass Power", working.bypassPower(), Material.PIGLIN_BANNER_PATTERN,
-            v -> { working = working.withBypassPower(clamp01(v)); open(); });
+            v -> { working = working.withBypassPower(clamp01(v)); dirty = true; open(); });
         SimpleItem bypassInc = inc(click -> { working = working.withBypassPower(
-            clamp01(working.bypassPower() + stepFloat(click, 0.05f, 0.1f, 0.25f))); open(); });
+            clamp01(working.bypassPower() + stepFloat(click, 0.05f, 0.1f, 0.25f))); dirty = true; open(); });
 
         // Blockability cycle
         Blockability block = working.blockability();
@@ -230,6 +226,7 @@ public class HitPacketEditorMenu extends Menu {
                 Blockability[] values = Blockability.values();
                 Blockability next = values[(block.ordinal() + 1) % values.length];
                 working = working.withBlockability(next);
+                dirty = true;
                 open();
             }
         );
@@ -294,7 +291,7 @@ public class HitPacketEditorMenu extends Menu {
                     .append(Component.text(fmt2(value), NamedTextColor.GOLD, TextDecoration.BOLD)))
                 .lore(List.of(Component.text("Click to type a value.", NamedTextColor.DARK_GRAY)))
                 .build(),
-            click -> openFloatAnvil(label, fmt2(value), onInput)
+            click -> ChatInput.promptFloat(swordPlayer.player(), label, value, onInput, this::open)
         );
     }
 
@@ -305,47 +302,19 @@ public class HitPacketEditorMenu extends Menu {
                     .append(Component.text(String.valueOf(value), NamedTextColor.GOLD, TextDecoration.BOLD)))
                 .lore(List.of(Component.text("Click to type a value.", NamedTextColor.DARK_GRAY)))
                 .build(),
-            click -> openIntAnvil(label, String.valueOf(value), onInput)
+            click -> ChatInput.promptInt(swordPlayer.player(), label, value, onInput, this::open)
         );
     }
 
-    // ── Anvil input ──────────────────────────────────────────────────────────
-
-    private void openFloatAnvil(String label, String currentVal, Consumer<Float> onInput) {
-        openAnvil(label, currentVal, text -> {
-            try {
-                onInput.accept(Float.parseFloat(text.trim()));
-            } catch (NumberFormatException ignored) { }
-        });
-    }
-
-    private void openIntAnvil(String label, String currentVal, Consumer<Integer> onInput) {
-        openAnvil(label, currentVal, text -> {
-            try {
-                onInput.accept(Integer.parseInt(text.trim()));
-            } catch (NumberFormatException ignored) { }
-        });
-    }
-
-    private void openAnvil(String label, String currentVal, Consumer<String> handler) {
-        ItemStack inputItem = new ItemStackBuilder(Material.PAPER)
-            .name(Component.text(currentVal, NamedTextColor.WHITE))
-            .build();
-        Gui gui = Gui.normal()
-            .setStructure("X # #")
-            .addIngredient('X', new SimpleItem(inputItem))
-            .addIngredient('#', BORDER)
-            .build();
-        AnvilWindow.single()
-            .setViewer(swordPlayer.player())
-            .setTitle(label)
-            .setGui(gui)
-            .addRenameHandler(text -> {
-                handler.accept(text);
-                Bukkit.getScheduler().runTask(Sword.getInstance(), this::open);
-            })
-            .build()
-            .open();
+    private void commitSave() {
+        if (!working.id().equals(originalId)) {
+            HitPacketRegistry.remove(originalId);
+        }
+        HitPacketRegistry.register(working);
+        HitPacketRegistry.saveAll();
+        dirty = false;
+        swordPlayer.message(Component.text(
+            "[Dev] Saved preset '" + working.id() + "'.", NamedTextColor.GREEN));
     }
 
     // ── Step helpers ─────────────────────────────────────────────────────────

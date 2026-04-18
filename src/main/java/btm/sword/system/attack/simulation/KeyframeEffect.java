@@ -1,5 +1,6 @@
 package btm.sword.system.attack.simulation;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.jetbrains.annotations.Nullable;
@@ -19,4 +20,17 @@ import btm.sword.system.attack.visuals.ParticleDisplay;
 public record KeyframeEffect(
     List<ParticleDisplay> displays,
     @Nullable SoundCue sound
-) {}
+) {
+
+    /**
+     * Returns a deep copy of this effect bundle — each display is deep-copied via
+     * {@link ParticleDisplay#copy()} and the list itself is freshly allocated, so
+     * draft editors can mutate the copy without leaking into the source.
+     * {@code sound} is a record with only immutable fields and is shared.
+     */
+    public KeyframeEffect copy() {
+        List<ParticleDisplay> out = new ArrayList<>(displays.size());
+        for (ParticleDisplay d : displays) out.add(d.copy());
+        return new KeyframeEffect(out, sound);
+    }
+}

@@ -4,11 +4,17 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
+import org.bukkit.event.inventory.ClickType;
+import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.NotNull;
 
+import btm.sword.Sword;
 import btm.sword.config.Config;
 import btm.sword.gamemode.QueueManager;
 import btm.sword.gamemode.type.CaptureTheFlag1v1;
@@ -31,7 +37,11 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import xyz.xenondevs.invui.gui.Gui;
+import xyz.xenondevs.invui.item.ItemProvider;
+import xyz.xenondevs.invui.item.ItemWrapper;
+import xyz.xenondevs.invui.item.impl.AbstractItem;
 import xyz.xenondevs.invui.item.impl.SimpleItem;
+import xyz.xenondevs.invui.window.AnvilWindow;
 import xyz.xenondevs.invui.window.Window;
 
 /** Developer menu providing quick access to testing utilities such as volume wands and dummy spawning. */
@@ -221,9 +231,130 @@ public class TestingMenu extends Menu {
             click -> {
                 ItemStack falchion = WeaponType.FALCHION.buildItemStack();
                 player.getInventory().addItem(falchion);
-                player.openSmithingTable(null, true); // TODO: Deprecated!!!
+                player.openInventory(Bukkit.createInventory(player, InventoryType.SMITHING));
                 swordPlayer.message(Component.text("Smithing test ready: place the Falchion into the base slot.", NamedTextColor.GREEN));
             }
+        );
+
+        SimpleItem anvilTest = new SimpleItem(
+            new ItemStackBuilder(Material.ANVIL)
+                .name(Component.text("Anvil Input Test", NamedTextColor.GRAY, TextDecoration.BOLD))
+                .lore(List.of(Component.text("Opens an AnvilWindow — type any float value", NamedTextColor.DARK_GRAY)))
+                .build(),
+            click -> Bukkit.getScheduler().runTask(Sword.getInstance(), () -> {
+                // Scheduled one tick after click so the current inventory finishes closing
+                // before Paper processes the new window open — avoids immediate-close issues.
+                String[] lastTyped = {""};
+                boolean[] cancelled = {false};
+
+                AbstractItem indicator = new AbstractItem() {
+                    @Override
+                    public ItemProvider getItemProvider() {
+                        String text = lastTyped[0];
+                        if (text.isBlank()) {
+                            return new ItemWrapper(new ItemStackBuilder(Material.GRAY_WOOL)
+                                .name(Component.text("Waiting for input...", NamedTextColor.GRAY))
+                                .build());
+                        }
+                        try {
+                            double val = Double.parseDouble(text);
+                            return new ItemWrapper(new ItemStackBuilder(Material.LIME_WOOL)
+                                .name(Component.text("Valid: " + val, NamedTextColor.GREEN, TextDecoration.BOLD))
+                                .lore(List.of(Component.text("Click the paper or press Esc to accept", NamedTextColor.DARK_GRAY)))
+                                .build());
+                        } catch (NumberFormatException e) {
+                            return new ItemWrapper(new ItemStackBuilder(Material.RED_WOOL)
+                                .name(Component.text("Invalid: not a number", NamedTextColor.RED, TextDecoration.BOLD))
+                                .lore(List.of(
+                                    Component.text("\"" + text + "\" cannot be parsed", NamedTextColor.DARK_GRAY),
+                                    Component.text("Type a valid number", NamedTextColor.DARK_GRAY)))
+                                .build());
+                        }
+                    }
+
+                    @Override
+                    public void handleClick(@NotNull ClickType clickType, @NotNull Player p,
+                                            @NotNull InventoryClickEvent event) { }
+                };
+
+                AbstractItem paperInput = new AbstractItem() {
+                    @Override
+                    public ItemProvider getItemProvider() {
+                        String display = lastTyped[0].isBlank() ? "0.0" : lastTyped[0];
+                        return new ItemWrapper(new ItemStackBuilder(Material.PAPER)
+                            .name(Component.text(display, NamedTextColor.GOLD, TextDecoration.BOLD))
+                            .lore(List.of(
+                                Component.text("Type a value in the field above", NamedTextColor.DARK_GRAY),
+                                Component.text("Click to accept  |  Esc to accept & close", NamedTextColor.DARK_GRAY)))
+                            .build());
+                    }
+
+                    @Override
+                    public void handleClick(@NotNull ClickType clickType, @NotNull Player p,
+                                            @NotNull InventoryClickEvent event) {
+                        if (!lastTyped[0].isBlank()) {
+                            try {
+                                Double.parseDouble(lastTyped[0]);
+                                p.closeInventory();
+                            } catch (NumberFormatException ignored) { }
+                        }
+                    }
+                };
+
+                AbstractItem backArrow = new AbstractItem() {
+                    @Override
+                    public ItemProvider getItemProvider() {
+                        return new ItemWrapper(new ItemStackBuilder(Material.BARRIER)
+                            .name(Component.text("Cancel", NamedTextColor.RED, TextDecoration.BOLD))
+                            .lore(List.of(Component.text("Close without accepting input", NamedTextColor.DARK_GRAY)))
+                            .build());
+                    }
+
+                    @Override
+                    public void handleClick(@NotNull ClickType clickType, @NotNull Player p,
+                                            @NotNull InventoryClickEvent event) {
+                        cancelled[0] = true;
+                        p.closeInventory();
+                    }
+                };
+
+                Gui anvilGui = Gui.normal()
+                    .setStructure("X M B")
+                    .addIngredient('X', paperInput)
+                    .addIngredient('M', indicator)
+                    .addIngredient('B', backArrow)
+                    .build();
+
+                AnvilWindow anvilWindow = AnvilWindow.single()
+                    .setViewer(player)
+                    .setTitle("Input a value | Esc. to accept")
+                    .setGui(anvilGui)
+                    .addRenameHandler(text -> {
+                        lastTyped[0] = text;
+                        indicator.notifyWindows();
+                        paperInput.notifyWindows();
+                    })
+                    .build();
+
+                anvilWindow.addCloseHandler(() -> {
+                    String result = lastTyped[0];
+                    boolean wasCancelled = cancelled[0];
+                    Bukkit.getScheduler().runTask(Sword.getInstance(), () -> {
+                        if (!wasCancelled && !result.isBlank()) {
+                            try {
+                                double val = Double.parseDouble(result);
+                                swordPlayer.message(Component.text("Anvil received: ", NamedTextColor.YELLOW)
+                                    .append(Component.text(String.valueOf(val), NamedTextColor.WHITE)));
+                            } catch (NumberFormatException ignored) {
+                                swordPlayer.message(Component.text("Invalid input: " + result, NamedTextColor.RED));
+                            }
+                        }
+                        open();
+                    });
+                });
+
+                anvilWindow.open();
+            })
         );
 
         Gui gui = Gui.normal()
@@ -244,6 +375,7 @@ public class TestingMenu extends Menu {
             .addIngredient('H', hudOverrideTest)
             .addIngredient('M', smithingInteractionTest)
             .addIngredient('O', ctfStop)
+            .addIngredient('V', anvilTest)
             .addIngredient('<', generatePreviousButtonOrDefault())
             .addIngredient('>', generateForwardPreviousButtonOrDefault())
             .build();

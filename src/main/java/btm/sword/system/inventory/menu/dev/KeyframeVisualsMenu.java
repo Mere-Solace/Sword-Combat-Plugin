@@ -65,6 +65,14 @@ public class KeyframeVisualsMenu extends Menu {
                 .name(Component.text("Back", NamedTextColor.GRAY)).build(),
             click -> new AttackEditorMenu(swordPlayer).open());
 
+        SimpleItem save = new SimpleItem(
+            new ItemStackBuilder(Material.EMERALD)
+                .name(Component.text("Save", NamedTextColor.GREEN, TextDecoration.BOLD))
+                .lore(List.of(Component.text("Save to attacks/<id>.yml", NamedTextColor.DARK_GRAY)))
+                .build(),
+            click -> AttackEditorMenu.saveAttack(
+                AttackDevSession.getOrCreate(swordPlayer.player()), swordPlayer));
+
         SimpleItem info = new SimpleItem(
             new ItemStackBuilder(Material.PAPER)
                 .name(Component.text("Keyframe #" + kfIdx, NamedTextColor.GOLD, TextDecoration.BOLD))
@@ -95,7 +103,7 @@ public class KeyframeVisualsMenu extends Menu {
             click -> {
                 if (currentSound == null) return;
                 session.setKeyframeEffect(kfIdx, new KeyframeEffect(
-                    displays != null ? displays : new ArrayList<>(), null));
+                    displays, null));
                 open();
             });
 
@@ -139,15 +147,15 @@ public class KeyframeVisualsMenu extends Menu {
 
         Gui gui = Gui.normal()
             .setStructure(
-                "B . I . . . . C L",
+                "B V I . . . . C L",
                 "1 2 3 4 5 6 7 8 9",
                 "a b c d e f g h i",
                 ". P . N . S . R .",
-                "# # # # # # # # #",
                 "# # # # # # # # #")
             .addIngredient('#', BORDER)
             .addIngredient('.', BORDER)
             .addIngredient('B', back)
+            .addIngredient('V', save)
             .addIngredient('I', info)
             .addIngredient('C', soundCycle)
             .addIngredient('L', soundClear)
