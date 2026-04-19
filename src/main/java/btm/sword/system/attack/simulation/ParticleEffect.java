@@ -63,7 +63,9 @@ public record ParticleEffect(
             double s = speed;
             wrapper.withSpeed(() -> s);
         }
-        if (dustOptions != null) {
+        if (dustOptions instanceof Particle.DustTransition dt) {
+            wrapper.withTransition(() -> 1.0, () -> dt);
+        } else if (dustOptions != null) {
             Particle.DustOptions opts = dustOptions;
             wrapper.withOptions(() -> opts);
         }
@@ -101,11 +103,12 @@ public record ParticleEffect(
      * @return a new {@link ParticleEffect} capturing the wrapper's current values
      */
     public static ParticleEffect fromWrapper(ParticleWrapper w) {
+        Particle.DustOptions dust = w.getDustTransition() != null ? w.getDustTransition() : w.getDustOptions();
         return new ParticleEffect(
             w.getParticle(),
             w.getCount(),
             new Vector3f((float) w.getXOffset(), (float) w.getYOffset(), (float) w.getZOffset()),
             w.getSpeed(),
-            w.getDustOptions());
+            dust);
     }
 }

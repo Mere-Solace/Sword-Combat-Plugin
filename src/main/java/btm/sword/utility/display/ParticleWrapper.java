@@ -152,6 +152,9 @@ public class ParticleWrapper {
     /** Returns the current dust options by calling the supplier, or {@code null} if none. */
     public Particle.DustOptions getDustOptions() { return options.get(); }
 
+    /** Returns the current dust transition by calling the supplier, or {@code null} if none. */
+    public Particle.DustTransition getDustTransition() { return transition.get(); }
+
     /**
      * Displays the particle effect at the specified location in the world.
      * Suppliers are evaluated at display time, enabling runtime-resolved values.
