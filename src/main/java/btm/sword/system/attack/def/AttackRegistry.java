@@ -13,14 +13,14 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import btm.sword.utility.Debug;
 
 /**
- * Global registry of all named {@link AttackDef}s.
+ * Global registry of all named {@link AttackInstance}s.
  *
  * <p>Attacks are registered at plugin startup and on {@code /sword reload}.
  * All lookups are O(1) via a {@link ConcurrentHashMap}.</p>
  */
 public final class AttackRegistry {
 
-    private static final ConcurrentHashMap<String, AttackDef> REGISTRY = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<String, AttackInstance> REGISTRY = new ConcurrentHashMap<>();
 
     private AttackRegistry() {}
 
@@ -29,19 +29,19 @@ public final class AttackRegistry {
      *
      * @param def the attack definition to register
      */
-    public static void register(AttackDef def) {
+    public static void register(AttackInstance def) {
         REGISTRY.put(def.getId(), def);
     }
 
     /**
-     * Returns the {@link AttackDef} for the given id.
+     * Returns the {@link AttackInstance} for the given id.
      *
      * @param id the unique attack identifier
      * @return the registered attack definition
      * @throws IllegalArgumentException if no attack is registered under {@code id}
      */
-    public static AttackDef get(String id) {
-        AttackDef def = REGISTRY.get(id);
+    public static AttackInstance get(String id) {
+        AttackInstance def = REGISTRY.get(id);
         if (def == null) throw new IllegalArgumentException("No AttackDef registered for id: " + id);
         return def;
     }
@@ -51,7 +51,7 @@ public final class AttackRegistry {
      *
      * @return all registered attacks
      */
-    public static Collection<AttackDef> getAll() {
+    public static Collection<AttackInstance> getAll() {
         return Collections.unmodifiableCollection(REGISTRY.values());
     }
 

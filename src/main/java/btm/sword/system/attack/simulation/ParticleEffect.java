@@ -3,13 +3,16 @@ package btm.sword.system.attack.simulation;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.bukkit.Color;
 import org.bukkit.Particle;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
 
 import btm.sword.system.attack.visuals.OriginAnchor;
 import btm.sword.system.attack.visuals.PointDisplay;
+import btm.sword.utility.Debug;
 import btm.sword.utility.display.ParticleWrapper;
+import lombok.Getter;
 
 /**
  * Specification for a single particle burst emitted by a
@@ -36,13 +39,16 @@ import btm.sword.utility.display.ParticleWrapper;
  *                     omits the speed parameter from the Bukkit call
  * @param dustOptions  colour/size options for {@link Particle#DUST} or
  *                     {@link Particle#DUST_COLOR_TRANSITION}; {@code null} otherwise
+ * @param entityColor  colour for {@link Particle#ENTITY_EFFECT}; {@code null} otherwise
  */
 public record ParticleEffect(
+    @Getter
     Particle type,
     int count,
     Vector3f spreadOffset,
     double speed,
-    @Nullable Particle.DustOptions dustOptions
+    @Nullable Particle.DustOptions dustOptions,
+    @Nullable Color entityColor
 ) {
 
     /**
@@ -64,10 +70,25 @@ public record ParticleEffect(
             wrapper.withSpeed(() -> s);
         }
         if (dustOptions instanceof Particle.DustTransition dt) {
+            Debug.particleDisplay("toWrapper type=" + type + " dustOptions=DustTransition from="
+                + dt.getColor() + " to=" + dt.getToColor() + " -> withTransition");
             wrapper.withTransition(() -> 1.0, () -> dt);
+        } else if (dustOptions != null && type == Particle.DUST_COLOR_TRANSITION) {
+            // Mismatched data from old YAML: DUST_COLOR_TRANSITION with a plain DustOptions.
+            // Promote it to a DustTransition (same from/to colour) so it dispatches correctly.
+            Particle.DustTransition promoted =
+                new Particle.DustTransition(dustOptions.getColor(), dustOptions.getColor(), dustOptions.getSize());
+            wrapper.withTransition(() -> 1.0, () -> promoted);
         } else if (dustOptions != null) {
+            Debug.particleDisplay("toWrapper type=" + type + " dustOptions=DustOptions color="
+                + dustOptions.getColor() + " -> withOptions");
             Particle.DustOptions opts = dustOptions;
             wrapper.withOptions(() -> opts);
+        } else if (entityColor != null) {
+            Color ec = entityColor;
+            wrapper.withEntityColor(() -> ec);
+        } else {
+            Debug.particleDisplay("toWrapper type=" + type + " dustOptions=null -> no data");
         }
         return wrapper;
     }
@@ -109,6 +130,7 @@ public record ParticleEffect(
             w.getCount(),
             new Vector3f((float) w.getXOffset(), (float) w.getYOffset(), (float) w.getZOffset()),
             w.getSpeed(),
-            dust);
+            dust,
+            w.getEntityColor());
     }
 }

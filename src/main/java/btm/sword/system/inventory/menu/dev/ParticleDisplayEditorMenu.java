@@ -237,8 +237,8 @@ public class ParticleDisplayEditorMenu extends Menu {
                     open();
                 }));
                 builder.addIngredient('V', BORDER);
-                builder.addIngredient('B', BORDER);
-                builder.addIngredient('N', BORDER);
+                builder.addIngredient('B', back);
+                builder.addIngredient('N', save);
                 builder.addIngredient('<', back);
                 builder.addIngredient('>', save);
             }
@@ -272,7 +272,7 @@ public class ParticleDisplayEditorMenu extends Menu {
                     open();
                 }));
                 builder.addIngredient('Z', BORDER).addIngredient('X', BORDER).addIngredient('C', BORDER);
-                builder.addIngredient('V', BORDER).addIngredient('B', BORDER).addIngredient('N', BORDER);
+                builder.addIngredient('V', back).addIngredient('B', save).addIngredient('N', BORDER);
                 builder.addIngredient('<', back).addIngredient('>', save);
             }
             case CircleDisplay cd -> {
@@ -309,7 +309,7 @@ public class ParticleDisplayEditorMenu extends Menu {
                     open();
                 }));
                 builder.addIngredient('X', cycleNormal(cd));
-                builder.addIngredient('C', BORDER).addIngredient('V', BORDER).addIngredient('B', BORDER);
+                builder.addIngredient('C', BORDER).addIngredient('V', save).addIngredient('B', back);
                 builder.addIngredient('N', BORDER).addIngredient('<', back).addIngredient('>', save);
             }
             case null, default -> {
@@ -317,7 +317,7 @@ public class ParticleDisplayEditorMenu extends Menu {
                 builder.addIngredient('v', BORDER).addIngredient('b', BORDER).addIngredient('n', BORDER);
                 builder.addIngredient(',', BORDER);
                 builder.addIngredient('Z', BORDER).addIngredient('X', BORDER).addIngredient('C', BORDER);
-                builder.addIngredient('V', BORDER).addIngredient('B', BORDER).addIngredient('N', BORDER);
+                builder.addIngredient('V', save).addIngredient('B', back).addIngredient('N', BORDER);
                 builder.addIngredient('<', back).addIngredient('>', save);
             }
         }
@@ -398,6 +398,7 @@ public class ParticleDisplayEditorMenu extends Menu {
             case OriginAnchor.EntityBodyPoint ebp -> "Body " + ebp.point().name();
             case OriginAnchor.FireLockedOrigin ignored -> "Locked";
             case OriginAnchor.RaycastOrigin ignored -> "Ray Origin";
+            case OriginAnchor.NextKeyframe nk -> "Next KF +" + nk.offset();
         };
     }
 

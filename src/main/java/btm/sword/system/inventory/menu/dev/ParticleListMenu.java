@@ -7,6 +7,9 @@ import org.bukkit.Color;
 import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.entity.Player;
+import org.bukkit.event.inventory.ClickType;
+import org.bukkit.event.inventory.InventoryClickEvent;
+import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3f;
 
 import btm.sword.system.attack.dev.AttackDevSession;
@@ -23,6 +26,7 @@ import net.kyori.adventure.text.format.TextDecoration;
 import xyz.xenondevs.invui.gui.PagedGui;
 import xyz.xenondevs.invui.gui.structure.Markers;
 import xyz.xenondevs.invui.item.Item;
+import xyz.xenondevs.invui.item.impl.AbstractItem;
 import xyz.xenondevs.invui.item.impl.SimpleItem;
 import xyz.xenondevs.invui.window.Window;
 
@@ -97,7 +101,7 @@ public class ParticleListMenu extends Menu {
                 () -> Particle.CRIT,
                 chosen -> {
                     List<ParticleEffect> updated = new ArrayList<>(display.getParticles());
-                    updated.add(new ParticleEffect(chosen, 1, new Vector3f(0.2f, 0.2f, 0.2f), -1.0, null));
+                    updated.add(new ParticleEffect(chosen, 1, new Vector3f(0.2f, 0.2f, 0.2f), -1.0, null, null));
                     display.setParticles(updated);
                 },
                 this::open,
@@ -166,7 +170,7 @@ public class ParticleListMenu extends Menu {
         Vector3f so = pe.spreadOffset();
         String speedLabel = pe.speed() < 0 ? "default" : String.format("%.2f", pe.speed());
 
-        return new xyz.xenondevs.invui.item.impl.AbstractItem() {
+        return new AbstractItem() {
             @Override
             public xyz.xenondevs.invui.item.ItemProvider getItemProvider() {
                 return new xyz.xenondevs.invui.item.ItemWrapper(
@@ -184,16 +188,16 @@ public class ParticleListMenu extends Menu {
             }
 
             @Override
-            public void handleClick(org.bukkit.event.inventory.@org.jetbrains.annotations.NotNull ClickType clickType,
-                                    org.bukkit.entity.@org.jetbrains.annotations.NotNull Player p,
-                                    org.bukkit.event.inventory.@org.jetbrains.annotations.NotNull InventoryClickEvent event) {
-                if (clickType == org.bukkit.event.inventory.ClickType.SHIFT_LEFT) {
+            public void handleClick(@NotNull ClickType clickType,
+                                    @NotNull Player p,
+                                    @NotNull InventoryClickEvent event) {
+                if (clickType == ClickType.SHIFT_LEFT) {
                     List<ParticleEffect> updated = new ArrayList<>(display.getParticles());
                     updated.remove(idx);
                     display.setParticles(updated);
                     open();
                 } else {
-                    new ParticleEffectEditorMenu(swordPlayer, kfIndex, displayIndex, idx).open();
+                    new ParticleEffectEditorMenu(swordPlayer, pe.getType(), kfIndex, displayIndex, idx).open();
                 }
             }
         };

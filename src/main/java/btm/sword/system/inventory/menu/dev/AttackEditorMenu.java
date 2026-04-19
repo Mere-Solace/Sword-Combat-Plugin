@@ -14,8 +14,8 @@ import org.joml.Vector3f;
 
 import btm.sword.Sword;
 import btm.sword.system.attack.HitValuePacket;
-import btm.sword.system.attack.def.AttackDef;
 import btm.sword.system.attack.def.AttackDefSerializer;
+import btm.sword.system.attack.def.AttackInstance;
 import btm.sword.system.attack.def.AttackRegistry;
 import btm.sword.system.attack.dev.AttackDevSession;
 import btm.sword.system.attack.simulation.KeyframeType;
@@ -908,7 +908,7 @@ public class AttackEditorMenu extends Menu {
      */
     static void saveAttack(AttackDevSession session, SwordPlayer player) {
         try {
-            AttackDef def = session.buildCurrentAttack();
+            AttackInstance def = session.buildCurrentAttack();
             AttackRegistry.register(def);
 
             File attacksDir = new File(Sword.getInstance().getDataFolder(), "attacks");

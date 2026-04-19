@@ -7,7 +7,7 @@ import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
-import btm.sword.system.attack.simulation.KeyframedTrajectory;
+import btm.sword.system.attack.simulation.KeyframedSequence;
 
 /**
  * Context passed to {@link ParticleDisplay#render} during effect dispatch.
@@ -27,7 +27,7 @@ public record EffectsContext(
     Matrix4f worldTransform,
     World world,
     UUID attackerId,
-    KeyframedTrajectory trajectory,
+    KeyframedSequence trajectory,
     @Nullable Vector3f lockedOrigin,
     int owningKeyframeIndex
 ) {}

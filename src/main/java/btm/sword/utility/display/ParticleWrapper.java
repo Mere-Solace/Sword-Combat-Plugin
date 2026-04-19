@@ -3,6 +3,7 @@ package btm.sword.utility.display;
 import java.util.Collection;
 import java.util.function.Supplier;
 
+import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.World;
@@ -55,6 +56,9 @@ public class ParticleWrapper {
 
     /** Supplier for block data used with block crack or block dust particle types, if applicable. */
     private Supplier<BlockData> blockData = () -> null;
+
+    /** Supplier for a direct colour applied to {@link Particle#ENTITY_EFFECT}; {@code null} otherwise. */
+    private Supplier<Color> entityColor = () -> null;
 
     /**
      * Constructs a ParticleWrapper with only a particle type supplier and default parameters.
@@ -129,6 +133,17 @@ public class ParticleWrapper {
         return this;
     }
 
+    /**
+     * Sets the entity colour supplier for {@link Particle#ENTITY_EFFECT} and returns {@code this}.
+     *
+     * @param entityColor supplier for the colour to pass as extra particle data
+     * @return this instance
+     */
+    public ParticleWrapper withEntityColor(Supplier<Color> entityColor) {
+        this.entityColor = entityColor;
+        return this;
+    }
+
     // ── Snapshot getters (call suppliers once, used for serialization) ──────
 
     /** Returns the current particle type by calling the supplier. */
@@ -155,6 +170,9 @@ public class ParticleWrapper {
     /** Returns the current dust transition by calling the supplier, or {@code null} if none. */
     public Particle.DustTransition getDustTransition() { return transition.get(); }
 
+    /** Returns the current entity colour by calling the supplier, or {@code null} if none. */
+    public Color getEntityColor() { return entityColor.get(); }
+
     /**
      * Displays the particle effect at the specified location in the world.
      * Suppliers are evaluated at display time, enabling runtime-resolved values.
@@ -172,17 +190,23 @@ public class ParticleWrapper {
         Particle.DustTransition t = transition.get();
         Particle.DustOptions o = options.get();
         BlockData bd = blockData.get();
+        Color ec = entityColor.get();
 
-        if (t == null && o == null && bd == null)
+        if (ec != null)
+            world.spawnParticle(p, location, c, x, y, z, s < 0 ? 1.0 : s, ec);
+        else if (t == null && o == null && bd == null)
             if (s == -1.0)
                 world.spawnParticle(p, location, c, x, y, z);
             else
                 world.spawnParticle(p, location, c, x, y, z, s);
 
-        else if (o == null && bd == null)
+        else if (t != null && bd == null)
             world.spawnParticle(p, location, c, x, y, z, data.get(), t);
 
-        else if (bd == null)
+        else if (o instanceof Particle.DustTransition dt && bd == null)
+            world.spawnParticle(p, location, c, x, y, z, data.get(), dt);
+
+        else if (o != null && bd == null)
             world.spawnParticle(p, location, c, o);
 
         else

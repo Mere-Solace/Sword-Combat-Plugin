@@ -135,7 +135,7 @@ public class KeyframeVisualsMenu extends Menu {
             click -> {
                 SoundCue next = nextSound(currentSound);
                 session.setKeyframeEffect(kfIdx, new KeyframeEffect(
-                    displays != null ? displays : new ArrayList<>(), next));
+                    displays, next));
                 open();
             });
 
@@ -239,13 +239,12 @@ public class KeyframeVisualsMenu extends Menu {
 
         Gui gui = Gui.normal()
             .setStructure(
-                "B V I . . . . C L",
+                "B V I # # # # C L",
                 "1 2 3 4 5 6 7 8 9",
                 "a b c d e f g h i",
                 "Q P . N . S . R F",
                 "# # # < M > # # #")
             .addIngredient('#', BORDER)
-            .addIngredient('.', BORDER)
             .addIngredient('B', back)
             .addIngredient('V', save)
             .addIngredient('I', info)

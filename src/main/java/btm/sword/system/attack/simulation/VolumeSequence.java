@@ -11,11 +11,11 @@ import org.joml.Matrix4fc;
  * </p>
  *
  * <p>Declared as a {@code @FunctionalInterface} so simple one-off attack shapes can be
- * expressed as lambdas. Concrete implementations: {@link KeyframedTrajectory} (OBB volumes)
- * and {@link SweepTrajectory} (Catmull-Rom capsule sweeps).</p>
+ * expressed as lambdas. Concrete implementations: {@link KeyframedSequence} (OBB volumes)
+ * and {@link SweepSequence} (Catmull-Rom capsule sweeps).</p>
  */
 @FunctionalInterface
-public interface VolumeTrajectory {
+public interface VolumeSequence {
 
     /**
      * Populates {@code out} with the volume's world-space geometry at normalized time {@code t}.

@@ -9,7 +9,7 @@ import org.joml.Vector3f;
 import btm.sword.utility.math.BezierUtil;
 
 /**
- * A {@link VolumeTrajectory} that interpolates an OBB between a small set of
+ * A {@link VolumeSequence} that interpolates an OBB between a small set of
  * {@link ControlPoint}s at runtime, storing only the defining curve points rather
  * than baked keyframe data.
  *
@@ -28,7 +28,7 @@ import btm.sword.utility.math.BezierUtil;
  * <p>Use with an {@link ObbVolume} buffer passed to
  * {@link btm.sword.system.attack.simulation.ActiveAttack}.</p>
  */
-public final class ControlPointTrajectory implements VolumeTrajectory {
+public final class ControlPointSequence implements VolumeSequence {
 
     private final List<ControlPoint> points;
     private final ControlMode mode;
@@ -41,7 +41,7 @@ public final class ControlPointTrajectory implements VolumeTrajectory {
      * @param mode   interpolation mode
      * @throws IllegalArgumentException if the point count does not match the mode requirement
      */
-    public ControlPointTrajectory(List<ControlPoint> points, ControlMode mode) {
+    public ControlPointSequence(List<ControlPoint> points, ControlMode mode) {
         int required = mode == ControlMode.LINEAR ? 2 : 4;
         if (points.size() != required) {
             throw new IllegalArgumentException(

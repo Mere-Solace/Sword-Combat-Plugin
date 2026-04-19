@@ -18,6 +18,7 @@ import org.bukkit.plugin.Plugin;
 import btm.sword.system.attack.dev.AnimationModeInputHandler;
 import btm.sword.system.attack.dev.AttackDevSession;
 import btm.sword.system.attack.dev.SaveConfirmDialog;
+import btm.sword.system.entity.umbral.input.BladeRequest;
 import btm.sword.system.input.InputType;
 import btm.sword.system.inventory.menu.dev.SweepGeneratorMenu;
 import btm.sword.system.item.KeyRegistry;
@@ -149,31 +150,31 @@ public final class DevSwordPlayer extends SwordPlayer {
      *   <li>All other slots fall through to the normal handler.</li>
      * </ul>
      *
-     * @param e the inventory click event to handle
+     * @param event the inventory click event to handle
      * @return {@code true} if the event was handled and should be cancelled
      */
     @Override
-    public boolean handleInventoryInput(InventoryClickEvent e) {
+    public boolean handleInventoryInput(InventoryClickEvent event) {
         if (!inAnimationMode) {
             // Volume-attack wand click → open Sweep Generator
-            if (e.getClickedInventory() == player().getInventory()) {
-                ItemStack clicked = e.getCurrentItem();
+            if (event.getClickedInventory() == player().getInventory()) {
+                ItemStack clicked = event.getCurrentItem();
                 if (clicked != null && KeyRegistry.hasKey(clicked, KeyRegistry.TEST_VOLUME_ATTACK_KEY)) {
                     new SweepGeneratorMenu(this).open();
                     return true;
                 }
             }
-            return super.handleInventoryInput(e);
+            return super.handleInventoryInput(event);
         }
 
-        if (e.getClickedInventory() != player().getInventory()) {
-            return super.handleInventoryInput(e);
+        if (event.getClickedInventory() != player().getInventory()) {
+            return super.handleInventoryInput(event);
         }
 
-        int slot = e.getSlot();
+        int slot = event.getSlot();
 
         if (slot == 35) {
-            if (e.getClick() == ClickType.LEFT) {
+            if (event.getClick() == ClickType.LEFT) {
                 AttackDevSession session = AttackDevSession.get(player().getUniqueId());
                 SaveConfirmDialog.open(this, session);
             }
@@ -184,6 +185,6 @@ public final class DevSwordPlayer extends SwordPlayer {
             return true;
         }
 
-        return super.handleInventoryInput(e);
+        return super.handleInventoryInput(event);
     }
 }

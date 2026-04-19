@@ -50,6 +50,12 @@ public abstract class Menu {
             .build()
     );
 
+    public static final SimpleItem EMPTY = new SimpleItem(
+        new ItemStackBuilder(Material.AIR)
+            .name(Component.text("]|["))
+            .build()
+    );
+
     public static final SimpleItem WALL = new SimpleItem(
         new ItemStackBuilder(Material.LIGHT_BLUE_STAINED_GLASS_PANE)
             .name(Component.text("|||", Config.SwordColor.TEXT_COOL_DARK))

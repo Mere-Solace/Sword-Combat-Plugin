@@ -22,7 +22,7 @@ import btm.sword.system.action.ActionCaster;
 import btm.sword.system.action.movement.MovementAction;
 import btm.sword.system.action.throwing.types.ThrownItem;
 import btm.sword.system.attack.ActiveAttack;
-import btm.sword.system.attack.def.AttackDef;
+import btm.sword.system.attack.def.AttackInstance;
 import btm.sword.system.attack.simulation.EntitySnapshotMap;
 import btm.sword.system.attack.simulation.SimulationAttack;
 import btm.sword.system.attack.simulation.VolumeSimulation;
@@ -67,7 +67,6 @@ public abstract class Combatant extends SwordEntity {
      *  if an
      * -driven attack is currently running.
      *
-     * @return {@code true} while an attack is active
      */
     private boolean isAttacking = false;
 
@@ -617,38 +616,38 @@ public abstract class Combatant extends SwordEntity {
     }
 
     /**
-     * Launches an {@link AttackDef}-driven attack for this combatant.
+     * Launches an {@link AttackInstance}-driven attack for this combatant.
      *
      * <p>Builds a shared {@code hitThisAttack} set, records the game-layer
      * {@link ActiveAttack}, and registers a {@link SimulationAttack} with
      * {@link VolumeSimulation} to begin the 200 Hz collision loop.
      * {@link #onAttackEnd()} is posted back to the main thread when the attack expires.</p>
      *
-     * @param def the attack definition to execute
+     * @param a the attack definition to execute
      */
-    public void launchAttackDef(AttackDef def) {
+    public void launchAttack(AttackInstance a) {
         long startMs = System.currentTimeMillis();
         Set<UUID> hitThisAttack = ConcurrentHashMap.newKeySet();
 
-        currentAttack = new ActiveAttack(def, uuid, startMs, hitThisAttack);
+        currentAttack = new ActiveAttack(a, uuid, startMs, hitThisAttack);
         isAttacking = true;
 
         // Damp XZ momentum and apply slow-falling for the attack window
         Vector vel = self().getVelocity();
         self().setVelocity(new Vector(vel.getX() * 0.3, vel.getY(), vel.getZ() * 0.3));
-        int durationTicks = def.getDurationMs() / 50;
+        int durationTicks = a.getDurationMs() / 50;
         self().addPotionEffect(new PotionEffect(PotionEffectType.SLOW_FALLING, durationTicks, 0, true, false));
 
-        Debug.attackVolume("LAUNCH id=" + def.getId()
+        Debug.attackVolume("LAUNCH id=" + a.getId()
             + " owner=" + self().getName()
-            + " duration=" + def.getDurationMs() + "ms"
-            + " type=" + def.getType());
+            + " duration=" + a.getDurationMs() + "ms"
+            + " type=" + a.getType());
 
         // Capture locked origin if the attack requires it
         Vector3f lockedCenter = null;
         Float lockedYaw = null;
         Float lockedPitch = null;
-        if (def.isLockOriginOnFire()) {
+        if (a.isLockOriginOnFire()) {
             EntitySnapshotMap.EntityBoundingBoxSnapshot snap =
                 EntitySnapshotMap.INSTANCE.get(uuid);
             if (snap != null) {
@@ -660,17 +659,17 @@ public abstract class Combatant extends SwordEntity {
 
         SimulationAttack simAttack = new SimulationAttack(
             uuid,
-            def.getTrajectory(),
-            def.createVolume(),
+            a.getTrajectory(),
+            a.createVolume(),
             startMs,
-            def.getDurationMs(),
-            def.getHitValue(),
-            def.getKnockbackFunction(),
+            a.getDurationMs(),
+            a.getHitValue(),
+            a.getKnockbackFunction(),
             self().getWorld().getUID(),
             hitThisAttack,
             this::onAttackEnd,
-            def.isOrientWithPitch(),
-            def.isLockOriginOnFire(),
+            a.isOrientWithPitch(),
+            a.isLockOriginOnFire(),
             lockedCenter,
             lockedYaw,
             lockedPitch

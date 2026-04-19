@@ -23,19 +23,20 @@ import org.joml.Vector3f;
 import btm.sword.Sword;
 import btm.sword.config.Config;
 import btm.sword.system.attack.simulation.ControlPoint;
-import btm.sword.system.attack.simulation.ControlPointTrajectory;
+import btm.sword.system.attack.simulation.ControlPointSequence;
 import btm.sword.system.attack.simulation.KeyframeType;
-import btm.sword.system.attack.simulation.KeyframedTrajectory;
+import btm.sword.system.attack.simulation.KeyframedSequence;
 import btm.sword.system.attack.simulation.ObbVolume;
 import btm.sword.system.attack.simulation.VolumeKeyframe;
+import btm.sword.system.attack.simulation.VolumeSequence;
 import btm.sword.system.attack.simulation.VolumeShape;
-import btm.sword.system.attack.simulation.VolumeTrajectory;
 import btm.sword.system.control.PredicateRunnablePair;
 import btm.sword.system.control.TimeArbiter;
 import btm.sword.system.item.KeyRegistry;
 import btm.sword.utility.Debug;
 import btm.sword.utility.Prefab;
 import btm.sword.utility.display.DrawUtil;
+import btm.sword.utility.display.ObbWireframe;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -64,8 +65,6 @@ import net.kyori.adventure.text.format.TextDecoration;
 public final class VolumeEditorMode {
 
     private static final int TICK_MS = 100;
-    private static final float EDGE_SPACING = 0.18f;
-    private static final int SPHERE_SEGMENTS = 16;
 
     /** How many ticks to skip between grey (non-selected) keyframe renders. */
     private static final int GREY_RENDER_PERIOD = 3;
@@ -147,12 +146,12 @@ public final class VolumeEditorMode {
      * Starts a 50 ms main-thread loop that renders the live interpolated OBB of a wand
      * test attack as it plays out.
      *
-     * <p>Only supports {@link KeyframedTrajectory} — silently no-ops for other trajectory
+     * <p>Only supports {@link KeyframedSequence} — silently no-ops for other trajectory
      * types. The OBB is rendered with a bright cyan outline at each tick.</p>
      *
      * <p>When {@code lockOriginOnFire} is {@code true}, the world transform is captured once
      * at call time and reused every tick — matching the simulation's frozen origin behaviour.
-     * Otherwise the player's live position and yaw are sampled each tick.</p>
+     * Otherwise, the player's live position and yaw are sampled each tick.</p>
      *
      * <p>The attack ray is drawn from the keyframe's stored ray origin (or the attacker's
      * bounding-box centre when none is stored) to the current volume centre. This matches
@@ -163,16 +162,16 @@ public final class VolumeEditorMode {
      * No cleanup is required by the caller.</p>
      *
      * @param player           the player who fired the wand attack
-     * @param trajectory       the attack's trajectory (must be {@link KeyframedTrajectory})
+     * @param sequence       the attack's trajectory (must be {@link KeyframedSequence})
      * @param startMs          wall-clock start time matching the {@link btm.sword.system.attack.simulation.SimulationAttack}
      * @param durationMs       total attack duration in milliseconds
      * @param lockOriginOnFire when {@code true}, origin is frozen at call time instead of
      *                         following the player each tick
      * @param orientWithPitch  whether the world transform should include pitch rotation
      */
-    public static void startPlaybackVisualization(Player player, VolumeTrajectory trajectory,
+    public static void startPlaybackVisualization(Player player, VolumeSequence sequence,
             long startMs, long durationMs, boolean lockOriginOnFire, boolean orientWithPitch) {
-        if (!(trajectory instanceof KeyframedTrajectory) && !(trajectory instanceof ControlPointTrajectory)) return;
+        if (!(sequence instanceof KeyframedSequence) && !(sequence instanceof ControlPointSequence)) return;
 
         ObbVolume buffer = new ObbVolume();
 
@@ -203,17 +202,17 @@ public final class VolumeEditorMode {
                 }
 
                 // Live position wireframe
-                trajectory.sample(t, worldTransform, buffer);
+                sequence.sample(t, worldTransform, buffer);
                 if (buffer.isSphere) {
-                    renderSphereWireframe(world, buffer.center, buffer.halfExtents.x, DUST_LIVE);
+                    ObbWireframe.renderSphere(world, buffer.center, buffer.halfExtents.x, DUST_LIVE);
                 } else {
-                    renderObbWireframe(world, buffer.center, buffer.halfExtents, buffer.rotation, DUST_LIVE);
+                    ObbWireframe.renderObb(world, buffer.center, buffer.halfExtents, buffer.rotation, DUST_LIVE);
                 }
 
                 // Attack ray: only drawn when the sampled keyframe is RAYCAST or ORIGIN_RAY
                 // (buffer.rayOrigin is non-null only for those types).
-                if (buffer.rayOrigin != null) {
-                    drawEdge(world, buffer.rayOrigin, new Vector3f(buffer.center), DUST_GHOST_PATH);
+                if (buffer.rayOrigin != null && Config.Debug.VISUALIZATION_SHOW_HITBOXES) {
+                    ObbWireframe.drawEdge(world, buffer.rayOrigin, new Vector3f(buffer.center), DUST_GHOST_PATH);
                 }
             },
             null,
@@ -408,7 +407,7 @@ public final class VolumeEditorMode {
             Particle.DustOptions dust = isSelected ? DUST_SELECTED : dustForType(kf.keyframeType());
 
             if (kf.shape() == VolumeShape.SPHERE) {
-                totalParticles += renderSphereWireframe(world, worldCenter, kf.halfExtents().x, dust);
+                totalParticles += ObbWireframe.renderSphere(world, worldCenter, kf.halfExtents().x, dust);
             } else {
                 // OBB
                 Quaternionf worldRot = new Quaternionf(worldBaseRot).mul(kf.rotation());
@@ -418,7 +417,7 @@ public final class VolumeEditorMode {
                         + " half=" + fmtVec(kf.halfExtents())
                         + (isSelected ? " [SELECTED]" : ""));
                 }
-                totalParticles += renderObbWireframe(world, worldCenter, kf.halfExtents(), worldRot, dust);
+                totalParticles += ObbWireframe.renderObb(world, worldCenter, kf.halfExtents(), worldRot, dust);
             }
 
             // RAYCAST: orange dot at ray origin + secant from origin to tip
@@ -452,7 +451,8 @@ public final class VolumeEditorMode {
         boolean holdingWand = KeyRegistry.hasKey(
             session.getPlayer().getInventory().getItemInMainHand(),
             KeyRegistry.TEST_VOLUME_ATTACK_KEY);
-        if (holdingWand && keyframes.size() >= 2 && tickCount % GREY_RENDER_PERIOD == 0) {
+        if (holdingWand && keyframes.size() >= 2 && tickCount % GREY_RENDER_PERIOD == 0
+                && Config.Debug.VISUALIZATION_SHOW_HITBOXES) {
             for (VolumeKeyframe kf : keyframes) {
                 if (kf.keyframeType() != KeyframeType.RAYCAST && kf.keyframeType() != KeyframeType.ORIGIN_RAY) {
                     continue;
@@ -462,7 +462,7 @@ public final class VolumeEditorMode {
                     new Vector3f(kf.localPosition()), new Vector3f());
                 Vector3f rayStart = worldTransform.transformPosition(
                     new Vector3f(kf.localRayOrigin()), new Vector3f());
-                drawEdge(world, rayStart, worldCenter, DUST_GHOST_PATH);
+                ObbWireframe.drawEdge(world, rayStart, worldCenter, DUST_GHOST_PATH);
             }
         }
     }
@@ -481,20 +481,22 @@ public final class VolumeEditorMode {
         if (points == null || points.isEmpty()) return;
 
         // Render each control point handle as a dark blue OBB
-        for (ControlPoint cp : points) {
-            Vector3f worldCenter = worldTransform.transformPosition(
-                new Vector3f(cp.position()), new Vector3f());
-            renderObbWireframe(world, worldCenter, cp.halfExtents(), worldBaseRot, DUST_CTRL_POINT);
+        if (Config.Debug.VISUALIZATION_SHOW_HITBOXES) {
+            for (ControlPoint cp : points) {
+                Vector3f worldCenter = worldTransform.transformPosition(
+                    new Vector3f(cp.position()), new Vector3f());
+                ObbWireframe.renderObb(world, worldCenter, cp.halfExtents(), worldBaseRot, DUST_CTRL_POINT);
+            }
         }
 
         // Ghost interpolated path at 10 t-values, rendered every 3rd tick
-        if (tickCount % GREY_RENDER_PERIOD == 0) {
-            ControlPointTrajectory traj = new ControlPointTrajectory(points, session.getEditControlMode());
+        if (Config.Debug.VISUALIZATION_SHOW_HITBOXES && tickCount % GREY_RENDER_PERIOD == 0) {
+            ControlPointSequence traj = new ControlPointSequence(points, session.getEditControlMode());
             ObbVolume buffer = new ObbVolume();
             for (int i = 0; i <= 9; i++) {
                 float t = i / 9.0f;
                 traj.sample(t, worldTransform, buffer);
-                renderObbWireframe(world, buffer.center, buffer.halfExtents, buffer.rotation, DUST_GHOST_PATH);
+                ObbWireframe.renderObb(world, buffer.center, buffer.halfExtents, buffer.rotation, DUST_GHOST_PATH);
             }
         }
     }
@@ -659,117 +661,6 @@ public final class VolumeEditorMode {
     private static int getLastInSelection(AttackDevSession session) {
         return session.getSelectedKeyframeIndices().stream()
             .mapToInt(Integer::intValue).max().orElse(-1);
-    }
-
-    // ── OBB wireframe renderer ────────────────────────────────────────────────
-
-    /**
-     * Draws the 12 edges of an oriented bounding box using spaced dust particles.
-     *
-     * @param world       the world to spawn particles in
-     * @param center      world-space OBB centre
-     * @param halfExtents OBB half-extents along its local axes
-     * @param rotation    OBB orientation as a unit quaternion
-     * @param dust        the {@link Particle.DustOptions} colour/size to use
-     * @return total number of particle spawn calls made
-     */
-    private static int renderObbWireframe(World world, Vector3f center, Vector3f halfExtents,
-            Quaternionf rotation, Particle.DustOptions dust) {
-        // Compute the three scaled local-axis vectors
-        Vector3f ax = rotation.transform(new Vector3f(halfExtents.x, 0, 0), new Vector3f());
-        Vector3f ay = rotation.transform(new Vector3f(0, halfExtents.y, 0), new Vector3f());
-        Vector3f az = rotation.transform(new Vector3f(0, 0, halfExtents.z), new Vector3f());
-
-        // 8 corners: bit pattern i → (±ax, ±ay, ±az)
-        Vector3f[] corners = new Vector3f[8];
-        for (int i = 0; i < 8; i++) {
-            float sx = (i & 1) != 0 ? 1f : -1f;
-            float sy = (i & 2) != 0 ? 1f : -1f;
-            float sz = (i & 4) != 0 ? 1f : -1f;
-            corners[i] = new Vector3f(center)
-                .add(ax.x * sx, ax.y * sx, ax.z * sx)
-                .add(ay.x * sy, ay.y * sy, ay.z * sy)
-                .add(az.x * sz, az.y * sz, az.z * sz);
-        }
-
-        // 12 edges: pairs of corners that differ in exactly one bit
-        int count = 0;
-        count += drawEdge(world, corners[0], corners[1], dust);
-        count += drawEdge(world, corners[2], corners[3], dust);
-        count += drawEdge(world, corners[4], corners[5], dust);
-        count += drawEdge(world, corners[6], corners[7], dust);
-        count += drawEdge(world, corners[0], corners[2], dust);
-        count += drawEdge(world, corners[1], corners[3], dust);
-        count += drawEdge(world, corners[4], corners[6], dust);
-        count += drawEdge(world, corners[5], corners[7], dust);
-        count += drawEdge(world, corners[0], corners[4], dust);
-        count += drawEdge(world, corners[1], corners[5], dust);
-        count += drawEdge(world, corners[2], corners[6], dust);
-        count += drawEdge(world, corners[3], corners[7], dust);
-        return count;
-    }
-
-    // ── Sphere wireframe renderer ─────────────────────────────────────────────
-
-    /**
-     * Draws three orthogonal great circles (XZ, XY, YZ planes) to represent a sphere.
-     *
-     * @param world  the world to spawn particles in
-     * @param center world-space sphere centre
-     * @param radius sphere radius
-     * @param dust   the {@link Particle.DustOptions} colour/size to use
-     * @return total number of particle spawn calls made
-     */
-    private static int renderSphereWireframe(World world, Vector3f center, float radius,
-            Particle.DustOptions dust) {
-        int count = 0;
-        for (int ring = 0; ring < 3; ring++) {
-            for (int i = 0; i < SPHERE_SEGMENTS; i++) {
-                float a0 = (float) (2 * Math.PI * i / SPHERE_SEGMENTS);
-                float a1 = (float) (2 * Math.PI * (i + 1) / SPHERE_SEGMENTS);
-                float cos0 = (float) Math.cos(a0);
-                float sin0 = (float) Math.sin(a0);
-                float cos1 = (float) Math.cos(a1);
-                float sin1 = (float) Math.sin(a1);
-
-                Vector3f p0;
-                Vector3f p1;
-                if (ring == 0) { // XZ plane
-                    p0 = new Vector3f(center.x + radius * cos0, center.y, center.z + radius * sin0);
-                    p1 = new Vector3f(center.x + radius * cos1, center.y, center.z + radius * sin1);
-                } else if (ring == 1) { // XY plane
-                    p0 = new Vector3f(center.x + radius * cos0, center.y + radius * sin0, center.z);
-                    p1 = new Vector3f(center.x + radius * cos1, center.y + radius * sin1, center.z);
-                } else { // YZ plane
-                    p0 = new Vector3f(center.x, center.y + radius * cos0, center.z + radius * sin0);
-                    p1 = new Vector3f(center.x, center.y + radius * cos1, center.z + radius * sin1);
-                }
-                count += drawEdge(world, p0, p1, dust);
-            }
-        }
-        return count;
-    }
-
-    // ── Shared utilities ──────────────────────────────────────────────────────
-
-    private static int drawEdge(World world, Vector3f a, Vector3f b, Particle.DustOptions dust) {
-        float dx = b.x - a.x;
-        float dy = b.y - a.y;
-        float dz = b.z - a.z;
-        float len = (float) Math.sqrt(dx * dx + dy * dy + dz * dz);
-        if (len < 1e-4f) return 0;
-
-        int steps = Math.max(1, (int) (len / EDGE_SPACING));
-        float sx = dx / steps;
-        float sy = dy / steps;
-        float sz = dz / steps;
-
-        for (int i = 0; i <= steps; i++) {
-            world.spawnParticle(Particle.DUST,
-                a.x + sx * i, a.y + sy * i, a.z + sz * i,
-                1, 0, 0, 0, 0, dust);
-        }
-        return steps + 1;
     }
 
     private static String fmtVec(Vector3f v) {

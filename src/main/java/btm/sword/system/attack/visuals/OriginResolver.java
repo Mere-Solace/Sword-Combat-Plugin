@@ -39,11 +39,12 @@ public final class OriginResolver {
                 ? toLoc(ctx, ctx.lockedOrigin())
                 : resolveKeyframe(ctx.owningKeyframeIndex(), ctx);
             case OriginAnchor.RaycastOrigin ignored -> resolveRaycastOrigin(ctx);
+            case OriginAnchor.NextKeyframe nk -> resolveKeyframe(ctx.owningKeyframeIndex() + nk.offset(), ctx);
         };
     }
 
     private static Location resolveKeyframe(int index, EffectsContext ctx) {
-        List<VolumeKeyframe> kfs = ctx.trajectory().getKeyframes();
+        List<VolumeKeyframe> kfs = ctx.trajectory().keyframes();
         if (kfs.isEmpty()) return new Location(ctx.world(), 0, 0, 0);
         int clamped = Math.max(0, Math.min(index, kfs.size() - 1));
         Vector3f local = new Vector3f(kfs.get(clamped).localPosition());
@@ -65,7 +66,7 @@ public final class OriginResolver {
     }
 
     private static Location resolveRaycastOrigin(EffectsContext ctx) {
-        List<VolumeKeyframe> kfs = ctx.trajectory().getKeyframes();
+        List<VolumeKeyframe> kfs = ctx.trajectory().keyframes();
         if (kfs.isEmpty()) return new Location(ctx.world(), 0, 0, 0);
         int clamped = Math.max(0, Math.min(ctx.owningKeyframeIndex(), kfs.size() - 1));
         VolumeKeyframe kf = kfs.get(clamped);

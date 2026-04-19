@@ -1,13 +1,18 @@
 package btm.sword.system.inventory.menu.dev;
 
+import java.io.File;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
+import org.bukkit.Color;
 import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.entity.Player;
 import org.joml.Vector3f;
 
+import btm.sword.Sword;
+import btm.sword.system.attack.def.ParticleDisplayLibrary;
 import btm.sword.system.attack.dev.AttackDevSession;
 import btm.sword.system.attack.simulation.ParticleEffect;
 import btm.sword.system.attack.visuals.ParticleDisplay;
@@ -16,8 +21,10 @@ import btm.sword.system.inventory.menu.EnumPickerOptions;
 import btm.sword.system.inventory.menu.EnumSelectionMenu;
 import btm.sword.system.inventory.menu.Menu;
 import btm.sword.system.item.ItemStackBuilder;
+import btm.sword.utility.ChatInputCapture;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import xyz.xenondevs.invui.gui.Gui;
 import xyz.xenondevs.invui.item.Click;
@@ -31,11 +38,15 @@ import xyz.xenondevs.invui.window.Window;
  * {@code particleIndex} with a new record instance. The display's list is mutated
  * in-place; no separate draft is kept at this level.</p>
  *
- * <p>Controls: particle type (click → picker), count, spawn-offset X/Y/Z, and speed.
- * Speed {@code &lt; 0} means "omit speed from the Bukkit call" (shown as DEFAULT).</p>
+ * <p>Controls: particle type (click → picker), count, spawn-offset X/Y/Z, speed, and
+ * dust colour/size controls shown only for {@link Particle#DUST} and
+ * {@link Particle#DUST_COLOR_TRANSITION} types.</p>
+ *
+ * <p>Speed {@code &lt; 0} means "omit speed from the Bukkit call" (shown as DEFAULT).</p>
  */
 public class ParticleEffectEditorMenu extends Menu {
 
+    private final Particle particleType;
     private final int kfIndex;
     private final int displayIndex;
     private final int particleIndex;
@@ -46,8 +57,9 @@ public class ParticleEffectEditorMenu extends Menu {
      * @param displayIndex  display index within the keyframe's display list
      * @param particleIndex index of the {@link ParticleEffect} within the display's list
      */
-    public ParticleEffectEditorMenu(SwordPlayer player, int kfIndex, int displayIndex, int particleIndex) {
+    public ParticleEffectEditorMenu(SwordPlayer player, Particle type, int kfIndex, int displayIndex, int particleIndex) {
         super(player);
+        this.particleType = type;
         this.kfIndex = kfIndex;
         this.displayIndex = displayIndex;
         this.particleIndex = particleIndex;
@@ -80,6 +92,28 @@ public class ParticleEffectEditorMenu extends Menu {
                 .build(),
             click -> AttackEditorMenu.saveAttack(
                 AttackDevSession.getOrCreate(swordPlayer.player()), swordPlayer)
+        );
+
+        SimpleItem addToPreset = new SimpleItem(
+            new ItemStackBuilder(Material.NETHER_STAR)
+                .name(Component.text("Add to Preset", NamedTextColor.AQUA, TextDecoration.BOLD))
+                .lore(List.of(Component.text("Save this particle as a display preset.", NamedTextColor.DARK_GRAY)))
+                .build(),
+            click -> {
+                ParticleEffect snapshot = display.getParticles().get(particleIndex);
+                ChatInputCapture.prompt(
+                    swordPlayer.player(),
+                    Component.text("Enter preset name (or 'cancel'):", NamedTextColor.AQUA),
+                    name -> {
+                        if (name.equalsIgnoreCase("cancel")) return;
+                        String key = name.trim().toLowerCase().replace(' ', '_');
+                        if (key.isEmpty()) return;
+                        ParticleDisplayLibrary.register(key, snapshot.toPointDisplay(null),
+                            new File(Sword.getInstance().getDataFolder(), "particles.yml"));
+                        swordPlayer.message(Component.text(
+                            "[Dev] Saved preset '" + key + "' to particles.yml", NamedTextColor.GREEN));
+                    });
+            }
         );
 
         SimpleItem typeButton = new SimpleItem(
@@ -171,16 +205,88 @@ public class ParticleEffectEditorMenu extends Menu {
         SimpleItem szInc = inc(click -> commit(display, pe, pe.type(), pe.count(),
             new Vector3f(so.x, so.y, so.z + stepFloat(click)), pe.speed()));
 
+        // ── Colour controls (DUST, DUST_COLOR_TRANSITION, ENTITY_EFFECT) ─────
+        boolean isDust = pe.type() == Particle.DUST;
+        boolean isTransition = pe.type() == Particle.DUST_COLOR_TRANSITION;
+        boolean isEntityEffect = pe.type() == Particle.ENTITY_EFFECT;
+        boolean hasDustColor = isDust || isTransition;
+
+        Color fromColor = pe.dustOptions() != null ? pe.dustOptions().getColor() : Color.WHITE;
+        Color toColor = (pe.dustOptions() instanceof Particle.DustTransition dt) ? dt.getToColor() : Color.WHITE;
+        float dustSize = pe.dustOptions() != null ? pe.dustOptions().getSize() : 1.0f;
+        Color entityCol = pe.entityColor() != null ? pe.entityColor() : Color.WHITE;
+
+        SimpleItem fromR = hasDustColor
+            ? colorChannel("From R", fromColor.getRed(), Material.RED_CONCRETE, fromColor,
+                v -> commitDust(display, pe, Color.fromRGB(clamp(v), fromColor.getGreen(), fromColor.getBlue()),
+                    toColor, dustSize, isTransition))
+            : isEntityEffect
+            ? colorChannel("R", entityCol.getRed(), Material.RED_CONCRETE, entityCol,
+                v -> commitEntityColor(display, pe, Color.fromRGB(clamp(v), entityCol.getGreen(), entityCol.getBlue())))
+            : EMPTY;
+        SimpleItem fromG = hasDustColor
+            ? colorChannel("From G", fromColor.getGreen(), Material.LIME_CONCRETE, fromColor,
+                v -> commitDust(display, pe, Color.fromRGB(fromColor.getRed(), clamp(v), fromColor.getBlue()),
+                    toColor, dustSize, isTransition))
+            : isEntityEffect
+            ? colorChannel("G", entityCol.getGreen(), Material.LIME_CONCRETE, entityCol,
+                v -> commitEntityColor(display, pe, Color.fromRGB(entityCol.getRed(), clamp(v), entityCol.getBlue())))
+            : EMPTY;
+        SimpleItem fromB = hasDustColor
+            ? colorChannel("From B", fromColor.getBlue(), Material.LIGHT_BLUE_CONCRETE, fromColor,
+                v -> commitDust(display, pe, Color.fromRGB(fromColor.getRed(), fromColor.getGreen(), clamp(v)),
+                    toColor, dustSize, isTransition))
+            : isEntityEffect
+            ? colorChannel("B", entityCol.getBlue(), Material.LIGHT_BLUE_CONCRETE, entityCol,
+                v -> commitEntityColor(display, pe, Color.fromRGB(entityCol.getRed(), entityCol.getGreen(), clamp(v))))
+            : EMPTY;
+
+        SimpleItem toR = isTransition
+            ? colorChannel("To R", toColor.getRed(), Material.RED_CONCRETE, toColor,
+                v -> commitDust(display, pe, fromColor,
+                    Color.fromRGB(clamp(v), toColor.getGreen(), toColor.getBlue()), dustSize, true))
+            : EMPTY;
+        SimpleItem toG = isTransition
+            ? colorChannel("To G", toColor.getGreen(), Material.LIME_CONCRETE, toColor,
+                v -> commitDust(display, pe, fromColor,
+                    Color.fromRGB(toColor.getRed(), clamp(v), toColor.getBlue()), dustSize, true))
+            : EMPTY;
+        SimpleItem toB = isTransition
+            ? colorChannel("To B", toColor.getBlue(), Material.LIGHT_BLUE_CONCRETE, toColor,
+                v -> commitDust(display, pe, fromColor,
+                    Color.fromRGB(toColor.getRed(), toColor.getGreen(), clamp(v)), dustSize, true))
+            : EMPTY;
+
+        SimpleItem sizeDec = hasDustColor
+            ? dec(click -> commitDust(display, pe, fromColor, toColor,
+                Math.max(0.01f, dustSize - stepFloat(click)), isTransition))
+            : EMPTY;
+        SimpleItem sizeDisp = hasDustColor
+            ? new SimpleItem(
+                new ItemStackBuilder(Material.PAPER)
+                    .name(Component.text("Size: ", NamedTextColor.GRAY)
+                        .append(Component.text(String.format("%.2f", dustSize), NamedTextColor.GOLD, TextDecoration.BOLD)))
+                    .lore(List.of(Component.text("Click to type a value.", NamedTextColor.DARK_GRAY)))
+                    .build(),
+                click -> openFloatAnvil("Dust Size", dustSize,
+                    v -> commitDust(display, pe, fromColor, toColor, Math.max(0.01f, v), isTransition),
+                    this::open))
+            : EMPTY;
+        SimpleItem sizeInc = hasDustColor
+            ? inc(click -> commitDust(display, pe, fromColor, toColor, dustSize + stepFloat(click), isTransition))
+            : EMPTY;
+
         Gui gui = Gui.normal()
             .setStructure(
-                "B . . . . . . V T",
+                "B # # # # # U V T",
                 ". 1 2 3 . 4 5 6 .",
                 ". q w e . r s t .",
                 ". a b c . . . . .",
-                ". . . . . . . . .",
-                ". . . . . . . . .")
-            .addIngredient('.', BORDER)
+                ". D E F . G H I .",
+                ". J K L . . . . .")
+            .addIngredient('#', BORDER)
             .addIngredient('B', back)
+            .addIngredient('U', addToPreset)
             .addIngredient('V', save)
             .addIngredient('T', typeButton)
             .addIngredient('1', cntDec).addIngredient('2', cntDisp).addIngredient('3', cntInc)
@@ -188,6 +294,9 @@ public class ParticleEffectEditorMenu extends Menu {
             .addIngredient('q', sxDec).addIngredient('w', sxDisp).addIngredient('e', sxInc)
             .addIngredient('r', syDec).addIngredient('s', syDisp).addIngredient('t', syInc)
             .addIngredient('a', szDec).addIngredient('b', szDisp).addIngredient('c', szInc)
+            .addIngredient('D', fromR).addIngredient('E', fromG).addIngredient('F', fromB)
+            .addIngredient('G', toR).addIngredient('H', toG).addIngredient('I', toB)
+            .addIngredient('J', sizeDec).addIngredient('K', sizeDisp).addIngredient('L', sizeInc)
             .build();
 
         Window.single()
@@ -203,14 +312,48 @@ public class ParticleEffectEditorMenu extends Menu {
     private void commit(ParticleDisplay display, ParticleEffect old,
                         Particle type, int count, Vector3f spreadOffset, double speed) {
         ParticleEffect updated = new ParticleEffect(type, count,
-            new Vector3f(spreadOffset), speed, old.dustOptions());
+            new Vector3f(spreadOffset), speed, old.dustOptions(), old.entityColor());
         display.getParticles().set(particleIndex, updated);
         open();
     }
 
+    private void commitDust(ParticleDisplay display, ParticleEffect pe,
+                            Color from, Color to, float size, boolean isTransition) {
+        Particle.DustOptions dust = isTransition
+            ? new Particle.DustTransition(from, to, size)
+            : new Particle.DustOptions(from, size);
+        ParticleEffect updated = new ParticleEffect(
+            pe.type(), pe.count(), new Vector3f(pe.spreadOffset()), pe.speed(), dust, null);
+        display.getParticles().set(particleIndex, updated);
+        open();
+    }
+
+    private void commitEntityColor(ParticleDisplay display, ParticleEffect pe, Color color) {
+        ParticleEffect updated = new ParticleEffect(
+            pe.type(), pe.count(), new Vector3f(pe.spreadOffset()), pe.speed(), null, color);
+        display.getParticles().set(particleIndex, updated);
+        open();
+    }
+
+    private SimpleItem colorChannel(String label, int current, Material mat, Color preview, Consumer<Integer> onCommit) {
+        return new SimpleItem(
+            new ItemStackBuilder(mat)
+                .name(Component.text(label + ": ", NamedTextColor.GRAY)
+                    .append(Component.text(String.valueOf(current), NamedTextColor.GOLD, TextDecoration.BOLD)))
+                .lore(List.of(
+                    Component.text("Click to type a value (0–255).", NamedTextColor.DARK_GRAY),
+                    Component.text("████████", TextColor.color(preview.getRed(), preview.getGreen(), preview.getBlue()))))
+                .build(),
+            click -> openIntAnvil(label, current, onCommit, this::open));
+    }
+
+    private static int clamp(int v) {
+        return Math.max(0, Math.min(255, v));
+    }
+
     private SimpleItem spreadField(String label, float current, Material mat,
                                    ParticleEffect pe, ParticleDisplay display,
-                                   java.util.function.Function<Float, Vector3f> spreadBuilder) {
+                                   Function<Float, Vector3f> spreadBuilder) {
         return new SimpleItem(
             new ItemStackBuilder(mat)
                 .name(Component.text(label + ": ", NamedTextColor.GRAY)

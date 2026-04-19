@@ -6,7 +6,7 @@ import org.joml.Vector3f;
 
 /**
  * A {@link Volume} representing an oriented bounding box (OBB) or sphere.
- * Used as the output buffer for {@link KeyframedTrajectory}.
+ * Used as the output buffer for {@link KeyframedSequence}.
  *
  * <p>When {@link #isSphere} is {@code true}, the volume was produced from a
  * {@link VolumeShape#SPHERE} keyframe. In that case {@link #halfExtents} holds a uniform
@@ -28,14 +28,14 @@ public final class ObbVolume extends Volume {
     /**
      * When {@code true} this volume came from a {@link VolumeShape#SPHERE} keyframe.
      * Collision delegates to sphere-vs-AABB rather than the full OBB SAT test.
-     * Written each tick by {@link KeyframedTrajectory#sample}.
+     * Written each tick by {@link KeyframedSequence#sample}.
      */
     public boolean isSphere = false;
 
     /**
      * World-space ray start for {@link KeyframeType#ORIGIN_RAY} and
      * {@link KeyframeType#RAYCAST} keyframes, written each tick by
-     * {@link KeyframedTrajectory#sample}. {@code null} when the keyframe has no stored
+     * {@link KeyframedSequence#sample}. {@code null} when the keyframe has no stored
      * ray origin — the simulation falls back to the player BB center.
      */
     @Nullable

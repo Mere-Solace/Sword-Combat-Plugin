@@ -126,7 +126,7 @@ public abstract sealed class ParticleDisplay
         List<ParticleEffect> out = new ArrayList<>(particles.size());
         for (ParticleEffect e : particles) {
             out.add(new ParticleEffect(e.type(), e.count(),
-                new Vector3f(e.spreadOffset()), e.speed(), e.dustOptions()));
+                new Vector3f(e.spreadOffset()), e.speed(), e.dustOptions(), e.entityColor()));
         }
         return out;
     }

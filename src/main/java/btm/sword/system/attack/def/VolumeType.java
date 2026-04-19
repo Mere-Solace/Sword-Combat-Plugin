@@ -5,7 +5,7 @@ import btm.sword.system.attack.simulation.ObbVolume;
 import btm.sword.system.attack.simulation.Volume;
 
 /**
- * Classifies the collision primitive used by an {@link AttackDef}.
+ * Classifies the collision primitive used by an {@link AttackInstance}.
  * Determines which {@link Volume} subtype is allocated when the attack is activated.
  */
 public enum VolumeType {

@@ -11,12 +11,17 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import org.bukkit.Bukkit;
+import org.bukkit.Color;
+import org.bukkit.Particle;
 import org.bukkit.World;
 import org.joml.Matrix4f;
+import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 import btm.sword.Sword;
+import btm.sword.config.Config;
 import btm.sword.utility.Debug;
+import btm.sword.utility.display.ObbWireframe;
 
 /**
  * Off-thread 5ms fixed-rate collision loop for the new attack system.
@@ -146,6 +151,20 @@ public final class VolumeSimulation {
 
             attack.getTrajectory().sample(t, worldTransform, attack.getVolume());
 
+            if (Config.Debug.VISUALIZATION_SHOW_HITBOXES
+                    && attack.getVolume() instanceof ObbVolume obbSnapshot) {
+                World world = Bukkit.getWorld(attack.getWorldUuid());
+                if (world != null) {
+                    Vector3f sc = new Vector3f(obbSnapshot.center);
+                    Vector3f she = new Vector3f(obbSnapshot.halfExtents);
+                    Quaternionf sr = new Quaternionf(obbSnapshot.rotation);
+                    // TODO: Config
+                    Particle.DustOptions dust = new Particle.DustOptions(Color.fromRGB(255, 80, 80), 0.4f);
+                    Bukkit.getScheduler().runTask(Sword.getInstance(),
+                        () -> ObbWireframe.renderObb(world, sc, she, sr, dust));
+                }
+            }
+
             // For RAYCAST / ORIGIN_RAY keyframes only, build a thin ray capsule from the
             // recorded origin to the keyframe tip for line-of-attack detection. obbVol.rayOrigin
             // is non-null only for those keyframe types (written by KeyframedTrajectory.sample).
@@ -182,10 +201,11 @@ public final class VolumeSimulation {
                     attack.getVolume().aabbMax);
             }
 
-            if (attack.getTrajectory() instanceof KeyframedTrajectory kt) {
+            if (attack.getTrajectory() instanceof KeyframedSequence kfs) {
                 World world = Bukkit.getWorld(attack.getWorldUuid());
                 if (world != null) {
-                    EffectsDispatcher.dispatch(kt, attack, attack.getPrevT(), t, worldTransform, world);
+                    // Effects are performed from here **!**
+                    EffectsDispatcher.dispatch(kfs, attack, attack.getPrevT(), t, worldTransform, world);
                 }
             }
             if (expired) {

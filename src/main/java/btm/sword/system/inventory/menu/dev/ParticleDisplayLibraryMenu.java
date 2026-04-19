@@ -12,7 +12,7 @@ import btm.sword.Sword;
 import btm.sword.system.attack.def.AttackRegistry;
 import btm.sword.system.attack.def.ParticleDisplayLibrary;
 import btm.sword.system.attack.dev.AttackDevSession;
-import btm.sword.system.attack.simulation.KeyframedTrajectory;
+import btm.sword.system.attack.simulation.KeyframedSequence;
 import btm.sword.system.attack.simulation.ParticleEffect;
 import btm.sword.system.attack.simulation.VolumeKeyframe;
 import btm.sword.system.attack.visuals.OriginAnchor;
@@ -160,8 +160,8 @@ public class ParticleDisplayLibraryMenu extends Menu {
         List<Item> items = new ArrayList<>();
         for (var def : AttackRegistry.getAll()) {
             if (def.getId().equals(currentId)) continue;
-            if (!(def.getTrajectory() instanceof KeyframedTrajectory kt)) continue;
-            List<DisplayEntry> found = collectFromKeyframes(kt.getKeyframes(), def.getId());
+            if (!(def.getTrajectory() instanceof KeyframedSequence kt)) continue;
+            List<DisplayEntry> found = collectFromKeyframes(kt.keyframes(), def.getId());
             for (DisplayEntry e : found) {
                 total++;
                 items.add(makeEntry(session, e, NamedTextColor.YELLOW));
@@ -268,6 +268,7 @@ public class ParticleDisplayLibraryMenu extends Menu {
             case OriginAnchor.EntityBodyPoint ebp -> "Body." + ebp.point().name();
             case OriginAnchor.FireLockedOrigin ignored -> "Locked";
             case OriginAnchor.RaycastOrigin ignored -> "RayOrigin";
+            case OriginAnchor.NextKeyframe nk -> "Next+" + nk.offset();
         };
     }
 

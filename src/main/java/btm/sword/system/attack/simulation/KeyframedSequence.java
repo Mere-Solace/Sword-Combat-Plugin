@@ -10,7 +10,7 @@ import org.joml.Vector3f;
 import btm.sword.utility.math.BezierUtil;
 
 /**
- * A {@link VolumeTrajectory} that animates an OBB volume through a sequence of
+ * A {@link VolumeSequence} that animates an OBB volume through a sequence of
  * {@link VolumeKeyframe}s using Catmull-Rom interpolation.
  *
  * <p>Position is interpolated with a Catmull-Rom spline across the keyframe sequence.
@@ -19,10 +19,11 @@ import btm.sword.utility.math.BezierUtil;
  * to world space via the supplied {@code worldTransform}.</p>
  *
  * <p>Use with an {@link ObbVolume} buffer passed to {@link ActiveAttack}.</p>
+ *
+ * @param keyframes -- GETTER --
+ *                  Returns the immutable keyframe list.
  */
-public final class KeyframedTrajectory implements VolumeTrajectory {
-
-    private final List<VolumeKeyframe> keyframes;
+public record KeyframedSequence(List<VolumeKeyframe> keyframes) implements VolumeSequence {
 
     /**
      * Creates a keyframed OBB trajectory.
@@ -30,20 +31,11 @@ public final class KeyframedTrajectory implements VolumeTrajectory {
      * @param keyframes ordered list of keyframes; must contain at least one entry
      * @throws IllegalArgumentException if the list is empty
      */
-    public KeyframedTrajectory(List<VolumeKeyframe> keyframes) {
+    public KeyframedSequence(List<VolumeKeyframe> keyframes) {
         if (keyframes.isEmpty()) {
             throw new IllegalArgumentException("KeyframedTrajectory requires at least one keyframe");
         }
         this.keyframes = List.copyOf(keyframes);
-    }
-
-    /**
-     * Returns the immutable keyframe list.
-     *
-     * @return keyframes in order
-     */
-    public List<VolumeKeyframe> getKeyframes() {
-        return keyframes;
     }
 
     /**
@@ -98,7 +90,7 @@ public final class KeyframedTrajectory implements VolumeTrajectory {
         Vector3f localPos = kb.linearToNext()
             ? new Vector3f(kb.localPosition()).lerp(kc.localPosition(), localT)
             : BezierUtil.catmullRom(
-                ka.localPosition(), kb.localPosition(), kc.localPosition(), kd.localPosition(), localT);
+            ka.localPosition(), kb.localPosition(), kc.localPosition(), kd.localPosition(), localT);
         Quaternionf localRot = new Quaternionf(kb.rotation()).slerp(kc.rotation(), localT);
         Vector3f he = new Vector3f(kb.halfExtents()).lerp(kc.halfExtents(), localT);
         if (sphere) {
@@ -114,9 +106,9 @@ public final class KeyframedTrajectory implements VolumeTrajectory {
             Vector3f interp = kb.linearToNext()
                 ? new Vector3f(originA).lerp(originB, localT)
                 : BezierUtil.catmullRom(
-                    ka.localRayOrigin() != null ? ka.localRayOrigin() : originA,
-                    originA, originB,
-                    kd.localRayOrigin() != null ? kd.localRayOrigin() : originB, localT);
+                ka.localRayOrigin() != null ? ka.localRayOrigin() : originA,
+                originA, originB,
+                kd.localRayOrigin() != null ? kd.localRayOrigin() : originB, localT);
             obbOut.rayOrigin = worldTransform.transformPosition(interp, new Vector3f());
         } else if (originB != null) {
             obbOut.rayOrigin = worldTransform.transformPosition(new Vector3f(originB), new Vector3f());

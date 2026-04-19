@@ -39,6 +39,12 @@ public sealed interface OriginAnchor {
         public static final RaycastOrigin INSTANCE = new RaycastOrigin();
     }
 
+    /**
+     * Resolves to the keyframe {@code offset} positions after the owning keyframe.
+     * Clamped to the last keyframe when the computed index exceeds the trajectory length.
+     */
+    record NextKeyframe(int offset) implements OriginAnchor {}
+
     /** Points on the attacker's body that an anchor can reference. */
     enum BodyPoint { EYE, CHEST, FEET }
 
@@ -56,4 +62,7 @@ public sealed interface OriginAnchor {
 
     /** Convenience factory: raycast-origin anchor (start of ray on RAYCAST keyframes). */
     static OriginAnchor raycastOrigin() { return RaycastOrigin.INSTANCE; }
+
+    /** Convenience factory: nth-next-keyframe anchor. */
+    static OriginAnchor nextKeyframe(int offset) { return new NextKeyframe(Math.max(1, offset)); }
 }

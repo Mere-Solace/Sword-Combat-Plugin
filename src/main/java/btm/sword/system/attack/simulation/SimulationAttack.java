@@ -33,7 +33,7 @@ import lombok.Setter;
 public final class SimulationAttack {
 
     private final UUID attackerUuid;
-    private final VolumeTrajectory trajectory;
+    private final VolumeSequence trajectory;
     private final Volume volume;
     private final long startMs;
     private final long durationMs;
@@ -69,7 +69,7 @@ public final class SimulationAttack {
     /**
      * Pre-allocated capsule buffer for the origin-to-tip ray collision check.
      * Populated each simulation tick for {@link ObbVolume}-based trajectories.
-     * {@code null} for other trajectory types (e.g. {@link SweepTrajectory}).
+     * {@code null} for other trajectory types (e.g. {@link SweepSequence}).
      */
     @Nullable
     @Setter
@@ -109,7 +109,7 @@ public final class SimulationAttack {
      */
     public SimulationAttack(
             UUID attackerUuid,
-            VolumeTrajectory trajectory,
+            VolumeSequence trajectory,
             Volume volume,
             long startMs,
             long durationMs,

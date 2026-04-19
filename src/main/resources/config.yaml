@@ -333,6 +333,7 @@ debug:
   logging_verbose_movement: false
   
   logging_verbose_config: false
+  logging_verbose_particle_display: false
   
   visualization_show_hitboxes: false
   visualization_show_raytraces: false

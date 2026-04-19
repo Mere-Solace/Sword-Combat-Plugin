@@ -100,44 +100,50 @@ public final class ParticleDisplaySerializer {
     /**
      * Serializes a {@link ParticleDisplay} to a raw YAML-compatible map.
      *
-     * @param d the display to serialize
+     * @param display the display to serialize
      * @return a map suitable for writing with {@link org.bukkit.configuration.file.YamlConfiguration}
      */
-    public static Map<String, Object> serialize(ParticleDisplay d) {
+    public static Map<String, Object> serialize(ParticleDisplay display) {
         Map<String, Object> map = new LinkedHashMap<>();
-        String shape = switch (d) {
+        String shape = switch (display) {
             case LineDisplay ignored -> "LINE";
             case SphereDisplay ignored -> "SPHERE";
             case CircleDisplay ignored -> "CIRCLE";
             default -> "POINT";
         };
         map.put("shape", shape);
-        map.put("anchor", serializeAnchor(d.getAnchor()));
-        map.put("origin-offset", vecMap(d.getOriginOffset()));
-        map.put("random-offset-range", vecMap(d.getRandomOffsetRange()));
-        map.put("repeat-count", d.getRepeatCount());
-        map.put("repeat-period-ticks", d.getRepeatPeriodTicks());
-        if (d.getBetweenKfRepeat() > 0) map.put("between-kf-repeat", d.getBetweenKfRepeat());
+        map.put("anchor", serializeAnchor(display.getAnchor()));
+        map.put("origin-offset", vecMap(display.getOriginOffset()));
+        map.put("random-offset-range", vecMap(display.getRandomOffsetRange()));
+        map.put("repeat-count", display.getRepeatCount());
+        map.put("repeat-period-ticks", display.getRepeatPeriodTicks());
+        if (display.getBetweenKfRepeat() > 0) map.put("between-kf-repeat", display.getBetweenKfRepeat());
         List<Map<String, Object>> pList = new ArrayList<>();
-        for (ParticleEffect p : d.getParticles()) {
+        for (ParticleEffect p : display.getParticles()) {
             pList.add(serializeParticle(p));
         }
         map.put("particles", pList);
-        if (d instanceof LineDisplay ld) {
-            map.put("end-anchor", serializeAnchor(ld.getEndAnchor()));
-            map.put("end-offset", vecMap(ld.getEndOffset()));
-            map.put("end-random-range", vecMap(ld.getEndRandomRange()));
-            map.put("spacing", ld.getSpacing());
-        } else if (d instanceof SphereDisplay sd) {
-            map.put("radius", sd.getRadius());
-            map.put("density", sd.getDensity());
-            map.put("filled", sd.isFilled());
-        } else if (d instanceof CircleDisplay cd) {
-            map.put("outer-radius", cd.getOuterRadius());
-            map.put("inner-radius", cd.getInnerRadius());
-            map.put("spacing-radial", cd.getSpacingRadial());
-            map.put("spacing-arc", cd.getSpacingArc());
-            map.put("normal", cd.getNormal().name());
+        switch (display) {
+            case LineDisplay ld -> {
+                map.put("end-anchor", serializeAnchor(ld.getEndAnchor()));
+                map.put("end-offset", vecMap(ld.getEndOffset()));
+                map.put("end-random-range", vecMap(ld.getEndRandomRange()));
+                map.put("spacing", ld.getSpacing());
+            }
+            case SphereDisplay sd -> {
+                map.put("radius", sd.getRadius());
+                map.put("density", sd.getDensity());
+                map.put("filled", sd.isFilled());
+            }
+            case CircleDisplay cd -> {
+                map.put("outer-radius", cd.getOuterRadius());
+                map.put("inner-radius", cd.getInnerRadius());
+                map.put("spacing-radial", cd.getSpacingRadial());
+                map.put("spacing-arc", cd.getSpacingArc());
+                map.put("normal", cd.getNormal().name());
+            }
+            default -> {
+            }
         }
         return map;
     }
@@ -181,7 +187,6 @@ public final class ParticleDisplaySerializer {
     public static Map<String, Object> serializeAnchor(OriginAnchor anchor) {
         Map<String, Object> m = new LinkedHashMap<>();
         switch (anchor) {
-            case OriginAnchor.OwningKeyframe ignored -> m.put("kind", "OWNING");
             case OriginAnchor.KeyframeIndex ki -> {
                 m.put("kind", "KEYFRAME");
                 m.put("index", ki.index());
@@ -219,9 +224,23 @@ public final class ParticleDisplaySerializer {
             int g = dustMap.get("g") instanceof Number n ? n.intValue() : 255;
             int b = dustMap.get("b") instanceof Number n ? n.intValue() : 255;
             float size = dustMap.get("size") instanceof Number n ? n.floatValue() : 1.0f;
-            dustOptions = new Particle.DustOptions(Color.fromRGB(r, g, b), size);
+            if (dustMap.containsKey("to-r")) {
+                int tr = dustMap.get("to-r") instanceof Number n ? n.intValue() : 255;
+                int tg = dustMap.get("to-g") instanceof Number n ? n.intValue() : 255;
+                int tb = dustMap.get("to-b") instanceof Number n ? n.intValue() : 255;
+                dustOptions = new Particle.DustTransition(Color.fromRGB(r, g, b), Color.fromRGB(tr, tg, tb), size);
+            } else {
+                dustOptions = new Particle.DustOptions(Color.fromRGB(r, g, b), size);
+            }
         }
-        return new ParticleEffect(type, count, spreadOffset, speed, dustOptions);
+        Color entityColor = null;
+        if (map.get("entityColor") instanceof Map<?, ?> ecMap) {
+            int r = ecMap.get("r") instanceof Number n ? n.intValue() : 255;
+            int g = ecMap.get("g") instanceof Number n ? n.intValue() : 255;
+            int b = ecMap.get("b") instanceof Number n ? n.intValue() : 255;
+            entityColor = Color.fromRGB(r, g, b);
+        }
+        return new ParticleEffect(type, count, spreadOffset, speed, dustOptions, entityColor);
     }
 
     /**
@@ -236,13 +255,30 @@ public final class ParticleDisplaySerializer {
         map.put("count", p.count());
         map.put("spreadOffset", vecMap(p.spreadOffset()));
         map.put("speed", p.speed());
-        if (p.dustOptions() != null) {
+        if (p.dustOptions() instanceof Particle.DustTransition dt) {
+            map.put("dust", Map.of(
+                "r", dt.getColor().getRed(),
+                "g", dt.getColor().getGreen(),
+                "b", dt.getColor().getBlue(),
+                "to-r", dt.getToColor().getRed(),
+                "to-g", dt.getToColor().getGreen(),
+                "to-b", dt.getToColor().getBlue(),
+                "size", (double) dt.getSize()
+            ));
+        } else if (p.dustOptions() != null) {
             Particle.DustOptions d = p.dustOptions();
             map.put("dust", Map.of(
                 "r", d.getColor().getRed(),
                 "g", d.getColor().getGreen(),
                 "b", d.getColor().getBlue(),
                 "size", (double) d.getSize()
+            ));
+        }
+        if (p.entityColor() != null) {
+            map.put("entityColor", Map.of(
+                "r", p.entityColor().getRed(),
+                "g", p.entityColor().getGreen(),
+                "b", p.entityColor().getBlue()
             ));
         }
         return map;

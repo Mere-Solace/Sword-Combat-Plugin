@@ -13,6 +13,7 @@ import btm.sword.system.inventory.item.ForwardItem;
 import btm.sword.system.inventory.item.PreviousItem;
 import btm.sword.system.inventory.menu.Menu;
 import btm.sword.system.item.ItemStackBuilder;
+import btm.sword.utility.ChatInputCapture;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -102,6 +103,30 @@ public class OriginAnchorPickerMenu extends Menu {
         SimpleItem bodyChest = bodyButton(OriginAnchor.BodyPoint.CHEST, Material.IRON_CHESTPLATE, "Attacker Chest");
         SimpleItem bodyFeet = bodyButton(OriginAnchor.BodyPoint.FEET, Material.IRON_BOOTS, "Attacker Feet");
 
+        SimpleItem nextKf = new SimpleItem(
+            new ItemStackBuilder(Material.ARROW)
+                .name(Component.text("Nth Next Keyframe", NamedTextColor.YELLOW, TextDecoration.BOLD))
+                .lore(List.of(
+                    Component.text("Resolves to the keyframe N positions", NamedTextColor.DARK_GRAY),
+                    Component.text("after the owning keyframe.", NamedTextColor.DARK_GRAY),
+                    Component.text("Clamped to the last keyframe.", NamedTextColor.DARK_GRAY),
+                    Component.empty(),
+                    Component.text("Click to enter offset.", NamedTextColor.YELLOW)))
+                .build(),
+            click -> ChatInputCapture.prompt(
+                swordPlayer.player(),
+                Component.text("Enter offset (e.g. 1 = next kf, 2 = two after, ...):", NamedTextColor.YELLOW),
+                input -> {
+                    if (!input.equalsIgnoreCase("cancel")) {
+                        try {
+                            int offset = Integer.parseInt(input.trim());
+                            onPick.accept(OriginAnchor.nextKeyframe(offset));
+                        } catch (NumberFormatException ignored) { }
+                    }
+                    returnTo.run();
+                })
+        );
+
         List<Item> kfItems = new ArrayList<>();
         for (int i = 0; i < kfCount; i++) {
             final int idx = i;
@@ -119,11 +144,12 @@ public class OriginAnchorPickerMenu extends Menu {
 
         PagedGui<Item> gui = PagedGui.items()
             .setStructure(
-                "B . O R E C F . L",
+                "B K O R E C F . L",
                 "x x x x x x x x x",
                 "< # # # # # # # >")
             .addIngredient('#', BORDER)
             .addIngredient('B', back)
+            .addIngredient('K', nextKf)
             .addIngredient('O', owning)
             .addIngredient('R', raycastOriginButton)
             .addIngredient('E', bodyEye)

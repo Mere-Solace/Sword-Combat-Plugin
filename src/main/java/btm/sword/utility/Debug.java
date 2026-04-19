@@ -172,6 +172,11 @@ public final class Debug {
         emit(Config.Debug.LOGGING_VERBOSE_ATTACK_VOLUME, "AttackVolume", message);
     }
 
+    /** ParticleEffect → ParticleWrapper conversion debug (type, dustOptions, dispatch path). Gated by {@link Config.Debug#LOGGING_VERBOSE_PARTICLE_DISPLAY}. */
+    public static void particleDisplay(String message) {
+        emit(Config.Debug.LOGGING_VERBOSE_PARTICLE_DISPLAY, "ParticleDisplay", message);
+    }
+
     // =========================================================================
     // Visual helpers
     // =========================================================================

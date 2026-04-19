@@ -2,7 +2,6 @@ package btm.sword;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
@@ -11,8 +10,6 @@ import org.bukkit.World;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
-import org.joml.Quaternionf;
-import org.joml.Vector3f;
 
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.ProtocolManager;
@@ -31,14 +28,9 @@ import btm.sword.listeners.packet.MovementListener;
 import btm.sword.system.action.throwing.InteractiveItemArbiter;
 import btm.sword.system.action.throwing.ProjectileManager;
 import btm.sword.system.attack.HitPacketRegistry;
-import btm.sword.system.attack.HitValuePacket;
-import btm.sword.system.attack.def.AttackDef;
 import btm.sword.system.attack.def.AttackRegistry;
 import btm.sword.system.attack.def.ParticleDisplayLibrary;
 import btm.sword.system.attack.simulation.CollisionEventBridge;
-import btm.sword.system.attack.simulation.KeyframeType;
-import btm.sword.system.attack.simulation.VolumeKeyframe;
-import btm.sword.system.attack.simulation.VolumeShape;
 import btm.sword.system.attack.simulation.VolumeSimulation;
 import btm.sword.system.control.TimeArbiter;
 import btm.sword.system.display.BossBarManager;
@@ -131,17 +123,6 @@ public final class Sword extends JavaPlugin {
 
         // Load particle display library presets from plugins/sword/particles.yml
         ParticleDisplayLibrary.load(new File(getDataFolder(), "particles.yml"));
-
-        // Register dev test AttackDef used by the TEST_VOLUME_ATTACK test item
-        AttackRegistry.register(new AttackDef.Builder("test_volume_attack")
-            .duration(600)
-            .onHit(new HitValuePacket(
-                () -> 0f, () -> 10, () -> 2, () -> 0f, () -> 0f))
-            .keyframes(List.of(
-                new VolumeKeyframe(0f, new Vector3f(0f, 1f, 1f), new Vector3f(0.5f, 0.5f, 0.5f), new Quaternionf(), VolumeShape.SPHERE, null, false, false, KeyframeType.STANDARD),
-                new VolumeKeyframe(1f, new Vector3f(0f, 1f, 2f), new Vector3f(0.5f, 0.5f, 0.5f), new Quaternionf(), VolumeShape.SPHERE, null, false, false, KeyframeType.STANDARD)
-            ))
-            .build());
 
         // Drain simulation collision events to the main thread every tick
         TimeArbiter.runTimeIndependentBukkitTaskOnTimer(

@@ -2892,6 +2892,14 @@ public final class Config {
             v -> LOGGING_VERBOSE_ATTACK_VOLUME = v,
             ConfigurationSection::getBoolean); }
 
+        /** Log ParticleEffect → ParticleWrapper conversion: particle type, dustOptions type, and dispatch path. */
+        public static boolean LOGGING_VERBOSE_PARTICLE_DISPLAY = false;
+        static { register(
+            "debug.logging_verbose_particle_display",
+            LOGGING_VERBOSE_PARTICLE_DISPLAY, Boolean.class,
+            v -> LOGGING_VERBOSE_PARTICLE_DISPLAY = v,
+            ConfigurationSection::getBoolean); }
+
         // Visualization configuration
         public static boolean VISUALIZATION_SHOW_HITBOXES = false;
         static { register(

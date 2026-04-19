@@ -30,18 +30,19 @@ public final class EffectsDispatcher {
      * Checks all keyframes in {@code trajectory} for effects that should fire in the
      * {@code (prevT, currentT]} window and schedules them on the main thread.
      *
-     * @param trajectory     the keyframed trajectory to scan
+     * @param seq     the keyframed trajectory to scan
      * @param attack         the running attack — source of attacker UUID and locked origin
      * @param prevT          normalized time at the previous tick (negative on the first tick)
      * @param currentT       normalized time at the current tick
      * @param worldTransform local-to-world transform at this tick
      * @param world          world in which to spawn effects
      */
-    public static void dispatch(KeyframedTrajectory trajectory, SimulationAttack attack,
-            float prevT, float currentT, Matrix4f worldTransform, World world) {
-        List<VolumeKeyframe> keyframes = trajectory.getKeyframes();
+    public static void dispatch(KeyframedSequence seq, SimulationAttack attack,
+                                float prevT, float currentT, Matrix4f worldTransform, World world) {
+        List<VolumeKeyframe> keyframes = seq.keyframes();
         for (int i = 0; i < keyframes.size(); i++) {
             VolumeKeyframe kf = keyframes.get(i);
+            // Run all keyframes in between the time steps
             if (kf.t() <= prevT || kf.t() > currentT) continue;
             KeyframeEffect effect = kf.effect();
             if (effect == null) continue;
@@ -56,7 +57,7 @@ public final class EffectsDispatcher {
                 new Matrix4f(worldTransform),
                 world,
                 attack.getAttackerUuid(),
-                trajectory,
+                seq,
                 attack.getLockedCenter(),
                 i);
 
