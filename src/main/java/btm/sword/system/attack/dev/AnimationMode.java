@@ -6,7 +6,6 @@ import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 
 import btm.sword.system.entity.impl.DevSwordPlayer;
-import btm.sword.system.entity.umbral.input.BladeRequest;
 import btm.sword.system.inventory.menu.dev.AttackBrowserMenu;
 import btm.sword.system.item.ItemStackBuilder;
 import net.kyori.adventure.text.Component;
@@ -47,7 +46,8 @@ public final class AnimationMode {
      * Enters AnimationMode on the given {@link DevSwordPlayer}.
      *
      * <ol>
-     *   <li>Requests {@link BladeRequest#DEACTIVATE} to hide the blade via {@code InactiveState} (blade FSM keeps ticking; display viewRange set to 0).</li>
+     *   <li>Suppresses the blade via {@link DevSwordPlayer#setUmbralBladeActive(boolean)} —
+     *       {@code Combatant.handleUmbralBladeTick()} destroys the blade on the next tick.</li>
      *   <li>Saves the current inventory to {@link AttackDevSession#getSavedAnimationInventory()}.</li>
      *   <li>Suppresses all anchored-item upkeep so managed items cannot refill the hotbar.</li>
      *   <li>Clears the inventory and populates the animation hotbar (slots 0–8).</li>
@@ -61,8 +61,8 @@ public final class AnimationMode {
      * @param session   the active attack editing session
      */
     public static void enter(DevSwordPlayer devPlayer, AttackDevSession session) {
-        // 1. Request INACTIVE — hides blade via InactiveState without destroying it
-        devPlayer.requestUmbralBladeState(BladeRequest.DEACTIVATE);
+        // 1. Suppress the blade via the lifecycle owner — blade is destroyed on the next tick.
+        devPlayer.setUmbralBladeActive(false);
 
         // 2. Snapshot the current creative-dev inventory
         session.setSavedAnimationInventory(devPlayer.player().getInventory().getContents().clone());
@@ -104,7 +104,8 @@ public final class AnimationMode {
      *   <li>Clears the AnimationMode flag.</li>
      *   <li>Restores the inventory from {@link AttackDevSession#getSavedAnimationInventory()}.</li>
      *   <li>Keeps anchored-item upkeep suppressed (player is still in creative dev mode).</li>
-     *   <li>Requests {@link BladeRequest#ACTIVATE_TO_PREVIOUS} to restore blade.</li>
+     *   <li>Re-enables the blade via {@link DevSwordPlayer#setUmbralBladeActive(boolean)} —
+     *       the lifecycle owner respawns it on the next tick.</li>
      * </ol>
      *
      * @param devPlayer the currently active {@link DevSwordPlayer} in AnimationMode
@@ -120,7 +121,7 @@ public final class AnimationMode {
         }
 
         devPlayer.setAllAnchoredItemUpkeep(false);
-        devPlayer.requestUmbralBladeState(BladeRequest.ACTIVATE_TO_PREVIOUS);
+        devPlayer.setUmbralBladeActive(true);
     }
 
     // ── Private helpers ───────────────────────────────────────────────────────

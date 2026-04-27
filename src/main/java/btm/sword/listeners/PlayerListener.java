@@ -1,8 +1,6 @@
 package btm.sword.listeners;
 
-import java.util.Objects;
 
-import org.bukkit.GameMode;
 import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.entity.HumanEntity;
@@ -38,8 +36,6 @@ import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.impl.DevSwordPlayer;
 import btm.sword.system.entity.impl.SwordPlayer;
-import btm.sword.system.entity.umbral.UmbralBlade;
-import btm.sword.system.entity.umbral.input.BladeRequest;
 import btm.sword.system.item.KeyRegistry;
 import btm.sword.system.item.material.MaterialType;
 import btm.sword.system.item.special.NonMovableItem;
@@ -433,23 +429,10 @@ public class PlayerListener implements Listener {
         }
     }
 
-    /** Handles game mode changes; removes blade display entities and deactivates the blade in spectator mode. */
+    /** Blade lifecycle (including spectator destroy/recreate) is owned by {@code Combatant.handleUmbralBladeTick()}. */
     @EventHandler
     public void gameChangeEvent(PlayerGameModeChangeEvent event) {
-        SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer());
-
-        // TODO: #233 - Find a better way to handle display entity orphaning on game mode change
-        UmbralBlade blade = swordPlayer.getUmbralBlade();
-        if (blade != null && blade.getDisplay() != null && blade.getDisplay().isValid()) {
-            blade.getDisplay().remove();
-        }
-
-        if (event.getNewGameMode().equals(GameMode.SPECTATOR)) {
-            swordPlayer.requestUmbralBladeState(BladeRequest.DEACTIVATE);
-        }
-        else if (Objects.equals(event.getPlayer().getGameMode(), GameMode.SPECTATOR)) {
-            swordPlayer.requestUmbralBladeState(BladeRequest.ACTIVATE_TO_PREVIOUS);
-        }
+        // intentionally empty
     }
 
 //    @EventHandler

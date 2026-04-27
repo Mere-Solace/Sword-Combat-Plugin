@@ -2812,6 +2812,13 @@ public final class Config {
             v -> LOGGING_VERBOSE_UMBRAL = v,
             ConfigurationSection::getBoolean); }
 
+        public static boolean LOGGING_VERBOSE_UMBRAL_STATES = false;
+        static { register(
+            "debug.logging_verbose_umbral_states",
+            LOGGING_VERBOSE_UMBRAL_STATES, Boolean.class,
+            v -> LOGGING_VERBOSE_UMBRAL_STATES = v,
+            ConfigurationSection::getBoolean); }
+
         public static boolean LOGGING_VERBOSE_HOSTILE = false;
         static { register(
             "debug.logging_verbose_hostile",

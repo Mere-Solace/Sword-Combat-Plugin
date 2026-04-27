@@ -411,6 +411,7 @@ public class SwordPlayer extends Combatant {
         }
         if (getUmbralBlade() != null) {
             getUmbralBlade().dispose();
+            setUmbralBlade(null);
         }
         endStatusDisplay();
         endIndicatorDisplay();

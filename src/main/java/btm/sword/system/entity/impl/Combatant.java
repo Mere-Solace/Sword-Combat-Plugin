@@ -5,11 +5,13 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
+import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
@@ -81,6 +83,7 @@ public abstract class Combatant extends SwordEntity {
     private UmbralBlade umbralBlade;
     private boolean startingBlade;
     private boolean bladeEnabled = true;
+    private boolean umbralBladeActive = true;
 
     private ThrownItem thrownItem;
     private ItemStack offHandItemStackDuringThrow;
@@ -134,11 +137,8 @@ public abstract class Combatant extends SwordEntity {
         super.onDeath();
 
         if (umbralBlade == null) return;
-        if (umbralBlade.getDisplay().isValid()) {
+        if (umbralBlade.getDisplay() != null && umbralBlade.getDisplay().isValid()) {
             Prefab.Particles.UMBRAL_BLADE_POOF.display(umbralBlade.getDisplay().getLocation());
-        }
-        if (umbralBlade.getDisplay() == null || !umbralBlade.getDisplay().isValid()) {
-            message("Display is null.");
         }
         umbralBlade.dispose();
         umbralBlade = null;
@@ -147,11 +147,12 @@ public abstract class Combatant extends SwordEntity {
     @Override
     public void onZeroHealth() {
         super.onZeroHealth();
-        if (umbralBlade != null && umbralBlade.getDisplay().isValid()) {
+        if (umbralBlade == null) return;
+        if (umbralBlade.getDisplay() != null && umbralBlade.getDisplay().isValid()) {
             Prefab.Particles.UMBRAL_BLADE_POOF.display(umbralBlade.getDisplay().getLocation());
-            umbralBlade.dispose();
-            umbralBlade = null;
         }
+        umbralBlade.dispose();
+        umbralBlade = null;
     }
 
     @Override
@@ -170,9 +171,34 @@ public abstract class Combatant extends SwordEntity {
      * </p>
      */
     public void handleUmbralBladeTick() {
-        if (!self().isValid() || !bladeEnabled) return;
-
-        if (umbralBlade == null && !isStartingBlade()) {
+        if (!self().isValid() || !bladeEnabled) {
+            if (umbralBlade != null) {
+                Debug.umbralStates(self().getName() + " lifecycle: invalid/disabled — ending blade");
+                endUmbralBlade();
+            }
+            return;
+        }
+        if (self() instanceof Player p && p.getGameMode() == GameMode.SPECTATOR) {
+            if (umbralBlade != null) {
+                Debug.umbralStates(self().getName() + " lifecycle: spectator — ending blade");
+                endUmbralBlade();
+            }
+            return;
+        }
+        if (!umbralBladeActive) {
+            if (umbralBlade != null) {
+                Debug.umbralStates(self().getName() + " lifecycle: suppressed — ending blade");
+                endUmbralBlade();
+            }
+            return;
+        }
+        if (umbralBlade != null && umbralBlade.getBladeStateMachine().isDeactivated()) {
+            Debug.umbralStates(self().getName() + " lifecycle: FSM deactivated — ending blade for recreation");
+            endUmbralBlade();
+            return;
+        }
+        if (umbralBlade == null && !startingBlade) {
+            Debug.umbralStates(self().getName() + " lifecycle: spawning blade");
             setupUmbralBlade();
             return;
         }

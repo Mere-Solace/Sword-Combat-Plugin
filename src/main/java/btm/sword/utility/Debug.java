@@ -122,6 +122,11 @@ public final class Debug {
         emit(Config.Debug.LOGGING_VERBOSE_UMBRAL, "Umbral", message);
     }
 
+    /** UmbralBlade FSM transition + lifecycle debug. Gated by {@link Config.Debug#LOGGING_VERBOSE_UMBRAL_STATES}. */
+    public static void umbralStates(String message) {
+        emit(Config.Debug.LOGGING_VERBOSE_UMBRAL_STATES, "UmbralStates", message);
+    }
+
     /** Hostile-entity debug. Gated by {@link Config.Debug#LOGGING_VERBOSE_HOSTILE}. */
     public static void hostile(String message) {
         emit(Config.Debug.LOGGING_VERBOSE_HOSTILE, "Hostile", message);

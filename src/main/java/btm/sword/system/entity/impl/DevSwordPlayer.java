@@ -18,7 +18,6 @@ import org.bukkit.plugin.Plugin;
 import btm.sword.system.attack.dev.AnimationModeInputHandler;
 import btm.sword.system.attack.dev.AttackDevSession;
 import btm.sword.system.attack.dev.SaveConfirmDialog;
-import btm.sword.system.entity.umbral.input.BladeRequest;
 import btm.sword.system.input.InputType;
 import btm.sword.system.inventory.menu.dev.SweepGeneratorMenu;
 import btm.sword.system.item.KeyRegistry;
@@ -38,8 +37,8 @@ import lombok.Setter;
  * <h2>AnimationMode behaviour</h2>
  * <ul>
  *   <li>The UmbralBlade FSM ticks identically to a normal {@link SwordPlayer} at all times.
- *       When AnimationMode is entered, {@link BladeRequest#DEACTIVATE} hides the blade via
- *       {@code InactiveState}; {@link BladeRequest#ACTIVATE_TO_PREVIOUS} restores it on exit.</li>
+ *       When AnimationMode is entered, {@link Combatant#setUmbralBladeActive(boolean)} suppresses
+ *       the blade; setting it back to {@code true} on exit causes the lifecycle owner to respawn it.</li>
  *   <li>{@link #act(InputType)} routes to {@link AnimationModeInputHandler} when
  *       {@link #isInAnimationMode()} is {@code true}; otherwise falls through to the
  *       normal input execution tree so non-animation dev interactions still work.</li>
@@ -136,7 +135,41 @@ public final class DevSwordPlayer extends SwordPlayer {
             AnimationModeInputHandler.handle(this, input);
             return;
         }
+        if (handleUmbralBladeTesterInput(input)) {
+            return;
+        }
         super.act(input);
+    }
+
+    /**
+     * Routes lifecycle commands while the player holds the UmbralBlade tester item
+     * (BREEZE_ROD tagged with {@link KeyRegistry#UMBRAL_BLADE_TESTER_KEY}).
+     *
+     * <ul>
+     *   <li>{@link InputType#LEFT}: deactivates the blade — destroys the instance and
+     *       blocks recreation until activate is called.</li>
+     *   <li>{@link InputType#DROP}: activates the blade — the lifecycle owner respawns
+     *       it on the next tick.</li>
+     * </ul>
+     *
+     * @param input the input received from the player
+     * @return {@code true} if the input was handled by the tester and should not fall
+     *         through to the normal input tree
+     */
+    private boolean handleUmbralBladeTesterInput(InputType input) {
+        ItemStack mainHand = player().getInventory().getItemInMainHand();
+        if (mainHand == null || mainHand.isEmpty()
+            || !KeyRegistry.hasKey(mainHand, KeyRegistry.UMBRAL_BLADE_TESTER_KEY)) {
+            return false;
+        }
+        switch (input) {
+            case LEFT -> deactivateUmbralBlade();
+            case DROP -> activateUmbralBlade();
+            default -> {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**

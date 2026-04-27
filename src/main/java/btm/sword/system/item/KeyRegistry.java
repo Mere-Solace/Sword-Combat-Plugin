@@ -208,6 +208,12 @@ public final class KeyRegistry {
     /** Cached {@link NamespacedKey} for {@link #TEST_VOLUME_ATTACK}. */
     public static final NamespacedKey TEST_VOLUME_ATTACK_KEY = key(TEST_VOLUME_ATTACK);
 
+    /** Persistent data key marking an item as the UmbralBlade lifecycle dev tester. */
+    public static final String UMBRAL_BLADE_TESTER = "umbral_blade_tester";
+
+    /** Cached {@link NamespacedKey} for {@link #UMBRAL_BLADE_TESTER}. */
+    public static final NamespacedKey UMBRAL_BLADE_TESTER_KEY = key(UMBRAL_BLADE_TESTER);
+
     // ------------------------------
     //  Utility Methods
     // ------------------------------

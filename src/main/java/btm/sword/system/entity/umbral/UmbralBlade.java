@@ -79,6 +79,7 @@ public class UmbralBlade extends ThrownItem {
         FORWARD_RUSH // otherwise?
     }
 
+    @Getter
     private final UmbralStateMachine bladeStateMachine;
     @Getter
     private Function<Combatant, Attack>[] basicAttacks;
@@ -652,9 +653,10 @@ public class UmbralBlade extends ThrownItem {
     public void dispose() {
         bladeStateMachine.getState().onExit(this);
         bladeStateMachine.setDeactivated(true);
-        if (display != null) {
+        if (display != null && display.isValid()) {
             display.remove();
         }
+        display = null;
     }
 
     /** Clears all mid-flight flags so the blade can be launched again cleanly. */
