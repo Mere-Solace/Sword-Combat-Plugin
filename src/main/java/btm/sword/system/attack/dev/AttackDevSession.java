@@ -15,13 +15,13 @@ import org.joml.Vector3f;
 
 import btm.sword.config.Config;
 import btm.sword.system.attack.HitValuePacket;
-import btm.sword.system.attack.def.AttackDef;
+import btm.sword.system.attack.def.AttackInstance;
 import btm.sword.system.attack.def.VolumeType;
 import btm.sword.system.attack.simulation.ControlMode;
 import btm.sword.system.attack.simulation.ControlPoint;
-import btm.sword.system.attack.simulation.ControlPointTrajectory;
+import btm.sword.system.attack.simulation.ControlPointSequence;
 import btm.sword.system.attack.simulation.KeyframeEffect;
-import btm.sword.system.attack.simulation.KeyframedTrajectory;
+import btm.sword.system.attack.simulation.KeyframedSequence;
 import btm.sword.system.attack.simulation.VolumeKeyframe;
 import btm.sword.system.attack.visuals.ParticleDisplay;
 import lombok.AccessLevel;
@@ -51,7 +51,7 @@ import net.kyori.adventure.text.format.NamedTextColor;
  *
  * <p>During EDITING, the mutable {@link #editKeyframes} list and {@link #editDurationMs}
  * field are the primary working state. Call {@link #buildCurrentAttack()} to materialise
- * the current state into an {@link AttackDef}, and {@link #loadIntoWand()} to cache that
+ * the current state into an {@link AttackInstance}, and {@link #loadIntoWand()} to cache that
  * definition so the test wand fires it on left-click.</p>
  */
 @Getter
@@ -178,10 +178,10 @@ public final class AttackDevSession {
     @Setter
     private LinkedHashSet<Integer> selectedKeyframeIndices = new LinkedHashSet<>();
     /**
-     * The most recently built {@link AttackDef} loaded into the test wand.
+     * The most recently built {@link AttackInstance} loaded into the test wand.
      * {@code null} means the wand fires the default {@code test_volume_attack}.
      */
-    private AttackDef loadedAttackDef = null;
+    private AttackInstance loadedAttackInstance = null;
 
     /**
      * Control points for the current CTRL_POINT edit session, or {@code null} when
@@ -207,6 +207,41 @@ public final class AttackDevSession {
      * overridable per-attack via the editor toggle.
      */
     @Getter @Setter private boolean editLockOriginOnFire = Config.Combat.ATTACKS_LOCK_ORIGIN_ON_FIRE;
+
+    // ── Pending multi-kf display copy ─────────────────────────────────────────
+    /**
+     * Keyframe indices to receive a copy of the display at {@link #pendingCopyDisplayIndex}
+     * when {@link btm.sword.system.inventory.menu.dev.KeyframeVisualsMenu} next opens.
+     * Set by add-shape actions that span multiple selected keyframes; consumed and cleared
+     * immediately by the menu so the copy only happens once.
+     */
+    @Getter private final List<Integer> pendingCopyTargets = new ArrayList<>();
+    /** Source keyframe index for the pending multi-kf copy. {@code -1} = none pending. */
+    @Getter @Setter private int pendingCopySourceKfIndex = -1;
+    /** Display index within the source keyframe for the pending multi-kf copy. {@code -1} = none pending. */
+    @Getter @Setter private int pendingCopyDisplayIndex = -1;
+
+    /**
+     * Stores a pending multi-kf display copy: sets the source kf/display indices and
+     * populates the target list.
+     *
+     * @param targets     keyframe indices that should receive a copy of the display
+     * @param sourceKfIdx source keyframe index
+     * @param displayIdx  display index within the source keyframe
+     */
+    public void setPendingCopy(List<Integer> targets, int sourceKfIdx, int displayIdx) {
+        pendingCopyTargets.clear();
+        pendingCopyTargets.addAll(targets);
+        pendingCopySourceKfIndex = sourceKfIdx;
+        pendingCopyDisplayIndex = displayIdx;
+    }
+
+    /** Clears all pending multi-kf copy state. */
+    public void clearPendingCopy() {
+        pendingCopyTargets.clear();
+        pendingCopySourceKfIndex = -1;
+        pendingCopyDisplayIndex = -1;
+    }
 
     private AttackDevSession(Player player) {
         this.player = player;
@@ -515,16 +550,16 @@ public final class AttackDevSession {
     }
 
     /**
-     * Constructs an immutable {@link AttackDef} from the current edit state.
+     * Constructs an immutable {@link AttackInstance} from the current edit state.
      * Delegates to a control-point build when the session holds CTRL_POINT data;
      * otherwise builds a keyframe-based VOLUME attack.
      *
      * @return the built attack definition
      * @throws IllegalStateException if there is neither keyframe nor control-point data
      */
-    public AttackDef buildCurrentAttack() {
+    public AttackInstance buildCurrentAttack() {
         if (editControlPoints != null && !editControlPoints.isEmpty()) {
-            return new AttackDef.Builder(currentAttackName)
+            return new AttackInstance.Builder(currentAttackName)
                 .controlPoints(editControlPoints, editControlMode)
                 .duration(editDurationMs)
                 .onHit(editHitValue != null ? editHitValue
@@ -536,7 +571,7 @@ public final class AttackDevSession {
         if (editKeyframes.isEmpty()) {
             throw new IllegalStateException("Cannot build AttackDef: no keyframes defined");
         }
-        return new AttackDef.Builder(currentAttackName)
+        return new AttackInstance.Builder(currentAttackName)
             .type(VolumeType.VOLUME)
             .keyframes(editKeyframes)
             .duration(editDurationMs)
@@ -549,34 +584,44 @@ public final class AttackDevSession {
 
     /**
      * Builds the current attack definition from edit state and stores it as the
-     * {@linkplain #loadedAttackDef wand-loaded attack}. The next left-click with the
+     * {@linkplain #loadedAttackInstance wand-loaded attack}. The next left-click with the
      * test wand will fire this definition instead of the default {@code test_volume_attack}.
      */
     public void loadIntoWand() {
-        this.loadedAttackDef = buildCurrentAttack();
+        this.loadedAttackInstance = buildCurrentAttack();
     }
 
     /**
-     * Starts an editing session from an existing {@link AttackDef}.
-     * Supports {@link KeyframedTrajectory} and {@link ControlPointTrajectory}.
+     * Starts an editing session from an existing {@link AttackInstance}.
+     * Supports {@link KeyframedSequence} and {@link ControlPointSequence}.
      *
      * @param def the attack definition to edit
      * @throws IllegalArgumentException if the trajectory type is not editable
      */
-    public void startEditingFromDef(AttackDef def) {
-        if (def.getTrajectory() instanceof ControlPointTrajectory cpt) {
+    public void startEditingFromDef(AttackInstance def) {
+        if (def.getTrajectory() instanceof ControlPointSequence cpt) {
             startEditingCtrlPoint(def.getId(), cpt.getPoints(), cpt.getMode(),
                 def.getDurationMs(), def.getHitValue());
             this.editOrientWithPitch = def.isOrientWithPitch();
             this.editLockOriginOnFire = def.isLockOriginOnFire();
             return;
         }
-        if (!(def.getTrajectory() instanceof KeyframedTrajectory kt)) {
+        if (!(def.getTrajectory() instanceof KeyframedSequence kt)) {
             throw new IllegalArgumentException("Cannot edit attack with unsupported trajectory: " + def.getId());
         }
-        startEditing(def.getId(), kt.getKeyframes(), def.getDurationMs(), def.getHitValue());
+        startEditing(def.getId(), kt.keyframes(), def.getDurationMs(), def.getHitValue());
         this.editOrientWithPitch = def.isOrientWithPitch();
         this.editLockOriginOnFire = def.isLockOriginOnFire();
+    }
+
+    /**
+     * Updates the attack name for the current session — used after a rename operation to keep
+     * the session's name in sync with the new id on disk and in the registry.
+     *
+     * @param name the new attack id
+     */
+    public void renameCurrentAttack(String name) {
+        this.currentAttackName = name;
     }
 
     /**

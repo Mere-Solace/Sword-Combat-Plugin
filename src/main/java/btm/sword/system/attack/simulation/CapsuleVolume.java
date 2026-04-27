@@ -4,7 +4,7 @@ import org.joml.Vector3f;
 
 /**
  * A {@link Volume} representing a capsule (swept sphere along a line segment).
- * Used as the output buffer for {@link SweepTrajectory}.
+ * Used as the output buffer for {@link SweepSequence}.
  */
 public final class CapsuleVolume extends Volume {
 

@@ -37,8 +37,8 @@ import lombok.Setter;
  * <h2>AnimationMode behaviour</h2>
  * <ul>
  *   <li>The UmbralBlade FSM ticks identically to a normal {@link SwordPlayer} at all times.
- *       When AnimationMode is entered, {@link BladeRequest#DEACTIVATE} hides the blade via
- *       {@code InactiveState}; {@link BladeRequest#ACTIVATE_TO_PREVIOUS} restores it on exit.</li>
+ *       When AnimationMode is entered, {@link Combatant#setUmbralBladeActive(boolean)} suppresses
+ *       the blade; setting it back to {@code true} on exit causes the lifecycle owner to respawn it.</li>
  *   <li>{@link #act(InputType)} routes to {@link AnimationModeInputHandler} when
  *       {@link #isInAnimationMode()} is {@code true}; otherwise falls through to the
  *       normal input execution tree so non-animation dev interactions still work.</li>
@@ -135,7 +135,41 @@ public final class DevSwordPlayer extends SwordPlayer {
             AnimationModeInputHandler.handle(this, input);
             return;
         }
+        if (handleUmbralBladeTesterInput(input)) {
+            return;
+        }
         super.act(input);
+    }
+
+    /**
+     * Routes lifecycle commands while the player holds the UmbralBlade tester item
+     * (BREEZE_ROD tagged with {@link KeyRegistry#UMBRAL_BLADE_TESTER_KEY}).
+     *
+     * <ul>
+     *   <li>{@link InputType#LEFT}: deactivates the blade — destroys the instance and
+     *       blocks recreation until activate is called.</li>
+     *   <li>{@link InputType#DROP}: activates the blade — the lifecycle owner respawns
+     *       it on the next tick.</li>
+     * </ul>
+     *
+     * @param input the input received from the player
+     * @return {@code true} if the input was handled by the tester and should not fall
+     *         through to the normal input tree
+     */
+    private boolean handleUmbralBladeTesterInput(InputType input) {
+        ItemStack mainHand = player().getInventory().getItemInMainHand();
+        if (mainHand == null || mainHand.isEmpty()
+            || !KeyRegistry.hasKey(mainHand, KeyRegistry.UMBRAL_BLADE_TESTER_KEY)) {
+            return false;
+        }
+        switch (input) {
+            case LEFT -> deactivateUmbralBlade();
+            case DROP -> activateUmbralBlade();
+            default -> {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
@@ -149,31 +183,31 @@ public final class DevSwordPlayer extends SwordPlayer {
      *   <li>All other slots fall through to the normal handler.</li>
      * </ul>
      *
-     * @param e the inventory click event to handle
+     * @param event the inventory click event to handle
      * @return {@code true} if the event was handled and should be cancelled
      */
     @Override
-    public boolean handleInventoryInput(InventoryClickEvent e) {
+    public boolean handleInventoryInput(InventoryClickEvent event) {
         if (!inAnimationMode) {
             // Volume-attack wand click → open Sweep Generator
-            if (e.getClickedInventory() == player().getInventory()) {
-                ItemStack clicked = e.getCurrentItem();
+            if (event.getClickedInventory() == player().getInventory()) {
+                ItemStack clicked = event.getCurrentItem();
                 if (clicked != null && KeyRegistry.hasKey(clicked, KeyRegistry.TEST_VOLUME_ATTACK_KEY)) {
                     new SweepGeneratorMenu(this).open();
                     return true;
                 }
             }
-            return super.handleInventoryInput(e);
+            return super.handleInventoryInput(event);
         }
 
-        if (e.getClickedInventory() != player().getInventory()) {
-            return super.handleInventoryInput(e);
+        if (event.getClickedInventory() != player().getInventory()) {
+            return super.handleInventoryInput(event);
         }
 
-        int slot = e.getSlot();
+        int slot = event.getSlot();
 
         if (slot == 35) {
-            if (e.getClick() == ClickType.LEFT) {
+            if (event.getClick() == ClickType.LEFT) {
                 AttackDevSession session = AttackDevSession.get(player().getUniqueId());
                 SaveConfirmDialog.open(this, session);
             }
@@ -184,6 +218,6 @@ public final class DevSwordPlayer extends SwordPlayer {
             return true;
         }
 
-        return super.handleInventoryInput(e);
+        return super.handleInventoryInput(event);
     }
 }

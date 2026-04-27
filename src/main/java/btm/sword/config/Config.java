@@ -2812,6 +2812,13 @@ public final class Config {
             v -> LOGGING_VERBOSE_UMBRAL = v,
             ConfigurationSection::getBoolean); }
 
+        public static boolean LOGGING_VERBOSE_UMBRAL_STATES = false;
+        static { register(
+            "debug.logging_verbose_umbral_states",
+            LOGGING_VERBOSE_UMBRAL_STATES, Boolean.class,
+            v -> LOGGING_VERBOSE_UMBRAL_STATES = v,
+            ConfigurationSection::getBoolean); }
+
         public static boolean LOGGING_VERBOSE_HOSTILE = false;
         static { register(
             "debug.logging_verbose_hostile",
@@ -2890,6 +2897,14 @@ public final class Config {
             "debug.logging_verbose_attack_volume",
             LOGGING_VERBOSE_ATTACK_VOLUME, Boolean.class,
             v -> LOGGING_VERBOSE_ATTACK_VOLUME = v,
+            ConfigurationSection::getBoolean); }
+
+        /** Log ParticleEffect → ParticleWrapper conversion: particle type, dustOptions type, and dispatch path. */
+        public static boolean LOGGING_VERBOSE_PARTICLE_DISPLAY = false;
+        static { register(
+            "debug.logging_verbose_particle_display",
+            LOGGING_VERBOSE_PARTICLE_DISPLAY, Boolean.class,
+            v -> LOGGING_VERBOSE_PARTICLE_DISPLAY = v,
             ConfigurationSection::getBoolean); }
 
         // Visualization configuration

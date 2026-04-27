@@ -3,10 +3,10 @@ package btm.sword.system.attack;
 import java.util.Set;
 import java.util.UUID;
 
-import btm.sword.system.attack.def.AttackDef;
+import btm.sword.system.attack.def.AttackInstance;
 
 /**
- * Represents an {@link AttackDef}-driven attack that is currently active for a combatant.
+ * Represents an {@link AttackInstance}-driven attack that is currently active for a combatant.
  *
  * <p>Holds the game-layer view of an in-progress attack: which definition is running,
  * who owns it, when it started, and which entities have already been hit.
@@ -22,7 +22,7 @@ import btm.sword.system.attack.def.AttackDef;
  * @param hitThisAttack thread-safe set of entity UUIDs hit so far
  */
 public record ActiveAttack(
-        AttackDef def,
+        AttackInstance def,
         UUID ownerUuid,
         long startTimeMs,
         Set<UUID> hitThisAttack) {

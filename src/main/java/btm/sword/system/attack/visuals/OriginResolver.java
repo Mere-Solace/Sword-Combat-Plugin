@@ -38,11 +38,13 @@ public final class OriginResolver {
             case OriginAnchor.FireLockedOrigin ignored -> ctx.lockedOrigin() != null
                 ? toLoc(ctx, ctx.lockedOrigin())
                 : resolveKeyframe(ctx.owningKeyframeIndex(), ctx);
+            case OriginAnchor.RaycastOrigin ignored -> resolveRaycastOrigin(ctx);
+            case OriginAnchor.NextKeyframe nk -> resolveKeyframe(ctx.owningKeyframeIndex() + nk.offset(), ctx);
         };
     }
 
     private static Location resolveKeyframe(int index, EffectsContext ctx) {
-        List<VolumeKeyframe> kfs = ctx.trajectory().getKeyframes();
+        List<VolumeKeyframe> kfs = ctx.trajectory().keyframes();
         if (kfs.isEmpty()) return new Location(ctx.world(), 0, 0, 0);
         int clamped = Math.max(0, Math.min(index, kfs.size() - 1));
         Vector3f local = new Vector3f(kfs.get(clamped).localPosition());
@@ -61,6 +63,18 @@ public final class OriginResolver {
             case CHEST -> swordEntity.getChestLocation();
             case FEET -> living.getLocation();
         };
+    }
+
+    private static Location resolveRaycastOrigin(EffectsContext ctx) {
+        List<VolumeKeyframe> kfs = ctx.trajectory().keyframes();
+        if (kfs.isEmpty()) return new Location(ctx.world(), 0, 0, 0);
+        int clamped = Math.max(0, Math.min(ctx.owningKeyframeIndex(), kfs.size() - 1));
+        VolumeKeyframe kf = kfs.get(clamped);
+        // Null fallback: use body-center (0,0,0 in local space) rather than the tip so the
+        // line has a non-zero length if localRayOrigin was never recorded.
+        Vector3f local = kf.localRayOrigin() != null ? new Vector3f(kf.localRayOrigin()) : new Vector3f();
+        Vector3f world = ctx.worldTransform().transformPosition(local);
+        return toLoc(ctx, world);
     }
 
     private static Location toLoc(EffectsContext ctx, Vector3f v) {

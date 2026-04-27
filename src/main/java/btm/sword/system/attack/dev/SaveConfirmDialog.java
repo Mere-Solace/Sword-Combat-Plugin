@@ -7,10 +7,10 @@ import org.bukkit.Material;
 import org.bukkit.configuration.file.YamlConfiguration;
 
 import btm.sword.Sword;
-import btm.sword.system.attack.def.AttackDef;
 import btm.sword.system.attack.def.AttackDefSerializer;
+import btm.sword.system.attack.def.AttackInstance;
 import btm.sword.system.attack.def.AttackRegistry;
-import btm.sword.system.attack.simulation.KeyframedTrajectory;
+import btm.sword.system.attack.simulation.KeyframedSequence;
 import btm.sword.system.entity.impl.DevSwordPlayer;
 import btm.sword.system.item.ItemStackBuilder;
 import net.kyori.adventure.text.Component;
@@ -115,7 +115,7 @@ public final class SaveConfirmDialog {
 
     private static void saveAndExit(DevSwordPlayer player, AttackDevSession session) {
         try {
-            AttackDef def = session.buildCurrentAttack();
+            AttackInstance def = session.buildCurrentAttack();
             AttackRegistry.register(def);
 
             File attacksDir = new File(Sword.getInstance().getDataFolder(), "attacks");
@@ -143,9 +143,9 @@ public final class SaveConfirmDialog {
                     var section = attacksSection.getConfigurationSection(name);
                     if (section != null) {
                         try {
-                            AttackDef loaded = AttackDefSerializer.load(section, name);
-                            if (loaded.getTrajectory() instanceof KeyframedTrajectory kt) {
-                                session.setEditKeyframes(kt.getKeyframes());
+                            AttackInstance loaded = AttackDefSerializer.load(section, name);
+                            if (loaded.getTrajectory() instanceof KeyframedSequence kt) {
+                                session.setEditKeyframes(kt.keyframes());
                             }
                         } catch (Exception e) {
                             player.message(Component.text(

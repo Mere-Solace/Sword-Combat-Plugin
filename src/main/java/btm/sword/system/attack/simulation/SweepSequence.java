@@ -8,7 +8,7 @@ import org.joml.Vector3f;
 import btm.sword.utility.math.BezierUtil;
 
 /**
- * A {@link VolumeTrajectory} that sweeps a capsule along a Catmull-Rom spline defined
+ * A {@link VolumeSequence} that sweeps a capsule along a Catmull-Rom spline defined
  * by a {@link SweepCurve}.
  *
  * <p>At each sample, the curve is evaluated at {@code t} and {@code t + dt} to produce
@@ -18,7 +18,7 @@ import btm.sword.utility.math.BezierUtil;
  *
  * <p>Use with a {@link CapsuleVolume} buffer passed to {@link ActiveAttack}.</p>
  */
-public final class SweepTrajectory implements VolumeTrajectory {
+public final class SweepSequence implements VolumeSequence {
 
     /** Step size used to derive the capsule's second endpoint from the curve. */
     private static final float DT = 0.01f;
@@ -30,7 +30,7 @@ public final class SweepTrajectory implements VolumeTrajectory {
      *
      * @param curve the Catmull-Rom path and radius profile for this attack
      */
-    public SweepTrajectory(SweepCurve curve) {
+    public SweepSequence(SweepCurve curve) {
         this.curve = curve;
     }
 

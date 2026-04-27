@@ -21,14 +21,14 @@ import org.joml.Vector3f;
 import btm.sword.system.attack.HitValuePacket;
 import btm.sword.system.attack.simulation.ControlMode;
 import btm.sword.system.attack.simulation.ControlPoint;
-import btm.sword.system.attack.simulation.ControlPointTrajectory;
+import btm.sword.system.attack.simulation.ControlPointSequence;
 import btm.sword.system.attack.simulation.KeyframeEffect;
 import btm.sword.system.attack.simulation.KeyframeType;
-import btm.sword.system.attack.simulation.KeyframedTrajectory;
+import btm.sword.system.attack.simulation.KeyframedSequence;
 import btm.sword.system.attack.simulation.ParticleEffect;
 import btm.sword.system.attack.simulation.SoundCue;
 import btm.sword.system.attack.simulation.SweepCurve;
-import btm.sword.system.attack.simulation.SweepTrajectory;
+import btm.sword.system.attack.simulation.SweepSequence;
 import btm.sword.system.attack.simulation.VolumeKeyframe;
 import btm.sword.system.attack.simulation.VolumeShape;
 import btm.sword.system.attack.visuals.CircleDisplay;
@@ -40,7 +40,7 @@ import btm.sword.system.attack.visuals.SphereDisplay;
 import btm.sword.utility.Debug;
 
 /**
- * Serializes and deserializes {@link AttackDef} entries to/from Bukkit {@link YamlConfiguration}.
+ * Serializes and deserializes {@link AttackInstance} entries to/from Bukkit {@link YamlConfiguration}.
  *
  * <p>SWEEP format uses a {@code curve} section with {@code control-points} and
  * {@code radius-profile} lists. VOLUME format uses a {@code keyframes} list.
@@ -56,14 +56,14 @@ public final class AttackDefSerializer {
     // ── Load ──────────────────────────────────────────────────────────────────
 
     /**
-     * Deserializes a single {@link AttackDef} from a {@link ConfigurationSection}.
+     * Deserializes a single {@link AttackInstance} from a {@link ConfigurationSection}.
      *
      * @param section the YAML section for this attack (child of {@code attacks:})
      * @param id      the attack identifier (key in the parent section)
      * @return the deserialized attack definition
      * @throws IllegalArgumentException if required fields are missing or malformed
      */
-    public static AttackDef load(ConfigurationSection section, String id) {
+    public static AttackInstance load(ConfigurationSection section, String id) {
         String typeStr = section.getString("type");
         if (typeStr == null) throw new IllegalArgumentException("Attack '" + id + "' missing 'type'");
         VolumeType type = VolumeType.valueOf(typeStr.toUpperCase());
@@ -74,7 +74,7 @@ public final class AttackDefSerializer {
         boolean orientWithPitch = section.getBoolean("orient-with-pitch", false);
         boolean lockOriginOnFire = section.getBoolean("lock-origin-on-fire", true);
 
-        AttackDef.Builder builder = new AttackDef.Builder(id)
+        AttackInstance.Builder builder = new AttackInstance.Builder(id)
             .duration(duration)
             .onHit(hitValue)
             .orientWithPitch(orientWithPitch)
@@ -278,6 +278,9 @@ public final class AttackDefSerializer {
                 yield OriginAnchor.body(bp);
             }
             case "LOCKED" -> OriginAnchor.fireLocked();
+            case "RAYCAST_ORIGIN" -> OriginAnchor.raycastOrigin();
+            case "NEXT_KEYFRAME" -> OriginAnchor.nextKeyframe(
+                map.get("offset") instanceof Number n ? n.intValue() : 1);
             default -> OriginAnchor.owning();
         };
     }
@@ -301,9 +304,23 @@ public final class AttackDefSerializer {
             int g = dustMap.get("g") instanceof Number gn ? gn.intValue() : 255;
             int b = dustMap.get("b") instanceof Number bn ? bn.intValue() : 255;
             float size = dustMap.get("size") instanceof Number sn2 ? sn2.floatValue() : 1.0f;
-            dust = new Particle.DustOptions(Color.fromRGB(r, g, b), size);
+            if (dustMap.containsKey("to-r")) {
+                int tr = dustMap.get("to-r") instanceof Number rn ? rn.intValue() : 255;
+                int tg = dustMap.get("to-g") instanceof Number gn ? gn.intValue() : 255;
+                int tb = dustMap.get("to-b") instanceof Number bn ? bn.intValue() : 255;
+                dust = new Particle.DustTransition(Color.fromRGB(r, g, b), Color.fromRGB(tr, tg, tb), size);
+            } else {
+                dust = new Particle.DustOptions(Color.fromRGB(r, g, b), size);
+            }
         }
-        return new ParticleEffect(type, count, spreadOffset, speed, dust);
+        Color entityColor = null;
+        if (map.get("entityColor") instanceof Map<?, ?> ecMap) {
+            int r = ecMap.get("r") instanceof Number rn ? rn.intValue() : 255;
+            int g = ecMap.get("g") instanceof Number gn ? gn.intValue() : 255;
+            int b = ecMap.get("b") instanceof Number bn ? bn.intValue() : 255;
+            entityColor = Color.fromRGB(r, g, b);
+        }
+        return new ParticleEffect(type, count, spreadOffset, speed, dust, entityColor);
     }
 
     private static SoundCue loadSoundCue(Map<?, ?> map) {
@@ -336,7 +353,7 @@ public final class AttackDefSerializer {
     // ── Save ──────────────────────────────────────────────────────────────────
 
     /**
-     * Serializes a single {@link AttackDef} into {@code file}, merging with any
+     * Serializes a single {@link AttackInstance} into {@code file}, merging with any
      * existing entries already present in the file.
      *
      * @param file   destination YAML file
@@ -344,7 +361,7 @@ public final class AttackDefSerializer {
      * @throws UnsupportedOperationException if the attack uses a custom lambda trajectory
      *                                        that cannot be serialized
      */
-    public static void save(File file, AttackDef attack) {
+    public static void save(File file, AttackInstance attack) {
         YamlConfiguration yaml = file.exists() ? YamlConfiguration.loadConfiguration(file) : new YamlConfiguration();
         String path = "attacks." + attack.getId();
 
@@ -376,8 +393,8 @@ public final class AttackDefSerializer {
         yaml.set(path + ".invulnerable-ticks", hv.invulnerableTicks());
     }
 
-    private static void saveSweepCurve(YamlConfiguration yaml, String path, AttackDef attack) {
-        if (!(attack.getTrajectory() instanceof SweepTrajectory sweep)) {
+    private static void saveSweepCurve(YamlConfiguration yaml, String path, AttackInstance attack) {
+        if (!(attack.getTrajectory() instanceof SweepSequence sweep)) {
             throw new UnsupportedOperationException("Cannot serialize non-SweepTrajectory as SWEEP for: " + attack.getId());
         }
         SweepCurve curve = sweep.getCurve();
@@ -394,12 +411,12 @@ public final class AttackDefSerializer {
         yaml.set(path + ".curve.radius-profile", radiusMaps);
     }
 
-    private static void saveKeyframes(YamlConfiguration yaml, String path, AttackDef attack) {
-        if (!(attack.getTrajectory() instanceof KeyframedTrajectory kt)) {
+    private static void saveKeyframes(YamlConfiguration yaml, String path, AttackInstance attack) {
+        if (!(attack.getTrajectory() instanceof KeyframedSequence kt)) {
             throw new UnsupportedOperationException("Cannot serialize non-KeyframedTrajectory as VOLUME for: " + attack.getId());
         }
         List<Map<String, Object>> kfMaps = new ArrayList<>();
-        for (VolumeKeyframe kf : kt.getKeyframes()) {
+        for (VolumeKeyframe kf : kt.keyframes()) {
             Map<String, Object> kfMap = new LinkedHashMap<>();
             kfMap.put("t", (double) kf.t());
             kfMap.put("position", vecMap(kf.localPosition()));
@@ -429,8 +446,8 @@ public final class AttackDefSerializer {
         yaml.set(path + ".keyframes", kfMaps);
     }
 
-    private static void saveControlPoints(YamlConfiguration yaml, String path, AttackDef attack) {
-        if (!(attack.getTrajectory() instanceof ControlPointTrajectory cpt)) {
+    private static void saveControlPoints(YamlConfiguration yaml, String path, AttackInstance attack) {
+        if (!(attack.getTrajectory() instanceof ControlPointSequence cpt)) {
             throw new UnsupportedOperationException(
                 "Cannot serialize non-ControlPointTrajectory as CTRL_POINT for: " + attack.getId());
         }
@@ -511,6 +528,11 @@ public final class AttackDefSerializer {
                 m.put("point", ebp.point().name());
             }
             case OriginAnchor.FireLockedOrigin ignored -> m.put("kind", "LOCKED");
+            case OriginAnchor.RaycastOrigin ignored -> m.put("kind", "RAYCAST_ORIGIN");
+            case OriginAnchor.NextKeyframe nk -> {
+                m.put("kind", "NEXT_KEYFRAME");
+                m.put("offset", nk.offset());
+            }
             default -> m.put("kind", "OWNING");
         }
         return m;
@@ -529,6 +551,13 @@ public final class AttackDefSerializer {
                 "g", d.getColor().getGreen(),
                 "b", d.getColor().getBlue(),
                 "size", (double) d.getSize()
+            ));
+        }
+        if (p.entityColor() != null) {
+            map.put("entityColor", Map.of(
+                "r", p.entityColor().getRed(),
+                "g", p.entityColor().getGreen(),
+                "b", p.entityColor().getBlue()
             ));
         }
         return map;

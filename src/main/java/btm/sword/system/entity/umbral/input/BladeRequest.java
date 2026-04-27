@@ -19,7 +19,6 @@ public enum BladeRequest {
     RECALL,
     WAITING,
 
-    ACTIVATE_TO_PREVIOUS,
     DEACTIVATE,
     RESUME_FROM_REPAIR
 }

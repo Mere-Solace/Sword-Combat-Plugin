@@ -5,11 +5,13 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
+import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
@@ -22,7 +24,7 @@ import btm.sword.system.action.ActionCaster;
 import btm.sword.system.action.movement.MovementAction;
 import btm.sword.system.action.throwing.types.ThrownItem;
 import btm.sword.system.attack.ActiveAttack;
-import btm.sword.system.attack.def.AttackDef;
+import btm.sword.system.attack.def.AttackInstance;
 import btm.sword.system.attack.simulation.EntitySnapshotMap;
 import btm.sword.system.attack.simulation.SimulationAttack;
 import btm.sword.system.attack.simulation.VolumeSimulation;
@@ -67,7 +69,6 @@ public abstract class Combatant extends SwordEntity {
      *  if an
      * -driven attack is currently running.
      *
-     * @return {@code true} while an attack is active
      */
     private boolean isAttacking = false;
 
@@ -82,6 +83,7 @@ public abstract class Combatant extends SwordEntity {
     private UmbralBlade umbralBlade;
     private boolean startingBlade;
     private boolean bladeEnabled = true;
+    private boolean umbralBladeActive = true;
 
     private ThrownItem thrownItem;
     private ItemStack offHandItemStackDuringThrow;
@@ -135,11 +137,8 @@ public abstract class Combatant extends SwordEntity {
         super.onDeath();
 
         if (umbralBlade == null) return;
-        if (umbralBlade.getDisplay().isValid()) {
+        if (umbralBlade.getDisplay() != null && umbralBlade.getDisplay().isValid()) {
             Prefab.Particles.UMBRAL_BLADE_POOF.display(umbralBlade.getDisplay().getLocation());
-        }
-        if (umbralBlade.getDisplay() == null || !umbralBlade.getDisplay().isValid()) {
-            message("Display is null.");
         }
         umbralBlade.dispose();
         umbralBlade = null;
@@ -148,11 +147,12 @@ public abstract class Combatant extends SwordEntity {
     @Override
     public void onZeroHealth() {
         super.onZeroHealth();
-        if (umbralBlade != null && umbralBlade.getDisplay().isValid()) {
+        if (umbralBlade == null) return;
+        if (umbralBlade.getDisplay() != null && umbralBlade.getDisplay().isValid()) {
             Prefab.Particles.UMBRAL_BLADE_POOF.display(umbralBlade.getDisplay().getLocation());
-            umbralBlade.dispose();
-            umbralBlade = null;
         }
+        umbralBlade.dispose();
+        umbralBlade = null;
     }
 
     @Override
@@ -171,9 +171,34 @@ public abstract class Combatant extends SwordEntity {
      * </p>
      */
     public void handleUmbralBladeTick() {
-        if (!self().isValid() || !bladeEnabled) return;
-
-        if (umbralBlade == null && !isStartingBlade()) {
+        if (!self().isValid() || !bladeEnabled) {
+            if (umbralBlade != null) {
+                Debug.umbralStates(self().getName() + " lifecycle: invalid/disabled — ending blade");
+                endUmbralBlade();
+            }
+            return;
+        }
+        if (self() instanceof Player p && p.getGameMode() == GameMode.SPECTATOR) {
+            if (umbralBlade != null) {
+                Debug.umbralStates(self().getName() + " lifecycle: spectator — ending blade");
+                endUmbralBlade();
+            }
+            return;
+        }
+        if (!umbralBladeActive) {
+            if (umbralBlade != null) {
+                Debug.umbralStates(self().getName() + " lifecycle: suppressed — ending blade");
+                endUmbralBlade();
+            }
+            return;
+        }
+        if (umbralBlade != null && umbralBlade.getBladeStateMachine().isDeactivated()) {
+            Debug.umbralStates(self().getName() + " lifecycle: FSM deactivated — ending blade for recreation");
+            endUmbralBlade();
+            return;
+        }
+        if (umbralBlade == null && !startingBlade) {
+            Debug.umbralStates(self().getName() + " lifecycle: spawning blade");
             setupUmbralBlade();
             return;
         }
@@ -197,6 +222,9 @@ public abstract class Combatant extends SwordEntity {
             }
             message("Starting Umbral Blade");
             umbralBlade = new UmbralBlade(this, ItemStack.of(Material.STONE_SWORD));
+
+            umbralBlade.setup(5);
+
             setStartingBlade(false);
             }, 200, TimeUnit.MILLISECONDS
         );
@@ -208,6 +236,7 @@ public abstract class Combatant extends SwordEntity {
      * spawning a new one. Call {@link #activateUmbralBlade()} to re-enable spawning.
      */
     public void deactivateUmbralBlade() {
+        Debug.throwing("Deactivating Blade");
         bladeEnabled = false;
         startingBlade = false;
         if (umbralBlade != null) {
@@ -222,6 +251,7 @@ public abstract class Combatant extends SwordEntity {
      * the normal deferred-spawn path.
      */
     public void activateUmbralBlade() {
+        Debug.throwing("Activating Blade");
         bladeEnabled = true;
     }
 
@@ -617,38 +647,38 @@ public abstract class Combatant extends SwordEntity {
     }
 
     /**
-     * Launches an {@link AttackDef}-driven attack for this combatant.
+     * Launches an {@link AttackInstance}-driven attack for this combatant.
      *
      * <p>Builds a shared {@code hitThisAttack} set, records the game-layer
      * {@link ActiveAttack}, and registers a {@link SimulationAttack} with
      * {@link VolumeSimulation} to begin the 200 Hz collision loop.
      * {@link #onAttackEnd()} is posted back to the main thread when the attack expires.</p>
      *
-     * @param def the attack definition to execute
+     * @param a the attack definition to execute
      */
-    public void launchAttackDef(AttackDef def) {
+    public void launchAttack(AttackInstance a) {
         long startMs = System.currentTimeMillis();
         Set<UUID> hitThisAttack = ConcurrentHashMap.newKeySet();
 
-        currentAttack = new ActiveAttack(def, uuid, startMs, hitThisAttack);
+        currentAttack = new ActiveAttack(a, uuid, startMs, hitThisAttack);
         isAttacking = true;
 
         // Damp XZ momentum and apply slow-falling for the attack window
         Vector vel = self().getVelocity();
         self().setVelocity(new Vector(vel.getX() * 0.3, vel.getY(), vel.getZ() * 0.3));
-        int durationTicks = def.getDurationMs() / 50;
+        int durationTicks = a.getDurationMs() / 50;
         self().addPotionEffect(new PotionEffect(PotionEffectType.SLOW_FALLING, durationTicks, 0, true, false));
 
-        Debug.attackVolume("LAUNCH id=" + def.getId()
+        Debug.attackVolume("LAUNCH id=" + a.getId()
             + " owner=" + self().getName()
-            + " duration=" + def.getDurationMs() + "ms"
-            + " type=" + def.getType());
+            + " duration=" + a.getDurationMs() + "ms"
+            + " type=" + a.getType());
 
         // Capture locked origin if the attack requires it
         Vector3f lockedCenter = null;
         Float lockedYaw = null;
         Float lockedPitch = null;
-        if (def.isLockOriginOnFire()) {
+        if (a.isLockOriginOnFire()) {
             EntitySnapshotMap.EntityBoundingBoxSnapshot snap =
                 EntitySnapshotMap.INSTANCE.get(uuid);
             if (snap != null) {
@@ -660,17 +690,17 @@ public abstract class Combatant extends SwordEntity {
 
         SimulationAttack simAttack = new SimulationAttack(
             uuid,
-            def.getTrajectory(),
-            def.createVolume(),
+            a.getTrajectory(),
+            a.createVolume(),
             startMs,
-            def.getDurationMs(),
-            def.getHitValue(),
-            def.getKnockbackFunction(),
+            a.getDurationMs(),
+            a.getHitValue(),
+            a.getKnockbackFunction(),
             self().getWorld().getUID(),
             hitThisAttack,
             this::onAttackEnd,
-            def.isOrientWithPitch(),
-            def.isLockOriginOnFire(),
+            a.isOrientWithPitch(),
+            a.isLockOriginOnFire(),
             lockedCenter,
             lockedYaw,
             lockedPitch

@@ -79,6 +79,7 @@ public class UmbralBlade extends ThrownItem {
         FORWARD_RUSH // otherwise?
     }
 
+    @Getter
     private final UmbralStateMachine bladeStateMachine;
     @Getter
     private Function<Combatant, Attack>[] basicAttacks;
@@ -209,7 +210,9 @@ public class UmbralBlade extends ThrownItem {
 
             thrower.self().addPassenger(display);
             display.setBillboard(Display.Billboard.FIXED);
-        }, 5);
+        });
+
+        // TODO: Removed the setup call; must set up elsewhere now.
 
         this.weapon = weapon;
 
@@ -235,6 +238,15 @@ public class UmbralBlade extends ThrownItem {
     /** Returns {@code true} and consumes the request if it is present in the input buffer. */
     public boolean isRequested(BladeRequest request) {
         return inputBuffer.consumeIfPresent(request);
+    }
+
+    public boolean isRequested(BladeRequest... requests) {
+        for (BladeRequest  request : requests) {
+            if (inputBuffer.consumeIfPresent(request)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /** Returns {@code true} and consumes the request if present and the blade is not in {@link InactiveState}. */
@@ -562,7 +574,9 @@ public class UmbralBlade extends ThrownItem {
             TimeArbiter.runFixedIterationTaskTimer(
                 null,
                 () -> request(BladeRequest.WIELD),
-                Config.UmbralBlade.WIELD_ON_GRAB_DELAY, Config.UmbralBlade.WIELD_ON_GRAB_PERIOD, Config.UmbralBlade.WIELD_ON_GRAB_ITERATIONS,
+                Config.UmbralBlade.WIELD_ON_GRAB_DELAY,
+                Config.UmbralBlade.WIELD_ON_GRAB_PERIOD,
+                Config.UmbralBlade.WIELD_ON_GRAB_ITERATIONS,
                 UmbralBlade.class,
                 "onGrab",
                 null,
@@ -637,8 +651,12 @@ public class UmbralBlade extends ThrownItem {
 
     @Override
     public void dispose() {
-        super.dispose();
+        bladeStateMachine.getState().onExit(this);
         bladeStateMachine.setDeactivated(true);
+        if (display != null && display.isValid()) {
+            display.remove();
+        }
+        display = null;
     }
 
     /** Clears all mid-flight flags so the blade can be launched again cleanly. */

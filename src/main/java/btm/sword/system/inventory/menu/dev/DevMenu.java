@@ -10,6 +10,7 @@ import btm.sword.system.inventory.menu.ItemLibraryMenu;
 import btm.sword.system.inventory.menu.MainMenu;
 import btm.sword.system.inventory.menu.Menu;
 import btm.sword.system.item.ItemStackBuilder;
+import btm.sword.utility.Prefab;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -169,6 +170,11 @@ public class DevMenu extends Menu {
             click -> new HitPacketLibraryMenu(swordPlayer).open()
         );
 
+        SimpleItem umbralBladeTester = new SimpleItem(
+            Prefab.Items.umbralBladeTester(),
+            click -> click.getPlayer().getInventory().addItem(Prefab.Items.umbralBladeTester())
+        );
+
 
         Gui gui = Gui.normal()
             .setStructure(
@@ -177,7 +183,7 @@ public class DevMenu extends Menu {
                 ". H V . ? . . E .",
                 ". . K . A . . P .",
                 "# R I . . . M W #",
-                "< > # . . . # # #")
+                "< > # . . . U # #")
             .addIngredient('#', BORDER)
             .addIngredient('T', toggles)
             .addIngredient('R', reloadInventoryButtons)
@@ -195,6 +201,7 @@ public class DevMenu extends Menu {
             .addIngredient('H', weaponDisplay)
             .addIngredient('V', attackEditor)
             .addIngredient('K', hitPackets)
+            .addIngredient('U', umbralBladeTester)
             .addIngredient('<', generatePreviousButtonOrDefault())
             .addIngredient('>', generateForwardPreviousButtonOrDefault())
             .build();

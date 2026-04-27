@@ -1,11 +1,14 @@
 package btm.sword.system.inventory.menu.dev;
 
+import java.io.File;
 import java.util.List;
 import java.util.function.Consumer;
 
 import org.bukkit.Material;
 import org.joml.Vector3f;
 
+import btm.sword.Sword;
+import btm.sword.system.attack.def.ParticleDisplayLibrary;
 import btm.sword.system.attack.dev.AttackDevSession;
 import btm.sword.system.attack.visuals.CircleDisplay;
 import btm.sword.system.attack.visuals.LineDisplay;
@@ -16,6 +19,7 @@ import btm.sword.system.attack.visuals.SphereDisplay;
 import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.inventory.menu.Menu;
 import btm.sword.system.item.ItemStackBuilder;
+import btm.sword.utility.ChatInputCapture;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -99,6 +103,26 @@ public class ParticleDisplayEditorMenu extends Menu {
             }
         );
 
+        SimpleItem saveToLibrary = new SimpleItem(
+            new ItemStackBuilder(Material.BOOKSHELF)
+                .name(Component.text("Save to Library", NamedTextColor.AQUA, TextDecoration.BOLD))
+                .lore(List.of(
+                    Component.text("Saves a copy of this display to particles.yml.", NamedTextColor.DARK_GRAY)))
+                .build(),
+            click -> ChatInputCapture.prompt(
+                swordPlayer.player(),
+                Component.text("Enter a name for this preset:", NamedTextColor.AQUA),
+                name -> {
+                    if (name.equalsIgnoreCase("cancel")) return;
+                    String key = name.trim().toLowerCase().replace(' ', '_');
+                    if (key.isEmpty()) return;
+                    ParticleDisplayLibrary.register(key, display,
+                        new File(Sword.getInstance().getDataFolder(), "particles.yml"));
+                    swordPlayer.message(Component.text(
+                        "[Dev] Saved preset '" + key + "' to particles.yml", NamedTextColor.GREEN));
+                })
+        );
+
         Vector3f off = display.getOriginOffset();
         SimpleItem offXDec = dec(click -> { off.x -= stepFloat(click); display.setOriginOffset(off); open(); });
         SimpleItem offXDisp = displayFloat("Off X", off.x, Material.RED_STAINED_GLASS, v -> { off.x = v; display.setOriginOffset(off); open(); });
@@ -127,6 +151,8 @@ public class ParticleDisplayEditorMenu extends Menu {
         SimpleItem pdDec = dec(click -> { display.setRepeatPeriodTicks(Math.max(0, display.getRepeatPeriodTicks() - stepInt(click))); open(); });
         SimpleItem pdDisp = displayInt("Period", display.getRepeatPeriodTicks(), Material.CLOCK, v -> { display.setRepeatPeriodTicks(Math.max(0, v)); open(); });
         SimpleItem pdInc = inc(click -> { display.setRepeatPeriodTicks(display.getRepeatPeriodTicks() + stepInt(click)); open(); });
+        SimpleItem bkrItem = displayInt("BtwKf", display.getBetweenKfRepeat(), Material.HOPPER,
+            v -> { display.setBetweenKfRepeat(Math.max(0, v)); open(); });
 
         Gui.Builder<?, ?> builder = Gui.normal()
             .setStructure(
@@ -141,7 +167,7 @@ public class ParticleDisplayEditorMenu extends Menu {
             .addIngredient('V', save)
             .addIngredient('I', info)
             .addIngredient('a', editParticles)
-            .addIngredient('c', BORDER)
+            .addIngredient('c', saveToLibrary)
             .addIngredient('D', deleteDisplay)
             .addIngredient('1', offXDec).addIngredient('2', offXDisp).addIngredient('3', offXInc)
             .addIngredient('4', offYDec).addIngredient('5', offYDisp).addIngredient('6', offYInc)
@@ -151,7 +177,7 @@ public class ParticleDisplayEditorMenu extends Menu {
             .addIngredient('u', rndZDec).addIngredient('i', rndZDisp).addIngredient('o', rndZInc)
             .addIngredient('R', rcDec).addIngredient('+', rcDisp).addIngredient('M', rcInc)
             .addIngredient('P', pdDec).addIngredient('p', pdDisp).addIngredient('m', pdInc)
-            .addIngredient('N', anchor).addIngredient('K', BORDER);
+            .addIngredient('N', anchor).addIngredient('K', bkrItem);
 
         addShapeRows(builder, display, back, save);
 
@@ -211,8 +237,8 @@ public class ParticleDisplayEditorMenu extends Menu {
                     open();
                 }));
                 builder.addIngredient('V', BORDER);
-                builder.addIngredient('B', BORDER);
-                builder.addIngredient('N', BORDER);
+                builder.addIngredient('B', back);
+                builder.addIngredient('N', save);
                 builder.addIngredient('<', back);
                 builder.addIngredient('>', save);
             }
@@ -246,7 +272,7 @@ public class ParticleDisplayEditorMenu extends Menu {
                     open();
                 }));
                 builder.addIngredient('Z', BORDER).addIngredient('X', BORDER).addIngredient('C', BORDER);
-                builder.addIngredient('V', BORDER).addIngredient('B', BORDER).addIngredient('N', BORDER);
+                builder.addIngredient('V', back).addIngredient('B', save).addIngredient('N', BORDER);
                 builder.addIngredient('<', back).addIngredient('>', save);
             }
             case CircleDisplay cd -> {
@@ -283,7 +309,7 @@ public class ParticleDisplayEditorMenu extends Menu {
                     open();
                 }));
                 builder.addIngredient('X', cycleNormal(cd));
-                builder.addIngredient('C', BORDER).addIngredient('V', BORDER).addIngredient('B', BORDER);
+                builder.addIngredient('C', BORDER).addIngredient('V', save).addIngredient('B', back);
                 builder.addIngredient('N', BORDER).addIngredient('<', back).addIngredient('>', save);
             }
             case null, default -> {
@@ -291,7 +317,7 @@ public class ParticleDisplayEditorMenu extends Menu {
                 builder.addIngredient('v', BORDER).addIngredient('b', BORDER).addIngredient('n', BORDER);
                 builder.addIngredient(',', BORDER);
                 builder.addIngredient('Z', BORDER).addIngredient('X', BORDER).addIngredient('C', BORDER);
-                builder.addIngredient('V', BORDER).addIngredient('B', BORDER).addIngredient('N', BORDER);
+                builder.addIngredient('V', save).addIngredient('B', back).addIngredient('N', BORDER);
                 builder.addIngredient('<', back).addIngredient('>', save);
             }
         }
@@ -371,6 +397,8 @@ public class ParticleDisplayEditorMenu extends Menu {
             case OriginAnchor.KeyframeIndex ki -> "KF #" + ki.index();
             case OriginAnchor.EntityBodyPoint ebp -> "Body " + ebp.point().name();
             case OriginAnchor.FireLockedOrigin ignored -> "Locked";
+            case OriginAnchor.RaycastOrigin ignored -> "Ray Origin";
+            case OriginAnchor.NextKeyframe nk -> "Next KF +" + nk.offset();
         };
     }
 

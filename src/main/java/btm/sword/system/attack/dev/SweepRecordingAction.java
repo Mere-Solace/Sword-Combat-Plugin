@@ -16,7 +16,7 @@ import btm.sword.Sword;
 import btm.sword.system.attack.HitValuePacket;
 import btm.sword.system.attack.def.AttackRegistry;
 import btm.sword.system.attack.simulation.KeyframeType;
-import btm.sword.system.attack.simulation.KeyframedTrajectory;
+import btm.sword.system.attack.simulation.KeyframedSequence;
 import btm.sword.system.attack.simulation.VolumeKeyframe;
 import btm.sword.system.attack.simulation.VolumeShape;
 import btm.sword.system.control.PredicateRunnablePair;
@@ -158,14 +158,14 @@ public final class SweepRecordingAction {
             Prefab.Particles.CREATE_DUST.apply(dustForNewPoint(session.getPendingPoints())).display(tip);
             Prefab.Particles.CREATE_DUST.apply(DUST_RAYCAST_ORIGIN).display(rayOrigin);
         } else if (mode == PlacementMode.ORIGIN_RAY) {
-            tip = computeWorldTip(player, 1);
+            tip = getLookPosition(player, 1);
             Vector to = tip.toVector().subtract(session.getLockedOrigin().toVector()).normalize();
             Location rayOrigin = session.getLockedOrigin().clone().add(to.multiply(session.getRayOffset()));
             session.addPendingPoint(new PlacedPoint(tip, mode, rayOrigin));
             Prefab.Particles.CREATE_DUST.apply(dustForNewPoint(session.getPendingPoints())).display(tip);
             Prefab.Particles.CREATE_DUST.apply(DUST_RAYCAST_ORIGIN).display(rayOrigin);
         } else {
-            tip = computeWorldTip(player, 1);
+            tip = getLookPosition(player, 1);
             session.addPendingPoint(tip);
             // Immediate placement marker — color matches what the render loop assigns this point
             Prefab.Particles.CREATE_DUST.apply(dustForNewPoint(session.getPendingPoints())).display(tip);
@@ -201,7 +201,7 @@ public final class SweepRecordingAction {
     // ── Saving ────────────────────────────────────────────────────────────────
 
     /**
-     * Converts the session's pending points into a {@link KeyframedTrajectory} edit session.
+     * Converts the session's pending points into a {@link KeyframedSequence} edit session.
      *
      * <p>No YAML is written here — the file is only persisted when the user explicitly saves
      * via {@link btm.sword.system.attack.dev.SaveConfirmDialog}. Each pending point is
@@ -457,7 +457,7 @@ public final class SweepRecordingAction {
      * Returns the world-space tip position at {@code distance} blocks from the player's eye
      * along the current look direction.
      */
-    static Location computeWorldTip(SwordPlayer player, float distance) {
+    static Location getLookPosition(SwordPlayer player, float distance) {
         return player.locFromEyeDir(distance);
     }
 

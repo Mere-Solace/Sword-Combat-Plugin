@@ -1,6 +1,6 @@
 package btm.sword.system.attack.dev;
 
-import btm.sword.system.attack.def.AttackDef;
+import btm.sword.system.attack.def.AttackInstance;
 import btm.sword.system.entity.impl.Combatant;
 import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.inventory.menu.dev.AttackBrowserMenu;
@@ -55,7 +55,7 @@ public final class WandActions {
      *
      * <ul>
      *   <li>If already in {@link DevMode#EDITING}: opens the editor directly.</li>
-     *   <li>If a wand-loaded {@link AttackDef} exists: calls
+     *   <li>If a wand-loaded {@link AttackInstance} exists: calls
      *       {@link AttackDevSession#startEditingFromDef} then opens the editor.</li>
      *   <li>Otherwise: opens {@link AttackBrowserMenu} so the player can pick an attack.</li>
      * </ul>
@@ -72,7 +72,7 @@ public final class WandActions {
             return;
         }
 
-        AttackDef loaded = session.getLoadedAttackDef();
+        AttackInstance loaded = session.getLoadedAttackInstance();
         if (loaded != null) {
             try {
                 session.startEditingFromDef(loaded);

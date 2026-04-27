@@ -388,6 +388,29 @@ public final class Prefab {
                 .tag(KeyRegistry.TEST_VOLUME_ATTACK_KEY, PersistentDataType.BOOLEAN, true)
                 .build();
         }
+
+        /**
+         * Builds an UmbralBlade lifecycle dev tester — a breeze rod tagged with
+         * {@link KeyRegistry#UMBRAL_BLADE_TESTER_KEY}. Left click destroys the blade
+         * (deactivate); drop respawns it (activate).
+         *
+         * @return a new ItemStack ready to give to a player
+         */
+        public static ItemStack umbralBladeTester() {
+            return new ItemStackBuilder(Material.BREEZE_ROD)
+                .name(Component.text("✦ Umbral Blade Tester", NamedTextColor.LIGHT_PURPLE, TextDecoration.BOLD))
+                .lore(List.of(
+                    Component.text("Dev lifecycle tester", NamedTextColor.DARK_GRAY).decorate(TextDecoration.ITALIC),
+                    Component.empty(),
+                    Component.text("Left click  ", NamedTextColor.YELLOW)
+                        .append(Component.text("— destroy blade (deactivate)", NamedTextColor.GRAY)),
+                    Component.text("Drop        ", NamedTextColor.YELLOW)
+                        .append(Component.text("— respawn blade (activate)", NamedTextColor.GRAY))
+                ))
+                .unbreakable(true)
+                .tag(KeyRegistry.UMBRAL_BLADE_TESTER_KEY, PersistentDataType.BOOLEAN, true)
+                .build();
+        }
     }
 
     public static final Material[] MODERN_MATERIALS = {

@@ -68,9 +68,11 @@ public final class SphereDisplay extends ParticleDisplay {
 
     @Override
     public SphereDisplay copy() {
-        return new SphereDisplay(anchor,
+        SphereDisplay c = new SphereDisplay(anchor,
             new Vector3f(originOffset), new Vector3f(randomOffsetRange),
             repeatCount, repeatPeriodTicks, copyParticles(),
             radius, density, filled);
+        c.betweenKfRepeat = betweenKfRepeat;
+        return c;
     }
 }

@@ -6,16 +6,17 @@ import java.util.function.BiFunction;
 import org.joml.Vector3f;
 
 import btm.sword.config.Config;
+import btm.sword.system.attack.ActiveAttack;
 import btm.sword.system.attack.HitValuePacket;
 import btm.sword.system.attack.simulation.ControlMode;
 import btm.sword.system.attack.simulation.ControlPoint;
-import btm.sword.system.attack.simulation.ControlPointTrajectory;
-import btm.sword.system.attack.simulation.KeyframedTrajectory;
+import btm.sword.system.attack.simulation.ControlPointSequence;
+import btm.sword.system.attack.simulation.KeyframedSequence;
 import btm.sword.system.attack.simulation.SweepCurve;
-import btm.sword.system.attack.simulation.SweepTrajectory;
+import btm.sword.system.attack.simulation.SweepSequence;
 import btm.sword.system.attack.simulation.Volume;
 import btm.sword.system.attack.simulation.VolumeKeyframe;
-import btm.sword.system.attack.simulation.VolumeTrajectory;
+import btm.sword.system.attack.simulation.VolumeSequence;
 import btm.sword.system.entity.base.SwordEntity;
 import lombok.Getter;
 
@@ -34,21 +35,21 @@ import lombok.Getter;
  * }</pre>
  *
  * <p>When activating an attack, allocate a fresh {@link Volume} buffer via
- * {@link #createVolume()} and pass it to {@link btm.sword.system.attack.simulation.ActiveAttack}.</p>
+ * {@link #createVolume()} and pass it to {@link ActiveAttack}.</p>
  */
 @Getter
-public final class AttackDef {
+public final class AttackInstance {
 
     private final String id;
     private final VolumeType type;
     private final int durationMs;
-    private final VolumeTrajectory trajectory;
+    private final VolumeSequence trajectory;
     private final HitValuePacket hitValue;
     private final BiFunction<Vector3f, SwordEntity, Vector3f> knockbackFunction;
     private final boolean orientWithPitch;
     private final boolean lockOriginOnFire;
 
-    private AttackDef(Builder b) {
+    private AttackInstance(Builder b) {
         this.id = b.id;
         this.type = b.type;
         this.durationMs = b.durationMs;
@@ -62,7 +63,7 @@ public final class AttackDef {
     /**
      * Allocates a fresh {@link Volume} buffer appropriate for this attack's {@link VolumeType}.
      * Call once per activation and pass the result to
-     * {@link btm.sword.system.attack.simulation.ActiveAttack}.
+     * {@link ActiveAttack}.
      *
      * @return a new, empty volume buffer
      */
@@ -73,14 +74,14 @@ public final class AttackDef {
     // ── Builder ───────────────────────────────────────────────────────────────
 
     /**
-     * Fluent builder for {@link AttackDef}.
+     * Fluent builder for {@link AttackInstance}.
      */
     public static final class Builder {
 
         private final String id;
         private VolumeType type;
         private int durationMs;
-        private VolumeTrajectory trajectory;
+        private VolumeSequence trajectory;
         private HitValuePacket hitValue;
         private BiFunction<Vector3f, SwordEntity, Vector3f> knockbackFunction =
             (contact, src) -> new Vector3f();
@@ -107,7 +108,7 @@ public final class AttackDef {
         }
 
         /**
-         * Explicitly sets the primitive type. Required when using {@link #trajectory(VolumeTrajectory)};
+         * Explicitly sets the primitive type. Required when using {@link #trajectory(VolumeSequence)};
          * implied automatically by {@link #keyframes} and {@link #sweep}.
          *
          * @param type the collision primitive
@@ -119,7 +120,7 @@ public final class AttackDef {
         }
 
         /**
-         * Builds a {@link KeyframedTrajectory} from the given keyframes and sets {@code type = VOLUME}.
+         * Builds a {@link KeyframedSequence} from the given keyframes and sets {@code type = VOLUME}.
          * Overridden by a subsequent {@link #trajectory} call.
          *
          * @param keyframes ordered list of OBB keyframes
@@ -127,12 +128,12 @@ public final class AttackDef {
          */
         public Builder keyframes(List<VolumeKeyframe> keyframes) {
             this.type = VolumeType.VOLUME;
-            this.trajectory = new KeyframedTrajectory(keyframes);
+            this.trajectory = new KeyframedSequence(keyframes);
             return this;
         }
 
         /**
-         * Builds a {@link SweepTrajectory} from the given curve and sets {@code type = SWEEP}.
+         * Builds a {@link SweepSequence} from the given curve and sets {@code type = SWEEP}.
          * Overridden by a subsequent {@link #trajectory} call.
          *
          * @param curve the Catmull-Rom sweep curve
@@ -140,12 +141,12 @@ public final class AttackDef {
          */
         public Builder sweep(SweepCurve curve) {
             this.type = VolumeType.SWEEP;
-            this.trajectory = new SweepTrajectory(curve);
+            this.trajectory = new SweepSequence(curve);
             return this;
         }
 
         /**
-         * Builds a {@link ControlPointTrajectory} from the given control points and mode,
+         * Builds a {@link ControlPointSequence} from the given control points and mode,
          * and sets {@code type = CTRL_POINT}. Overridden by a subsequent {@link #trajectory} call.
          *
          * @param points ordered list of control points; must be 2 for {@link ControlMode#LINEAR}
@@ -155,7 +156,7 @@ public final class AttackDef {
          */
         public Builder controlPoints(List<ControlPoint> points, ControlMode mode) {
             this.type = VolumeType.CTRL_POINT;
-            this.trajectory = new ControlPointTrajectory(points, mode);
+            this.trajectory = new ControlPointSequence(points, mode);
             return this;
         }
 
@@ -166,7 +167,7 @@ public final class AttackDef {
          * @param trajectory custom trajectory implementation or lambda
          * @return this builder
          */
-        public Builder trajectory(VolumeTrajectory trajectory) {
+        public Builder trajectory(VolumeSequence trajectory) {
             this.trajectory = trajectory;
             return this;
         }
@@ -221,18 +222,18 @@ public final class AttackDef {
         }
 
         /**
-         * Builds and returns an immutable {@link AttackDef}.
+         * Builds and returns an immutable {@link AttackInstance}.
          *
          * @return the constructed attack definition
          * @throws IllegalStateException if {@code type}, {@code trajectory}, {@code hitValue},
          *                               or {@code durationMs} have not been set
          */
-        public AttackDef build() {
+        public AttackInstance build() {
             if (type == null) throw new IllegalStateException("AttackDef '" + id + "': type not set");
             if (trajectory == null) throw new IllegalStateException("AttackDef '" + id + "': trajectory not set");
             if (hitValue == null) throw new IllegalStateException("AttackDef '" + id + "': hitValue not set");
             if (durationMs <= 0) throw new IllegalStateException("AttackDef '" + id + "': durationMs must be > 0");
-            return new AttackDef(this);
+            return new AttackInstance(this);
         }
     }
 }

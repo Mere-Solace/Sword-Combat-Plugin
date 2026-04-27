@@ -3,7 +3,7 @@ package btm.sword.system.attack.simulation;
 import org.joml.Vector3f;
 
 /**
- * Mutable, reusable output buffer populated by {@link VolumeTrajectory#sample} each simulation tick.
+ * Mutable, reusable output buffer populated by {@link VolumeSequence#sample} each simulation tick.
  * <p>
  * Instances are allocated once per {@link ActiveAttack} and reused across ticks to avoid
  * per-frame heap allocation in the 200 Hz simulation loop.
@@ -15,10 +15,10 @@ import org.joml.Vector3f;
  */
 public abstract class Volume {
 
-    /** World-space AABB minimum corner — written by {@link VolumeTrajectory#sample}, read by {@link SpatialGrid}. */
+    /** World-space AABB minimum corner — written by {@link VolumeSequence#sample}, read by {@link SpatialGrid}. */
     public final Vector3f aabbMin = new Vector3f();
 
-    /** World-space AABB maximum corner — written by {@link VolumeTrajectory#sample}, read by {@link SpatialGrid}. */
+    /** World-space AABB maximum corner — written by {@link VolumeSequence#sample}, read by {@link SpatialGrid}. */
     public final Vector3f aabbMax = new Vector3f();
 
     /**

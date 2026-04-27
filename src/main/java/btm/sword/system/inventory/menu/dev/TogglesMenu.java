@@ -151,6 +151,18 @@ public class TogglesMenu extends Menu {
             () -> Config.Debug.LOGGING_VERBOSE_ATTACK_VOLUME = !Config.Debug.LOGGING_VERBOSE_ATTACK_VOLUME
         );
 
+        SimpleItem verboseParticleDisplay = toggle(
+            "Particle Display (toWrapper)",
+            () -> Config.Debug.LOGGING_VERBOSE_PARTICLE_DISPLAY,
+            () -> Config.Debug.LOGGING_VERBOSE_PARTICLE_DISPLAY = !Config.Debug.LOGGING_VERBOSE_PARTICLE_DISPLAY
+        );
+
+        SimpleItem showHitboxes = toggle(
+            "Hitbox Outlines (live attacks)",
+            () -> Config.Debug.VISUALIZATION_SHOW_HITBOXES,
+            () -> Config.Debug.VISUALIZATION_SHOW_HITBOXES = !Config.Debug.VISUALIZATION_SHOW_HITBOXES
+        );
+
         @SuppressWarnings("unchecked")
         Config.ConfigEntry<Boolean> skipLoadEntry = (Config.ConfigEntry<Boolean>) Config.ENTRIES.stream()
             .filter(e -> e.path().equals("debug.skip_data_load"))
@@ -211,7 +223,7 @@ public class TogglesMenu extends Menu {
                 ". A B C D E P Q .",
                 ". F G H I J K R .",
                 ". S T U L M N O .",
-                ". V . . . . . . .",
+                ". V W X . . . . .",
                 "< # # # # # # # #")
             .addIngredient('#', BORDER)
             .addIngredient('A', verboseDebug)
@@ -236,6 +248,8 @@ public class TogglesMenu extends Menu {
             .addIngredient('N', freshProfile)
             .addIngredient('O', resetJoin)
             .addIngredient('V', verboseAttackVolume)
+            .addIngredient('W', verboseParticleDisplay)
+            .addIngredient('X', showHitboxes)
             .addIngredient('<', generatePreviousButtonOrDefault())
             .build();
 

@@ -13,7 +13,7 @@ color:
   text_item_base: '#787878'
   text_cool_dark: '#333C4B'
   
-  umbral_glow: '#FFFFFF'
+  umbral_glow: '#640000'
   ferocious_sweep: '#FF0000'
 
 
@@ -328,18 +328,20 @@ world:
 
 
 debug:
-  
+
   logging_verbose_combat: false
   logging_verbose_movement: false
-  
+
   logging_verbose_config: false
+  logging_verbose_umbral_states: false
   
   visualization_show_hitboxes: false
   visualization_show_raytraces: false
-  wireframe_selected_size: 0.9
-  wireframe_default_color: "FFE63C"
-  wireframe_default_size: 0.7
-  wireframe_live_size: 1.0
+  wireframe_selected_size: 0.5
+  wireframe_default_size: 0.5
+  wireframe_live_size: 0.3
+  skip_data_save: false
+  skip_data_load: false
 
 
 grab:
@@ -417,3 +419,5 @@ roguelike:
   spawn_x: -209.0
   spawn_y: 104.0
   spawn_z: -1968.0
+umbral-blade:
+  scale-y: 1.0

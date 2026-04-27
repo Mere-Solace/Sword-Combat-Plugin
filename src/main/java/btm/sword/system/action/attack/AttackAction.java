@@ -4,11 +4,10 @@ import static btm.sword.system.action.attack.PunchAction.throwPunch;
 
 import org.bukkit.inventory.ItemStack;
 
-import btm.sword.Sword;
 import btm.sword.config.Config;
 import btm.sword.system.action.SwordAction;
 import btm.sword.system.attack.SweepAttack;
-import btm.sword.system.attack.def.AttackDef;
+import btm.sword.system.attack.def.AttackInstance;
 import btm.sword.system.attack.dev.AttackDevSession;
 import btm.sword.system.attack.dev.DevMode;
 import btm.sword.system.attack.dev.VolumeEditorMode;
@@ -21,6 +20,7 @@ import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.inventory.menu.dev.SweepGeneratorMenu;
 import btm.sword.system.item.ItemUsageManager;
 import btm.sword.system.item.KeyRegistry;
+import btm.sword.utility.Debug;
 import btm.sword.utility.misc.ConsumerToConsumePair;
 
 
@@ -52,21 +52,21 @@ public class AttackAction extends SwordAction {
         if (KeyRegistry.hasKey(itemUsedInAttack, KeyRegistry.TEST_VOLUME_ATTACK_KEY)) {
             if (executor instanceof SwordPlayer sp) {
                 AttackDevSession devSession = AttackDevSession.get(sp.player().getUniqueId());
-                Sword.print("[AttackAction] wand fired by " + sp.player().getName()
+                Debug.attackVolume("[AttackAction] wand fired by " + sp.player().getName()
                     + " — devSession=" + (devSession == null ? "null" : devSession.getMode())
-                    + " loadedAttack=" + (devSession == null || devSession.getLoadedAttackDef() == null
-                        ? "null" : devSession.getLoadedAttackDef().getId())
+                    + " loadedAttack=" + (devSession == null || devSession.getLoadedAttackInstance() == null
+                    ? "null" : devSession.getLoadedAttackInstance().getId())
                     + " editingSessions=" + AttackDevSession.getEditingSessions().size());
                 if (devSession != null && devSession.getMode() == DevMode.EDITING) {
-                    Sword.print("[AttackAction]   keyframes=" + devSession.getEditKeyframes().size()
+                    Debug.attackVolume("[AttackAction]   keyframes=" + devSession.getEditKeyframes().size()
                         + " duration=" + devSession.getEditDurationMs() + "ms");
                 }
                 if (devSession != null && devSession.getMode() == DevMode.RECORDING) {
                     new SweepGeneratorMenu(sp).open();
                     return;
                 }
-                if (devSession != null && devSession.getLoadedAttackDef() != null) {
-                    fireWandDef(executor, devSession.getLoadedAttackDef());
+                if (devSession != null && devSession.getLoadedAttackInstance() != null) {
+                    fireWandDef(executor, devSession.getLoadedAttackInstance());
                     return;
                 }
             }
@@ -132,10 +132,10 @@ public class AttackAction extends SwordAction {
             .execute(executor);
     }
 
-    private static void fireWandDef(Combatant executor, AttackDef def) {
+    private static void fireWandDef(Combatant executor, AttackInstance def) {
         long startMs = System.currentTimeMillis();
-        executor.launchAttackDef(def);
-        if (executor instanceof SwordPlayer sp) {
+        executor.launchAttack(def);
+        if (executor instanceof SwordPlayer sp && Config.Debug.VISUALIZATION_SHOW_HITBOXES) {
             VolumeEditorMode.startPlaybackVisualization(
                 sp.player(), def.getTrajectory(), startMs, def.getDurationMs(),
                 def.isLockOriginOnFire(), def.isOrientWithPitch());

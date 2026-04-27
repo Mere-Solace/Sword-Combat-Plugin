@@ -41,6 +41,13 @@ public abstract sealed class ParticleDisplay
     protected int repeatCount;
     /** Ticks between repeat emissions. Ignored when {@link #repeatCount} &lt;= 1. */
     protected int repeatPeriodTicks;
+    /**
+     * When &gt; 1, fire this display this many total times evenly distributed across the window
+     * from this keyframe's {@code t} to the next keyframe's {@code t} (scheduled by
+     * {@link btm.sword.system.attack.simulation.EffectsDispatcher}).
+     * {@code 0} means inactive — normal {@link #repeatCount}/{@link #repeatPeriodTicks} logic applies.
+     */
+    protected int betweenKfRepeat = 0;
     /** Particles to display at each point this shape emits to. Never {@code null}. */
     protected List<ParticleEffect> particles;
 
@@ -79,6 +86,11 @@ public abstract sealed class ParticleDisplay
         }
     }
 
+    /** Fires a single emission without scheduling any repeats — used by between-kf repeat scheduling. */
+    public final void renderOnce(EffectsContext ctx) {
+        emitOnce(ctx);
+    }
+
     private void emitOnce(EffectsContext ctx) {
         Location base = OriginResolver.resolve(anchor, ctx);
         Vector3f worldOffset = ctx.worldTransform().transformDirection(new Vector3f(originOffset));
@@ -114,7 +126,7 @@ public abstract sealed class ParticleDisplay
         List<ParticleEffect> out = new ArrayList<>(particles.size());
         for (ParticleEffect e : particles) {
             out.add(new ParticleEffect(e.type(), e.count(),
-                new Vector3f(e.spreadOffset()), e.speed(), e.dustOptions()));
+                new Vector3f(e.spreadOffset()), e.speed(), e.dustOptions(), e.entityColor()));
         }
         return out;
     }

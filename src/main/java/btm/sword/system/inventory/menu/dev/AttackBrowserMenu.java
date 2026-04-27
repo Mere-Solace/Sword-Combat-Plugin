@@ -9,18 +9,23 @@ import org.bukkit.Material;
 import org.bukkit.event.inventory.ClickType;
 
 import btm.sword.Sword;
-import btm.sword.system.attack.def.AttackDef;
+import btm.sword.config.Config;
+import btm.sword.system.attack.def.AttackDefSerializer;
+import btm.sword.system.attack.def.AttackInstance;
 import btm.sword.system.attack.def.AttackRegistry;
 import btm.sword.system.attack.dev.AnimationMode;
 import btm.sword.system.attack.dev.AttackDevSession;
 import btm.sword.system.attack.dev.DevMode;
-import btm.sword.system.attack.simulation.KeyframedTrajectory;
+import btm.sword.system.attack.simulation.ControlPointSequence;
+import btm.sword.system.attack.simulation.KeyframedSequence;
+import btm.sword.system.attack.simulation.SweepSequence;
 import btm.sword.system.entity.impl.DevSwordPlayer;
 import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.inventory.item.ForwardItem;
 import btm.sword.system.inventory.item.PreviousItem;
 import btm.sword.system.inventory.menu.Menu;
 import btm.sword.system.item.ItemStackBuilder;
+import btm.sword.utility.ChatInputCapture;
 import btm.sword.utility.Prefab;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -90,16 +95,23 @@ public class AttackBrowserMenu extends Menu {
 
         SimpleItem giveWand = giveItem(Prefab.Items.testVolumeWand());
 
+        SimpleItem showHitboxes = toggle(
+            "Hitbox Outlines (live attacks)",
+            () -> Config.Debug.VISUALIZATION_SHOW_HITBOXES,
+            () -> Config.Debug.VISUALIZATION_SHOW_HITBOXES = !Config.Debug.VISUALIZATION_SHOW_HITBOXES
+        );
+
         PagedGui<Item> gui = PagedGui.items()
             .setStructure(
                 "P # # # # # # # #",
                 "x x x x x x x x x",
                 "x x x x x x x x x",
-                "N G # < # > # # #")
+                "N G H < # > # # #")
             .addIngredient('#', BORDER)
             .addIngredient('P', back)
             .addIngredient('N', newRecording)
             .addIngredient('G', giveWand)
+            .addIngredient('H', showHitboxes)
             .addIngredient('<', new PreviousItem())
             .addIngredient('>', new ForwardItem())
             .addIngredient('x', Markers.CONTENT_LIST_SLOT_HORIZONTAL)
@@ -114,22 +126,92 @@ public class AttackBrowserMenu extends Menu {
             .open();
     }
 
+    private void openRenamePrompt(AttackInstance def) {
+        ChatInputCapture.prompt(
+            swordPlayer.player(),
+            Component.text("[Dev] Enter new name for '" + def.getId() + "':", NamedTextColor.YELLOW),
+            input -> {
+                if (input.equalsIgnoreCase("cancel")) {
+                    new AttackBrowserMenu(swordPlayer).open();
+                    return;
+                }
+                String newId = input.trim().toLowerCase().replace(' ', '_');
+                if (newId.isEmpty() || newId.equals(def.getId())) {
+                    new AttackBrowserMenu(swordPlayer).open();
+                    return;
+                }
+                if (AttackRegistry.contains(newId)) {
+                    swordPlayer.message(Component.text("[Dev] '" + newId + "' is already taken.", NamedTextColor.RED));
+                    new AttackBrowserMenu(swordPlayer).open();
+                    return;
+                }
+                performRename(def, newId);
+            });
+    }
+
+    private void performRename(AttackInstance old, String newId) {
+        File attacksDir = new File(Sword.getInstance().getDataFolder(), "attacks");
+        attacksDir.mkdirs();
+        try {
+            AttackInstance renamed = rebuildWithId(old, newId);
+
+            File newFile = new File(attacksDir, newId + ".yml");
+            AttackDefSerializer.save(newFile, renamed);
+
+            File oldFile = new File(attacksDir, old.getId() + ".yml");
+            if (oldFile.exists() && !oldFile.getCanonicalPath().equals(newFile.getCanonicalPath())) {
+                oldFile.delete();
+            }
+
+            AttackRegistry.unregister(old.getId());
+            AttackRegistry.register(renamed);
+
+            AttackDevSession session = AttackDevSession.get(swordPlayer.player().getUniqueId());
+            if (session != null && old.getId().equals(session.getCurrentAttackName())) {
+                session.renameCurrentAttack(newId);
+            }
+
+            swordPlayer.message(Component.text(
+                "[Dev] Renamed '" + old.getId() + "' → '" + newId + "'.", NamedTextColor.GREEN));
+        } catch (Exception e) {
+            swordPlayer.message(Component.text("[Dev] Rename failed: " + e.getMessage(), NamedTextColor.RED));
+        }
+        new AttackBrowserMenu(swordPlayer).open();
+    }
+
+    private static AttackInstance rebuildWithId(AttackInstance old, String newId) {
+        AttackInstance.Builder b = new AttackInstance.Builder(newId)
+            .duration(old.getDurationMs())
+            .onHit(old.getHitValue())
+            .orientWithPitch(old.isOrientWithPitch())
+            .lockOriginOnFire(old.isLockOriginOnFire());
+        switch (old.getType()) {
+            case VOLUME -> b.keyframes(((KeyframedSequence) old.getTrajectory()).keyframes());
+            case SWEEP -> b.sweep(((SweepSequence) old.getTrajectory()).getCurve());
+            case CTRL_POINT -> {
+                ControlPointSequence cps = (ControlPointSequence) old.getTrajectory();
+                b.controlPoints(cps.getPoints(), cps.getMode());
+            }
+        }
+        return b.build();
+    }
+
     private List<Item> buildAttackItems() {
-        List<AttackDef> sorted = AttackRegistry.getAll().stream()
-            .sorted(Comparator.comparing(AttackDef::getId))
+        List<AttackInstance> sorted = AttackRegistry.getAll().stream()
+            .sorted(Comparator.comparing(AttackInstance::getId))
             .toList();
 
         List<Item> items = new ArrayList<>(sorted.size());
-        for (AttackDef def : sorted) {
+        for (AttackInstance def : sorted) {
             items.add(buildAttackItem(def));
         }
         return items;
     }
 
-    private Item buildAttackItem(AttackDef def) {
-        boolean editable = def.getTrajectory() instanceof KeyframedTrajectory;
+    private Item buildAttackItem(AttackInstance def) {
+        boolean editable = def.getTrajectory() instanceof KeyframedSequence;
         int frameCount = editable
-            ? ((KeyframedTrajectory) def.getTrajectory()).getKeyframes().size()
+            ? ((KeyframedSequence) def.getTrajectory()).keyframes().size()
             : -1;
 
         List<Component> lore = new ArrayList<>();
@@ -149,6 +231,7 @@ public class AttackBrowserMenu extends Menu {
         } else {
             lore.add(Component.text("SWEEP attacks cannot be edited here", NamedTextColor.RED));
         }
+        lore.add(Component.text("Swap-click to rename", NamedTextColor.LIGHT_PURPLE));
 
         Material icon = editable ? Material.PAPER : Material.BOOK;
         ItemStackBuilder builder = new ItemStackBuilder(icon)
@@ -156,29 +239,36 @@ public class AttackBrowserMenu extends Menu {
             .lore(lore);
 
         if (!editable) {
-            return new SimpleItem(builder.build(), click -> swordPlayer.message(
-                Component.text("SWEEP attacks cannot be edited via the menu.", NamedTextColor.RED)));
+            return new SimpleItem(builder.build(), click -> {
+                if (click.getClickType() == ClickType.SWAP_OFFHAND) {
+                    openRenamePrompt(def);
+                } else {
+                    swordPlayer.message(Component.text("SWEEP attacks cannot be edited via the menu.", NamedTextColor.RED));
+                }
+            });
         }
 
         return new SimpleItem(builder.build(), click -> {
-            KeyframedTrajectory kt = (KeyframedTrajectory) def.getTrajectory();
+            KeyframedSequence kt = (KeyframedSequence) def.getTrajectory();
             AttackDevSession session = AttackDevSession.getOrCreate(swordPlayer.player());
-            if (click.getClickType() == ClickType.SHIFT_LEFT) {
+            if (click.getClickType() == ClickType.SWAP_OFFHAND) {
+                openRenamePrompt(def);
+            } else if (click.getClickType() == ClickType.SHIFT_LEFT) {
                 if (!(swordPlayer instanceof DevSwordPlayer dev)) {
                     swordPlayer.message(Component.text("[Dev] Not a dev player — cannot enter Animation Mode.", NamedTextColor.RED));
                     return;
                 }
-                session.startEditing(def.getId(), kt.getKeyframes(), def.getDurationMs(), def.getHitValue());
+                session.startEditing(def.getId(), kt.keyframes(), def.getDurationMs(), def.getHitValue());
                 swordPlayer.player().closeInventory();
                 AnimationMode.enter(dev, session);
             } else if (click.getClickType().isRightClick()) {
-                session.startViewing(def.getId(), kt.getKeyframes());
+                session.startViewing(def.getId(), kt.keyframes());
                 swordPlayer.player().closeInventory();
                 swordPlayer.message(Component.text(
                     "[Dev] Visualizing '" + def.getId() + "' — close your inventory to stop.",
                     NamedTextColor.YELLOW));
             } else {
-                session.startEditing(def.getId(), kt.getKeyframes(), def.getDurationMs(), def.getHitValue());
+                session.startEditing(def.getId(), kt.keyframes(), def.getDurationMs(), def.getHitValue());
                 new AttackEditorMenu(swordPlayer).open();
             }
         });

@@ -82,9 +82,11 @@ public final class LineDisplay extends ParticleDisplay {
 
     @Override
     public LineDisplay copy() {
-        return new LineDisplay(anchor,
+        LineDisplay c = new LineDisplay(anchor,
             new Vector3f(originOffset), new Vector3f(randomOffsetRange),
             repeatCount, repeatPeriodTicks, copyParticles(),
             endAnchor, new Vector3f(endOffset), new Vector3f(endRandomRange), spacing);
+        c.betweenKfRepeat = betweenKfRepeat;
+        return c;
     }
 }

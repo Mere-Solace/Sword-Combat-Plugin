@@ -122,6 +122,11 @@ public final class Debug {
         emit(Config.Debug.LOGGING_VERBOSE_UMBRAL, "Umbral", message);
     }
 
+    /** UmbralBlade FSM transition + lifecycle debug. Gated by {@link Config.Debug#LOGGING_VERBOSE_UMBRAL_STATES}. */
+    public static void umbralStates(String message) {
+        emit(Config.Debug.LOGGING_VERBOSE_UMBRAL_STATES, "UmbralStates", message);
+    }
+
     /** Hostile-entity debug. Gated by {@link Config.Debug#LOGGING_VERBOSE_HOSTILE}. */
     public static void hostile(String message) {
         emit(Config.Debug.LOGGING_VERBOSE_HOSTILE, "Hostile", message);
@@ -170,6 +175,11 @@ public final class Debug {
     /** AttackDef volume simulation debug (launch, hit confirmation, expiry). Gated by {@link Config.Debug#LOGGING_VERBOSE_ATTACK_VOLUME}. */
     public static void attackVolume(String message) {
         emit(Config.Debug.LOGGING_VERBOSE_ATTACK_VOLUME, "AttackVolume", message);
+    }
+
+    /** ParticleEffect → ParticleWrapper conversion debug (type, dustOptions, dispatch path). Gated by {@link Config.Debug#LOGGING_VERBOSE_PARTICLE_DISPLAY}. */
+    public static void particleDisplay(String message) {
+        emit(Config.Debug.LOGGING_VERBOSE_PARTICLE_DISPLAY, "ParticleDisplay", message);
     }
 
     // =========================================================================

@@ -5,13 +5,11 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import org.bukkit.Color;
-import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.util.Vector;
 
 import btm.sword.config.Config;
 import btm.sword.system.control.TimeArbiter;
-import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.entity.umbral.UmbralBlade;
 import btm.sword.system.entity.umbral.input.BladeRequest;
 import btm.sword.system.entity.umbral.statemachine.state.AttackingHeavyState;
@@ -41,6 +39,7 @@ import lombok.Setter;
 public class UmbralStateMachine extends StateMachine<UmbralBlade> {
     @Getter
     private UmbralStateFacade previousState;
+    @Getter
     @Setter
     private boolean deactivated;
 
@@ -78,9 +77,7 @@ public class UmbralStateMachine extends StateMachine<UmbralBlade> {
         addTransition(new Transition<>(
             UmbralStateFacade.class,
             InactiveState.class,
-            b -> (b.getThrower().self() instanceof SwordPlayer sp &&
-                sp.player().getGameMode().equals(GameMode.SPECTATOR)) ||
-                b.isRequested(BladeRequest.DEACTIVATE),
+            b -> b.isRequested(BladeRequest.DEACTIVATE),
             b -> {}
         ));
 
@@ -89,16 +86,6 @@ public class UmbralStateMachine extends StateMachine<UmbralBlade> {
             UmbralStateFacade.class,
             RecoverState.class,
             b -> b.getDisplay() == null || b.getDisplay().isDead() || !b.getDisplay().isValid(),
-            b -> {}
-        ));
-
-        // =====================================================================
-        // INACTIVE
-        // =====================================================================
-        addTransition(new Transition<>(
-            InactiveState.class,
-            StandbyState.class,
-            b -> b.isRequested(BladeRequest.ACTIVATE_TO_PREVIOUS),
             b -> {}
         ));
 
@@ -462,19 +449,24 @@ public class UmbralStateMachine extends StateMachine<UmbralBlade> {
 
     @Override
     public void onAnyTransition() {
-
+        Debug.debug("[Old State] " + getPreviousState() + " | [New State] " + getState());
     }
 
     @Override
     public void tick() {
-        if (deactivated) return;
+        if (deactivated) {
+            Debug.umbral("      > > > deactivated");
+            if (context.getDisplay().isValid()) {
+            }
+            return;
+        }
 
         currentState.onTick(context);
         for (var t : transitions) {
             if (t.from().isAssignableFrom(currentState.getClass())
                 && t.condition().test(context)) {
-
                 t.onTransition().accept(context);
+                onAnyTransition();
                 if (t.to() == PreviousState.class) {
                     setState(previousState);
                 } else {
@@ -496,6 +488,8 @@ public class UmbralStateMachine extends StateMachine<UmbralBlade> {
     public void setState(State<UmbralBlade> next) {
         previousState = (UmbralStateFacade) currentState;
         Debug.system(currentState.getClass().getSimpleName() + " -> " + next.getClass().getSimpleName());
+        Debug.umbralStates("[" + context.getThrower().self().getName() + "] "
+            + currentState.getClass().getSimpleName() + " -> " + next.getClass().getSimpleName());
         super.setState(next);
 
         applyGlowForState(next, context);
