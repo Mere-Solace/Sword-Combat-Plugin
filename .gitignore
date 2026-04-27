@@ -1,6 +1,7 @@
 # User-specific stuff
 .idea/
 notes.txt
+enforcement.txt
 
 *.iml
 *.ipr

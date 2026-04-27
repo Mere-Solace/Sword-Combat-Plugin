@@ -12,20 +12,21 @@ public class InactiveState extends UmbralStateFacade {
 
     @Override
     public void onEnter(UmbralBlade blade) {
-        if (blade.getDisplay() != null) {
-            blade.getDisplay().setViewRange(0f);
-        }
+        blade.dispose();
     }
 
     @Override
     public void onExit(UmbralBlade blade) {
-        if (blade.getDisplay() != null) {
-            blade.getDisplay().setViewRange(300f);
-        }
     }
 
     @Override
     public void onTick(UmbralBlade blade) {
+        // since we turn the FSM off entirely upon entering,
+        // the inactive state must run its own checks to turn the
+        // system back on.
 
+        // check if we should turn this thing back on;
+        // the knowledge of which comes from one bool in Combatant
+        // setting that bool will turn
     }
 }

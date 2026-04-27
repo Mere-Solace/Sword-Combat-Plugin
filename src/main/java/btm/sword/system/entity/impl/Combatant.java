@@ -196,6 +196,9 @@ public abstract class Combatant extends SwordEntity {
             }
             message("Starting Umbral Blade");
             umbralBlade = new UmbralBlade(this, ItemStack.of(Material.STONE_SWORD));
+
+            umbralBlade.setup(5);
+
             setStartingBlade(false);
             }, 200, TimeUnit.MILLISECONDS
         );
@@ -207,6 +210,7 @@ public abstract class Combatant extends SwordEntity {
      * spawning a new one. Call {@link #activateUmbralBlade()} to re-enable spawning.
      */
     public void deactivateUmbralBlade() {
+        Debug.throwing("Deactivating Blade");
         bladeEnabled = false;
         startingBlade = false;
         if (umbralBlade != null) {
@@ -221,6 +225,7 @@ public abstract class Combatant extends SwordEntity {
      * the normal deferred-spawn path.
      */
     public void activateUmbralBlade() {
+        Debug.throwing("Activating Blade");
         bladeEnabled = true;
     }
 

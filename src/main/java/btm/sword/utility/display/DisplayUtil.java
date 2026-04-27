@@ -202,7 +202,11 @@ public final class DisplayUtil {
             null,
             null,
             0, period,
-            DisplayUtil.class, "itemDisplayFollow (2)"
+            DisplayUtil.class, "itemDisplayFollowLerp",
+            new PredicateRunnablePair(
+                () -> !entity.self().isValid() || display.isDead() || !display.isValid(),
+                null
+            )
         );
     }
 

@@ -91,7 +91,7 @@ public class ThrownItem extends VisualProjectile {
      * @param displaySetupInstructions  applied to the {@link ItemDisplay} immediately after it spawns
      * @param setupPeriod               polling interval in ticks for the spawn-check loop
      */
-    public ThrownItem(Combatant thrower, Consumer<ItemDisplay> displaySetupInstructions, int setupPeriod) {
+    public ThrownItem(Combatant thrower, Consumer<ItemDisplay> displaySetupInstructions) {
         this.thrower = thrower;
         this.displaySetupInstructions = displaySetupInstructions;
         setupSuccessful = false;
@@ -99,8 +99,6 @@ public class ThrownItem extends VisualProjectile {
         xDisplayOffset = -0.6f;
         yDisplayOffset = 0.25f;
         zDisplayOffset = -0.1f;
-
-        setup(setupPeriod);
     }
 
     /**
@@ -109,7 +107,7 @@ public class ThrownItem extends VisualProjectile {
      *
      * @param period polling interval in ticks
      */
-    protected void setup(int period) {
+    public void setup(int period) {
         TimeArbiter.runTimeIndependentBukkitTaskOnTimer(
             null,
             () -> {

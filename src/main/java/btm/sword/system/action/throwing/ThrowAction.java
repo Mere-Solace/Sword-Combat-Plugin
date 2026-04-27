@@ -85,7 +85,8 @@ public class ThrowAction extends SwordAction {
             logicalItem = executor.getItemStackInHand(true);
         }
 
-        ThrownItem thrownItem = new ThrownItem(executor, setupInstructions, 1);
+        ThrownItem thrownItem = new ThrownItem(executor, setupInstructions);
+        thrownItem.setup(1);
         thrownItem.setItemStack(logicalItem);
         executor.setThrownItem(thrownItem);
 
@@ -129,7 +130,8 @@ public class ThrowAction extends SwordAction {
         executor.setThrowPhase(ThrowPhase.THROWING);
         if (executor instanceof SwordPlayer sp) sp.setActivationContext(ActivationContext.THROWING);
 
-        ThrownItem thrownItem = new ThrownItem(executor, display -> display.setItemStack(item), 1);
+        ThrownItem thrownItem = new ThrownItem(executor, display -> display.setItemStack(item));
+        thrownItem.setup(1);
         thrownItem.setItemStack(item);
         thrownItem.setDisplayScale(displayScale);
         executor.setThrownItem(thrownItem);
