@@ -15,8 +15,14 @@ The input execution system translates raw Minecraft player events (left-click, r
 | `InputListener` | Bukkit transport adapter. Each handler resolves the `SwordPlayer`, builds an `InputIntent`, calls `InputRouter.route`, and applies the returned `InputDecision` |
 | `InputIntent` | Sealed interface plus one record per input source (`Attack`, `Interact`, `InteractEntity`, `Drop`, `SneakBegin`, `SneakEnd`, `Swap`, `HotbarChange`) |
 | `InputDecision` | Record with a `cancelEvent` flag plus the `PASS` and `CANCEL` constants |
-| `InputRouter` | Static dispatcher. Owns every gameplay routing decision (typed-item handling, suppression checks, usable gating, interactible-block fall-through, block-availability, throw cancellation, final dispatch into `SwordPlayer.act`) |
+| `InputRouter` | Static dispatcher. Owns every gameplay routing decision (suppression checks, usable gating, interactible-block fall-through, block-availability, throw cancellation, final dispatch into `SwordPlayer.act`) |
 | `InputGestureTracker` | Owns right-click and sneak hold lifecycle (timing, scheduled tasks, tap/hold dispatch) |
+| `ItemInputBinding` | Contract for per-item input intercepts. Defines `id`, `phase` (EARLY or AT_ROOT), `matches`, `dispatch` |
+| `ItemInputDispatchTable` | Static registry of bindings. Ordered first-match dispatch, called by `InputRouter` (EARLY) and `SwordPlayer.act` (AT_ROOT) |
+| `binding.InputBindingsRegistrar` | Registers all built-in bindings during `Sword.onEnable`; clears on `onDisable` |
+| `binding.MenuButtonBinding` | EARLY: opens `MainMenu` for `MAIN_MENU_BUTTON_KEY` items (suppresses SHIFT) |
+| `binding.StorageButtonBinding` | EARLY: opens the matching pouch menu for storage items |
+| `binding.AbilitySlotBinding` | AT_ROOT: dispatches the equipped active skill on LEFT click for `ACTIVE_1` / `ACTIVE_2` slots |
 | `InputType` | Enum of nine logical input signals |
 | `InputKey` | Record pairing an `InputType` with a set of allowed `SwordItemType`s and an optional accessibility predicate |
 | `InputExecutionTree` | The trie. Owns the root `InputNode`, traversal state, timeout timer, and HUD rendering |
@@ -35,12 +41,21 @@ Bukkit event ── InputListener ──► InputIntent
                                        ▼
                                  InputRouter
                                        │
-                                       ├── handleItemInteraction
+                                       ├── ItemInputDispatchTable.dispatch(EARLY)
+                                       │     (MenuButton, StorageButton, …)
+                                       │     → consumed → return InputDecision
+                                       │
                                        ├── inventory mode suppression
                                        ├── ItemClassifier.isUsable
                                        ├── interactible-block fall-through
                                        ├── isUnableToBlock display
                                        └── SwordPlayer.act(InputType)
+                                                 │
+                                                 ├── ItemInputDispatchTable.dispatch(AT_ROOT)
+                                                 │     (AbilitySlot, …)
+                                                 │     → consumed → resetTree, return
+                                                 │
+                                                 └── inputExecutionTree.step(InputType)
                                        │
                                        ▼
                                  InputDecision ──► InputListener.applyDecision (event.setCancelled)

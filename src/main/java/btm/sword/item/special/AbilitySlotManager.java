@@ -314,7 +314,7 @@ public class AbilitySlotManager {
     /**
      * Returns the {@link SwordItemType} for the ability at the given hotbar slot index,
      * or {@code null} if that slot does not have an active (equipped) ability.
-     * Used by {@code handleAbilityInput} as a reliable alternative to PDC tag lookups.
+     * Used by {@code AbilitySlotBinding} as a reliable alternative to PDC tag lookups.
      *
      * @param heldSlot the player's currently held hotbar slot index
      * @return {@link SwordItemType#ACTIVE_1}, {@link SwordItemType#ACTIVE_2}, or {@code null}

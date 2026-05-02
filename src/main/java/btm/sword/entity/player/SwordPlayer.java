@@ -41,15 +41,8 @@ import com.destroystokyo.paper.profile.PlayerProfile;
 
 import btm.sword.action.core.BlockAction;
 import btm.sword.action.core.UmbralBladeAction;
-import btm.sword.action.skill.Skill;
-import btm.sword.action.skill.SkillId;
 import btm.sword.action.skill.SkillIds;
-import btm.sword.action.skill.SkillRegistry;
 import btm.sword.action.skill.container.PlayerSkillContainer;
-import btm.sword.action.skill.container.SkillSlot;
-import btm.sword.action.skill.container.SkillSlotActionFactory;
-import btm.sword.action.skill.container.SkillSlotState;
-import btm.sword.action.skill.type.ActiveSkill;
 import btm.sword.action.skill.type.impl.charge.ChargeAction;
 import btm.sword.action.skill.type.impl.charge.ChargeSession;
 import btm.sword.action.throwing.ThrowAction;
@@ -67,12 +60,13 @@ import btm.sword.input.InputGestureTracker;
 import btm.sword.input.InputListener;
 import btm.sword.input.InputRegistrar;
 import btm.sword.input.InputType;
+import btm.sword.input.ItemInputBinding;
+import btm.sword.input.ItemInputDispatchTable;
 import btm.sword.item.core.ItemClass;
 import btm.sword.item.core.ItemClassifier;
 import btm.sword.item.core.ItemStackBuilder;
 import btm.sword.item.core.KeyRegistry;
 import btm.sword.item.core.StorageCategory;
-import btm.sword.item.core.SwordItemType;
 import btm.sword.item.special.AbilitySlotManager;
 import btm.sword.item.special.NonMovableItem;
 import btm.sword.item.special.SlotAnchoredItem;
@@ -561,9 +555,14 @@ public class SwordPlayer extends Combatant {
             + "\n           isAtRoot=" + isAtRoot()
             + "\n           notHoldingChargeable=" + !ChargeAction.isHoldingChargeable(this));
 
-        if (isAtRoot() && !ChargeAction.isHoldingChargeable(this) && handleAbilityInput(input)) {
-            resetTree();
-            return;
+        if (isAtRoot() && !ChargeAction.isHoldingChargeable(this)) {
+            ItemStack heldStack = getItemStackInHand(true);
+            if (ItemInputDispatchTable.dispatch(
+                    new ItemInputBinding.MatchContext(this, input, heldStack),
+                    ItemInputBinding.Phase.AT_ROOT)) {
+                resetTree();
+                return;
+            }
         }
 
         if (throwingState()) {
@@ -643,43 +642,6 @@ public class SwordPlayer extends Combatant {
     /** Returns {@code true} if the player's currently held item has an active cooldown. */
     public boolean isHeldItemOnCooldown() {
         return getItemStackInHand(true) instanceof ItemStack item && player.getCooldown(item) > 0;
-    }
-
-    private boolean handleAbilityInput(InputType input) {
-        int heldSlot = player.getInventory().getHeldItemSlot();
-
-        // Gate: is this even an ability slot? If not, let the normal input tree handle it.
-        SwordItemType itemType = abilitySlotManager.getActiveTypeForHeldSlot(heldSlot);
-        if (itemType == null) return false;
-
-        // From here on, this IS an ability slot (return true to consume the input)
-        if (input == InputType.LEFT) {
-            if (isHeldItemOnCooldown()) return true;
-
-            SkillSlot slot = itemType == SwordItemType.ACTIVE_1 ? SkillSlot.ACTIVE_1 : SkillSlot.ACTIVE_2;
-
-            InputAction action = SkillSlotActionFactory.create(this, slot, false);
-            if (action == null) return true;
-
-            SkillId equippedId = getCombatProfile().getPlayerSkillContainer().getEquipped(slot);
-            Skill skill = SkillRegistry.get(equippedId);
-            if (!(skill instanceof ActiveSkill active) || !active.canPerform(this)) return true;
-
-            SkillSlotState state = getCombatProfile().getPlayerSkillContainer().getSlotState(slot);
-            if (System.currentTimeMillis() < state.cooldownExpiresAt()) return true;
-
-            InputActionExecutor.execute(action, this);
-
-            abilitySlotManager.consumeUse(heldSlot);
-            long expiry = System.currentTimeMillis() + active.calculateCooldown(this);
-            SkillSlotState current = getCombatProfile().getPlayerSkillContainer().getSlotState(slot);
-            getCombatProfile().getPlayerSkillContainer().setSlotState(slot,
-                new SkillSlotState(current.remainingUses(), current.remainingDurability(), expiry));
-
-            return true;
-        } else {
-            return false;
-        }
     }
 
     @Override
@@ -967,39 +929,9 @@ public class SwordPlayer extends Combatant {
     }
 
     /**
-     * Dispatches an input event for items that carry a Sword-managed type key.
-     * This is the primary point of contact for typed-item input handling, called by
-     * {@link InputListener} before any class-based filtering or
-     * routing through {@link #act(InputType)}.
-     * <p>
-     * If this method returns {@code true}, the caller must cancel the originating Bukkit
-     * event and skip all further input processing — even if no action was taken (e.g.
-     * shift is suppressed for the menu button without opening the menu).
-     * </p>
-     *
-     * @param itemStack the item stack involved in the input; must not be null
-     * @param input     the input type being evaluated
-     * @return {@code true} if the input was fully handled and the event should be cancelled
-     */
-    public boolean handleItemInteraction(ItemStack itemStack, InputType input) {
-        if (KeyRegistry.hasKey(itemStack, KeyRegistry.MAIN_MENU_BUTTON_KEY)) {
-            if (input != InputType.SHIFT) {
-                InventoryMenuManager.openMenu(MainMenu.class, this);
-            }
-            return true;
-        }
-
-        StorageCategory category = StorageCategory.fromItem(itemStack);
-        if (category != null) {
-            openMenuForCategory(category);
-            return true;
-        }
-        return false;
-    }
-
-    /**
      * Opens the menu associated with the given {@link StorageCategory}.
-     * Shared by {@link #handleItemInteraction} and {@link #tryOpenMenuForItem}.
+     * Shared by {@link #tryOpenMenuForItem} and the EARLY-phase
+     * {@link btm.sword.input.binding.StorageButtonBinding}.
      *
      * @param category the storage category whose menu to open
      */
@@ -1016,7 +948,8 @@ public class SwordPlayer extends Combatant {
      * corresponding menu and returns {@code true}. Returns {@code false} otherwise.
      *
      * <p>Intended for inventory-click context where there is no SHIFT carve-out.
-     * The main-menu SHIFT suppression is handled separately in {@link #handleItemInteraction}.</p>
+     * The main-menu SHIFT suppression is handled separately by the EARLY-phase
+     * {@link btm.sword.input.binding.MenuButtonBinding}.</p>
      *
      * @param item the item to inspect; may be null
      * @return {@code true} if a menu was opened

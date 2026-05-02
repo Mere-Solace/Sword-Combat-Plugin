@@ -97,8 +97,8 @@ public final class ItemClassifier {
 
     /**
      * Returns {@code true} if the item is {@link ItemClass#BLOCKED} — i.e., it is fully
-     * managed by the Sword system and suppresses all inputs, routing them through
-     * {@link btm.sword.entity.player.SwordPlayer#handleItemInteraction} instead.
+     * managed by the Sword system and suppresses all inputs, routing them through the
+     * EARLY phase of the {@link btm.sword.input.ItemInputDispatchTable} instead.
      *
      * @param item the item to check; may be null or empty
      * @return true if the item is BLOCKED

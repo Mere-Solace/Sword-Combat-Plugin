@@ -38,6 +38,8 @@ import btm.sword.event.listener.WorldListener;
 import btm.sword.event.packet.EntityPacketListener;
 import btm.sword.event.packet.MovementListener;
 import btm.sword.input.InputListener;
+import btm.sword.input.ItemInputDispatchTable;
+import btm.sword.input.binding.InputBindingsRegistrar;
 import btm.sword.interaction.CustomInteractionManager;
 import btm.sword.join.MenuSlotGrid;
 import btm.sword.join.ServerJoinArbiter;
@@ -138,6 +140,9 @@ public final class Sword extends JavaPlugin {
         InventoryMenuManager.registerAll();
         CustomInteractionManager.initialize();
 
+        // Register all per-item input bindings (menu button, storage buttons, ability slots).
+        InputBindingsRegistrar.registerAll();
+
         AnimationRegistry.initialize(this);
         MobTypeRegistry.initialize(this);
         WeaponDisplayRegistry.initialize(this);
@@ -193,6 +198,9 @@ public final class Sword extends JavaPlugin {
 
         // Release all staging grid slots
         MenuSlotGrid.releaseAll();
+
+        // Empty the per-item input dispatch table so a /reload re-registers cleanly.
+        ItemInputDispatchTable.clear();
 
         PlayerDataManager.shutdown();
         VolumeSimulation.INSTANCE.shutdown();

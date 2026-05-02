@@ -5,6 +5,8 @@ import org.bukkit.inventory.ItemStack;
 import btm.sword.action.throwing.ThrowAction;
 import btm.sword.entity.player.SwordPlayer;
 import btm.sword.entity.player.ThrowPhase;
+import btm.sword.input.ItemInputBinding.MatchContext;
+import btm.sword.input.ItemInputBinding.Phase;
 import btm.sword.item.core.ItemClassifier;
 import btm.sword.runtime.scheduler.SwordScheduler;
 import btm.sword.util.entity.InputUtil;
@@ -63,9 +65,13 @@ public final class InputRouter {
 
     // ── Per-intent handlers ───────────────────────────────────────────────────
 
+    private static boolean dispatchEarly(SwordPlayer player, InputType type, ItemStack item) {
+        return ItemInputDispatchTable.dispatch(new MatchContext(player, type, item), Phase.EARLY);
+    }
+
     private static InputDecision handleAttack(SwordPlayer player) {
         ItemStack item = player.getItemStackInHand(true);
-        if (player.handleItemInteraction(item, InputType.LEFT)) return InputDecision.PASS;
+        if (dispatchEarly(player, InputType.LEFT, item)) return InputDecision.PASS;
         player.act(InputType.LEFT);
         return InputDecision.CANCEL;
     }
@@ -78,7 +84,7 @@ public final class InputRouter {
         ItemStack item = player.getItemStackInHand(true);
         InputType type = i.side() == InputIntent.Side.LEFT ? InputType.LEFT : InputType.RIGHT;
 
-        if (player.handleItemInteraction(item, type)) return InputDecision.CANCEL;
+        if (dispatchEarly(player, type, item)) return InputDecision.CANCEL;
 
         if (i.side() == InputIntent.Side.RIGHT) {
             if (ItemClassifier.isUsable(item)) return InputDecision.PASS;
@@ -97,7 +103,7 @@ public final class InputRouter {
 
     private static InputDecision handleInteractEntity(SwordPlayer player) {
         ItemStack item = player.getItemStackInHand(true);
-        if (player.handleItemInteraction(item, InputType.RIGHT)) return InputDecision.CANCEL;
+        if (dispatchEarly(player, InputType.RIGHT, item)) return InputDecision.CANCEL;
         if (ItemClassifier.isUsable(item)) return InputDecision.PASS;
 
         player.setInteractingWithEntity(true);
@@ -114,7 +120,7 @@ public final class InputRouter {
 
     private static InputDecision handleDrop(SwordPlayer player, InputIntent.Drop d) {
         player.setLastHeldItemBeforeDrop(d.droppedStack());
-        if (player.handleItemInteraction(d.droppedStack(), InputType.DROP)) return InputDecision.CANCEL;
+        if (dispatchEarly(player, InputType.DROP, d.droppedStack())) return InputDecision.CANCEL;
         player.setPerformedDropAction();
         player.act(InputType.DROP);
         return InputDecision.CANCEL;
@@ -122,7 +128,7 @@ public final class InputRouter {
 
     private static InputDecision handleSneakBegin(SwordPlayer player) {
         ItemStack item = player.getItemStackInHand(true);
-        if (player.handleItemInteraction(item, InputType.SHIFT)) return InputDecision.PASS;
+        if (dispatchEarly(player, InputType.SHIFT, item)) return InputDecision.PASS;
         player.act(InputType.SHIFT);
         return InputDecision.PASS;
     }
@@ -134,7 +140,7 @@ public final class InputRouter {
 
     private static InputDecision handleSwap(SwordPlayer player) {
         ItemStack item = player.getItemStackInHand(true);
-        if (player.handleItemInteraction(item, InputType.SWAP)) return InputDecision.CANCEL;
+        if (dispatchEarly(player, InputType.SWAP, item)) return InputDecision.CANCEL;
         if (player.isSwappingInInv()) return InputDecision.PASS;
         player.act(InputType.SWAP);
         return InputDecision.CANCEL;
