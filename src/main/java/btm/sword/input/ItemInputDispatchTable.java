@@ -5,6 +5,7 @@ import java.util.List;
 
 import btm.sword.input.ItemInputBinding.MatchContext;
 import btm.sword.input.ItemInputBinding.Phase;
+import btm.sword.input.binding.InputBindingsRegistrar;
 
 /**
  * Static, ordered registry of {@link ItemInputBinding}s.

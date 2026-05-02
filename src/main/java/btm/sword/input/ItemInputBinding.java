@@ -1,5 +1,7 @@
 package btm.sword.input;
 
+import java.util.function.Predicate;
+
 import org.bukkit.inventory.ItemStack;
 
 import btm.sword.entity.player.SwordPlayer;
@@ -82,4 +84,32 @@ public interface ItemInputBinding {
      *             stack for {@link InputIntent.Drop}
      */
     record MatchContext(SwordPlayer player, InputType input, ItemStack item) {}
+
+    /**
+     * Inline factory for trivial bindings — pairs a match predicate with a dispatch
+     * predicate and wraps them in an anonymous {@link ItemInputBinding}.
+     *
+     * <p>Use this when the binding fits in a few lines of lambda. Bindings with
+     * non-trivial logic, helper methods, or per-binding state should be authored as a
+     * full class (e.g. {@code AbilitySlotBinding}).</p>
+     *
+     * @param id stable identifier; reusing an id replaces the prior binding
+     * @param phase dispatch phase
+     * @param matches predicate that selects which inputs the binding applies to
+     * @param dispatch predicate that performs the binding's effect and returns
+     *                 {@code true} if the input was consumed
+     * @return an immutable binding ready to register
+     */
+    static ItemInputBinding of(String id,
+                                Phase phase,
+                                Predicate<MatchContext> matches,
+                                Predicate<MatchContext> dispatch) {
+        return new ItemInputBinding() {
+            @Override public String id() { return id; }
+            @Override public Phase phase() { return phase; }
+            @Override public boolean matches(MatchContext ctx) { return matches.test(ctx); }
+            @Override public boolean dispatch(MatchContext ctx) { return dispatch.test(ctx); }
+            @Override public String toString() { return "ItemInputBinding[" + id + "/" + phase + "]"; }
+        };
+    }
 }

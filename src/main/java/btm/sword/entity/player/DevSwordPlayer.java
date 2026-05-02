@@ -135,41 +135,10 @@ public final class DevSwordPlayer extends SwordPlayer {
             AnimationModeInputHandler.handle(this, input);
             return;
         }
-        if (handleUmbralBladeTesterInput(input)) {
-            return;
-        }
+        // UmbralBlade tester (BREEZE_ROD) lifecycle is now handled by
+        // btm.sword.input.binding.UmbralBladeTesterBinding via the EARLY-phase
+        // ItemInputDispatchTable, before this method is ever invoked.
         super.act(input);
-    }
-
-    /**
-     * Routes lifecycle commands while the player holds the UmbralBlade tester item
-     * (BREEZE_ROD tagged with {@link KeyRegistry#UMBRAL_BLADE_TESTER_KEY}).
-     *
-     * <ul>
-     *   <li>{@link InputType#LEFT}: deactivates the blade — destroys the instance and
-     *       blocks recreation until activate is called.</li>
-     *   <li>{@link InputType#DROP}: activates the blade — the lifecycle owner respawns
-     *       it on the next tick.</li>
-     * </ul>
-     *
-     * @param input the input received from the player
-     * @return {@code true} if the input was handled by the tester and should not fall
-     *         through to the normal input tree
-     */
-    private boolean handleUmbralBladeTesterInput(InputType input) {
-        ItemStack dropped = getLastHeldItemBeforeDrop();
-        if (dropped.isEmpty() ||
-            !KeyRegistry.hasKey(dropped, KeyRegistry.UMBRAL_BLADE_TESTER_KEY)) {
-            return false;
-        }
-        switch (input) {
-            case LEFT -> deactivateUmbralBlade();
-            case DROP -> activateUmbralBlade();
-            default -> {
-                return false;
-            }
-        }
-        return true;
     }
 
     /**
