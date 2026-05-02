@@ -9,10 +9,10 @@ import java.util.Queue;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import btm.sword.entity.player.SwordPlayer;
 import btm.sword.gamemode.type.CaptureTheFlag1v1;
 import btm.sword.gamemode.type.Gamemode;
 import btm.sword.gamemode.type.RoguelikeRun;
-import btm.sword.system.entity.impl.SwordPlayer;
 
 /**
  * Manages per-{@link Gamemode} matchmaking queues and tracks active matches.
@@ -22,7 +22,7 @@ import btm.sword.system.entity.impl.SwordPlayer;
  * </p>
  *
  * <p>Active CTF matches are registered in {@link #ACTIVE_MATCHES} so that
- * {@link btm.sword.listeners.PlayerListener} can route death events to the correct match.</p>
+ * {@link btm.sword.event.listener.PlayerListener} can route death events to the correct match.</p>
  */
 public final class QueueManager {
 

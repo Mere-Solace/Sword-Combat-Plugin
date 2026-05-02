@@ -15,10 +15,10 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.TextDisplay;
 
 import btm.sword.config.Config;
-import btm.sword.control.SwordScheduler;
+import btm.sword.entity.arbiter.SwordEntityArbiter;
+import btm.sword.entity.player.SwordPlayer;
 import btm.sword.gamemode.QueueManager;
-import btm.sword.system.entity.SwordEntityArbiter;
-import btm.sword.system.entity.impl.SwordPlayer;
+import btm.sword.runtime.scheduler.SwordScheduler;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;

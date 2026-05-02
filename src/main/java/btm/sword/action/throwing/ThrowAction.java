@@ -1,0 +1,229 @@
+package btm.sword.action.throwing;
+
+import java.util.function.Consumer;
+
+import org.bukkit.entity.ItemDisplay;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.scheduler.BukkitRunnable;
+import org.jetbrains.annotations.Nullable;
+import org.joml.Vector3f;
+
+import btm.sword.Sword;
+import btm.sword.action.core.SwordAction;
+import btm.sword.action.throwing.types.ThrownItem;
+import btm.sword.action.throwing.types.VisualProjectile;
+import btm.sword.entity.base.Combatant;
+import btm.sword.entity.player.SwordPlayer;
+import btm.sword.entity.player.ThrowPhase;
+import btm.sword.input.ActivationContext;
+import btm.sword.util.misc.Debug;
+
+/**
+ * Handles the sequence of actions involved in a {@code Combatant} performing a throw action.
+ * <p>
+ * A throw in this context is a multiphase process composed of:
+ * <ul>
+ *     <li><b>Preparation</b> – The entity begins aiming or charging a throw.</li>
+ *     <li><b>Cancellation</b> – The throw is interrupted before release.</li>
+ *     <li><b>Release</b> – The item is actually thrown.</li>
+ * </ul>
+ * <p>
+ * This class manages the visual representation of the thrown item, its logical state
+ * (e.g. tracking success or cancellation), and synchronization with the player's held items.
+ * <p>
+ * Each method in this class operates on a {@link Combatant} (either a player or AI-controlled entity)
+ * and interacts with a {@link ThrownItem} object to handle the in-world physics and display logic.
+ *
+ * @see SwordAction
+ * @see ThrownItem
+ * @see Combatant
+ * @see SwordPlayer
+ */
+public class ThrowAction extends SwordAction {
+    /**
+     * Initializes the throw sequence for the given executor using the item currently in the main hand.
+     *
+     * @param executor the combatant beginning a throw action
+     */
+    public static void throwReady(Combatant executor) {
+        if (executor instanceof SwordPlayer sp) {
+            sp.setBlocking(false);
+        }
+        throwReady(executor, null);
+    }
+
+    /**
+     * Initializes the throw sequence for the given executor.
+     * <p>
+     * This method marks the executor as attempting a throw, spawns an
+     * {@link ItemDisplay} at the entity's eye location to represent the thrown item,
+     * and creates a corresponding {@link ThrownItem} wrapper for simulation control.
+     * <p>
+     * If the executor is a {@link SwordPlayer}, the thrown item's display will mirror
+     * the item currently in hand (based on the item snapshot taken at hold time).
+     * If {@code itemOverride} is non-null, that item is used for the display and logical
+     * item stack regardless of what the executor holds — used by mob AI to throw a specific item.
+     *
+     * @param executor     the combatant beginning a throw action
+     * @param itemOverride the explicit item to throw, or {@code null} to derive from the executor's hand
+     */
+    public static void throwReady(Combatant executor, @Nullable ItemStack itemOverride) {
+        executor.setThrowPhase(ThrowPhase.THROWING);
+        if (executor instanceof SwordPlayer sp) sp.setActivationContext(ActivationContext.THROWING);
+
+        Consumer<ItemDisplay> setupInstructions;
+        ItemStack logicalItem;
+
+        if (itemOverride != null) {
+            setupInstructions = display -> display.setItemStack(itemOverride);
+            logicalItem = itemOverride;
+        } else if (executor instanceof SwordPlayer sp && !sp.getItemStackInHand(true).isEmpty()) {
+            setupInstructions = display -> display.setItemStack(sp.getMainItemStackAtTimeOfHold());
+            logicalItem = sp.getMainItemStackAtTimeOfHold();
+        } else {
+            setupInstructions = display -> display.setItemStack(executor.getItemStackInHand(true));
+            logicalItem = executor.getItemStackInHand(true);
+        }
+
+        ThrownItem thrownItem = new ThrownItem(executor, setupInstructions);
+        thrownItem.setup(1);
+        thrownItem.setItemStack(logicalItem);
+        executor.setThrownItem(thrownItem);
+
+        // This Bukkit Runnable is fine for now
+        new BukkitRunnable() {
+            int misses = 0;
+            @Override
+            public void run() {
+                if (misses > 20) {
+                    cancel();
+                }
+                if (thrownItem.getDisplay() == null) {
+                    misses++;
+                } else {
+                    thrownItem.onReady();
+                    cancel();
+                }
+            }
+        }.runTaskTimer(Sword.getInstance(), 0L, 3L);
+    }
+
+    /**
+     * Throws an item directly without the {@link #throwReady} aim-and-hold windup.
+     * <p>
+     * The display entity is spawned on the next server tick; once it exists the
+     * {@link ThrownItem} is immediately released at the given velocity — {@code onReady()}
+     * is never called. This is suitable for instant-release throws (e.g. knife throws)
+     * where no aim window or slowness effect is desired.
+     * <p>
+     * {@code displayScale} is applied to the item's transform in
+     * {@link ThrownItem#determineOrientation()} via
+     * {@link VisualProjectile#setDisplayScale(Vector3f)}.
+     * Pass {@code 1.0f} for normal size.
+     *
+     * @param executor     the combatant performing the throw
+     * @param item         the item to throw
+     * @param displayScale scale vector applied to the display transform (e.g. {@code new Vector3f(x_scale, y_scale, z_scale)})
+     * @param velocity     the initial velocity magnitude passed to {@link ThrownItem#onRelease(double)}
+     */
+    public static void throwDirect(Combatant executor, ItemStack item, Vector3f displayScale, double velocity) {
+        executor.setThrowPhase(ThrowPhase.THROWING);
+        if (executor instanceof SwordPlayer sp) sp.setActivationContext(ActivationContext.THROWING);
+
+        ThrownItem thrownItem = new ThrownItem(executor, display -> display.setItemStack(item));
+        thrownItem.setup(1);
+        thrownItem.setItemStack(item);
+        thrownItem.setDisplayScale(displayScale);
+        executor.setThrownItem(thrownItem);
+
+        new BukkitRunnable() {
+            int misses = 0;
+            @Override
+            public void run() {
+                if (misses > 20) {
+                    cancel();
+                    return;
+                }
+                if (thrownItem.getDisplay() == null) {
+                    misses++;
+                } else {
+                    executor.setThrowPhase(ThrowPhase.SUCCESS);
+                    if (executor instanceof SwordPlayer sp) sp.setActivationContext(ActivationContext.NORMAL);
+                    thrownItem.onRelease(velocity);
+                    cancel();
+                }
+            }
+        }.runTaskTimer(Sword.getInstance(), 0L, 1L);
+    }
+
+    /**
+     * Throws an item directly without the {@link #throwReady} aim-and-hold windup.
+     * <p>
+     * The display entity is spawned on the next server tick; once it exists the
+     * {@link ThrownItem} is immediately released at the given velocity — {@code onReady()}
+     * is never called. This is suitable for instant-release throws (e.g. knife throws)
+     * where no aim window or slowness effect is desired.
+     * <p>
+     * {@code displayScale} is applied to the item's transform in
+     * {@link ThrownItem#determineOrientation()} via
+     * {@link VisualProjectile#setDisplayScale(Vector3f)}.
+     * Pass {@code 1.0f} for normal size.
+     *
+     * @param executor     the combatant performing the throw
+     * @param item         the item to throw
+     * @param displayScale uniform scale applied to the display transform (e.g. {@code 0.5f} for half size)
+     * @param velocity     the initial velocity magnitude passed to {@link ThrownItem#onRelease(double)}
+     */
+    public static void throwDirect(Combatant executor, ItemStack item, float displayScale, double velocity) {
+        throwDirect(executor, item, new Vector3f(displayScale), velocity);
+    }
+
+    /**
+     * Cancels a throw action before it is released.
+     * <p>
+     * This restores the executor’s held item states to what they were prior to
+     * initiating the throw, clears the temporary {@link ThrownItem} reference,
+     * and marks the throw as canceled in the combatant’s state.
+     * <p>
+     * This method is typically called when the player releases the throw input too early,
+     * switches items, or is interrupted by another action.
+     *
+     * @param executor The combatant whose throw action is being canceled.
+     */
+    public static void throwCancel(Combatant executor) {
+        Debug.system("Throw was <CANCELED>");
+        executor.setThrowPhase(ThrowPhase.CANCELLED);
+        if (executor instanceof SwordPlayer sp) sp.setActivationContext(ActivationContext.NORMAL);
+
+        if (executor instanceof SwordPlayer sp) {
+            sp.setItemAtIndex(sp.getMainHandItemStackDuringThrow(), sp.getThrownItemIndex());
+        }
+        else {
+            executor.setItemStackInHand(executor.getMainHandItemStackDuringThrow(), true);
+        }
+        executor.setItemStackInHand(executor.getOffHandItemStackDuringThrow(), false);
+
+        executor.setThrownItem(null);
+    }
+
+    /**
+     * Executes the final release of a throw after successful preparation.
+     * <p>
+     * This marks the throw as successful, then schedules the {@link ThrownItem}
+     * to be released after a short delay. The delay allows synchronization with
+     * client-side animations or wind-up frames before the item actually leaves the hand.
+     * <p>
+     * Once released, the item’s {@link ThrownItem#onRelease(double)} method is invoked,
+     * which handles projectile motion, collision detection, and effects.
+     *
+     * @param executor The combatant performing the throw.
+     */
+    public static void throwItem(Combatant executor) {
+        if (executor.getThrowPhase() == ThrowPhase.CANCELLED) return;
+
+        executor.setThrowPhase(ThrowPhase.SUCCESS);
+        if (executor instanceof SwordPlayer sp) sp.setActivationContext(ActivationContext.NORMAL);
+
+        if (executor.getThrownItem() != null) executor.getThrownItem().onRelease(2);
+    }
+}

@@ -1,0 +1,235 @@
+package btm.sword.item.core;
+
+import java.util.List;
+
+import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
+import org.bukkit.inventory.ItemFlag;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.Damageable;
+import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.meta.SkullMeta;
+import org.bukkit.inventory.meta.components.CustomModelDataComponent;
+import org.bukkit.persistence.PersistentDataType;
+
+import btm.sword.action.throwing.ImpactType;
+import btm.sword.combat.style.WeaponAttackStyle;
+import io.papermc.paper.datacomponent.DataComponentTypes;
+import net.kyori.adventure.text.Component;
+
+/**
+ * Builder utility for creating and customizing {@link ItemStack} instances in a fluent style.
+ * <p>
+ * Example usage:
+ * <pre>
+ * ItemStack custom = new ItemStackBuilder(Material.DIAMOND_SWORD)
+ *     .name(Component.text("Epic Blade"))
+ *     .lore(List.of(Component.text("Forged in the fires of the Jokers")))
+ *     .unbreakable(true)
+ *     .durability(10)
+ *     .tag("customKey","customValue")
+ *     .baseDamage(12.5)
+ *     .customModelData(123)  // use new API
+ *     .hideAll()
+ *     .build();
+ * </pre>
+ * </p>
+ *
+ * @see ItemStack
+ * @see ItemMeta
+ * @see SkullMeta
+ */
+public class ItemStackBuilder {
+    private final ItemStack item;
+    private ItemMeta meta;
+    private boolean stripAttributeModifiers = false;
+
+    /** Returns a new builder for the given material. */
+    public static ItemStackBuilder of(Material material) {
+        return new ItemStackBuilder(material);
+    }
+
+    /**
+     * Creates an ItemStackBuilder for the given material.
+     * If the item’s meta is null, it falls back to a default shield meta.
+     *
+     * @param material the material to build the item from
+     */
+    public ItemStackBuilder(Material material) {
+        ItemMeta preMeta;
+        this.item = ItemStack.of(material);
+        preMeta = item.getItemMeta();
+        if (preMeta == null)
+            preMeta = ItemStack.of(Material.SHIELD).getItemMeta();
+        this.meta = preMeta;
+    }
+
+    /**
+     * Use this first: old meta is overwritten
+     *
+     * @param meta The new meta
+     */
+    public ItemStackBuilder setMeta(ItemMeta meta) {
+        this.meta = meta;
+        return this;
+    }
+
+    /**
+     * Sets the display name of the item.
+     *
+     * @param component the component representing the name to set
+     * @return this builder, for chaining
+     */
+    public ItemStackBuilder name(Component component) {
+        meta.itemName(component);
+        meta.customName(component);
+        return this;
+    }
+
+    /**
+     * Sets the lore of the item.
+     *
+     * @param lore a list of Component instances representing the lore lines
+     * @return this builder, for chaining
+     */
+    public ItemStackBuilder lore(List<Component> lore) {
+        meta.lore(lore);
+        return this;
+    }
+
+    /**
+     * Marks the item as unbreakable (or not).
+     *
+     * @param unbreakable true to make the item unbreakable; false otherwise
+     * @return this builder, for chaining
+     */
+    public ItemStackBuilder unbreakable(boolean unbreakable) {
+        tag(KeyRegistry.BREAKABLE_WEAPON_KEY, PersistentDataType.BOOLEAN, unbreakable);
+        meta.setUnbreakable(unbreakable);
+        return this;
+    }
+
+    // TODO: use ItemMeta instanceof Damageable to set Max damage, get damage, etc.
+
+    /** Sets the max damage and starting damage for a damageable item; no-op if the item is not damageable. */
+    public ItemStackBuilder setDamageValues(int maxDamage, int startingDamage) {
+        if (meta instanceof Damageable damageable) {
+            damageable.setMaxDamage(maxDamage);
+            damageable.setDamage(startingDamage);
+        }
+        return this;
+    }
+
+    /**
+     * Adds a persistent data tag (string) to the item.
+     *
+     * @param key the key (namespaced under your plugin) to store
+     * @param value the string value to store
+     * @return this builder, for chaining
+     */
+    public <T, Z> ItemStackBuilder tag(NamespacedKey key, PersistentDataType<T, Z> dataType, Z value) {
+        meta.getPersistentDataContainer().set(
+            key,
+            dataType,
+            value
+        );
+        return this;
+    }
+
+    /** Tags the item with its {@link SwordItemType} identifier for runtime type detection. */
+    public ItemStackBuilder tagSwordItem(SwordItemType type) {
+        return tag(KeyRegistry.ITEM_TYPE_KEY, PersistentDataType.STRING, type.string());
+    }
+
+    /** Tags the item with the given {@link WeaponAttackStyle} string for attack-style resolution. */
+    public ItemStackBuilder tagAttackStyle(WeaponAttackStyle type) {
+        return tag(KeyRegistry.ATTACK_STYLE_KEY, PersistentDataType.STRING, type.string());
+    }
+
+    /** Tags the item with the given impact type string for hit effect resolution. */
+    public ItemStackBuilder tagImpactType(ImpactType type) {
+        return tag(KeyRegistry.IMPACT_TYPE_KEY, PersistentDataType.STRING, type.string());
+    }
+
+    /** Tags the item as a storage button of the given category. */
+    public ItemStackBuilder tagStorageButton(StorageCategory category) {
+        return tag(KeyRegistry.STORAGE_BUTTON_KEY, PersistentDataType.STRING, category.string());
+    }
+
+    /**
+     * Sets the base damage value (double) for this item via persistent data.
+     *
+     * @param value the base damage value to store
+     * @return this builder, for chaining
+     */
+    public ItemStackBuilder toughnessDamageAdder(double value) {
+        return tag(KeyRegistry.TOUGHNESS_DAMAGE_ADDER_KEY, PersistentDataType.DOUBLE, value);
+    }
+
+    /**
+     * Sets the custom model data using the newer API.
+     * <p>
+     * The legacy {@link ItemMeta#setCustomModelData(Integer)} is deprecated. According to the newer API
+     * documentation, you should use {@link ItemMeta#setCustomModelDataComponent(CustomModelDataComponent)} instead.
+     * </p>
+     *
+     * @param identifier the custom model data identifier (or other custom model data structure)
+     * @return this builder, for chaining
+     */
+    @SuppressWarnings("all")
+    public ItemStackBuilder customModelData(int identifier) {
+        // Using new, experimental API methods:
+        CustomModelDataComponent cmc = meta.getCustomModelDataComponent();
+        // Clear or initialize as needed; in the simplest case we just set a single float value list:
+        cmc.setFloats(List.of((float) identifier));
+        meta.setCustomModelDataComponent(cmc);
+        return this;
+    }
+
+    /**
+     * Strips all vanilla attribute modifiers (attack damage, attack speed, armor, etc.) from the item
+     * by clearing the {@code ATTRIBUTE_MODIFIERS} data component on build.
+     * <p>
+     * Prefer this over {@link ItemFlag#HIDE_ATTRIBUTES} — that flag only hides the tooltip line,
+     * while this actually removes the modifiers so they cannot affect gameplay.
+     * </p>
+     *
+     * @return this builder, for chaining
+     */
+    public ItemStackBuilder stripAttributeModifiers() {
+        this.stripAttributeModifiers = true;
+        return this;
+    }
+
+    /**
+     * Hides all item flags (makes the item display cleaner by hiding enchants, attributes, etc.).
+     *
+     * @return this builder, for chaining
+     */
+    public ItemStackBuilder hideAll() {
+        meta.addItemFlags(
+                ItemFlag.HIDE_ARMOR_TRIM,
+                ItemFlag.HIDE_ATTRIBUTES,
+                ItemFlag.HIDE_DESTROYS,
+                ItemFlag.HIDE_DYE,
+                ItemFlag.HIDE_ENCHANTS,
+                ItemFlag.HIDE_PLACED_ON,
+                ItemFlag.HIDE_STORED_ENCHANTS,
+                ItemFlag.HIDE_UNBREAKABLE
+        );
+        return this;
+    }
+
+    /**
+     * Builds and returns the configured {@link ItemStack}.
+     *
+     * @return the built ItemStack with all applied meta
+     */
+    public ItemStack build() {
+        item.setItemMeta(meta);
+        if (stripAttributeModifiers) {
+            item.unsetData(DataComponentTypes.ATTRIBUTE_MODIFIERS);
+        }
+        return item;
+    }
+}

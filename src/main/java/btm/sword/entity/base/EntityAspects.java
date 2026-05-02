@@ -1,0 +1,383 @@
+package btm.sword.entity.base;
+
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Function;
+
+import org.bukkit.scheduler.BukkitTask;
+
+import btm.sword.config.Config;
+import btm.sword.entity.aspect.Aspect;
+import btm.sword.entity.aspect.AspectType;
+import btm.sword.entity.aspect.Resource;
+import btm.sword.entity.aspect.value.AspectValue;
+import btm.sword.entity.aspect.value.ResourceValue;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextColor;
+import net.kyori.adventure.text.format.TextDecoration;
+
+
+/**
+ * Manages and provides access to all {@link Aspect} and {@link Resource} values associated with an entity.
+ * <p>
+ * The {@code EntityAspects} class acts as a central container for an entity's full set of combat-related stats.
+ * These stats are divided into two major groups:
+ * <ul>
+ *     <li><b>Resources</b> — dynamic pools that regenerate over time, such as {@link #shards}, {@link #toughness}, {@link #soulfire}, and {@link #form}.</li>
+ *     <li><b>Aspects</b> — static or semi-static modifiers that describe the entity’s inherent traits and power scaling, such as {@link #might}, {@link #resolve}, {@link #armor}, etc.</li>
+ * </ul>
+ * <p>
+ * Each {@link EntityAspects} instance is constructed from a {@link CombatProfile}, which defines the base values
+ * for each {@link AspectType}. Upon construction, all {@link Resource} aspects automatically begin their regeneration
+ * tasks (handled internally by their {@link Resource#startRegenTask()} methods).
+ *
+ * <h3>Usage Overview</h3>
+ * <p>
+ * This class is primarily accessed through the owning {@link btm.sword.entity.base.SwordEntity SwordEntity}.
+ * You can retrieve the active {@link EntityAspects} instance via:
+ * <pre>{@code
+ * SwordEntity entity = ...;
+ * EntityAspects aspects = entity.getAspects();
+ * }</pre>
+ *
+ * <h3>Accessing Stats</h3>
+ * Each aspect can be retrieved or queried by its {@link AspectType}:
+ * <pre>{@code
+ * float currentToughness = entity.getAspects().toughnessVal();
+ * float currentSoulfire = entity.getAspects().soulfireCur();
+ *
+ * // Or dynamically by type:
+ * float might = entity.getAspects().getAspectVal(AspectType.MIGHT);
+ * }</pre>
+ *
+ * <h3>Modifying Values</h3>
+ * Use the {@link Resource} API for additive, subtractive, or reset-based updates:
+ * <pre>{@code
+ * aspects.toughness().remove(10); // Removes 10 points of toughness
+ * aspects.shards().reset();       // Restores shards to full
+ * }</pre>
+ *
+ * <h3>Lifecycle & Integration</h3>
+ * <ul>
+ *     <li>This object is created once per {@link SwordEntity} (during its construction).</li>
+ *     <li>All resource regeneration tasks begin immediately upon construction.</li>
+ *     <li>Resources are reset during {@link SwordEntity#onSpawn()} or when a respawn/reset event occurs.</li>
+ *     <li>Aspects and resources are primarily visualized in the player HUD or combat overlay, and can be queried
+ *     for live updates via the appropriate getters (e.g., for health bars or mana-like gauges).</li>
+ * </ul>
+ *
+ * <h3>Internal Layout</h3>
+ * <p>
+ * Internally, all aspects are stored in a single {@code Aspect[]} array named {@link #stats}, ordered as follows:
+ * <pre>
+ * [shards, toughness, soulfire, form, might, resolve, finesse, prowess, armor, fortitude, celerity, willpower]
+ * </pre>
+ * This layout is deterministic and consistent across entities for indexing and iteration purposes.
+ *
+ * @see Aspect
+ * @see Resource
+ * @see CombatProfile
+ * @see btm.sword.entity.base.SwordEntity
+ */
+public class EntityAspects {
+    /**
+     * Ordered array of all aspects (resources first, then static attributes).
+     * <p>
+     * Index layout:
+     * <pre>
+     * [0] Shards
+     * [1] Toughness
+     * [2] Soulfire
+     * [3] Form
+     * [4] Might
+     * [5] Resolve
+     * [6] Finesse
+     * [7] Prowess
+     * [8] Armor
+     * [9] Fortitude
+     * [10] Celerity
+     * [11] Willpower
+     * </pre>
+     */
+    private final Aspect[] stats = new Aspect[12];
+
+    private final Resource shards;
+    private final Resource toughness;
+    private final Resource soulfire;
+    private final Resource form;
+
+    private final Aspect might;
+    private final Aspect resolve;
+    private final Aspect finesse;
+    private final Aspect prowess;
+    private final Aspect armor;
+    private final Aspect fortitude;
+    private final Aspect celerity;
+    private final Aspect willpower;
+
+    private BukkitTask restartTask;
+
+    /**
+     * Constructs all resource and aspect objects for a given {@link CombatProfile}.
+     * <p>
+     * Each resource is configured with its base value, regeneration rate, and regeneration period,
+     * and then has its regeneration task automatically started.
+     *
+     * @param profile the {@link CombatProfile} providing base stat and resource values
+     */
+    public EntityAspects(CombatProfile profile) {
+        AspectValue shardVals = profile.getStat(AspectType.SHARDS);
+        shards = new Resource(
+                AspectType.SHARDS,
+                shardVals.getValue(),
+                ((ResourceValue) shardVals).getRegenPeriod(),
+                ((ResourceValue) shardVals).getRegenAmount());
+        shards.startRegenTask();
+        stats[0] = shards;
+
+        AspectValue toughnessVals = profile.getStat(AspectType.TOUGHNESS);
+        toughness = new Resource(
+                AspectType.TOUGHNESS,
+                toughnessVals.getValue(),
+                ((ResourceValue) toughnessVals).getRegenPeriod(),
+                ((ResourceValue) toughnessVals).getRegenAmount());
+        toughness.startRegenTask();
+        stats[1] = toughness;
+
+        AspectValue soulfireVals = profile.getStat(AspectType.SOULFIRE);
+        soulfire = new Resource(
+                AspectType.SOULFIRE,
+                soulfireVals.getValue(),
+                ((ResourceValue) soulfireVals).getRegenPeriod(),
+                ((ResourceValue) soulfireVals).getRegenAmount());
+        soulfire.startRegenTask();
+        stats[2] = soulfire;
+
+        AspectValue formVals = profile.getStat(AspectType.FORM);
+        form = new Resource(
+                AspectType.FORM,
+                formVals.getValue(),
+                ((ResourceValue) formVals).getRegenPeriod(),
+                ((ResourceValue) formVals).getRegenAmount());
+        form.startRegenTask();
+        stats[3] = form;
+
+        might = new Aspect(AspectType.MIGHT, profile.getStat(AspectType.MIGHT).getValue());
+        stats[4] = might;
+        resolve = new Aspect(AspectType.RESOLVE, profile.getStat(AspectType.RESOLVE).getValue());
+        stats[5] = resolve;
+        finesse = new Aspect(AspectType.FINESSE, profile.getStat(AspectType.FINESSE).getValue());
+        stats[6] = finesse;
+        prowess = new Aspect(AspectType.PROWESS, profile.getStat(AspectType.PROWESS).getValue());
+        stats[7] = prowess;
+        armor = new Aspect(AspectType.ARMOR, profile.getStat(AspectType.ARMOR).getValue());
+        stats[8] = armor;
+        fortitude = new Aspect(AspectType.FORTITUDE, profile.getStat(AspectType.FORTITUDE).getValue());
+        stats[9] = fortitude;
+        celerity = new Aspect(AspectType.CELERITY, profile.getStat(AspectType.CELERITY).getValue());
+        stats[10] = celerity;
+        willpower = new Aspect(AspectType.WILLPOWER, profile.getStat(AspectType.WILLPOWER).getValue());
+        stats[11] = willpower;
+    }
+
+    /**
+     * Retrieves a specific {@link Aspect} or {@link Resource} based on its {@link AspectType}.
+     *
+     * @param type the aspect type to retrieve
+     * @return the corresponding {@link Aspect} or {@link Resource} instance
+     */
+    public Aspect getAspect(AspectType type) {
+        return switch (type) {
+            case SHARDS -> shards;
+            case TOUGHNESS -> toughness;
+            case SOULFIRE -> soulfire;
+            case FORM -> form;
+
+            case MIGHT -> might;
+            case RESOLVE -> resolve;
+            case FINESSE -> finesse;
+            case PROWESS -> prowess;
+            case ARMOR -> armor;
+            case FORTITUDE -> fortitude;
+            case CELERITY -> celerity;
+            case WILLPOWER -> willpower;
+        };
+    }
+
+    /**
+     * Returns the full ordered array of all aspects, including both resources and static attributes.
+     * <p>
+     * This is typically used for iteration or serialization purposes.
+     *
+     * @return an array containing all {@link Aspect}s in canonical order
+     */
+    public Aspect[] aspectSet() {
+        return stats;
+    }
+
+    /**
+     * Retrieves the current effective value of a given {@link AspectType}.
+     * <p>
+     * The "effective value" represents the stat’s current real-time magnitude,
+     * incorporating modifiers, buffs, or debuffs.
+     *
+     * @param type the aspect type
+     * @return the effective stat value
+     */
+    public float getAspectVal(AspectType type) {
+        return getAspect(type).effectiveMaxValue();
+    }
+
+    public Resource shards() { return shards; }
+    public Resource toughness() { return toughness; }
+    public Resource soulfire() { return soulfire; }
+    public Resource form() { return form; }
+
+    public Aspect might() { return might; }
+    public Aspect resolve() { return resolve; }
+    public Aspect finesse() { return finesse; }
+    public Aspect prowess() { return prowess; }
+    public Aspect armor() { return armor; }
+    public Aspect fortitude() { return fortitude; }
+    public Aspect celerity() { return celerity; }
+    public Aspect willpower() { return willpower; }
+
+    public float shardsMaxVal() { return shards.effectiveMaxValue(); }
+    public float toughnessMaxVal() { return toughness.effectiveMaxValue(); }
+    public float soulfireMaxVal() { return soulfire.effectiveMaxValue(); }
+    public float formMaxVal() { return form.effectiveMaxValue(); }
+
+    public float mightVal() { return might.effectiveMaxValue(); }
+    public float resolveVal() { return resolve.effectiveMaxValue(); }
+    public float finesseVal() { return finesse.effectiveMaxValue(); }
+    public float prowessVal() { return prowess.effectiveMaxValue(); }
+    public float armorVal() { return armor.effectiveMaxValue(); }
+    public float fortitudeVal() { return fortitude.effectiveMaxValue(); }
+    public float celerityVal() { return celerity.effectiveMaxValue(); }
+    public float willpowerVal() { return willpower.effectiveMaxValue(); }
+
+    public float shardsCur() { return shards.cur(); }
+    public float toughnessCur() { return toughness.cur(); }
+    public float soulfireCur() { return soulfire.cur(); }
+    public float formCur() { return form.cur(); }
+
+    /**
+     * Returns a plain-text summary of the current resource values for debugging.
+     *
+     * @return multi-line string listing current shards, toughness, soulfire, and form
+     */
+    public String curResources() {
+        return "Shards: " + shardsCur() +
+                "\nToughness: " + toughnessCur() +
+                "\nSoulfire: " + soulfireCur() +
+                "\nForm: " + formCur();
+    }
+
+    /**
+     * Updates live {@link Resource} and {@link Aspect} values from a freshly loaded
+     * {@link CombatProfile} without replacing the resource objects themselves.
+     * <p>
+     * Resources have their regen task restarted so the new period takes effect immediately.
+     * The current value is preserved (capped to the new max if necessary).
+     * Static aspects have their base value replaced directly.
+     * </p>
+     *
+     * @param profile the updated profile to read values from
+     */
+    public void reloadFromProfile(CombatProfile profile) {
+        for (Aspect aspect : stats) {
+            btm.sword.entity.aspect.value.AspectValue val = profile.getStat(aspect.type);
+            if (val == null) continue;
+            if (aspect instanceof Resource resource
+                && val instanceof btm.sword.entity.aspect.value.ResourceValue rv) {
+                resource.stopRegenTask();
+                resource.setBaseValue(rv.getValue());
+                resource.setBaseRegenPeriod(rv.getRegenPeriod());
+                resource.setBaseRegenAmount(rv.getRegenAmount());
+                resource.startRegenTask();
+            } else {
+                aspect.setBaseValue(val.getValue());
+            }
+        }
+    }
+
+    /**
+     * Cancels all active regeneration tasks for every resource (shards, toughness, soulfire, form).
+     * Also cancels any pending restart task. Called during {@link btm.sword.entity.base.SwordEntity#onDeath()}
+     * to prevent regen from continuing after death.
+     */
+    public void stopAllResourceTasks() {
+        if (restartTask != null && !restartTask.isCancelled()) restartTask.cancel();
+        shards().stopRegenTask();
+        toughness().stopRegenTask();
+        soulfire().stopRegenTask();
+        form().stopRegenTask();
+    }
+
+
+    /**
+     * Restarts the regeneration task for the specified resource type after a tick-based delay.
+     * Used to pause regeneration after a hit and resume it later.
+     *
+     * @param type  the resource to restart; must be one of the four resource types
+     *              ({@link AspectType#SHARDS}, {@link AspectType#TOUGHNESS},
+     *              {@link AspectType#SOULFIRE}, {@link AspectType#FORM})
+     * @param ticks delay in ticks before the regen task is restarted
+     */
+    public void restartResourceProcessAfterDelay(AspectType type, int ticks) {
+        Resource r;
+        switch (type) {
+            case SHARDS -> r = shards;
+            case TOUGHNESS -> r = toughness;
+            case SOULFIRE -> r = soulfire;
+            case FORM ->  r = form;
+            default -> r = null;
+        }
+        if (r == null) return;
+
+        r.restartRegenTaskLater(ticks);
+    }
+    /**
+     * Builds a formatted list of {@link net.kyori.adventure.text.Component} lines suitable for display
+     * in a tooltip or HUD, containing current values for all resources and aspects.
+     *
+     * @return ordered list of Adventure text components, one line per stat
+     */
+    public List<Component> toComponentList() {
+        List<Component> lines = new ArrayList<>();
+
+        TextColor r = Config.SwordColor.TEXT_RESOURCE_COLOR;
+        TextColor a = Config.SwordColor.TEXT_ASPECT_COLOR;
+
+        // Resources header
+        lines.add(Component.text("Resources", NamedTextColor.GOLD, TextDecoration.BOLD));
+
+        // Helper to format numbers
+        Function<Float, String> fmt = val -> String.format("%.1f", val);
+
+        // Resources
+        lines.add(Component.text(fmt.apply(shardsCur())    + " >>> Shards", r));
+        lines.add(Component.text(fmt.apply(toughnessCur()) + " >>> Toughness", r));
+        lines.add(Component.text(fmt.apply(soulfireCur())  + " >>> Soulfire", r));
+        lines.add(Component.text(fmt.apply(formCur())      + " >>> Form", r));
+
+        lines.add(Component.empty());
+
+        // Aspects header
+        lines.add(Component.text("Aspects", NamedTextColor.GOLD, TextDecoration.BOLD));
+
+        // Aspects
+        lines.add(Component.text(fmt.apply(mightVal())      + " >>> Might", a));
+        lines.add(Component.text(fmt.apply(resolveVal())    + " >>> Resolve", a));
+        lines.add(Component.text(fmt.apply(finesseVal())    + " >>> Finesse", a));
+        lines.add(Component.text(fmt.apply(prowessVal())    + " >>> Prowess", a));
+        lines.add(Component.text(fmt.apply(armorVal())      + " >>> Armor", a));
+        lines.add(Component.text(fmt.apply(fortitudeVal())  + " >>> Fortitude", a));
+        lines.add(Component.text(fmt.apply(celerityVal())   + " >>> Celerity", a));
+        lines.add(Component.text(fmt.apply(willpowerVal())  + " >>> Willpower", a));
+
+        return lines;
+    }
+}

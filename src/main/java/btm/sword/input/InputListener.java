@@ -18,15 +18,15 @@ import org.bukkit.inventory.ItemStack;
 
 import com.destroystokyo.paper.event.player.PlayerAttackEntityCooldownResetEvent;
 
+import btm.sword.action.throwing.ThrowAction;
 import btm.sword.config.Config;
-import btm.sword.control.SwordScheduler;
-import btm.sword.system.action.throwing.ThrowAction;
-import btm.sword.system.entity.SwordEntityArbiter;
-import btm.sword.system.entity.impl.SwordPlayer;
-import btm.sword.system.entity.impl.ThrowPhase;
-import btm.sword.system.item.ItemClassifier;
-import btm.sword.utility.Debug;
-import btm.sword.utility.entity.InputUtil;
+import btm.sword.entity.arbiter.SwordEntityArbiter;
+import btm.sword.entity.player.SwordPlayer;
+import btm.sword.entity.player.ThrowPhase;
+import btm.sword.item.core.ItemClassifier;
+import btm.sword.runtime.scheduler.SwordScheduler;
+import btm.sword.util.entity.InputUtil;
+import btm.sword.util.misc.Debug;
 import io.papermc.paper.event.player.PrePlayerAttackEntityEvent;
 
 /**
@@ -42,10 +42,10 @@ import io.papermc.paper.event.player.PrePlayerAttackEntityEvent;
  * <ol>
  *   <li>{@link SwordPlayer#handleItemInteraction} — first call for every event. If it
  *       returns {@code true}, the event is cancelled and no further processing occurs.
- *       Handles {@link btm.sword.system.item.ItemClass#BLOCKED} items (e.g. menu button).</li>
+ *       Handles {@link btm.sword.item.core.ItemClass#BLOCKED} items (e.g. menu button).</li>
  *   <li>{@link ItemClassifier#isUsable} guard — for right-click and drop paths only.
  *       Lets vanilla right-click behavior (eating, blocking, charging) and normal item
- *       drops pass through untouched for {@link btm.sword.system.item.ItemClass#USABLE} items.</li>
+ *       drops pass through untouched for {@link btm.sword.item.core.ItemClass#USABLE} items.</li>
  *   <li>Sword input tree — all remaining inputs route through {@link SwordPlayer#act}.</li>
  * </ol>
  */

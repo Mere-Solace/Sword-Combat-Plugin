@@ -2,7 +2,7 @@ package btm.sword.input;
 
 import java.util.function.Predicate;
 
-import btm.sword.system.entity.impl.SwordPlayer;
+import btm.sword.entity.player.SwordPlayer;
 
 /**
  * Defines the context in which a player's {@link InputExecutionTree} operates.
@@ -10,7 +10,7 @@ import btm.sword.system.entity.impl.SwordPlayer;
  * Contexts allow the same physical input tree to expose or suppress different action paths
  * depending on the player's current gameplay state. Nodes use {@link InputExecutionTree.InputNodeBuilder#visibleIf}
  * predicates that check the player's active context via
- * {@link btm.sword.system.entity.impl.SwordPlayer#getActivationContext()}.
+ * {@link btm.sword.entity.player.SwordPlayer#getActivationContext()}.
  * </p>
  *
  * <p>Example — restricting a node to {@link #NORMAL} only:</p>

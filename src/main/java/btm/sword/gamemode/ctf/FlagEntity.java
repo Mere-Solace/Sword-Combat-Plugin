@@ -9,9 +9,9 @@ import org.bukkit.entity.Item;
 import org.bukkit.inventory.ItemStack;
 
 import btm.sword.config.Config;
-import btm.sword.control.SwordScheduler;
-import btm.sword.system.entity.impl.SwordPlayer;
-import btm.sword.utility.Prefab;
+import btm.sword.entity.player.SwordPlayer;
+import btm.sword.runtime.scheduler.SwordScheduler;
+import btm.sword.util.prefab.Prefab;
 import lombok.Getter;
 import net.kyori.adventure.text.Component;
 

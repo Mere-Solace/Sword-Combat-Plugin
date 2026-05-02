@@ -9,10 +9,10 @@ import java.util.concurrent.TimeUnit;
 import org.bukkit.Location;
 
 import btm.sword.config.Config;
-import btm.sword.control.SwordScheduler;
+import btm.sword.entity.player.SwordPlayer;
 import btm.sword.gamemode.ctf.CtfTeam;
 import btm.sword.gamemode.ctf.FlagEntity;
-import btm.sword.system.entity.impl.SwordPlayer;
+import btm.sword.runtime.scheduler.SwordScheduler;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -125,7 +125,7 @@ public class CaptureTheFlag1v1 extends Gamemode {
     }
 
     /**
-     * Called by {@link btm.sword.gamemode.QueueManager} (via {@link btm.sword.listeners.PlayerListener})
+     * Called by {@link btm.sword.gamemode.QueueManager} (via {@link btm.sword.event.listener.PlayerListener})
      * when a participant dies during the match.
      * <p>
      * Drops the flag if the dead player was carrying one, then schedules a delayed respawn

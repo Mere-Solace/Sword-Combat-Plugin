@@ -15,12 +15,12 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.Nullable;
 
-import btm.sword.system.action.attack.AttackAction;
-import btm.sword.system.action.movement.MovementAction;
-import btm.sword.system.action.throwing.types.ThrownItem;
-import btm.sword.system.attack.dev.VolumeEditorMode;
-import btm.sword.system.attack.style.AttackType;
-import btm.sword.utility.sound.SwordSoundType;
+import btm.sword.action.attack.AttackAction;
+import btm.sword.action.movement.MovementAction;
+import btm.sword.action.throwing.types.ThrownItem;
+import btm.sword.combat.dev.VolumeEditorMode;
+import btm.sword.combat.style.AttackType;
+import btm.sword.util.sound.SwordSoundType;
 import net.kyori.adventure.text.format.TextColor;
 
 /**
@@ -248,7 +248,7 @@ public final class Config {
         return loadEnum(section, path, defaultValue, Particle.class);
     }
 
-    /** Loader for {@link btm.sword.system.attack.style.AttackType} configuration values. */
+    /** Loader for {@link btm.sword.combat.style.AttackType} configuration values. */
     public static AttackType loadAttackType(ConfigurationSection section, String path, AttackType defaultValue) {
         if (!section.contains(path)) return defaultValue;
         String value = section.getString(path);
@@ -458,7 +458,7 @@ public final class Config {
      * entity rotation, attack arcs, and visual effects.
      * </p>
      *
-     * @see btm.sword.system.entity.umbral.UmbralBlade Umbral blade rotation behavior
+     * @see btm.sword.umbral.UmbralBlade Umbral blade rotation behavior
      */
     public static class Angle {
         public static float UMBRAL_BLADE_IDLE_PERIOD = (float) Math.PI / 8; // radians (22.5°)
@@ -488,7 +488,7 @@ public final class Config {
      * </ul>
      *
      * @see ThrownItem Thrown item physics implementation
-     * @see btm.sword.system.attack.Attack Attack knockback application
+     * @see btm.sword.combat.attack.Attack Attack knockback application
      */
     public static class Physics {
         // Thrown items configuration
@@ -667,7 +667,7 @@ public final class Config {
      *   <li><b>Impalement</b> - Damage-over-time, pinning, head detection</li>
      * </ul>
      *
-     * @see btm.sword.system.attack.Attack Attack execution and damage application
+     * @see btm.sword.combat.attack.Attack Attack execution and damage application
      * @see AttackAction Attack state machine
      */
     public static class Combat {
@@ -1745,9 +1745,9 @@ public final class Config {
     // ==============================================================================
     /**
      * All configurable audio properties: global enable toggle, per-event sound keys,
-     * volumes, and pitches. Values map to {@link btm.sword.utility.sound.SwordSoundType} entries
-     * and are used by {@link btm.sword.utility.sound.SoundWrapper} and
-     * {@link btm.sword.utility.Prefab.Sounds}.
+     * volumes, and pitches. Values map to {@link btm.sword.util.sound.SwordSoundType} entries
+     * and are used by {@link btm.sword.util.sound.SoundWrapper} and
+     * {@link btm.sword.util.prefab.Prefab.Sounds}.
      */
     public static class Audio {
         // Sounds configuration
@@ -1983,8 +1983,8 @@ public final class Config {
      *   <li><b>Form</b> - Combat stance/technique points</li>
      * </ul>
      *
-     * @see btm.sword.system.entity.base.CombatProfile Combat stat management
-     * @see btm.sword.system.entity.base.SwordEntity Entity wrapper
+     * @see btm.sword.entity.base.CombatProfile Combat stat management
+     * @see btm.sword.entity.base.SwordEntity Entity wrapper
      */
     public static class Entity {
         // Player configuration
@@ -2850,7 +2850,7 @@ public final class Config {
             ConfigurationSection::getBoolean); }
 
         /** Log skill slot resolution, ability cast routing, and
-         * {@link btm.sword.system.action.skill.container.PlayerSkillContainer} state. */
+         * {@link btm.sword.action.skill.container.PlayerSkillContainer} state. */
         public static boolean LOGGING_VERBOSE_SKILL = false;
         static { register(
             "debug.logging_verbose_skill",
@@ -2875,7 +2875,7 @@ public final class Config {
             ConfigurationSection::getBoolean); }
 
         /** Log attack sweeps: Bezier curve steps, hitbox detections,
-         * and {@link btm.sword.system.attack.HitValuePacket} dispatch. */
+         * and {@link btm.sword.combat.hit.HitValuePacket} dispatch. */
         public static boolean LOGGING_VERBOSE_ATTACK = false;
         static { register(
             "debug.logging_verbose_attack",
@@ -2978,8 +2978,8 @@ public final class Config {
             ConfigurationSection::getDouble); }
 
         /**
-         * When {@code true}, {@link btm.sword.system.playerdata.PlayerDataManager#register} skips
-         * the database load and always creates a fresh {@link btm.sword.system.playerdata.PlayerData},
+         * When {@code true}, {@link btm.sword.playerdata.PlayerDataManager#register} skips
+         * the database load and always creates a fresh {@link btm.sword.playerdata.PlayerData},
          * simulating a first-time join. Persisted to config.yaml.
          * Toggle via the Dev Toggles menu or {@code /sword dev skipload}.
          */
@@ -2991,7 +2991,7 @@ public final class Config {
             ConfigurationSection::getBoolean); }
 
         /**
-         * When {@code true}, all save paths in {@link btm.sword.system.playerdata.PlayerDataManager}
+         * When {@code true}, all save paths in {@link btm.sword.playerdata.PlayerDataManager}
          * ({@code saveAsync}, {@code flushAll}, {@code shutdown}) are no-ops — data is never written
          * to the database. The store connection is still closed cleanly on shutdown.
          * Persisted to config.yaml. Toggle via the Dev Toggles menu or {@code /sword dev skipsave}.
@@ -3011,7 +3011,7 @@ public final class Config {
     /**
      * All configurable parameters for the grab action: durations, range, hold physics,
      * pull speed, and aspect-scaling factors. Used by
-     * {@link btm.sword.system.action.utility.GrabAction}.
+     * {@link btm.sword.action.utility.GrabAction}.
      */
     public static class Grab {
         public static int CAST_DURATION = 750;
@@ -3364,7 +3364,7 @@ public final class Config {
     /**
      * All configurable parameters for the UmbralBlade weapon and its state machine:
      * lunge timings, throw/recall physics, lodging thresholds, and blade display properties.
-     * Used by {@link btm.sword.system.entity.umbral.UmbralBlade} and its states.
+     * Used by {@link btm.sword.umbral.UmbralBlade} and its states.
      */
     public static class UmbralBlade {
         public static double LUNGE_TIME_CUTOFF = 1.1;
@@ -3570,15 +3570,15 @@ public final class Config {
     }
 
     /**
-     * Bézier control-point vectors for each named {@link btm.sword.system.attack.style.AttackType}.
+     * Bézier control-point vectors for each named {@link btm.sword.combat.style.AttackType}.
      *
      * <p>Each attack type exposes four {@link Vector} fields — {@code _START}, {@code _END},
      * {@code _C1}, and {@code _C2} — corresponding to the four cubic Bézier control points.
      * Values are loaded from the {@code attack_curves} YAML section as {@code {x, y, z}} maps
      * and hot-reloaded by {@code /sword reload}.
      *
-     * <p>{@link btm.sword.system.attack.style.AttackType} enum constants reference these fields
-     * via {@link btm.sword.utility.math.ControlVectors} suppliers so that live config changes
+     * <p>{@link btm.sword.combat.style.AttackType} enum constants reference these fields
+     * via {@link btm.sword.util.math.ControlVectors} suppliers so that live config changes
      * take effect on the next attack without a restart.
      */
     public static class AttackCurves {
@@ -4141,7 +4141,7 @@ public final class Config {
          * <p>
          * Must be the <b>anim key</b> — the sub-entry key under {@code anims:} in
          * {@code animations.yml} (e.g. {@code "gentle_v2_default"}), NOT the group/section key
-         * ({@code "gentle_v2"}). {@link btm.sword.system.scene.animation.AnimationRegistry#get}
+         * ({@code "gentle_v2"}). {@link btm.sword.scene.animation.AnimationRegistry#get}
          * looks up by this key; the resulting AnimationDef then supplies both
          * {@code groupTag} and {@code animTag} to the DEU controller.
          * </p>
@@ -4312,7 +4312,7 @@ public final class Config {
      * The grid is a matrix of off-screen platform slots. Each player occupies one slot
      * from join until they enter gameplay. The grid is placed at the configured origin and
      * grows along X (rows) and Z (columns) with the given spacing.
-     * {@link btm.sword.system.join.MenuSlotGrid} reads these values and manages occupancy.
+     * {@link btm.sword.join.MenuSlotGrid} reads these values and manages occupancy.
      * </p>
      */
     public static class MenuGrid {
