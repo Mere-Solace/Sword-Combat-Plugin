@@ -1,8 +1,8 @@
 package btm.sword.input;
 
 import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
 
+import org.bukkit.event.Cancellable;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -18,94 +18,71 @@ import org.bukkit.inventory.ItemStack;
 
 import com.destroystokyo.paper.event.player.PlayerAttackEntityCooldownResetEvent;
 
-import btm.sword.action.throwing.ThrowAction;
 import btm.sword.config.Config;
 import btm.sword.entity.arbiter.SwordEntityArbiter;
 import btm.sword.entity.player.SwordPlayer;
-import btm.sword.entity.player.ThrowPhase;
-import btm.sword.item.core.ItemClassifier;
 import btm.sword.runtime.scheduler.SwordScheduler;
-import btm.sword.util.entity.InputUtil;
 import btm.sword.util.misc.Debug;
 import io.papermc.paper.event.player.PrePlayerAttackEntityEvent;
 
 /**
- * Handles all player input events and routes them through the {@link SwordPlayer}
- * system for unified input handling and action evaluation.
- * <p>
- * This listener captures and interprets a wide range of Minecraft input actions —
- * including attacks, start-clicks, drops, swaps, and sneaking — and delegates
- * them to the internal {@link InputType}-based system used by the Sword plugin.
- * </p>
+ * Bukkit transport adapter for the Sword input system.
  *
- * <h2>Input routing priority</h2>
+ * <p>This class is intentionally thin. Each Bukkit handler does only three things:</p>
  * <ol>
- *   <li>{@link SwordPlayer#handleItemInteraction} — first call for every event. If it
- *       returns {@code true}, the event is cancelled and no further processing occurs.
- *       Handles {@link btm.sword.item.core.ItemClass#BLOCKED} items (e.g. menu button).</li>
- *   <li>{@link ItemClassifier#isUsable} guard — for right-click and drop paths only.
- *       Lets vanilla right-click behavior (eating, blocking, charging) and normal item
- *       drops pass through untouched for {@link btm.sword.item.core.ItemClass#USABLE} items.</li>
- *   <li>Sword input tree — all remaining inputs route through {@link SwordPlayer#act}.</li>
+ *   <li>Resolve the {@link SwordPlayer} for the firing event.</li>
+ *   <li>Build an immutable {@link InputIntent}.</li>
+ *   <li>Hand it to {@link InputRouter#route(InputIntent, SwordPlayer)} and apply the
+ *       returned {@link InputDecision} to the source event via
+ *       {@link #applyDecision(Cancellable, InputDecision)}.</li>
  * </ol>
+ *
+ * <p>Three Bukkit-event-ordering workarounds remain in this class because they are
+ * concerns of the transport layer rather than gameplay routing:</p>
+ * <ul>
+ *   <li><b>Right-click autorepeat suppression</b> — Minecraft fires {@code RIGHT_CLICK_BLOCK}
+ *       every tick while the player aims at a block while holding right-click. Cancelling
+ *       these synchronously here is the only way to suppress the block-interaction sound
+ *       and particle feedback; cancelling later is too late.</li>
+ *   <li><b>Spawn-egg restoration</b> — keeps debug spawn eggs from being consumed.</li>
+ *   <li><b>1-tick dispatch deferral</b> on {@link PlayerInteractEvent} — gives Bukkit's
+ *       inventory-related events time to fire first so {@code isInInventorySession},
+ *       {@code isDroppingInInv}, and {@code isSwappingInInv} are accurate when the router
+ *       reads them.</li>
+ * </ul>
  */
 public class InputListener implements Listener {
-    /**
-     * Handles standard attack inputs (left-clicking entities).
-     * <p>
-     * This event fires before the normal Bukkit {@code EntityDamageByEntityEvent}
-     * and is used to interpret left-clicks as input actions rather than vanilla attacks.
-     * If the {@link SwordPlayer} recognizes the item input, the vanilla attack is canceled.
-     * </p>
-     *
-     * @param event the {@link PrePlayerAttackEntityEvent} triggered before a player attacks an entity
-     */
+
+    /** Pre-attack hook fires before the vanilla attack so left-clicks become combo input. */
     @EventHandler
     public void onNormalAttack(PrePlayerAttackEntityEvent event) {
-        SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer());
-        ItemStack item = swordPlayer.getItemStackInHand(true);
-
-        if (swordPlayer.handleItemInteraction(item, InputType.LEFT)) return;
-
-        event.setCancelled(true);
-
-        swordPlayer.act(InputType.LEFT);
+        SwordPlayer player = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer());
+        InputIntent intent = new InputIntent.Attack(event.getPlayer().getUniqueId(), now());
+        applyDecision(event, InputRouter.route(intent, player));
     }
 
-    /** Handles the attack cooldown reset event; currently used only for debug tracing. */
-    @EventHandler // imagine that...
+    /** Debug-only hook for the vanilla attack-cooldown reset event. */
+    @EventHandler
     public void onAttackCooldownResetEvent(PlayerAttackEntityCooldownResetEvent event) {
-        SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer());
-
         Debug.input("PlayerAttackEntityCooldownResetEvent");
     }
 
-    /**
-     * Handles general player interaction events (left and start clicks).
-     * <p>
-     * This includes both air and block interactions. The system distinguishes between
-     * left and start inputs, checks for contextual blocking (e.g., interacting with blocks),
-     * and routes actions through the {@link SwordPlayer#act(InputType)} pipeline.
-     * </p>
-     *
-     * @param event the {@link PlayerInteractEvent} triggered when a player interacts with air or a block
-     */
+    /** Generic player interaction (left/right click on air or block). */
     @EventHandler(priority = EventPriority.NORMAL)
     public void onPlayerInteract(PlayerInteractEvent event) {
-        SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer());
-        ItemStack item = swordPlayer.getItemStackInHand(true);
-
+        SwordPlayer player = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer());
         Action action = event.getAction();
+        ItemStack item = player.getItemStackInHand(true);
 
-        // Suppress Minecraft's auto-repeated right-click events while a hold is already being tracked.
-        // These repeat each tick when aiming at a block, causing the hold to end and restart in a loop.
-        // Cancelling synchronously here also suppresses block interaction feedback (sounds, particles).
-        if ((action == Action.RIGHT_CLICK_BLOCK || action == Action.RIGHT_CLICK_AIR) && swordPlayer.isHoldingRight()) {
+        // Transport quirk: suppress Minecraft's auto-repeated right-click events while a hold
+        // is in progress. Cancelling synchronously also suppresses block-interaction feedback
+        // (sounds, particles); cancelling on a later tick is too late.
+        if ((action == Action.RIGHT_CLICK_BLOCK || action == Action.RIGHT_CLICK_AIR) && player.isHoldingRight()) {
             event.setCancelled(true);
             return;
         }
 
-        // Restore spawn eggs after use so they are never consumed — allows infinite spawning.
+        // Transport quirk: restore spawn eggs after use so debug spawning is infinite.
         if ((action == Action.RIGHT_CLICK_AIR || action == Action.RIGHT_CLICK_BLOCK)
                 && item != null && !item.isEmpty() && item.getType().name().endsWith("_SPAWN_EGG")) {
             ItemStack snapshot = item.clone();
@@ -114,184 +91,92 @@ public class InputListener implements Listener {
                 1, TimeUnit.MILLISECONDS);
         }
 
-        SwordScheduler.runBukkitTaskLater(() -> {
-            if (swordPlayer.isInInventorySession()) return;
-            if (swordPlayer.hasPerformedDropAction()) return;
-            if (swordPlayer.isDroppingInInv()) {
-                return;
-            }
+        InputIntent.Side side;
+        if (action == Action.LEFT_CLICK_AIR || action == Action.LEFT_CLICK_BLOCK) {
+            side = InputIntent.Side.LEFT;
+        } else if (action == Action.RIGHT_CLICK_AIR || action == Action.RIGHT_CLICK_BLOCK) {
+            side = InputIntent.Side.RIGHT;
+        } else {
+            return;
+        }
 
-            if ((action == Action.LEFT_CLICK_AIR || action == Action.LEFT_CLICK_BLOCK)) {
-                if (swordPlayer.handleItemInteraction(item, InputType.LEFT)) {
-                    event.setCancelled(true);
-                    return;
-                }
+        InputIntent intent = new InputIntent.Interact(
+            event.getPlayer().getUniqueId(),
+            now(),
+            side,
+            event.hasBlock() ? event.getClickedBlock() : null
+        );
 
-                swordPlayer.act(InputType.LEFT);
-            } else if (action == Action.RIGHT_CLICK_AIR || action == Action.RIGHT_CLICK_BLOCK) {
-                if (swordPlayer.handleItemInteraction(item, InputType.RIGHT)) {
-                    event.setCancelled(true);
-                    return;
-                }
-
-                if (ItemClassifier.isUsable(item)) return;
-
-                if (swordPlayer.isAtRoot() &&
-                    event.hasBlock() &&
-                    InputUtil.isInteractible(event.getClickedBlock())) {
-                    // allow blocks like doors and levers to be used
-                    return;
-                }
-
-                if (swordPlayer.isUnableToBlock()) {
-                    swordPlayer.displayDisablingEffect();
-                    return;
-                }
-                swordPlayer.act(InputType.RIGHT);
-            }
-        }, Config.Timing.RIGHT_INTERACT_DELAY, TimeUnit.MILLISECONDS);
+        // Transport quirk: defer one tick so inventory events fire first and the router sees
+        // the correct InventoryMode flags on the player.
+        SwordScheduler.runBukkitTaskLater(
+            () -> applyDecision(event, InputRouter.route(intent, player)),
+            Config.Timing.RIGHT_INTERACT_DELAY,
+            TimeUnit.MILLISECONDS
+        );
     }
 
-    /**
-     * Handles interactions directly targeting entities (start-clicking them).
-     * <p>
-     * Marks the player as currently interacting with an entity to prevent duplicate
-     * actions and ensures start-clicks are correctly registered as {@link InputType#RIGHT}.
-     * The flag resets one tick later via a scheduled task.
-     * </p>
-     *
-     * @param event the {@link PlayerInteractEntityEvent} triggered when a player start-clicks an entity
-     */
+    /** Right-click directly on an entity. */
     @EventHandler
     public void onPlayerEntityInteract(PlayerInteractEntityEvent event) {
-        SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer());
-        ItemStack item = swordPlayer.getItemStackInHand(true);
-
-        if (swordPlayer.handleItemInteraction(item, InputType.RIGHT)) {
-            event.setCancelled(true);
-            return;
-        }
-
-        if (ItemClassifier.isUsable(item)) return;
-
-        event.setCancelled(true);
-
-        swordPlayer.setInteractingWithEntity(true);
-        Consumer<SwordPlayer> resetInteractingFlag =
-                sp -> sp.setInteractingWithEntity(false);
-        SwordScheduler.runConsumerNextTick(resetInteractingFlag, swordPlayer);
-
-        if (swordPlayer.isUnableToBlock()) {
-            swordPlayer.displayDisablingEffect();
-            return;
-        }
-
-        swordPlayer.act(InputType.RIGHT);
+        SwordPlayer player = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer());
+        InputIntent intent = new InputIntent.InteractEntity(event.getPlayer().getUniqueId(), now());
+        applyDecision(event, InputRouter.route(intent, player));
     }
 
-    /** Reserved handler for entity-targeted interactions; no behaviour is currently implemented. */
+    /** Reserved handler; no behaviour is currently implemented. */
     @EventHandler
     public void onPlayerInteractAtEntity(PlayerInteractAtEntityEvent event) {
-
+        // intentionally empty
     }
 
-    /**
-     * Handles player item drops.
-     * <p>
-     * Interprets drop actions as potential inputs for the sword system (e.g., skill triggers).
-     * Sets a temporary flag to prevent misinterpretation as other actions.
-     * </p>
-     *
-     * @param event the {@link PlayerDropItemEvent} triggered when a player drops an item
-     */
+    /** Item drop. */
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onPlayerDropEvent(PlayerDropItemEvent event) {
-        SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer());
-        ItemStack item = event.getItemDrop().getItemStack();
-        swordPlayer.setLastHeldItemBeforeDrop(item);
-
-        // Typed items (BLOCKED → opens menu, cancels drop)
-        if (swordPlayer.handleItemInteraction(item, InputType.DROP)) {
-            event.setCancelled(true);
-            return;
-        }
-
-        swordPlayer.setPerformedDropAction();
-        swordPlayer.act(InputType.DROP);
-        event.setCancelled(true);
+        SwordPlayer player = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer());
+        InputIntent intent = new InputIntent.Drop(
+            event.getPlayer().getUniqueId(),
+            now(),
+            event.getItemDrop().getItemStack()
+        );
+        applyDecision(event, InputRouter.route(intent, player));
     }
 
-    /**
-     * Handles player sneaking (shift key) actions.
-     * <p>
-     * When a player begins sneaking, this is interpreted as a {@link InputType#SHIFT}
-     * input and processed accordingly. When the player stops sneaking, the sneaking
-     * state is cleared via {@link SwordPlayer#endSneaking()}.
-     * </p>
-     *
-     * @param event the {@link PlayerToggleSneakEvent} triggered when a player toggles sneak state
-     */
+    /** Sneak toggle (begin or end). */
     @EventHandler
     public void onSneakEvent(PlayerToggleSneakEvent event) {
-        SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer());
-
-        if (event.isSneaking()) {
-            ItemStack item = swordPlayer.getItemStackInHand(true);
-            if (swordPlayer.handleItemInteraction(item, InputType.SHIFT)) return;
-            swordPlayer.act(InputType.SHIFT);
-        }
-        else {
-            swordPlayer.endSneaking();
-        }
+        SwordPlayer player = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer());
+        InputIntent intent = event.isSneaking()
+            ? new InputIntent.SneakBegin(event.getPlayer().getUniqueId(), now())
+            : new InputIntent.SneakEnd(event.getPlayer().getUniqueId(), now());
+        applyDecision(event, InputRouter.route(intent, player));
     }
 
-    /**
-     * Handles swapping items between main hand and offhand.
-     * <p>
-     * Interprets hand-swapping as an {@link InputType#SWAP} action unless performed
-     * within an inventory. Prevents normal behavior if the action is recognized.
-     * </p>
-     *
-     * @param event the {@link PlayerSwapHandItemsEvent} triggered when a player presses the swap key
-     */
+    /** Offhand-swap key. */
     @EventHandler
     public void onSwapEvent(PlayerSwapHandItemsEvent event) {
-        SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer());
-        ItemStack item = swordPlayer.getItemStackInHand(true);
-
-        if (swordPlayer.handleItemInteraction(item, InputType.SWAP)) {
-            event.setCancelled(true);
-        }
-        else if (!swordPlayer.isSwappingInInv()) {
-            swordPlayer.act(InputType.SWAP);
-            event.setCancelled(true);
-        }
+        SwordPlayer player = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer());
+        InputIntent intent = new InputIntent.Swap(event.getPlayer().getUniqueId(), now());
+        applyDecision(event, InputRouter.route(intent, player));
     }
 
-    /**
-     * Handles hotbar item switching (scroll wheel or number key).
-     * <p>
-     * Temporarily flags the {@link SwordPlayer} as changing hand index to prevent
-     * conflicting inputs. Cancels ongoing throw actions and resets input trees if needed.
-     * </p>
-     *
-     * @param event the {@link PlayerItemHeldEvent} triggered when a player changes selected hotbar slot
-     */
+    /** Hotbar slot change. */
     @EventHandler
     public void onChangeItemEvent(PlayerItemHeldEvent event) {
-        SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer());
-        swordPlayer.setChangingHandIndex(true);
+        SwordPlayer player = (SwordPlayer) SwordEntityArbiter.getOrAdd(event.getPlayer());
+        InputIntent intent = new InputIntent.HotbarChange(
+            event.getPlayer().getUniqueId(),
+            now(),
+            event.getNewSlot()
+        );
+        applyDecision(event, InputRouter.route(intent, player));
+    }
 
-        if (swordPlayer.inputReliantOnItem()) {
-            swordPlayer.resetTree();
-        }
+    private static long now() {
+        return System.currentTimeMillis();
+    }
 
-        if (swordPlayer.getThrowPhase() == ThrowPhase.THROWING) {
-            ThrowAction.throwCancel(swordPlayer);
-        }
-
-        Consumer<SwordPlayer> resetChangingHandFlag =
-                sp -> sp.setChangingHandIndex(false);
-        SwordScheduler.runConsumerNextTick(resetChangingHandFlag, swordPlayer);
+    private static void applyDecision(Cancellable event, InputDecision decision) {
+        if (decision.cancelEvent()) event.setCancelled(true);
     }
 }

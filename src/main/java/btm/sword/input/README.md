@@ -12,6 +12,11 @@ The input execution system translates raw Minecraft player events (left-click, r
 
 | Class | Role |
 |---|---|
+| `InputListener` | Bukkit transport adapter. Each handler resolves the `SwordPlayer`, builds an `InputIntent`, calls `InputRouter.route`, and applies the returned `InputDecision` |
+| `InputIntent` | Sealed interface plus one record per input source (`Attack`, `Interact`, `InteractEntity`, `Drop`, `SneakBegin`, `SneakEnd`, `Swap`, `HotbarChange`) |
+| `InputDecision` | Record with a `cancelEvent` flag plus the `PASS` and `CANCEL` constants |
+| `InputRouter` | Static dispatcher. Owns every gameplay routing decision (typed-item handling, suppression checks, usable gating, interactible-block fall-through, block-availability, throw cancellation, final dispatch into `SwordPlayer.act`) |
+| `InputGestureTracker` | Owns right-click and sneak hold lifecycle (timing, scheduled tasks, tap/hold dispatch) |
 | `InputType` | Enum of nine logical input signals |
 | `InputKey` | Record pairing an `InputType` with a set of allowed `SwordItemType`s and an optional accessibility predicate |
 | `InputExecutionTree` | The trie. Owns the root `InputNode`, traversal state, timeout timer, and HUD rendering |
@@ -21,6 +26,27 @@ The input execution system translates raw Minecraft player events (left-click, r
 | `InputActionExecutor` | Static helper. Exposes `ReadinessState readiness()` (full per-reason check), `canCast()` (delegates to `readiness()`), `soulfireStatusColor()`, and `execute()` |
 | `InputActionExecutor.ReadinessState` | Enum: `READY`, `ON_COOLDOWN`, `INSUFFICIENT_SOULFIRE`, `DISABLED`. Priority order: cooldown > disabled > soulfire |
 | `ActivationContext` | Enum of three player contexts (`NORMAL`, `STUNNED`, `CHANNELING`) used by node `visibleIf` predicates |
+
+### Layering
+
+```
+Bukkit event ── InputListener ──► InputIntent
+                                       │
+                                       ▼
+                                 InputRouter
+                                       │
+                                       ├── handleItemInteraction
+                                       ├── inventory mode suppression
+                                       ├── ItemClassifier.isUsable
+                                       ├── interactible-block fall-through
+                                       ├── isUnableToBlock display
+                                       └── SwordPlayer.act(InputType)
+                                       │
+                                       ▼
+                                 InputDecision ──► InputListener.applyDecision (event.setCancelled)
+```
+
+Three Bukkit-event-ordering workarounds remain in `InputListener` because they are concerns of the transport layer rather than gameplay routing: right-click autorepeat suppression, spawn-egg restoration, and the 1-tick dispatch deferral on `PlayerInteractEvent`.
 
 Supporting classes outside this package:
 
