@@ -24,7 +24,7 @@ RigHostile           (entity.impl)   — non-combat scripted mob, extends SwordE
 |---|---|
 | `SwordEntity` | UUID, `LivingEntity` ref, `EntityAspects`, `Affliction` map, `Impalement` set, status `TextDisplay`, tick loop, hit invulnerability, impale slow, bounding box queries, basis vectors |
 | `Combatant` | `UmbralBlade` lifecycle, grab/throw mechanics, `abilityCastTask`, air dash budget, `ActiveAttack` tracking, stat scaling helpers (`calcValueAdditive`, `calcCooldown`), `canPerform*` combat checks |
-| `SwordPlayer` | `InputExecutionTree`, `InputBuffer`, inventory upkeep, scene overlay, creative dev mode, HUD display helpers, `ActivationContext`, `PlayerStorage`, skill container, `AbilitySlotManager`, `PlayerMenuManager` |
+| `SwordPlayer` | `InputExecutionTree`, `InputGestureTracker`, inventory upkeep, scene overlay, creative dev mode, HUD display helpers, `ActivationContext`, `PlayerStorage`, skill container, `AbilitySlotManager`, `PlayerMenuManager` |
 | `Hostile` | AI `StateMachine`, vanilla AI suppression, goal management via `MobGoalArbiter` |
 | `Dummy` | Thin Combatant subclass; tracks owner, responds to `onGrabbed`/`onReleased` |
 | `RigHostile` | Scripted non-combat NPC; does not extend `Combatant` |
@@ -50,7 +50,7 @@ The intended rule is:
 
 ### What lives in SwordPlayer and is correctly player-specific
 
-- `InputExecutionTree` and `InputBuffer` — player-only input routing
+- `InputExecutionTree` and `InputGestureTracker` — player-only input routing
 - `ActivationContext` and `activationContext` — tracks player-specific FSM context (NORMAL, THROWING, INCAPACITATED, etc.)
 - `inventoryUpkeep`, `SlotAnchoredItem` management — requires `Player.getInventory()`
 - `AbilitySlotManager`, `PlayerMenuManager`, `PlayerStorage` — player data layer

@@ -284,12 +284,12 @@ SwordPlayer.act(InputType input)
     │     isGrabbing() + LEFT              → grab hit
     │     abilityCastTask != null          → return (blocked)
     │
-    ├── RIGHT input → startHoldingRight()
-    │     TimeArbiter task polls isHandRaised()
-    │     on release: timeRightHeld < 162 ms → act(RIGHT_TAP)
-    │                 timeRightHeld ≥ 162 ms → act(RIGHT_HOLD)
+    ├── RIGHT input → gestureTracker.startRightHold()
+    │     TimeArbiter task polls RightHoldHandler.shouldContinue()
+    │     on release: rightDurationMs < 162 ms → act(RIGHT_TAP)
+    │                 rightDurationMs ≥ 162 ms → act(RIGHT_HOLD)
     │
-    ├── SHIFT input → startSneaking()
+    ├── SHIFT input → gestureTracker.startSneak()
     │     Same timing logic → SHIFT_TAP or SHIFT_HOLD
     │
     ├── RIGHT_TAP / SHIFT_TAP → only proceed if nextExists(inputKey)
@@ -327,7 +327,25 @@ ActionCaster.cast(executor, castDurationMillis, () -> action.perform(executor))
 
 ### RIGHT and SHIFT Hold Detection
 
-`startHoldingRight()` replaces the main-hand item with gunpowder (to prevent Minecraft's vanilla use-item behavior from firing) and starts a `TimeArbiter` repeating task. The task polls `player.isHandRaised()` — when the player is no longer raising the shield/item (i.e., they released right-click), `endHoldingRight()` is called, elapsed time is recorded, and `act(RIGHT_TAP)` or `act(RIGHT_HOLD)` is fired depending on hold duration. Sneaking uses the same pattern but without item swapping.
+The `InputGestureTracker` owns the timing and scheduled-task lifecycle for both gestures. It exposes four explicit transitions per gesture (`start`, `release`, `abort`, plus the deferred `onReleased` callback fired by the scheduler) and dispatches lifecycle events through the `RightHoldHandler` and `SneakHandler` interfaces.
+
+`SwordPlayer` implements those handlers as anonymous classes:
+
+- `RightHoldHandler.onBegan()` — snapshots main + offhand stacks, captures the held slot, swaps in gunpowder when no umbral / ability / wand item is held (suppresses Minecraft's vanilla use-item behaviour).
+- `RightHoldHandler.onTick()` — restarts the trie timeout while not blocking (so the parry window is the only thing that closes naturally).
+- `RightHoldHandler.shouldContinue()` — returns `player.isHandRaised() || player.isBlocking()`. Returning false triggers a natural release.
+- `RightHoldHandler.onReleased(longPress)` — fires `act(RIGHT_HOLD)` if the duration met the 162 ms tap threshold, else `act(RIGHT_TAP)`.
+- `RightHoldHandler.onEnded()` — clears the blocking flag, cancels block drain, and restores the snapshotted main + offhand items.
+
+`SneakHandler` only implements `onTick()` (restart trie timeout) and `onReleased(longPress)` (fire `SHIFT_TAP` or `SHIFT_HOLD`). Snapshot/restore is unnecessary because no item swap occurs.
+
+The tracker guarantees:
+
+- `start*` is idempotent (no-op while already held).
+- `release*` is idempotent (no-op while not held).
+- `abort*` and `shutdown()` are idempotent and used during teardown.
+- `onEnded` runs synchronously inside `release*` so callers can restore inventory state before the deferred `onReleased` callback observes it.
+- While `held == true`, exactly one scheduled task exists.
 
 ---
 

@@ -62,8 +62,8 @@ import btm.sword.entity.mob.Dummy;
 import btm.sword.input.ActivationContext;
 import btm.sword.input.InputAction;
 import btm.sword.input.InputActionExecutor;
-import btm.sword.input.InputBuffer;
 import btm.sword.input.InputExecutionTree;
+import btm.sword.input.InputGestureTracker;
 import btm.sword.input.InputListener;
 import btm.sword.input.InputRegistrar;
 import btm.sword.input.InputType;
@@ -155,7 +155,7 @@ public class SwordPlayer extends Combatant {
     private final HashSet<Dummy> yourDummies = new HashSet<>();
 
     private final InputExecutionTree inputExecutionTree;
-    private final InputBuffer inputBuffer;
+    private final InputGestureTracker gestureTracker;
     private final long baseInputTimeoutMillis = 1400L;
 
     /** Current input context; controls which action paths are visible in the execution tree. */
@@ -186,18 +186,12 @@ public class SwordPlayer extends Combatant {
 
     private TimeArbiter.TaskHandle blockDrainTask;
 
-    private TimeArbiter.TaskHandle rightClickHoldTask;
-    private boolean holdingRight;
-    private long rightHoldTimeStart;
-    private long timeRightHeld;
-    private ItemStack mainItemStackAtTimeOfHold;
-    private ItemStack offItemStackAtTimeOfHold;
-    private int indexOfRightHold;
-
-    private TimeArbiter.TaskHandle sneakTask;
-    private boolean sneaking;
-    private long sneakHoldTimeStart;
-    private long timeSneakHeld;
+    /** Snapshot of the main-hand item taken when a right-hold begins. Read by throw + lunge actions. */
+    private ItemStack mainItemStackAtTimeOfHold = ItemStack.of(Material.AIR);
+    /** Snapshot of the offhand item taken when a right-hold begins. Read by throw actions. */
+    private ItemStack offItemStackAtTimeOfHold = ItemStack.of(Material.AIR);
+    /** Hotbar slot index that was held when the right-hold began. Used to restore the slot on release. */
+    private int indexOfRightHold = -1;
 
     @Getter
     @Setter
@@ -326,7 +320,7 @@ public class SwordPlayer extends Combatant {
         updateManagedItems();
 
         inputExecutionTree = new InputExecutionTree(this);
-        inputBuffer = new InputBuffer();
+        gestureTracker = new InputGestureTracker(buildRightHoldHandler(), buildSneakHandler());
         InputRegistrar.initializeInputTree(inputExecutionTree.getRoot(), this);
         InputRegistrar.initializeMovementInputs(inputExecutionTree.getRoot());
 
@@ -335,17 +329,81 @@ public class SwordPlayer extends Combatant {
         interactingWithEntity = false;
         threwItem = false;
 
-        holdingRight = false;
-        rightHoldTimeStart = 0L;
-        timeRightHeld = 0L;
-
-        sneaking = false;
-        sneakHoldTimeStart = 0L;
-        timeSneakHeld = 0L;
-
         thrownItemIndex = -1;
 
         inventoryMode = InventoryMode.NONE;
+    }
+
+    /**
+     * Builds the gesture handler that captures and restores the main-hand inventory state
+     * across a right-click hold gesture, and dispatches the deferred tap/hold input.
+     */
+    private InputGestureTracker.RightHoldHandler buildRightHoldHandler() {
+        return new InputGestureTracker.RightHoldHandler() {
+            @Override
+            public void onBegan() {
+                ItemStack mainHand = getItemStackInHand(true);
+                ItemStack offHand = getItemStackInHand(false);
+                mainItemStackAtTimeOfHold = mainHand == null ? ItemStack.of(Material.AIR) : mainHand.clone();
+                offItemStackAtTimeOfHold = offHand == null ? ItemStack.of(Material.AIR) : offHand.clone();
+                indexOfRightHold = getCurrentInvIndex();
+
+                if (!mainItemStackAtTimeOfHold.isEmpty()
+                        && !holdingUmbralItemInMainHand()
+                        && notHoldingAbilityItem()
+                        && !heldItemHasKey(KeyRegistry.TEST_VOLUME_ATTACK_KEY)) {
+                    setItemStackInHand(ItemStack.of(Material.GUNPOWDER), true);
+                }
+            }
+
+            @Override
+            public void onTick() {
+                // While blocking, let the trie timeout expire naturally — that closes the parry window.
+                if (!isBlocking()) inputExecutionTree.restartTimeoutTimer();
+            }
+
+            @Override
+            public boolean shouldContinue() {
+                return player.isHandRaised() || player.isBlocking();
+            }
+
+            @Override
+            public void onReleased(boolean longPress) {
+                act(longPress ? InputType.RIGHT_HOLD : InputType.RIGHT_TAP);
+            }
+
+            @Override
+            public void onEnded() {
+                setBlocking(false);
+                cancelBlockDrainTask();
+                setItemStackInHand(offItemStackAtTimeOfHold, false);
+                if (!threwItem && !holdingUmbralItemInMainHand()) {
+                    if (abilitySlotManager.isAbilityHeldSlot(indexOfRightHold)) {
+                        abilitySlotManager.restoreSlot(indexOfRightHold);
+                    } else if (!mainItemStackAtTimeOfHold.isEmpty()) {
+                        setItemAtIndex(mainItemStackAtTimeOfHold, indexOfRightHold);
+                    }
+                }
+            }
+        };
+    }
+
+    /**
+     * Builds the gesture handler for the sneak-hold gesture. The handler keeps the input
+     * trie timeout alive while sneaking and dispatches the deferred tap/hold input on release.
+     */
+    private InputGestureTracker.SneakHandler buildSneakHandler() {
+        return new InputGestureTracker.SneakHandler() {
+            @Override
+            public void onTick() {
+                inputExecutionTree.restartTimeoutTimer();
+            }
+
+            @Override
+            public void onReleased(boolean longPress) {
+                act(longPress ? InputType.SHIFT_HOLD : InputType.SHIFT_TAP);
+            }
+        };
     }
 
     /**
@@ -356,7 +414,6 @@ public class SwordPlayer extends Combatant {
     @Override
     protected void onTick() {
         super.onTick();
-        inputBuffer.tick();
 
         if (player.getHealth() > 0) updateVisualStats();
 
@@ -409,6 +466,8 @@ public class SwordPlayer extends Combatant {
      * Called when the player leaves the game.
      */
     public void onLeave() {
+        gestureTracker.shutdown();
+        cancelBlockDrainTask();
         if (activeCameraController != null) {
             activeCameraController.stop();
         }
@@ -530,15 +589,11 @@ public class SwordPlayer extends Combatant {
         }
 
         if (input == InputType.RIGHT) {
-            if (rightClickHoldTask == null)
-                startHoldingRight();
-            else
-                return;
+            if (gestureTracker.isRightHeld()) return;
+            gestureTracker.startRightHold();
         } else if (input == InputType.SHIFT) {
-            if (sneakTask == null)
-                startSneaking();
-            else
-                return;
+            if (gestureTracker.isSneakHeld()) return;
+            gestureTracker.startSneak();
         }
 
         if (input == InputType.RIGHT_TAP || input == InputType.SHIFT_TAP) {
@@ -547,13 +602,13 @@ public class SwordPlayer extends Combatant {
 
         if (input == InputType.RIGHT_HOLD) {
             long minTime = inputExecutionTree.getMinHoldLengthOfNext(input);
-            if (minTime == -1 || timeRightHeld < minTime) {
+            if (minTime == -1 || gestureTracker.rightDurationMs() < minTime) {
                 if (throwingState()) ThrowAction.throwCancel(this);
                 return;
             }
         } else if (input == InputType.SHIFT_HOLD) {
             long minTime = inputExecutionTree.getMinHoldLengthOfNext(input);
-            if (minTime == -1 || timeSneakHeld < minTime) {
+            if (minTime == -1 || gestureTracker.sneakDurationMs() < minTime) {
                 return;
             }
         }
@@ -1496,134 +1551,31 @@ public class SwordPlayer extends Combatant {
     }
 
     /**
-     * Starts holding the start mouse button, tracking the hold time and managing state.
-     * Changes the player's main hand item to a placeholder while holding (gunpowder).
+     * Returns {@code true} while a right-click hold gesture is in progress.
+     * Backed by {@link InputGestureTracker#isRightHeld()}.
      */
-    public void startHoldingRight() {
-        if (holdingRight) return;
-
-        if (rightClickHoldTask != null && !rightClickHoldTask.isCancelled()) rightClickHoldTask.cancel();
-
-        holdingRight = true;
-        rightHoldTimeStart = System.currentTimeMillis();
-
-        ItemStack mainHand = getItemStackInHand(true);
-        ItemStack offHand = getItemStackInHand(false);
-        mainItemStackAtTimeOfHold = mainHand == null ? ItemStack.of(Material.AIR) : mainHand.clone();
-        offItemStackAtTimeOfHold = offHand == null ? ItemStack.of(Material.AIR) : offHand.clone();
-
-        indexOfRightHold = getCurrentInvIndex();
-
-        if (!mainItemStackAtTimeOfHold.isEmpty() &&
-            !holdingUmbralItemInMainHand() &&
-            notHoldingAbilityItem() &&
-            !heldItemHasKey(KeyRegistry.TEST_VOLUME_ATTACK_KEY)) {
-            setItemStackInHand(ItemStack.of(Material.GUNPOWDER), true); // can change the logic here later
-        }
-
-
-        rightClickHoldTask = TimeArbiter.runTimeIndependentBukkitTaskOnTimer(
-            () -> {
-                // While blocking, let the trie timeout expire naturally — that closes the parry window.
-                // For all other right-hold scenarios (throw ready, etc.) keep the timer alive.
-                if (!isBlocking()) inputExecutionTree.restartTimeoutTimer();
-                // player must ALWAYS be holding a shield in offhand, then... I can work with this though
-                if (!player.isHandRaised() && !player.isBlocking()) {
-                    endHoldingRight();
-                }
-            },
-            null,
-            100, 50,
-            SwordPlayer.class, "startHoldingRight",
-            new PredicateRunnablePair(
-                () -> !holdingRight,
-                () -> {
-                    if (timeRightHeld < 162)
-                        act(InputType.RIGHT_TAP);
-                    else
-                        act(InputType.RIGHT_HOLD);
-                    resetHoldingRight();
-                }
-            )
-        );
+    public boolean isHoldingRight() {
+        return gestureTracker.isRightHeld();
     }
 
     /**
-     * Resets the holding start state and cancels the associated task.
-     */
-    public void resetHoldingRight() {
-        rightClickHoldTask = null;
-        holdingRight = false;
-        rightHoldTimeStart = 0L;
-        timeRightHeld = 0L;
-        setBlocking(false);
-        cancelBlockDrainTask();
-    }
-
-    /**
-     * Ends holding start-click input, restoring item stacks appropriately.
+     * Releases the right-hold gesture. The deferred tap or hold input fires on the next
+     * scheduler tick after inventory state has been restored. Safe to call when no hold is
+     * active.
+     * <p>
+     * Used by external systems (e.g. {@link btm.sword.action.throwing.types.ThrownItem})
+     * that need to terminate a right-hold from outside the input layer.
      */
     public void endHoldingRight() {
-        holdingRight = false;
-        timeRightHeld = System.currentTimeMillis() - rightHoldTimeStart;
-        setBlocking(false);
-        cancelBlockDrainTask();
-        setItemStackInHand(offItemStackAtTimeOfHold, false);
-        if (!threwItem && !holdingUmbralItemInMainHand()) {
-            if (abilitySlotManager.isAbilityHeldSlot(indexOfRightHold)) {
-                abilitySlotManager.restoreSlot(indexOfRightHold);
-            }
-            else if (!mainItemStackAtTimeOfHold.isEmpty()) {
-                setItemAtIndex(mainItemStackAtTimeOfHold, indexOfRightHold);
-            }
-        }
+        gestureTracker.releaseRightHold();
     }
 
     /**
-     * Starts sneaking state, tracking the hold time and scheduling updates.
-     */
-    public void startSneaking() {
-        if (sneaking) return;
-
-        if (sneakTask != null && !sneakTask.isCancelled()) sneakTask.cancel();
-
-        sneaking = true;
-        sneakHoldTimeStart = System.currentTimeMillis();
-
-        sneakTask = TimeArbiter.runTimeIndependentBukkitTaskOnTimer(
-            inputExecutionTree::restartTimeoutTimer,
-            null,
-            0, 50,
-            SwordPlayer.class, "startSneaking",
-            new PredicateRunnablePair(
-                () -> !sneaking,
-                () -> {
-                    if (timeSneakHeld < 162)
-                        act(InputType.SHIFT_TAP);
-                    else
-                        act(InputType.SHIFT_HOLD);
-                    resetSneaking();
-                }
-            )
-        );
-    }
-
-    /**
-     * Resets sneaking state and cancels the associated task.
-     */
-    public void resetSneaking() {
-        sneakTask = null;
-        sneaking = false;
-        sneakHoldTimeStart = 0L;
-        timeSneakHeld = 0L;
-    }
-
-    /**
-     * Ends sneaking state and calculates how long the player sneaked.
+     * Releases the sneak-hold gesture. The deferred tap or hold input fires on the next
+     * scheduler tick. Safe to call when no sneak is active.
      */
     public void endSneaking() {
-        sneaking = false;
-        timeSneakHeld = System.currentTimeMillis() - sneakHoldTimeStart;
+        gestureTracker.releaseSneak();
     }
 
     /**

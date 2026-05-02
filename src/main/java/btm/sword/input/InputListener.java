@@ -69,8 +69,6 @@ public class InputListener implements Listener {
 
         event.setCancelled(true);
 
-        if (!swordPlayer.getInputBuffer().accept(InputType.LEFT)) return;
-
         swordPlayer.act(InputType.LEFT);
     }
 
@@ -129,8 +127,6 @@ public class InputListener implements Listener {
                     return;
                 }
 
-                if (!swordPlayer.getInputBuffer().accept(InputType.LEFT)) return;
-
                 swordPlayer.act(InputType.LEFT);
             } else if (action == Action.RIGHT_CLICK_AIR || action == Action.RIGHT_CLICK_BLOCK) {
                 if (swordPlayer.handleItemInteraction(item, InputType.RIGHT)) {
@@ -139,8 +135,6 @@ public class InputListener implements Listener {
                 }
 
                 if (ItemClassifier.isUsable(item)) return;
-
-                if (!swordPlayer.getInputBuffer().accept(InputType.RIGHT)) return;
 
                 if (swordPlayer.isAtRoot() &&
                     event.hasBlock() &&
@@ -186,8 +180,6 @@ public class InputListener implements Listener {
         Consumer<SwordPlayer> resetInteractingFlag =
                 sp -> sp.setInteractingWithEntity(false);
         SwordScheduler.runConsumerNextTick(resetInteractingFlag, swordPlayer);
-
-        if (!swordPlayer.getInputBuffer().accept(InputType.RIGHT)) return;
 
         if (swordPlayer.isUnableToBlock()) {
             swordPlayer.displayDisablingEffect();
