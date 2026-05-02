@@ -1,4 +1,4 @@
-package btm.sword.system.input;
+package btm.sword.input;
 
 import java.util.function.Predicate;
 

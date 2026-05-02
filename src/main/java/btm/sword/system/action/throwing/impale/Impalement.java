@@ -1,8 +1,8 @@
 package btm.sword.system.action.throwing.impale;
 
+import btm.sword.control.PredicateRunnablePair;
+import btm.sword.control.TimeArbiter;
 import btm.sword.system.action.throwing.types.ThrownItem;
-import btm.sword.system.control.PredicateRunnablePair;
-import btm.sword.system.control.TimeArbiter;
 import btm.sword.system.entity.base.SwordEntity;
 import lombok.Getter;
 import lombok.Setter;

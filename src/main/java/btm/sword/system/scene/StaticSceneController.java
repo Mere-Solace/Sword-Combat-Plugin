@@ -7,11 +7,11 @@ import org.bukkit.entity.ItemDisplay;
 import org.bukkit.entity.Player;
 
 import btm.sword.Sword;
+import btm.sword.control.SwordScheduler;
+import btm.sword.control.TimeArbiter;
+import btm.sword.input.ActivationContext;
 import btm.sword.listeners.packet.MovementListener;
-import btm.sword.system.control.SwordScheduler;
-import btm.sword.system.control.TimeArbiter;
 import btm.sword.system.entity.impl.SwordPlayer;
-import btm.sword.system.input.ActivationContext;
 
 /**
  * Camera controller that freezes the player and attaches the camera to a fixed world location.

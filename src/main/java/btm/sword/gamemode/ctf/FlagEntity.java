@@ -9,7 +9,7 @@ import org.bukkit.entity.Item;
 import org.bukkit.inventory.ItemStack;
 
 import btm.sword.config.Config;
-import btm.sword.system.control.SwordScheduler;
+import btm.sword.control.SwordScheduler;
 import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.utility.Prefab;
 import lombok.Getter;

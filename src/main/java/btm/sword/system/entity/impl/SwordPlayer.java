@@ -40,6 +40,17 @@ import org.joml.Vector3f;
 import com.destroystokyo.paper.profile.PlayerProfile;
 
 import btm.sword.config.Config;
+import btm.sword.control.PredicateRunnablePair;
+import btm.sword.control.SwordScheduler;
+import btm.sword.control.TimeArbiter;
+import btm.sword.input.ActivationContext;
+import btm.sword.input.InputAction;
+import btm.sword.input.InputActionExecutor;
+import btm.sword.input.InputBuffer;
+import btm.sword.input.InputExecutionTree;
+import btm.sword.input.InputListener;
+import btm.sword.input.InputRegistrar;
+import btm.sword.input.InputType;
 import btm.sword.system.action.BlockAction;
 import btm.sword.system.action.UmbralBladeAction;
 import btm.sword.system.action.skill.Skill;
@@ -55,20 +66,10 @@ import btm.sword.system.action.skill.type.impl.charge.ChargeAction;
 import btm.sword.system.action.skill.type.impl.charge.ChargeSession;
 import btm.sword.system.action.throwing.ThrowAction;
 import btm.sword.system.action.throwing.types.DroppedItem;
-import btm.sword.system.control.PredicateRunnablePair;
-import btm.sword.system.control.SwordScheduler;
-import btm.sword.system.control.TimeArbiter;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.hud.HudOverrideManager;
 import btm.sword.system.hud.HudRenderState;
-import btm.sword.system.input.ActivationContext;
-import btm.sword.system.input.InputAction;
-import btm.sword.system.input.InputActionExecutor;
-import btm.sword.system.input.InputBuffer;
-import btm.sword.system.input.InputExecutionTree;
-import btm.sword.system.input.InputRegistrar;
-import btm.sword.system.input.InputType;
 import btm.sword.system.inventory.InventoryMenuManager;
 import btm.sword.system.inventory.PlayerMenuManager;
 import btm.sword.system.inventory.menu.ArtifactPouchMenu;
@@ -911,7 +912,7 @@ public class SwordPlayer extends Combatant {
     /**
      * Dispatches an input event for items that carry a Sword-managed type key.
      * This is the primary point of contact for typed-item input handling, called by
-     * {@link btm.sword.listeners.InputListener} before any class-based filtering or
+     * {@link InputListener} before any class-based filtering or
      * routing through {@link #act(InputType)}.
      * <p>
      * If this method returns {@code true}, the caller must cancel the originating Bukkit
@@ -1048,7 +1049,7 @@ public class SwordPlayer extends Combatant {
      * </p>
      * <p>
      * Called both from {@link #handleInventoryInput} (Q/Ctrl+Q in inventory) and from
-     * {@link btm.sword.listeners.InputListener#onPlayerDropEvent} when the player drags an item
+     * {@link InputListener#onPlayerDropEvent} when the player drags an item
      * outside the inventory window.
      * </p>
      *

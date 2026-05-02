@@ -32,22 +32,22 @@ import com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent;
 
 import btm.sword.Sword;
 import btm.sword.config.Config;
+import btm.sword.control.EntityController;
+import btm.sword.control.PredicateRunnablePair;
+import btm.sword.control.SwordScheduler;
+import btm.sword.control.TimeArbiter;
+import btm.sword.input.ActivationContext;
 import btm.sword.system.action.BlockAction;
 import btm.sword.system.action.throwing.impale.Impalement;
 import btm.sword.system.action.throwing.types.DroppedItem;
 import btm.sword.system.attack.HitValuePacket;
 import btm.sword.system.attack.simulation.EntitySnapshotMap;
 import btm.sword.system.combat.Affliction;
-import btm.sword.system.control.EntityController;
-import btm.sword.system.control.PredicateRunnablePair;
-import btm.sword.system.control.SwordScheduler;
-import btm.sword.system.control.TimeArbiter;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.SwordTeam;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.impl.Combatant;
 import btm.sword.system.entity.impl.SwordPlayer;
-import btm.sword.system.input.ActivationContext;
 import btm.sword.utility.Debug;
 import btm.sword.utility.Prefab;
 import btm.sword.utility.SwordTimeUnit;
@@ -244,6 +244,7 @@ public abstract class SwordEntity {
         EntitySnapshotMap.INSTANCE.snapshot(uuid, self.getBoundingBox(), self.getYaw(), self.getPitch());
     }
 
+    /** Apply a potion effect to the underlying entity. */
     public void addPotionEffect(PotionEffect effect) {
         self.addPotionEffect(IMPALE_SLOW);
     }
@@ -1146,7 +1147,7 @@ public abstract class SwordEntity {
     }
 
     /**
-     * Teleports this entity to the specified {@link Location} via {@link btm.sword.system.control.EntityController}.
+     * Teleports this entity to the specified {@link Location} via {@link btm.sword.control.EntityController}.
      *
      * @param location the target location
      */

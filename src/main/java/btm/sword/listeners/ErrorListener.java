@@ -9,7 +9,7 @@ import org.bukkit.event.Listener;
 import com.destroystokyo.paper.event.server.ServerExceptionEvent;
 
 import btm.sword.Sword;
-import btm.sword.system.control.SwordScheduler;
+import btm.sword.control.SwordScheduler;
 import btm.sword.utility.SwordTimeUnit;
 
 /**

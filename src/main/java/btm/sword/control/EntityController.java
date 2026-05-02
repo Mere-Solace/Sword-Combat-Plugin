@@ -1,4 +1,4 @@
-package btm.sword.system.control;
+package btm.sword.control;
 
 import org.bukkit.Location;
 import org.bukkit.entity.Entity;

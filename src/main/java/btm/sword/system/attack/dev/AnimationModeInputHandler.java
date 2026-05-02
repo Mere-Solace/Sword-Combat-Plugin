@@ -4,11 +4,11 @@ import java.util.List;
 
 import org.joml.Vector3f;
 
+import btm.sword.control.TimeArbiter;
+import btm.sword.input.InputType;
 import btm.sword.system.attack.simulation.VolumeKeyframe;
 import btm.sword.system.attack.simulation.VolumeShape;
-import btm.sword.system.control.TimeArbiter;
 import btm.sword.system.entity.impl.DevSwordPlayer;
-import btm.sword.system.input.InputType;
 import btm.sword.system.inventory.menu.dev.AttackEditorMenu;
 
 /**
@@ -172,7 +172,7 @@ public final class AnimationModeInputHandler {
             null,
             0, PREVIEW_ADVANCE_MS,
             AnimationModeInputHandler.class, "previewLoop",
-            new btm.sword.system.control.PredicateRunnablePair(
+            new btm.sword.control.PredicateRunnablePair(
                 () -> !session.isPlayingPreview() || session.getMode() != DevMode.EDITING,
                 () -> session.setPlayingPreview(false))
         );

@@ -6,9 +6,9 @@ import java.util.concurrent.TimeUnit;
 import org.bukkit.util.Vector;
 
 import btm.sword.config.Config;
+import btm.sword.control.SwordScheduler;
+import btm.sword.control.TimeArbiter;
 import btm.sword.system.attack.style.AttackType;
-import btm.sword.system.control.SwordScheduler;
-import btm.sword.system.control.TimeArbiter;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.impl.Combatant;
 import btm.sword.system.entity.umbral.UmbralBlade;

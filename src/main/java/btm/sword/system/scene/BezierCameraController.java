@@ -7,7 +7,7 @@ import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 
-import btm.sword.system.control.TimeArbiter;
+import btm.sword.control.TimeArbiter;
 
 /**
  * Camera controller that drives the camera along a {@link CameraPath} (cubic Bézier curve).
@@ -72,7 +72,7 @@ public class BezierCameraController extends CameraController {
         if (CameraService.isAvailable()) {
             // Delay 1 tick so the entity is tracked client-side before the packet fires.
             ArmorStand stand = armorStand;
-            btm.sword.system.control.SwordScheduler.runConsumerNextTick(
+            btm.sword.control.SwordScheduler.runConsumerNextTick(
                 p -> cameraSession = CameraService.attach(p, stand), playerRef);
         } else {
             savedGameMode = playerRef.getGameMode();

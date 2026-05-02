@@ -130,7 +130,7 @@ public class AttackingHeavyState extends UmbralStateFacade {
         GeneratedAttackProfile profile = new GeneratedAttackProfile(ctrl, e -> Attack::getTo);
 
         int duration = 20 * (int) Math.log(Math.max(1, dist * dist));
-        Debug.attack("Attack Duration:="+duration);
+        Debug.attack("Attack Duration:=" + duration);
         Attack attackObj = new UmbralBladeAttack(blade.getDisplay(), profile,
             true, true, 1,
             30, 1, (int) (duration * 1.75),

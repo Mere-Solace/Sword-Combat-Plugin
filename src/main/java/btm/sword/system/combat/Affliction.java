@@ -1,7 +1,7 @@
 package btm.sword.system.combat;
 
-import btm.sword.system.control.PredicateRunnablePair;
-import btm.sword.system.control.TimeArbiter;
+import btm.sword.control.PredicateRunnablePair;
+import btm.sword.control.TimeArbiter;
 import btm.sword.system.entity.base.SwordEntity;
 
 //STUNNED,        // Duration

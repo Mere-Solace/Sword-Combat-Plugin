@@ -11,10 +11,10 @@ import org.bukkit.event.inventory.ClickType;
 import org.bukkit.inventory.ItemStack;
 
 import btm.sword.config.Config;
+import btm.sword.control.SwordScheduler;
 import btm.sword.gamemode.QueueManager;
 import btm.sword.gamemode.type.CaptureTheFlag1v1;
 import btm.sword.gamemode.type.RoguelikeRun;
-import btm.sword.system.control.SwordScheduler;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.impl.Dummy;
 import btm.sword.system.entity.impl.SwordPlayer;

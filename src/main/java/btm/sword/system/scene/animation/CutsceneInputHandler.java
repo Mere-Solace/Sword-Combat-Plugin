@@ -1,8 +1,8 @@
 package btm.sword.system.scene.animation;
 
+import btm.sword.input.ActivationContext;
+import btm.sword.input.InputType;
 import btm.sword.system.entity.impl.SwordPlayer;
-import btm.sword.system.input.ActivationContext;
-import btm.sword.system.input.InputType;
 import btm.sword.system.scene.CameraSystem;
 
 /**

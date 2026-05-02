@@ -15,9 +15,9 @@ import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
 
 import btm.sword.config.Config;
+import btm.sword.control.PredicateRunnablePair;
+import btm.sword.control.TimeArbiter;
 import btm.sword.system.action.SwordAction;
-import btm.sword.system.control.PredicateRunnablePair;
-import btm.sword.system.control.TimeArbiter;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.impl.Combatant;

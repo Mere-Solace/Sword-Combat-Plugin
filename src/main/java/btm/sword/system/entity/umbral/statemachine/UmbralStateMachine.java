@@ -9,7 +9,7 @@ import org.bukkit.Location;
 import org.bukkit.util.Vector;
 
 import btm.sword.config.Config;
-import btm.sword.system.control.TimeArbiter;
+import btm.sword.control.TimeArbiter;
 import btm.sword.system.entity.umbral.UmbralBlade;
 import btm.sword.system.entity.umbral.input.BladeRequest;
 import btm.sword.system.entity.umbral.statemachine.state.AttackingHeavyState;
@@ -456,8 +456,6 @@ public class UmbralStateMachine extends StateMachine<UmbralBlade> {
     public void tick() {
         if (deactivated) {
             Debug.umbral("      > > > deactivated");
-            if (context.getDisplay().isValid()) {
-            }
             return;
         }
 

@@ -15,10 +15,10 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
 
+import btm.sword.input.InputType;
 import btm.sword.system.attack.dev.AnimationModeInputHandler;
 import btm.sword.system.attack.dev.AttackDevSession;
 import btm.sword.system.attack.dev.SaveConfirmDialog;
-import btm.sword.system.input.InputType;
 import btm.sword.system.inventory.menu.dev.SweepGeneratorMenu;
 import btm.sword.system.item.KeyRegistry;
 import btm.sword.system.playerdata.PlayerData;
@@ -157,9 +157,9 @@ public final class DevSwordPlayer extends SwordPlayer {
      *         through to the normal input tree
      */
     private boolean handleUmbralBladeTesterInput(InputType input) {
-        ItemStack mainHand = player().getInventory().getItemInMainHand();
-        if (mainHand == null || mainHand.isEmpty()
-            || !KeyRegistry.hasKey(mainHand, KeyRegistry.UMBRAL_BLADE_TESTER_KEY)) {
+        ItemStack dropped = getLastHeldItemBeforeDrop();
+        if (dropped.isEmpty() ||
+            !KeyRegistry.hasKey(dropped, KeyRegistry.UMBRAL_BLADE_TESTER_KEY)) {
             return false;
         }
         switch (input) {

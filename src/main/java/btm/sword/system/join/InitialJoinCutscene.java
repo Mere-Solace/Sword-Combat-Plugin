@@ -8,7 +8,7 @@ import org.bukkit.World;
 import org.bukkit.entity.Player;
 
 import btm.sword.config.Config;
-import btm.sword.system.control.SwordScheduler;
+import btm.sword.control.SwordScheduler;
 import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.playerdata.PlayerData;
 import btm.sword.system.playerdata.PlayerDataManager;

@@ -1,4 +1,4 @@
-package btm.sword.system.input;
+package btm.sword.input;
 
 import btm.sword.system.action.ActionCaster;
 import btm.sword.system.action.constraint.ActionConstraint;

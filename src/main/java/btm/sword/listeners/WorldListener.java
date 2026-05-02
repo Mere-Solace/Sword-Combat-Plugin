@@ -12,7 +12,7 @@ import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 
 import btm.sword.config.Config;
-import btm.sword.system.control.SwordScheduler;
+import btm.sword.control.SwordScheduler;
 
 /**
  * Listener for world-level events: block interactions and item consumption.

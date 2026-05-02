@@ -8,7 +8,7 @@ import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
-import btm.sword.system.control.SwordScheduler;
+import btm.sword.control.SwordScheduler;
 import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.inventory.menu.Menu;
 import btm.sword.system.item.KeyRegistry;

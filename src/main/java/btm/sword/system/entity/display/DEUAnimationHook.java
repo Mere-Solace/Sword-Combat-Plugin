@@ -7,7 +7,7 @@ import java.util.concurrent.TimeUnit;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 
-import btm.sword.system.control.SwordScheduler;
+import btm.sword.control.SwordScheduler;
 import net.donnypz.displayentityutils.events.AnimationStateChangeEvent;
 import net.donnypz.displayentityutils.utils.DisplayEntities.SpawnedDisplayEntityGroup;
 

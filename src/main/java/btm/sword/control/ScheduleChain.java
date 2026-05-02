@@ -1,4 +1,4 @@
-package btm.sword.system.control;
+package btm.sword.control;
 
 import java.util.ArrayList;
 import java.util.List;

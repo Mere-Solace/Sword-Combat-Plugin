@@ -6,10 +6,10 @@ import org.bukkit.entity.ItemDisplay;
 import org.bukkit.entity.Player;
 
 import btm.sword.Sword;
+import btm.sword.control.SwordScheduler;
+import btm.sword.input.ActivationContext;
 import btm.sword.listeners.packet.MovementListener;
-import btm.sword.system.control.SwordScheduler;
 import btm.sword.system.entity.impl.SwordPlayer;
-import btm.sword.system.input.ActivationContext;
 import btm.sword.system.scene.animation.AnimationDef;
 import net.donnypz.displayentityutils.events.GroupSpawnedEvent;
 import net.donnypz.displayentityutils.managers.DisplayAnimationManager;

@@ -23,15 +23,15 @@ import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 import btm.sword.config.Config;
+import btm.sword.control.PredicateRunnablePair;
+import btm.sword.control.SwordScheduler;
+import btm.sword.control.TimeArbiter;
 import btm.sword.system.action.movement.DashDirection;
 import btm.sword.system.action.throwing.types.ThrownItem;
 import btm.sword.system.attack.Attack;
 import btm.sword.system.attack.UmbralBladeAttack;
 import btm.sword.system.attack.style.AttackType;
 import btm.sword.system.attack.style.WeaponAttackStyle;
-import btm.sword.system.control.PredicateRunnablePair;
-import btm.sword.system.control.SwordScheduler;
-import btm.sword.system.control.TimeArbiter;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.impl.Combatant;
 import btm.sword.system.entity.impl.SwordPlayer;
@@ -240,8 +240,9 @@ public class UmbralBlade extends ThrownItem {
         return inputBuffer.consumeIfPresent(request);
     }
 
+    /** Returns {@code true} if any of the given requests is present in the input buffer. */
     public boolean isRequested(BladeRequest... requests) {
-        for (BladeRequest  request : requests) {
+        for (BladeRequest request : requests) {
             if (inputBuffer.consumeIfPresent(request)) {
                 return true;
             }

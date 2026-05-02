@@ -22,10 +22,10 @@ import org.bukkit.util.Vector;
 import com.destroystokyo.paper.entity.Pathfinder;
 import com.destroystokyo.paper.entity.ai.GoalType;
 
+import btm.sword.control.SwordScheduler;
 import btm.sword.system.action.throwing.types.DroppedItem;
 import btm.sword.system.action.throwing.types.ThrownItem;
 import btm.sword.system.combat.Affliction;
-import btm.sword.system.control.SwordScheduler;
 import btm.sword.system.entity.ai.HostileStateMachine;
 import btm.sword.system.entity.ai.MobGoalArbiter;
 import btm.sword.system.entity.ai.WanderProfile;

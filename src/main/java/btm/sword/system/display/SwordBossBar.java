@@ -10,7 +10,7 @@ import java.util.function.Consumer;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
-import btm.sword.system.control.SwordScheduler;
+import btm.sword.control.SwordScheduler;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
 

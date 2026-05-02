@@ -15,8 +15,8 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.TextDisplay;
 
 import btm.sword.config.Config;
+import btm.sword.control.SwordScheduler;
 import btm.sword.gamemode.QueueManager;
-import btm.sword.system.control.SwordScheduler;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.impl.SwordPlayer;
 import net.kyori.adventure.text.Component;
