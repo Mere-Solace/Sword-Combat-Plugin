@@ -15,10 +15,10 @@ import com.comphenix.protocol.ProtocolManager;
 import com.comphenix.protocol.events.PacketContainer;
 
 import btm.sword.config.Config;
-import btm.sword.system.control.TimeArbiter;
+import btm.sword.control.TimeArbiter;
+import btm.sword.input.InputRegistrar;
 import btm.sword.system.entity.impl.Combatant;
 import btm.sword.system.entity.impl.SwordPlayer;
-import btm.sword.system.input.InputRegistrar;
 
 /** Miscellaneous utility actions and helpers that do not fit into a dedicated utility class. */
 public final class Misc {

@@ -7,8 +7,8 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitTask;
 
 import btm.sword.Sword;
-import btm.sword.system.control.SwordScheduler;
-import btm.sword.system.control.TimeArbiter;
+import btm.sword.control.SwordScheduler;
+import btm.sword.control.TimeArbiter;
 import btm.sword.system.entity.impl.Combatant;
 
 /**

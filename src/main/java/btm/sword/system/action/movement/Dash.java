@@ -12,11 +12,11 @@ import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
 
 import btm.sword.config.Config;
+import btm.sword.control.PredicateRunnablePair;
+import btm.sword.control.SwordScheduler;
+import btm.sword.control.TimeArbiter;
 import btm.sword.system.action.throwing.InteractiveItem;
 import btm.sword.system.action.throwing.InteractiveItemArbiter;
-import btm.sword.system.control.PredicateRunnablePair;
-import btm.sword.system.control.SwordScheduler;
-import btm.sword.system.control.TimeArbiter;
 import btm.sword.system.entity.impl.Combatant;
 import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.entity.umbral.UmbralBlade;
@@ -36,7 +36,7 @@ import btm.sword.utility.sound.SwordSoundType;
  * <p>
  * Resolves which {@link DashType} applies based on ground state, pitch, held items, and
  * raycasts for nearby interactive items or the UmbralBlade, then launches the appropriate
- * movement impulse via {@link btm.sword.system.control.TimeArbiter}.
+ * movement impulse via {@link btm.sword.control.TimeArbiter}.
  * </p>
  *
  * <p>Direction is encoded as an integer (e.g. {@code 1} = forward, {@code -1} = backward);

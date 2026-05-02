@@ -19,7 +19,7 @@ import com.comphenix.protocol.wrappers.WrappedChatComponent;
 
 import btm.sword.Sword;
 import btm.sword.config.Config;
-import btm.sword.system.control.SwordScheduler;
+import btm.sword.control.SwordScheduler;
 import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.inventory.item.ConfigEntryItem;
 import btm.sword.system.inventory.item.ForwardItem;

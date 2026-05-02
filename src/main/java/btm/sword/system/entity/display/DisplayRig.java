@@ -14,8 +14,8 @@ import org.joml.Vector3f;
 
 import btm.sword.Sword;
 import btm.sword.config.Config;
-import btm.sword.system.control.SwordScheduler;
-import btm.sword.system.control.TimeArbiter;
+import btm.sword.control.SwordScheduler;
+import btm.sword.control.TimeArbiter;
 import btm.sword.system.entity.mob.AnimationSlots;
 import btm.sword.utility.SwordTimeUnit;
 import net.donnypz.displayentityutils.events.GroupSpawnedEvent;

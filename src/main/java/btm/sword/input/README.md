@@ -1,6 +1,6 @@
 # Input Execution System
 
-Package: `btm.sword.system.input`
+Package: `btm.sword.input`
 
 ## Overview
 

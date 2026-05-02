@@ -3,9 +3,9 @@ package btm.sword.system.action.skill.type;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 
+import btm.sword.input.InputAction;
 import btm.sword.system.action.skill.Skill;
 import btm.sword.system.entity.impl.Combatant;
-import btm.sword.system.input.InputAction;
 import btm.sword.system.item.ItemStackBuilder;
 import lombok.Getter;
 import lombok.Setter;

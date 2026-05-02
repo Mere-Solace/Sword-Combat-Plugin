@@ -1,7 +1,7 @@
 package btm.sword.system.entity.umbral.statemachine.state;
 
+import btm.sword.control.TimeArbiter;
 import btm.sword.system.action.throwing.InteractiveItemArbiter;
-import btm.sword.system.control.TimeArbiter;
 import btm.sword.system.entity.umbral.UmbralBlade;
 import btm.sword.system.entity.umbral.statemachine.UmbralStateFacade;
 

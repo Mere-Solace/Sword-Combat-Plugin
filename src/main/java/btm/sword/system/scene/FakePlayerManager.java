@@ -30,7 +30,7 @@ import com.comphenix.protocol.wrappers.Pair;
 import com.destroystokyo.paper.profile.ProfileProperty;
 
 import btm.sword.Sword;
-import btm.sword.system.control.SwordScheduler;
+import btm.sword.control.SwordScheduler;
 import btm.sword.system.entity.impl.SwordPlayer;
 
 /**

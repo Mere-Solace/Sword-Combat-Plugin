@@ -19,11 +19,11 @@ import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
 
 import btm.sword.config.Config;
+import btm.sword.control.PredicateRunnablePair;
+import btm.sword.control.SwordScheduler;
+import btm.sword.control.TimeArbiter;
 import btm.sword.system.action.SwordAction;
 import btm.sword.system.attack.style.AttackProfile;
-import btm.sword.system.control.PredicateRunnablePair;
-import btm.sword.system.control.SwordScheduler;
-import btm.sword.system.control.TimeArbiter;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.system.entity.impl.Combatant;
@@ -284,8 +284,8 @@ public class Attack extends SwordAction implements Runnable {
         interpolationValueRange = attackEndValue - attackStartValue;
         interpolationStep = interpolationValueRange / attackIterations;
         int msPerIteration = Math.max(1, attackMilliseconds / attackIterations);
-        Debug.attack("attackMilliseconds="+attackMilliseconds);
-        Debug.attack("msPerIteration="+msPerIteration);
+        Debug.attack("attackMilliseconds=" + attackMilliseconds);
+        Debug.attack("msPerIteration=" + msPerIteration);
 
         generatePathFunction();
         determineOrigin();

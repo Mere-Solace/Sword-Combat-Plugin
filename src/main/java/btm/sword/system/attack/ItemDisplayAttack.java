@@ -4,8 +4,8 @@ package btm.sword.system.attack;
 import org.bukkit.entity.ItemDisplay;
 
 import btm.sword.config.Config;
+import btm.sword.control.TimeArbiter;
 import btm.sword.system.attack.style.AttackProfile;
-import btm.sword.system.control.TimeArbiter;
 import btm.sword.utility.Prefab;
 import lombok.Setter;
 

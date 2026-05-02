@@ -3,8 +3,8 @@ package btm.sword.system.entity.aspect;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
-import btm.sword.system.control.SwordScheduler;
-import btm.sword.system.control.TimeArbiter;
+import btm.sword.control.SwordScheduler;
+import btm.sword.control.TimeArbiter;
 import btm.sword.utility.SwordTimeUnit;
 import lombok.Getter;
 import lombok.Setter;

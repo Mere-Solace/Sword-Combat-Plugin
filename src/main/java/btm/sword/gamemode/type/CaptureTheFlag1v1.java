@@ -9,9 +9,9 @@ import java.util.concurrent.TimeUnit;
 import org.bukkit.Location;
 
 import btm.sword.config.Config;
+import btm.sword.control.SwordScheduler;
 import btm.sword.gamemode.ctf.CtfTeam;
 import btm.sword.gamemode.ctf.FlagEntity;
-import btm.sword.system.control.SwordScheduler;
 import btm.sword.system.entity.impl.SwordPlayer;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;

@@ -1,4 +1,4 @@
-package btm.sword.listeners;
+package btm.sword.input;
 
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
@@ -19,12 +19,11 @@ import org.bukkit.inventory.ItemStack;
 import com.destroystokyo.paper.event.player.PlayerAttackEntityCooldownResetEvent;
 
 import btm.sword.config.Config;
+import btm.sword.control.SwordScheduler;
 import btm.sword.system.action.throwing.ThrowAction;
-import btm.sword.system.control.SwordScheduler;
 import btm.sword.system.entity.SwordEntityArbiter;
 import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.entity.impl.ThrowPhase;
-import btm.sword.system.input.InputType;
 import btm.sword.system.item.ItemClassifier;
 import btm.sword.utility.Debug;
 import btm.sword.utility.entity.InputUtil;

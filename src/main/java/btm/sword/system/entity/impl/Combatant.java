@@ -20,6 +20,10 @@ import org.bukkit.util.Vector;
 import org.joml.Vector3f;
 
 import btm.sword.config.Config;
+import btm.sword.control.PredicateRunnablePair;
+import btm.sword.control.SwordScheduler;
+import btm.sword.control.TimeArbiter;
+import btm.sword.input.ActivationContext;
 import btm.sword.system.action.ActionCaster;
 import btm.sword.system.action.movement.MovementAction;
 import btm.sword.system.action.throwing.types.ThrownItem;
@@ -28,9 +32,6 @@ import btm.sword.system.attack.def.AttackInstance;
 import btm.sword.system.attack.simulation.EntitySnapshotMap;
 import btm.sword.system.attack.simulation.SimulationAttack;
 import btm.sword.system.attack.simulation.VolumeSimulation;
-import btm.sword.system.control.PredicateRunnablePair;
-import btm.sword.system.control.SwordScheduler;
-import btm.sword.system.control.TimeArbiter;
 import btm.sword.system.entity.aspect.AspectType;
 import btm.sword.system.entity.base.CombatProfile;
 import btm.sword.system.entity.base.SwordEntity;
@@ -42,10 +43,10 @@ import btm.sword.system.entity.umbral.statemachine.state.SheathedState;
 import btm.sword.system.entity.umbral.statemachine.state.StandbyState;
 import btm.sword.system.entity.umbral.statemachine.state.WaitingState;
 import btm.sword.system.entity.umbral.statemachine.state.WieldState;
-import btm.sword.system.input.ActivationContext;
 import btm.sword.system.item.KeyRegistry;
 import btm.sword.utility.Debug;
 import btm.sword.utility.Prefab;
+import btm.sword.utility.statemachine.State;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -359,7 +360,7 @@ public abstract class Combatant extends SwordEntity {
      * and displaying associated particle effects.
      */
     public void onGrabHit() {
-        if (holdingSoulLink() && !umbralBlade.inState(SheathedState.class) && !attemptedGrabImpale) {
+        if (holdingSoulLink() && !isBladeInState(SheathedState.class) && !attemptedGrabImpale) {
             attemptedGrabImpale = true;
             getUmbralBlade().request(BladeRequest.GRAB_IMPALE);
         }
@@ -459,12 +460,11 @@ public abstract class Combatant extends SwordEntity {
      * Requires the base {@link #canPerformAction()} check to pass, the blade to be
      * in the wield state, sufficient soulfire, and at least one missing shard.
      *
-     * @return {@code true} if a heal can be initiated
+     * @return {@code true} if a heal charge can be initiated
      */
     public boolean canPerformHealAction() {
         return canPerformAction() &&
-            umbralBlade != null &&
-            umbralBlade.inState(WieldState.class) &&
+            isBladeInState(WieldState.class) &&
             aspects.soulfireCur() >= Config.Combat.CHANNEL_SOULFIRE_COST &&
             aspects.shards().belowMax();
     }
@@ -477,15 +477,21 @@ public abstract class Combatant extends SwordEntity {
      * @return {@code true} if a wield action can be initiated
      */
     public boolean canPerformWieldAction() {
-        if (umbralBlade.inState(WaitingState.class)) {
+        if (isBladeInState(WaitingState.class)) {
             return inRangeOfUmbralBlade(Config.Movement.DASH_GRAB_DISTANCE_SQUARED);
         }
 
-        return canPerformAction() && (
-                umbralBlade.inState(StandbyState.class) ||
-                umbralBlade.inState(SheathedState.class) ||
-                umbralBlade.inState(WieldState.class)
+        return canPerformAction() &&
+            (
+                isBladeInState(StandbyState.class) ||
+                isBladeInState(SheathedState.class) ||
+                isBladeInState(WieldState.class)
             );
+    }
+
+    /** Returns {@code true} if the umbral blade is currently in the given state. */
+    public boolean isBladeInState(Class<? extends State<UmbralBlade>> clazz) {
+        return umbralBlade != null && umbralBlade.inState(clazz);
     }
 
     /**
@@ -510,11 +516,11 @@ public abstract class Combatant extends SwordEntity {
     public boolean canPerformUmbralAction() {
         return canPerformAction() &&
             (
-                umbralBlade.inState(StandbyState.class) ||
-                umbralBlade.inState(RecallingState.class) ||
-                umbralBlade.inState(LodgedState.class) ||
-                umbralBlade.inState(SheathedState.class) ||
-                umbralBlade.inState(WaitingState.class)
+                isBladeInState(StandbyState.class) ||
+                isBladeInState(RecallingState.class) ||
+                isBladeInState(LodgedState.class) ||
+                isBladeInState(SheathedState.class) ||
+                isBladeInState(WaitingState.class)
             );
     }
 
@@ -633,17 +639,6 @@ public abstract class Combatant extends SwordEntity {
                 getUmbralBlade().inState(StandbyState.class) ||
                 getUmbralBlade().inState(SheathedState.class) ||
                 getUmbralBlade().inState(LodgedState.class));
-    }
-
-    /**
-     * Returns {@code true} if this combatant can perform a shadow blink teleport.
-     * Requires the base action check and the blade to be in the lodged state.
-     *
-     * @return {@code true} if a shadow blink can be performed
-     */
-    public boolean canPerformShadowBlink() {
-        return canPerformAction() &&
-            (getUmbralBlade().inState(LodgedState.class));
     }
 
     /**

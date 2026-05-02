@@ -10,7 +10,7 @@ import net.kyori.adventure.text.format.NamedTextColor;
 
 /**
  * Static action helpers for volume-attack wand input bindings registered in
- * {@link btm.sword.system.input.InputRegistrar}.
+ * {@link btm.sword.input.InputRegistrar}.
  *
  * <h2>DROP+DROP — exit session</h2>
  * {@link #exitSession} stops whatever dev session is currently active (RECORDING,

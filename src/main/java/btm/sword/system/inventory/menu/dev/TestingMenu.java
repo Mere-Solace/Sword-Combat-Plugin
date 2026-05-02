@@ -16,9 +16,9 @@ import org.jetbrains.annotations.NotNull;
 
 import btm.sword.Sword;
 import btm.sword.config.Config;
+import btm.sword.control.SwordScheduler;
 import btm.sword.gamemode.QueueManager;
 import btm.sword.gamemode.type.CaptureTheFlag1v1;
-import btm.sword.system.control.SwordScheduler;
 import btm.sword.system.display.BossBarManager;
 import btm.sword.system.display.ScoreboardManager;
 import btm.sword.system.display.SwordBossBar;

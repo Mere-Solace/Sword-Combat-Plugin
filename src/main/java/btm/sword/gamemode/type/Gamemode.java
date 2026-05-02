@@ -8,8 +8,8 @@ import org.bukkit.boss.BarColor;
 import org.bukkit.boss.BarStyle;
 import org.bukkit.boss.BossBar;
 
-import btm.sword.system.control.PredicateRunnablePair;
-import btm.sword.system.control.TimeArbiter;
+import btm.sword.control.PredicateRunnablePair;
+import btm.sword.control.TimeArbiter;
 import btm.sword.system.entity.impl.SwordPlayer;
 
 /**

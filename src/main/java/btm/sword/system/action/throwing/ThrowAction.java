@@ -9,13 +9,13 @@ import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
 
 import btm.sword.Sword;
+import btm.sword.input.ActivationContext;
 import btm.sword.system.action.SwordAction;
 import btm.sword.system.action.throwing.types.ThrownItem;
 import btm.sword.system.action.throwing.types.VisualProjectile;
 import btm.sword.system.entity.impl.Combatant;
 import btm.sword.system.entity.impl.SwordPlayer;
 import btm.sword.system.entity.impl.ThrowPhase;
-import btm.sword.system.input.ActivationContext;
 import btm.sword.utility.Debug;
 
 /**

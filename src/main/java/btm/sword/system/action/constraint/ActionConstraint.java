@@ -5,7 +5,7 @@ import java.util.function.Predicate;
 import btm.sword.system.entity.impl.Combatant;
 
 /**
- * A composable predicate evaluated before an {@link btm.sword.system.input.InputAction} may be cast.
+ * A composable predicate evaluated before an {@link btm.sword.input.InputAction} may be cast.
  * <p>
  * Constraints replace scattered {@code canPerform*()} calls in {@link Combatant} with
  * reusable, named conditions that can be declared inline in the input tree builder:

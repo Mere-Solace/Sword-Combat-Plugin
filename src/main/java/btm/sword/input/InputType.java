@@ -1,4 +1,4 @@
-package btm.sword.system.input;
+package btm.sword.input;
 
 /** Enumerates all discrete player inputs that can be routed through the {@link InputExecutionTree}. */
 public enum InputType {

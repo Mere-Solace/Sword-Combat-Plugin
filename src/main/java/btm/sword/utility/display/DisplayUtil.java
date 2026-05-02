@@ -14,9 +14,9 @@ import org.bukkit.entity.Mob;
 import org.bukkit.util.Vector;
 
 import btm.sword.config.Config;
-import btm.sword.system.control.PredicateRunnablePair;
-import btm.sword.system.control.SwordScheduler;
-import btm.sword.system.control.TimeArbiter;
+import btm.sword.control.PredicateRunnablePair;
+import btm.sword.control.SwordScheduler;
+import btm.sword.control.TimeArbiter;
 import btm.sword.system.entity.base.SwordEntity;
 import btm.sword.utility.Prefab;
 

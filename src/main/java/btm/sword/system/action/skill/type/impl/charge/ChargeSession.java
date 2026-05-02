@@ -5,7 +5,7 @@ import java.util.Map;
 
 import org.bukkit.entity.ItemDisplay;
 
-import btm.sword.system.control.TimeArbiter;
+import btm.sword.control.TimeArbiter;
 import lombok.Getter;
 import lombok.Setter;
 

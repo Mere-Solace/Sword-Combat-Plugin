@@ -9,8 +9,8 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
 
 import btm.sword.config.Config;
+import btm.sword.control.SwordScheduler;
 import btm.sword.system.action.throwing.ThrowAction;
-import btm.sword.system.control.SwordScheduler;
 import btm.sword.system.entity.ai.MobGoalArbiter;
 import btm.sword.system.entity.ai.goal.LookAtTargetGoal;
 import btm.sword.system.entity.impl.Hostile;

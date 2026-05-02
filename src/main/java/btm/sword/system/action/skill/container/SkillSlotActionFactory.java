@@ -1,5 +1,6 @@
 package btm.sword.system.action.skill.container;
 
+import btm.sword.input.InputAction;
 import btm.sword.system.action.skill.Skill;
 import btm.sword.system.action.skill.SkillId;
 import btm.sword.system.action.skill.SkillRegistry;
@@ -7,7 +8,6 @@ import btm.sword.system.action.skill.type.ActiveSkill;
 import btm.sword.system.action.skill.type.impl.umbral.VoidLungeSkill;
 import btm.sword.system.entity.base.CombatProfile;
 import btm.sword.system.entity.impl.SwordPlayer;
-import btm.sword.system.input.InputAction;
 
 /**
  * Factory that builds {@link InputAction} instances for skill slots at runtime.

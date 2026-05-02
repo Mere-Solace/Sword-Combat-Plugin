@@ -7,8 +7,8 @@ import java.util.concurrent.TimeUnit;
 import org.bukkit.Location;
 import org.joml.Vector3f;
 
+import btm.sword.control.SwordScheduler;
 import btm.sword.system.attack.simulation.ParticleEffect;
-import btm.sword.system.control.SwordScheduler;
 import btm.sword.utility.math.VectorUtil;
 import lombok.Getter;
 import lombok.Setter;
