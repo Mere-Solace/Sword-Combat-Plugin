@@ -8,9 +8,9 @@ import org.bukkit.boss.BarColor;
 import org.bukkit.boss.BarStyle;
 import org.bukkit.boss.BossBar;
 
-import btm.sword.control.PredicateRunnablePair;
-import btm.sword.control.TimeArbiter;
-import btm.sword.system.entity.impl.SwordPlayer;
+import btm.sword.entity.player.SwordPlayer;
+import btm.sword.runtime.scheduler.PredicateRunnablePair;
+import btm.sword.runtime.scheduler.TimeArbiter;
 
 /**
  * Abstract base for all Sword game modes.

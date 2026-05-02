@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<!DOCTYPE import-control PUBLIC
+    "-//Checkstyle//DTD ImportControl Configuration 1.4//EN"
+    "https://checkstyle.org/dtds/import_control_1_4.dtd">
+
+<!--
+  Architecture rules for btm.sword.
+
+  Layered structure (top depends on bottom, never reverse):
+
+    command/  event/                                          <- edges (Bukkit hooks, slash commands)
+    gamemode/  scene/  ui/  menu/  interaction/  join/        <- presentation/integration
+    playerdata/  combat/  action/  item/  umbral/             <- game domain
+    entity/  input/  config/                                  <- domain primitives
+    runtime/                                                  <- engine (scheduling, lifecycle, FSM)
+    util/                                                     <- pure helpers
+
+  v1: this file only forbids the deleted `btm.sword.system.*` package from
+  reappearing. Everything else is allowed. Tighten in follow-up PRs by adding
+  per-subpackage <subpackage> blocks with stricter rules.
+-->
+
+<import-control pkg="btm.sword">
+    <!-- Forbid the old `system.*` package from ever reappearing. -->
+    <disallow pkg="btm\.sword\.system(\..*)?" regex="true"/>
+
+    <!-- Default: allow everything else. -->
+    <allow pkg=".*" regex="true"/>
+</import-control>

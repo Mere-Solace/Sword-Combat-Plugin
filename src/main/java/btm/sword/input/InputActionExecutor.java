@@ -1,9 +1,9 @@
 package btm.sword.input;
 
-import btm.sword.system.action.ActionCaster;
-import btm.sword.system.action.constraint.ActionConstraint;
-import btm.sword.system.entity.impl.Combatant;
-import btm.sword.system.entity.impl.SwordPlayer;
+import btm.sword.action.constraint.ActionConstraint;
+import btm.sword.action.core.ActionCaster;
+import btm.sword.entity.base.Combatant;
+import btm.sword.entity.player.SwordPlayer;
 import net.kyori.adventure.text.format.TextColor;
 
 /**

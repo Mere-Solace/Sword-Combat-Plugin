@@ -8,10 +8,10 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
-import btm.sword.system.action.constraint.ActionConstraint;
-import btm.sword.system.entity.impl.Combatant;
-import btm.sword.system.entity.impl.SwordPlayer;
-import btm.sword.utility.Debug;
+import btm.sword.action.constraint.ActionConstraint;
+import btm.sword.entity.base.Combatant;
+import btm.sword.entity.player.SwordPlayer;
+import btm.sword.util.misc.Debug;
 import lombok.Getter;
 
 /**

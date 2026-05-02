@@ -31,6 +31,13 @@
             <property name="allowStaticMemberImports" value="false"/>
         </module>
 
+        <!-- Architecture rules: forbid imports from the deleted `system.*` package
+             and lock in the new top-level layout. -->
+        <module name="ImportControl">
+            <property name="severity" value="error"/>
+            <property name="file" value="${config_loc}/import-control.xml"/>
+        </module>
+
         <!-- Checks for common coding problems -->
         <module name="EmptyBlock">
             <property name="severity" value="warning"/>
