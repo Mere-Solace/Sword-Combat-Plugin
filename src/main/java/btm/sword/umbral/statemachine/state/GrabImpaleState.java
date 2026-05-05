@@ -2,6 +2,7 @@ package btm.sword.umbral.statemachine.state;
 
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 import org.bukkit.util.Vector;
 
@@ -10,14 +11,33 @@ import btm.sword.config.Config;
 import btm.sword.entity.base.Combatant;
 import btm.sword.entity.base.SwordEntity;
 import btm.sword.runtime.scheduler.SwordScheduler;
-import btm.sword.runtime.scheduler.TimeArbiter;
 import btm.sword.umbral.UmbralBlade;
+import btm.sword.umbral.motion.drivers.SlerpToOffsetDriver;
 import btm.sword.umbral.statemachine.UmbralStateFacade;
-import btm.sword.util.display.DisplayUtil;
 
-/** State that lunges the blade toward a grabbed target and impales it on contact. */
+/**
+ * State that lunges the blade toward a grabbed target and impales it on contact.
+ * <p>
+ * Two phases:
+ * <ol>
+ *   <li><b>Slerp</b> — the blade approaches a ready position above the grabbed entity using a
+ *       {@link SlerpToOffsetDriver} on the blade's motion subsystem. On arrival the
+ *       driver schedules a 200 ms delay before transitioning to the lunge phase.</li>
+ *   <li><b>Lunge</b> — the blade flies through the grabbed entity along an inherited cubic-Bézier
+ *       trajectory driven by the parent {@code stepFlight} loop. The driver-based migration of
+ *       this phase happens together with {@link LungingState} so the two paths share the same
+ *       {@code BezierDriver} integration.</li>
+ * </ol>
+ */
 public class GrabImpaleState extends UmbralStateFacade {
-    private TimeArbiter.TaskHandle slerpTask;
+
+    private static final double SLERP_SPEED = 1.0;
+    private static final double SLERP_ARRIVAL_DISTANCE = 2.0;
+    private static final long SLERP_TIMEOUT_TICKS = 50;
+    private static final int SLERP_TELEPORT_DURATION = 2;
+    private static final int LUNGE_DELAY_MS = 200;
+    private static final double EYE_HEIGHT_MULTIPLIER = 6.0;
+
     private ScheduledFuture<?> attackTask;
     private boolean lungeActive = false;
 
@@ -39,7 +59,7 @@ public class GrabImpaleState extends UmbralStateFacade {
     public void onExit(UmbralBlade blade) {
         lungeActive = false;
         blade.setFinishedLunging(false);
-        if (slerpTask != null && !slerpTask.isCancelled()) slerpTask.cancel();
+        blade.getBladeMotion().stop();
         if (attackTask != null) attackTask.cancel(false);
     }
 
@@ -55,26 +75,37 @@ public class GrabImpaleState extends UmbralStateFacade {
     private void moveToReadyPosition(UmbralBlade blade) {
         SwordEntity grabbed = blade.getThrower().getGrabbedEntity();
         // TODO: potentially -> make random and in cooler more dynamic positions depending on cur blade pos
-        Vector offset = new Vector(-1, grabbed.getEyeHeight() * 6, -1);
-        slerpTask = DisplayUtil.displaySlerpToOffset(grabbed, blade.getDisplay(), offset,
-            1, 2, 50, 2, false,
-            50,
-            () -> { // predicate for when the movement should end other than when it reaches destination.
-                Combatant thrower = blade.getThrower();
-                return thrower.getGrabbedEntity() == null ||
-                    thrower.getGrabbedEntity().isDead() ||
-                    thrower.isDead() ||
-                    !thrower.getUmbralBlade().inState(GrabImpaleState.class);
-            },
-            () -> false,
-            () -> attackTask = SwordScheduler.runBukkitTaskLater(() -> attackEnemy(blade),
-                200, TimeUnit.MILLISECONDS)
-        );
+        Vector offset = new Vector(-1, grabbed.getEyeHeight() * EYE_HEIGHT_MULTIPLIER, -1);
+
+        // Composed end predicate: abandon the slerp if the grab context evaporates (target lost,
+        // thrower dead, or FSM transitioned away from this state). The driver remains generic;
+        // FSM-aware logic stays at the call site.
+        Supplier<Boolean> abandonIfGrabLost = () -> {
+            Combatant thrower = blade.getThrower();
+            return thrower.getGrabbedEntity() == null
+                || thrower.getGrabbedEntity().isDead()
+                || thrower.isDead()
+                || !thrower.getUmbralBlade().inState(GrabImpaleState.class);
+        };
+
+        blade.getBladeMotion().install(new SlerpToOffsetDriver(
+            grabbed,
+            offset,
+            SLERP_SPEED,
+            SLERP_ARRIVAL_DISTANCE,
+            SLERP_TIMEOUT_TICKS,
+            abandonIfGrabLost,
+            () -> attackTask = SwordScheduler.runBukkitTaskLater(
+                () -> attackEnemy(blade),
+                LUNGE_DELAY_MS, TimeUnit.MILLISECONDS
+            ),
+            SLERP_TELEPORT_DURATION
+        ));
     }
 
     private void attackEnemy(UmbralBlade blade) {
         if (!blade.inState(GrabImpaleState.class)) return;
-        if (slerpTask != null && !slerpTask.isCancelled()) slerpTask.cancel();
+        blade.getBladeMotion().stop();
         blade.setHitEntity(null);
         blade.setFinishedLunging(false);
         blade.setTimeCutoff(Config.UmbralBlade.LUNGE_TIME_CUTOFF);
