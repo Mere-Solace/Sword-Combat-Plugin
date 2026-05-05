@@ -2,6 +2,7 @@ package btm.sword.scene.animation;
 
 import btm.sword.Sword;
 import btm.sword.scene.camera.CameraController;
+import btm.sword.util.misc.Debug;
 import net.donnypz.displayentityutils.events.GroupSpawnedEvent;
 import net.donnypz.displayentityutils.managers.DisplayAnimationManager;
 import net.donnypz.displayentityutils.managers.DisplayGroupManager;
@@ -19,7 +20,7 @@ import net.donnypz.displayentityutils.utils.DisplayEntities.SpawnedDisplayEntity
  * The animation group is spawned as real server-side entities, visible to all players.
  * </p>
  *
- * <p>The standard Stop button ({@link CameraSystem#stopController}) still works because
+ * <p>The standard Stop button ({@link btm.sword.scene.camera.CameraSystem#stopController}) still works because
  * this controller extends {@link CameraController} — ownership is tracked normally.</p>
  *
  * <h2>Usage</h2>
@@ -68,8 +69,14 @@ public class WorldAnimationController extends CameraController {
             stop();
             return;
         }
+        animation.allowTextureChanges(true); // important for allowing mid-animation overrides
 
         spawnedGroup = group.spawn(owner.player().getLocation(), GroupSpawnedEvent.SpawnReason.CUSTOM);
+
+        if (spawnedGroup == null) {
+            Debug.error("Spawned Group is null");
+            return;
+        }
 
         DisplayAnimator.AnimationType animType = loop
             ? DisplayAnimator.AnimationType.LOOP

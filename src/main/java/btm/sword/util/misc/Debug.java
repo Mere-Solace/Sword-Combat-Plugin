@@ -110,6 +110,11 @@ public final class Debug {
         emit(Config.Debug.LOGGING_VERBOSE_INVENTORY, "Inventory", message);
     }
 
+    /** Error-level debug. Always emits regardless of verbose flags. */
+    public static void error(String message) {
+        emit(true, "Error", message);
+    }
+
     /**
      * System-level debug (state machine transitions, scheduler tasks, display lifecycle).
      * Gated by {@link Config.Debug#LOGGING_VERBOSE_SYSTEM}.

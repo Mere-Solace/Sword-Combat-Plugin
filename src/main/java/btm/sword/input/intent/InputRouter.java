@@ -82,9 +82,10 @@ public final class InputRouter {
     }
 
     private static InputDecision handleInteract(SwordPlayer player, InputIntent.Interact i) {
-        if (player.isInInventorySession()) return InputDecision.PASS;
-        if (player.isPerformingDropInput()) return InputDecision.PASS;
-        if (player.isDroppingInInv()) return InputDecision.PASS;
+        if (player.isInInventorySession() ||
+            player.isPerformingDropInput() ||
+            player.isDroppingInInv())
+            return InputDecision.CANCEL;
 
         ItemStack item = player.getItemStackInHand(true);
         InputType type = i.side() == InputIntent.Side.LEFT ? InputType.LEFT : InputType.RIGHT;
@@ -125,8 +126,8 @@ public final class InputRouter {
 
     private static InputDecision handleDrop(SwordPlayer player, InputIntent.Drop d) {
         player.setLastHeldItemBeforeDrop(d.droppedStack());
-        if (dispatchEarly(player, InputType.DROP, d.droppedStack())) return InputDecision.CANCEL;
         player.setPerformingDropInput();
+        if (dispatchEarly(player, InputType.DROP, d.droppedStack())) return InputDecision.CANCEL;
         player.act(InputType.DROP);
         return InputDecision.CANCEL;
     }

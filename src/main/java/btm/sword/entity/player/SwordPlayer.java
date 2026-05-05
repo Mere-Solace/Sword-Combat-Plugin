@@ -161,7 +161,6 @@ public class SwordPlayer extends Combatant {
 
     @Setter
     private boolean channelInterrupted = false;
-
     private boolean performingDropInput;
     @Setter
     private ItemStack lastHeldItemBeforeDrop = ItemStack.of(Material.AIR);
