@@ -1,11 +1,11 @@
-package btm.sword.input;
+package btm.sword.input.binding;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import btm.sword.input.ItemInputBinding.MatchContext;
-import btm.sword.input.ItemInputBinding.Phase;
-import btm.sword.input.binding.InputBindingsRegistrar;
+import btm.sword.input.InputType;
+import btm.sword.input.binding.ItemInputBinding.MatchContext;
+import btm.sword.input.binding.ItemInputBinding.Phase;
 
 /**
  * Static, ordered registry of {@link ItemInputBinding}s.

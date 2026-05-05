@@ -1,4 +1,4 @@
-package btm.sword.input;
+package btm.sword.input.transport;
 
 import java.util.concurrent.TimeUnit;
 
@@ -21,6 +21,8 @@ import com.destroystokyo.paper.event.player.PlayerAttackEntityCooldownResetEvent
 import btm.sword.config.Config;
 import btm.sword.entity.arbiter.SwordEntityArbiter;
 import btm.sword.entity.player.SwordPlayer;
+import btm.sword.input.intent.InputIntent;
+import btm.sword.input.intent.InputRouter;
 import btm.sword.runtime.scheduler.SwordScheduler;
 import btm.sword.util.misc.Debug;
 import io.papermc.paper.event.player.PrePlayerAttackEntityEvent;

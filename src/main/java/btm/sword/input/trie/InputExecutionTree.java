@@ -1,4 +1,4 @@
-package btm.sword.input;
+package btm.sword.input.trie;
 
 import java.util.IdentityHashMap;
 import java.util.Iterator;
@@ -16,6 +16,7 @@ import javax.annotation.Nullable;
 
 import btm.sword.config.Config;
 import btm.sword.entity.player.SwordPlayer;
+import btm.sword.input.InputType;
 import btm.sword.runtime.scheduler.SwordScheduler;
 import btm.sword.util.misc.Debug;
 import btm.sword.util.misc.SwordTimeUnit;
@@ -136,7 +137,7 @@ public class InputExecutionTree {
             if (action != null) {
                 if (entry.getKey().equals(InputType.DROP)
                         && owner.getItemTypeInHand(true).isAir()
-                        && !owner.isPerformedDropAction()) {
+                        && !owner.isPerformingDropInput()) {
                     readiness = InputActionExecutor.ReadinessState.DISABLED;
                 }
                 else {

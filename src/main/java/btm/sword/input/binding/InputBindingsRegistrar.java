@@ -4,9 +4,7 @@ import java.util.function.Predicate;
 
 import btm.sword.Sword;
 import btm.sword.input.InputType;
-import btm.sword.input.ItemInputBinding;
-import btm.sword.input.ItemInputBinding.Phase;
-import btm.sword.input.ItemInputDispatchTable;
+import btm.sword.input.binding.ItemInputBinding.Phase;
 import btm.sword.item.core.KeyRegistry;
 import btm.sword.item.core.StorageCategory;
 import btm.sword.menu.ArtifactPouchMenu;

@@ -7,6 +7,8 @@ import org.bukkit.Tag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
 
+import btm.sword.input.binding.ItemInputDispatchTable;
+
 /**
  * Classifies {@link ItemStack}s into {@link ItemClass} values to determine
  * how the Sword input system should respond when a player holds or uses an item.
@@ -98,7 +100,7 @@ public final class ItemClassifier {
     /**
      * Returns {@code true} if the item is {@link ItemClass#BLOCKED} — i.e., it is fully
      * managed by the Sword system and suppresses all inputs, routing them through the
-     * EARLY phase of the {@link btm.sword.input.ItemInputDispatchTable} instead.
+     * EARLY phase of the {@link ItemInputDispatchTable} instead.
      *
      * @param item the item to check; may be null or empty
      * @return true if the item is BLOCKED

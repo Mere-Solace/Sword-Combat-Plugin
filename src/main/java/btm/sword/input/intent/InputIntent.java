@@ -1,4 +1,4 @@
-package btm.sword.input;
+package btm.sword.input.intent;
 
 import java.util.UUID;
 

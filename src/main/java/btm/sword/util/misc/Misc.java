@@ -17,7 +17,7 @@ import com.comphenix.protocol.events.PacketContainer;
 import btm.sword.config.Config;
 import btm.sword.entity.base.Combatant;
 import btm.sword.entity.player.SwordPlayer;
-import btm.sword.input.InputRegistrar;
+import btm.sword.input.trie.InputRegistrar;
 import btm.sword.runtime.scheduler.TimeArbiter;
 
 /** Miscellaneous utility actions and helpers that do not fit into a dedicated utility class. */

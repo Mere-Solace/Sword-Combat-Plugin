@@ -1,5 +1,7 @@
 package btm.sword.item.core;
 
+import btm.sword.input.binding.ItemInputDispatchTable;
+
 /**
  * Classifies an item stack's interaction behavior within the Sword input system.
  * <p>
@@ -26,7 +28,7 @@ public enum ItemClass {
     /**
      * The item is fully managed by the Sword system and suppresses all vanilla inputs.
      * Any input (left, right, drop, swap, shift) is intercepted and routed through the
-     * EARLY phase of the {@link btm.sword.input.ItemInputDispatchTable} rather than the
+     * EARLY phase of the {@link ItemInputDispatchTable} rather than the
      * Sword input execution tree or vanilla Minecraft.
      */
     BLOCKED,

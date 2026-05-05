@@ -52,16 +52,16 @@ import btm.sword.entity.aspect.AspectType;
 import btm.sword.entity.base.Combatant;
 import btm.sword.entity.base.SwordEntity;
 import btm.sword.entity.mob.Dummy;
-import btm.sword.input.ActivationContext;
-import btm.sword.input.InputAction;
-import btm.sword.input.InputActionExecutor;
-import btm.sword.input.InputExecutionTree;
 import btm.sword.input.InputGestureTracker;
-import btm.sword.input.InputListener;
-import btm.sword.input.InputRegistrar;
 import btm.sword.input.InputType;
-import btm.sword.input.ItemInputBinding;
-import btm.sword.input.ItemInputDispatchTable;
+import btm.sword.input.binding.ItemInputBinding;
+import btm.sword.input.binding.ItemInputDispatchTable;
+import btm.sword.input.transport.InputListener;
+import btm.sword.input.trie.ActivationContext;
+import btm.sword.input.trie.InputAction;
+import btm.sword.input.trie.InputActionExecutor;
+import btm.sword.input.trie.InputExecutionTree;
+import btm.sword.input.trie.InputRegistrar;
 import btm.sword.item.core.ItemClass;
 import btm.sword.item.core.ItemClassifier;
 import btm.sword.item.core.ItemStackBuilder;
@@ -108,6 +108,7 @@ import net.kyori.adventure.title.Title;
  */
 @Getter
 public class SwordPlayer extends Combatant {
+
     private final Player player;
     private final PlayerProfile profile;
     private final String username;
@@ -123,11 +124,11 @@ public class SwordPlayer extends Combatant {
     private SlotAnchoredItem questStorageButton;
     private final SlotAnchoredItem shieldItem;
     private final SlotAnchoredItem chestplateItem;
-    @Getter
+
     private final AbilitySlotManager abilitySlotManager;
 
     /** Active charge session for chargeable abilities, or {@code null} if not charging. */
-    @Getter
+
     @Setter
     private ChargeSession activeCharge;
 
@@ -157,12 +158,11 @@ public class SwordPlayer extends Combatant {
     private ActivationContext activationContext = ActivationContext.NORMAL;
 
     /** Set to true by the damage pipeline when a healing channel is interrupted by incoming damage. */
-    @Getter
+
     @Setter
     private boolean channelInterrupted = false;
 
-    private boolean performedDropAction;
-    @Getter
+    private boolean performingDropInput;
     @Setter
     private ItemStack lastHeldItemBeforeDrop = ItemStack.of(Material.AIR);
     @Setter
@@ -171,6 +171,7 @@ public class SwordPlayer extends Combatant {
     private boolean interactingWithEntity;
     @Setter
     private boolean threwItem;
+
     @Setter
     private boolean blocking;
 
@@ -181,13 +182,15 @@ public class SwordPlayer extends Combatant {
     private TimeArbiter.TaskHandle blockDrainTask;
 
     /** Snapshot of the main-hand item taken when a right-hold begins. Read by throw + lunge actions. */
+
     private ItemStack mainItemStackAtTimeOfHold = ItemStack.of(Material.AIR);
     /** Snapshot of the offhand item taken when a right-hold begins. Read by throw actions. */
+
     private ItemStack offItemStackAtTimeOfHold = ItemStack.of(Material.AIR);
     /** Hotbar slot index that was held when the right-hold began. Used to restore the slot on release. */
+
     private int indexOfRightHold = -1;
 
-    @Getter
     @Setter
     private TimeArbiter.TaskHandle healChannelTask;
 
@@ -232,7 +235,6 @@ public class SwordPlayer extends Combatant {
     /** Snapshot of offhand slot (40) taken when creative dev mode is entered; restored on exit. */
     private ItemStack savedCreativeDevOffhand = null;
 
-    @Getter
     @Setter
     private CameraController activeCameraController;
 
@@ -318,7 +320,7 @@ public class SwordPlayer extends Combatant {
         InputRegistrar.initializeInputTree(inputExecutionTree.getRoot(), this);
         InputRegistrar.initializeMovementInputs(inputExecutionTree.getRoot());
 
-        performedDropAction = false;
+        performingDropInput = false;
         changingHandIndex = false;
         interactingWithEntity = false;
         threwItem = false;
@@ -612,7 +614,7 @@ public class SwordPlayer extends Combatant {
             }
         }
 
-        Debug.input("Line before step is resolved.");
+        Debug.input("Line before step is reached.");
 
         // The execution trie is only traversed if the code makes it here!
         InputExecutionTree.InputNode node = inputExecutionTree.step(input);
@@ -1126,15 +1128,6 @@ public class SwordPlayer extends Combatant {
             .build();
     }
 
-    /**
-     * Checks if the player has performed a drop action recently.
-     *
-     * @return true if a drop action was performed, false otherwise
-     */
-    public boolean hasPerformedDropAction() {
-        return performedDropAction;
-    }
-
     /** Clears the active item and applies a cooldown to the off-hand item for the given number of ticks. */
     public void disableShield(int ticks) {
         self.clearActiveItem();
@@ -1149,13 +1142,13 @@ public class SwordPlayer extends Combatant {
     @Override
     public boolean holdingUmbralBlade() {
         return super.holdingUmbralBlade() ||
-            (isPerformedDropAction() && KeyRegistry.hasKey(getLastHeldItemBeforeDrop(), KeyRegistry.UMBRAL_BLADE_KEY));
+            (isPerformingDropInput() && KeyRegistry.hasKey(getLastHeldItemBeforeDrop(), KeyRegistry.UMBRAL_BLADE_KEY));
     }
 
     @Override
     public boolean holdingSoulLink() {
         return super.holdingSoulLink() ||
-            (isPerformedDropAction() && KeyRegistry.hasKey(getLastHeldItemBeforeDrop(), KeyRegistry.SOUL_LINK_KEY));
+            (isPerformingDropInput() && KeyRegistry.hasKey(getLastHeldItemBeforeDrop(), KeyRegistry.SOUL_LINK_KEY));
     }
 
     /** Returns {@code true} if the player's currently held slot is not an ability slot. */
@@ -1214,12 +1207,12 @@ public class SwordPlayer extends Combatant {
      * Returns {@code true} if the player's held item has the given persistent data key.
      *
      * <p>During a drop event the item is temporarily removed from the hand before the
-     * event is cancelled. When {@link #isPerformedDropAction()} is {@code true}, the
+     * event is cancelled. When {@link #isPerformingDropInput()} is {@code true}, the
      * pre-drop item stored in {@link #getLastHeldItemBeforeDrop()} is checked instead,
      * matching the same pattern used by {@link #holdingUmbralBlade()}.</p>
      */
     public boolean heldItemHasKey(NamespacedKey key) {
-        ItemStack item = isPerformedDropAction() ? getLastHeldItemBeforeDrop() : getItemStackInHand(true);
+        ItemStack item = isPerformingDropInput() ? getLastHeldItemBeforeDrop() : getItemStackInHand(true);
         return KeyRegistry.hasKey(item, key);
     }
 
@@ -1589,10 +1582,10 @@ public class SwordPlayer extends Combatant {
     }
 
     /** Marks that the player has performed a drop action; automatically resets after 100 ms. */
-    public void setPerformedDropAction() {
-        performedDropAction = true;
+    public void setPerformingDropInput() {
+        performingDropInput = true;
         SwordScheduler.runBukkitTaskLater(
-            () -> performedDropAction = false,
+            () -> performingDropInput = false,
             100, TimeUnit.MILLISECONDS
         );
     }

@@ -9,10 +9,9 @@ import btm.sword.action.skill.container.SkillSlotActionFactory;
 import btm.sword.action.skill.container.SkillSlotState;
 import btm.sword.action.skill.type.ActiveSkill;
 import btm.sword.entity.player.SwordPlayer;
-import btm.sword.input.InputAction;
-import btm.sword.input.InputActionExecutor;
 import btm.sword.input.InputType;
-import btm.sword.input.ItemInputBinding;
+import btm.sword.input.trie.InputAction;
+import btm.sword.input.trie.InputActionExecutor;
 import btm.sword.item.core.SwordItemType;
 import btm.sword.item.special.AbilitySlotManager;
 

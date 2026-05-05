@@ -15,7 +15,7 @@ import btm.sword.action.throwing.types.VisualProjectile;
 import btm.sword.entity.base.Combatant;
 import btm.sword.entity.player.SwordPlayer;
 import btm.sword.entity.player.ThrowPhase;
-import btm.sword.input.ActivationContext;
+import btm.sword.input.trie.ActivationContext;
 import btm.sword.util.misc.Debug;
 
 /**

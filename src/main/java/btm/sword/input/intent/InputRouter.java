@@ -1,12 +1,16 @@
-package btm.sword.input;
+package btm.sword.input.intent;
 
 import org.bukkit.inventory.ItemStack;
 
 import btm.sword.action.throwing.ThrowAction;
 import btm.sword.entity.player.SwordPlayer;
 import btm.sword.entity.player.ThrowPhase;
-import btm.sword.input.ItemInputBinding.MatchContext;
-import btm.sword.input.ItemInputBinding.Phase;
+import btm.sword.input.InputType;
+import btm.sword.input.binding.ItemInputBinding.MatchContext;
+import btm.sword.input.binding.ItemInputBinding.Phase;
+import btm.sword.input.binding.ItemInputDispatchTable;
+import btm.sword.input.transport.InputDecision;
+import btm.sword.input.transport.InputListener;
 import btm.sword.item.core.ItemClassifier;
 import btm.sword.runtime.scheduler.SwordScheduler;
 import btm.sword.util.entity.InputUtil;
@@ -70,6 +74,7 @@ public final class InputRouter {
     }
 
     private static InputDecision handleAttack(SwordPlayer player) {
+        if (player.isPerformingDropInput()) return InputDecision.CANCEL;
         ItemStack item = player.getItemStackInHand(true);
         if (dispatchEarly(player, InputType.LEFT, item)) return InputDecision.PASS;
         player.act(InputType.LEFT);
@@ -78,7 +83,7 @@ public final class InputRouter {
 
     private static InputDecision handleInteract(SwordPlayer player, InputIntent.Interact i) {
         if (player.isInInventorySession()) return InputDecision.PASS;
-        if (player.hasPerformedDropAction()) return InputDecision.PASS;
+        if (player.isPerformingDropInput()) return InputDecision.PASS;
         if (player.isDroppingInInv()) return InputDecision.PASS;
 
         ItemStack item = player.getItemStackInHand(true);
@@ -121,7 +126,7 @@ public final class InputRouter {
     private static InputDecision handleDrop(SwordPlayer player, InputIntent.Drop d) {
         player.setLastHeldItemBeforeDrop(d.droppedStack());
         if (dispatchEarly(player, InputType.DROP, d.droppedStack())) return InputDecision.CANCEL;
-        player.setPerformedDropAction();
+        player.setPerformingDropInput();
         player.act(InputType.DROP);
         return InputDecision.CANCEL;
     }

@@ -1,10 +1,13 @@
-package btm.sword.input;
+package btm.sword.input.binding;
 
 import java.util.function.Predicate;
 
 import org.bukkit.inventory.ItemStack;
 
 import btm.sword.entity.player.SwordPlayer;
+import btm.sword.input.InputType;
+import btm.sword.input.intent.InputIntent;
+import btm.sword.input.intent.InputRouter;
 
 /**
  * Registers a per-item input intercept into the {@link ItemInputDispatchTable}.

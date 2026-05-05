@@ -31,7 +31,7 @@ import btm.sword.config.Config;
 import btm.sword.entity.aspect.AspectType;
 import btm.sword.entity.player.SwordPlayer;
 import btm.sword.entity.player.ThrowPhase;
-import btm.sword.input.ActivationContext;
+import btm.sword.input.trie.ActivationContext;
 import btm.sword.item.core.KeyRegistry;
 import btm.sword.runtime.scheduler.PredicateRunnablePair;
 import btm.sword.runtime.scheduler.SwordScheduler;
@@ -635,10 +635,12 @@ public abstract class Combatant extends SwordEntity {
      */
     public boolean canPerformUmbralLinkAttack() {
         return canPerformAction() &&
-            (getUmbralBlade().inState(RecallingState.class) ||
-                getUmbralBlade().inState(StandbyState.class) ||
-                getUmbralBlade().inState(SheathedState.class) ||
-                getUmbralBlade().inState(LodgedState.class));
+            (
+                isBladeInState(RecallingState.class) ||
+                isBladeInState(StandbyState.class) ||
+                isBladeInState(SheathedState.class) ||
+                isBladeInState(LodgedState.class)
+            );
     }
 
     /**

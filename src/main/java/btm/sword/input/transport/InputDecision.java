@@ -1,4 +1,6 @@
-package btm.sword.input;
+package btm.sword.input.transport;
+
+import btm.sword.input.intent.InputIntent;
 
 /**
  * The router's response to an {@link InputIntent}: a single boolean instructing the

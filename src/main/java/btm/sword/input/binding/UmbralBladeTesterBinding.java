@@ -2,7 +2,6 @@ package btm.sword.input.binding;
 
 import btm.sword.entity.player.DevSwordPlayer;
 import btm.sword.input.InputType;
-import btm.sword.input.ItemInputBinding;
 import btm.sword.item.core.KeyRegistry;
 
 /**

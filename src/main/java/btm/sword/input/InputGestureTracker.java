@@ -2,6 +2,7 @@ package btm.sword.input;
 
 import btm.sword.runtime.scheduler.PredicateRunnablePair;
 import btm.sword.runtime.scheduler.TimeArbiter;
+import lombok.Getter;
 
 /**
  * Owns the timing and scheduled-task lifecycle for the two physical-input gestures that
@@ -59,11 +60,23 @@ public final class InputGestureTracker {
     private final long tapThresholdMs;
 
     private TimeArbiter.TaskHandle rightTask;
+    /**
+     * -- GETTER --
+     * Returns true
+     *  while a right-hold gesture is in progress.
+     */
+    @Getter
     private boolean rightHeld;
     private long rightStartMs;
     private long rightDurationMs;
 
     private TimeArbiter.TaskHandle sneakTask;
+    /**
+     * -- GETTER --
+     * Returns true
+     *  while a sneak-hold gesture is in progress.
+     */
+    @Getter
     private boolean sneakHeld;
     private long sneakStartMs;
     private long sneakDurationMs;
@@ -150,11 +163,6 @@ public final class InputGestureTracker {
         rightDurationMs = 0L;
     }
 
-    /** Returns {@code true} while a right-hold gesture is in progress. */
-    public boolean isRightHeld() {
-        return rightHeld;
-    }
-
     /**
      * Returns the duration of the most recent right-hold gesture in milliseconds.
      * Updated at {@link #releaseRightHold()} and stable between gestures.
@@ -220,11 +228,6 @@ public final class InputGestureTracker {
         sneakHeld = false;
         sneakStartMs = 0L;
         sneakDurationMs = 0L;
-    }
-
-    /** Returns {@code true} while a sneak-hold gesture is in progress. */
-    public boolean isSneakHeld() {
-        return sneakHeld;
     }
 
     /**

@@ -8,7 +8,7 @@ import org.bukkit.entity.Player;
 import btm.sword.Sword;
 import btm.sword.entity.player.SwordPlayer;
 import btm.sword.event.packet.MovementListener;
-import btm.sword.input.ActivationContext;
+import btm.sword.input.trie.ActivationContext;
 import btm.sword.runtime.scheduler.SwordScheduler;
 import btm.sword.scene.camera.CameraController;
 import btm.sword.scene.camera.CameraService;
@@ -92,6 +92,7 @@ public class DEUAnimationController extends CameraController {
         SpawnedDisplayAnimation animation = DisplayAnimationManager.getSpawnedDisplayAnimation(
             def.animTag(), LoadMethod.LOCAL
         );
+
         if (animation == null) {
             Sword.getInstance().getLogger().warning(
                 "[DEUAnimationController] Animation not found: " + def.animTag() + " — stopping controller."
