@@ -23,6 +23,7 @@ import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 import btm.sword.action.movement.DashDirection;
+import btm.sword.action.throwing.Lodgeable;
 import btm.sword.action.throwing.types.ThrownItem;
 import btm.sword.combat.attack.Attack;
 import btm.sword.combat.attack.UmbralBladeAttack;
@@ -70,7 +71,7 @@ import net.kyori.adventure.text.format.TextDecoration;
 // while flying and attacking on its own, no soulfire is reaped on attacks
 // while in hand, higher soulfire intake on hit
 /** The signature UmbralBlade weapon — a thrown item backed by a full FSM managing all combat states and visual transitions. */
-public class UmbralBlade extends ThrownItem {
+public class UmbralBlade extends ThrownItem implements Lodgeable {
     /** Type of dash-reclaim attack to perform on the next quick or heavy attack entry. */
     public enum ReclaimType {
         NONE,

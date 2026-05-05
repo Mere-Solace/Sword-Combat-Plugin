@@ -26,6 +26,7 @@ import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 import btm.sword.action.throwing.ImpactType;
+import btm.sword.action.throwing.Lodgeable;
 import btm.sword.action.throwing.ThrowAction;
 import btm.sword.action.throwing.impale.Impalement;
 import btm.sword.combat.hit.HitValuePacket;
@@ -62,7 +63,7 @@ import net.kyori.adventure.text.format.TextDecoration;
  */
 @Getter
 @Setter
-public class ThrownItem extends VisualProjectile {
+public class ThrownItem extends VisualProjectile implements Lodgeable {
     protected final Combatant thrower;
 
     protected Impalement thisImpalement;
@@ -320,6 +321,18 @@ public class ThrownItem extends VisualProjectile {
         } else {
             ItemUsageManager.damageItemStack(itemStack, onThrowHitDamageToItem, thrower.self());
         }
+    }
+
+    /**
+     * Returns the entity this thrown item is currently lodged in. Delegates to the inherited
+     * {@code hitEntity} field — preserves the pre-{@link Lodgeable} dispatch behavior that
+     * {@link btm.sword.action.throwing.InteractiveItemArbiter} relied on via {@code getHitEntity()}.
+     *
+     * @return the impaled entity, or {@code null} if not currently lodged
+     */
+    @Override
+    public SwordEntity getImpaledEntity() {
+        return hitEntity;
     }
 
     /**
