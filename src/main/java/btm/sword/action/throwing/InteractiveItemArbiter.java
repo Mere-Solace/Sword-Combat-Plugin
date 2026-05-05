@@ -83,7 +83,9 @@ public final class InteractiveItemArbiter {
     /** Returns {@code true} if the targeted item is not currently impaling the given entity. */
     public static boolean notImpaled(SwordEntity self, ItemDisplay targeted) {
         InteractiveItem thrown = INTERACTIVE_ITEMS.getOrDefault(targeted, null);
-        return !(thrown instanceof ThrownItem ti) || ti.getHitEntity() == null || !ti.getHitEntity().equals(self);
+        return !(thrown instanceof Lodgeable lodgeable)
+            || lodgeable.getImpaledEntity() == null
+            || !lodgeable.getImpaledEntity().equals(self);
     }
 
     /**
@@ -115,8 +117,8 @@ public final class InteractiveItemArbiter {
     public static void onGrab(ItemDisplay display, Combatant executor) {
         InteractiveItem interactiveItem = remove(display, false);
         if (interactiveItem == null) return;
-        if (interactiveItem instanceof ThrownItem thrownItem) {
-            thrownItem.setRetrieved(true);
+        if (interactiveItem instanceof Lodgeable lodgeable) {
+            lodgeable.setRetrieved(true);
         }
 
         // UmbralBlade manages its own item state (weapon/link/blade fields) and never populates
