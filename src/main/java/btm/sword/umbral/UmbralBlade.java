@@ -24,6 +24,7 @@ import org.joml.Vector3f;
 
 import btm.sword.action.movement.DashDirection;
 import btm.sword.action.throwing.Lodgeable;
+import btm.sword.action.throwing.impale.Impalement;
 import btm.sword.action.throwing.types.ThrownItem;
 import btm.sword.combat.attack.Attack;
 import btm.sword.combat.attack.UmbralBladeAttack;
@@ -45,6 +46,7 @@ import btm.sword.umbral.input.BladeRequest;
 import btm.sword.umbral.input.InputBuffer;
 import btm.sword.umbral.motion.BladeMotion;
 import btm.sword.umbral.motion.BladeMotionHost;
+import btm.sword.umbral.motion.drivers.ImpalementFollowDriver;
 import btm.sword.umbral.statemachine.UmbralStateMachine;
 import btm.sword.umbral.statemachine.state.AttackingHeavyState;
 import btm.sword.umbral.statemachine.state.AttackingQuickState;
@@ -698,6 +700,39 @@ public class UmbralBlade extends ThrownItem implements Lodgeable, BladeMotionHos
 
     @Override
     public void handleItemDamageAndCheckIfBroken() {}
+
+    /**
+     * Overrides the inherited impalement follow-task to install an {@link ImpalementFollowDriver}
+     * on this blade's {@link BladeMotion} instead of scheduling a {@code DisplayUtil} task.
+     * <p>
+     * Behavioral parity with the parent: bookkeeping for the {@link Impalement} record is preserved
+     * (registered on the hit entity and on this blade), and the driver tracks the hit entity with the
+     * same {@code heightOffset} / {@code followHead} resolution. The exit predicate watches the FSM
+     * — the driver reports DONE as soon as the blade leaves {@link LodgedState}.
+     */
+    @Override
+    public void impale(LivingEntity hit) {
+        setThisImpalement(new Impalement(hitEntity));
+        getThisImpalement().startShouldDisposeCheckTask(hitEntity, this);
+        hitEntity.addImpalement(getThisImpalement());
+
+        double max = hit.getEyeLocation().getY();
+        double feet = hit.getLocation().getY();
+        double diff = max - feet;
+        double heightOffset = Math.max(0, Math.min(cur.getY() - feet, hit.getHeight()));
+
+        boolean followHead = !Config.Combat.IMPALEMENT_HEAD_FOLLOW_EXCEPTIONS.contains(hitEntity.type())
+            && heightOffset >= diff * Config.Combat.IMPALEMENT_HEAD_ZONE_RATIO;
+
+        bladeMotion.install(new ImpalementFollowDriver(
+            hitEntity,
+            velocity.clone().normalize(),
+            heightOffset,
+            followHead,
+            () -> !inState(LodgedState.class),
+            2
+        ));
+    }
 
     @Override
     public void disposeWithNewInteractiveItem() {

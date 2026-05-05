@@ -66,6 +66,7 @@ public class LodgedState extends UmbralStateFacade {
 
     @Override
     public void onExit(UmbralBlade blade) {
+        blade.getBladeMotion().stop();
         blade.resetFlightState();
     }
 
