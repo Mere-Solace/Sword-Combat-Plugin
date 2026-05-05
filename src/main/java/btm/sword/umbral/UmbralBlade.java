@@ -43,6 +43,8 @@ import btm.sword.runtime.scheduler.TimeArbiter;
 import btm.sword.runtime.statemachine.State;
 import btm.sword.umbral.input.BladeRequest;
 import btm.sword.umbral.input.InputBuffer;
+import btm.sword.umbral.motion.BladeMotion;
+import btm.sword.umbral.motion.BladeMotionHost;
 import btm.sword.umbral.statemachine.UmbralStateMachine;
 import btm.sword.umbral.statemachine.state.AttackingHeavyState;
 import btm.sword.umbral.statemachine.state.AttackingQuickState;
@@ -71,7 +73,7 @@ import net.kyori.adventure.text.format.TextDecoration;
 // while flying and attacking on its own, no soulfire is reaped on attacks
 // while in hand, higher soulfire intake on hit
 /** The signature UmbralBlade weapon — a thrown item backed by a full FSM managing all combat states and visual transitions. */
-public class UmbralBlade extends ThrownItem implements Lodgeable {
+public class UmbralBlade extends ThrownItem implements Lodgeable, BladeMotionHost {
     /** Type of dash-reclaim attack to perform on the next quick or heavy attack entry. */
     public enum ReclaimType {
         NONE,
@@ -82,6 +84,15 @@ public class UmbralBlade extends ThrownItem implements Lodgeable {
 
     @Getter
     private final UmbralStateMachine bladeStateMachine;
+    /**
+     * Per-tick motion subsystem. Owns the currently-installed
+     * {@link btm.sword.umbral.motion.BladeMotionDriver} (if any) and is the single writer
+     * of the blade's world-space position via the {@link BladeMotionHost} bridge below.
+     * Initially {@link BladeMotion.State#IDLE IDLE}; states install drivers on entry and
+     * stop on exit.
+     */
+    @Getter
+    private final BladeMotion bladeMotion;
     @Getter
     private Function<Combatant, Attack>[] basicAttacks;
     @Getter
@@ -226,6 +237,8 @@ public class UmbralBlade extends ThrownItem implements Lodgeable {
         this.bladeStateMachine = new UmbralStateMachine(this, new SheathedState());
         bladeStateMachine.initTransitions();
 
+        this.bladeMotion = new BladeMotion(this);
+
         exitImpalementStatePredicate = blade -> !inState(LodgedState.class);
 
         endHoverPredicate = blade -> !bladeStateMachine.inState(new StandbyState());
@@ -266,15 +279,55 @@ public class UmbralBlade extends ThrownItem implements Lodgeable {
         return bladeStateMachine.getState().getClass().equals(clazz);
     }
 
-    /** Ticks the blade: disposes if the thrower is invalid, then advances the FSM by one tick. */
+    /**
+     * Ticks the blade: disposes if the thrower is invalid, advances the installed motion driver,
+     * then advances the FSM by one tick. Motion is ticked first so that states observe the
+     * post-tick blade position when their {@code onTick} runs.
+     */
     public void onTick() {
         if (thrower.isInvalid()) {
 //            thrower.message("Ending Umbral Blade");
             dispose();
         }
 
+        bladeMotion.tick();
+
         if (bladeStateMachine != null)
             bladeStateMachine.tick();
+    }
+
+    // -----------------------------------------------------------------------
+    // BladeMotionHost — bridge from the motion subsystem to this blade's display + thrower.
+    // Drivers never touch the ItemDisplay directly; every motion-driven write to the world
+    // routes through these methods so display-handle ownership stays with the blade.
+    // -----------------------------------------------------------------------
+
+    @Override
+    public Combatant thrower() {
+        return thrower;
+    }
+
+    @Override
+    public void teleportDisplay(Location location, Vector direction, int teleportDuration) {
+        if (display == null || !display.isValid()) return;
+        TimeArbiter.teleportDisplay(display, location, direction, teleportDuration,
+            UmbralBlade.class, 0);
+    }
+
+    @Override
+    public void setDisplayTransformation(Transformation transformation, int transformDuration) {
+        if (display == null || !display.isValid()) return;
+        TimeArbiter.setDisplayTransformation(display, transformation, transformDuration);
+    }
+
+    @Override
+    public Location currentDisplayLocation() {
+        return (display == null || !display.isValid()) ? null : display.getLocation();
+    }
+
+    @Override
+    public boolean isDisplayValid() {
+        return display != null && display.isValid();
     }
 
     // TODO: #240 - Make a method for calculating correct orientation of blade for edge to align with plane of swing on attack
@@ -655,6 +708,7 @@ public class UmbralBlade extends ThrownItem implements Lodgeable {
     public void dispose() {
         bladeStateMachine.getState().onExit(this);
         bladeStateMachine.setDeactivated(true);
+        bladeMotion.stop();
         if (display != null && display.isValid()) {
             display.remove();
         }
