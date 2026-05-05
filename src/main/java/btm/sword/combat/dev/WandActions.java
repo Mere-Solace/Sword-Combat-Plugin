@@ -3,6 +3,7 @@ package btm.sword.combat.dev;
 import btm.sword.combat.def.AttackInstance;
 import btm.sword.entity.base.Combatant;
 import btm.sword.entity.player.SwordPlayer;
+import btm.sword.input.trie.InputRegistrar;
 import btm.sword.menu.dev.AttackBrowserMenu;
 import btm.sword.menu.dev.AttackEditorMenu;
 import net.kyori.adventure.text.Component;
@@ -10,7 +11,7 @@ import net.kyori.adventure.text.format.NamedTextColor;
 
 /**
  * Static action helpers for volume-attack wand input bindings registered in
- * {@link btm.sword.input.InputRegistrar}.
+ * {@link InputRegistrar}.
  *
  * <h2>DROP+DROP — exit session</h2>
  * {@link #exitSession} stops whatever dev session is currently active (RECORDING,

@@ -1,4 +1,4 @@
-package btm.sword.input;
+package btm.sword.input.trie;
 
 import java.util.Collections;
 import java.util.LinkedList;
@@ -26,6 +26,7 @@ import btm.sword.config.Config;
 import btm.sword.entity.aspect.AspectType;
 import btm.sword.entity.base.Combatant;
 import btm.sword.entity.player.SwordPlayer;
+import btm.sword.input.InputType;
 import btm.sword.item.core.KeyRegistry;
 import btm.sword.util.misc.Debug;
 import btm.sword.util.misc.SwordTimeUnit;

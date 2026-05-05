@@ -25,9 +25,9 @@ import net.kyori.adventure.text.format.TextDecoration;
  * </pre>
  *
  * <p>Each category is tagged onto its {@link ItemStack} via
- * {@link KeyRegistry#STORAGE_BUTTON_KEY} and routed in
- * {@code SwordPlayer#handleItemInteraction} and
- * {@code SwordPlayer#handleInventoryInput}.</p>
+ * {@link KeyRegistry#STORAGE_BUTTON_KEY} and routed by the EARLY-phase
+ * {@code StorageButtonBinding} (input pipeline) and
+ * {@code SwordPlayer#handleInventoryInput} (inventory click pipeline).</p>
  *
  * <p>The {@link #loreSupplier} stored on each constant is a static default
  * (returns an empty list). Per-player dynamic lore is supplied by

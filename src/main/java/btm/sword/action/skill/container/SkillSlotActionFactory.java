@@ -7,7 +7,7 @@ import btm.sword.action.skill.type.ActiveSkill;
 import btm.sword.action.skill.type.impl.umbral.VoidLungeSkill;
 import btm.sword.entity.base.CombatProfile;
 import btm.sword.entity.player.SwordPlayer;
-import btm.sword.input.InputAction;
+import btm.sword.input.trie.InputAction;
 
 /**
  * Factory that builds {@link InputAction} instances for skill slots at runtime.

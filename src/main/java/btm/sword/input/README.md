@@ -12,6 +12,17 @@ The input execution system translates raw Minecraft player events (left-click, r
 
 | Class | Role |
 |---|---|
+| `InputListener` | Bukkit transport adapter. Each handler resolves the `SwordPlayer`, builds an `InputIntent`, calls `InputRouter.route`, and applies the returned `InputDecision` |
+| `InputIntent` | Sealed interface plus one record per input source (`Attack`, `Interact`, `InteractEntity`, `Drop`, `SneakBegin`, `SneakEnd`, `Swap`, `HotbarChange`) |
+| `InputDecision` | Record with a `cancelEvent` flag plus the `PASS` and `CANCEL` constants |
+| `InputRouter` | Static dispatcher. Owns every gameplay routing decision (suppression checks, usable gating, interactible-block fall-through, block-availability, throw cancellation, final dispatch into `SwordPlayer.act`) |
+| `InputGestureTracker` | Owns right-click and sneak hold lifecycle (timing, scheduled tasks, tap/hold dispatch) |
+| `ItemInputBinding` | Contract for per-item input intercepts. Defines `id`, `phase` (EARLY or AT_ROOT), `matches`, `dispatch` |
+| `ItemInputDispatchTable` | Static registry of bindings. Ordered first-match dispatch, called by `InputRouter` (EARLY) and `SwordPlayer.act` (AT_ROOT) |
+| `binding.InputBindingsRegistrar` | Registers all built-in bindings during `Sword.onEnable`; clears on `onDisable` |
+| `binding.MenuButtonBinding` | EARLY: opens `MainMenu` for `MAIN_MENU_BUTTON_KEY` items (suppresses SHIFT) |
+| `binding.StorageButtonBinding` | EARLY: opens the matching pouch menu for storage items |
+| `binding.AbilitySlotBinding` | AT_ROOT: dispatches the equipped active skill on LEFT click for `ACTIVE_1` / `ACTIVE_2` slots |
 | `InputType` | Enum of nine logical input signals |
 | `InputKey` | Record pairing an `InputType` with a set of allowed `SwordItemType`s and an optional accessibility predicate |
 | `InputExecutionTree` | The trie. Owns the root `InputNode`, traversal state, timeout timer, and HUD rendering |
@@ -21,6 +32,36 @@ The input execution system translates raw Minecraft player events (left-click, r
 | `InputActionExecutor` | Static helper. Exposes `ReadinessState readiness()` (full per-reason check), `canCast()` (delegates to `readiness()`), `soulfireStatusColor()`, and `execute()` |
 | `InputActionExecutor.ReadinessState` | Enum: `READY`, `ON_COOLDOWN`, `INSUFFICIENT_SOULFIRE`, `DISABLED`. Priority order: cooldown > disabled > soulfire |
 | `ActivationContext` | Enum of three player contexts (`NORMAL`, `STUNNED`, `CHANNELING`) used by node `visibleIf` predicates |
+
+### Layering
+
+```
+Bukkit event ── InputListener ──► InputIntent
+                                       │
+                                       ▼
+                                 InputRouter
+                                       │
+                                       ├── ItemInputDispatchTable.dispatch(EARLY)
+                                       │     (MenuButton, StorageButton, …)
+                                       │     → consumed → return InputDecision
+                                       │
+                                       ├── inventory mode suppression
+                                       ├── ItemClassifier.isUsable
+                                       ├── interactible-block fall-through
+                                       ├── isUnableToBlock display
+                                       └── SwordPlayer.act(InputType)
+                                                 │
+                                                 ├── ItemInputDispatchTable.dispatch(AT_ROOT)
+                                                 │     (AbilitySlot, …)
+                                                 │     → consumed → resetTree, return
+                                                 │
+                                                 └── inputExecutionTree.step(InputType)
+                                       │
+                                       ▼
+                                 InputDecision ──► InputListener.applyDecision (event.setCancelled)
+```
+
+Three Bukkit-event-ordering workarounds remain in `InputListener` because they are concerns of the transport layer rather than gameplay routing: right-click autorepeat suppression, spawn-egg restoration, and the 1-tick dispatch deferral on `PlayerInteractEvent`.
 
 Supporting classes outside this package:
 
@@ -284,12 +325,12 @@ SwordPlayer.act(InputType input)
     │     isGrabbing() + LEFT              → grab hit
     │     abilityCastTask != null          → return (blocked)
     │
-    ├── RIGHT input → startHoldingRight()
-    │     TimeArbiter task polls isHandRaised()
-    │     on release: timeRightHeld < 162 ms → act(RIGHT_TAP)
-    │                 timeRightHeld ≥ 162 ms → act(RIGHT_HOLD)
+    ├── RIGHT input → gestureTracker.startRightHold()
+    │     TimeArbiter task polls RightHoldHandler.shouldContinue()
+    │     on release: rightDurationMs < 162 ms → act(RIGHT_TAP)
+    │                 rightDurationMs ≥ 162 ms → act(RIGHT_HOLD)
     │
-    ├── SHIFT input → startSneaking()
+    ├── SHIFT input → gestureTracker.startSneak()
     │     Same timing logic → SHIFT_TAP or SHIFT_HOLD
     │
     ├── RIGHT_TAP / SHIFT_TAP → only proceed if nextExists(inputKey)
@@ -327,7 +368,25 @@ ActionCaster.cast(executor, castDurationMillis, () -> action.perform(executor))
 
 ### RIGHT and SHIFT Hold Detection
 
-`startHoldingRight()` replaces the main-hand item with gunpowder (to prevent Minecraft's vanilla use-item behavior from firing) and starts a `TimeArbiter` repeating task. The task polls `player.isHandRaised()` — when the player is no longer raising the shield/item (i.e., they released right-click), `endHoldingRight()` is called, elapsed time is recorded, and `act(RIGHT_TAP)` or `act(RIGHT_HOLD)` is fired depending on hold duration. Sneaking uses the same pattern but without item swapping.
+The `InputGestureTracker` owns the timing and scheduled-task lifecycle for both gestures. It exposes four explicit transitions per gesture (`start`, `release`, `abort`, plus the deferred `onReleased` callback fired by the scheduler) and dispatches lifecycle events through the `RightHoldHandler` and `SneakHandler` interfaces.
+
+`SwordPlayer` implements those handlers as anonymous classes:
+
+- `RightHoldHandler.onBegan()` — snapshots main + offhand stacks, captures the held slot, swaps in gunpowder when no umbral / ability / wand item is held (suppresses Minecraft's vanilla use-item behaviour).
+- `RightHoldHandler.onTick()` — restarts the trie timeout while not blocking (so the parry window is the only thing that closes naturally).
+- `RightHoldHandler.shouldContinue()` — returns `player.isHandRaised() || player.isBlocking()`. Returning false triggers a natural release.
+- `RightHoldHandler.onReleased(longPress)` — fires `act(RIGHT_HOLD)` if the duration met the 162 ms tap threshold, else `act(RIGHT_TAP)`.
+- `RightHoldHandler.onEnded()` — clears the blocking flag, cancels block drain, and restores the snapshotted main + offhand items.
+
+`SneakHandler` only implements `onTick()` (restart trie timeout) and `onReleased(longPress)` (fire `SHIFT_TAP` or `SHIFT_HOLD`). Snapshot/restore is unnecessary because no item swap occurs.
+
+The tracker guarantees:
+
+- `start*` is idempotent (no-op while already held).
+- `release*` is idempotent (no-op while not held).
+- `abort*` and `shutdown()` are idempotent and used during teardown.
+- `onEnded` runs synchronously inside `release*` so callers can restore inventory state before the deferred `onReleased` callback observes it.
+- While `held == true`, exactly one scheduled task exists.
 
 ---
 

@@ -5,7 +5,7 @@ import org.bukkit.inventory.ItemStack;
 
 import btm.sword.action.skill.Skill;
 import btm.sword.entity.base.Combatant;
-import btm.sword.input.InputAction;
+import btm.sword.input.trie.InputAction;
 import btm.sword.item.core.ItemStackBuilder;
 import lombok.Getter;
 import lombok.Setter;

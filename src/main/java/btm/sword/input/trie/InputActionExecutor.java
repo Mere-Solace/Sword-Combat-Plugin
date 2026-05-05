@@ -1,4 +1,4 @@
-package btm.sword.input;
+package btm.sword.input.trie;
 
 import btm.sword.action.constraint.ActionConstraint;
 import btm.sword.action.core.ActionCaster;

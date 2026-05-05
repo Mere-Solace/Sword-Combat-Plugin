@@ -3,9 +3,10 @@ package btm.sword.action.constraint;
 import java.util.function.Predicate;
 
 import btm.sword.entity.base.Combatant;
+import btm.sword.input.trie.InputAction;
 
 /**
- * A composable predicate evaluated before an {@link btm.sword.input.InputAction} may be cast.
+ * A composable predicate evaluated before an {@link InputAction} may be cast.
  * <p>
  * Constraints replace scattered {@code canPerform*()} calls in {@link Combatant} with
  * reusable, named conditions that can be declared inline in the input tree builder:

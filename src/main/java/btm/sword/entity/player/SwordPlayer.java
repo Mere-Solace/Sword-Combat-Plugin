@@ -41,15 +41,8 @@ import com.destroystokyo.paper.profile.PlayerProfile;
 
 import btm.sword.action.core.BlockAction;
 import btm.sword.action.core.UmbralBladeAction;
-import btm.sword.action.skill.Skill;
-import btm.sword.action.skill.SkillId;
 import btm.sword.action.skill.SkillIds;
-import btm.sword.action.skill.SkillRegistry;
 import btm.sword.action.skill.container.PlayerSkillContainer;
-import btm.sword.action.skill.container.SkillSlot;
-import btm.sword.action.skill.container.SkillSlotActionFactory;
-import btm.sword.action.skill.container.SkillSlotState;
-import btm.sword.action.skill.type.ActiveSkill;
 import btm.sword.action.skill.type.impl.charge.ChargeAction;
 import btm.sword.action.skill.type.impl.charge.ChargeSession;
 import btm.sword.action.throwing.ThrowAction;
@@ -59,20 +52,21 @@ import btm.sword.entity.aspect.AspectType;
 import btm.sword.entity.base.Combatant;
 import btm.sword.entity.base.SwordEntity;
 import btm.sword.entity.mob.Dummy;
-import btm.sword.input.ActivationContext;
-import btm.sword.input.InputAction;
-import btm.sword.input.InputActionExecutor;
-import btm.sword.input.InputBuffer;
-import btm.sword.input.InputExecutionTree;
-import btm.sword.input.InputListener;
-import btm.sword.input.InputRegistrar;
+import btm.sword.input.InputGestureTracker;
 import btm.sword.input.InputType;
+import btm.sword.input.binding.ItemInputBinding;
+import btm.sword.input.binding.ItemInputDispatchTable;
+import btm.sword.input.transport.InputListener;
+import btm.sword.input.trie.ActivationContext;
+import btm.sword.input.trie.InputAction;
+import btm.sword.input.trie.InputActionExecutor;
+import btm.sword.input.trie.InputExecutionTree;
+import btm.sword.input.trie.InputRegistrar;
 import btm.sword.item.core.ItemClass;
 import btm.sword.item.core.ItemClassifier;
 import btm.sword.item.core.ItemStackBuilder;
 import btm.sword.item.core.KeyRegistry;
 import btm.sword.item.core.StorageCategory;
-import btm.sword.item.core.SwordItemType;
 import btm.sword.item.special.AbilitySlotManager;
 import btm.sword.item.special.NonMovableItem;
 import btm.sword.item.special.SlotAnchoredItem;
@@ -114,6 +108,7 @@ import net.kyori.adventure.title.Title;
  */
 @Getter
 public class SwordPlayer extends Combatant {
+
     private final Player player;
     private final PlayerProfile profile;
     private final String username;
@@ -129,11 +124,11 @@ public class SwordPlayer extends Combatant {
     private SlotAnchoredItem questStorageButton;
     private final SlotAnchoredItem shieldItem;
     private final SlotAnchoredItem chestplateItem;
-    @Getter
+
     private final AbilitySlotManager abilitySlotManager;
 
     /** Active charge session for chargeable abilities, or {@code null} if not charging. */
-    @Getter
+
     @Setter
     private ChargeSession activeCharge;
 
@@ -155,7 +150,7 @@ public class SwordPlayer extends Combatant {
     private final HashSet<Dummy> yourDummies = new HashSet<>();
 
     private final InputExecutionTree inputExecutionTree;
-    private final InputBuffer inputBuffer;
+    private final InputGestureTracker gestureTracker;
     private final long baseInputTimeoutMillis = 1400L;
 
     /** Current input context; controls which action paths are visible in the execution tree. */
@@ -163,12 +158,11 @@ public class SwordPlayer extends Combatant {
     private ActivationContext activationContext = ActivationContext.NORMAL;
 
     /** Set to true by the damage pipeline when a healing channel is interrupted by incoming damage. */
-    @Getter
+
     @Setter
     private boolean channelInterrupted = false;
 
-    private boolean performedDropAction;
-    @Getter
+    private boolean performingDropInput;
     @Setter
     private ItemStack lastHeldItemBeforeDrop = ItemStack.of(Material.AIR);
     @Setter
@@ -177,6 +171,7 @@ public class SwordPlayer extends Combatant {
     private boolean interactingWithEntity;
     @Setter
     private boolean threwItem;
+
     @Setter
     private boolean blocking;
 
@@ -186,20 +181,16 @@ public class SwordPlayer extends Combatant {
 
     private TimeArbiter.TaskHandle blockDrainTask;
 
-    private TimeArbiter.TaskHandle rightClickHoldTask;
-    private boolean holdingRight;
-    private long rightHoldTimeStart;
-    private long timeRightHeld;
-    private ItemStack mainItemStackAtTimeOfHold;
-    private ItemStack offItemStackAtTimeOfHold;
-    private int indexOfRightHold;
+    /** Snapshot of the main-hand item taken when a right-hold begins. Read by throw + lunge actions. */
 
-    private TimeArbiter.TaskHandle sneakTask;
-    private boolean sneaking;
-    private long sneakHoldTimeStart;
-    private long timeSneakHeld;
+    private ItemStack mainItemStackAtTimeOfHold = ItemStack.of(Material.AIR);
+    /** Snapshot of the offhand item taken when a right-hold begins. Read by throw actions. */
 
-    @Getter
+    private ItemStack offItemStackAtTimeOfHold = ItemStack.of(Material.AIR);
+    /** Hotbar slot index that was held when the right-hold began. Used to restore the slot on release. */
+
+    private int indexOfRightHold = -1;
+
     @Setter
     private TimeArbiter.TaskHandle healChannelTask;
 
@@ -244,7 +235,6 @@ public class SwordPlayer extends Combatant {
     /** Snapshot of offhand slot (40) taken when creative dev mode is entered; restored on exit. */
     private ItemStack savedCreativeDevOffhand = null;
 
-    @Getter
     @Setter
     private CameraController activeCameraController;
 
@@ -326,26 +316,90 @@ public class SwordPlayer extends Combatant {
         updateManagedItems();
 
         inputExecutionTree = new InputExecutionTree(this);
-        inputBuffer = new InputBuffer();
+        gestureTracker = new InputGestureTracker(buildRightHoldHandler(), buildSneakHandler());
         InputRegistrar.initializeInputTree(inputExecutionTree.getRoot(), this);
         InputRegistrar.initializeMovementInputs(inputExecutionTree.getRoot());
 
-        performedDropAction = false;
+        performingDropInput = false;
         changingHandIndex = false;
         interactingWithEntity = false;
         threwItem = false;
 
-        holdingRight = false;
-        rightHoldTimeStart = 0L;
-        timeRightHeld = 0L;
-
-        sneaking = false;
-        sneakHoldTimeStart = 0L;
-        timeSneakHeld = 0L;
-
         thrownItemIndex = -1;
 
         inventoryMode = InventoryMode.NONE;
+    }
+
+    /**
+     * Builds the gesture handler that captures and restores the main-hand inventory state
+     * across a right-click hold gesture, and dispatches the deferred tap/hold input.
+     */
+    private InputGestureTracker.RightHoldHandler buildRightHoldHandler() {
+        return new InputGestureTracker.RightHoldHandler() {
+            @Override
+            public void onBegan() {
+                ItemStack mainHand = getItemStackInHand(true);
+                ItemStack offHand = getItemStackInHand(false);
+                mainItemStackAtTimeOfHold = mainHand == null ? ItemStack.of(Material.AIR) : mainHand.clone();
+                offItemStackAtTimeOfHold = offHand == null ? ItemStack.of(Material.AIR) : offHand.clone();
+                indexOfRightHold = getCurrentInvIndex();
+
+                if (!mainItemStackAtTimeOfHold.isEmpty()
+                        && !holdingUmbralItemInMainHand()
+                        && notHoldingAbilityItem()
+                        && !heldItemHasKey(KeyRegistry.TEST_VOLUME_ATTACK_KEY)) {
+                    setItemStackInHand(ItemStack.of(Material.GUNPOWDER), true);
+                }
+            }
+
+            @Override
+            public void onTick() {
+                // While blocking, let the trie timeout expire naturally — that closes the parry window.
+                if (!isBlocking()) inputExecutionTree.restartTimeoutTimer();
+            }
+
+            @Override
+            public boolean shouldContinue() {
+                return player.isHandRaised() || player.isBlocking();
+            }
+
+            @Override
+            public void onReleased(boolean longPress) {
+                act(longPress ? InputType.RIGHT_HOLD : InputType.RIGHT_TAP);
+            }
+
+            @Override
+            public void onEnded() {
+                setBlocking(false);
+                cancelBlockDrainTask();
+                setItemStackInHand(offItemStackAtTimeOfHold, false);
+                if (!threwItem && !holdingUmbralItemInMainHand()) {
+                    if (abilitySlotManager.isAbilityHeldSlot(indexOfRightHold)) {
+                        abilitySlotManager.restoreSlot(indexOfRightHold);
+                    } else if (!mainItemStackAtTimeOfHold.isEmpty()) {
+                        setItemAtIndex(mainItemStackAtTimeOfHold, indexOfRightHold);
+                    }
+                }
+            }
+        };
+    }
+
+    /**
+     * Builds the gesture handler for the sneak-hold gesture. The handler keeps the input
+     * trie timeout alive while sneaking and dispatches the deferred tap/hold input on release.
+     */
+    private InputGestureTracker.SneakHandler buildSneakHandler() {
+        return new InputGestureTracker.SneakHandler() {
+            @Override
+            public void onTick() {
+                inputExecutionTree.restartTimeoutTimer();
+            }
+
+            @Override
+            public void onReleased(boolean longPress) {
+                act(longPress ? InputType.SHIFT_HOLD : InputType.SHIFT_TAP);
+            }
+        };
     }
 
     /**
@@ -356,7 +410,6 @@ public class SwordPlayer extends Combatant {
     @Override
     protected void onTick() {
         super.onTick();
-        inputBuffer.tick();
 
         if (player.getHealth() > 0) updateVisualStats();
 
@@ -409,6 +462,8 @@ public class SwordPlayer extends Combatant {
      * Called when the player leaves the game.
      */
     public void onLeave() {
+        gestureTracker.shutdown();
+        cancelBlockDrainTask();
         if (activeCameraController != null) {
             activeCameraController.stop();
         }
@@ -502,9 +557,14 @@ public class SwordPlayer extends Combatant {
             + "\n           isAtRoot=" + isAtRoot()
             + "\n           notHoldingChargeable=" + !ChargeAction.isHoldingChargeable(this));
 
-        if (isAtRoot() && !ChargeAction.isHoldingChargeable(this) && handleAbilityInput(input)) {
-            resetTree();
-            return;
+        if (isAtRoot() && !ChargeAction.isHoldingChargeable(this)) {
+            ItemStack heldStack = getItemStackInHand(true);
+            if (ItemInputDispatchTable.dispatch(
+                    new ItemInputBinding.MatchContext(this, input, heldStack),
+                    ItemInputBinding.Phase.AT_ROOT)) {
+                resetTree();
+                return;
+            }
         }
 
         if (throwingState()) {
@@ -530,15 +590,11 @@ public class SwordPlayer extends Combatant {
         }
 
         if (input == InputType.RIGHT) {
-            if (rightClickHoldTask == null)
-                startHoldingRight();
-            else
-                return;
+            if (gestureTracker.isRightHeld()) return;
+            gestureTracker.startRightHold();
         } else if (input == InputType.SHIFT) {
-            if (sneakTask == null)
-                startSneaking();
-            else
-                return;
+            if (gestureTracker.isSneakHeld()) return;
+            gestureTracker.startSneak();
         }
 
         if (input == InputType.RIGHT_TAP || input == InputType.SHIFT_TAP) {
@@ -547,18 +603,18 @@ public class SwordPlayer extends Combatant {
 
         if (input == InputType.RIGHT_HOLD) {
             long minTime = inputExecutionTree.getMinHoldLengthOfNext(input);
-            if (minTime == -1 || timeRightHeld < minTime) {
+            if (minTime == -1 || gestureTracker.rightDurationMs() < minTime) {
                 if (throwingState()) ThrowAction.throwCancel(this);
                 return;
             }
         } else if (input == InputType.SHIFT_HOLD) {
             long minTime = inputExecutionTree.getMinHoldLengthOfNext(input);
-            if (minTime == -1 || timeSneakHeld < minTime) {
+            if (minTime == -1 || gestureTracker.sneakDurationMs() < minTime) {
                 return;
             }
         }
 
-        Debug.input("Line before step is resolved.");
+        Debug.input("Line before step is reached.");
 
         // The execution trie is only traversed if the code makes it here!
         InputExecutionTree.InputNode node = inputExecutionTree.step(input);
@@ -588,43 +644,6 @@ public class SwordPlayer extends Combatant {
     /** Returns {@code true} if the player's currently held item has an active cooldown. */
     public boolean isHeldItemOnCooldown() {
         return getItemStackInHand(true) instanceof ItemStack item && player.getCooldown(item) > 0;
-    }
-
-    private boolean handleAbilityInput(InputType input) {
-        int heldSlot = player.getInventory().getHeldItemSlot();
-
-        // Gate: is this even an ability slot? If not, let the normal input tree handle it.
-        SwordItemType itemType = abilitySlotManager.getActiveTypeForHeldSlot(heldSlot);
-        if (itemType == null) return false;
-
-        // From here on, this IS an ability slot (return true to consume the input)
-        if (input == InputType.LEFT) {
-            if (isHeldItemOnCooldown()) return true;
-
-            SkillSlot slot = itemType == SwordItemType.ACTIVE_1 ? SkillSlot.ACTIVE_1 : SkillSlot.ACTIVE_2;
-
-            InputAction action = SkillSlotActionFactory.create(this, slot, false);
-            if (action == null) return true;
-
-            SkillId equippedId = getCombatProfile().getPlayerSkillContainer().getEquipped(slot);
-            Skill skill = SkillRegistry.get(equippedId);
-            if (!(skill instanceof ActiveSkill active) || !active.canPerform(this)) return true;
-
-            SkillSlotState state = getCombatProfile().getPlayerSkillContainer().getSlotState(slot);
-            if (System.currentTimeMillis() < state.cooldownExpiresAt()) return true;
-
-            InputActionExecutor.execute(action, this);
-
-            abilitySlotManager.consumeUse(heldSlot);
-            long expiry = System.currentTimeMillis() + active.calculateCooldown(this);
-            SkillSlotState current = getCombatProfile().getPlayerSkillContainer().getSlotState(slot);
-            getCombatProfile().getPlayerSkillContainer().setSlotState(slot,
-                new SkillSlotState(current.remainingUses(), current.remainingDurability(), expiry));
-
-            return true;
-        } else {
-            return false;
-        }
     }
 
     @Override
@@ -912,39 +931,9 @@ public class SwordPlayer extends Combatant {
     }
 
     /**
-     * Dispatches an input event for items that carry a Sword-managed type key.
-     * This is the primary point of contact for typed-item input handling, called by
-     * {@link InputListener} before any class-based filtering or
-     * routing through {@link #act(InputType)}.
-     * <p>
-     * If this method returns {@code true}, the caller must cancel the originating Bukkit
-     * event and skip all further input processing — even if no action was taken (e.g.
-     * shift is suppressed for the menu button without opening the menu).
-     * </p>
-     *
-     * @param itemStack the item stack involved in the input; must not be null
-     * @param input     the input type being evaluated
-     * @return {@code true} if the input was fully handled and the event should be cancelled
-     */
-    public boolean handleItemInteraction(ItemStack itemStack, InputType input) {
-        if (KeyRegistry.hasKey(itemStack, KeyRegistry.MAIN_MENU_BUTTON_KEY)) {
-            if (input != InputType.SHIFT) {
-                InventoryMenuManager.openMenu(MainMenu.class, this);
-            }
-            return true;
-        }
-
-        StorageCategory category = StorageCategory.fromItem(itemStack);
-        if (category != null) {
-            openMenuForCategory(category);
-            return true;
-        }
-        return false;
-    }
-
-    /**
      * Opens the menu associated with the given {@link StorageCategory}.
-     * Shared by {@link #handleItemInteraction} and {@link #tryOpenMenuForItem}.
+     * Shared by {@link #tryOpenMenuForItem} and the EARLY-phase
+     * {@link btm.sword.input.binding.StorageButtonBinding}.
      *
      * @param category the storage category whose menu to open
      */
@@ -961,7 +950,8 @@ public class SwordPlayer extends Combatant {
      * corresponding menu and returns {@code true}. Returns {@code false} otherwise.
      *
      * <p>Intended for inventory-click context where there is no SHIFT carve-out.
-     * The main-menu SHIFT suppression is handled separately in {@link #handleItemInteraction}.</p>
+     * The main-menu SHIFT suppression is handled separately by the EARLY-phase
+     * {@link btm.sword.input.binding.MenuButtonBinding}.</p>
      *
      * @param item the item to inspect; may be null
      * @return {@code true} if a menu was opened
@@ -1138,15 +1128,6 @@ public class SwordPlayer extends Combatant {
             .build();
     }
 
-    /**
-     * Checks if the player has performed a drop action recently.
-     *
-     * @return true if a drop action was performed, false otherwise
-     */
-    public boolean hasPerformedDropAction() {
-        return performedDropAction;
-    }
-
     /** Clears the active item and applies a cooldown to the off-hand item for the given number of ticks. */
     public void disableShield(int ticks) {
         self.clearActiveItem();
@@ -1161,13 +1142,13 @@ public class SwordPlayer extends Combatant {
     @Override
     public boolean holdingUmbralBlade() {
         return super.holdingUmbralBlade() ||
-            (isPerformedDropAction() && KeyRegistry.hasKey(getLastHeldItemBeforeDrop(), KeyRegistry.UMBRAL_BLADE_KEY));
+            (isPerformingDropInput() && KeyRegistry.hasKey(getLastHeldItemBeforeDrop(), KeyRegistry.UMBRAL_BLADE_KEY));
     }
 
     @Override
     public boolean holdingSoulLink() {
         return super.holdingSoulLink() ||
-            (isPerformedDropAction() && KeyRegistry.hasKey(getLastHeldItemBeforeDrop(), KeyRegistry.SOUL_LINK_KEY));
+            (isPerformingDropInput() && KeyRegistry.hasKey(getLastHeldItemBeforeDrop(), KeyRegistry.SOUL_LINK_KEY));
     }
 
     /** Returns {@code true} if the player's currently held slot is not an ability slot. */
@@ -1226,12 +1207,12 @@ public class SwordPlayer extends Combatant {
      * Returns {@code true} if the player's held item has the given persistent data key.
      *
      * <p>During a drop event the item is temporarily removed from the hand before the
-     * event is cancelled. When {@link #isPerformedDropAction()} is {@code true}, the
+     * event is cancelled. When {@link #isPerformingDropInput()} is {@code true}, the
      * pre-drop item stored in {@link #getLastHeldItemBeforeDrop()} is checked instead,
      * matching the same pattern used by {@link #holdingUmbralBlade()}.</p>
      */
     public boolean heldItemHasKey(NamespacedKey key) {
-        ItemStack item = isPerformedDropAction() ? getLastHeldItemBeforeDrop() : getItemStackInHand(true);
+        ItemStack item = isPerformingDropInput() ? getLastHeldItemBeforeDrop() : getItemStackInHand(true);
         return KeyRegistry.hasKey(item, key);
     }
 
@@ -1496,134 +1477,31 @@ public class SwordPlayer extends Combatant {
     }
 
     /**
-     * Starts holding the start mouse button, tracking the hold time and managing state.
-     * Changes the player's main hand item to a placeholder while holding (gunpowder).
+     * Returns {@code true} while a right-click hold gesture is in progress.
+     * Backed by {@link InputGestureTracker#isRightHeld()}.
      */
-    public void startHoldingRight() {
-        if (holdingRight) return;
-
-        if (rightClickHoldTask != null && !rightClickHoldTask.isCancelled()) rightClickHoldTask.cancel();
-
-        holdingRight = true;
-        rightHoldTimeStart = System.currentTimeMillis();
-
-        ItemStack mainHand = getItemStackInHand(true);
-        ItemStack offHand = getItemStackInHand(false);
-        mainItemStackAtTimeOfHold = mainHand == null ? ItemStack.of(Material.AIR) : mainHand.clone();
-        offItemStackAtTimeOfHold = offHand == null ? ItemStack.of(Material.AIR) : offHand.clone();
-
-        indexOfRightHold = getCurrentInvIndex();
-
-        if (!mainItemStackAtTimeOfHold.isEmpty() &&
-            !holdingUmbralItemInMainHand() &&
-            notHoldingAbilityItem() &&
-            !heldItemHasKey(KeyRegistry.TEST_VOLUME_ATTACK_KEY)) {
-            setItemStackInHand(ItemStack.of(Material.GUNPOWDER), true); // can change the logic here later
-        }
-
-
-        rightClickHoldTask = TimeArbiter.runTimeIndependentBukkitTaskOnTimer(
-            () -> {
-                // While blocking, let the trie timeout expire naturally — that closes the parry window.
-                // For all other right-hold scenarios (throw ready, etc.) keep the timer alive.
-                if (!isBlocking()) inputExecutionTree.restartTimeoutTimer();
-                // player must ALWAYS be holding a shield in offhand, then... I can work with this though
-                if (!player.isHandRaised() && !player.isBlocking()) {
-                    endHoldingRight();
-                }
-            },
-            null,
-            100, 50,
-            SwordPlayer.class, "startHoldingRight",
-            new PredicateRunnablePair(
-                () -> !holdingRight,
-                () -> {
-                    if (timeRightHeld < 162)
-                        act(InputType.RIGHT_TAP);
-                    else
-                        act(InputType.RIGHT_HOLD);
-                    resetHoldingRight();
-                }
-            )
-        );
+    public boolean isHoldingRight() {
+        return gestureTracker.isRightHeld();
     }
 
     /**
-     * Resets the holding start state and cancels the associated task.
-     */
-    public void resetHoldingRight() {
-        rightClickHoldTask = null;
-        holdingRight = false;
-        rightHoldTimeStart = 0L;
-        timeRightHeld = 0L;
-        setBlocking(false);
-        cancelBlockDrainTask();
-    }
-
-    /**
-     * Ends holding start-click input, restoring item stacks appropriately.
+     * Releases the right-hold gesture. The deferred tap or hold input fires on the next
+     * scheduler tick after inventory state has been restored. Safe to call when no hold is
+     * active.
+     * <p>
+     * Used by external systems (e.g. {@link btm.sword.action.throwing.types.ThrownItem})
+     * that need to terminate a right-hold from outside the input layer.
      */
     public void endHoldingRight() {
-        holdingRight = false;
-        timeRightHeld = System.currentTimeMillis() - rightHoldTimeStart;
-        setBlocking(false);
-        cancelBlockDrainTask();
-        setItemStackInHand(offItemStackAtTimeOfHold, false);
-        if (!threwItem && !holdingUmbralItemInMainHand()) {
-            if (abilitySlotManager.isAbilityHeldSlot(indexOfRightHold)) {
-                abilitySlotManager.restoreSlot(indexOfRightHold);
-            }
-            else if (!mainItemStackAtTimeOfHold.isEmpty()) {
-                setItemAtIndex(mainItemStackAtTimeOfHold, indexOfRightHold);
-            }
-        }
+        gestureTracker.releaseRightHold();
     }
 
     /**
-     * Starts sneaking state, tracking the hold time and scheduling updates.
-     */
-    public void startSneaking() {
-        if (sneaking) return;
-
-        if (sneakTask != null && !sneakTask.isCancelled()) sneakTask.cancel();
-
-        sneaking = true;
-        sneakHoldTimeStart = System.currentTimeMillis();
-
-        sneakTask = TimeArbiter.runTimeIndependentBukkitTaskOnTimer(
-            inputExecutionTree::restartTimeoutTimer,
-            null,
-            0, 50,
-            SwordPlayer.class, "startSneaking",
-            new PredicateRunnablePair(
-                () -> !sneaking,
-                () -> {
-                    if (timeSneakHeld < 162)
-                        act(InputType.SHIFT_TAP);
-                    else
-                        act(InputType.SHIFT_HOLD);
-                    resetSneaking();
-                }
-            )
-        );
-    }
-
-    /**
-     * Resets sneaking state and cancels the associated task.
-     */
-    public void resetSneaking() {
-        sneakTask = null;
-        sneaking = false;
-        sneakHoldTimeStart = 0L;
-        timeSneakHeld = 0L;
-    }
-
-    /**
-     * Ends sneaking state and calculates how long the player sneaked.
+     * Releases the sneak-hold gesture. The deferred tap or hold input fires on the next
+     * scheduler tick. Safe to call when no sneak is active.
      */
     public void endSneaking() {
-        sneaking = false;
-        timeSneakHeld = System.currentTimeMillis() - sneakHoldTimeStart;
+        gestureTracker.releaseSneak();
     }
 
     /**
@@ -1704,10 +1582,10 @@ public class SwordPlayer extends Combatant {
     }
 
     /** Marks that the player has performed a drop action; automatically resets after 100 ms. */
-    public void setPerformedDropAction() {
-        performedDropAction = true;
+    public void setPerformingDropInput() {
+        performingDropInput = true;
         SwordScheduler.runBukkitTaskLater(
-            () -> performedDropAction = false,
+            () -> performingDropInput = false,
             100, TimeUnit.MILLISECONDS
         );
     }

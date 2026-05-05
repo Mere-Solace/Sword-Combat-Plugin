@@ -1,5 +1,7 @@
 package btm.sword.input;
 
+import btm.sword.input.trie.InputExecutionTree;
+
 /** Enumerates all discrete player inputs that can be routed through the {@link InputExecutionTree}. */
 public enum InputType {
     LEFT,

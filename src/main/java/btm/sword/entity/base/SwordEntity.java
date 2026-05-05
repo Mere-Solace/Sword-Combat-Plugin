@@ -42,7 +42,7 @@ import btm.sword.entity.arbiter.SwordEntityArbiter;
 import btm.sword.entity.aspect.AspectType;
 import btm.sword.entity.player.SwordPlayer;
 import btm.sword.entity.team.SwordTeam;
-import btm.sword.input.ActivationContext;
+import btm.sword.input.trie.ActivationContext;
 import btm.sword.runtime.lifecycle.EntityController;
 import btm.sword.runtime.scheduler.PredicateRunnablePair;
 import btm.sword.runtime.scheduler.SwordScheduler;
