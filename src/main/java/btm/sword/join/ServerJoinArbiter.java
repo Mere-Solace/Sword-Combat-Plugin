@@ -113,9 +113,7 @@ public final class ServerJoinArbiter implements Listener {
      */
     private static void stagePlayer(Player player, UUID uuid) {
         Optional<Location> slot = MenuSlotGrid.acquireSlot(uuid);
-        if (slot.isPresent()) {
-            player.teleport(slot.get());
-        }
+        slot.ifPresent(player::teleport);
 
         player.setGameMode(GameMode.SURVIVAL);
         player.setInvisible(true);
@@ -168,7 +166,7 @@ public final class ServerJoinArbiter implements Listener {
     private static Location spawnpointLocation() {
         World world = Bukkit.getWorld(Config.JoinSequence.WORLD);
         if (world == null && !Bukkit.getWorlds().isEmpty()) {
-            world = Bukkit.getWorlds().get(0);
+            world = Bukkit.getWorlds().getFirst();
         }
         if (world == null) return null;
         return new Location(
