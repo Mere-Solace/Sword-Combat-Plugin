@@ -1,30 +1,29 @@
 package btm.sword.umbral;
 
-import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-import org.bukkit.FluidCollisionMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Particle;
+import org.bukkit.block.Block;
 import org.bukkit.entity.Display;
 import org.bukkit.entity.ItemDisplay;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
-import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Transformation;
 import org.bukkit.util.Vector;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 import btm.sword.action.movement.DashDirection;
+import btm.sword.action.throwing.InteractiveItem;
 import btm.sword.action.throwing.Lodgeable;
 import btm.sword.action.throwing.impale.Impalement;
-import btm.sword.action.throwing.types.ThrownItem;
 import btm.sword.combat.attack.Attack;
 import btm.sword.combat.attack.UmbralBladeAttack;
 import btm.sword.combat.style.AttackType;
@@ -59,11 +58,8 @@ import btm.sword.umbral.statemachine.state.SheathedState;
 import btm.sword.umbral.statemachine.state.StandbyState;
 import btm.sword.umbral.statemachine.state.WaitingState;
 import btm.sword.umbral.statemachine.state.WieldState;
-import btm.sword.util.display.DrawUtil;
 import btm.sword.util.display.ParticleWrapper;
-import btm.sword.util.math.BezierUtil;
 import btm.sword.util.math.ControlVectors;
-import btm.sword.util.math.VectorUtil;
 import btm.sword.util.misc.Debug;
 import btm.sword.util.prefab.Prefab;
 import lombok.Getter;
@@ -71,60 +67,77 @@ import lombok.Setter;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextDecoration;
 
-// while flying and attacking on its own, no soulfire is reaped on attacks
-// while in hand, higher soulfire intake on hit
-/** The signature UmbralBlade weapon — a thrown item backed by a full FSM managing all combat states and visual transitions. */
-public class UmbralBlade extends ThrownItem implements Lodgeable, BladeMotionHost {
+/**
+ * The signature UmbralBlade weapon — coordinator of a layered FSM-driven combat system.
+ *
+ * <p>Composed of four strictly-owned subsystems:
+ * <ul>
+ *   <li>{@link BladeIdentity} — immutable thrower / weapon / link / blade tuple (existence)</li>
+ *   <li>{@link BladeDisplay} — single owner of the {@link ItemDisplay} entity (presentation)</li>
+ *   <li>{@link BladeMotion} — single writer of world-space position via pluggable drivers (motion)</li>
+ *   <li>{@link UmbralStateMachine} — intent / time progression (behavior)</li>
+ * </ul>
+ *
+ * <p>Implements {@link InteractiveItem} and {@link Lodgeable} directly — no inheritance from
+ * {@code ThrownItem}. The blade does not participate in the parent throw/flight pipeline; its
+ * lunge motion is driven by an FSM-installed {@code LungingDriver} on the motion subsystem.</p>
+ *
+ * <p>Lifecycle: {@code UNINITIALIZED -> ALIVE -> DISPOSED}. {@link #dispose} is idempotent.</p>
+ */
+public class UmbralBlade implements InteractiveItem, Lodgeable, BladeMotionHost {
+
     /** Type of dash-reclaim attack to perform on the next quick or heavy attack entry. */
     public enum ReclaimType {
         NONE,
-        CIRCULAR_SLASH, // in waiting state
-        EVISCERATE, // If pulling from Lodged
-        FORWARD_RUSH // otherwise?
+        CIRCULAR_SLASH,
+        EVISCERATE,
+        FORWARD_RUSH
     }
 
-    @Getter
-    private final UmbralStateMachine bladeStateMachine;
-    /**
-     * Per-tick motion subsystem. Owns the currently-installed
-     * {@link btm.sword.umbral.motion.BladeMotionDriver} (if any) and is the single writer
-     * of the blade's world-space position via the {@link BladeMotionHost} bridge below.
-     * Initially {@link BladeMotion.State#IDLE IDLE}; states install drivers on entry and
-     * stop on exit.
-     */
-    @Getter
-    private final BladeMotion bladeMotion;
-    /**
-     * Single owner of the underlying {@link ItemDisplay} handle for this blade. All umbral-side
-     * presentation operations (teleport / transformation / bobbing / spawn / dispose) route
-     * through this wrapper. The inherited {@code display} field on {@link ThrownItem}'s parents
-     * remains alive transitionally because inherited physics methods still read it; both fields
-     * point to the same {@code ItemDisplay} handle and are synced on respawn/dispose. The
-     * inherited field is removed entirely when inheritance is severed in step 9.
-     */
-    @Getter
-    private final BladeDisplay bladeDisplay;
-    @Getter
-    private Function<Combatant, Attack>[] basicAttacks;
-    @Getter
-    private int currentComboStep = -1;
+    // -----------------------------------------------------------------------
+    // Identity & subsystems (immutable references for the lifetime of the blade)
+    // -----------------------------------------------------------------------
 
     /**
-     * Immutable identity of this blade — thrower, original weapon, soul-link anchor, and visual
-     * blade item. Constructed once in the UmbralBlade constructor and never mutated. All
-     * identity-related accessors delegate to this record.
+     * Immutable identity — thrower, original weapon, soul-link anchor, visual blade item.
+     * Constructed once in the constructor and never mutated.
      */
     @Getter
     private final BladeIdentity identity;
 
+    /**
+     * Per-tick motion subsystem. Owns the currently-installed
+     * {@link btm.sword.umbral.motion.BladeMotionDriver} and is the single writer of the blade's
+     * world-space position via the {@link BladeMotionHost} bridge below.
+     */
     @Getter
-    @Setter
-    private long lastActionTime = 0;
+    private final BladeMotion bladeMotion;
 
+    /**
+     * Single owner of the underlying {@link ItemDisplay} handle. All presentation operations
+     * route through this wrapper.
+     */
+    @Getter
+    private final BladeDisplay bladeDisplay;
+
+    /** Finite state machine driving the blade's behavioral states. */
+    @Getter
+    private final UmbralStateMachine bladeStateMachine;
+
+    /** Initial display setup consumer; reused by {@link #resetWeaponDisplay}. */
+    private final Consumer<ItemDisplay> displaySetup;
+
+    // -----------------------------------------------------------------------
+    // Combat configuration
+    // -----------------------------------------------------------------------
+
+    @Getter
+    private Function<Combatant, Attack>[] basicAttacks;
+    @Getter
+    private int currentComboStep = -1;
     @Getter
     private final Vector3f scale = new Vector3f(
         (float) Config.UmbralBlade.SCALE_X, (float) Config.UmbralBlade.SCALE_Y, (float) Config.UmbralBlade.SCALE_Z);
-
     @Getter
     private final Predicate<UmbralBlade> endHoverPredicate;
     @Getter
@@ -132,7 +145,6 @@ public class UmbralBlade extends ThrownItem implements Lodgeable, BladeMotionHos
     @Getter
     @Setter
     private boolean attackCompleted = false;
-
     @Getter
     @Setter
     private ControlVectors ctrlPointsForLunge;
@@ -156,12 +168,104 @@ public class UmbralBlade extends ThrownItem implements Lodgeable, BladeMotionHos
 
     /**
      * Tracks whether the blade item (true) or the link item (false) should occupy slot 0.
-     * Set by state transitions — independent of actual inventory contents so player
-     * manipulation cannot desync it.
+     * Independent of actual inventory contents so player manipulation cannot desync it.
      */
     @Getter
     @Setter
     private boolean bladeWielded = false;
+
+    @Getter
+    @Setter
+    private long lastActionTime = 0;
+
+    // -----------------------------------------------------------------------
+    // Impalement bookkeeping (set by the lunge collision pipeline; read by FSM transitions)
+    // -----------------------------------------------------------------------
+
+    /**
+     * The entity most recently struck by a lunge. Set by the lunge {@code onEntity} callback;
+     * read by FSM transitions to drive the LungingState/GrabImpaleState -> LodgedState branch.
+     */
+    @Getter
+    @Setter
+    private SwordEntity hitEntity;
+
+    /**
+     * The blade's velocity direction at the moment of the last hit. Captured by lunge drivers
+     * and read by FSM knockback computations and {@link #impale}.
+     */
+    private Vector lastVelocity = new Vector();
+
+    /**
+     * Whether the blade has been flagged as retrieved. Debounced by {@link #setRetrieved} to
+     * preserve the legacy 60 ms hold-window behavior.
+     */
+    @Getter
+    private boolean retrieved;
+
+    /** The active {@link Impalement} record while the blade is in {@link LodgedState}. */
+    @Getter
+    @Setter
+    private Impalement thisImpalement;
+
+    /**
+     * Predicate tested by the {@link ImpalementFollowDriver} to decide when impalement ends.
+     * Composed at the blade level so the driver remains FSM-agnostic.
+     */
+    @Getter
+    private final Predicate<UmbralBlade> exitImpalementStatePredicate;
+
+    // -----------------------------------------------------------------------
+    // Lifecycle
+    // -----------------------------------------------------------------------
+
+    private boolean disposed = false;
+
+    // -----------------------------------------------------------------------
+    // Construction
+    // -----------------------------------------------------------------------
+
+    /** Constructs the UmbralBlade, spawning its display and initialising the FSM and attack chains. */
+    public UmbralBlade(Combatant thrower, ItemStack weapon) {
+        this.displaySetup = display -> {
+            display.setItemStack(weapon);
+            display.setTransformation(new Transformation(
+                new Vector3f(0.28f, -1.35f, -0.5f),
+                new Quaternionf().rotationY((float) Math.PI / 2).rotateZ(-(float) Math.PI / (1.65f)),
+                new Vector3f(0.85f, 1.3f, 1f),
+                new Quaternionf()
+            ));
+            display.setPersistent(false);
+            thrower.self().addPassenger(display);
+            display.setBillboard(Display.Billboard.FIXED);
+        };
+
+        this.bladeDisplay = new BladeDisplay(scale);
+        this.bladeDisplay.respawn(thrower.self(), displaySetup);
+
+        this.identity = new BladeIdentity(thrower, weapon, createLinkItem(thrower), createBladeItem(thrower, weapon));
+
+        this.attackEndCallback = () -> attackCompleted = true;
+
+        loadBasicAttacks();
+
+        this.bladeStateMachine = new UmbralStateMachine(this, new SheathedState());
+        bladeStateMachine.initTransitions();
+
+        this.bladeMotion = new BladeMotion(this);
+
+        this.exitImpalementStatePredicate = blade -> !inState(LodgedState.class);
+        this.endHoverPredicate = blade -> !bladeStateMachine.inState(new StandbyState());
+    }
+
+    // -----------------------------------------------------------------------
+    // Identity-derived accessors
+    // -----------------------------------------------------------------------
+
+    /** Returns the blade's owning {@link Combatant}. */
+    public Combatant getThrower() {
+        return identity.thrower();
+    }
 
     /** Returns the original weapon {@link ItemStack} the blade was created from. */
     public ItemStack getWeapon() {
@@ -176,18 +280,12 @@ public class UmbralBlade extends ThrownItem implements Lodgeable, BladeMotionHos
     /**
      * Returns the Soul Link {@link ItemStack} for use as an inventory item.
      * Use {@link #getLinkAnchor()} when slot-restoration logic is needed.
-     *
-     * @return the Soul Link ItemStack
      */
     public ItemStack getLink() {
         return identity.link().getItemStack();
     }
 
-    /**
-     * Returns the {@link SoulLinkItem} anchor for slot-restoration and satisfaction checks.
-     *
-     * @return the Soul Link anchor
-     */
+    /** Returns the {@link SoulLinkItem} anchor for slot-restoration and satisfaction checks. */
     public SoulLinkItem getLinkAnchor() {
         return identity.link();
     }
@@ -195,8 +293,6 @@ public class UmbralBlade extends ThrownItem implements Lodgeable, BladeMotionHos
     /**
      * Returns the correct {@link ItemStack} for slot 0 based on the internal
      * {@link #bladeWielded} flag — the blade when active, the link otherwise.
-     *
-     * @return the ItemStack that should currently occupy slot 0
      */
     public ItemStack getExpectedSlotItem() {
         return bladeWielded ? identity.blade() : getLink();
@@ -207,7 +303,7 @@ public class UmbralBlade extends ThrownItem implements Lodgeable, BladeMotionHos
      * Ensures slot 0 contains the correct item based on {@link #bladeWielded}.
      */
     public void purgeStrayItems() {
-        if (!(thrower instanceof SwordPlayer sp)) return;
+        if (!(identity.thrower() instanceof SwordPlayer sp)) return;
         org.bukkit.inventory.PlayerInventory inv = sp.getPlayer().getInventory();
 
         for (int i = 1; i < inv.getSize(); i++) {
@@ -219,7 +315,6 @@ public class UmbralBlade extends ThrownItem implements Lodgeable, BladeMotionHos
             }
         }
 
-        // Ensure slot 0 has the correct item
         ItemStack slot0 = inv.getItem(0);
         ItemStack expected = getExpectedSlotItem();
         NamespacedKey expectedKey = bladeWielded ? KeyRegistry.UMBRAL_BLADE_KEY : KeyRegistry.SOUL_LINK_KEY;
@@ -228,42 +323,9 @@ public class UmbralBlade extends ThrownItem implements Lodgeable, BladeMotionHos
         }
     }
 
-    /** Constructs the UmbralBlade, spawning its display entity and initialising the FSM and attack chains. */
-    public UmbralBlade(Combatant thrower, ItemStack weapon) {
-        super(thrower, display -> {
-            display.setItemStack(weapon);
-            display.setTransformation(new Transformation(
-                    new Vector3f(0.28f, -1.35f, -0.5f),
-                    new Quaternionf().rotationY((float) Math.PI / 2).rotateZ(-(float) Math.PI / (1.65f)),
-                    new Vector3f(0.85f, 1.3f, 1f),
-                    new Quaternionf()
-            ));
-            display.setPersistent(false);
-
-            thrower.self().addPassenger(display);
-            display.setBillboard(Display.Billboard.FIXED);
-        });
-
-        // TODO: Removed the setup call; must set up elsewhere now.
-
-        this.bladeDisplay = new BladeDisplay(scale);
-        this.bladeDisplay.adopt(display);
-
-        this.identity = new BladeIdentity(thrower, weapon, createLinkItem(thrower), createBladeItem(thrower, weapon));
-
-        this.attackEndCallback = () -> attackCompleted = true;
-
-        loadBasicAttacks();
-
-        this.bladeStateMachine = new UmbralStateMachine(this, new SheathedState());
-        bladeStateMachine.initTransitions();
-
-        this.bladeMotion = new BladeMotion(this);
-
-        exitImpalementStatePredicate = blade -> !inState(LodgedState.class);
-
-        endHoverPredicate = blade -> !bladeStateMachine.inState(new StandbyState());
-    }
+    // -----------------------------------------------------------------------
+    // Input request API
+    // -----------------------------------------------------------------------
 
     /** Pushes the given request into the input buffer for evaluation on the next FSM tick. */
     public void request(BladeRequest request) {
@@ -278,9 +340,7 @@ public class UmbralBlade extends ThrownItem implements Lodgeable, BladeMotionHos
     /** Returns {@code true} if any of the given requests is present in the input buffer. */
     public boolean isRequested(BladeRequest... requests) {
         for (BladeRequest request : requests) {
-            if (inputBuffer.consumeIfPresent(request)) {
-                return true;
-            }
+            if (inputBuffer.consumeIfPresent(request)) return true;
         }
         return false;
     }
@@ -292,7 +352,7 @@ public class UmbralBlade extends ThrownItem implements Lodgeable, BladeMotionHos
 
     /** Returns {@code true} if this blade belongs to the given combatant. */
     public boolean isOwnedBy(Combatant combatant) {
-        return combatant.getUniqueId().equals(thrower.getUniqueId());
+        return combatant.getUniqueId().equals(identity.thrower().getUniqueId());
     }
 
     /** Returns {@code true} if the FSM is currently in the given state class. */
@@ -300,32 +360,32 @@ public class UmbralBlade extends ThrownItem implements Lodgeable, BladeMotionHos
         return bladeStateMachine.getState().getClass().equals(clazz);
     }
 
+    // -----------------------------------------------------------------------
+    // Per-tick orchestration
+    // -----------------------------------------------------------------------
+
     /**
      * Ticks the blade: disposes if the thrower is invalid, advances the installed motion driver,
      * then advances the FSM by one tick. Motion is ticked first so that states observe the
      * post-tick blade position when their {@code onTick} runs.
      */
     public void onTick() {
-        if (thrower.isInvalid()) {
-//            thrower.message("Ending Umbral Blade");
+        if (disposed) return;
+        if (identity.thrower().isInvalid()) {
             dispose();
+            return;
         }
-
         bladeMotion.tick();
-
-        if (bladeStateMachine != null)
-            bladeStateMachine.tick();
+        bladeStateMachine.tick();
     }
 
     // -----------------------------------------------------------------------
     // BladeMotionHost — bridge from the motion subsystem to this blade's display + thrower.
-    // Drivers never touch the ItemDisplay directly; every motion-driven write to the world
-    // routes through these methods so display-handle ownership stays with the blade.
     // -----------------------------------------------------------------------
 
     @Override
     public Combatant thrower() {
-        return thrower;
+        return identity.thrower();
     }
 
     @Override
@@ -348,6 +408,54 @@ public class UmbralBlade extends ThrownItem implements Lodgeable, BladeMotionHos
         return bladeDisplay.isValid();
     }
 
+    // -----------------------------------------------------------------------
+    // InteractiveItem — required for legacy world-item integration paths
+    // -----------------------------------------------------------------------
+
+    @Override
+    public ItemDisplay getDisplay() {
+        return bladeDisplay.handle();
+    }
+
+    @Override
+    public ItemStack getItemStack() {
+        return identity.blade();
+    }
+
+    // -----------------------------------------------------------------------
+    // Lodgeable — impalement bookkeeping contract
+    // -----------------------------------------------------------------------
+
+    @Override
+    public SwordEntity getImpaledEntity() {
+        return hitEntity;
+    }
+
+    /**
+     * Sets the retrieved flag with a 60 ms automatic reset window. Only schedules the reset when
+     * setting to {@code true} so repeated {@code false} calls do not stack scheduled tasks.
+     */
+    @Override
+    public void setRetrieved(boolean retrieved) {
+        this.retrieved = retrieved;
+        if (retrieved) {
+            SwordScheduler.runBukkitTaskLater(() -> this.retrieved = false, 60, TimeUnit.MILLISECONDS);
+        }
+    }
+
+    /**
+     * In the FSM-driven blade, "dispose with new interactive item" is interpreted as a recall
+     * request — the blade returns to the thrower rather than dropping a world item.
+     */
+    @Override
+    public void disposeWithNewInteractiveItem() {
+        request(BladeRequest.RECALL);
+    }
+
+    // -----------------------------------------------------------------------
+    // Display transitions per FSM state
+    // -----------------------------------------------------------------------
+
     // TODO: #240 - Make a method for calculating correct orientation of blade for edge to align with plane of swing on attack
     /** Applies the display transformation for the given state class after a 50 ms delay. */
     public void setDisplayTransformation(Class<? extends State<UmbralBlade>> state) {
@@ -361,14 +469,7 @@ public class UmbralBlade extends ThrownItem implements Lodgeable, BladeMotionHos
         );
     }
 
-    /**
-     * Returns the interpolation duration in ticks to use when transitioning the blade display
-     * into the given state. Fast action states use short durations; idle/equipped states use longer
-     * durations for smoother visual transitions.
-     *
-     * @param state the target state class
-     * @return interpolation duration in ticks
-     */
+    /** Returns the interpolation duration in ticks to use when transitioning into the given state. */
     private int getInterpolationDurationForState(Class<? extends State<UmbralBlade>> state) {
         if (state == LungingState.class || state == GrabImpaleState.class) return 2;
         if (state == AttackingQuickState.class || state == AttackingHeavyState.class) return 2;
@@ -403,15 +504,13 @@ public class UmbralBlade extends ThrownItem implements Lodgeable, BladeMotionHos
                 new Vector3f(),
                 new Quaternionf().rotateX((float) Math.PI / 2),
                 scale,
-                new Quaternionf()
-            );
+                new Quaternionf());
         } else if (state == GrabImpaleState.class) {
             return new Transformation(
                 new Vector3f(),
                 new Quaternionf().rotateX((float) -Math.PI / 2),
                 scale,
-                new Quaternionf()
-            );
+                new Quaternionf());
         } else if (state == LodgedState.class) {
             return bladeDisplay.currentTransformation();
         } else if (state == AttackingQuickState.class || state == AttackingHeavyState.class) {
@@ -429,176 +528,82 @@ public class UmbralBlade extends ThrownItem implements Lodgeable, BladeMotionHos
         }
     }
 
-    /** Starts the cosine idle bobbing animation on the blade's display entity. */
+    /** Starts the cosine idle bobbing animation on the blade's display. */
     public void startIdleMovement() {
         bladeDisplay.startBobbing(Config.UmbralBlade.IDLE_MOVEMENT_AMPLITUDE, Config.UmbralBlade.IDLE_MOVEMENT_PERIOD);
     }
 
-    /** Cancels the idle bobbing animation task if it is currently running. */
+    /** Cancels the idle bobbing animation if running. */
     public void endIdleMovement() {
         bladeDisplay.stopBobbing();
     }
 
-    @Override
-    public void groundedCheck() {
-        RayTraceResult hitBlock = display.getWorld()
-            .rayTraceBlocks(prev, velocity, // detect from prev, checks go through later, which is what I need to happen.
-                cur.toVector()
-                    .subtract(prev.toVector())
-                    .lengthSquared() * Config.Detection.THROW_GROUND_CHECK_MULTIPLIER / 10,
-                FluidCollisionMode.NEVER, true);
-
-        if (hitBlock == null) {
-            return;
-        }
-
-        if (hitBlock.getHitBlock() == null || hitBlock.getHitBlock().getType().isAir())
-            return;
-
-        grounded = true;
-        stuckBlock = hitBlock.getHitBlock();
-        cur = hitBlock.getHitPosition().toLocation(display.getWorld());
-    }
-
-    @SuppressWarnings("unchecked")
-    private void loadBasicAttacks() {
-        basicAttacks = new Function[]{
-            combatant -> new UmbralBladeAttack(display, AttackType.WIDE_UMBRAL_SLASH1_WINDUP,
-                true, true, 1,
-                10, 30, 500,
-                0, 1)
-                .setBlade(this)
-                .setInitialMovementTicks(25)
-                .setDrawParticles(false)
-                .setNextAttack(
-                    new UmbralBladeAttack(display, AttackType.WIDE_UMBRAL_SLASH1,
-                        true, false, 0,
-                        20, 10, 100,
-                        0, 1)
-                        .setBlade(this)
-                        .setOnEntityHitInstructions(swordEntity -> Prefab.Particles.BLEED.display(swordEntity.getChestLocation()))
-                        .setCallback(attackEndCallback, 200),
-                    100),
-
-            combatant -> new UmbralBladeAttack(display, AttackType.WIDE_UMBRAL_SLASH2_WINDUP,
-                true, true, 2,
-                10, 30, 500,
-                0, 1)
-                .setBlade(this)
-                .setInitialMovementTicks(25)
-                .setDrawParticles(false)
-                .setNextAttack(
-                    new UmbralBladeAttack(display, AttackType.WIDE_UMBRAL_SLASH2,
-                        true, false, 0,
-                        20, 10, 100,
-                        0, 1)
-                        .setBlade(this)
-                        .setOnEntityHitInstructions(swordEntity -> Prefab.Particles.BLEED.display(swordEntity.getChestLocation()))
-                        .setCallback(attackEndCallback, 200),
-                    100),
-
-            combatant -> new UmbralBladeAttack(display, AttackType.WIDE_UMBRAL_SLASH3_WINDUP,
-                false, true, 3,
-                10, 30, 500,
-                0, 1.2)
-                .setBlade(this)
-                .setInitialMovementTicks(25)
-                .setDrawParticles(false)
-                .setNextAttack(
-                    new UmbralBladeAttack(display, AttackType.WIDE_UMBRAL_SLASH3,
-                        false, false, 0,
-                        20, 10, 50,
-                        0, 1)
-                        .setBlade(this)
-                        .setOnEntityHitInstructions(swordEntity -> Prefab.Particles.BLEED.display(swordEntity.getChestLocation()))
-                        .setCallback(attackEndCallback, 200),
-                    250)
-        };
-    }
-
-    /**
-     * Builds the {@link SoulLinkItem} for the given thrower. Pure factory — no instance state.
-     * Result is consumed once during {@link BladeIdentity} construction.
-     */
-    private static SoulLinkItem createLinkItem(Combatant thrower) {
-        return new SoulLinkItem(new ItemStackBuilder(Material.HEAVY_CORE)
-            .hideAll()
-            .name(Component.text("~ ", Config.SwordColor.TEXT_ITEM_NAME)
-                .append(Component.text(thrower.getDisplayName() + "'s Soul Link",
-                    Config.SwordColor.TEXT_ITEM_NAME, TextDecoration.BOLD))
-                .append(Component.text(" ~", Config.SwordColor.TEXT_ITEM_NAME)))
-            .lore(Prefab.Text.SOUL_LINK_LORE)
-            .unbreakable(true)
-            .tag(KeyRegistry.SOUL_LINK_KEY, PersistentDataType.STRING, thrower.getUniqueId().toString())
-            .tagSwordItem(SwordItemType.UMBRAL_LINK)
-            .build());
-    }
-
-    /**
-     * Builds the visual blade {@link ItemStack} for the given thrower and source weapon.
-     * Pure factory — no instance state. Result is consumed once during
-     * {@link BladeIdentity} construction.
-     */
-    private static ItemStack createBladeItem(Combatant thrower, ItemStack weapon) {
-        return new ItemStackBuilder(weapon.getType())
-            .hideAll()
-            .name(Component.text("~ ", Config.SwordColor.TEXT_COOL_DARK)
-                .append(Component.text(thrower.getDisplayName() + "'s Blade",
-                    Config.SwordColor.TEXT_COOL, TextDecoration.BOLD))
-                .append(Component.text(" ~", Config.SwordColor.TEXT_COOL_DARK)))
-            .lore(Prefab.Text.UMBRAL_BLADE_LORE)
-            .unbreakable(true)
-            .tag(KeyRegistry.UMBRAL_BLADE_KEY, PersistentDataType.STRING, thrower.getUniqueId().toString())
-            .tag(KeyRegistry.SPECIAL_ITEM_KEY, PersistentDataType.BOOLEAN, true)
-            .tag(KeyRegistry.NON_MOVABLE_KEY, PersistentDataType.BOOLEAN, true)
-            .tagSwordItem(SwordItemType.UMBRAL_BLADE)
-            .tagAttackStyle(WeaponAttackStyle.SLASH)
-            .build();
-    }
-
     /** Removes the existing display entity and respawns a fresh one at the thrower's eye level. */
     public void resetWeaponDisplay() {
-        bladeDisplay.respawn(thrower.self(), displaySetupInstructions);
-        // TODO: #step-9 — sync removed once inheritance is severed and bladeDisplay becomes
-        //       the only handle holder.
-        display = bladeDisplay.handle();
+        bladeDisplay.respawn(identity.thrower().self(), displaySetup);
     }
 
-    @Override
-    public void generateFunctions(double initialVelocity) {
-        if (ctrlPointsForLunge == null) {
-            super.generateFunctions(initialVelocity);
-        }
-        else {
-            calcBezierTrajectory();
-        }
+    // -----------------------------------------------------------------------
+    // Lunge collision integration — called from LungingDriver callbacks
+    // -----------------------------------------------------------------------
+
+    /**
+     * Captures the blade's instantaneous velocity vector, used by FSM transition actions to
+     * compute knockback and by {@link #impale} to orient the impalement follow.
+     *
+     * @param velocity the velocity vector at impact time; defensively cloned
+     */
+    public void setLastVelocity(Vector velocity) {
+        this.lastVelocity = velocity == null ? new Vector() : velocity.clone();
     }
 
-    protected void calcBezierTrajectory() {
-        SwordEntity target = inState(GrabImpaleState.class) ?
-            getThrower().getGrabbedEntity() :
-            thrower.getTargetedEntity(20);
-
-        origin = display.getLocation();
-        cur = origin.clone();
-        prev = cur.clone();
-
-        Vector dir;
-        if (target == null) {
-            Location intent = thrower.locFromEyeDir(20);
-            dir = intent.toVector().subtract(display.getLocation().toVector());
-        }
-        else {
-            DrawUtil.secant(List.of(Prefab.Particles.TEST_SPARKLE), display.getLocation(), target.getChestLocation(), 0.5);
-
-            dir = target.getChestLocation().toVector().subtract(display.getLocation().toVector());
-        }
-        this.currentBasis = VectorUtil.getBasis(display.getLocation().setDirection(dir), dir);
-
-        ControlVectors adjusted = ctrlPointsForLunge.adjustToBasis(currentBasis, 1);
-        this.positionFunction = BezierUtil.cubicBezier3D(adjusted);
-        this.velocityFunction = t -> dir.clone().multiply(0.5);
+    /** Returns a defensive clone of the last captured velocity vector. */
+    public Vector getVelocity() {
+        return lastVelocity.clone();
     }
+
+    /** Emits the dramatic dust-pillar particle effect at the given location for a stuck-block hit. */
+    public void emitStuckBlockEffect(Block block, Location at) {
+        new ParticleWrapper(
+            () -> Particle.DUST_PILLAR, () -> 50, () -> 1.0, () -> 1.0, () -> 1.0)
+            .withBlockData(block::getBlockData)
+            .display(at);
+    }
+
+    /**
+     * Embeds the blade in the given target entity by installing an {@link ImpalementFollowDriver}
+     * and registering the {@link Impalement} bookkeeping. Reads {@link #hitEntity} (set by the
+     * lunge {@code onEntity} callback) and {@link #lastVelocity} (also captured at hit time).
+     */
+    public void impale(LivingEntity hit) {
+        thisImpalement = new Impalement(hitEntity);
+        thisImpalement.startShouldDisposeCheckTask(hitEntity, this);
+        hitEntity.addImpalement(thisImpalement);
+
+        double max = hit.getEyeLocation().getY();
+        double feet = hit.getLocation().getY();
+        double diff = max - feet;
+        Location curLoc = bladeDisplay.currentLocation();
+        double curY = curLoc != null ? curLoc.getY() : feet;
+        double heightOffset = Math.max(0, Math.min(curY - feet, hit.getHeight()));
+
+        boolean followHead = !Config.Combat.IMPALEMENT_HEAD_FOLLOW_EXCEPTIONS.contains(hitEntity.type())
+            && heightOffset >= diff * Config.Combat.IMPALEMENT_HEAD_ZONE_RATIO;
+
+        Vector dir = lastVelocity.lengthSquared() < 1e-9 ? new Vector(0, 0, 1) : lastVelocity.clone().normalize();
+        bladeMotion.install(new ImpalementFollowDriver(
+            hitEntity,
+            dir,
+            heightOffset,
+            followHead,
+            () -> !inState(LodgedState.class),
+            2
+        ));
+    }
+
+    // -----------------------------------------------------------------------
+    // Combat helpers
+    // -----------------------------------------------------------------------
 
     /** Sets the reclaim type and schedules a reset to {@link ReclaimType#NONE} after the given duration. */
     public void setReclaimType(ReclaimType type, int durationMilliseconds) {
@@ -618,10 +623,9 @@ public class UmbralBlade extends ThrownItem implements Lodgeable, BladeMotionHos
             return;
         }
 
-        if (inState(WaitingState.class)) { // set reclaim type for 1/4 of a second.
+        if (inState(WaitingState.class)) {
             setReclaimType(ReclaimType.CIRCULAR_SLASH, Config.UmbralBlade.RECLAIM_WINDOW_MS);
-        }
-        else if (inState(LodgedState.class)) {
+        } else if (inState(LodgedState.class)) {
             setReclaimType(ReclaimType.EVISCERATE, Config.UmbralBlade.RECLAIM_WINDOW_MS);
         }
 
@@ -640,126 +644,14 @@ public class UmbralBlade extends ThrownItem implements Lodgeable, BladeMotionHos
                     () -> {}
                 )
             );
-
-        }
-        else {
+        } else {
             request(BladeRequest.STANDBY);
         }
-    }
-
-    @Override
-    protected boolean shouldShowLandingMarker() {
-        return false;
-    }
-
-    @Override
-    protected void teleport() {
-        bladeDisplay.teleportTo(cur, to, 2);
-    }
-
-    @Override
-    protected void rotate() {
-        // no-op
-    }
-
-    @Override
-    protected void onCatch() {
-        // No action on catch.
-    }
-
-    @Override
-    protected void onGrounded() {
-        if (stuckBlock != null) {
-            this.blockDustPillarParticle = new ParticleWrapper(
-                () -> Particle.DUST_PILLAR, () -> 50, () -> 1.0, () -> 1.0, () -> 1.0)
-                .withBlockData(() -> stuckBlock.getBlockData());
-            blockDustPillarParticle.display(cur);
-        }
-        request(BladeRequest.RECALL);
-    }
-
-    @Override
-    public void onEnd() {
-        super.onEnd();
-        finishedLunging = true;
-        resetFlightState();
-    }
-
-    @Override
-    public void onHit() {
-        // no-op — hit effects are applied explicitly in FSM transition actions and LodgedState.onEnter()
-    }
-
-    @Override
-    protected void handleOnReleaseActions() {
-        Prefab.Sounds.THROW.playForAllInRadius(getThrower().self());
-    }
-
-    @Override
-    public void handleItemDamageAndCheckIfBroken() {}
-
-    /**
-     * Overrides the inherited impalement follow-task to install an {@link ImpalementFollowDriver}
-     * on this blade's {@link BladeMotion} instead of scheduling a {@code DisplayUtil} task.
-     * <p>
-     * Behavioral parity with the parent: bookkeeping for the {@link Impalement} record is preserved
-     * (registered on the hit entity and on this blade), and the driver tracks the hit entity with the
-     * same {@code heightOffset} / {@code followHead} resolution. The exit predicate watches the FSM
-     * — the driver reports DONE as soon as the blade leaves {@link LodgedState}.
-     */
-    @Override
-    public void impale(LivingEntity hit) {
-        setThisImpalement(new Impalement(hitEntity));
-        getThisImpalement().startShouldDisposeCheckTask(hitEntity, this);
-        hitEntity.addImpalement(getThisImpalement());
-
-        double max = hit.getEyeLocation().getY();
-        double feet = hit.getLocation().getY();
-        double diff = max - feet;
-        double heightOffset = Math.max(0, Math.min(cur.getY() - feet, hit.getHeight()));
-
-        boolean followHead = !Config.Combat.IMPALEMENT_HEAD_FOLLOW_EXCEPTIONS.contains(hitEntity.type())
-            && heightOffset >= diff * Config.Combat.IMPALEMENT_HEAD_ZONE_RATIO;
-
-        bladeMotion.install(new ImpalementFollowDriver(
-            hitEntity,
-            velocity.clone().normalize(),
-            heightOffset,
-            followHead,
-            () -> !inState(LodgedState.class),
-            2
-        ));
-    }
-
-    @Override
-    public void disposeWithNewInteractiveItem() {
-        request(BladeRequest.RECALL);
-    }
-
-    @Override
-    public void dispose() {
-        bladeStateMachine.getState().onExit(this);
-        bladeStateMachine.setDeactivated(true);
-        bladeMotion.stop();
-        bladeDisplay.dispose();
-        // TODO: #step-9 — sync removed once inheritance is severed and bladeDisplay becomes
-        //       the only handle holder.
-        display = null;
-    }
-
-    /** Clears all mid-flight flags so the blade can be launched again cleanly. */
-    public void resetFlightState() {
-        hit = false;
-        grounded = false;
-        caught = false;
-        stuckBlock = null;
-        timeScalingFactor = -1;
     }
 
     /** Sets the active dash direction and resets it to {@link DashDirection#NONE} after 250 ms. */
     public void setDashingDirection(DashDirection direction) {
         this.dashDirection = direction;
-
         SwordScheduler.runBukkitTaskLater(
             () -> dashDirection = DashDirection.NONE,
             250, TimeUnit.MILLISECONDS
@@ -775,5 +667,122 @@ public class UmbralBlade extends ThrownItem implements Lodgeable, BladeMotionHos
     public void requestQuickAttack(int comboStep) {
         currentComboStep = comboStep;
         request(BladeRequest.ATTACK_QUICK);
+    }
+
+    // -----------------------------------------------------------------------
+    // Disposal
+    // -----------------------------------------------------------------------
+
+    /**
+     * Idempotent disposal: deactivates the FSM, stops motion, removes the display entity. After
+     * disposal {@link #onTick} is a no-op and all subsystems are in their terminal state.
+     */
+    @Override
+    public void dispose() {
+        if (disposed) return;
+        disposed = true;
+        bladeStateMachine.getState().onExit(this);
+        bladeStateMachine.setDeactivated(true);
+        bladeMotion.stop();
+        bladeDisplay.dispose();
+    }
+
+    // -----------------------------------------------------------------------
+    // Private factories — pure helpers used during construction
+    // -----------------------------------------------------------------------
+
+    @SuppressWarnings("unchecked")
+    private void loadBasicAttacks() {
+        ItemDisplay handle = bladeDisplay.handle();
+        basicAttacks = new Function[]{
+            combatant -> new UmbralBladeAttack(handle, AttackType.WIDE_UMBRAL_SLASH1_WINDUP,
+                true, true, 1,
+                10, 30, 500,
+                0, 1)
+                .setBlade(this)
+                .setInitialMovementTicks(25)
+                .setDrawParticles(false)
+                .setNextAttack(
+                    new UmbralBladeAttack(handle, AttackType.WIDE_UMBRAL_SLASH1,
+                        true, false, 0,
+                        20, 10, 100,
+                        0, 1)
+                        .setBlade(this)
+                        .setOnEntityHitInstructions(swordEntity -> Prefab.Particles.BLEED.display(swordEntity.getChestLocation()))
+                        .setCallback(attackEndCallback, 200),
+                    100),
+
+            combatant -> new UmbralBladeAttack(handle, AttackType.WIDE_UMBRAL_SLASH2_WINDUP,
+                true, true, 2,
+                10, 30, 500,
+                0, 1)
+                .setBlade(this)
+                .setInitialMovementTicks(25)
+                .setDrawParticles(false)
+                .setNextAttack(
+                    new UmbralBladeAttack(handle, AttackType.WIDE_UMBRAL_SLASH2,
+                        true, false, 0,
+                        20, 10, 100,
+                        0, 1)
+                        .setBlade(this)
+                        .setOnEntityHitInstructions(swordEntity -> Prefab.Particles.BLEED.display(swordEntity.getChestLocation()))
+                        .setCallback(attackEndCallback, 200),
+                    100),
+
+            combatant -> new UmbralBladeAttack(handle, AttackType.WIDE_UMBRAL_SLASH3_WINDUP,
+                false, true, 3,
+                10, 30, 500,
+                0, 1.2)
+                .setBlade(this)
+                .setInitialMovementTicks(25)
+                .setDrawParticles(false)
+                .setNextAttack(
+                    new UmbralBladeAttack(handle, AttackType.WIDE_UMBRAL_SLASH3,
+                        false, false, 0,
+                        20, 10, 50,
+                        0, 1)
+                        .setBlade(this)
+                        .setOnEntityHitInstructions(swordEntity -> Prefab.Particles.BLEED.display(swordEntity.getChestLocation()))
+                        .setCallback(attackEndCallback, 200),
+                    250)
+        };
+    }
+
+    /**
+     * Builds the {@link SoulLinkItem} for the given thrower. Pure factory — no instance state.
+     */
+    private static SoulLinkItem createLinkItem(Combatant thrower) {
+        return new SoulLinkItem(new ItemStackBuilder(Material.HEAVY_CORE)
+            .hideAll()
+            .name(Component.text("~ ", Config.SwordColor.TEXT_ITEM_NAME)
+                .append(Component.text(thrower.getDisplayName() + "'s Soul Link",
+                    Config.SwordColor.TEXT_ITEM_NAME, TextDecoration.BOLD))
+                .append(Component.text(" ~", Config.SwordColor.TEXT_ITEM_NAME)))
+            .lore(Prefab.Text.SOUL_LINK_LORE)
+            .unbreakable(true)
+            .tag(KeyRegistry.SOUL_LINK_KEY, PersistentDataType.STRING, thrower.getUniqueId().toString())
+            .tagSwordItem(SwordItemType.UMBRAL_LINK)
+            .build());
+    }
+
+    /**
+     * Builds the visual blade {@link ItemStack} for the given thrower and source weapon.
+     * Pure factory — no instance state.
+     */
+    private static ItemStack createBladeItem(Combatant thrower, ItemStack weapon) {
+        return new ItemStackBuilder(weapon.getType())
+            .hideAll()
+            .name(Component.text("~ ", Config.SwordColor.TEXT_COOL_DARK)
+                .append(Component.text(thrower.getDisplayName() + "'s Blade",
+                    Config.SwordColor.TEXT_COOL, TextDecoration.BOLD))
+                .append(Component.text(" ~", Config.SwordColor.TEXT_COOL_DARK)))
+            .lore(Prefab.Text.UMBRAL_BLADE_LORE)
+            .unbreakable(true)
+            .tag(KeyRegistry.UMBRAL_BLADE_KEY, PersistentDataType.STRING, thrower.getUniqueId().toString())
+            .tag(KeyRegistry.SPECIAL_ITEM_KEY, PersistentDataType.BOOLEAN, true)
+            .tag(KeyRegistry.NON_MOVABLE_KEY, PersistentDataType.BOOLEAN, true)
+            .tagSwordItem(SwordItemType.UMBRAL_BLADE)
+            .tagAttackStyle(WeaponAttackStyle.SLASH)
+            .build();
     }
 }

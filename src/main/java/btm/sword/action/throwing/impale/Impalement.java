@@ -1,13 +1,13 @@
 package btm.sword.action.throwing.impale;
 
-import btm.sword.action.throwing.types.ThrownItem;
+import btm.sword.action.throwing.Lodgeable;
 import btm.sword.entity.base.SwordEntity;
 import btm.sword.runtime.scheduler.PredicateRunnablePair;
 import btm.sword.runtime.scheduler.TimeArbiter;
 import lombok.Getter;
 import lombok.Setter;
 
-/** Represents an active impalement state binding a thrown item to an impaled entity. */
+/** Represents an active impalement state binding a lodgeable item to an impaled entity. */
 public class Impalement {
     @Getter
     private final SwordEntity impaledEntity;
@@ -19,21 +19,27 @@ public class Impalement {
         this.impaledEntity = impaledEntity;
     }
 
-    /** Starts a recurring task that disposes the impalement once the item is retrieved or the entity dies. */
-    public void startShouldDisposeCheckTask(SwordEntity hitEntity, ThrownItem impalingItem) {
+    /**
+     * Starts a recurring task that disposes the impalement once the item is retrieved, the
+     * entity dies, or the impalement is otherwise released.
+     *
+     * @param hitEntity     the entity being impaled
+     * @param impalingItem  the lodgeable item performing the impalement
+     */
+    public void startShouldDisposeCheckTask(SwordEntity hitEntity, Lodgeable impalingItem) {
         TimeArbiter.runTimeIndependentBukkitTaskOnTimer(
             null,
             null,
             0, 75,
             Impalement.class, "startShouldDisposeCheckTask",
             new PredicateRunnablePair(
-                () -> shouldDispose || impalingItem.getHitEntity() == null ||
+                () -> shouldDispose || impalingItem.getImpaledEntity() == null ||
                     hitEntity.isDead() ||
                     impalingItem.getDisplay() == null,
                 impalingItem::disposeWithNewInteractiveItem
             ),
             new PredicateRunnablePair(
-                () -> impalingItem.getDisplay().isDead() || impalingItem.isRetrieved(),
+                () -> impalingItem.getDisplay() == null || impalingItem.getDisplay().isDead() || impalingItem.isRetrieved(),
                 () -> hitEntity.removeImpalement(this)
             )
         );

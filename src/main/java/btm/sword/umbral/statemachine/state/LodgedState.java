@@ -1,41 +1,22 @@
 package btm.sword.umbral.statemachine.state;
 
 
+import org.bukkit.entity.LivingEntity;
+
 import btm.sword.entity.base.SwordEntity;
 import btm.sword.umbral.UmbralBlade;
 import btm.sword.umbral.statemachine.UmbralStateFacade;
 
 /**
  * State where the UmbralBlade is lodged in an entity or block.
- * <p>
- * In this state, the blade is stuck in a target (enemy entity or solid block)
- * after a throw, lunge, or attack. It remains attached until recalled by the
- * wielder or until the target dies/is destroyed.
- * </p>
- * <p>
- * <b>Entry Actions:</b>
- * <ul>
- *   <li>Stop all movement</li>
- *   <li>Set display transformation for lodged position</li>
- *   <li>Attach display to target entity/block via entity follow task</li>
- * </ul>
- * </p>
- * <p>
- * <b>Exit Actions:</b>
- * <ul>
- *   <li>Cancel entity follow task</li>
- *   <li>Reset flight state</li>
- *   <li>Clear glow</li>
- * </ul>
- * </p>
- * <p>
- * <b>Typical Transitions:</b>
- * <ul>
- *   <li>LODGED → RECALLING (wielder recalls the blade)</li>
- *   <li>LODGED → WAITING (target dies or block destroyed)</li>
- * </ul>
- * </p>
  *
+ * <p>Entry installs the {@link btm.sword.umbral.motion.drivers.ImpalementFollowDriver} on the
+ * blade's motion subsystem via {@code blade.impale(...)} when an impaled entity is present.
+ * Knockback damage is applied by the FSM transition action that reaches this state — this
+ * {@code onEnter} only sets up the follow behavior.</p>
+ *
+ * <p>Exit stops the motion driver. Glow / inventory / display cleanup is handled by the FSM
+ * recovery conditions and outgoing transition actions.</p>
  */
 public class LodgedState extends UmbralStateFacade {
 
@@ -47,31 +28,18 @@ public class LodgedState extends UmbralStateFacade {
     @Override
     public void onEnter(UmbralBlade blade) {
         SwordEntity target = blade.getHitEntity();
-
-        blade.startImpalementTask(target);
-//        if (target != null) {
-//            LivingEntity le = target.self();
-//            double heightOffset = Math.max(0, Math.min(blade.getCur().getY() - le.getLocation().getY(), le.getHeight()));
-//            boolean followHead = !Config.Combat.IMPALEMENT_HEAD_FOLLOW_EXCEPTIONS.contains(target.type())
-//                && heightOffset >= (le.getEyeLocation().getY() - le.getLocation().getY()) * Config.Combat.IMPALEMENT_HEAD_ZONE_RATIO;
-//
-//            followTask = DisplayUtil.itemDisplayFollow(
-//                target, blade.getDisplay(),
-//                blade.getVelocity().clone().normalize(),
-//                heightOffset, followHead,
-//                null, null, null, null
-//            );
-//        }
+        if (target != null && target.self() instanceof LivingEntity le) {
+            blade.impale(le);
+        }
     }
 
     @Override
     public void onExit(UmbralBlade blade) {
         blade.getBladeMotion().stop();
-        blade.resetFlightState();
     }
 
     @Override
     public void onTick(UmbralBlade blade) {
-
+        // Impalement follow runs from the installed motion driver; nothing to do per-tick here.
     }
 }

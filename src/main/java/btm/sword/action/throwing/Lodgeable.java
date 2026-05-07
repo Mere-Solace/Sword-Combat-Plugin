@@ -28,4 +28,19 @@ public interface Lodgeable extends InteractiveItem {
      * @param retrieved {@code true} when the item is being picked up
      */
     void setRetrieved(boolean retrieved);
+
+    /**
+     * Returns {@code true} if this item has been marked as retrieved. Used by the impalement
+     * watchdog to decide when its bookkeeping should release the impaled entity.
+     *
+     * @return whether the item is currently flagged as retrieved
+     */
+    boolean isRetrieved();
+
+    /**
+     * Disposes this item and emits a fresh interactive world-item at its current location.
+     * Used by impalement bookkeeping to drop the lodged item back into the world when the
+     * impalement ends without the item being explicitly retrieved.
+     */
+    void disposeWithNewInteractiveItem();
 }
