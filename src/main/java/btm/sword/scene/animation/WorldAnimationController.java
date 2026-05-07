@@ -9,6 +9,7 @@ import net.donnypz.displayentityutils.managers.DisplayGroupManager;
 import net.donnypz.displayentityutils.managers.LoadMethod;
 import net.donnypz.displayentityutils.utils.DisplayEntities.DisplayAnimator;
 import net.donnypz.displayentityutils.utils.DisplayEntities.DisplayEntityGroup;
+import net.donnypz.displayentityutils.utils.DisplayEntities.GroupSpawnSettings;
 import net.donnypz.displayentityutils.utils.DisplayEntities.SpawnedDisplayAnimation;
 import net.donnypz.displayentityutils.utils.DisplayEntities.SpawnedDisplayEntityGroup;
 
@@ -69,8 +70,6 @@ public class WorldAnimationController extends CameraController {
             stop();
             return;
         }
-        animation.allowTextureChanges(true); // important for allowing mid-animation overrides
-
         spawnedGroup = group.spawn(owner.player().getLocation(), GroupSpawnedEvent.SpawnReason.CUSTOM);
 
         if (spawnedGroup == null) {

@@ -100,8 +100,6 @@ public class DEUAnimationController extends CameraController {
             stop();
             return;
         }
-        animation.allowTextureChanges(true); // important for allowing mid-animation overrides
-
         packetGroup = group.createPacketGroup(location, GroupSpawnedEvent.SpawnReason.DISPLAY_CONTROLLER);
         if (packetGroup == null) {
             Sword.getInstance().getLogger().warning(

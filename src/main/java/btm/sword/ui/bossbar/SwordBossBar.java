@@ -11,6 +11,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
 import btm.sword.runtime.scheduler.SwordScheduler;
+import lombok.Getter;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
 
@@ -40,6 +41,11 @@ public final class SwordBossBar {
 
     private final BossBar bossBar;
     private final Set<UUID> viewers = new HashSet<>();
+    /**
+     * -- GETTER --
+     *  Returns whether this bar has been removed.
+     */
+    @Getter
     private boolean removed;
 
     /**
@@ -183,15 +189,6 @@ public final class SwordBossBar {
      */
     public BossBar getBossBar() {
         return bossBar;
-    }
-
-    /**
-     * Returns whether this bar has been removed.
-     *
-     * @return {@code true} if removed
-     */
-    public boolean isRemoved() {
-        return removed;
     }
 
     /**

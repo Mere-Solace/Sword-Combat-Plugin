@@ -3,6 +3,8 @@ package btm.sword.entity.display;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import net.donnypz.displayentityutils.utils.DisplayEntities.GroupSpawnSettings;
+
 import org.bukkit.Material;
 import org.bukkit.entity.Display;
 import org.bukkit.entity.ItemDisplay;
@@ -107,7 +109,9 @@ public final class DisplayRig {
      * @return the new rig, or {@code null} if the group cannot be found in DEU's local storage
      */
     public static @Nullable DisplayRig spawn(Mob mob, String groupTag, AnimationSlots slots) {
+
         DisplayEntityGroup def = DisplayGroupManager.getGroup(LoadMethod.LOCAL, groupTag);
+
         if (def == null) {
             Sword.getInstance().getLogger().warning(
                 "[DisplayRig] Group not found: " + groupTag + " — skipping display rig."
@@ -211,19 +215,24 @@ public final class DisplayRig {
 
         final ItemDisplay anchor = weaponAnchor;
 
-        // 5-tick refresh: forces a Bukkit metadata packet so DEU state-machine resets are
-        // overridden within one loop cycle. The packet hook intercepts these too.
-        weaponRefreshTask = TimeArbiter.runTimeBoundBukkitTaskOnTimer(
-            () -> {
-                if (!mob.isValid() || !anchor.isValid()) return;
-                anchor.setGlowing(true);
-                anchor.setGlowColorOverride(Config.SwordColor.ATTACK_QUICK_GLOW);
-                anchor.setItemDisplayTransform(ItemDisplay.ItemDisplayTransform.THIRDPERSON_LEFTHAND);
-                anchor.setItemStack(item);
-            },
-            null, null, 0, 1,
-            DisplayRig.class, "setWeaponSlotItem"
-        );
+        anchor.setGlowing(true);
+        anchor.setGlowColorOverride(Config.SwordColor.ATTACK_QUICK_GLOW);
+        anchor.setItemDisplayTransform(ItemDisplay.ItemDisplayTransform.THIRDPERSON_LEFTHAND);
+        anchor.setItemStack(item);
+//
+//        // 5-tick refresh: forces a Bukkit metadata packet so DEU state-machine resets are
+//        // overridden within one loop cycle. The packet hook intercepts these too.
+//        weaponRefreshTask = TimeArbiter.runTimeBoundBukkitTaskOnTimer(
+//            () -> {
+//                if (!mob.isValid() || !anchor.isValid()) return;
+//                anchor.setGlowing(true);
+//                anchor.setGlowColorOverride(Config.SwordColor.ATTACK_QUICK_GLOW);
+//                anchor.setItemDisplayTransform(ItemDisplay.ItemDisplayTransform.THIRDPERSON_LEFTHAND);
+//                anchor.setItemStack(item);
+//            },
+//            null, null, 0, 1,
+//            DisplayRig.class, "setWeaponSlotItem"
+//        );
     }
 
     // -----------------------------------------------------------------------
@@ -355,7 +364,8 @@ public final class DisplayRig {
         DisplayAnimator.AnimationType animType = transitionLock
             ? DisplayAnimator.AnimationType.LINEAR
             : DisplayAnimator.AnimationType.LOOP;
-        MachineState state = new MachineState(machine, type, List.of(animTag), LoadMethod.LOCAL, animType, transitionLock);
+        MachineState state = new MachineState(machine, type, List.of(animTag),
+            LoadMethod.LOCAL, animType, transitionLock, false);
         machine.addState(state);
     }
 }
