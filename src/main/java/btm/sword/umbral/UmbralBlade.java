@@ -109,11 +109,14 @@ public class UmbralBlade extends ThrownItem implements Lodgeable, BladeMotionHos
     @Getter
     private int currentComboStep = -1;
 
-    private SoulLinkItem link;
+    /**
+     * Immutable identity of this blade — thrower, original weapon, soul-link anchor, and visual
+     * blade item. Constructed once in the UmbralBlade constructor and never mutated. All
+     * identity-related accessors delegate to this record.
+     */
     @Getter
-    private ItemStack blade;
-    @Getter
-    private final ItemStack weapon;
+    private final BladeIdentity identity;
+
     @Getter
     @Setter
     private long lastActionTime = 0;
@@ -160,6 +163,16 @@ public class UmbralBlade extends ThrownItem implements Lodgeable, BladeMotionHos
     @Setter
     private boolean bladeWielded = false;
 
+    /** Returns the original weapon {@link ItemStack} the blade was created from. */
+    public ItemStack getWeapon() {
+        return identity.weapon();
+    }
+
+    /** Returns the visual blade {@link ItemStack} displayed when the blade is wielded. */
+    public ItemStack getBlade() {
+        return identity.blade();
+    }
+
     /**
      * Returns the Soul Link {@link ItemStack} for use as an inventory item.
      * Use {@link #getLinkAnchor()} when slot-restoration logic is needed.
@@ -167,7 +180,7 @@ public class UmbralBlade extends ThrownItem implements Lodgeable, BladeMotionHos
      * @return the Soul Link ItemStack
      */
     public ItemStack getLink() {
-        return link.getItemStack();
+        return identity.link().getItemStack();
     }
 
     /**
@@ -176,7 +189,7 @@ public class UmbralBlade extends ThrownItem implements Lodgeable, BladeMotionHos
      * @return the Soul Link anchor
      */
     public SoulLinkItem getLinkAnchor() {
-        return link;
+        return identity.link();
     }
 
     /**
@@ -186,7 +199,7 @@ public class UmbralBlade extends ThrownItem implements Lodgeable, BladeMotionHos
      * @return the ItemStack that should currently occupy slot 0
      */
     public ItemStack getExpectedSlotItem() {
-        return bladeWielded ? blade : getLink();
+        return bladeWielded ? identity.blade() : getLink();
     }
 
     /**
@@ -233,12 +246,10 @@ public class UmbralBlade extends ThrownItem implements Lodgeable, BladeMotionHos
 
         // TODO: Removed the setup call; must set up elsewhere now.
 
-        this.weapon = weapon;
-
         this.bladeDisplay = new BladeDisplay(scale);
         this.bladeDisplay.adopt(display);
 
-        generateUmbralItems();
+        this.identity = new BladeIdentity(thrower, weapon, createLinkItem(thrower), createBladeItem(thrower, weapon));
 
         this.attackEndCallback = () -> attackCompleted = true;
 
@@ -505,9 +516,12 @@ public class UmbralBlade extends ThrownItem implements Lodgeable, BladeMotionHos
         };
     }
 
-    private void generateUmbralItems() {
-        // item Stack used for determining umbral blade inputs
-        this.link = new SoulLinkItem(new ItemStackBuilder(Material.HEAVY_CORE)
+    /**
+     * Builds the {@link SoulLinkItem} for the given thrower. Pure factory — no instance state.
+     * Result is consumed once during {@link BladeIdentity} construction.
+     */
+    private static SoulLinkItem createLinkItem(Combatant thrower) {
+        return new SoulLinkItem(new ItemStackBuilder(Material.HEAVY_CORE)
             .hideAll()
             .name(Component.text("~ ", Config.SwordColor.TEXT_ITEM_NAME)
                 .append(Component.text(thrower.getDisplayName() + "'s Soul Link",
@@ -518,8 +532,15 @@ public class UmbralBlade extends ThrownItem implements Lodgeable, BladeMotionHos
             .tag(KeyRegistry.SOUL_LINK_KEY, PersistentDataType.STRING, thrower.getUniqueId().toString())
             .tagSwordItem(SwordItemType.UMBRAL_LINK)
             .build());
+    }
 
-        this.blade = new ItemStackBuilder(weapon.getType())
+    /**
+     * Builds the visual blade {@link ItemStack} for the given thrower and source weapon.
+     * Pure factory — no instance state. Result is consumed once during
+     * {@link BladeIdentity} construction.
+     */
+    private static ItemStack createBladeItem(Combatant thrower, ItemStack weapon) {
+        return new ItemStackBuilder(weapon.getType())
             .hideAll()
             .name(Component.text("~ ", Config.SwordColor.TEXT_COOL_DARK)
                 .append(Component.text(thrower.getDisplayName() + "'s Blade",
