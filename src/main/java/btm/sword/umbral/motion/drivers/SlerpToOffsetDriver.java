@@ -26,34 +26,27 @@ import btm.sword.umbral.motion.BladeMotionDriver;
  *   <li>If the distance is below {@code endDistance}, report {@link Status#DONE DONE}.</li>
  *   <li>Otherwise teleport the blade by {@code direction.normalized() * speed} along that vector.</li>
  * </ol>
- *
+ * <p>
  * Reports {@link Status#DONE DONE} on arrival, on timeout, when the anchor becomes invalid, or
  * when the externally-supplied {@code endCondition} returns {@code true}. On any DONE path, the
  * supplied {@code onArrive} callback (if non-null) is scheduled on the next tick via
  * {@link SwordScheduler#runBukkitTask(Runnable)}.
  */
-public final class SlerpToOffsetDriver implements BladeMotionDriver {
-
-    private final SwordEntity anchor;
-    private final Vector localOffset;
-    private final double speed;
-    private final double endDistance;
-    private final long timeoutTicks;
-    private final Supplier<Boolean> endCondition;
-    private final Runnable onArrive;
-    private final int teleportDuration;
+public record SlerpToOffsetDriver(SwordEntity anchor, Vector localOffset, double speed, double endDistance,
+                                  long timeoutTicks, Supplier<Boolean> endCondition, Runnable onArrive,
+                                  int teleportDuration) implements BladeMotionDriver {
 
     /**
-     * @param anchor            the entity the offset is computed relative to
-     * @param localOffset       the anchor-local offset (right / up / forward components)
-     * @param speed             per-tick world-space speed of approach
-     * @param endDistance       arrival threshold in world units (squared internally for cheap compare)
-     * @param timeoutTicks      maximum ticks before reporting DONE regardless of arrival
-     * @param endCondition      external predicate; when it returns {@code true}, report DONE
-     *                          (may be {@code null} to disable)
-     * @param onArrive          callback scheduled when the driver reports DONE for any reason
-     *                          (may be {@code null})
-     * @param teleportDuration  smoothing duration in ticks for the teleport interpolation
+     * @param anchor           the entity the offset is computed relative to
+     * @param localOffset      the anchor-local offset (right / up / forward components)
+     * @param speed            per-tick world-space speed of approach
+     * @param endDistance      arrival threshold in world units (squared internally for cheap compare)
+     * @param timeoutTicks     maximum ticks before reporting DONE regardless of arrival
+     * @param endCondition     external predicate; when it returns {@code true}, report DONE
+     *                         (maybe {@code null} to disable)
+     * @param onArrive         callback scheduled when the driver reports DONE for any reason
+     *                         (maybe {@code null})
+     * @param teleportDuration smoothing duration in ticks for the teleport interpolation
      */
     public SlerpToOffsetDriver(SwordEntity anchor, Vector localOffset,
                                double speed, double endDistance, long timeoutTicks,
@@ -70,7 +63,8 @@ public final class SlerpToOffsetDriver implements BladeMotionDriver {
     }
 
     @Override
-    public void onInstall(BladeMotionContext context) {}
+    public void onInstall(BladeMotionContext context) {
+    }
 
     @Override
     public Status tick(BladeMotionContext context) {
@@ -98,7 +92,8 @@ public final class SlerpToOffsetDriver implements BladeMotionDriver {
     }
 
     @Override
-    public void onUninstall(BladeMotionContext context) {}
+    public void onUninstall(BladeMotionContext context) {
+    }
 
     private Status finish() {
         if (onArrive != null) {

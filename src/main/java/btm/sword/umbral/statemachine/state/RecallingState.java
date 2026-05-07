@@ -93,16 +93,16 @@ public class RecallingState extends UmbralStateFacade {
     }
 
     @Override
-    public void onExit(UmbralBlade blade) {
-        blade.getBladeMotion().stop();
-    }
-
-    @Override
     public void onTick(UmbralBlade blade) {
         // Defensive: if the motion ended for any reason without the onArrive callback firing
         // (e.g. external dispose mid-flight), still request STANDBY so the FSM transitions out.
         if (blade.getBladeMotion().isEnded()) {
             blade.request(BladeRequest.STANDBY);
         }
+    }
+
+    @Override
+    public void onExit(UmbralBlade blade) {
+        blade.getBladeMotion().stop();
     }
 }
