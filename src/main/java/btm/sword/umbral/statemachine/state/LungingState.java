@@ -1,17 +1,21 @@
 package btm.sword.umbral.statemachine.state;
 
+import org.bukkit.Location;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.util.Vector;
 
 import btm.sword.combat.style.AttackType;
 import btm.sword.config.Config;
 import btm.sword.entity.arbiter.SwordEntityArbiter;
+import btm.sword.entity.base.SwordEntity;
 import btm.sword.umbral.UmbralBlade;
 import btm.sword.umbral.input.BladeRequest;
 import btm.sword.umbral.motion.drivers.LungingDriver;
 import btm.sword.umbral.statemachine.UmbralStateFacade;
 import btm.sword.util.math.Basis;
 import btm.sword.util.math.VectorUtil;
+import btm.sword.util.misc.Debug;
 
 /**
  * State that propels the blade forward along a Bézier trajectory toward a targeted entity.
@@ -43,10 +47,13 @@ public class LungingState extends UmbralStateFacade {
         blade.setFinishedLunging(false);
         blade.setCtrlPointsForLunge(AttackType.LUNGE1.controlVectors());
 
-        long durationTicks = (long) Math.max(1, Config.UmbralBlade.LUNGE_TIME_CUTOFF);
-        double timeStep = Config.UmbralBlade.LUNGE_TIME_SCALING_FACTOR;
+        long durationTicks = Math.max(1, Config.UmbralBlade.LUNGE_TIME_SCALING_FACTOR);
+        double timeStep = Config.UmbralBlade.LUNGE_TIME_CUTOFF / durationTicks;
 
-        Basis basis = VectorUtil.getBasisWithoutPitch(blade.getThrower().self());
+        Basis basis = resolveLungeBasis(blade);
+
+        Debug.umbral("LUNGE install: durationTicks=" + durationTicks + " timeStep=" + timeStep
+            + " basisFwd=" + basis.forward());
 
         blade.getBladeMotion().install(new LungingDriver(
             blade.getCtrlPointsForLunge(),
@@ -58,17 +65,41 @@ public class LungingState extends UmbralStateFacade {
             buildEntityFilter(blade),
             (entityHit, direction) -> {
                 if (!(entityHit.entity() instanceof LivingEntity le)) return;
+                Debug.umbral("LUNGE entity hit: " + le.getName() + " dir=" + direction);
                 blade.setLastVelocity(direction);
                 blade.setHitEntity(SwordEntityArbiter.getOrAdd(le));
                 blade.impale(le);
             },
             (blockHit, direction) -> {
+                Debug.umbral("LUNGE block hit: " + blockHit.block().getType() + " dir=" + direction);
                 blade.setLastVelocity(direction);
                 blade.emitStuckBlockEffect(blockHit.block(), blockHit.position());
                 blade.request(BladeRequest.RECALL);
             },
-            () -> blade.setFinishedLunging(true)
+            () -> {
+                Debug.umbral("LUNGE complete: timeout reached");
+                blade.setFinishedLunging(true);
+            }
         ));
+    }
+
+    /**
+     * Builds the basis used to project the lunge bezier into world space. Aims the blade at the
+     * thrower's targeted entity (chest) when one is in range; otherwise aims at a point 20 blocks
+     * along the thrower's eye direction. Includes pitch so steep aims work.
+     */
+    private static Basis resolveLungeBasis(UmbralBlade blade) {
+        Location bladeLoc = blade.getBladeDisplay().currentLocation();
+        if (bladeLoc == null) bladeLoc = blade.getThrower().self().getEyeLocation();
+        SwordEntity target = blade.getThrower().getTargetedEntity(20);
+        Vector dir;
+        if (target == null) {
+            Location intent = blade.getThrower().locFromEyeDir(20);
+            dir = intent.toVector().subtract(bladeLoc.toVector());
+        } else {
+            dir = target.getChestLocation().toVector().subtract(bladeLoc.toVector());
+        }
+        return VectorUtil.getBasis(bladeLoc.clone().setDirection(dir), dir);
     }
 
     @Override

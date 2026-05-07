@@ -12,6 +12,7 @@ import btm.sword.umbral.UmbralBlade;
 import btm.sword.umbral.input.BladeRequest;
 import btm.sword.umbral.motion.drivers.SlerpToOffsetDriver;
 import btm.sword.umbral.statemachine.UmbralStateFacade;
+import btm.sword.util.misc.Debug;
 
 /**
  * State where the UmbralBlade is being recalled to the wielder.
@@ -40,10 +41,10 @@ public class RecallingState extends UmbralStateFacade {
     private static final int MAX_STATIONARY_ITERATIONS = 4;
     private static final double EPSILON_SQUARED = 0.004;
 
-    private static final double SLERP_SPEED = 1.5;
+    private static final double SLERP_SPEED = 0.45;
     private static final double SLERP_ARRIVAL_DISTANCE = 1.5;
-    private static final long SLERP_TIMEOUT_TICKS = 80;
-    private static final int SLERP_TELEPORT_DURATION = 5;
+    private static final long SLERP_TIMEOUT_TICKS = 200;
+    private static final int SLERP_TELEPORT_DURATION = 4;
 
     @Override
     public String name() {
@@ -63,6 +64,9 @@ public class RecallingState extends UmbralStateFacade {
         Supplier<Boolean> endWhenStationaryAndNotDashing =
             () -> stationaryCheck.get() && !blade.getThrower().isDashing();
 
+        Debug.umbral("RECALL install: speed=" + SLERP_SPEED + " arrival=" + SLERP_ARRIVAL_DISTANCE
+            + " timeout=" + SLERP_TIMEOUT_TICKS + " teleportDuration=" + SLERP_TELEPORT_DURATION);
+
         blade.getBladeMotion().install(new SlerpToOffsetDriver(
             blade.getThrower(),
             blade.getThrower().getChestVector(),
@@ -70,7 +74,10 @@ public class RecallingState extends UmbralStateFacade {
             SLERP_ARRIVAL_DISTANCE,
             SLERP_TIMEOUT_TICKS,
             endWhenStationaryAndNotDashing,
-            () -> blade.request(BladeRequest.STANDBY),
+            () -> {
+                Debug.umbral("RECALL onArrive fired -> request STANDBY");
+                blade.request(BladeRequest.STANDBY);
+            },
             SLERP_TELEPORT_DURATION
         ));
     }

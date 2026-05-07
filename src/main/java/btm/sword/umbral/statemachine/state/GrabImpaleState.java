@@ -5,6 +5,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
+import org.bukkit.Location;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.util.Vector;
@@ -22,6 +23,7 @@ import btm.sword.umbral.motion.drivers.SlerpToOffsetDriver;
 import btm.sword.umbral.statemachine.UmbralStateFacade;
 import btm.sword.util.math.Basis;
 import btm.sword.util.math.VectorUtil;
+import btm.sword.util.misc.Debug;
 
 /**
  * State that lunges the blade toward a grabbed target and impales it on contact.
@@ -106,9 +108,12 @@ public class GrabImpaleState extends UmbralStateFacade {
         blade.setFinishedLunging(false);
         blade.setCtrlPointsForLunge(AttackType.LUNGE1.controlVectors());
 
-        long durationTicks = (long) Math.max(1, Config.UmbralBlade.LUNGE_TIME_CUTOFF);
-        double timeStep = Config.UmbralBlade.LUNGE_TIME_SCALING_FACTOR;
-        Basis basis = VectorUtil.getBasisWithoutPitch(blade.getThrower().self());
+        long durationTicks = Math.max(1, Config.UmbralBlade.LUNGE_TIME_SCALING_FACTOR);
+        double timeStep = Config.UmbralBlade.LUNGE_TIME_CUTOFF / durationTicks;
+        Basis basis = resolveGrabLungeBasis(blade);
+
+        Debug.umbral("GRAB_LUNGE install: durationTicks=" + durationTicks + " timeStep=" + timeStep
+            + " basisFwd=" + basis.forward());
 
         blade.getBladeMotion().install(new LungingDriver(
             blade.getCtrlPointsForLunge(),
@@ -120,17 +125,36 @@ public class GrabImpaleState extends UmbralStateFacade {
             buildEntityFilter(blade),
             (entityHit, direction) -> {
                 if (!(entityHit.entity() instanceof LivingEntity le)) return;
+                Debug.umbral("GRAB_LUNGE entity hit: " + le.getName() + " dir=" + direction);
                 blade.setLastVelocity(direction);
                 blade.setHitEntity(SwordEntityArbiter.getOrAdd(le));
                 blade.impale(le);
             },
             (blockHit, direction) -> {
+                Debug.umbral("GRAB_LUNGE block hit: " + blockHit.block().getType() + " dir=" + direction);
                 blade.setLastVelocity(direction);
                 blade.emitStuckBlockEffect(blockHit.block(), blockHit.position());
                 blade.request(BladeRequest.RECALL);
             },
-            () -> blade.setFinishedLunging(true)
+            () -> {
+                Debug.umbral("GRAB_LUNGE complete: timeout reached");
+                blade.setFinishedLunging(true);
+            }
         ));
+    }
+
+    /**
+     * Builds the basis aimed from the blade toward the grabbed entity's chest. Includes pitch
+     * so the lunge correctly handles airborne or elevated grabs.
+     */
+    private static Basis resolveGrabLungeBasis(UmbralBlade blade) {
+        Location bladeLoc = blade.getBladeDisplay().currentLocation();
+        if (bladeLoc == null) bladeLoc = blade.getThrower().self().getEyeLocation();
+        SwordEntity grabbed = blade.getThrower().getGrabbedEntity();
+        Vector dir = grabbed != null
+            ? grabbed.getChestLocation().toVector().subtract(bladeLoc.toVector())
+            : blade.getThrower().dir().multiply(20);
+        return VectorUtil.getBasis(bladeLoc.clone().setDirection(dir), dir);
     }
 
     private static Predicate<Entity> buildEntityFilter(UmbralBlade blade) {
