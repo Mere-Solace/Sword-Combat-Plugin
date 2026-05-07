@@ -44,7 +44,9 @@ public class RecallingState extends UmbralStateFacade {
     private static final double SLERP_SPEED = 0.45;
     private static final double SLERP_ARRIVAL_DISTANCE = 1.5;
     private static final long SLERP_TIMEOUT_TICKS = 200;
-    private static final int SLERP_TELEPORT_DURATION = 4;
+    // Short duration so consecutive per-tick yaw aims don't pile up — keeps body rotation
+    // tracking the player smoothly instead of chasing a stale target.
+    private static final int SLERP_TELEPORT_DURATION = 2;
 
     @Override
     public String name() {
