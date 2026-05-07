@@ -2,12 +2,12 @@ package btm.sword.combat.attack;
 
 import java.util.HashSet;
 
-import org.bukkit.entity.ItemDisplay;
 import org.bukkit.entity.LivingEntity;
 
 import btm.sword.combat.style.AttackProfile;
 import btm.sword.config.Config;
 import btm.sword.umbral.UmbralBlade;
+import btm.sword.umbral.presentation.BladeDisplay;
 import btm.sword.util.entity.HitboxUtil;
 
 
@@ -16,13 +16,13 @@ public class UmbralBladeAttack extends ItemDisplayAttack {
     protected UmbralBlade blade;
 
     /** Full-parameter constructor forwarded to {@link ItemDisplayAttack}. */
-    public UmbralBladeAttack(ItemDisplay weaponDisplay, AttackProfile profile,
+    public UmbralBladeAttack(BladeDisplay weaponDisplay, AttackProfile profile,
                              boolean orientWithPitch, boolean displayOnly,
                              int tpDuration, int displaySteps,
                              int attackStepsPerDisplayStep, int attackMilliseconds,
                              double attackStartValue, double attackEndValue) {
 
-        super(weaponDisplay, profile,
+        super(weaponDisplay.handle(), profile,
             orientWithPitch, displayOnly,
             tpDuration, displaySteps,
             attackStepsPerDisplayStep, attackMilliseconds,
@@ -30,8 +30,8 @@ public class UmbralBladeAttack extends ItemDisplayAttack {
     }
 
     /** Convenience constructor using default display step count from config. */
-    public UmbralBladeAttack(ItemDisplay weaponDisplay, AttackProfile profile, boolean orientWithPitch, boolean displayOnly, int tpDuration) {
-        super(weaponDisplay, profile, orientWithPitch, displayOnly, tpDuration);
+    public UmbralBladeAttack(BladeDisplay weaponDisplay, AttackProfile profile, boolean orientWithPitch, boolean displayOnly, int tpDuration) {
+        super(weaponDisplay.handle(), profile, orientWithPitch, displayOnly, tpDuration);
     }
 
 

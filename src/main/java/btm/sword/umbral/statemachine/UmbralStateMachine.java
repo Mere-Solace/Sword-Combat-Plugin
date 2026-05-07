@@ -411,7 +411,7 @@ public class UmbralStateMachine extends StateMachine<UmbralBlade> {
         addTransition(new Transition<>(
             LungingState.class,
             RecallingState.class,
-            UmbralBlade::isFinishedLunging,
+            b -> b.isFinishedLunging() || b.isRequested(BladeRequest.RECALL),
             b -> {}
         ));
 

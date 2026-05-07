@@ -205,7 +205,7 @@ audio:
   throw_volume: 0.35
   throw_pitch: 0.4
   
-  attack_sound: EVENT_RAID_HORN
+  attack_sound: ITEM_TRIDENT_THROW
   attack_volume: 0.6
   attack_pitch: 0.7
   
@@ -219,7 +219,7 @@ audio:
   punch_connect: BLOCK_NETHERRACK_PLACE
   punch_connect_vol: 1.5
   punch_connect_pitch: 1.0
-  pre_attack_sound: ENTITY_DOLPHIN_JUMP
+  pre_attack_sound: ITEM_TRIDENT_THROW
   parry_attempt_sound: ENTITY_ILLUSIONER_CAST_SPELL
 
 
@@ -328,12 +328,11 @@ world:
 
 
 debug:
-
+  
   logging_verbose_combat: false
   logging_verbose_movement: false
-
+  
   logging_verbose_config: false
-  logging_verbose_umbral_states: false
   
   visualization_show_hitboxes: false
   visualization_show_raytraces: false

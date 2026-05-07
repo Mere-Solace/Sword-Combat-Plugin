@@ -224,8 +224,6 @@ public abstract class Combatant extends SwordEntity {
             message("Starting Umbral Blade");
             umbralBlade = new UmbralBlade(this, ItemStack.of(Material.STONE_SWORD));
 
-            umbralBlade.setup(5);
-
             setStartingBlade(false);
             }, 200, TimeUnit.MILLISECONDS
         );

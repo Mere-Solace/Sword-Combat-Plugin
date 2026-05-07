@@ -9,8 +9,6 @@ public class RecoverState extends UmbralStateFacade {
     private UmbralBlade blade;
     private final Runnable recoverBlade = () -> {
         try {
-            if (blade.getDisplay() != null) blade.getDisplay().remove();
-            blade.setDisplay(null);
             blade.resetWeaponDisplay();
         } catch (Exception e) {
             throw new RuntimeException(e);

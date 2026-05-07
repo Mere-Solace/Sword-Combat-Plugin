@@ -131,7 +131,7 @@ public class AttackingHeavyState extends UmbralStateFacade {
 
         int duration = 20 * (int) Math.log(Math.max(1, dist * dist));
         Debug.attack("Attack Duration:=" + duration);
-        Attack attackObj = new UmbralBladeAttack(blade.getDisplay(), profile,
+        Attack attackObj = new UmbralBladeAttack(blade.getBladeDisplay(), profile,
             true, true, 1,
             30, 1, (int) (duration * 1.75),
             0.2, -0.1)
@@ -139,7 +139,7 @@ public class AttackingHeavyState extends UmbralStateFacade {
             .setInitialMovementTicks(5)
             .setDrawParticles(false)
             .setNextAttack(
-                new UmbralBladeAttack(blade.getDisplay(), profile,
+                new UmbralBladeAttack(blade.getBladeDisplay(), profile,
                     true, false, 0,
                     (int) (dist * 2), 10, duration / 2,
                     0, 1)
