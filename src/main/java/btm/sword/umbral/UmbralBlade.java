@@ -11,7 +11,6 @@ import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Particle;
 import org.bukkit.entity.Display;
-import org.bukkit.entity.EntityType;
 import org.bukkit.entity.ItemDisplay;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.inventory.ItemStack;
@@ -47,6 +46,7 @@ import btm.sword.umbral.input.InputBuffer;
 import btm.sword.umbral.motion.BladeMotion;
 import btm.sword.umbral.motion.BladeMotionHost;
 import btm.sword.umbral.motion.drivers.ImpalementFollowDriver;
+import btm.sword.umbral.presentation.BladeDisplay;
 import btm.sword.umbral.statemachine.UmbralStateMachine;
 import btm.sword.umbral.statemachine.state.AttackingHeavyState;
 import btm.sword.umbral.statemachine.state.AttackingQuickState;
@@ -59,7 +59,6 @@ import btm.sword.umbral.statemachine.state.SheathedState;
 import btm.sword.umbral.statemachine.state.StandbyState;
 import btm.sword.umbral.statemachine.state.WaitingState;
 import btm.sword.umbral.statemachine.state.WieldState;
-import btm.sword.util.display.DisplayUtil;
 import btm.sword.util.display.DrawUtil;
 import btm.sword.util.display.ParticleWrapper;
 import btm.sword.util.math.BezierUtil;
@@ -95,6 +94,16 @@ public class UmbralBlade extends ThrownItem implements Lodgeable, BladeMotionHos
      */
     @Getter
     private final BladeMotion bladeMotion;
+    /**
+     * Single owner of the underlying {@link ItemDisplay} handle for this blade. All umbral-side
+     * presentation operations (teleport / transformation / bobbing / spawn / dispose) route
+     * through this wrapper. The inherited {@code display} field on {@link ThrownItem}'s parents
+     * remains alive transitionally because inherited physics methods still read it; both fields
+     * point to the same {@code ItemDisplay} handle and are synced on respawn/dispose. The
+     * inherited field is removed entirely when inheritance is severed in step 9.
+     */
+    @Getter
+    private final BladeDisplay bladeDisplay;
     @Getter
     private Function<Combatant, Attack>[] basicAttacks;
     @Getter
@@ -112,10 +121,6 @@ public class UmbralBlade extends ThrownItem implements Lodgeable, BladeMotionHos
     @Getter
     private final Vector3f scale = new Vector3f(
         (float) Config.UmbralBlade.SCALE_X, (float) Config.UmbralBlade.SCALE_Y, (float) Config.UmbralBlade.SCALE_Z);
-
-    @Getter
-    @Setter
-    private TimeArbiter.TaskHandle idleMovementTask;
 
     @Getter
     private final Predicate<UmbralBlade> endHoverPredicate;
@@ -230,6 +235,9 @@ public class UmbralBlade extends ThrownItem implements Lodgeable, BladeMotionHos
 
         this.weapon = weapon;
 
+        this.bladeDisplay = new BladeDisplay(scale);
+        this.bladeDisplay.adopt(display);
+
         generateUmbralItems();
 
         this.attackEndCallback = () -> attackCompleted = true;
@@ -311,36 +319,33 @@ public class UmbralBlade extends ThrownItem implements Lodgeable, BladeMotionHos
 
     @Override
     public void teleportDisplay(Location location, Vector direction, int teleportDuration) {
-        if (display == null || !display.isValid()) return;
-        TimeArbiter.teleportDisplay(display, location, direction, teleportDuration,
-            UmbralBlade.class, 0);
+        bladeDisplay.teleportTo(location, direction, teleportDuration);
     }
 
     @Override
     public void setDisplayTransformation(Transformation transformation, int transformDuration) {
-        if (display == null || !display.isValid()) return;
-        TimeArbiter.setDisplayTransformation(display, transformation, transformDuration);
+        bladeDisplay.setTransformation(transformation, transformDuration);
     }
 
     @Override
     public Location currentDisplayLocation() {
-        return (display == null || !display.isValid()) ? null : display.getLocation();
+        return bladeDisplay.currentLocation();
     }
 
     @Override
     public boolean isDisplayValid() {
-        return display != null && display.isValid();
+        return bladeDisplay.isValid();
     }
 
     // TODO: #240 - Make a method for calculating correct orientation of blade for edge to align with plane of swing on attack
     /** Applies the display transformation for the given state class after a 50 ms delay. */
     public void setDisplayTransformation(Class<? extends State<UmbralBlade>> state) {
-        if (display == null) return;
+        if (!bladeDisplay.isValid()) return;
 
         int duration = getInterpolationDurationForState(state);
         SwordScheduler.runBukkitTaskLater(() -> {
-            DisplayUtil.setInterpolationValues(display, 0, duration);
-            display.setTransformation(getStateDisplayTransformation(state));
+            bladeDisplay.setInterpolation(0, duration);
+            bladeDisplay.setTransformationImmediate(getStateDisplayTransformation(state));
             }, 50, TimeUnit.MILLISECONDS
         );
     }
@@ -397,7 +402,7 @@ public class UmbralBlade extends ThrownItem implements Lodgeable, BladeMotionHos
                 new Quaternionf()
             );
         } else if (state == LodgedState.class) {
-            return display.getTransformation();
+            return bladeDisplay.currentTransformation();
         } else if (state == AttackingQuickState.class || state == AttackingHeavyState.class) {
             return new Transformation(
                 new Vector3f(0, 0, -1),
@@ -415,36 +420,12 @@ public class UmbralBlade extends ThrownItem implements Lodgeable, BladeMotionHos
 
     /** Starts the cosine idle bobbing animation on the blade's display entity. */
     public void startIdleMovement() {
-        if (idleMovementTask != null) {
-            idleMovementTask.cancel();
-        }
-        final double[] step = {0};
-        idleMovementTask = TimeArbiter.runTimeBoundBukkitTaskOnTimer(
-            () -> {
-                TimeArbiter.setDisplayTransformation(display,
-                    new Transformation(
-                        new Vector3f(0, (float) (Math.cos(step[0]) * Config.UmbralBlade.IDLE_MOVEMENT_AMPLITUDE), 0),
-                        display.getTransformation().getLeftRotation(),
-                        scale,
-                        new Quaternionf()
-                    ),
-                    Config.UmbralBlade.IDLE_MOVEMENT_PERIOD
-                );
-
-                step[0] += Math.PI / 8;
-            },
-            null,
-            null,
-            0, Config.UmbralBlade.IDLE_MOVEMENT_PERIOD,
-            UmbralBlade.class, "startIdleMovement"
-        );
+        bladeDisplay.startBobbing(Config.UmbralBlade.IDLE_MOVEMENT_AMPLITUDE, Config.UmbralBlade.IDLE_MOVEMENT_PERIOD);
     }
 
     /** Cancels the idle bobbing animation task if it is currently running. */
     public void endIdleMovement() {
-        if (idleMovementTask != null) {
-            idleMovementTask.cancel();
-        }
+        bladeDisplay.stopBobbing();
     }
 
     @Override
@@ -556,14 +537,10 @@ public class UmbralBlade extends ThrownItem implements Lodgeable, BladeMotionHos
 
     /** Removes the existing display entity and respawns a fresh one at the thrower's eye level. */
     public void resetWeaponDisplay() {
-        if (display != null) {
-            display.remove();
-            display = null;
-        }
-
-        LivingEntity e = thrower.self();
-        display = (ItemDisplay) e.getWorld().spawnEntity(e.getEyeLocation(), EntityType.ITEM_DISPLAY);
-        displaySetupInstructions.accept(display);
+        bladeDisplay.respawn(thrower.self(), displaySetupInstructions);
+        // TODO: #step-9 — sync removed once inheritance is severed and bladeDisplay becomes
+        //       the only handle holder.
+        display = bladeDisplay.handle();
     }
 
     @Override
@@ -656,8 +633,7 @@ public class UmbralBlade extends ThrownItem implements Lodgeable, BladeMotionHos
 
     @Override
     protected void teleport() {
-        TimeArbiter.teleportDisplay(display, cur, to, 2,
-            UmbralBlade.class, 458);
+        bladeDisplay.teleportTo(cur, to, 2);
     }
 
     @Override
@@ -744,9 +720,9 @@ public class UmbralBlade extends ThrownItem implements Lodgeable, BladeMotionHos
         bladeStateMachine.getState().onExit(this);
         bladeStateMachine.setDeactivated(true);
         bladeMotion.stop();
-        if (display != null && display.isValid()) {
-            display.remove();
-        }
+        bladeDisplay.dispose();
+        // TODO: #step-9 — sync removed once inheritance is severed and bladeDisplay becomes
+        //       the only handle holder.
         display = null;
     }
 
