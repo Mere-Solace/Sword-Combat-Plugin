@@ -3,8 +3,6 @@ package btm.sword.entity.display;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import net.donnypz.displayentityutils.utils.DisplayEntities.GroupSpawnSettings;
-
 import org.bukkit.Material;
 import org.bukkit.entity.Display;
 import org.bukkit.entity.ItemDisplay;
