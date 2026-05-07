@@ -87,7 +87,12 @@ public record SlerpToOffsetDriver(SwordEntity anchor, Vector localOffset, double
 
         Vector step = direction.normalize().multiply(speed);
         Location updated = current.clone().add(step);
-        context.teleportTo(updated, step, teleportDuration);
+        // Lock the body yaw/pitch toward the target on the first tick only. Subsequent ticks
+        // pass a null direction so Bukkit's smooth-teleport interpolation finishes the single
+        // rotation onto the lock instead of being restarted every tick by a slightly different
+        // step direction (which produced visible stutter on long recalls).
+        Vector teleportDir = context.tickCount() == 1 ? step : null;
+        context.teleportTo(updated, teleportDir, teleportDuration);
         return Status.RUNNING;
     }
 
