@@ -1,5 +1,7 @@
 package btm.sword.umbral.statemachine.state;
 
+import java.util.function.Predicate;
+
 import org.bukkit.Location;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
@@ -114,7 +116,7 @@ public class LungingState extends UmbralStateFacade {
     }
 
     /** Build an entity filter that excludes the thrower and the blade's own display entity. */
-    private static java.util.function.Predicate<Entity> buildEntityFilter(UmbralBlade blade) {
+    private static Predicate<Entity> buildEntityFilter(UmbralBlade blade) {
         return entity -> {
             if (!(entity instanceof LivingEntity le) || le.isDead()) return false;
             if (entity.getUniqueId().equals(blade.getThrower().getUniqueId())) return false;

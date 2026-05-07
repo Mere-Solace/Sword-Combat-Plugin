@@ -693,9 +693,8 @@ public class UmbralBlade implements InteractiveItem, Lodgeable, BladeMotionHost 
 
     @SuppressWarnings("unchecked")
     private void loadBasicAttacks() {
-        ItemDisplay handle = bladeDisplay.handle();
         basicAttacks = new Function[]{
-            combatant -> new UmbralBladeAttack(handle, AttackType.WIDE_UMBRAL_SLASH1_WINDUP,
+            combatant -> new UmbralBladeAttack(bladeDisplay, AttackType.WIDE_UMBRAL_SLASH1_WINDUP,
                 true, true, 1,
                 10, 30, 500,
                 0, 1)
@@ -703,7 +702,7 @@ public class UmbralBlade implements InteractiveItem, Lodgeable, BladeMotionHost 
                 .setInitialMovementTicks(25)
                 .setDrawParticles(false)
                 .setNextAttack(
-                    new UmbralBladeAttack(handle, AttackType.WIDE_UMBRAL_SLASH1,
+                    new UmbralBladeAttack(bladeDisplay, AttackType.WIDE_UMBRAL_SLASH1,
                         true, false, 0,
                         20, 10, 100,
                         0, 1)
@@ -712,7 +711,7 @@ public class UmbralBlade implements InteractiveItem, Lodgeable, BladeMotionHost 
                         .setCallback(attackEndCallback, 200),
                     100),
 
-            combatant -> new UmbralBladeAttack(handle, AttackType.WIDE_UMBRAL_SLASH2_WINDUP,
+            combatant -> new UmbralBladeAttack(bladeDisplay, AttackType.WIDE_UMBRAL_SLASH2_WINDUP,
                 true, true, 2,
                 10, 30, 500,
                 0, 1)
@@ -720,7 +719,7 @@ public class UmbralBlade implements InteractiveItem, Lodgeable, BladeMotionHost 
                 .setInitialMovementTicks(25)
                 .setDrawParticles(false)
                 .setNextAttack(
-                    new UmbralBladeAttack(handle, AttackType.WIDE_UMBRAL_SLASH2,
+                    new UmbralBladeAttack(bladeDisplay, AttackType.WIDE_UMBRAL_SLASH2,
                         true, false, 0,
                         20, 10, 100,
                         0, 1)
@@ -729,7 +728,7 @@ public class UmbralBlade implements InteractiveItem, Lodgeable, BladeMotionHost 
                         .setCallback(attackEndCallback, 200),
                     100),
 
-            combatant -> new UmbralBladeAttack(handle, AttackType.WIDE_UMBRAL_SLASH3_WINDUP,
+            combatant -> new UmbralBladeAttack(bladeDisplay, AttackType.WIDE_UMBRAL_SLASH3_WINDUP,
                 false, true, 3,
                 10, 30, 500,
                 0, 1.2)
@@ -737,7 +736,7 @@ public class UmbralBlade implements InteractiveItem, Lodgeable, BladeMotionHost 
                 .setInitialMovementTicks(25)
                 .setDrawParticles(false)
                 .setNextAttack(
-                    new UmbralBladeAttack(handle, AttackType.WIDE_UMBRAL_SLASH3,
+                    new UmbralBladeAttack(bladeDisplay, AttackType.WIDE_UMBRAL_SLASH3,
                         false, false, 0,
                         20, 10, 50,
                         0, 1)

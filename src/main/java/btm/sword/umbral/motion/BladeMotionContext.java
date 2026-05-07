@@ -12,7 +12,7 @@ import btm.sword.entity.base.Combatant;
  * Drivers receive an instance of this class as the only argument to their lifecycle methods.
  * The context forwards display operations to a {@link BladeMotionHost} and exposes a tick
  * counter that resets each time a new driver is installed. Drivers MUST NOT cache the context
- * reference outside of their own internal fields and MUST NOT downcast it.
+ * reference outside their own internal fields and MUST NOT downcast it.
  * <p>
  * The instance is created by and owned exclusively by {@link BladeMotion}; only that class may
  * mutate the tick counter via the package-private accessors below.

@@ -90,7 +90,6 @@ public class ThrownItem extends VisualProjectile implements Lodgeable {
      *
      * @param thrower                   the combatant performing the throw
      * @param displaySetupInstructions  applied to the {@link ItemDisplay} immediately after it spawns
-     * @param setupPeriod               polling interval in ticks for the spawn-check loop
      */
     public ThrownItem(Combatant thrower, Consumer<ItemDisplay> displaySetupInstructions) {
         this.thrower = thrower;

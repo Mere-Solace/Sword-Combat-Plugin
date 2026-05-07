@@ -124,7 +124,7 @@ public class AttackingQuickState extends UmbralStateFacade {
             case BACKWARD -> type = AttackType.B_DASH_ATTACK;
             default -> type = AttackType.WIDE_UMBRAL_SLASH3;
         }
-        new UmbralBladeAttack(blade.getDisplay(), type,
+        new UmbralBladeAttack(blade.getBladeDisplay(), type,
             direction.equals(DashDirection.FORWARD), false, 1,
             5, 10, 200,
             0, 1)
