@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.bukkit.Bukkit;
@@ -32,6 +33,7 @@ import btm.sword.runtime.scheduler.TimeArbiter;
 import btm.sword.scene.camera.CameraSystem;
 import btm.sword.ui.bossbar.BossBarManager;
 import btm.sword.ui.scoreboard.ScoreboardManager;
+import net.kyori.adventure.text.Component;
 import xyz.xenondevs.invui.window.Window;
 import xyz.xenondevs.invui.window.WindowManager;
 
@@ -158,19 +160,24 @@ public final class ServerJoinArbiter implements Listener {
         AtomicBoolean madeSelection = new AtomicBoolean(false);
         AtomicReference<Window> openWindow = new AtomicReference<>();
 
-        // Selection Type that allows for dynamic resolving of location & world
-        // and maybe routing with Velocity (if need be, once we get there...)
-
-
-        // Join menu defines all 'places for player to go'
-        JoinRouterMenu joinRouterMenu = new JoinRouterMenu(swordPlayer, madeSelection);
+        // Routing consumer: fires exactly once when the player clicks a destination.
+        // Closes the menu, runs the configurable countdown, then teleports and flips
+        // madeSelection — at which point the velocity-zero ticker below tears down.
+        // Transitional; the upcoming JoinSession owns this countdown directly.
+        JoinRouterMenu joinRouterMenu = new JoinRouterMenu(
+            swordPlayer,
+            destination -> {
+                if (openWindow.get() != null) openWindow.get().close();
+                startRoutingCountdown(swordPlayer, destination, madeSelection);
+            }
+        );
 
         // zero velocity and display a selection menu consistently
         TimeArbiter.runTimeIndependentBukkitTaskOnTimer(
             null,
             () -> {
                 openWindow.set(WindowManager.getInstance().getOpenWindow(player));
-                if (openWindow.get() == null) {
+                if (openWindow.get() == null && !joinRouterMenu.isSelected()) {
                     joinRouterMenu.open();
                 }
                 player.setVelocity(new Vector(0, 0, 0));
@@ -182,12 +189,50 @@ public final class ServerJoinArbiter implements Listener {
                 () -> {
                     if (openWindow.get() != null) {
                         openWindow.get().close();
-
-                        player.setGameMode(GameMode.SURVIVAL);
-                        player.setInvisible(false);
                     }
+                    player.setGameMode(GameMode.SURVIVAL);
+                    player.setInvisible(false);
                 }
             )
+        );
+    }
+
+    /**
+     * Runs the routing countdown for the selected destination, then teleports the player
+     * and flips {@code madeSelection} to signal the velocity-zero ticker to tear down.
+     *
+     * <p>Iteration count is derived from
+     * {@link JoinSequenceConfig#ROUTING_DURATION_MS} and
+     * {@link JoinSequenceConfig#ROUTING_TICK_PERIOD_MS} as
+     * {@code (duration / period) - 1} so the lastIterationCallback fires at exactly
+     * {@code duration} ms after the click.</p>
+     */
+    private static void startRoutingCountdown(SwordPlayer swordPlayer,
+                                              Destination destination,
+                                              AtomicBoolean madeSelection) {
+        AtomicInteger ai = new AtomicInteger(0);
+        int periodMs = Math.max(1, JoinSequenceConfig.ROUTING_TICK_PERIOD_MS);
+        int iterations = Math.max(0,
+            (JoinSequenceConfig.ROUTING_DURATION_MS / periodMs) - 1);
+
+        TimeArbiter.runFixedIterationTaskTimer(
+            null,
+            () -> swordPlayer.displayTitle(
+                Component.text(ai.incrementAndGet()),
+                Component.text("Preparing to teleport..."),
+                0L, periodMs + 100L, 0L
+            ),
+            0, periodMs, iterations,
+            ServerJoinArbiter.class, "startRoutingCountdown",
+            () -> {
+                swordPlayer.displayTitle(
+                    Component.text(ai.incrementAndGet()),
+                    Component.text("Teleporting"),
+                    0L, periodMs + 100L, 0L
+                );
+                swordPlayer.teleport(destination.spawn());
+                madeSelection.set(true);
+            }
         );
     }
 

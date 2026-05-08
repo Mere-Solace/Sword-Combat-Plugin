@@ -2,20 +2,16 @@ package btm.sword.join.menu;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 
-import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.entity.Player;
 
-import btm.sword.config.section.JoinSequenceConfig;
 import btm.sword.entity.player.SwordPlayer;
 import btm.sword.item.core.ItemStackBuilder;
+import btm.sword.join.Destination;
 import btm.sword.menu.InventoryMenuManager;
 import btm.sword.menu.Menu;
 import btm.sword.menu.character.CharacterMenu;
-import btm.sword.runtime.scheduler.TimeArbiter;
 import net.kyori.adventure.text.Component;
 import xyz.xenondevs.invui.gui.Gui;
 import xyz.xenondevs.invui.item.impl.SimpleItem;
@@ -23,52 +19,61 @@ import xyz.xenondevs.invui.window.Window;
 
 /**
  * Top-level join-sequence menu shown to a player while they are held in the dark-room
- * staging slot. Surfaces the four destination buttons (hub, quick-join, adventure,
- * roguelike) and a player-stats opener. Each destination button closes the window,
- * marks the selection, runs a configurable countdown title, then teleports the player
- * to the configured {@link Location}.
+ * staging slot.
  *
- * <p>The countdown duration and tick period come from
- * {@link JoinSequenceConfig#ROUTING_DURATION_MS} and
- * {@link JoinSequenceConfig#ROUTING_TICK_PERIOD_MS}.</p>
+ * <h2>Responsibility</h2>
+ * <p>Surfaces four destination buttons (hub, quick-join, adventure, roguelike) and a
+ * player-stats opener. The menu is purely an intent-raising surface — when the player
+ * clicks a destination button, the menu invokes the supplied {@code onSelect} callback
+ * with the chosen {@link Destination}. The menu never teleports, runs countdowns, or
+ * decides what the chosen destination means; that responsibility lies with the caller
+ * (the join lifecycle owner).</p>
+ *
+ * <h2>Click idempotency</h2>
+ * <p>Once any destination button is clicked the menu refuses subsequent destination
+ * clicks until it is reopened. This prevents a single open menu from raising multiple
+ * intents in quick succession (which would race in the caller's lifecycle code). The
+ * player-stats button is exempt because it merely opens a sub-menu and does not
+ * commit a routing decision.</p>
  */
 public class JoinRouterMenu extends Menu {
-    private final AtomicBoolean madeSelection;
+
+    private final Consumer<Destination> onSelect;
 
     /**
-     * Creates a Menu instance bound to the given player.
-     *
-     * @param player
-     *         the player this menu belongs to
+     * Latches on the first destination click. Subsequent destination clicks on the same
+     * menu instance are ignored. Reset by reopening: a new menu instance starts unset.
      */
-    public JoinRouterMenu(SwordPlayer player, AtomicBoolean madeSelection) {
+    private final AtomicBoolean selected = new AtomicBoolean(false);
+
+    /**
+     * Constructs a join-router menu bound to {@code player} that raises destination intent
+     * through {@code onSelect}.
+     *
+     * @param player   the player this menu belongs to; never null
+     * @param onSelect callback invoked exactly once with the chosen {@link Destination}
+     *                 the first time the player clicks a destination button. The callback
+     *                 is responsible for closing the InvUI window and performing any
+     *                 follow-up (countdown, teleport, gamemode change, etc.). Never null.
+     */
+    public JoinRouterMenu(SwordPlayer player, Consumer<Destination> onSelect) {
         super(player);
-        this.madeSelection = madeSelection;
+        this.onSelect = onSelect;
     }
 
     /**
+     * Returns whether this menu instance has already raised a destination intent.
+     * Intended for the menu re-display ticker so it can stop reopening a menu that has
+     * already been "consumed" by a click.
      *
-     * @return
+     * @return {@code true} if a destination button has been clicked on this instance
      */
-    public boolean isSelectionMade() {
-        return madeSelection.get();
+    public boolean isSelected() {
+        return selected.get();
     }
 
-    /**
-     *
-     */
-    public void makeSelection() {
-        madeSelection.set(true);
-    }
-
-    /**
-     *
-     */
     @Override
     public void open() {
-        Player player = swordPlayer.player();
-        AtomicReference<Window> window = new AtomicReference<>();
-
         SimpleItem playerInfo = new SimpleItem(
             swordPlayer.getPlayerHeadItemWithCustomText(
                 Component.text("Player Stats"),
@@ -77,45 +82,36 @@ public class JoinRouterMenu extends Menu {
             click -> InventoryMenuManager.openMenu(CharacterMenu.class, swordPlayer)
         );
 
-        // go to hub area
         SimpleItem hub = destinationButton(
             Material.CAMPFIRE,
             "Hub",
             "The central social area",
-            JoinSequenceConfig.DESTINATION_HUB,
-            window
+            Destination.HUB
         );
 
-        // quick join a match (tp to waiting room)
         SimpleItem quickJoin = destinationButton(
             Material.IRON_SWORD,
             "Quick-Join",
             "Enter the matchmaking queue",
-            JoinSequenceConfig.DESTINATION_QUICK_JOIN,
-            window
+            Destination.QUICK_JOIN
         );
 
-        // join adventure world
         SimpleItem adventure = destinationButton(
             Material.GRASS_BLOCK,
             "Adventure",
             "Enter the adventure world",
-            JoinSequenceConfig.DESTINATION_ADVENTURE,
-            window
+            Destination.ADVENTURE
         );
 
-        // join roguelike world
         SimpleItem roguelike = destinationButton(
             Material.WITHER_SKELETON_SKULL,
             "Roguelike",
             "Enter the roguelike world",
-            JoinSequenceConfig.DESTINATION_ROGUELIKE,
-            window
+            Destination.ROGUELIKE
         );
 
         // TODO: edit settings (S)
         // TODO: edit saves (X)
-        // TODO: view stats — currently mapped to playerInfo head (P)
 
         Gui.Builder.Normal builder = Gui.normal()
             .setStructure(
@@ -133,79 +129,31 @@ public class JoinRouterMenu extends Menu {
 
         Gui gui = builder.build();
 
-        window.set(Window.single()
+        Window.single()
             .setViewer(swordPlayer.player())
             .setTitle("MainMenu")
             .setGui(gui)
             .build()
-        );
-        window.get().open();
+            .open();
     }
 
     /**
-     * Builds a destination button. Clicking the button closes the window, marks the menu's
-     * selection flag, runs the configured countdown title, and finally teleports the player
-     * to {@code destination}. Logic is duplicated across all four destinations so this
-     * helper exists to keep the {@link #open()} body readable; it is replaced in the next
-     * lifecycle iteration when {@link JoinSession} owns the routing sequence.
-     *
-     * @param material    item material for the button face
-     * @param title       display name shown in the item tooltip
-     * @param description single-line lore description
-     * @param destination world location to teleport to on countdown completion
-     * @param window      reference holder for the open InvUI window — captured so the
-     *                    button can close the window before the countdown begins
-     * @return an InvUI {@link SimpleItem} configured with the click behaviour
+     * Builds an inert-on-second-click destination button. The first click latches the
+     * {@link #selected} flag and dispatches {@code destination} to the {@code onSelect}
+     * callback. Subsequent clicks on this menu instance are ignored.
      */
     private SimpleItem destinationButton(Material material,
                                          String title,
                                          String description,
-                                         Location destination,
-                                         AtomicReference<Window> window) {
+                                         Destination destination) {
         return new SimpleItem(
             ItemStackBuilder.of(material)
                 .name(Component.text(title))
                 .lore(List.of(Component.text(description)))
                 .build(),
-            click -> startRoutingCountdown(destination, window)
-        );
-    }
-
-    /**
-     * Closes the menu window, marks the selection, and starts the configurable countdown
-     * task that teleports the player to {@code destination} on completion.
-     *
-     * <p>Iteration count is derived from
-     * {@link JoinSequenceConfig#ROUTING_DURATION_MS} and
-     * {@link JoinSequenceConfig#ROUTING_TICK_PERIOD_MS} as
-     * {@code (duration / period) - 1} so the lastIterationCallback fires at exactly
-     * {@code duration} ms after the click.</p>
-     */
-    private void startRoutingCountdown(Location destination, AtomicReference<Window> window) {
-        if (window.get() != null) window.get().close();
-        makeSelection();
-
-        AtomicInteger ai = new AtomicInteger(0);
-        int periodMs = Math.max(1, JoinSequenceConfig.ROUTING_TICK_PERIOD_MS);
-        int iterations = Math.max(0,
-            (JoinSequenceConfig.ROUTING_DURATION_MS / periodMs) - 1);
-
-        TimeArbiter.runFixedIterationTaskTimer(
-            null,
-            () -> swordPlayer.displayTitle(
-                Component.text(ai.incrementAndGet()),
-                Component.text("Preparing to teleport..."),
-                0L, periodMs + 100L, 0L
-            ),
-            0, periodMs, iterations,
-            JoinRouterMenu.class, "startRoutingCountdown",
-            () -> {
-                swordPlayer.displayTitle(
-                    Component.text(ai.incrementAndGet()),
-                    Component.text("Teleporting"),
-                    0L, periodMs + 100L, 0L
-                );
-                swordPlayer.teleport(destination);
+            click -> {
+                if (!selected.compareAndSet(false, true)) return;
+                onSelect.accept(destination);
             }
         );
     }
