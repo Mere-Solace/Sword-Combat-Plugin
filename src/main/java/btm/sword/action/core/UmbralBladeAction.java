@@ -12,7 +12,7 @@ import org.bukkit.util.Vector;
 import btm.sword.action.attack.AttackAction;
 import btm.sword.combat.attack.Attack;
 import btm.sword.combat.style.AttackType;
-import btm.sword.config.Config;
+import btm.sword.config.section.CombatConfig;
 import btm.sword.entity.base.Combatant;
 import btm.sword.entity.base.SwordEntity;
 import btm.sword.entity.player.SwordPlayer;
@@ -112,7 +112,7 @@ public class UmbralBladeAction extends SwordAction {
         new Attack(wielder.getItemStackInHand(true), // TODO: Store somewhere
             AttackType.BLADE_RETRIEVAL_CIRCULAR_SLASH,
             false,
-            Config.Combat.CIRCULAR_SLASH_DURATION_MS, Config.Combat.CIRCULAR_SLASH_ITERATIONS,
+            CombatConfig.CIRCULAR_SLASH_DURATION_MS, CombatConfig.CIRCULAR_SLASH_ITERATIONS,
             0, 1).execute(wielder);
     }
 
@@ -121,7 +121,7 @@ public class UmbralBladeAction extends SwordAction {
         UmbralBlade blade = wielder.getUmbralBlade();
         if (blade == null) return;
 
-        if (wielder.getAspects().soulfireCur() >= (float) Config.Combat.LINK_ATTACK_SOULFIRE_COST && !blade.inState(LodgedState.class)) {
+        if (wielder.getAspects().soulfireCur() >= (float) CombatConfig.LINK_ATTACK_SOULFIRE_COST && !blade.inState(LodgedState.class)) {
             blade.requestQuickAttack(comboStep);
             return;
         }
@@ -147,7 +147,7 @@ public class UmbralBladeAction extends SwordAction {
         if (blade == null || !blade.inState(WieldState.class)) return;
         if (!(wielder instanceof SwordPlayer sp)) return;
 
-        float cost = (float) Config.Combat.CHANNEL_SOULFIRE_COST;
+        float cost = (float) CombatConfig.CHANNEL_SOULFIRE_COST;
 
         if (wielder.getAspects().soulfireCur() < cost) return;
 
@@ -155,8 +155,8 @@ public class UmbralBladeAction extends SwordAction {
         sp.setChannelInterrupted(false);
 
         final AtomicInteger iterationsPassed = new AtomicInteger(0);
-        int healingDuration = (int) Config.Combat.CHANNEL_DURATION_MS;
-        int period = Config.Combat.CHANNEL_HEAL_PERIOD;
+        int healingDuration = (int) CombatConfig.CHANNEL_DURATION_MS;
+        int period = CombatConfig.CHANNEL_HEAL_PERIOD;
         final int iterationsRequired = healingDuration / period;
         final float soulfirePerIteration = cost / iterationsRequired;
 
@@ -194,7 +194,7 @@ public class UmbralBladeAction extends SwordAction {
                     && sp.getActivationContext().equals(ActivationContext.CHANNELING)) {
                     Debug.umbral("My lad, you're healing yourself!");
 
-                    sp.changeShards(Config.Combat.CHANNEL_HEAL_AMOUNT);
+                    sp.changeShards(CombatConfig.CHANNEL_HEAL_AMOUNT);
                     Prefab.Particles.SOULFIRE_POOF.display(sp.getChestLocation());
                     Prefab.Sounds.SHADOW_BLINK.playForAllInRadius(sp.self());
                     healComplete.set(true);

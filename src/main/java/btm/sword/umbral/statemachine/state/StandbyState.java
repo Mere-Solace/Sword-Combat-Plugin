@@ -3,7 +3,7 @@ package btm.sword.umbral.statemachine.state;
 import org.bukkit.util.Vector;
 
 import btm.sword.action.throwing.InteractiveItemArbiter;
-import btm.sword.config.Config;
+import btm.sword.config.section.ColorConfig;
 import btm.sword.entity.player.SwordPlayer;
 import btm.sword.umbral.UmbralBlade;
 import btm.sword.umbral.motion.drivers.AnchoredFollowDriver;
@@ -29,7 +29,7 @@ public class StandbyState extends UmbralStateFacade {
         ));
         blade.startIdleMovement();
         if (blade.getThrower() instanceof SwordPlayer swordPlayer) {
-            swordPlayer.displayTitle(null, Component.text("Ready.").color(Config.SwordColor.TEXT_COOL),
+            swordPlayer.displayTitle(null, Component.text("Ready.").color(ColorConfig.TEXT_COOL),
                 50, 500, 50);
         }
     }

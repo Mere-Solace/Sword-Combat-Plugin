@@ -29,7 +29,8 @@ import btm.sword.Sword;
 import btm.sword.combat.dev.AnimationMode;
 import btm.sword.combat.dev.AttackDevSession;
 import btm.sword.combat.dev.DevMode;
-import btm.sword.config.Config;
+import btm.sword.config.section.ColorConfig;
+import btm.sword.config.section.DebugConfig;
 import btm.sword.entity.arbiter.SwordEntityArbiter;
 import btm.sword.entity.base.SwordEntity;
 import btm.sword.entity.player.DevSwordPlayer;
@@ -39,6 +40,7 @@ import btm.sword.gamemode.type.CaptureTheFlag1v1;
 import btm.sword.item.core.KeyRegistry;
 import btm.sword.item.material.MaterialType;
 import btm.sword.item.special.NonMovableItem;
+import btm.sword.join.WaitingPhaseGuard;
 import btm.sword.playerdata.PlayerStorage;
 import btm.sword.util.misc.ChatInputCapture;
 import btm.sword.util.misc.Debug;
@@ -119,6 +121,11 @@ public class PlayerListener implements Listener {
     public void onItemPickup(EntityPickupItemEvent event) {
         SwordEntity e = SwordEntityArbiter.getOrAdd(event.getEntity());
 
+        if (WaitingPhaseGuard.isLocked(e)) {
+            event.setCancelled(true);
+            return;
+        }
+
         if (!e.isAbleToPickup()) {
             event.setCancelled(true);
             return;
@@ -137,7 +144,7 @@ public class PlayerListener implements Listener {
                     storage.addMaterial(materialType, toStore);
                     sp.player().sendActionBar(
                         Component.text("[+", NamedTextColor.GREEN)
-                            .append(Component.text(toStore, Config.SwordColor.TEXT_COOL))
+                            .append(Component.text(toStore, ColorConfig.TEXT_COOL))
                             .append(Component.text(" ", NamedTextColor.GREEN))
                             .append(materialType.displayName())
                             .append(Component.text("] → Material Pouch", NamedTextColor.GREEN))
@@ -158,7 +165,7 @@ public class PlayerListener implements Listener {
                 storage.addCredits(total);
                 sp.player().sendActionBar(
                     Component.text("[+", NamedTextColor.GREEN)
-                        .append(Component.text(total + " ✦", Config.SwordColor.TEXT_COOL))
+                        .append(Component.text(total + " ✦", ColorConfig.TEXT_COOL))
                         .append(Component.text("] → Currency Pouch", NamedTextColor.GREEN))
                 );
                 event.setCancelled(true);
@@ -185,7 +192,7 @@ public class PlayerListener implements Listener {
      */
     @EventHandler
     public void inventoryEvent(InventoryEvent event) {
-        if (!Config.Debug.LOGGING_VERBOSE_INVENTORY) return;
+        if (!DebugConfig.LOGGING_VERBOSE_INVENTORY) return;
         for (HumanEntity human : event.getViewers()) {
             if (human instanceof Player) {
                 SwordEntityArbiter.get(human)
@@ -233,6 +240,13 @@ public class PlayerListener implements Listener {
      */
     @EventHandler
     public void inventoryDragEvent(InventoryDragEvent event) {
+        if (event.getWhoClicked() instanceof Player p) {
+            SwordEntity e = SwordEntityArbiter.getOrAdd(p);
+            if (WaitingPhaseGuard.isLocked(e)) {
+                event.setCancelled(true);
+                return;
+            }
+        }
         if (NonMovableItem.isNonMovable(event.getOldCursor())) {
             event.setCancelled(true);
         }
@@ -257,6 +271,13 @@ public class PlayerListener implements Listener {
             e.fillInStackTrace();
             return;
         }
+
+        if (WaitingPhaseGuard.isLocked(sp)) {
+            event.setCancelled(true);
+            event.setResult(Event.Result.DENY);
+            return;
+        }
+
         Debug.sendInventoryClickDebugMessage(event);
 
         if (sp.handleInventoryInput(event)) {
@@ -434,9 +455,4 @@ public class PlayerListener implements Listener {
     public void gameChangeEvent(PlayerGameModeChangeEvent event) {
         // intentionally empty
     }
-
-//    @EventHandler
-//    public void onItemBreak(PlayerItemBreakEvent event) {
-//
-//    }
 }

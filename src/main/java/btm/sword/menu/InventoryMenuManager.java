@@ -8,6 +8,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
 import btm.sword.entity.player.SwordPlayer;
+import btm.sword.menu.character.ArtifactPouchMenu;
+import btm.sword.menu.character.CharacterMenu;
+import btm.sword.menu.character.CurrencyMenu;
+import btm.sword.menu.character.MaterialPouchMenu;
+import btm.sword.menu.character.MovesetMenu;
 import btm.sword.menu.dev.AllKeyframeEffectsMenu;
 import btm.sword.menu.dev.AnimationBrowserMenu;
 import btm.sword.menu.dev.ConfigMenu;
@@ -15,9 +20,12 @@ import btm.sword.menu.dev.CreativeInventoryMenu;
 import btm.sword.menu.dev.DEUBDEMenu;
 import btm.sword.menu.dev.DeuGroupBrowserMenu;
 import btm.sword.menu.dev.DevMenu;
+import btm.sword.menu.dev.DevStatEditorMenu;
+import btm.sword.menu.dev.ItemLibraryMenu;
 import btm.sword.menu.dev.KeyframeVisualsMenu;
 import btm.sword.menu.dev.TestingMenu;
 import btm.sword.menu.dev.WeaponDisplayEditorMenu;
+import btm.sword.menu.main.MainMenu;
 
 /** Registry and factory for all InvUI-backed menus; maps menu types to their player-scoped constructors. */
 public final class InventoryMenuManager {

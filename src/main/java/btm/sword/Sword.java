@@ -41,8 +41,11 @@ import btm.sword.input.binding.InputBindingsRegistrar;
 import btm.sword.input.binding.ItemInputDispatchTable;
 import btm.sword.input.transport.InputListener;
 import btm.sword.interaction.CustomInteractionManager;
+import btm.sword.join.JoinSessionArbiter;
 import btm.sword.join.MenuSlotGrid;
-import btm.sword.join.ServerJoinArbiter;
+import btm.sword.join.PlayerWaitingGate;
+import btm.sword.join.stash.InMemoryInventoryStashRepository;
+import btm.sword.join.stash.InventoryStashRepository;
 import btm.sword.menu.InventoryMenuManager;
 import btm.sword.playerdata.PlayerDataManager;
 import btm.sword.runtime.scheduler.TimeArbiter;
@@ -73,6 +76,17 @@ public final class Sword extends JavaPlugin {
     @Getter
     private static ProtocolManager protocolManager;
 
+    /**
+     * Repository for inventory snapshots stashed during the join-waiting phase.
+     * Constructed in {@link #onEnable()} and held for the lifetime of the plugin.
+     * The current backing implementation is in-memory — see
+     * {@link InMemoryInventoryStashRepository} — and intentionally does not persist
+     * across plugin reload. To upgrade to durable storage, swap the construction site
+     * in {@link #onEnable()}; no call sites depend on the concrete type.
+     */
+    @Getter
+    private InventoryStashRepository inventoryStashRepository;
+
     @Override
     public void onEnable() {
         instance = this;
@@ -87,13 +101,18 @@ public final class Sword extends JavaPlugin {
         ConfigManager.getInstance().loadConfig();
         Debug.init(getDataFolder());
 
+        // Construct the join-phase inventory stash repository. Currently in-memory; swap
+        // here to upgrade to a durable backing without touching any call sites.
+        inventoryStashRepository = new InMemoryInventoryStashRepository();
+
         InvUI.getInstance().setPlugin(this);
 
         getServer().getPluginManager().registerEvents(new ErrorListener(), this);
         getServer().getPluginManager().registerEvents(new InputListener(), this);
         getServer().getPluginManager().registerEvents(new PlayerListener(), this);
         getServer().getPluginManager().registerEvents(new CustomInteractionListener(), this);
-        getServer().getPluginManager().registerEvents(new ServerJoinArbiter(), this);
+        getServer().getPluginManager().registerEvents(
+            new JoinSessionArbiter(new PlayerWaitingGate(inventoryStashRepository)), this);
         getServer().getPluginManager().registerEvents(new EntityListener(), this);
         getServer().getPluginManager().registerEvents(new DEUAnimationHook(), this);
         WeaponAnchorPacketHook.register();

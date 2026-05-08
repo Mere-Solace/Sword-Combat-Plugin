@@ -8,7 +8,7 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Item;
 import org.bukkit.inventory.ItemStack;
 
-import btm.sword.config.Config;
+import btm.sword.config.section.CtfConfig;
 import btm.sword.entity.player.SwordPlayer;
 import btm.sword.runtime.scheduler.SwordScheduler;
 import btm.sword.util.prefab.Prefab;
@@ -25,7 +25,7 @@ import net.kyori.adventure.text.Component;
  *   <li><b>CARRIED</b> — the ArmorStand is removed, the banner is placed on the carrier's
  *       helmet slot, and a {@link Prefab.PotionEffects#FLAG_CARRIER_SLOW} effect is applied.</li>
  *   <li><b>DROPPED</b> — the carrier lost the flag (died or match intervention). A banner
- *       {@link Item} entity lies on the ground. After {@link Config.Ctf#FLAG_RETURN_TIMER_SECONDS}
+ *       {@link Item} entity lies on the ground. After {@link CtfConfig#FLAG_RETURN_TIMER_SECONDS}
  *       seconds the flag auto-returns to base.</li>
  * </ul>
  *
@@ -219,7 +219,7 @@ public class FlagEntity {
     private void scheduleReturn() {
         returnTimer = SwordScheduler.runBukkitTaskLater(
             this::returnToBase,
-            Config.Ctf.FLAG_RETURN_TIMER_SECONDS,
+            CtfConfig.FLAG_RETURN_TIMER_SECONDS,
             TimeUnit.SECONDS
         );
     }

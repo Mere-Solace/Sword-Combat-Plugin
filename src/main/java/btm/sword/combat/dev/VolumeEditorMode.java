@@ -29,7 +29,7 @@ import btm.sword.combat.simulation.ObbVolume;
 import btm.sword.combat.simulation.VolumeKeyframe;
 import btm.sword.combat.simulation.VolumeSequence;
 import btm.sword.combat.simulation.VolumeShape;
-import btm.sword.config.Config;
+import btm.sword.config.section.DebugConfig;
 import btm.sword.item.core.KeyRegistry;
 import btm.sword.runtime.scheduler.PredicateRunnablePair;
 import btm.sword.runtime.scheduler.TimeArbiter;
@@ -108,19 +108,19 @@ public final class VolumeEditorMode {
 
     /**
      * Rebuilds {@link #DUST_SELECTED}, {@link #DUST_DEFAULT}, and {@link #DUST_LIVE} from the
-     * current {@link btm.sword.config.Config.Debug} wireframe color/size entries.
+     * current {@link btm.sword.config.section.DebugConfig} wireframe color/size entries.
      * Called by config consumers on load and hot-reload.
      */
     public static void rebuildDust() {
         DUST_SELECTED = new Particle.DustOptions(
-            Config.Debug.WIREFRAME_SELECTED_COLOR,
-            (float) Config.Debug.WIREFRAME_SELECTED_SIZE);
+            DebugConfig.WIREFRAME_SELECTED_COLOR,
+            (float) DebugConfig.WIREFRAME_SELECTED_SIZE);
         DUST_DEFAULT = new Particle.DustOptions(
-            Config.Debug.WIREFRAME_DEFAULT_COLOR,
-            (float) Config.Debug.WIREFRAME_DEFAULT_SIZE);
+            DebugConfig.WIREFRAME_DEFAULT_COLOR,
+            (float) DebugConfig.WIREFRAME_DEFAULT_SIZE);
         DUST_LIVE = new Particle.DustOptions(
-            Config.Debug.WIREFRAME_LIVE_COLOR,
-            (float) Config.Debug.WIREFRAME_LIVE_SIZE);
+            DebugConfig.WIREFRAME_LIVE_COLOR,
+            (float) DebugConfig.WIREFRAME_LIVE_SIZE);
     }
 
     /** Text display entities spawned per editing session, keyed by player UUID. */
@@ -211,7 +211,7 @@ public final class VolumeEditorMode {
 
                 // Attack ray: only drawn when the sampled keyframe is RAYCAST or ORIGIN_RAY
                 // (buffer.rayOrigin is non-null only for those types).
-                if (buffer.rayOrigin != null && Config.Debug.VISUALIZATION_SHOW_HITBOXES) {
+                if (buffer.rayOrigin != null && DebugConfig.VISUALIZATION_SHOW_HITBOXES) {
                     ObbWireframe.drawEdge(world, buffer.rayOrigin, new Vector3f(buffer.center), DUST_GHOST_PATH);
                 }
             },
@@ -452,7 +452,7 @@ public final class VolumeEditorMode {
             session.getPlayer().getInventory().getItemInMainHand(),
             KeyRegistry.TEST_VOLUME_ATTACK_KEY);
         if (holdingWand && keyframes.size() >= 2 && tickCount % GREY_RENDER_PERIOD == 0
-                && Config.Debug.VISUALIZATION_SHOW_HITBOXES) {
+                && DebugConfig.VISUALIZATION_SHOW_HITBOXES) {
             for (VolumeKeyframe kf : keyframes) {
                 if (kf.keyframeType() != KeyframeType.RAYCAST && kf.keyframeType() != KeyframeType.ORIGIN_RAY) {
                     continue;
@@ -481,7 +481,7 @@ public final class VolumeEditorMode {
         if (points == null || points.isEmpty()) return;
 
         // Render each control point handle as a dark blue OBB
-        if (Config.Debug.VISUALIZATION_SHOW_HITBOXES) {
+        if (DebugConfig.VISUALIZATION_SHOW_HITBOXES) {
             for (ControlPoint cp : points) {
                 Vector3f worldCenter = worldTransform.transformPosition(
                     new Vector3f(cp.position()), new Vector3f());
@@ -490,7 +490,7 @@ public final class VolumeEditorMode {
         }
 
         // Ghost interpolated path at 10 t-values, rendered every 3rd tick
-        if (Config.Debug.VISUALIZATION_SHOW_HITBOXES && tickCount % GREY_RENDER_PERIOD == 0) {
+        if (DebugConfig.VISUALIZATION_SHOW_HITBOXES && tickCount % GREY_RENDER_PERIOD == 0) {
             ControlPointSequence traj = new ControlPointSequence(points, session.getEditControlMode());
             ObbVolume buffer = new ObbVolume();
             for (int i = 0; i <= 9; i++) {

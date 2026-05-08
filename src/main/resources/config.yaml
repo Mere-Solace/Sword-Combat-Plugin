@@ -407,6 +407,38 @@ menu_grid:
 join_sequence:
   opening_x: -186.5
   opening_z: -1058.5
+  destination:
+    hub:
+      world: 0
+      x: -275.5
+      y: 138.5
+      z: -1245.5
+      yaw: 90.0
+      pitch: 25.0
+    quick_join:
+      world: 0
+      x: 0.5
+      y: 100.0
+      z: 0.5
+      yaw: 0.0
+      pitch: 0.0
+    adventure:
+      world: 0
+      x: 100.5
+      y: 100.0
+      z: 100.5
+      yaw: 0.0
+      pitch: 0.0
+    roguelike:
+      world: 0
+      x: -100.5
+      y: 100.0
+      z: -100.5
+      yaw: 0.0
+      pitch: 0.0
+  routing:
+    duration_ms: 5000
+    tick_period_ms: 1000
 ctf:
   red_spawn_x: -209.0
   red_spawn_y: 105.0

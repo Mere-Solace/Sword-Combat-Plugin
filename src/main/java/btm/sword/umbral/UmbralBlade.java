@@ -28,7 +28,9 @@ import btm.sword.combat.attack.Attack;
 import btm.sword.combat.attack.UmbralBladeAttack;
 import btm.sword.combat.style.AttackType;
 import btm.sword.combat.style.WeaponAttackStyle;
-import btm.sword.config.Config;
+import btm.sword.config.section.ColorConfig;
+import btm.sword.config.section.CombatConfig;
+import btm.sword.config.section.UmbralBladeConfig;
 import btm.sword.entity.base.Combatant;
 import btm.sword.entity.base.SwordEntity;
 import btm.sword.entity.player.SwordPlayer;
@@ -137,7 +139,7 @@ public class UmbralBlade implements InteractiveItem, Lodgeable, BladeMotionHost 
     private int currentComboStep = -1;
     @Getter
     private final Vector3f scale = new Vector3f(
-        (float) Config.UmbralBlade.SCALE_X, (float) Config.UmbralBlade.SCALE_Y, (float) Config.UmbralBlade.SCALE_Z);
+        (float) UmbralBladeConfig.SCALE_X, (float) UmbralBladeConfig.SCALE_Y, (float) UmbralBladeConfig.SCALE_Z);
     @Getter
     private final Predicate<UmbralBlade> endHoverPredicate;
     @Getter
@@ -530,7 +532,7 @@ public class UmbralBlade implements InteractiveItem, Lodgeable, BladeMotionHost 
 
     /** Starts the cosine idle bobbing animation on the blade's display. */
     public void startIdleMovement() {
-        bladeDisplay.startBobbing(Config.UmbralBlade.IDLE_MOVEMENT_AMPLITUDE, Config.UmbralBlade.IDLE_MOVEMENT_PERIOD);
+        bladeDisplay.startBobbing(UmbralBladeConfig.IDLE_MOVEMENT_AMPLITUDE, UmbralBladeConfig.IDLE_MOVEMENT_PERIOD);
     }
 
     /** Cancels the idle bobbing animation if running. */
@@ -587,8 +589,8 @@ public class UmbralBlade implements InteractiveItem, Lodgeable, BladeMotionHost 
         double curY = curLoc != null ? curLoc.getY() : feet;
         double heightOffset = Math.max(0, Math.min(curY - feet, hit.getHeight()));
 
-        boolean followHead = !Config.Combat.IMPALEMENT_HEAD_FOLLOW_EXCEPTIONS.contains(hitEntity.type())
-            && heightOffset >= diff * Config.Combat.IMPALEMENT_HEAD_ZONE_RATIO;
+        boolean followHead = !CombatConfig.IMPALEMENT_HEAD_FOLLOW_EXCEPTIONS.contains(hitEntity.type())
+            && heightOffset >= diff * CombatConfig.IMPALEMENT_HEAD_ZONE_RATIO;
 
         Vector dir = lastVelocity.lengthSquared() < 1e-9 ? new Vector(0, 0, 1) : lastVelocity.clone().normalize();
         bladeMotion.install(new ImpalementFollowDriver(
@@ -624,18 +626,18 @@ public class UmbralBlade implements InteractiveItem, Lodgeable, BladeMotionHost 
         }
 
         if (inState(WaitingState.class)) {
-            setReclaimType(ReclaimType.CIRCULAR_SLASH, Config.UmbralBlade.RECLAIM_WINDOW_MS);
+            setReclaimType(ReclaimType.CIRCULAR_SLASH, UmbralBladeConfig.RECLAIM_WINDOW_MS);
         } else if (inState(LodgedState.class)) {
-            setReclaimType(ReclaimType.EVISCERATE, Config.UmbralBlade.RECLAIM_WINDOW_MS);
+            setReclaimType(ReclaimType.EVISCERATE, UmbralBladeConfig.RECLAIM_WINDOW_MS);
         }
 
         if (combatant.holdingUmbralItemInMainHand()) {
             TimeArbiter.runFixedIterationTaskTimer(
                 null,
                 () -> request(BladeRequest.WIELD),
-                Config.UmbralBlade.WIELD_ON_GRAB_DELAY,
-                Config.UmbralBlade.WIELD_ON_GRAB_PERIOD,
-                Config.UmbralBlade.WIELD_ON_GRAB_ITERATIONS,
+                UmbralBladeConfig.WIELD_ON_GRAB_DELAY,
+                UmbralBladeConfig.WIELD_ON_GRAB_PERIOD,
+                UmbralBladeConfig.WIELD_ON_GRAB_ITERATIONS,
                 UmbralBlade.class,
                 "onGrab",
                 null,
@@ -753,10 +755,10 @@ public class UmbralBlade implements InteractiveItem, Lodgeable, BladeMotionHost 
     private static SoulLinkItem createLinkItem(Combatant thrower) {
         return new SoulLinkItem(new ItemStackBuilder(Material.HEAVY_CORE)
             .hideAll()
-            .name(Component.text("~ ", Config.SwordColor.TEXT_ITEM_NAME)
+            .name(Component.text("~ ", ColorConfig.TEXT_ITEM_NAME)
                 .append(Component.text(thrower.getDisplayName() + "'s Soul Link",
-                    Config.SwordColor.TEXT_ITEM_NAME, TextDecoration.BOLD))
-                .append(Component.text(" ~", Config.SwordColor.TEXT_ITEM_NAME)))
+                    ColorConfig.TEXT_ITEM_NAME, TextDecoration.BOLD))
+                .append(Component.text(" ~", ColorConfig.TEXT_ITEM_NAME)))
             .lore(Prefab.Text.SOUL_LINK_LORE)
             .unbreakable(true)
             .tag(KeyRegistry.SOUL_LINK_KEY, PersistentDataType.STRING, thrower.getUniqueId().toString())
@@ -771,10 +773,10 @@ public class UmbralBlade implements InteractiveItem, Lodgeable, BladeMotionHost 
     private static ItemStack createBladeItem(Combatant thrower, ItemStack weapon) {
         return new ItemStackBuilder(weapon.getType())
             .hideAll()
-            .name(Component.text("~ ", Config.SwordColor.TEXT_COOL_DARK)
+            .name(Component.text("~ ", ColorConfig.TEXT_COOL_DARK)
                 .append(Component.text(thrower.getDisplayName() + "'s Blade",
-                    Config.SwordColor.TEXT_COOL, TextDecoration.BOLD))
-                .append(Component.text(" ~", Config.SwordColor.TEXT_COOL_DARK)))
+                    ColorConfig.TEXT_COOL, TextDecoration.BOLD))
+                .append(Component.text(" ~", ColorConfig.TEXT_COOL_DARK)))
             .lore(Prefab.Text.UMBRAL_BLADE_LORE)
             .unbreakable(true)
             .tag(KeyRegistry.UMBRAL_BLADE_KEY, PersistentDataType.STRING, thrower.getUniqueId().toString())

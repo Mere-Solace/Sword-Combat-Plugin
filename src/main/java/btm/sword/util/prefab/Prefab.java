@@ -16,6 +16,12 @@ import btm.sword.combat.attack.Attack;
 import btm.sword.combat.attack.Blockability;
 import btm.sword.combat.hit.HitValuePacket;
 import btm.sword.config.Config;
+import btm.sword.config.section.AudioConfig;
+import btm.sword.config.section.ColorConfig;
+import btm.sword.config.section.CombatConfig;
+import btm.sword.config.section.CtfConfig;
+import btm.sword.config.section.MovementConfig;
+import btm.sword.config.section.ParticleConfig;
 import btm.sword.entity.base.SwordEntity;
 import btm.sword.item.core.ItemStackBuilder;
 import btm.sword.item.core.KeyRegistry;
@@ -54,22 +60,22 @@ public final class Prefab {
         public static final ParticleWrapper TEST_HIT = new ParticleWrapper(
             () -> Particle.CRIT, () -> 30, () -> 0.5, () -> 0.5, () -> 0.5).withSpeed(() -> 0.15);
         public static final ParticleWrapper BLEED = new ParticleWrapper(
-            () -> Config.Particles.BLEED_TYPE, () -> Config.Particles.BLEED_COUNT, () -> 0.1, () -> 0.1, () -> 0.1)
+            () -> ParticleConfig.BLEED_TYPE, () -> ParticleConfig.BLEED_COUNT, () -> 0.1, () -> 0.1, () -> 0.1)
             .withBlockData(Material.CRIMSON_HYPHAE::createBlockData)
-            .withSpeed(() -> Config.Particles.BLEED_SPEED);
+            .withSpeed(() -> ParticleConfig.BLEED_SPEED);
 
         public static final ParticleWrapper THROWN_ITEM_IMPALE = new ParticleWrapper(
-            () -> Config.Particles.THROWN_ITEM_IMPALE_TYPE, () -> Config.Particles.THROWN_ITEM_IMPALE_COUNT,
-            () -> 0.1, () -> 0.1, () -> 0.1).withSpeed(() -> Config.Particles.THROWN_ITEM_IMPALE_SPEED);
+            () -> ParticleConfig.THROWN_ITEM_IMPALE_TYPE, () -> ParticleConfig.THROWN_ITEM_IMPALE_COUNT,
+            () -> 0.1, () -> 0.1, () -> 0.1).withSpeed(() -> ParticleConfig.THROWN_ITEM_IMPALE_SPEED);
 
         public static final ParticleWrapper THROWN_ITEM_MARKER = new ParticleWrapper(
-            () -> Config.Particles.THROWN_ITEM_MARKER_TYPE, () -> Config.Particles.THROWN_ITEM_MARKER_COUNT,
-            () -> 0.1, () -> 0.1, () -> 0.1).withSpeed(() -> Config.Particles.THROWN_ITEM_MARKER_SPEED);
+            () -> ParticleConfig.THROWN_ITEM_MARKER_TYPE, () -> ParticleConfig.THROWN_ITEM_MARKER_COUNT,
+            () -> 0.1, () -> 0.1, () -> 0.1).withSpeed(() -> ParticleConfig.THROWN_ITEM_MARKER_SPEED);
 
         /** Slow upward stream from the center of a landing prediction marker. */
         public static final ParticleWrapper LANDING_STREAM = new ParticleWrapper(
-            () -> Config.Particles.LANDING_STREAM_TYPE, () -> Config.Particles.LANDING_STREAM_COUNT,
-            () -> 0.2, () -> 0.2, () -> 0.2).withSpeed(() -> Config.Particles.LANDING_STREAM_SPEED);
+            () -> ParticleConfig.LANDING_STREAM_TYPE, () -> ParticleConfig.LANDING_STREAM_COUNT,
+            () -> 0.2, () -> 0.2, () -> 0.2).withSpeed(() -> ParticleConfig.LANDING_STREAM_SPEED);
 
         public static final ParticleWrapper TEST_SWORD_BLUE = new ParticleWrapper(
             () -> Particle.DUST_COLOR_TRANSITION, () -> 5, () -> 0.025, () -> 0.025, () -> 0.025)
@@ -82,56 +88,56 @@ public final class Prefab {
             () -> Particle.ELECTRIC_SPARK, () -> 2, () -> 0.0, () -> 0.0, () -> 0.0).withSpeed(() -> 0.0);
 
         public static final ParticleWrapper COLLIDE = new ParticleWrapper(
-            () -> Config.Particles.COLLIDE_TYPE, () -> Config.Particles.COLLIDE_COUNT,
-            () -> 0.1, () -> 0.1, () -> 0.1).withSpeed(() -> Config.Particles.COLLIDE_SPEED);
+            () -> ParticleConfig.COLLIDE_TYPE, () -> ParticleConfig.COLLIDE_COUNT,
+            () -> 0.1, () -> 0.1, () -> 0.1).withSpeed(() -> ParticleConfig.COLLIDE_SPEED);
 
         public static final ParticleWrapper GRAB_CLOUD = new ParticleWrapper(
-            () -> Config.Particles.GRAB_CLOUD_TYPE, () -> Config.Particles.GRAB_CLOUD_COUNT,
-            () -> 0.5, () -> 0.5, () -> 0.5).withSpeed(() -> Config.Particles.GRAB_CLOUD_SPEED);
+            () -> ParticleConfig.GRAB_CLOUD_TYPE, () -> ParticleConfig.GRAB_CLOUD_COUNT,
+            () -> 0.5, () -> 0.5, () -> 0.5).withSpeed(() -> ParticleConfig.GRAB_CLOUD_SPEED);
         public static final ParticleWrapper GRAB_ATTEMPT = new ParticleWrapper(
-            () -> Config.Particles.GRAB_ATTEMPT_TYPE, () -> Config.Particles.GRAB_ATTEMPT_COUNT,
-            () -> 0.01, () -> 0.01, () -> 0.01).withSpeed(() -> Config.Particles.GRAB_ATTEMPT_SPEED);
+            () -> ParticleConfig.GRAB_ATTEMPT_TYPE, () -> ParticleConfig.GRAB_ATTEMPT_COUNT,
+            () -> 0.01, () -> 0.01, () -> 0.01).withSpeed(() -> ParticleConfig.GRAB_ATTEMPT_SPEED);
 
         public static final ParticleWrapper PUNCH = new ParticleWrapper(
-            () -> Config.Particles.PUNCH_TYPE, () -> Config.Particles.PUNCH_COUNT,
-            () -> 0.0, () -> 0.0, () -> 0.0).withSpeed(() -> Config.Particles.PUNCH_SPEED);
+            () -> ParticleConfig.PUNCH_TYPE, () -> ParticleConfig.PUNCH_COUNT,
+            () -> 0.0, () -> 0.0, () -> 0.0).withSpeed(() -> ParticleConfig.PUNCH_SPEED);
         public static final ParticleWrapper PUNCH_CONNECT = new ParticleWrapper(
-            () -> Config.Particles.PUNCH_CONNECT_TYPE, () -> Config.Particles.PUNCH_CONNECT_COUNT,
-            () -> 0.0, () -> 0.0, () -> 0.0).withSpeed(() -> Config.Particles.PUNCH_CONNECT_SPEED);
+            () -> ParticleConfig.PUNCH_CONNECT_TYPE, () -> ParticleConfig.PUNCH_CONNECT_COUNT,
+            () -> 0.0, () -> 0.0, () -> 0.0).withSpeed(() -> ParticleConfig.PUNCH_CONNECT_SPEED);
 
         public static final ParticleWrapper UMBRAL_BLADE_POOF = new ParticleWrapper(
-            () -> Config.Particles.UMBRAL_BLADE_POOF_TYPE, () -> Config.Particles.UMBRAL_BLADE_POOF_COUNT,
-            () -> 0.5, () -> 0.5, () -> 0.5).withSpeed(() -> Config.Particles.UMBRAL_BLADE_POOF_SPEED);
+            () -> ParticleConfig.UMBRAL_BLADE_POOF_TYPE, () -> ParticleConfig.UMBRAL_BLADE_POOF_COUNT,
+            () -> 0.5, () -> 0.5, () -> 0.5).withSpeed(() -> ParticleConfig.UMBRAL_BLADE_POOF_SPEED);
         public static final ParticleWrapper SOULFIRE_POOF = new ParticleWrapper(
-            () -> Config.Particles.SOULFIRE_POOF_TYPE, () -> Config.Particles.SOULFIRE_POOF_COUNT,
-            () -> 0.05, () -> 0.05, () -> 0.05).withSpeed(() -> Config.Particles.SOULFIRE_POOF_SPEED);
+            () -> ParticleConfig.SOULFIRE_POOF_TYPE, () -> ParticleConfig.SOULFIRE_POOF_COUNT,
+            () -> 0.05, () -> 0.05, () -> 0.05).withSpeed(() -> ParticleConfig.SOULFIRE_POOF_SPEED);
         public static final ParticleWrapper SMOKE = new ParticleWrapper(
-            () -> Config.Particles.SMOKE_TYPE, () -> Config.Particles.SMOKE_COUNT,
-            () -> 0.005, () -> 0.005, () -> 0.005).withSpeed(() -> Config.Particles.SMOKE_SPEED);
+            () -> ParticleConfig.SMOKE_TYPE, () -> ParticleConfig.SMOKE_COUNT,
+            () -> 0.005, () -> 0.005, () -> 0.005).withSpeed(() -> ParticleConfig.SMOKE_SPEED);
 
         public static final ParticleWrapper UMBRAL_FLAME = new ParticleWrapper(
-            () -> Config.Particles.UMBRAL_FLAME_TYPE, () -> Config.Particles.UMBRAL_FLAME_COUNT,
+            () -> ParticleConfig.UMBRAL_FLAME_TYPE, () -> ParticleConfig.UMBRAL_FLAME_COUNT,
             () -> 0.05, () -> 0.05, () -> 0.05)
             .withTransition(() -> 1.0, () -> new Particle.DustTransition(Color.fromRGB(53, 166, 240), Color.fromRGB(52, 72, 81), 0.5f));
 
         public static final ParticleWrapper THROW_TRAIL = new ParticleWrapper(
-            () -> Config.Particles.THROW_TRAIL_TYPE, () -> Config.Particles.THROW_TRAIL_COUNT,
-            () -> 0.0, () -> 0.0, () -> 0.0).withSpeed(() -> Config.Particles.THROW_TRAIL_SPEED);
+            () -> ParticleConfig.THROW_TRAIL_TYPE, () -> ParticleConfig.THROW_TRAIL_COUNT,
+            () -> 0.0, () -> 0.0, () -> 0.0).withSpeed(() -> ParticleConfig.THROW_TRAIL_SPEED);
 
         public static final ParticleWrapper ITEM_THROW_BREAK = new ParticleWrapper(
-            () -> Config.Particles.ITEM_THROW_BREAK_TYPE, () -> Config.Particles.ITEM_THROW_BREAK_COUNT,
-            () -> 0.4, () -> 0.4, () -> 0.4).withSpeed(() -> Config.Particles.ITEM_THROW_BREAK_SPEED);
+            () -> ParticleConfig.ITEM_THROW_BREAK_TYPE, () -> ParticleConfig.ITEM_THROW_BREAK_COUNT,
+            () -> 0.4, () -> 0.4, () -> 0.4).withSpeed(() -> ParticleConfig.ITEM_THROW_BREAK_SPEED);
 
         public static final ParticleWrapper TOUGH_BREAK_1 = new ParticleWrapper(
-            () -> Config.Particles.TOUGH_BREAK_TYPE, () -> Config.Particles.TOUGH_BREAK_COUNT,
-            () -> 1.0, () -> 1.0, () -> 1.0).withSpeed(() -> Config.Particles.TOUGH_BREAK_SPEED);
+            () -> ParticleConfig.TOUGH_BREAK_TYPE, () -> ParticleConfig.TOUGH_BREAK_COUNT,
+            () -> 1.0, () -> 1.0, () -> 1.0).withSpeed(() -> ParticleConfig.TOUGH_BREAK_SPEED);
 
         public static final ParticleWrapper TOUGH_RECHARGE_1 = new ParticleWrapper(
-            () -> Config.Particles.TOUGH_RECHARGE_1_TYPE, () -> Config.Particles.TOUGH_RECHARGE_1_COUNT,
-            () -> 1.0, () -> 1.0, () -> 1.0).withSpeed(() -> Config.Particles.TOUGH_RECHARGE_1_SPEED);
+            () -> ParticleConfig.TOUGH_RECHARGE_1_TYPE, () -> ParticleConfig.TOUGH_RECHARGE_1_COUNT,
+            () -> 1.0, () -> 1.0, () -> 1.0).withSpeed(() -> ParticleConfig.TOUGH_RECHARGE_1_SPEED);
         public static final ParticleWrapper TOUGH_RECHARGE_2 = new ParticleWrapper(
-            () -> Config.Particles.TOUGH_RECHARGE_2_TYPE, () -> Config.Particles.TOUGH_RECHARGE_2_COUNT,
-            () -> 0.5, () -> 0.5, () -> 0.5).withSpeed(() -> Config.Particles.TOUGH_RECHARGE_2_SPEED);
+            () -> ParticleConfig.TOUGH_RECHARGE_2_TYPE, () -> ParticleConfig.TOUGH_RECHARGE_2_COUNT,
+            () -> 0.5, () -> 0.5, () -> 0.5).withSpeed(() -> ParticleConfig.TOUGH_RECHARGE_2_SPEED);
     }
 
     /** Pre-built knockback instruction functions for use with {@link btm.sword.combat.attack.Attack}. */
@@ -146,57 +152,57 @@ public final class Prefab {
      */
     public static class Attacks {
         public static final HitValuePacket DEFAULT_MOB_HIT = new HitValuePacket(
-            () -> Config.Combat.HIT_DEFAULT_MOB_REAPED_SOULFIRE,
-            () -> Config.Combat.HIT_DEFAULT_MOB_INVULN_TICKS,
-            () -> Config.Combat.HIT_DEFAULT_MOB_SHARD_DAMAGE,
-            () -> Config.Combat.HIT_DEFAULT_MOB_TOUGHNESS_DAMAGE,
-            () -> Config.Combat.HIT_DEFAULT_MOB_SOULFIRE_LOSS
+            () -> CombatConfig.HIT_DEFAULT_MOB_REAPED_SOULFIRE,
+            () -> CombatConfig.HIT_DEFAULT_MOB_INVULN_TICKS,
+            () -> CombatConfig.HIT_DEFAULT_MOB_SHARD_DAMAGE,
+            () -> CombatConfig.HIT_DEFAULT_MOB_TOUGHNESS_DAMAGE,
+            () -> CombatConfig.HIT_DEFAULT_MOB_SOULFIRE_LOSS
         );
 
         public static final HitValuePacket BASIC_ATTACK = new HitValuePacket(
             () -> 5f,
-            () -> Config.Combat.ATTACK_CLASS_HIT_INVULN_TICKS,
-            () -> Config.Combat.ATTACK_CLASS_HIT_SHARDS,
-            () -> Config.Combat.ATTACK_CLASS_HIT_TOUGHNESS,
-            () -> Config.Combat.ATTACK_CLASS_HIT_SOULFIRE
+            () -> CombatConfig.ATTACK_CLASS_HIT_INVULN_TICKS,
+            () -> CombatConfig.ATTACK_CLASS_HIT_SHARDS,
+            () -> CombatConfig.ATTACK_CLASS_HIT_TOUGHNESS,
+            () -> CombatConfig.ATTACK_CLASS_HIT_SOULFIRE
         );
 
         public static final HitValuePacket GRAB_HIT = new HitValuePacket(
-            () -> Config.Combat.HIT_GRAB_REAPED_SOULFIRE,
-            () -> Config.Combat.HIT_GRAB_INVULN_TICKS,
-            () -> Config.Combat.HIT_GRAB_SHARD_DAMAGE,
-            () -> Config.Combat.HIT_GRAB_TOUGHNESS_DAMAGE,
-            () -> Config.Combat.HIT_GRAB_SOULFIRE_LOSS
+            () -> CombatConfig.HIT_GRAB_REAPED_SOULFIRE,
+            () -> CombatConfig.HIT_GRAB_INVULN_TICKS,
+            () -> CombatConfig.HIT_GRAB_SHARD_DAMAGE,
+            () -> CombatConfig.HIT_GRAB_TOUGHNESS_DAMAGE,
+            () -> CombatConfig.HIT_GRAB_SOULFIRE_LOSS
         );
 
         public static final HitValuePacket THROWN_WEAPON = new HitValuePacket(
             () -> 0f,
-            () -> Config.Combat.THROWN_DAMAGE_SWORD_AXE_INVULNERABILITY_TICKS,
-            () -> Config.Combat.THROWN_DAMAGE_SWORD_AXE_BASE_SHARDS,
-            () -> Config.Combat.THROWN_DAMAGE_SWORD_AXE_TOUGHNESS_DAMAGE,
-            () -> Config.Combat.THROWN_DAMAGE_SWORD_AXE_SOULFIRE_REDUCTION
+            () -> CombatConfig.THROWN_DAMAGE_SWORD_AXE_INVULNERABILITY_TICKS,
+            () -> CombatConfig.THROWN_DAMAGE_SWORD_AXE_BASE_SHARDS,
+            () -> CombatConfig.THROWN_DAMAGE_SWORD_AXE_TOUGHNESS_DAMAGE,
+            () -> CombatConfig.THROWN_DAMAGE_SWORD_AXE_SOULFIRE_REDUCTION
         );
 
         public static final HitValuePacket UMBRAL_ITEM_DISPLAY_ATTACK = new HitValuePacket(
-            () -> Config.Combat.HIT_UMBRAL_DISPLAY_REAPED_SOULFIRE,
-            () -> Config.Combat.HIT_UMBRAL_DISPLAY_INVULN_TICKS,
-            () -> Config.Combat.HIT_UMBRAL_DISPLAY_SHARD_DAMAGE,
-            () -> Config.Combat.HIT_UMBRAL_DISPLAY_TOUGHNESS_DAMAGE,
-            () -> Config.Combat.HIT_UMBRAL_DISPLAY_SOULFIRE_LOSS
+            () -> CombatConfig.HIT_UMBRAL_DISPLAY_REAPED_SOULFIRE,
+            () -> CombatConfig.HIT_UMBRAL_DISPLAY_INVULN_TICKS,
+            () -> CombatConfig.HIT_UMBRAL_DISPLAY_SHARD_DAMAGE,
+            () -> CombatConfig.HIT_UMBRAL_DISPLAY_TOUGHNESS_DAMAGE,
+            () -> CombatConfig.HIT_UMBRAL_DISPLAY_SOULFIRE_LOSS
         );
 
         public static final HitValuePacket PUNCH = new HitValuePacket(
-            () -> Config.Combat.HIT_PUNCH_REAPED_SOULFIRE,
-            () -> Config.Combat.HIT_PUNCH_INVULN_TICKS,
-            () -> Config.Combat.HIT_PUNCH_SHARD_DAMAGE,
-            () -> Config.Combat.HIT_PUNCH_TOUGHNESS_DAMAGE,
-            () -> Config.Combat.HIT_PUNCH_SOULFIRE_LOSS
+            () -> CombatConfig.HIT_PUNCH_REAPED_SOULFIRE,
+            () -> CombatConfig.HIT_PUNCH_INVULN_TICKS,
+            () -> CombatConfig.HIT_PUNCH_SHARD_DAMAGE,
+            () -> CombatConfig.HIT_PUNCH_TOUGHNESS_DAMAGE,
+            () -> CombatConfig.HIT_PUNCH_SOULFIRE_LOSS
         );
 
         /** Hit packet for thrown knife ability projectiles. Low shard damage, high toughness damage. */
         public static final HitValuePacket KNIFE_THROW = new HitValuePacket(
             () -> 0f,
-            () -> Config.Combat.THROWN_DAMAGE_SWORD_AXE_INVULNERABILITY_TICKS,
+            () -> CombatConfig.THROWN_DAMAGE_SWORD_AXE_INVULNERABILITY_TICKS,
             () -> 1,
             () -> 15f,
             () -> 0f
@@ -204,17 +210,17 @@ public final class Prefab {
 
         /**
          * Hit packet for UmbralBlade lunge and grab-impale hits.
-         * SHIELD_PASSING: reduces damage by {@link Config.Combat#SHIELD_PASSING_BYPASS_POWER}
+         * SHIELD_PASSING: reduces damage by {@link CombatConfig#SHIELD_PASSING_BYPASS_POWER}
          * even against a blocking defender — these attacks pierce the guard.
          */
         public static final HitValuePacket UMBRAL_IMPALE = new HitValuePacket(
             () -> 0f,
-            () -> Config.Combat.THROWN_DAMAGE_SWORD_AXE_INVULNERABILITY_TICKS,
-            () -> Config.Combat.THROWN_DAMAGE_SWORD_AXE_BASE_SHARDS,
-            () -> Config.Combat.THROWN_DAMAGE_SWORD_AXE_TOUGHNESS_DAMAGE,
-            () -> Config.Combat.THROWN_DAMAGE_SWORD_AXE_SOULFIRE_REDUCTION,
+            () -> CombatConfig.THROWN_DAMAGE_SWORD_AXE_INVULNERABILITY_TICKS,
+            () -> CombatConfig.THROWN_DAMAGE_SWORD_AXE_BASE_SHARDS,
+            () -> CombatConfig.THROWN_DAMAGE_SWORD_AXE_TOUGHNESS_DAMAGE,
+            () -> CombatConfig.THROWN_DAMAGE_SWORD_AXE_SOULFIRE_REDUCTION,
             Blockability.SHIELD_PASSING,
-            () -> Config.Combat.SHIELD_PASSING_BYPASS_POWER
+            () -> CombatConfig.SHIELD_PASSING_BYPASS_POWER
         );
     }
 
@@ -228,21 +234,21 @@ public final class Prefab {
          * </p>
          */
         public static final SoundWrapper ATTACK = new SoundWrapper(
-            () -> Config.Audio.ATTACK_SOUND,
-            () -> Config.Audio.ATTACK_VOLUME,
-            () -> Config.Audio.ATTACK_PITCH
+            () -> AudioConfig.ATTACK_SOUND,
+            () -> AudioConfig.ATTACK_VOLUME,
+            () -> AudioConfig.ATTACK_PITCH
         );
 
         public static final SoundWrapper PUNCH_ATTEMPT = new SoundWrapper(
-            () -> Config.Audio.PUNCH_ATTEMPT,
-            () -> Config.Audio.PUNCH_ATTEMPT_VOL,
-            () -> Config.Audio.PUNCH_ATTEMPT_PITCH
+            () -> AudioConfig.PUNCH_ATTEMPT,
+            () -> AudioConfig.PUNCH_ATTEMPT_VOL,
+            () -> AudioConfig.PUNCH_ATTEMPT_PITCH
         );
 
         public static final SoundWrapper PUNCH_CONNECT = new SoundWrapper(
-            () -> Config.Audio.PUNCH_CONNECT,
-            () -> Config.Audio.PUNCH_CONNECT_VOL,
-            () -> Config.Audio.PUNCH_CONNECT_PITCH
+            () -> AudioConfig.PUNCH_CONNECT,
+            () -> AudioConfig.PUNCH_CONNECT_VOL,
+            () -> AudioConfig.PUNCH_CONNECT_PITCH
         );
 
         /**
@@ -253,27 +259,27 @@ public final class Prefab {
          * </p>
          */
         public static final SoundWrapper THROW = new SoundWrapper(
-            () -> Config.Audio.THROW_SOUND,
-            () -> Config.Audio.THROW_VOLUME,
-            () -> Config.Audio.THROW_PITCH
+            () -> AudioConfig.THROW_SOUND,
+            () -> AudioConfig.THROW_VOLUME,
+            () -> AudioConfig.THROW_PITCH
         );
 
         public static final SoundWrapper BLOCK_BROKEN = new SoundWrapper(
-            () -> Config.Audio.BLOCK_BROKEN_SOUND,
-            () -> Config.Audio.BLOCK_BROKEN_VOLUME,
-            () -> Config.Audio.BLOCK_BROKEN_PITCH
+            () -> AudioConfig.BLOCK_BROKEN_SOUND,
+            () -> AudioConfig.BLOCK_BROKEN_VOLUME,
+            () -> AudioConfig.BLOCK_BROKEN_PITCH
         );
 
         public static final SoundWrapper PARRY_ATTEMPT = new SoundWrapper(
-            () -> Config.Audio.PARRY_ATTEMPT_SOUND,
-            () -> Config.Audio.PARRY_ATTEMPT_VOLUME,
-            () -> Config.Audio.PARRY_ATTEMPT_PITCH
+            () -> AudioConfig.PARRY_ATTEMPT_SOUND,
+            () -> AudioConfig.PARRY_ATTEMPT_VOLUME,
+            () -> AudioConfig.PARRY_ATTEMPT_PITCH
         );
 
         public static final SoundWrapper PRE_ATTACK = new SoundWrapper(
-            () -> Config.Audio.PRE_ATTACK_SOUND,
-            () -> Config.Audio.PRE_ATTACK_VOLUME,
-            () -> Config.Audio.PRE_ATTACK_PITCH
+            () -> AudioConfig.PRE_ATTACK_SOUND,
+            () -> AudioConfig.PRE_ATTACK_VOLUME,
+            () -> AudioConfig.PRE_ATTACK_PITCH
         );
 
         public static final SoundWrapper SOULFIRE_GAIN_BACKGROUND = new SoundWrapper(
@@ -292,67 +298,67 @@ public final class Prefab {
     /** Pre-built {@link PotionEffectWrapper} instances for common status effects. */
     public static class PotionEffects {
         public static final PotionEffectWrapper DASH_SPEED =
-            new PotionEffectWrapper(PotionEffectType.SPEED, Config.Movement.SPEED_DURATION, Config.Movement.SPEED_AMPLIFIER);
+            new PotionEffectWrapper(PotionEffectType.SPEED, MovementConfig.SPEED_DURATION, MovementConfig.SPEED_AMPLIFIER);
         public static final PotionEffectWrapper HEAL_CHANNEL_SLOW =
-            new PotionEffectWrapper(PotionEffectType.SLOWNESS, Config.Combat.HEAL_CHANNEL_SLOW_DURATION, Config.Combat.HEAL_CHANNEL_SLOW_AMPLIFIER);
+            new PotionEffectWrapper(PotionEffectType.SLOWNESS, CombatConfig.HEAL_CHANNEL_SLOW_DURATION, CombatConfig.HEAL_CHANNEL_SLOW_AMPLIFIER);
         /** Applied to a player carrying a CTF flag. Effectively permanent; removed on drop/capture/match end. */
         public static final PotionEffectWrapper FLAG_CARRIER_SLOW =
             new PotionEffectWrapper(() -> PotionEffectType.SLOWNESS,
-                () -> Config.Ctf.FLAG_CARRIER_SLOW_DURATION,
-                () -> Config.Ctf.FLAG_CARRIER_SLOW_AMPLIFIER,
+                () -> CtfConfig.FLAG_CARRIER_SLOW_DURATION,
+                () -> CtfConfig.FLAG_CARRIER_SLOW_AMPLIFIER,
                 () -> false, () -> false, () -> false);
     }
 
     /** Pre-built lore/description {@link net.kyori.adventure.text.Component} lists for special items. */
     public static class Text {
         public static final List<Component> SOUL_LINK_LORE = List.of(
-            Component.text("", Config.SwordColor.TEXT_ITEM_BASE),
+            Component.text("", ColorConfig.TEXT_ITEM_BASE),
 
-            Component.text("Soul Link Controls", Config.SwordColor.TEXT_ITEM_HEADER, TextDecoration.ITALIC),
+            Component.text("Soul Link Controls", ColorConfig.TEXT_ITEM_HEADER, TextDecoration.ITALIC),
 
-            Component.text("Shift + Swap", Config.SwordColor.TEXT_ITEM_CONTROLS)
-                .append(Component.text(" – Toggle Standby / Sheathed", Config.SwordColor.TEXT_ITEM_BASE)),
-            Component.text("  • Standby: ", Config.SwordColor.TEXT_ITEM_HEADER)
-                .append(Component.text("Blade hovers, awaits commands", Config.SwordColor.TEXT_ITEM_BASE)),
-            Component.text("  • Sheathed: ", Config.SwordColor.TEXT_ITEM_HEADER)
-                .append(Component.text("Blade returns to your hip", Config.SwordColor.TEXT_ITEM_BASE)),
+            Component.text("Shift + Swap", ColorConfig.TEXT_ITEM_CONTROLS)
+                .append(Component.text(" – Toggle Standby / Sheathed", ColorConfig.TEXT_ITEM_BASE)),
+            Component.text("  • Standby: ", ColorConfig.TEXT_ITEM_HEADER)
+                .append(Component.text("Blade hovers, awaits commands", ColorConfig.TEXT_ITEM_BASE)),
+            Component.text("  • Sheathed: ", ColorConfig.TEXT_ITEM_HEADER)
+                .append(Component.text("Blade returns to your hip", ColorConfig.TEXT_ITEM_BASE)),
 
-            Component.text("", Config.SwordColor.TEXT_ITEM_BASE),
+            Component.text("", ColorConfig.TEXT_ITEM_BASE),
 
-            Component.text("Shift + Drop", Config.SwordColor.TEXT_ITEM_CONTROLS)
-                .append(Component.text(" – Wield Blade", Config.SwordColor.TEXT_ITEM_BASE)),
-            Component.text("  • Equips the Blade directly into your hand", Config.SwordColor.TEXT_ITEM_BASE),
+            Component.text("Shift + Drop", ColorConfig.TEXT_ITEM_CONTROLS)
+                .append(Component.text(" – Wield Blade", ColorConfig.TEXT_ITEM_BASE)),
+            Component.text("  • Equips the Blade directly into your hand", ColorConfig.TEXT_ITEM_BASE),
 
-            Component.text("", Config.SwordColor.TEXT_ITEM_BASE),
+            Component.text("", ColorConfig.TEXT_ITEM_BASE),
 
-            Component.text("Left Click", Config.SwordColor.TEXT_ITEM_CONTROLS)
-                .append(Component.text(" – Quick Attack (Standby, costs Soulfire)", Config.SwordColor.TEXT_ITEM_BASE)),
+            Component.text("Left Click", ColorConfig.TEXT_ITEM_CONTROLS)
+                .append(Component.text(" – Quick Attack (Standby, costs Soulfire)", ColorConfig.TEXT_ITEM_BASE)),
 
-            Component.text("", Config.SwordColor.TEXT_ITEM_BASE),
+            Component.text("", ColorConfig.TEXT_ITEM_BASE),
 
-            Component.text("Drop + Right Click", Config.SwordColor.TEXT_ITEM_CONTROLS)
-                .append(Component.text(" – Lunge (Standby, costs Soulfire)", Config.SwordColor.TEXT_ITEM_BASE))
+            Component.text("Drop + Right Click", ColorConfig.TEXT_ITEM_CONTROLS)
+                .append(Component.text(" – Lunge (Standby, costs Soulfire)", ColorConfig.TEXT_ITEM_BASE))
         );
 
         public static final List<Component> UMBRAL_BLADE_LORE = List.of(
-            Component.text("", Config.SwordColor.TEXT_ITEM_BASE),
+            Component.text("", ColorConfig.TEXT_ITEM_BASE),
 
-            Component.text("Umbral Blade Techniques", Config.SwordColor.TEXT_ITEM_HEADER, TextDecoration.ITALIC),
+            Component.text("Umbral Blade Techniques", ColorConfig.TEXT_ITEM_HEADER, TextDecoration.ITALIC),
 
-            Component.text("Left Click (×1/2/3)", Config.SwordColor.TEXT_ITEM_CONTROLS)
-                .append(Component.text(" – Attack Chain", Config.SwordColor.TEXT_ITEM_BASE)),
-            Component.text("Drop + Left Click (×1)", Config.SwordColor.TEXT_ITEM_CONTROLS)
-                .append(Component.text(" – Heavy Sweep", Config.SwordColor.TEXT_ITEM_BASE)),
-            Component.text("  • Repeated Left clicks increase sweep force", Config.SwordColor.TEXT_ITEM_BASE),
-            Component.text("Drop + Right Click", Config.SwordColor.TEXT_ITEM_CONTROLS)
-                .append(Component.text(" – Lunge Throw", Config.SwordColor.TEXT_ITEM_BASE)),
-            Component.text("Shift + Swap", Config.SwordColor.TEXT_ITEM_CONTROLS)
-                .append(Component.text(" – Return to Standby", Config.SwordColor.TEXT_ITEM_BASE)),
+            Component.text("Left Click (×1/2/3)", ColorConfig.TEXT_ITEM_CONTROLS)
+                .append(Component.text(" – Attack Chain", ColorConfig.TEXT_ITEM_BASE)),
+            Component.text("Drop + Left Click (×1)", ColorConfig.TEXT_ITEM_CONTROLS)
+                .append(Component.text(" – Heavy Sweep", ColorConfig.TEXT_ITEM_BASE)),
+            Component.text("  • Repeated Left clicks increase sweep force", ColorConfig.TEXT_ITEM_BASE),
+            Component.text("Drop + Right Click", ColorConfig.TEXT_ITEM_CONTROLS)
+                .append(Component.text(" – Lunge Throw", ColorConfig.TEXT_ITEM_BASE)),
+            Component.text("Shift + Swap", ColorConfig.TEXT_ITEM_CONTROLS)
+                .append(Component.text(" – Return to Standby", ColorConfig.TEXT_ITEM_BASE)),
 
-            Component.text("", Config.SwordColor.TEXT_ITEM_BASE),
+            Component.text("", ColorConfig.TEXT_ITEM_BASE),
 
-            Component.text("Swap + Left [combo]", Config.SwordColor.TEXT_ITEM_CONTROLS)
-                .append(Component.text(" – Umbral Skills", Config.SwordColor.TEXT_ITEM_BASE))
+            Component.text("Swap + Left [combo]", ColorConfig.TEXT_ITEM_CONTROLS)
+                .append(Component.text(" – Umbral Skills", ColorConfig.TEXT_ITEM_BASE))
         );
     }
 

@@ -11,7 +11,8 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
 
-import btm.sword.config.Config;
+import btm.sword.config.section.MenuGridConfig;
+
 
 /**
  * Manages a matrix of off-screen "staging slots" used during the server join sequence.
@@ -22,7 +23,7 @@ import btm.sword.config.Config;
  * </p>
  *
  * <h2>Grid layout</h2>
- * The grid grows from {@link Config.MenuGrid#ORIGIN_X}/{@link Config.MenuGrid#ORIGIN_Z}
+ * The grid grows from {@link MenuGridConfig#ORIGIN_X}/{@link MenuGridConfig#ORIGIN_Z}
  * along positive X (rows) and positive Z (columns) with configurable spacing.
  * A single black-concrete block is placed one unit below each slot centre as a platform.
  *
@@ -58,8 +59,8 @@ public final class MenuSlotGrid {
             return Optional.ofNullable(slotCenter(existing));
         }
 
-        int rows = Config.MenuGrid.ROWS;
-        int cols = Config.MenuGrid.COLS;
+        int rows = MenuGridConfig.ROWS;
+        int cols = MenuGridConfig.COLS;
         double centerRow = (rows - 1) / 2.0;
         double centerCol = (cols - 1) / 2.0;
 
@@ -118,8 +119,8 @@ public final class MenuSlotGrid {
 //        World world = resolveWorld();
 //        if (world == null) return;
 //
-//        int rows = Config.MenuGrid.ROWS;
-//        int cols = Config.MenuGrid.COLS;
+//        int rows = MenuGridConfig.ROWS;
+//        int cols = MenuGridConfig.COLS;
 //        for (int i = 0; i < rows; i++) {
 //            for (int j = 0; j < cols; j++) {
 //                Location floor = slotCenter(new int[]{i, j});
@@ -151,14 +152,14 @@ public final class MenuSlotGrid {
         if (world == null) return null;
         return new Location(
             world,
-            Config.MenuGrid.ORIGIN_X + rc[0] * Config.MenuGrid.SPACING_X,
-            Config.MenuGrid.ORIGIN_Y,
-            Config.MenuGrid.ORIGIN_Z + rc[1] * Config.MenuGrid.SPACING_Z
+            MenuGridConfig.ORIGIN_X + rc[0] * MenuGridConfig.SPACING_X,
+            MenuGridConfig.ORIGIN_Y,
+            MenuGridConfig.ORIGIN_Z + rc[1] * MenuGridConfig.SPACING_Z
         );
     }
 
     private static World resolveWorld() {
-        World world = Bukkit.getWorld(Config.MenuGrid.WORLD);
+        World world = Bukkit.getWorld(MenuGridConfig.WORLD);
         if (world == null && !Bukkit.getWorlds().isEmpty()) {
             world = Bukkit.getWorlds().getFirst();
         }

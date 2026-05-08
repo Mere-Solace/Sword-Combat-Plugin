@@ -61,6 +61,18 @@ public final class KeyRegistry {
     public static final NamespacedKey NON_MOVABLE_KEY = key(NON_MOVABLE);
 
 
+    /**
+     * Persistent data key marking an item as a join-waiting placeholder pane. Set on every
+     * black-stained-glass slot filler placed by
+     * {@link btm.sword.join.PlayerWaitingGate#engage}; used purely for diagnostics so a
+     * player's inventory can be inspected at runtime to confirm the gate is engaged.
+     */
+    public static final String WAITING_PLACEHOLDER = "waiting_placeholder";
+
+    /** Cached {@link NamespacedKey} for {@link #WAITING_PLACEHOLDER}. */
+    public static final NamespacedKey WAITING_PLACEHOLDER_KEY = key(WAITING_PLACEHOLDER);
+
+
 
     public static final String SOUL_LINK = "soul_link";
 

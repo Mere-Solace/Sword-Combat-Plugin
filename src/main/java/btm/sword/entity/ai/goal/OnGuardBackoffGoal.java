@@ -13,7 +13,7 @@ import com.destroystokyo.paper.entity.ai.GoalKey;
 import com.destroystokyo.paper.entity.ai.GoalType;
 
 import btm.sword.Sword;
-import btm.sword.config.Config;
+import btm.sword.config.section.HostileConfig;
 import btm.sword.entity.mob.Hostile;
 
 /**
@@ -102,7 +102,7 @@ public class OnGuardBackoffGoal implements Goal<@NotNull Mob> {
 
         orbitAngle += ThreadLocalRandom.current().nextDouble(ORBIT_STEP_MIN, ORBIT_STEP_MAX);
 
-        double radius = Math.sqrt(Config.Hostile.ON_GUARD_SAFE_DISTANCE_SQUARED);
+        double radius = Math.sqrt(HostileConfig.ON_GUARD_SAFE_DISTANCE_SQUARED);
         Location targetLoc = hostile.getCurrentTarget().self().getLocation();
         Location strafeDest = targetLoc.clone().add(
             Math.cos(orbitAngle) * radius,

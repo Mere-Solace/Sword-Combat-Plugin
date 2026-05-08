@@ -7,7 +7,7 @@ import org.bukkit.inventory.ItemStack;
 
 import btm.sword.combat.attack.MobSweepAttack;
 import btm.sword.combat.style.AttackType;
-import btm.sword.config.Config;
+import btm.sword.config.section.HostileConfig;
 import btm.sword.entity.mob.Hostile;
 
 /**
@@ -47,6 +47,6 @@ public class MobSlashAbility implements MobAbility {
 
     @Override
     public int cooldownTicks() {
-        return Config.Hostile.MOB_SLASH_COOLDOWN_TICKS;
+        return HostileConfig.MOB_SLASH_COOLDOWN_TICKS;
     }
 }

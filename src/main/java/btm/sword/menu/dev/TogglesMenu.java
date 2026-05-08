@@ -7,6 +7,8 @@ import org.bukkit.entity.Player;
 
 import btm.sword.config.Config;
 import btm.sword.config.ConfigManager;
+import btm.sword.config.section.DebugConfig;
+import btm.sword.config.section.WorldConfig;
 import btm.sword.entity.player.SwordPlayer;
 import btm.sword.item.core.ItemStackBuilder;
 import btm.sword.menu.Menu;
@@ -45,50 +47,50 @@ public class TogglesMenu extends Menu {
 
         SimpleItem verboseDebug = toggle(
             "Debug (general)",
-            () -> Config.Debug.LOGGING_VERBOSE_DEBUG,
-            () -> Config.Debug.LOGGING_VERBOSE_DEBUG = !Config.Debug.LOGGING_VERBOSE_DEBUG
+            () -> DebugConfig.LOGGING_VERBOSE_DEBUG,
+            () -> DebugConfig.LOGGING_VERBOSE_DEBUG = !DebugConfig.LOGGING_VERBOSE_DEBUG
         );
 
         SimpleItem verboseCombat = toggle(
             "Combat",
-            () -> Config.Debug.LOGGING_VERBOSE_COMBAT,
-            () -> Config.Debug.LOGGING_VERBOSE_COMBAT = !Config.Debug.LOGGING_VERBOSE_COMBAT
+            () -> DebugConfig.LOGGING_VERBOSE_COMBAT,
+            () -> DebugConfig.LOGGING_VERBOSE_COMBAT = !DebugConfig.LOGGING_VERBOSE_COMBAT
         );
 
         SimpleItem verboseMovement = toggle(
             "Movement",
-            () -> Config.Debug.LOGGING_VERBOSE_MOVEMENT,
-            () -> Config.Debug.LOGGING_VERBOSE_MOVEMENT = !Config.Debug.LOGGING_VERBOSE_MOVEMENT
+            () -> DebugConfig.LOGGING_VERBOSE_MOVEMENT,
+            () -> DebugConfig.LOGGING_VERBOSE_MOVEMENT = !DebugConfig.LOGGING_VERBOSE_MOVEMENT
         );
 
         SimpleItem verboseInventory = toggle(
             "Inventory",
-            () -> Config.Debug.LOGGING_VERBOSE_INVENTORY,
-            () -> Config.Debug.LOGGING_VERBOSE_INVENTORY = !Config.Debug.LOGGING_VERBOSE_INVENTORY
+            () -> DebugConfig.LOGGING_VERBOSE_INVENTORY,
+            () -> DebugConfig.LOGGING_VERBOSE_INVENTORY = !DebugConfig.LOGGING_VERBOSE_INVENTORY
         );
 
         SimpleItem verboseSystem = toggle(
             "System (FSM / tasks)",
-            () -> Config.Debug.LOGGING_VERBOSE_SYSTEM,
-            () -> Config.Debug.LOGGING_VERBOSE_SYSTEM = !Config.Debug.LOGGING_VERBOSE_SYSTEM
+            () -> DebugConfig.LOGGING_VERBOSE_SYSTEM,
+            () -> DebugConfig.LOGGING_VERBOSE_SYSTEM = !DebugConfig.LOGGING_VERBOSE_SYSTEM
         );
 
         SimpleItem verboseUmbral = toggle(
             "Umbral",
-            () -> Config.Debug.LOGGING_VERBOSE_UMBRAL,
-            () -> Config.Debug.LOGGING_VERBOSE_UMBRAL = !Config.Debug.LOGGING_VERBOSE_UMBRAL
+            () -> DebugConfig.LOGGING_VERBOSE_UMBRAL,
+            () -> DebugConfig.LOGGING_VERBOSE_UMBRAL = !DebugConfig.LOGGING_VERBOSE_UMBRAL
         );
 
         SimpleItem verboseHostile = toggle(
             "Hostile",
-            () -> Config.Debug.LOGGING_VERBOSE_HOSTILE,
-            () -> Config.Debug.LOGGING_VERBOSE_HOSTILE = !Config.Debug.LOGGING_VERBOSE_HOSTILE
+            () -> DebugConfig.LOGGING_VERBOSE_HOSTILE,
+            () -> DebugConfig.LOGGING_VERBOSE_HOSTILE = !DebugConfig.LOGGING_VERBOSE_HOSTILE
         );
 
         SimpleItem verboseListener = toggle(
             "Listener",
-            () -> Config.Debug.LOGGING_VERBOSE_LISTENER,
-            () -> Config.Debug.LOGGING_VERBOSE_LISTENER = !Config.Debug.LOGGING_VERBOSE_LISTENER
+            () -> DebugConfig.LOGGING_VERBOSE_LISTENER,
+            () -> DebugConfig.LOGGING_VERBOSE_LISTENER = !DebugConfig.LOGGING_VERBOSE_LISTENER
         );
 
         SimpleItem specialItemChecks = toggle(
@@ -99,96 +101,96 @@ public class TogglesMenu extends Menu {
 
         SimpleItem blockPlacing = toggle(
             "Block placing",
-            () -> Config.World.BLOCK_INTERACTION_ALLOW_BLOCK_PLACING,
-            () -> Config.World.BLOCK_INTERACTION_ALLOW_BLOCK_PLACING = !Config.World.BLOCK_INTERACTION_ALLOW_BLOCK_PLACING
+            () -> WorldConfig.BLOCK_INTERACTION_ALLOW_BLOCK_PLACING,
+            () -> WorldConfig.BLOCK_INTERACTION_ALLOW_BLOCK_PLACING = !WorldConfig.BLOCK_INTERACTION_ALLOW_BLOCK_PLACING
         );
 
         SimpleItem verboseAnimation = toggle(
             "Animation (DEU hook)",
-            () -> Config.Debug.LOGGING_VERBOSE_ANIMATION,
-            () -> Config.Debug.LOGGING_VERBOSE_ANIMATION = !Config.Debug.LOGGING_VERBOSE_ANIMATION
+            () -> DebugConfig.LOGGING_VERBOSE_ANIMATION,
+            () -> DebugConfig.LOGGING_VERBOSE_ANIMATION = !DebugConfig.LOGGING_VERBOSE_ANIMATION
         );
 
         SimpleItem verboseInput = toggle(
             "Input (combo / trie)",
-            () -> Config.Debug.LOGGING_VERBOSE_INPUT,
-            () -> Config.Debug.LOGGING_VERBOSE_INPUT = !Config.Debug.LOGGING_VERBOSE_INPUT
+            () -> DebugConfig.LOGGING_VERBOSE_INPUT,
+            () -> DebugConfig.LOGGING_VERBOSE_INPUT = !DebugConfig.LOGGING_VERBOSE_INPUT
         );
 
         SimpleItem verboseSkill = toggle(
             "Skill (slot resolution)",
-            () -> Config.Debug.LOGGING_VERBOSE_SKILL,
-            () -> Config.Debug.LOGGING_VERBOSE_SKILL = !Config.Debug.LOGGING_VERBOSE_SKILL
+            () -> DebugConfig.LOGGING_VERBOSE_SKILL,
+            () -> DebugConfig.LOGGING_VERBOSE_SKILL = !DebugConfig.LOGGING_VERBOSE_SKILL
         );
 
         SimpleItem verboseAbility = toggle(
             "Ability (lifecycle)",
-            () -> Config.Debug.LOGGING_VERBOSE_ABILITY,
-            () -> Config.Debug.LOGGING_VERBOSE_ABILITY = !Config.Debug.LOGGING_VERBOSE_ABILITY
+            () -> DebugConfig.LOGGING_VERBOSE_ABILITY,
+            () -> DebugConfig.LOGGING_VERBOSE_ABILITY = !DebugConfig.LOGGING_VERBOSE_ABILITY
         );
 
         SimpleItem verboseGrab = toggle(
             "Grab (action lifecycle)",
-            () -> Config.Debug.LOGGING_VERBOSE_GRAB,
-            () -> Config.Debug.LOGGING_VERBOSE_GRAB = !Config.Debug.LOGGING_VERBOSE_GRAB
+            () -> DebugConfig.LOGGING_VERBOSE_GRAB,
+            () -> DebugConfig.LOGGING_VERBOSE_GRAB = !DebugConfig.LOGGING_VERBOSE_GRAB
         );
 
         SimpleItem verboseAttack = toggle(
             "Attack (sweeps / hitbox)",
-            () -> Config.Debug.LOGGING_VERBOSE_ATTACK,
-            () -> Config.Debug.LOGGING_VERBOSE_ATTACK = !Config.Debug.LOGGING_VERBOSE_ATTACK
+            () -> DebugConfig.LOGGING_VERBOSE_ATTACK,
+            () -> DebugConfig.LOGGING_VERBOSE_ATTACK = !DebugConfig.LOGGING_VERBOSE_ATTACK
         );
 
         SimpleItem verboseThrowing = toggle(
             "Throwing (item lifecycle)",
-            () -> Config.Debug.LOGGING_VERBOSE_THROWING,
-            () -> Config.Debug.LOGGING_VERBOSE_THROWING = !Config.Debug.LOGGING_VERBOSE_THROWING
+            () -> DebugConfig.LOGGING_VERBOSE_THROWING,
+            () -> DebugConfig.LOGGING_VERBOSE_THROWING = !DebugConfig.LOGGING_VERBOSE_THROWING
         );
 
         SimpleItem verboseAttackVolume = toggle(
             "Attack Volume (sim / hits)",
-            () -> Config.Debug.LOGGING_VERBOSE_ATTACK_VOLUME,
-            () -> Config.Debug.LOGGING_VERBOSE_ATTACK_VOLUME = !Config.Debug.LOGGING_VERBOSE_ATTACK_VOLUME
+            () -> DebugConfig.LOGGING_VERBOSE_ATTACK_VOLUME,
+            () -> DebugConfig.LOGGING_VERBOSE_ATTACK_VOLUME = !DebugConfig.LOGGING_VERBOSE_ATTACK_VOLUME
         );
 
         SimpleItem verboseParticleDisplay = toggle(
             "Particle Display (toWrapper)",
-            () -> Config.Debug.LOGGING_VERBOSE_PARTICLE_DISPLAY,
-            () -> Config.Debug.LOGGING_VERBOSE_PARTICLE_DISPLAY = !Config.Debug.LOGGING_VERBOSE_PARTICLE_DISPLAY
+            () -> DebugConfig.LOGGING_VERBOSE_PARTICLE_DISPLAY,
+            () -> DebugConfig.LOGGING_VERBOSE_PARTICLE_DISPLAY = !DebugConfig.LOGGING_VERBOSE_PARTICLE_DISPLAY
         );
 
         SimpleItem showHitboxes = toggle(
             "Hitbox Outlines (live attacks)",
-            () -> Config.Debug.VISUALIZATION_SHOW_HITBOXES,
-            () -> Config.Debug.VISUALIZATION_SHOW_HITBOXES = !Config.Debug.VISUALIZATION_SHOW_HITBOXES
+            () -> DebugConfig.VISUALIZATION_SHOW_HITBOXES,
+            () -> DebugConfig.VISUALIZATION_SHOW_HITBOXES = !DebugConfig.VISUALIZATION_SHOW_HITBOXES
         );
 
         @SuppressWarnings("unchecked")
-        Config.ConfigEntry<Boolean> skipLoadEntry = (Config.ConfigEntry<Boolean>) Config.ENTRIES.stream()
+        Config.ConfigEntry<Boolean> skipLoadEntry = (Config.ConfigEntry<Boolean>) Config.entries().stream()
             .filter(e -> e.path().equals("debug.skip_data_load"))
             .findFirst()
             .orElseThrow();
 
         SimpleItem skipLoad = toggle(
             "Skip Load (persisted)",
-            () -> Config.Debug.SKIP_DATA_LOAD,
+            () -> DebugConfig.SKIP_DATA_LOAD,
             () -> {
-                ConfigManager.getInstance().setValue(skipLoadEntry, !Config.Debug.SKIP_DATA_LOAD);
+                ConfigManager.getInstance().setValue(skipLoadEntry, !DebugConfig.SKIP_DATA_LOAD);
                 ConfigManager.getInstance().saveConfig();
             }
         );
 
         @SuppressWarnings("unchecked")
-        Config.ConfigEntry<Boolean> skipSaveEntry = (Config.ConfigEntry<Boolean>) Config.ENTRIES.stream()
+        Config.ConfigEntry<Boolean> skipSaveEntry = (Config.ConfigEntry<Boolean>) Config.entries().stream()
             .filter(e -> e.path().equals("debug.skip_data_save"))
             .findFirst()
             .orElseThrow();
 
         SimpleItem skipSave = toggle(
             "Skip Save (persisted)",
-            () -> Config.Debug.SKIP_DATA_SAVE,
+            () -> DebugConfig.SKIP_DATA_SAVE,
             () -> {
-                ConfigManager.getInstance().setValue(skipSaveEntry, !Config.Debug.SKIP_DATA_SAVE);
+                ConfigManager.getInstance().setValue(skipSaveEntry, !DebugConfig.SKIP_DATA_SAVE);
                 ConfigManager.getInstance().saveConfig();
             }
         );

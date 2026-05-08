@@ -15,14 +15,14 @@ import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
 import btm.sword.Sword;
-import btm.sword.config.Config;
+import btm.sword.config.section.AnimationConfig;
+import btm.sword.config.section.SceneConfig;
 import btm.sword.entity.player.SwordPlayer;
 import btm.sword.gamemode.QueueManager;
 import btm.sword.gamemode.type.CaptureTheFlag1v1;
 import btm.sword.item.core.ItemStackBuilder;
 import btm.sword.item.weapon.WeaponType;
 import btm.sword.menu.Menu;
-import btm.sword.menu.PacketTestMenu;
 import btm.sword.runtime.scheduler.SwordScheduler;
 import btm.sword.scene.SceneManager;
 import btm.sword.scene.animation.AnimationDef;
@@ -63,10 +63,10 @@ public class TestingMenu extends Menu {
         SimpleItem staticScene = new SimpleItem(
             new ItemStackBuilder(Material.SPYGLASS)
                 .name(Component.text("Static Scene Test", NamedTextColor.LIGHT_PURPLE, TextDecoration.BOLD))
-                .lore(List.of(Component.text("Play: " + Config.Animation.STATIC_MENU_ANIMATION_KEY, NamedTextColor.DARK_GRAY)))
+                .lore(List.of(Component.text("Play: " + AnimationConfig.STATIC_MENU_ANIMATION_KEY, NamedTextColor.DARK_GRAY)))
                 .build(),
             click -> {
-                String animKey = Config.Animation.STATIC_MENU_ANIMATION_KEY;
+                String animKey = AnimationConfig.STATIC_MENU_ANIMATION_KEY;
                 AnimationDef def = AnimationRegistry.get(animKey).orElse(null);
                 if (def == null) {
                     swordPlayer.message(Component.text("Animation not found: " + animKey, NamedTextColor.RED));
@@ -76,8 +76,8 @@ public class TestingMenu extends Menu {
             }
         );
 
-        double fakePlayerDist = Config.Scene.FAKE_PLAYER_DISTANCE;
-        String animKeyLabel = Config.Animation.STATIC_MENU_ANIMATION_KEY;
+        double fakePlayerDist = SceneConfig.FAKE_PLAYER_DISTANCE;
+        String animKeyLabel = AnimationConfig.STATIC_MENU_ANIMATION_KEY;
         SimpleItem fakePlayerScene = new SimpleItem(
             new ItemStackBuilder(Material.PLAYER_HEAD)
                 .name(Component.text("Fake Player Scene Test", NamedTextColor.LIGHT_PURPLE, TextDecoration.BOLD))
@@ -89,7 +89,7 @@ public class TestingMenu extends Menu {
             click -> {
                 Location playerLoc = swordPlayer.player().getLocation();
                 Location displayPosition = playerLoc.clone()
-                    .add(playerLoc.getDirection().multiply(Config.Scene.FAKE_PLAYER_DISTANCE));
+                    .add(playerLoc.getDirection().multiply(SceneConfig.FAKE_PLAYER_DISTANCE));
                 SceneManager.enterStaticMenuScene(swordPlayer, displayPosition);
             }
         );

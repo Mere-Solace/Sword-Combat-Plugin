@@ -22,7 +22,9 @@ import btm.sword.action.utility.GrabAction;
 import btm.sword.action.utility.UtilityAction;
 import btm.sword.combat.dev.SweepRecordingAction;
 import btm.sword.combat.dev.WandActions;
-import btm.sword.config.Config;
+import btm.sword.config.section.CombatConfig;
+import btm.sword.config.section.GrabConfig;
+import btm.sword.config.section.MovementConfig;
 import btm.sword.entity.aspect.AspectType;
 import btm.sword.entity.base.Combatant;
 import btm.sword.entity.player.SwordPlayer;
@@ -87,7 +89,7 @@ public final class InputRegistrar {
                 .action(GrabAction::grab)
                 .cooldown(executor -> executor.calcCooldown(AspectType.FORTITUDE, 200, 1000, 10))
                 .canCast(Combatant::canPerformAction)
-                .castDuration(() -> Config.Grab.CAST_DURATION)
+                .castDuration(() -> GrabConfig.CAST_DURATION)
                 .displayDisabled(true)
                 .resetIfCannotPerform(true)
                 .build(),
@@ -149,7 +151,7 @@ public final class InputRegistrar {
                     .build(),
                 sp -> sp.normalActState() && sp.getItemStackInHand(false).getType() == Material.SHIELD)
         )))
-            .timeoutTicks(SwordTimeUnit.millisToTicks(Config.Combat.PARRY_AVAILABLE_MS))
+            .timeoutTicks(SwordTimeUnit.millisToTicks(CombatConfig.PARRY_AVAILABLE_MS))
             .cancellable(true)
             .display(true)
             .visibleIf(ActivationContext.onlyIn(ActivationContext.NORMAL))
@@ -547,14 +549,14 @@ public final class InputRegistrar {
     private static void registerBasicAttackCombo(InputExecutionTree.InputNode root) {
         Function<Combatant, Integer> attackCastDuration = executor -> (int) executor.calcValueReductive(
             AspectType.CELERITY,
-            Config.Combat.ATTACKS_CAST_TIMING_MIN_DURATION,
-            Config.Combat.ATTACKS_CAST_TIMING_MAX_DURATION,
-            Config.Combat.ATTACKS_CAST_TIMING_REDUCTION_RATE);
+            CombatConfig.ATTACKS_CAST_TIMING_MIN_DURATION,
+            CombatConfig.ATTACKS_CAST_TIMING_MAX_DURATION,
+            CombatConfig.ATTACKS_CAST_TIMING_REDUCTION_RATE);
 
-        for (int step = 1; step <= Config.Combat.BASIC_COMBO_STEPS; step++) {
+        for (int step = 1; step <= CombatConfig.BASIC_COMBO_STEPS; step++) {
             final int comboStep = step;
             boolean isFirst = step == 1;
-            boolean isLast = step == Config.Combat.BASIC_COMBO_STEPS;
+            boolean isLast = step == CombatConfig.BASIC_COMBO_STEPS;
 
             Function<Combatant, Integer> cooldown = isFirst
                 ? Combatant::getDurationOfLastAttack
@@ -623,32 +625,6 @@ public final class InputRegistrar {
             .build();
     }
 
-    // TODO: Maybe we can go back to this architecture, although it is somewhat redundant
-//    /**
-//     * Registers tap and hold variants for an active skill slot.
-//     *
-//     * @param root      the tree root node
-//     * @param owner     the player who owns the tree
-//     * @param slot      the skill slot to bind
-//     * @param slotIndex the hotbar slot index (1 or 2) for context predicate
-//     */
-//    private static void registerActiveSkillSlot(InputExecutionTree.InputNode root,
-//                                                SwordPlayer owner,
-//                                                SkillSlot slot, int slotIndex) {
-//        // Tap variant
-//        new InputExecutionTree.InputNodeBuilder(root, List.of(InputType.LEFT))
-//            .action(new LinkedList<>(List.of(
-//                new InputExecutionTree.ActionContextPair(
-//                    () -> SkillSlotActionFactory.create(owner, slot, false),
-//                    sp -> !sp.notHoldingAbilityItem())
-//            )))
-//            .dynamic(true)
-//            .sameItemRequired(true)
-//            .cancellable(true)
-//            .display(true)
-//            .build();
-//    }
-
     /**
      * Registers a dash and its follow-up dash-attack for the given input key and direction.
      * Dash: {@code key, key}. Dash-attack: {@code key, key, LEFT}.
@@ -668,7 +644,7 @@ public final class InputRegistrar {
                         .action(executor -> MovementAction.dash(executor, direction))
                         .cooldown(executor -> executor.calcCooldown(AspectType.CELERITY, 200, 1000, 10))
                         .canCast(Combatant::canAirDash)
-                        .castDuration(() -> Config.Movement.DASH_CAST_DURATION)
+                        .castDuration(() -> MovementConfig.DASH_CAST_DURATION)
                         .displayDisabled(true)
                         .resetIfCannotPerform(true)
                         .build(),

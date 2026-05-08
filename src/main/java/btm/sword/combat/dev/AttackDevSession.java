@@ -23,7 +23,8 @@ import btm.sword.combat.simulation.KeyframeEffect;
 import btm.sword.combat.simulation.KeyframedSequence;
 import btm.sword.combat.simulation.VolumeKeyframe;
 import btm.sword.combat.visuals.ParticleDisplay;
-import btm.sword.config.Config;
+import btm.sword.config.section.CombatConfig;
+import btm.sword.config.section.DirectionConfig;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
@@ -200,13 +201,13 @@ public final class AttackDevSession {
      * Whether OBBs are tilted by the player's pitch angle. Defaults to the global config
      * value; overridable per-attack via the editor toggle.
      */
-    @Getter @Setter private boolean editOrientWithPitch = Config.Combat.ATTACKS_ORIENT_WITH_PITCH;
+    @Getter @Setter private boolean editOrientWithPitch = CombatConfig.ATTACKS_ORIENT_WITH_PITCH;
 
     /**
      * Whether the attack origin is locked at fire time. Defaults to the global config value;
      * overridable per-attack via the editor toggle.
      */
-    @Getter @Setter private boolean editLockOriginOnFire = Config.Combat.ATTACKS_LOCK_ORIGIN_ON_FIRE;
+    @Getter @Setter private boolean editLockOriginOnFire = CombatConfig.ATTACKS_LOCK_ORIGIN_ON_FIRE;
 
     // ── Pending multi-kf display copy ─────────────────────────────────────────
     /**
@@ -311,7 +312,7 @@ public final class AttackDevSession {
         this.mode = DevMode.RECORDING;
 
         // Capture position lock and reference frame at recording start
-        this.lockedOrigin = player.getLocation().clone().add(0, 1.0, 0).setDirection(Config.Direction.north());
+        this.lockedOrigin = player.getLocation().clone().add(0, 1.0, 0).setDirection(DirectionConfig.north());
         BoundingBox bb = player.getBoundingBox();
         this.recordingRefOrigin = new Vector3f(
             (float) bb.getCenterX(), (float) bb.getCenterY(), (float) bb.getCenterZ());

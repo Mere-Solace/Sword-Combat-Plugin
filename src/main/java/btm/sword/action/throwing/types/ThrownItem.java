@@ -30,7 +30,11 @@ import btm.sword.action.throwing.Lodgeable;
 import btm.sword.action.throwing.ThrowAction;
 import btm.sword.action.throwing.impale.Impalement;
 import btm.sword.combat.hit.HitValuePacket;
-import btm.sword.config.Config;
+import btm.sword.config.section.CombatConfig;
+import btm.sword.config.section.DirectionConfig;
+import btm.sword.config.section.PhysicsConfig;
+import btm.sword.config.section.TimingConfig;
+import btm.sword.config.section.WorldConfig;
 import btm.sword.entity.base.Combatant;
 import btm.sword.entity.base.SwordEntity;
 import btm.sword.entity.player.SwordPlayer;
@@ -271,8 +275,7 @@ public class ThrownItem extends VisualProjectile implements Lodgeable {
     @Override
     protected void onCatch() {
         ItemStack caughtItem = display.getItemStack();
-        if (caughtItem != null && KeyRegistry.hasKey(caughtItem, KeyRegistry.ABILITY_ID_KEY)
-                && thrower instanceof SwordPlayer sp) {
+        if (KeyRegistry.hasKey(caughtItem, KeyRegistry.ABILITY_ID_KEY) && thrower instanceof SwordPlayer sp) {
             String abilityId = KeyRegistry.getKeyField(caughtItem, KeyRegistry.ABILITY_ID_KEY,
                 org.bukkit.persistence.PersistentDataType.STRING);
             sp.getAbilitySlotManager().refundByAbilityId(abilityId);
@@ -346,7 +349,7 @@ public class ThrownItem extends VisualProjectile implements Lodgeable {
                 && (entity instanceof LivingEntity l)
                 && !l.isDead();
         boolean excludeThrower = isAbilityItem()
-            || timeStep.get() < Config.Timing.THROWN_ITEMS_CATCH_GRACE_PERIOD;
+            || timeStep.get() < TimingConfig.THROWN_ITEMS_CATCH_GRACE_PERIOD;
         return excludeThrower
             ? entity -> filter.test(entity) && entity.getUniqueId() != thrower.getUniqueId()
             : filter;
@@ -376,9 +379,9 @@ public class ThrownItem extends VisualProjectile implements Lodgeable {
         LivingEntity ex = thrower.self();
         Location o = ex.getEyeLocation();
         Basis basis = VectorUtil.getBasisWithoutPitch(ex);
-        return o.add(basis.right().multiply(Config.Physics.THROWN_ITEMS_ORIGIN_OFFSET_FORWARD))
-            .add(basis.up().multiply(Config.Physics.THROWN_ITEMS_ORIGIN_OFFSET_UP))
-            .add(basis.forward().multiply(Config.Physics.THROWN_ITEMS_ORIGIN_OFFSET_BACK));
+        return o.add(basis.right().multiply(PhysicsConfig.THROWN_ITEMS_ORIGIN_OFFSET_FORWARD))
+            .add(basis.up().multiply(PhysicsConfig.THROWN_ITEMS_ORIGIN_OFFSET_UP))
+            .add(basis.forward().multiply(PhysicsConfig.THROWN_ITEMS_ORIGIN_OFFSET_BACK));
     }
 
     /**
@@ -396,7 +399,7 @@ public class ThrownItem extends VisualProjectile implements Lodgeable {
     @Override
     protected Vector resolveFlatDir() {
         if (launchDirection != null) return launchDirection.clone().setY(0).normalize();
-        return thrower.getFlatDir().rotateAroundY(Config.Physics.THROWN_ITEMS_TRAJECTORY_ROTATION);
+        return thrower.getFlatDir().rotateAroundY(PhysicsConfig.THROWN_ITEMS_TRAJECTORY_ROTATION);
     }
 
     /**
@@ -425,13 +428,13 @@ public class ThrownItem extends VisualProjectile implements Lodgeable {
     protected void nonImpalingImpact(SwordEntity target) {
         Vector kb = knockbackFunction != null
             ? knockbackFunction.apply(target)
-            : velocity.clone().multiply(Config.Combat.THROWN_DAMAGE_OTHER_KNOCKBACK_MULTIPLIER);
+            : velocity.clone().multiply(CombatConfig.THROWN_DAMAGE_OTHER_KNOCKBACK_MULTIPLIER);
         target.hit(thrower, hitPacket != null ? hitPacket : Prefab.Attacks.THROWN_WEAPON, kb);
 
         target.world().createExplosion(target.getChestLocation(),
-            Config.Combat.THROWN_DAMAGE_OTHER_EXPLOSION_POWER,
-            Config.World.EXPLOSIONS_SET_FIRE,
-            Config.World.EXPLOSIONS_BREAK_BLOCKS);
+            CombatConfig.THROWN_DAMAGE_OTHER_EXPLOSION_POWER,
+            WorldConfig.EXPLOSIONS_SET_FIRE,
+            WorldConfig.EXPLOSIONS_BREAK_BLOCKS);
 
         if (display.isValid()) {
             disposeWithNewInteractiveItem();
@@ -447,9 +450,9 @@ public class ThrownItem extends VisualProjectile implements Lodgeable {
         Vector kb = knockbackFunction != null
             ? knockbackFunction.apply(target)
             : EntityUtil.isOnGround(target.self())
-                ? velocity.clone().multiply(Config.Combat.THROWN_DAMAGE_SWORD_AXE_KNOCKBACK_GROUNDED)
-                : VectorUtil.getProjOntoPlane(velocity, Config.Direction.up())
-                    .multiply(Config.Combat.THROWN_DAMAGE_SWORD_AXE_KNOCKBACK_AIRBORNE);
+                ? velocity.clone().multiply(CombatConfig.THROWN_DAMAGE_SWORD_AXE_KNOCKBACK_GROUNDED)
+                : VectorUtil.getProjOntoPlane(velocity, DirectionConfig.up())
+                    .multiply(CombatConfig.THROWN_DAMAGE_SWORD_AXE_KNOCKBACK_AIRBORNE);
 
         if (display.isValid()) {
             impale(target.self());
@@ -472,8 +475,8 @@ public class ThrownItem extends VisualProjectile implements Lodgeable {
         double diff = max - feet;
         double heightOffset = Math.max(0, Math.min(cur.getY() - feet, hit.getHeight()));
 
-        boolean followHead = !Config.Combat.IMPALEMENT_HEAD_FOLLOW_EXCEPTIONS.contains(hitEntity.type())
-            && heightOffset >= diff * Config.Combat.IMPALEMENT_HEAD_ZONE_RATIO;
+        boolean followHead = !CombatConfig.IMPALEMENT_HEAD_FOLLOW_EXCEPTIONS.contains(hitEntity.type())
+            && heightOffset >= diff * CombatConfig.IMPALEMENT_HEAD_ZONE_RATIO;
         DisplayUtil.itemDisplayFollow(hitEntity, display, velocity.clone().normalize(), heightOffset, followHead,
             exitImpalementStatePredicate, this, null, null);
     }
@@ -596,7 +599,6 @@ public class ThrownItem extends VisualProjectile implements Lodgeable {
     /** Returns the Y-axis rotation (radians) that makes a FIXED TextDisplay face outward from a wall. */
     private float wallFaceYaw(BlockFace face) {
         return switch (face) {
-            case NORTH -> 0f;
             case SOUTH -> (float) Math.PI;
             case EAST -> (float) (Math.PI / 2);
             case WEST -> (float) (-Math.PI / 2);

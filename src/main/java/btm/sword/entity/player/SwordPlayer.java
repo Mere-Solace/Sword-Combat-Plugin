@@ -47,7 +47,9 @@ import btm.sword.action.skill.type.impl.charge.ChargeAction;
 import btm.sword.action.skill.type.impl.charge.ChargeSession;
 import btm.sword.action.throwing.ThrowAction;
 import btm.sword.action.throwing.types.DroppedItem;
-import btm.sword.config.Config;
+import btm.sword.config.section.ColorConfig;
+import btm.sword.config.section.CombatConfig;
+import btm.sword.config.section.WorldConfig;
 import btm.sword.entity.aspect.AspectType;
 import btm.sword.entity.base.Combatant;
 import btm.sword.entity.base.SwordEntity;
@@ -70,12 +72,12 @@ import btm.sword.item.core.StorageCategory;
 import btm.sword.item.special.AbilitySlotManager;
 import btm.sword.item.special.NonMovableItem;
 import btm.sword.item.special.SlotAnchoredItem;
-import btm.sword.menu.ArtifactPouchMenu;
-import btm.sword.menu.CurrencyMenu;
 import btm.sword.menu.InventoryMenuManager;
-import btm.sword.menu.MainMenu;
-import btm.sword.menu.MaterialPouchMenu;
 import btm.sword.menu.PlayerMenuManager;
+import btm.sword.menu.character.ArtifactPouchMenu;
+import btm.sword.menu.character.CurrencyMenu;
+import btm.sword.menu.character.MaterialPouchMenu;
+import btm.sword.menu.main.MainMenu;
 import btm.sword.playerdata.PlayerData;
 import btm.sword.playerdata.PlayerStorage;
 import btm.sword.runtime.scheduler.PredicateRunnablePair;
@@ -137,12 +139,12 @@ public class SwordPlayer extends Combatant {
 
     private final Supplier<List<Component>> currencyLore =
         () -> List.of(Component.text(playerStorage.getSteelCredits() + " Steel Credits")
-            .color(Config.SwordColor.TEXT_COOL)
+            .color(ColorConfig.TEXT_COOL)
             .decoration(TextDecoration.ITALIC, false));
 
     private final Supplier<List<Component>> materialLore =
         () -> List.of(Component.text(playerStorage.getTotalMaterialSlots() + " / " + MATERIAL_SLOTS_TOTAL + " slots")
-            .color(Config.SwordColor.TEXT_COOL)
+            .color(ColorConfig.TEXT_COOL)
             .decoration(TextDecoration.ITALIC, false));
 
     private final int maxNumDummies = 3;
@@ -267,7 +269,7 @@ public class SwordPlayer extends Combatant {
         playerHead = new ItemStackBuilder(Material.PLAYER_HEAD)
             .setMeta(skullMeta)
             .hideAll()
-            .name(Component.text("Your Stats", Config.SwordColor.TEXT_COOL_DARK))
+            .name(Component.text("Your Stats", ColorConfig.TEXT_COOL_DARK))
             .lore(aspects.toComponentList())
             .build();
 
@@ -276,7 +278,7 @@ public class SwordPlayer extends Combatant {
         menuButton = new SlotAnchoredItem(
             new ItemStackBuilder(Material.ECHO_SHARD)
                 .hideAll()
-                .name(Component.text("~ | Main Menu | ~", Config.SwordColor.TEXT_COOL, TextDecoration.BOLD))
+                .name(Component.text("~ | Main Menu | ~", ColorConfig.TEXT_COOL, TextDecoration.BOLD))
                 .tag(KeyRegistry.MAIN_MENU_BUTTON_KEY, PersistentDataType.STRING, "yes")
                 .tag(KeyRegistry.ITEM_CLASS_KEY, PersistentDataType.STRING, ItemClass.BLOCKED.name())
                 .build(),
@@ -498,7 +500,7 @@ public class SwordPlayer extends Combatant {
 
     /**
      * Starts the repeating soulfire drain ticker while blocking.
-     * Drains {@link Config.Combat#BLOCK_SOULFIRE_DRAIN_PER_SECOND} per second.
+     * Drains {@link CombatConfig#BLOCK_SOULFIRE_DRAIN_PER_SECOND} per second.
      * Breaks the block automatically if soulfire hits zero. Called from
      * {@link btm.sword.action.core.BlockAction#startBlock}.
      */
@@ -511,7 +513,7 @@ public class SwordPlayer extends Combatant {
             () -> {
                 if (!isBlocking()) return;
                 Prefab.Particles.UMBRAL_FLAME.display(getChestLocation().add(dir()));
-                float drainPerTick = Config.Combat.BLOCK_SOULFIRE_DRAIN_PER_SECOND / (1000f / periodMs);
+                float drainPerTick = CombatConfig.BLOCK_SOULFIRE_DRAIN_PER_SECOND / (1000f / periodMs);
                 aspects.soulfire().remove(drainPerTick);
                 if (aspects.soulfire().cur() <= 0) {
                     BlockAction.onBlockBroken(this);
@@ -536,9 +538,17 @@ public class SwordPlayer extends Combatant {
      * based on the input execution tree. Handles interrupting throwing, grabbing, swapping,
      * and cooldowns.
      *
+     * <p><b>Hard waiting-phase gate.</b> If this player's activation context is
+     * {@link ActivationContext#WAITING}, this method returns immediately without dispatching
+     * to the input tree, ability cast paths, or cutscene handler. This is the second of two
+     * structural enforcement points (the first being the early return inside
+     * {@link btm.sword.input.intent.InputRouter#route}). It catches any callers that bypass
+     * the router — for example, programmatic re-entries from action code paths.</p>
+     *
      * @param input the input type from the player to process
      */
     public void act(InputType input) {
+        if (activationContext == ActivationContext.WAITING) return;
         if (ItemClassifier.isBlocked(getItemStackInHand(true))) return;
 
         if (activationContext == ActivationContext.CUTSCENE) {
@@ -838,7 +848,7 @@ public class SwordPlayer extends Combatant {
 
         setAllAnchoredItemUpkeep(false);
         Debug.SPECIAL_ITEM_CHECKS_ENABLED = false;
-        Config.World.BLOCK_INTERACTION_ALLOW_BLOCK_PLACING = true;
+        WorldConfig.BLOCK_INTERACTION_ALLOW_BLOCK_PLACING = true;
 
         inCreativeDevMode = true;
     }
@@ -869,7 +879,7 @@ public class SwordPlayer extends Combatant {
 
         setAllAnchoredItemUpkeep(true);
         Debug.SPECIAL_ITEM_CHECKS_ENABLED = true;
-        Config.World.BLOCK_INTERACTION_ALLOW_BLOCK_PLACING = false;
+        WorldConfig.BLOCK_INTERACTION_ALLOW_BLOCK_PLACING = false;
 
         reloadInventoryButtons();
         shieldItem.restore(player);
@@ -1281,8 +1291,8 @@ public class SwordPlayer extends Combatant {
     /** Displays a title showing the player's current soulfire versus the required amount. */
     public void displayLackOfSoulfire(float required) {
         self.showTitle(Title.title(
-            Component.text("✖", Config.SwordColor.TEXT_COOL_DARK),
-            Component.text(String.format("%.1f", aspects.soulfireCur()) + "/" + required, Config.SwordColor.TEXT_ITEM_BASE, TextDecoration.ITALIC),
+            Component.text("✖", ColorConfig.TEXT_COOL_DARK),
+            Component.text(String.format("%.1f", aspects.soulfireCur()) + "/" + required, ColorConfig.TEXT_ITEM_BASE, TextDecoration.ITALIC),
             Title.Times.times(
                 Duration.ofMillis(20),
                 Duration.ofMillis(baseInputTimeoutMillis),

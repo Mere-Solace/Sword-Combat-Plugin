@@ -8,7 +8,9 @@ import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.util.Vector;
 
-import btm.sword.config.Config;
+import btm.sword.config.section.ColorConfig;
+import btm.sword.config.section.CombatConfig;
+import btm.sword.config.section.DirectionConfig;
 import btm.sword.runtime.scheduler.TimeArbiter;
 import btm.sword.runtime.statemachine.State;
 import btm.sword.runtime.statemachine.StateMachine;
@@ -242,8 +244,8 @@ public class UmbralStateMachine extends StateMachine<UmbralBlade> {
             LodgedState.class,
             b -> b.getHitEntity() != null,
             b -> {
-                Vector kb = VectorUtil.getProjOntoPlane(b.getVelocity(), Config.Direction.up())
-                    .multiply(Config.Combat.THROWN_DAMAGE_SWORD_AXE_KNOCKBACK_AIRBORNE);
+                Vector kb = VectorUtil.getProjOntoPlane(b.getVelocity(), DirectionConfig.up())
+                    .multiply(CombatConfig.THROWN_DAMAGE_SWORD_AXE_KNOCKBACK_AIRBORNE);
                 b.getHitEntity().hit(b.getThrower(), Prefab.Attacks.UMBRAL_IMPALE, kb);
             }
         ));
@@ -402,8 +404,8 @@ public class UmbralStateMachine extends StateMachine<UmbralBlade> {
             LodgedState.class,
             b -> b.getHitEntity() != null,
             b -> {
-                Vector kb = VectorUtil.getProjOntoPlane(b.getVelocity(), Config.Direction.up())
-                    .multiply(Config.Combat.THROWN_DAMAGE_SWORD_AXE_KNOCKBACK_AIRBORNE);
+                Vector kb = VectorUtil.getProjOntoPlane(b.getVelocity(), DirectionConfig.up())
+                    .multiply(CombatConfig.THROWN_DAMAGE_SWORD_AXE_KNOCKBACK_AIRBORNE);
                 b.getHitEntity().hit(b.getThrower(), Prefab.Attacks.UMBRAL_IMPALE, kb);
             }
         ));
@@ -507,14 +509,14 @@ public class UmbralStateMachine extends StateMachine<UmbralBlade> {
     }
 
     private static Color glowColorForState(Class<?> stateClass) {
-        if (stateClass == StandbyState.class) return Config.SwordColor.STANDBY_GLOW;
-        if (stateClass == AttackingQuickState.class) return Config.SwordColor.ATTACK_QUICK_GLOW;
-        if (stateClass == AttackingHeavyState.class) return Config.SwordColor.FEROCIOUS_SWEEP;
-        if (stateClass == LungingState.class) return Config.SwordColor.LUNGE_GLOW;
-        if (stateClass == LodgedState.class) return Config.SwordColor.LODGED_GLOW;
-        if (stateClass == GrabImpaleState.class) return Config.SwordColor.GRAB_IMPALE_GLOW;
-        if (stateClass == RecallingState.class) return Config.SwordColor.RECALL_GLOW;
-        if (stateClass == WaitingState.class) return Config.SwordColor.UMBRAL_GLOW;
+        if (stateClass == StandbyState.class) return ColorConfig.STANDBY_GLOW;
+        if (stateClass == AttackingQuickState.class) return ColorConfig.ATTACK_QUICK_GLOW;
+        if (stateClass == AttackingHeavyState.class) return ColorConfig.FEROCIOUS_SWEEP;
+        if (stateClass == LungingState.class) return ColorConfig.LUNGE_GLOW;
+        if (stateClass == LodgedState.class) return ColorConfig.LODGED_GLOW;
+        if (stateClass == GrabImpaleState.class) return ColorConfig.GRAB_IMPALE_GLOW;
+        if (stateClass == RecallingState.class) return ColorConfig.RECALL_GLOW;
+        if (stateClass == WaitingState.class) return ColorConfig.UMBRAL_GLOW;
         return null;
     }
 }

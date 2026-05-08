@@ -15,7 +15,7 @@ import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
 
 import btm.sword.action.core.SwordAction;
-import btm.sword.config.Config;
+import btm.sword.config.section.MovementConfig;
 import btm.sword.entity.aspect.AspectType;
 import btm.sword.entity.base.Combatant;
 import btm.sword.entity.base.SwordEntity;
@@ -72,7 +72,7 @@ public class MovementAction extends SwordAction {
 
         Dash.scheduleParticleDisplay(executor);
 
-        PotionEffect speed = new PotionEffect(PotionEffectType.SPEED, Config.Movement.SPEED_DURATION - 1, Config.Movement.SPEED_AMPLIFIER - 1);
+        PotionEffect speed = new PotionEffect(PotionEffectType.SPEED, MovementConfig.SPEED_DURATION - 1, MovementConfig.SPEED_AMPLIFIER - 1);
         executor.self().addPotionEffect(speed);
 
         executor.setVelocity(basis.forward().multiply(0.25).add(basis.right().multiply(1.5 * direction)));
@@ -94,14 +94,14 @@ public class MovementAction extends SwordAction {
 
         LivingEntity targetEntity = target.self();
 
-        double baseForce = Config.Movement.TOSS_BASE_FORCE;
-        double force = executor.calcValueAdditive(AspectType.MIGHT, Config.Movement.TOSS_MIGHT_MULTIPLIER_BASE, baseForce, Config.Movement.TOSS_MIGHT_MULTIPLIER_INCREMENT);
+        double baseForce = MovementConfig.TOSS_BASE_FORCE;
+        double force = executor.calcValueAdditive(AspectType.MIGHT, MovementConfig.TOSS_MIGHT_MULTIPLIER_BASE, baseForce, MovementConfig.TOSS_MIGHT_MULTIPLIER_INCREMENT);
 
         TimeArbiter.runFixedIterationTaskTimer(
             null,
-            () -> target.setVelocity(new Vector(0, Config.Movement.TOSS_UPWARD_VELOCITY_Y, 0)),
+            () -> target.setVelocity(new Vector(0, MovementConfig.TOSS_UPWARD_VELOCITY_Y, 0)),
             0, 50,
-            Config.Movement.TOSS_UPWARD_PHASE_ITERATIONS,
+            MovementConfig.TOSS_UPWARD_PHASE_ITERATIONS,
             MovementAction.class, "toss",
             null
         );
@@ -109,8 +109,8 @@ public class MovementAction extends SwordAction {
         TimeArbiter.runFixedIterationTaskTimer(
             null,
             () -> targetEntity.setVelocity(executor.dir().multiply(force)),
-            SwordTimeUnit.ticksToMillis(Config.Movement.TOSS_UPWARD_PHASE_ITERATIONS), 50,
-            Config.Movement.TOSS_FORWARD_PHASE_ITERATIONS,
+            SwordTimeUnit.ticksToMillis(MovementConfig.TOSS_UPWARD_PHASE_ITERATIONS), 50,
+            MovementConfig.TOSS_FORWARD_PHASE_ITERATIONS,
             MovementAction.class, "toss",
             null
         );
@@ -136,7 +136,7 @@ public class MovementAction extends SwordAction {
 
                 Debug.movement("blockResult=" + blockResult);
 
-                double entityRadius = Config.Movement.TOSS_ENTITY_DETECTION_RADIUS;
+                double entityRadius = MovementConfig.TOSS_ENTITY_DETECTION_RADIUS;
                 Collection<LivingEntity> entities = world.getNearbyLivingEntities(
                     newLocation, entityRadius, entityRadius, entityRadius,
                     entity ->
@@ -146,20 +146,20 @@ public class MovementAction extends SwordAction {
                 if ((blockResult != null && blockResult.getHitBlock() != null) || !entities.isEmpty()) {
                     if (!entities.isEmpty()) {
                         Vector knockbackDir = currentLocation.toVector().subtract(((LivingEntity) Arrays.stream(entities.toArray()).toList().getFirst()).getLocation().toVector());
-                        targetEntity.setVelocity(knockbackDir.normalize().multiply(Config.Movement.TOSS_KNOCKBACK_MULTIPLIER * force));
+                        targetEntity.setVelocity(knockbackDir.normalize().multiply(MovementConfig.TOSS_KNOCKBACK_MULTIPLIER * force));
                     }
-                    world.createExplosion(newLocation, Config.Movement.TOSS_EXPLOSION_POWER, false, false);
+                    world.createExplosion(newLocation, MovementConfig.TOSS_EXPLOSION_POWER, false, false);
                     target.hit(executor, 5,
-                        Config.Movement.TOSS_HIT_INVULNERABILITY_TICKS,
-                        Config.Movement.TOSS_HIT_SHARD_DAMAGE,
-                        Config.Movement.TOSS_HIT_TOUGHNESS_DAMAGE,
-                        Config.Movement.TOSS_HIT_SOULFIRE_REDUCTION,
+                        MovementConfig.TOSS_HIT_INVULNERABILITY_TICKS,
+                        MovementConfig.TOSS_HIT_SHARD_DAMAGE,
+                        MovementConfig.TOSS_HIT_TOUGHNESS_DAMAGE,
+                        MovementConfig.TOSS_HIT_SOULFIRE_REDUCTION,
                         new Vector());
                     check[0] = false;
                 }
             },
-            SwordTimeUnit.ticksToMillis(Config.Movement.TOSS_UPWARD_PHASE_ITERATIONS), 50,
-            Config.Movement.TOSS_ANIMATION_ITERATIONS,
+            SwordTimeUnit.ticksToMillis(MovementConfig.TOSS_UPWARD_PHASE_ITERATIONS), 50,
+            MovementConfig.TOSS_ANIMATION_ITERATIONS,
             MovementAction.class, "toss",
             null,
             new PredicateRunnablePair(

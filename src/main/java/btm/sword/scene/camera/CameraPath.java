@@ -13,7 +13,7 @@ import btm.sword.util.math.ControlVectors;
  * Value object representing a cubic Bézier camera trajectory in world space.
  * <p>
  * The path is defined by a {@link ControlVectors} whose suppliers resolve from
- * {@code Config.Scene} so that hot-reloaded values are picked up automatically.
+ * {@code SceneConfig} so that hot-reloaded values are picked up automatically.
  * </p>
  * <p>
  * Call {@link #evaluate(double, World)} with {@code t} in {@code [0, 1]} to obtain

@@ -9,7 +9,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
 import org.joml.Vector3f;
 
-import btm.sword.config.Config;
+import btm.sword.config.section.DirectionConfig;
 import btm.sword.entity.base.SwordEntity;
 
 
@@ -29,12 +29,12 @@ public final class VectorUtil {
         dir.normalize();
         if (dir.isZero()) { // just in case, return a default basis
             return new Basis(
-                Config.Direction.up().crossProduct(Config.Direction.south()),
-                Config.Direction.up(),
-                Config.Direction.south());
+                DirectionConfig.up().crossProduct(DirectionConfig.south()),
+                DirectionConfig.up(),
+                DirectionConfig.south());
         }
 
-        Vector upReference = Config.Direction.up();
+        Vector upReference = DirectionConfig.up();
         Vector right;
 
         double isDirectionStraightUpOrDown = dir.dot(upReference);
@@ -57,7 +57,7 @@ public final class VectorUtil {
 
     /** Computes a horizontal-only basis from the entity's yaw, ignoring pitch. */
     public static Basis getBasisWithoutPitch(Entity origin) {
-        Vector up = Config.Direction.up();
+        Vector up = DirectionConfig.up();
         double yaw;
         if (origin instanceof Player player) {
             yaw = Math.toRadians(player.getBodyYaw());
@@ -73,7 +73,7 @@ public final class VectorUtil {
 
     /** Computes a horizontal-only basis from the location's yaw, ignoring pitch. */
     public static Basis getBasisWithoutPitch(Location location) {
-        Vector up = Config.Direction.up();
+        Vector up = DirectionConfig.up();
         double yaw = Math.toRadians(location.getYaw());
         Vector dir = new Vector(-Math.sin(yaw), 0, Math.cos(yaw));
         Vector right = dir.getCrossProduct(up).normalize();

@@ -12,7 +12,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.LivingEntity;
 
 import btm.sword.Sword;
-import btm.sword.config.Config;
+import btm.sword.config.section.DebugConfig;
 import btm.sword.playerdata.store.PlayerDataStore;
 import btm.sword.playerdata.store.SqlitePlayerDataStore;
 
@@ -66,13 +66,13 @@ public final class PlayerDataManager {
      * Synchronously flushes all CACHEd player data to disk and closes the store connection.
      * Called once on server shutdown.
      * <p>
-     * If {@link Config.Debug#SKIP_DATA_SAVE} is {@code true}, the flush is skipped but the
+     * If {@link DebugConfig#SKIP_DATA_SAVE} is {@code true}, the flush is skipped but the
      * database connection is still closed cleanly.
      * </p>
      */
     public static void shutdown() {
         if (store == null) return;
-        if (!Config.Debug.SKIP_DATA_SAVE) {
+        if (!DebugConfig.SKIP_DATA_SAVE) {
             store.saveAll(CACHE.keySet(), CACHE);
         }
         store.close();
@@ -82,7 +82,7 @@ public final class PlayerDataManager {
      * Registers a player, loading their data from the database if it exists
      * or creating a fresh default record for first-time players.
      * <p>
-     * If {@link Config.Debug#SKIP_DATA_LOAD} is {@code true}, the database load is skipped
+     * If {@link DebugConfig#SKIP_DATA_LOAD} is {@code true}, the database load is skipped
      * entirely and a fresh {@link PlayerData} is always created, simulating a first-time join.
      * </p>
      *
@@ -92,7 +92,7 @@ public final class PlayerDataManager {
         UUID uuid = entity.getUniqueId();
         if (CACHE.containsKey(uuid)) return;
 
-        if (Config.Debug.SKIP_DATA_LOAD) {
+        if (DebugConfig.SKIP_DATA_LOAD) {
             CACHE.put(uuid, new PlayerData(uuid));
             return;
         }
@@ -115,13 +115,13 @@ public final class PlayerDataManager {
      * Asynchronously saves a single player's data to the database.
      * Call this when a player quits so their data is persisted promptly.
      * <p>
-     * This method is a no-op when {@link Config.Debug#SKIP_DATA_SAVE} is {@code true}.
+     * This method is a no-op when {@link DebugConfig#SKIP_DATA_SAVE} is {@code true}.
      * </p>
      *
      * @param uuid the player's unique ID
      */
     public static void saveAsync(UUID uuid) {
-        if (Config.Debug.SKIP_DATA_SAVE) return;
+        if (DebugConfig.SKIP_DATA_SAVE) return;
         PlayerData data = CACHE.get(uuid);
         if (data == null || store == null) return;
         Sword.getScheduler().submit(() -> store.save(uuid, data));
@@ -159,11 +159,11 @@ public final class PlayerDataManager {
     /**
      * Async flush of all currently CACHEd players — called by the periodic scheduler.
      * <p>
-     * This method is a no-op when {@link Config.Debug#SKIP_DATA_SAVE} is {@code true}.
+     * This method is a no-op when {@link DebugConfig#SKIP_DATA_SAVE} is {@code true}.
      * </p>
      */
     public static void flushAll() {
-        if (Config.Debug.SKIP_DATA_SAVE) return;
+        if (DebugConfig.SKIP_DATA_SAVE) return;
         if (store == null || CACHE.isEmpty()) return;
         Collection<UUID> snapshot = CACHE.keySet();
         store.saveAll(snapshot, CACHE);

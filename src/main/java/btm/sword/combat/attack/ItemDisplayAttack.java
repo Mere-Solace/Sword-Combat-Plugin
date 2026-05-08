@@ -4,7 +4,7 @@ package btm.sword.combat.attack;
 import org.bukkit.entity.ItemDisplay;
 
 import btm.sword.combat.style.AttackProfile;
-import btm.sword.config.Config;
+import btm.sword.config.section.DisplayConfig;
 import btm.sword.runtime.scheduler.TimeArbiter;
 import btm.sword.util.prefab.Prefab;
 import lombok.Setter;
@@ -34,7 +34,7 @@ public class ItemDisplayAttack extends Attack {
         super(weaponDisplay.getItemStack(), profile, orientWithPitch);
         this.weaponDisplay = weaponDisplay;
         this.displayOnly = displayOnly;
-        this.displaySteps = Config.Display.ATTACK_DISPLAY_STEPS;
+        this.displaySteps = DisplayConfig.ATTACK_DISPLAY_STEPS;
         this.attackStepsPerDisplayStep = attackIterations / displaySteps; // Stored for potential future use
         this.tpDuration = tpDuration;
     }

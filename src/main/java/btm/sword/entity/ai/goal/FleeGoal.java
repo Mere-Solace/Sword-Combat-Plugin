@@ -17,7 +17,7 @@ import com.destroystokyo.paper.entity.ai.GoalKey;
 import com.destroystokyo.paper.entity.ai.GoalType;
 
 import btm.sword.Sword;
-import btm.sword.config.Config;
+import btm.sword.config.section.HostileConfig;
 import btm.sword.entity.mob.Hostile;
 
 /**
@@ -71,7 +71,7 @@ public class FleeGoal implements Goal<@NotNull Mob> {
      */
     @Override
     public boolean shouldStayActive() {
-        double aggroRadius = Math.sqrt(Config.Hostile.AGGRO_RANGE_SQUARED);
+        double aggroRadius = Math.sqrt(HostileConfig.AGGRO_RANGE_SQUARED);
         return !mob.getWorld().getNearbyPlayers(mob.getLocation(), aggroRadius).isEmpty();
     }
 
@@ -107,13 +107,12 @@ public class FleeGoal implements Goal<@NotNull Mob> {
     }
 
     private void recalculateFleeDirection() {
-        double aggroRadius = Math.sqrt(Config.Hostile.AGGRO_RANGE_SQUARED);
+        double aggroRadius = Math.sqrt(HostileConfig.AGGRO_RANGE_SQUARED);
         Collection<Player> nearbyPlayers = mob.getWorld().getNearbyPlayers(mob.getLocation(), aggroRadius);
         if (nearbyPlayers.isEmpty()) return;
 
         Optional<Player> nearest = nearbyPlayers.stream()
             .min(Comparator.comparingDouble(p -> p.getLocation().distanceSquared(mob.getLocation())));
-        if (nearest.isEmpty()) return;
 
         Vector away = mob.getLocation()
             .subtract(nearest.get().getLocation())

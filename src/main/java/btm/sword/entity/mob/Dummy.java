@@ -6,7 +6,8 @@ import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 
 import btm.sword.combat.affliction.Affliction;
-import btm.sword.config.Config;
+import btm.sword.config.section.AudioConfig;
+import btm.sword.config.section.CombatConfig;
 import btm.sword.entity.arbiter.SwordEntityArbiter;
 import btm.sword.entity.aspect.AspectType;
 import btm.sword.entity.aspect.value.ResourceValue;
@@ -90,9 +91,8 @@ public class Dummy extends Passive {
 
         Prefab.Particles.TEST_HIT.display(getChestLocation());
         SoundUtil.playSound(source.self(), SwordSoundType.ENTITY_PLAYER_ATTACK_STRONG,
-            Config.Audio.ENTITY_HIT_CONNECT_VOLUME, Config.Audio.ENTITY_HIT_CONNECT_PITCH);
-
-//        self.setVelocity(knockbackVelocity);
+            AudioConfig.ENTITY_HIT_CONNECT_VOLUME, AudioConfig.ENTITY_HIT_CONNECT_PITCH
+        );
 
         // If Toughness == 0
         if (aspects.toughness().remove(baseToughnessDamage)) {
@@ -115,8 +115,8 @@ public class Dummy extends Passive {
             shardsLostDuringToughnessBreak += baseNumShards;
 
 
-            if (shardsLostDuringToughnessBreak >= Config.Combat.SHARDS_LOST_PERCENT_TOUGHNESS_RESET * aspects.shards().effectiveMaxValue()) {
-                aspects.toughness().setCurPercent(Config.Combat.TOUGHNESS_RECHARGE_PERCENT);
+            if (shardsLostDuringToughnessBreak >= CombatConfig.SHARDS_LOST_PERCENT_TOUGHNESS_RESET * aspects.shards().effectiveMaxValue()) {
+                aspects.toughness().setCurPercent(CombatConfig.TOUGHNESS_RECHARGE_PERCENT);
             }
         }
 

@@ -1,1 +1,23 @@
 rootProject.name = 'Sword'
+
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        mavenCentral()
+        maven {
+            url 'https://jitpack.io'
+        }
+        maven {
+            name = "papermc-repo"
+            url = "https://repo.papermc.io/repository/maven-public/"
+        }
+        maven {
+            name = "sonatype"
+            url = "https://oss.sonatype.org/content/groups/public/"
+        }
+        maven {
+            name "xenondevsReleases"
+            url 'https://repo.xenondevs.xyz/releases'
+        }
+    }
+}

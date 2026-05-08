@@ -14,7 +14,7 @@ import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
 import btm.sword.Sword;
-import btm.sword.config.Config;
+import btm.sword.config.section.ColorConfig;
 import btm.sword.entity.player.SwordPlayer;
 import btm.sword.item.core.ItemStackBuilder;
 import net.kyori.adventure.text.Component;
@@ -46,7 +46,7 @@ public abstract class Menu {
     /** Shared black stained-glass-pane border item used as inactive GUI decoration. */
     public static final SimpleItem BORDER = new SimpleItem(
         new ItemStackBuilder(Material.BLACK_STAINED_GLASS_PANE)
-            .name(Component.text("|[]|", Config.SwordColor.TEXT_COOL_DARK))
+            .name(Component.text("|[]|", ColorConfig.TEXT_COOL_DARK))
             .build()
     );
 
@@ -58,7 +58,7 @@ public abstract class Menu {
 
     public static final SimpleItem WALL = new SimpleItem(
         new ItemStackBuilder(Material.LIGHT_BLUE_STAINED_GLASS_PANE)
-            .name(Component.text("|||", Config.SwordColor.TEXT_COOL_DARK))
+            .name(Component.text("|||", ColorConfig.TEXT_COOL_DARK))
             .build()
     );
 

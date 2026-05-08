@@ -4,8 +4,9 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
 
-import btm.sword.config.Config;
+import btm.sword.config.section.SceneConfig;
 import btm.sword.entity.player.SwordPlayer;
+import btm.sword.scene.camera.CameraController;
 import btm.sword.scene.camera.CameraSystem;
 import btm.sword.scene.fake.FakePlayerManager;
 
@@ -87,7 +88,7 @@ public final class SceneManager {
     /**
      * Exits the static menu scene for the given player.
      * <p>
-     * Stopping the controller triggers the full cleanup in {@link MenuSceneController#onStop}:
+     * Stopping the controller triggers the full cleanup:
      * NPC despawn, player teleport back, camera restore, and input unlock.
      * </p>
      *
@@ -106,24 +107,24 @@ public final class SceneManager {
      * Returns {@code null} if the configured world does not exist.
      */
     private static Location getSafeAnchor() {
-        String worldName = Config.Scene.SAFE_ANCHOR_WORLD;
+        String worldName = SceneConfig.SAFE_ANCHOR_WORLD;
         World world = Bukkit.getWorld(worldName);
         if (world == null && !Bukkit.getWorlds().isEmpty()) {
-            world = Bukkit.getWorlds().get(0);
+            world = Bukkit.getWorlds().getFirst();
         }
         if (world == null) return null;
         return new Location(world,
-            Config.Scene.SAFE_ANCHOR_X,
-            Config.Scene.SAFE_ANCHOR_Y,
-            Config.Scene.SAFE_ANCHOR_Z
+            SceneConfig.SAFE_ANCHOR_X,
+            SceneConfig.SAFE_ANCHOR_Y,
+            SceneConfig.SAFE_ANCHOR_Z
         );
     }
 
     /**
      * Computes the camera location for the static preview scene.
      * <p>
-     * The camera is placed {@link Config.Scene#CAMERA_DISTANCE} blocks in front of the
-     * display position (along its facing direction) and {@link Config.Scene#CAMERA_HEIGHT}
+     * The camera is placed {@link SceneConfig#CAMERA_DISTANCE} blocks in front of the
+     * display position (along its facing direction) and {@link SceneConfig#CAMERA_HEIGHT}
      * blocks upward, then aimed back at the display position so the NPC is centered in frame.
      * </p>
      *
@@ -131,8 +132,8 @@ public final class SceneManager {
      * @return the camera location with yaw/pitch set to face the NPC
      */
     private static Location computeCameraLocation(Location displayPosition) {
-        double distance = Config.Scene.CAMERA_DISTANCE;
-        double height   = Config.Scene.CAMERA_HEIGHT;
+        double distance = SceneConfig.CAMERA_DISTANCE;
+        double height   = SceneConfig.CAMERA_HEIGHT;
 
         // Place the camera in front of the NPC (along the direction the NPC faces)
         Location camLoc = displayPosition.clone()

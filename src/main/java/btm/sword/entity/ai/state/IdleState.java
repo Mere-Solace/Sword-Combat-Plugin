@@ -8,7 +8,7 @@ import org.bukkit.entity.Player;
 
 import com.destroystokyo.paper.entity.ai.GoalType;
 
-import btm.sword.config.Config;
+import btm.sword.config.section.HostileConfig;
 import btm.sword.entity.ai.HostileAIFacade;
 import btm.sword.entity.ai.MobGoalArbiter;
 import btm.sword.entity.ai.goal.IdleWanderGoal;
@@ -62,14 +62,14 @@ public class IdleState extends HostileAIFacade {
                 h.setAggroTarget(null); // target died; forget them
             } else if (!Hostile.isInvulnerableGameMode(remembered)) {
                 double distSq = h.self().getLocation().distanceSquared(remembered.self().getLocation());
-                if (distSq <= Config.Hostile.AGGRO_RANGE_SQUARED) {
+                if (distSq <= HostileConfig.AGGRO_RANGE_SQUARED) {
                     h.setNearestScannedTarget(remembered);
                     return;
                 }
             }
         }
 
-        double aggroRadius = Math.sqrt(Config.Hostile.AGGRO_RANGE_SQUARED);
+        double aggroRadius = Math.sqrt(HostileConfig.AGGRO_RANGE_SQUARED);
         Collection<Entity> nearby = h.self().getWorld().getNearbyEntities(
             h.self().getLocation(), aggroRadius, aggroRadius, aggroRadius,
             e -> e instanceof Player

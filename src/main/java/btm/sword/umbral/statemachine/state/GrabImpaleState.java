@@ -11,7 +11,7 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.util.Vector;
 
 import btm.sword.combat.style.AttackType;
-import btm.sword.config.Config;
+import btm.sword.config.section.UmbralBladeConfig;
 import btm.sword.entity.arbiter.SwordEntityArbiter;
 import btm.sword.entity.base.Combatant;
 import btm.sword.entity.base.SwordEntity;
@@ -108,8 +108,8 @@ public class GrabImpaleState extends UmbralStateFacade {
         blade.setFinishedLunging(false);
         blade.setCtrlPointsForLunge(AttackType.LUNGE1.controlVectors());
 
-        long durationTicks = Math.max(1, Config.UmbralBlade.LUNGE_TIME_SCALING_FACTOR);
-        double timeStep = Config.UmbralBlade.LUNGE_TIME_CUTOFF / durationTicks;
+        long durationTicks = Math.max(1, UmbralBladeConfig.LUNGE_TIME_SCALING_FACTOR);
+        double timeStep = UmbralBladeConfig.LUNGE_TIME_CUTOFF / durationTicks;
         Basis basis = resolveGrabLungeBasis(blade);
 
         Debug.umbral("GRAB_LUNGE install: durationTicks=" + durationTicks + " timeStep=" + timeStep

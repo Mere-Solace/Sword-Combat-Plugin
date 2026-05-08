@@ -8,16 +8,17 @@ import java.util.stream.Collectors;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 
-import btm.sword.config.Config;
+import btm.sword.config.section.ColorConfig;
 import btm.sword.item.armor.ArmorType;
 import btm.sword.item.material.MaterialType;
 import btm.sword.item.quest.QuestItemType;
 import btm.sword.item.weapon.WeaponType;
+import btm.sword.menu.dev.ItemLibraryMenu;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextDecoration;
 
 /**
- * Enumeration of item library categories shown in the {@link btm.sword.menu.ItemLibraryMenu}.
+ * Enumeration of item library categories shown in the {@link ItemLibraryMenu}.
  *
  * <p>Each constant groups a family of game items under a display name and icon, and provides
  * a supplier that builds the current list of {@link ItemStack}s for that category.</p>
@@ -75,7 +76,7 @@ public enum LibraryCategory {
      * @return the display name component
      */
     public Component displayNameComponent() {
-        return Component.text(displayName, Config.SwordColor.TEXT_COOL, TextDecoration.BOLD)
+        return Component.text(displayName, ColorConfig.TEXT_COOL, TextDecoration.BOLD)
             .decoration(TextDecoration.ITALIC, false);
     }
 }

@@ -12,7 +12,7 @@ import btm.sword.entity.mob.Hostile;
  * Flee AI state for Hostile entities.
  *
  * <p>Triggered when the mob's health drops below
- * {@link btm.sword.config.Config.Hostile#FLEE_HEALTH_FRACTION}. All pathfinding is
+ * {@link btm.sword.config.HostileConfig#FLEE_HEALTH_FRACTION}. All pathfinding is
  * delegated to {@link FleeGoal}, which recalculates the flee direction away from the
  * nearest player every 20 ticks. Transitions back to {@link IdleState} once no players
  * remain within aggro range.

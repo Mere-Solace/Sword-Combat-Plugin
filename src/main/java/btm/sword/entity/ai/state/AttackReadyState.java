@@ -2,7 +2,7 @@ package btm.sword.entity.ai.state;
 
 import org.bukkit.Particle;
 
-import btm.sword.config.Config;
+import btm.sword.config.section.HostileConfig;
 import btm.sword.entity.ai.HostileAIFacade;
 import btm.sword.entity.mob.Hostile;
 
@@ -26,7 +26,7 @@ public class AttackReadyState extends HostileAIFacade {
 
     @Override
     public void onEnter(Hostile h) {
-        h.setAttackReadyTimer(Config.Hostile.ATTACK_READY_TICKS);
+        h.setAttackReadyTimer(HostileConfig.ATTACK_READY_TICKS);
         h.getPathfinder().stopPathfinding();
         h.getMob().setAware(true);
 

@@ -69,8 +69,6 @@ public class WorldAnimationController extends CameraController {
             stop();
             return;
         }
-        animation.allowTextureChanges(true); // important for allowing mid-animation overrides
-
         spawnedGroup = group.spawn(owner.player().getLocation(), GroupSpawnedEvent.SpawnReason.CUSTOM);
 
         if (spawnedGroup == null) {

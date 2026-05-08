@@ -9,7 +9,9 @@ import org.bukkit.util.Vector;
 import btm.sword.combat.attack.Attack;
 import btm.sword.combat.style.shape.ArcShape;
 import btm.sword.combat.style.shape.BezierShape;
-import btm.sword.config.Config;
+import btm.sword.config.section.AttackCurveConfig;
+import btm.sword.config.section.DirectionConfig;
+import btm.sword.config.section.UmbralBladeConfig;
 import btm.sword.entity.base.SwordEntity;
 import btm.sword.util.math.ControlVectors;
 import btm.sword.util.math.VectorUtil;
@@ -18,159 +20,159 @@ import btm.sword.util.prefab.Prefab;
 /**
  * Named attack curve presets backed by cubic Bézier control points.
  *
- * <p>Each entry's control-point vectors are read from {@link Config.AttackCurves} via
+ * <p>Each entry's control-point vectors are read from {@link AttackCurveConfig} via
  * {@link ControlVectors} suppliers, so live config changes (e.g., {@code /sword reload})
  * take effect on the next attack without a server restart.
  */
 public enum AttackType implements AttackProfile {
 //region Initializations
     UMBRAL_SLASH1(new ControlVectors(
-        () -> Config.AttackCurves.UMBRAL_SLASH1_START,
-        () -> Config.AttackCurves.UMBRAL_SLASH1_END,
-        () -> Config.AttackCurves.UMBRAL_SLASH1_C1,
-        () -> Config.AttackCurves.UMBRAL_SLASH1_C2),
+        () -> AttackCurveConfig.UMBRAL_SLASH1_START,
+        () -> AttackCurveConfig.UMBRAL_SLASH1_END,
+        () -> AttackCurveConfig.UMBRAL_SLASH1_C1,
+        () -> AttackCurveConfig.UMBRAL_SLASH1_C2),
         e -> Attack::getRightVector
     ),
     UMBRAL_SLASH1_WINDUP(new ControlVectors(
-        () -> Config.AttackCurves.UMBRAL_SLASH1_WINDUP_START,
-        () -> Config.AttackCurves.UMBRAL_SLASH1_WINDUP_END,
-        () -> Config.AttackCurves.UMBRAL_SLASH1_WINDUP_C1,
-        () -> Config.AttackCurves.UMBRAL_SLASH1_WINDUP_C2)
+        () -> AttackCurveConfig.UMBRAL_SLASH1_WINDUP_START,
+        () -> AttackCurveConfig.UMBRAL_SLASH1_WINDUP_END,
+        () -> AttackCurveConfig.UMBRAL_SLASH1_WINDUP_C1,
+        () -> AttackCurveConfig.UMBRAL_SLASH1_WINDUP_C2)
     ),
 
     WIDE_UMBRAL_SLASH1(new ControlVectors(
-        () -> Config.AttackCurves.WIDE_UMBRAL_SLASH1_START,
-        () -> Config.AttackCurves.WIDE_UMBRAL_SLASH1_END,
-        () -> Config.AttackCurves.WIDE_UMBRAL_SLASH1_C1,
-        () -> Config.AttackCurves.WIDE_UMBRAL_SLASH1_C2),
+        () -> AttackCurveConfig.WIDE_UMBRAL_SLASH1_START,
+        () -> AttackCurveConfig.WIDE_UMBRAL_SLASH1_END,
+        () -> AttackCurveConfig.WIDE_UMBRAL_SLASH1_C1,
+        () -> AttackCurveConfig.WIDE_UMBRAL_SLASH1_C2),
         e -> Attack::getRightVector
     ),
     WIDE_UMBRAL_SLASH1_WINDUP(new ControlVectors(
-        () -> Config.AttackCurves.WIDE_UMBRAL_SLASH1_WINDUP_START,
-        () -> Config.AttackCurves.WIDE_UMBRAL_SLASH1_WINDUP_END,
-        () -> Config.AttackCurves.WIDE_UMBRAL_SLASH1_WINDUP_C1,
-        () -> Config.AttackCurves.WIDE_UMBRAL_SLASH1_WINDUP_C2)
+        () -> AttackCurveConfig.WIDE_UMBRAL_SLASH1_WINDUP_START,
+        () -> AttackCurveConfig.WIDE_UMBRAL_SLASH1_WINDUP_END,
+        () -> AttackCurveConfig.WIDE_UMBRAL_SLASH1_WINDUP_C1,
+        () -> AttackCurveConfig.WIDE_UMBRAL_SLASH1_WINDUP_C2)
     ),
 
     WIDE_UMBRAL_SLASH2(new ControlVectors(
-        () -> Config.AttackCurves.WIDE_UMBRAL_SLASH2_START,
-        () -> Config.AttackCurves.WIDE_UMBRAL_SLASH2_END,
-        () -> Config.AttackCurves.WIDE_UMBRAL_SLASH2_C1,
-        () -> Config.AttackCurves.WIDE_UMBRAL_SLASH2_C2),
+        () -> AttackCurveConfig.WIDE_UMBRAL_SLASH2_START,
+        () -> AttackCurveConfig.WIDE_UMBRAL_SLASH2_END,
+        () -> AttackCurveConfig.WIDE_UMBRAL_SLASH2_C1,
+        () -> AttackCurveConfig.WIDE_UMBRAL_SLASH2_C2),
         e -> attack -> attack.getRightVector().multiply(-1).add(attack.getForwardVector().multiply(0.3))
     ),
     WIDE_UMBRAL_SLASH2_WINDUP(new ControlVectors(
-        () -> Config.AttackCurves.WIDE_UMBRAL_SLASH2_WINDUP_START,
-        () -> Config.AttackCurves.WIDE_UMBRAL_SLASH2_WINDUP_END,
-        () -> Config.AttackCurves.WIDE_UMBRAL_SLASH2_WINDUP_C1,
-        () -> Config.AttackCurves.WIDE_UMBRAL_SLASH2_WINDUP_C2)
+        () -> AttackCurveConfig.WIDE_UMBRAL_SLASH2_WINDUP_START,
+        () -> AttackCurveConfig.WIDE_UMBRAL_SLASH2_WINDUP_END,
+        () -> AttackCurveConfig.WIDE_UMBRAL_SLASH2_WINDUP_C1,
+        () -> AttackCurveConfig.WIDE_UMBRAL_SLASH2_WINDUP_C2)
     ),
 
     WIDE_UMBRAL_SLASH3(new ControlVectors(
-        () -> Config.AttackCurves.WIDE_UMBRAL_SLASH3_START,
-        () -> Config.AttackCurves.WIDE_UMBRAL_SLASH3_END,
-        () -> Config.AttackCurves.WIDE_UMBRAL_SLASH3_C1,
-        () -> Config.AttackCurves.WIDE_UMBRAL_SLASH3_C2),
-        e -> attack -> attack.getForwardVector().add(Config.Direction.up().multiply(-2))
+        () -> AttackCurveConfig.WIDE_UMBRAL_SLASH3_START,
+        () -> AttackCurveConfig.WIDE_UMBRAL_SLASH3_END,
+        () -> AttackCurveConfig.WIDE_UMBRAL_SLASH3_C1,
+        () -> AttackCurveConfig.WIDE_UMBRAL_SLASH3_C2),
+        e -> attack -> attack.getForwardVector().add(DirectionConfig.up().multiply(-2))
     ),
     WIDE_UMBRAL_SLASH3_WINDUP(new ControlVectors(
-        () -> Config.AttackCurves.WIDE_UMBRAL_SLASH3_WINDUP_START,
-        () -> Config.AttackCurves.WIDE_UMBRAL_SLASH3_WINDUP_END,
-        () -> Config.AttackCurves.WIDE_UMBRAL_SLASH3_WINDUP_C1,
-        () -> Config.AttackCurves.WIDE_UMBRAL_SLASH3_WINDUP_C2)
+        () -> AttackCurveConfig.WIDE_UMBRAL_SLASH3_WINDUP_START,
+        () -> AttackCurveConfig.WIDE_UMBRAL_SLASH3_WINDUP_END,
+        () -> AttackCurveConfig.WIDE_UMBRAL_SLASH3_WINDUP_C1,
+        () -> AttackCurveConfig.WIDE_UMBRAL_SLASH3_WINDUP_C2)
     ),
 
     SLASH1(new ControlVectors(
-        () -> Config.AttackCurves.SLASH1_START,
-        () -> Config.AttackCurves.SLASH1_END,
-        () -> Config.AttackCurves.SLASH1_C1,
-        () -> Config.AttackCurves.SLASH1_C2),
+        () -> AttackCurveConfig.SLASH1_START,
+        () -> AttackCurveConfig.SLASH1_END,
+        () -> AttackCurveConfig.SLASH1_C1,
+        () -> AttackCurveConfig.SLASH1_C2),
         e -> attack -> attack.getRightVector().multiply(-0.5).add(attack.getForwardVector().multiply(0.1))
     ),
     SLASH2(new ControlVectors(
-        () -> Config.AttackCurves.SLASH2_START,
-        () -> Config.AttackCurves.SLASH2_END,
-        () -> Config.AttackCurves.SLASH2_C1,
-        () -> Config.AttackCurves.SLASH2_C2),
+        () -> AttackCurveConfig.SLASH2_START,
+        () -> AttackCurveConfig.SLASH2_END,
+        () -> AttackCurveConfig.SLASH2_C1,
+        () -> AttackCurveConfig.SLASH2_C2),
         e -> attack -> attack.getRightVector().multiply(0.5).add(attack.getForwardVector().multiply(0.1))
     ),
     SLASH3(new ControlVectors(
-        () -> Config.AttackCurves.SLASH3_START,
-        () -> Config.AttackCurves.SLASH3_END,
-        () -> Config.AttackCurves.SLASH3_C1,
-        () -> Config.AttackCurves.SLASH3_C2),
+        () -> AttackCurveConfig.SLASH3_START,
+        () -> AttackCurveConfig.SLASH3_END,
+        () -> AttackCurveConfig.SLASH3_C1,
+        () -> AttackCurveConfig.SLASH3_C2),
         e -> attack -> attack.getTo().add(attack.getForwardVector().multiply(0.5))
     ),
 
     UP_SMASH(new ControlVectors(
-        () -> Config.AttackCurves.UP_SMASH_START,
-        () -> Config.AttackCurves.UP_SMASH_END,
-        () -> Config.AttackCurves.UP_SMASH_C1,
-        () -> Config.AttackCurves.UP_SMASH_C2),
-        e -> attack -> Config.Direction.up().multiply(5)
+        () -> AttackCurveConfig.UP_SMASH_START,
+        () -> AttackCurveConfig.UP_SMASH_END,
+        () -> AttackCurveConfig.UP_SMASH_C1,
+        () -> AttackCurveConfig.UP_SMASH_C2),
+        e -> attack -> DirectionConfig.up().multiply(5)
     ),
 
     LUNGE1(new ControlVectors(
-        () -> Config.AttackCurves.LUNGE1_START,
-        () -> Config.AttackCurves.LUNGE1_END,
-        () -> Config.AttackCurves.LUNGE1_C1,
-        () -> Config.AttackCurves.LUNGE1_C2),
+        () -> AttackCurveConfig.LUNGE1_START,
+        () -> AttackCurveConfig.LUNGE1_END,
+        () -> AttackCurveConfig.LUNGE1_C1,
+        () -> AttackCurveConfig.LUNGE1_C2),
         e -> attack -> new Vector()
     ),
 
     F_DASH_ATTACK(new ControlVectors(
-        () -> Config.AttackCurves.F_DASH_ATTACK_START,
-        () -> Config.AttackCurves.F_DASH_ATTACK_END,
-        () -> Config.AttackCurves.F_DASH_ATTACK_C1,
-        () -> Config.AttackCurves.F_DASH_ATTACK_C2),
+        () -> AttackCurveConfig.F_DASH_ATTACK_START,
+        () -> AttackCurveConfig.F_DASH_ATTACK_END,
+        () -> AttackCurveConfig.F_DASH_ATTACK_C1,
+        () -> AttackCurveConfig.F_DASH_ATTACK_C2),
         e -> attack -> new Vector()
     ),
     B_DASH_ATTACK(new ControlVectors(
-        () -> Config.AttackCurves.B_DASH_ATTACK_START,
-        () -> Config.AttackCurves.B_DASH_ATTACK_END,
-        () -> Config.AttackCurves.B_DASH_ATTACK_C1,
-        () -> Config.AttackCurves.B_DASH_ATTACK_C2),
+        () -> AttackCurveConfig.B_DASH_ATTACK_START,
+        () -> AttackCurveConfig.B_DASH_ATTACK_END,
+        () -> AttackCurveConfig.B_DASH_ATTACK_C1,
+        () -> AttackCurveConfig.B_DASH_ATTACK_C2),
         e -> Attack::getForwardVector
     ),
     R_STRAFE_ATTACK(new ControlVectors(
-        () -> Config.AttackCurves.R_STRAFE_ATTACK_START,
-        () -> Config.AttackCurves.R_STRAFE_ATTACK_END,
-        () -> Config.AttackCurves.R_STRAFE_ATTACK_C1,
-        () -> Config.AttackCurves.R_STRAFE_ATTACK_C2),
+        () -> AttackCurveConfig.R_STRAFE_ATTACK_START,
+        () -> AttackCurveConfig.R_STRAFE_ATTACK_END,
+        () -> AttackCurveConfig.R_STRAFE_ATTACK_C1,
+        () -> AttackCurveConfig.R_STRAFE_ATTACK_C2),
         e -> Attack::getRightVector
     ),
     L_STRAFE_ATTACK(new ControlVectors(
-        () -> Config.AttackCurves.L_STRAFE_ATTACK_START,
-        () -> Config.AttackCurves.L_STRAFE_ATTACK_END,
-        () -> Config.AttackCurves.L_STRAFE_ATTACK_C1,
-        () -> Config.AttackCurves.L_STRAFE_ATTACK_C2),
+        () -> AttackCurveConfig.L_STRAFE_ATTACK_START,
+        () -> AttackCurveConfig.L_STRAFE_ATTACK_END,
+        () -> AttackCurveConfig.L_STRAFE_ATTACK_C1,
+        () -> AttackCurveConfig.L_STRAFE_ATTACK_C2),
         e -> attack -> attack.getRightVector().multiply(-1)
     ),
 
     D_AIR(new ControlVectors(
-        () -> Config.AttackCurves.D_AIR_START,
-        () -> Config.AttackCurves.D_AIR_END,
-        () -> Config.AttackCurves.D_AIR_C1,
-        () -> Config.AttackCurves.D_AIR_C2)
+        () -> AttackCurveConfig.D_AIR_START,
+        () -> AttackCurveConfig.D_AIR_END,
+        () -> AttackCurveConfig.D_AIR_C1,
+        () -> AttackCurveConfig.D_AIR_C2)
     ),
     N_AIR(new ControlVectors(
-        () -> Config.AttackCurves.N_AIR_START,
-        () -> Config.AttackCurves.N_AIR_END,
-        () -> Config.AttackCurves.N_AIR_C1,
-        () -> Config.AttackCurves.N_AIR_C2)
+        () -> AttackCurveConfig.N_AIR_START,
+        () -> AttackCurveConfig.N_AIR_END,
+        () -> AttackCurveConfig.N_AIR_C1,
+        () -> AttackCurveConfig.N_AIR_C2)
     ),
 
     DEFAULT(new ControlVectors(
-        Config.Direction::up,
-        Config.Direction::down,
-        Config.Direction::outUp,
-        Config.Direction::outDown
+        DirectionConfig::up,
+        DirectionConfig::down,
+        DirectionConfig::outUp,
+        DirectionConfig::outDown
     )),
 
     BLADE_RETRIEVAL_CIRCULAR_SLASH(
-        new ArcShape(Config.UmbralBlade.CIRCULAR_SLASH_RADIUS, Config.UmbralBlade.CIRCULAR_SLASH_START_ANGLE,
-            Config.UmbralBlade.CIRCULAR_SLASH_END_ANGLE, Config.UmbralBlade.CIRCULAR_SLASH_HEIGHT),
-        e -> attack -> VectorUtil.getVectorTo(e, attack.getAttacker(), Config.UmbralBlade.CIRCULAR_SLASH_KNOCKBACK)
+        new ArcShape(UmbralBladeConfig.CIRCULAR_SLASH_RADIUS, UmbralBladeConfig.CIRCULAR_SLASH_START_ANGLE,
+            UmbralBladeConfig.CIRCULAR_SLASH_END_ANGLE, UmbralBladeConfig.CIRCULAR_SLASH_HEIGHT),
+        e -> attack -> VectorUtil.getVectorTo(e, attack.getAttacker(), UmbralBladeConfig.CIRCULAR_SLASH_KNOCKBACK)
     );
 //endregion
 

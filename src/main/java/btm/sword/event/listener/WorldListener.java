@@ -11,14 +11,14 @@ import org.bukkit.event.player.PlayerItemConsumeEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 
-import btm.sword.config.Config;
+import btm.sword.config.section.WorldConfig;
 import btm.sword.runtime.scheduler.SwordScheduler;
 
 /**
  * Listener for world-level events: block interactions and item consumption.
  *
  * <p>Block breaking and placing are gated behind
- * {@link btm.sword.config.Config.World#BLOCK_INTERACTION_ALLOW_BLOCK_PLACING}. When
+ * {@link btm.sword.config.section.WorldConfig#BLOCK_INTERACTION_ALLOW_BLOCK_PLACING}. When
  * placing is forbidden the event is cancelled outright; when allowed, any block placed
  * by a player is immediately restored to its pre-placement stack so that blocks are never
  * truly consumed (preserving the combat-focused design intent of not depleting inventory).
@@ -34,7 +34,7 @@ public class WorldListener implements Listener {
      */
     @EventHandler
     public void onBlockBreak(BlockBreakEvent event) {
-        if (!Config.World.BLOCK_INTERACTION_ALLOW_BLOCK_PLACING) {
+        if (!WorldConfig.BLOCK_INTERACTION_ALLOW_BLOCK_PLACING) {
             event.setCancelled(true);
         }
     }
@@ -47,7 +47,7 @@ public class WorldListener implements Listener {
      */
     @EventHandler
     public void onBlockPlace(BlockPlaceEvent event) {
-        if (!Config.World.BLOCK_INTERACTION_ALLOW_BLOCK_PLACING) {
+        if (!WorldConfig.BLOCK_INTERACTION_ALLOW_BLOCK_PLACING) {
             event.setCancelled(true);
             return;
         }
@@ -58,7 +58,7 @@ public class WorldListener implements Listener {
 
         SwordScheduler.runBukkitTaskLater(() -> {
             ItemStack current = player.getInventory().getItem(hand);
-            if (current == null || current.isEmpty()) {
+            if (current.isEmpty()) {
                 player.getInventory().setItem(hand, before);
             } else {
                 current.setAmount(before.getAmount());

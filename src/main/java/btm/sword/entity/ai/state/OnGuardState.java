@@ -4,7 +4,7 @@ import org.bukkit.Particle;
 
 import com.destroystokyo.paper.entity.ai.GoalType;
 
-import btm.sword.config.Config;
+import btm.sword.config.section.HostileConfig;
 import btm.sword.entity.ai.HostileAIFacade;
 import btm.sword.entity.ai.MobGoalArbiter;
 import btm.sword.entity.ai.goal.LookAtTargetGoal;
@@ -29,7 +29,7 @@ public class OnGuardState extends HostileAIFacade {
 
     @Override
     public void onEnter(Hostile h) {
-        h.setOnGuardTimer(Config.Hostile.ON_GUARD_TICKS);
+        h.setOnGuardTimer(HostileConfig.ON_GUARD_TICKS);
         if (h.getCurrentTarget() == null || !h.getCurrentTarget().self().isValid()) return;
 
         h.self().getWorld().spawnParticle(

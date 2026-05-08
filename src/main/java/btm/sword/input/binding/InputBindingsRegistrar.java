@@ -7,11 +7,11 @@ import btm.sword.input.InputType;
 import btm.sword.input.binding.ItemInputBinding.Phase;
 import btm.sword.item.core.KeyRegistry;
 import btm.sword.item.core.StorageCategory;
-import btm.sword.menu.ArtifactPouchMenu;
-import btm.sword.menu.CurrencyMenu;
 import btm.sword.menu.InventoryMenuManager;
-import btm.sword.menu.MainMenu;
-import btm.sword.menu.MaterialPouchMenu;
+import btm.sword.menu.character.ArtifactPouchMenu;
+import btm.sword.menu.character.CurrencyMenu;
+import btm.sword.menu.character.MaterialPouchMenu;
+import btm.sword.menu.main.MainMenu;
 
 /**
  * Single registration point for all built-in {@link ItemInputBinding}s.

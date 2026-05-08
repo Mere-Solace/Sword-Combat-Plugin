@@ -11,6 +11,7 @@ import btm.sword.input.binding.ItemInputBinding.Phase;
 import btm.sword.input.binding.ItemInputDispatchTable;
 import btm.sword.input.transport.InputDecision;
 import btm.sword.input.transport.InputListener;
+import btm.sword.input.trie.ActivationContext;
 import btm.sword.item.core.ItemClassifier;
 import btm.sword.runtime.scheduler.SwordScheduler;
 import btm.sword.util.entity.InputUtil;
@@ -53,8 +54,18 @@ public final class InputRouter {
     /**
      * Dispatches the given intent for the given player and returns the listener-side
      * cancellation decision.
+     *
+     * <p><b>Hard waiting-phase gate.</b> If the player's
+     * {@link SwordPlayer#getActivationContext() activation context} is
+     * {@link ActivationContext#WAITING}, this method returns {@link InputDecision#CANCEL}
+     * immediately without dispatching to any handler. This is the structural enforcement
+     * point for the invariant <em>"a player in WAITING triggers no input dispatch"</em> and
+     * is not opt-out per intent or per node.</p>
      */
     public static InputDecision route(InputIntent intent, SwordPlayer player) {
+        if (player.getActivationContext() == ActivationContext.WAITING) {
+            return InputDecision.CANCEL;
+        }
         return switch (intent) {
             case InputIntent.Attack ignored -> handleAttack(player);
             case InputIntent.Interact i -> handleInteract(player, i);

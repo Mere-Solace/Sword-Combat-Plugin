@@ -13,7 +13,8 @@ import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 import btm.sword.Sword;
-import btm.sword.config.Config;
+import btm.sword.config.section.ColorConfig;
+import btm.sword.config.section.HostileConfig;
 import btm.sword.entity.mob.AnimationSlots;
 import btm.sword.runtime.scheduler.SwordScheduler;
 import btm.sword.runtime.scheduler.TimeArbiter;
@@ -107,7 +108,9 @@ public final class DisplayRig {
      * @return the new rig, or {@code null} if the group cannot be found in DEU's local storage
      */
     public static @Nullable DisplayRig spawn(Mob mob, String groupTag, AnimationSlots slots) {
+
         DisplayEntityGroup def = DisplayGroupManager.getGroup(LoadMethod.LOCAL, groupTag);
+
         if (def == null) {
             Sword.getInstance().getLogger().warning(
                 "[DisplayRig] Group not found: " + groupTag + " — skipping display rig."
@@ -137,12 +140,12 @@ public final class DisplayRig {
         }
 
         for (Display display : group.getPartEntities(Display.class)) {
-            display.setTeleportDuration(Config.Hostile.DISPLAY_TELEPORT_DURATION);
+            display.setTeleportDuration(HostileConfig.DISPLAY_TELEPORT_DURATION);
         }
 
         GroupFollowProperties yawFollow = GroupFollowProperties.builder(FollowType.YAW)
             .setId("hostile_yaw")
-            .setTeleportationDuration(Config.Hostile.DISPLAY_TELEPORT_DURATION)
+            .setTeleportationDuration(HostileConfig.DISPLAY_TELEPORT_DURATION)
             .build();
         group.followEntityDirection(mob, yawFollow);
 
@@ -211,19 +214,24 @@ public final class DisplayRig {
 
         final ItemDisplay anchor = weaponAnchor;
 
-        // 5-tick refresh: forces a Bukkit metadata packet so DEU state-machine resets are
-        // overridden within one loop cycle. The packet hook intercepts these too.
-        weaponRefreshTask = TimeArbiter.runTimeBoundBukkitTaskOnTimer(
-            () -> {
-                if (!mob.isValid() || !anchor.isValid()) return;
-                anchor.setGlowing(true);
-                anchor.setGlowColorOverride(Config.SwordColor.ATTACK_QUICK_GLOW);
-                anchor.setItemDisplayTransform(ItemDisplay.ItemDisplayTransform.THIRDPERSON_LEFTHAND);
-                anchor.setItemStack(item);
-            },
-            null, null, 0, 1,
-            DisplayRig.class, "setWeaponSlotItem"
-        );
+        anchor.setGlowing(true);
+        anchor.setGlowColorOverride(ColorConfig.ATTACK_QUICK_GLOW);
+        anchor.setItemDisplayTransform(ItemDisplay.ItemDisplayTransform.THIRDPERSON_LEFTHAND);
+        anchor.setItemStack(item);
+//
+//        // 5-tick refresh: forces a Bukkit metadata packet so DEU state-machine resets are
+//        // overridden within one loop cycle. The packet hook intercepts these too.
+//        weaponRefreshTask = TimeArbiter.runTimeBoundBukkitTaskOnTimer(
+//            () -> {
+//                if (!mob.isValid() || !anchor.isValid()) return;
+//                anchor.setGlowing(true);
+//                anchor.setGlowColorOverride(ColorConfig.ATTACK_QUICK_GLOW);
+//                anchor.setItemDisplayTransform(ItemDisplay.ItemDisplayTransform.THIRDPERSON_LEFTHAND);
+//                anchor.setItemStack(item);
+//            },
+//            null, null, 0, 1,
+//            DisplayRig.class, "setWeaponSlotItem"
+//        );
     }
 
     // -----------------------------------------------------------------------
@@ -355,7 +363,8 @@ public final class DisplayRig {
         DisplayAnimator.AnimationType animType = transitionLock
             ? DisplayAnimator.AnimationType.LINEAR
             : DisplayAnimator.AnimationType.LOOP;
-        MachineState state = new MachineState(machine, type, List.of(animTag), LoadMethod.LOCAL, animType, transitionLock);
+        MachineState state = new MachineState(machine, type, List.of(animTag),
+            LoadMethod.LOCAL, animType, transitionLock, false);
         machine.addState(state);
     }
 }

@@ -1,6 +1,6 @@
 package btm.sword.umbral.statemachine.state;
 
-import btm.sword.config.Config;
+import btm.sword.config.section.UmbralBladeConfig;
 import btm.sword.umbral.UmbralBlade;
 import btm.sword.umbral.input.BladeRequest;
 import btm.sword.umbral.statemachine.UmbralStateFacade;
@@ -59,7 +59,7 @@ public class WaitingState extends UmbralStateFacade {
     @Override
     public void onTick(UmbralBlade blade) {
         long elapsed = System.currentTimeMillis() - entryTime;
-        if (elapsed > Config.UmbralBlade.WAITING_TIMEOUT_MS) {
+        if (elapsed > UmbralBladeConfig.WAITING_TIMEOUT_MS) {
             blade.request(BladeRequest.RECALL);
             return;
         }
@@ -68,7 +68,7 @@ public class WaitingState extends UmbralStateFacade {
 
         Prefab.Particles.LANDING_STREAM.display(blade.getDisplay().getLocation());
 
-        double maxDist = Config.UmbralBlade.WAITING_MAX_DISTANCE;
+        double maxDist = UmbralBladeConfig.WAITING_MAX_DISTANCE;
         double distSq = blade.getThrower().self().getLocation()
             .distanceSquared(blade.getDisplay().getLocation());
         if (distSq > maxDist * maxDist) {
