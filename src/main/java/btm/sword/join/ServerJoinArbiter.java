@@ -14,9 +14,9 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.util.Vector;
+import org.spigotmc.event.player.PlayerSpawnLocationEvent;
 
 import btm.sword.Sword;
 import btm.sword.config.section.JoinSequenceConfig;
@@ -32,9 +32,6 @@ import btm.sword.runtime.scheduler.TimeArbiter;
 import btm.sword.scene.camera.CameraSystem;
 import btm.sword.ui.bossbar.BossBarManager;
 import btm.sword.ui.scoreboard.ScoreboardManager;
-
-import org.spigotmc.event.player.PlayerSpawnLocationEvent;
-
 import xyz.xenondevs.invui.window.Window;
 import xyz.xenondevs.invui.window.WindowManager;
 
