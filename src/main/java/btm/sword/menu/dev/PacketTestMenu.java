@@ -1,4 +1,4 @@
-package btm.sword.menu;
+package btm.sword.menu.dev;
 
 import java.util.List;
 
@@ -7,6 +7,7 @@ import org.bukkit.entity.Player;
 
 import btm.sword.entity.player.SwordPlayer;
 import btm.sword.item.core.ItemStackBuilder;
+import btm.sword.menu.Menu;
 import btm.sword.scene.fake.FakePlayerPacketTester;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;

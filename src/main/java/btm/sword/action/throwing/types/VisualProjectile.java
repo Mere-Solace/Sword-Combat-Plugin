@@ -24,7 +24,11 @@ import org.joml.Vector3f;
 
 import btm.sword.action.throwing.InteractiveItemArbiter;
 import btm.sword.action.throwing.ItemThrowStyle;
-import btm.sword.config.Config;
+import btm.sword.action.throwing.ThrowAction;
+import btm.sword.config.section.DetectionConfig;
+import btm.sword.config.section.DirectionConfig;
+import btm.sword.config.section.PhysicsConfig;
+import btm.sword.config.section.TimingConfig;
 import btm.sword.entity.arbiter.SwordEntityArbiter;
 import btm.sword.entity.base.SwordEntity;
 import btm.sword.item.core.KeyRegistry;
@@ -171,9 +175,9 @@ public class VisualProjectile extends SimulatedDisplay {
                 .withBlockData(() -> display.getItemStack().getType().createBlockData())
             : null;
 
-        xDisplayOffset = Config.Physics.THROWN_ITEMS_DISPLAY_OFFSET_X;
-        yDisplayOffset = Config.Physics.THROWN_ITEMS_DISPLAY_OFFSET_Y;
-        zDisplayOffset = Config.Physics.THROWN_ITEMS_DISPLAY_OFFSET_Z;
+        xDisplayOffset = PhysicsConfig.THROWN_ITEMS_DISPLAY_OFFSET_X;
+        yDisplayOffset = PhysicsConfig.THROWN_ITEMS_DISPLAY_OFFSET_Y;
+        zDisplayOffset = PhysicsConfig.THROWN_ITEMS_DISPLAY_OFFSET_Z;
     }
 
     /**
@@ -284,9 +288,9 @@ public class VisualProjectile extends SimulatedDisplay {
     protected void rotate() {
         switch (getThrowStyle()) {
             case SPEAR -> {}
-            case HATCHET, ROTATE -> applyRotation(false, (float) Config.Physics.THROWN_ITEMS_ROTATION_SPEED_AXE);
-            case LOB -> applyRotation(true, (float) (Config.Physics.THROWN_ITEMS_ROTATION_SPEED_DEFAULT_SPEED * 0.4));
-            default -> applyRotation(true, (float) Config.Physics.THROWN_ITEMS_ROTATION_SPEED_DEFAULT_SPEED);
+            case HATCHET, ROTATE -> applyRotation(false, (float) PhysicsConfig.THROWN_ITEMS_ROTATION_SPEED_AXE);
+            case LOB -> applyRotation(true, (float) (PhysicsConfig.THROWN_ITEMS_ROTATION_SPEED_DEFAULT_SPEED * 0.4));
+            default -> applyRotation(true, (float) PhysicsConfig.THROWN_ITEMS_ROTATION_SPEED_DEFAULT_SPEED);
         }
     }
 
@@ -362,14 +366,14 @@ public class VisualProjectile extends SimulatedDisplay {
                 Prefab.Particles.THROWN_ITEM_MARKER.display(cur.clone().add(step));
                 Prefab.Particles.THROWN_ITEM_MARKER.display(cur);
                 Prefab.Particles.THROWN_ITEM_MARKER.display(cur.clone().subtract(step));
-                iteration.set(iteration.get() + Config.Timing.THROWN_ITEMS_DISPOSAL_CHECK_INTERVAL);
+                iteration.set(iteration.get() + TimingConfig.THROWN_ITEMS_DISPOSAL_CHECK_INTERVAL);
             },
             null,
-            1, Config.Timing.THROWN_ITEMS_DISPOSAL_CHECK_INTERVAL,
+            1, TimingConfig.THROWN_ITEMS_DISPOSAL_CHECK_INTERVAL,
             VisualProjectile.class, "startGroundedDisposeTask",
             new PredicateRunnablePair(() -> display.isDead(), null),
             new PredicateRunnablePair(
-                () -> iteration.get() > Config.Timing.THROWN_ITEMS_DISPOSAL_TIMEOUT,
+                () -> iteration.get() > TimingConfig.THROWN_ITEMS_DISPOSAL_TIMEOUT,
                 () -> { if (!display.isDead()) display.remove(); }
             )
         );
@@ -398,7 +402,7 @@ public class VisualProjectile extends SimulatedDisplay {
         RayTraceResult hitBlock = display.getWorld()
             .rayTraceBlocks(cur, velocity,
                 cur.toVector().subtract(prev.toVector()).lengthSquared()
-                    * Config.Detection.THROW_GROUND_CHECK_MULTIPLIER,
+                    * DetectionConfig.THROW_GROUND_CHECK_MULTIPLIER,
                 FluidCollisionMode.NEVER, true);
 
         if (hitBlock == null) return;
@@ -424,8 +428,8 @@ public class VisualProjectile extends SimulatedDisplay {
         RayTraceResult result = display.getWorld()
             .rayTraceEntities(prev, velocity,
                 cur.toVector().subtract(prev.toVector()).lengthSquared()
-                    * Config.Detection.THROW_HIT_CHECK_DIST_MULTIPLIER,
-                Config.Detection.THROW_HIT_CHECK_DIST_MULTIPLIER, effFilter);
+                    * DetectionConfig.THROW_HIT_CHECK_DIST_MULTIPLIER,
+                DetectionConfig.THROW_HIT_CHECK_DIST_MULTIPLIER, effFilter);
 
         if (result == null) return;
         if (!(result.getHitEntity() instanceof LivingEntity le)) return;
@@ -624,17 +628,17 @@ public class VisualProjectile extends SimulatedDisplay {
         Vector flatDir = resolveFlatDir();
         velocity = flatDir.clone();
         Vector forwardVelocity = flatDir.clone().multiply(forwardCoefficient);
-        Vector upwardVelocity = Config.Direction.up().multiply(upwardCoefficient);
+        Vector upwardVelocity = DirectionConfig.up().multiply(upwardCoefficient);
 
-        double gravDamper = Config.Physics.THROWN_ITEMS_GRAVITY_DAMPER;
+        double gravDamper = PhysicsConfig.THROWN_ITEMS_GRAVITY_DAMPER;
 
         positionFunction = t -> flatDir.clone().multiply(forwardCoefficient * t)
-            .add(Config.Direction.up().multiply(
+            .add(DirectionConfig.up().multiply(
                 (upwardCoefficient * t) - (initialVelocity * (1.0 / gravDamper) * t * t)));
 
         velocityFunction = t -> forwardVelocity.clone()
             .add(upwardVelocity.clone()
-                .add(Config.Direction.up().multiply(-initialVelocity * (2.0 / gravDamper) * t)));
+                .add(DirectionConfig.up().multiply(-initialVelocity * (2.0 / gravDamper) * t)));
     }
 
     // -----------------------------------------------------------------------

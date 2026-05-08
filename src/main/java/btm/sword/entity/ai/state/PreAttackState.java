@@ -4,7 +4,7 @@ import org.bukkit.Particle;
 
 import com.destroystokyo.paper.entity.ai.GoalType;
 
-import btm.sword.config.Config;
+import btm.sword.config.section.HostileConfig;
 import btm.sword.entity.ai.HostileAIFacade;
 import btm.sword.entity.ai.MobGoalArbiter;
 import btm.sword.entity.ai.ability.AbilityCategory;
@@ -38,7 +38,7 @@ public class PreAttackState extends HostileAIFacade {
 
     @Override
     public void onEnter(Hostile h) {
-        h.setPreAttackTimer(Config.Hostile.PRE_ATTACK_TICKS);
+        h.setPreAttackTimer(HostileConfig.PRE_ATTACK_TICKS);
         h.selectAbility();
 
         h.getMob().setAware(true);

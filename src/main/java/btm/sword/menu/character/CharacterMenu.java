@@ -1,4 +1,4 @@
-package btm.sword.menu;
+package btm.sword.menu.character;
 
 
 import java.util.ArrayList;
@@ -15,10 +15,12 @@ import btm.sword.action.skill.SkillId;
 import btm.sword.action.skill.SkillIds;
 import btm.sword.action.skill.SkillRegistry;
 import btm.sword.action.skill.container.SkillSlot;
-import btm.sword.config.Config;
+import btm.sword.config.section.ColorConfig;
 import btm.sword.entity.player.SwordPlayer;
 import btm.sword.item.core.ItemStackBuilder;
 import btm.sword.item.special.AbilitySlotManager;
+import btm.sword.menu.Menu;
+import btm.sword.menu.dev.DevStatEditorMenu;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
@@ -86,7 +88,7 @@ public class CharacterMenu extends Menu {
 
         ItemStack toDisplay =
             ItemStackBuilder.of(skillPointer.icon().getType())
-                .name(Component.text(inputSeq, Config.SwordColor.TEXT_COOL, TextDecoration.ITALIC))
+                .name(Component.text(inputSeq, ColorConfig.TEXT_COOL, TextDecoration.ITALIC))
                 .lore(lore)
                 .hideAll()
                 .build();
@@ -98,7 +100,7 @@ public class CharacterMenu extends Menu {
 
     private SimpleItem generateEmptySlotButton(SkillSlot slot, String inputSeq) {
         return new SimpleItem(ItemStackBuilder.of(Material.WHITE_STAINED_GLASS_PANE)
-            .name(Component.text(inputSeq, Config.SwordColor.TEXT_COOL, TextDecoration.ITALIC))
+            .name(Component.text(inputSeq, ColorConfig.TEXT_COOL, TextDecoration.ITALIC))
             .lore(List.of(Component.text("Empty Slot")))
             .build(),
             selectAction(slot)

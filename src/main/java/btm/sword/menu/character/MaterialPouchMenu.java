@@ -1,4 +1,4 @@
-package btm.sword.menu;
+package btm.sword.menu.character;
 
 import java.util.List;
 import java.util.Map;
@@ -7,10 +7,11 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.ClickType;
 import org.bukkit.inventory.ItemStack;
 
-import btm.sword.config.Config;
+import btm.sword.config.section.ColorConfig;
 import btm.sword.entity.player.SwordPlayer;
 import btm.sword.item.core.ItemStackBuilder;
 import btm.sword.item.material.MaterialType;
+import btm.sword.menu.Menu;
 import btm.sword.playerdata.PlayerStorage;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -94,16 +95,16 @@ public class MaterialPouchMenu extends Menu {
         List<Component> slotLore = List.of(
             Component.empty(),
             Component.text("Stored: ", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false)
-                .append(Component.text(count, Config.SwordColor.TEXT_COOL).decoration(TextDecoration.ITALIC, false)),
+                .append(Component.text(count, ColorConfig.TEXT_COOL).decoration(TextDecoration.ITALIC, false)),
             Component.empty(),
-            Component.text("Left-click ", Config.SwordColor.TEXT_ITEM_CONTROLS).decoration(TextDecoration.ITALIC, false)
-                .append(Component.text("(with item) — Store", Config.SwordColor.TEXT_ITEM_BASE).decoration(TextDecoration.ITALIC, false)),
-            Component.text("Left-click ", Config.SwordColor.TEXT_ITEM_CONTROLS).decoration(TextDecoration.ITALIC, false)
-                .append(Component.text("— Withdraw 1", Config.SwordColor.TEXT_ITEM_BASE).decoration(TextDecoration.ITALIC, false)),
-            Component.text("Right-click ", Config.SwordColor.TEXT_ITEM_CONTROLS).decoration(TextDecoration.ITALIC, false)
-                .append(Component.text("— Withdraw all", Config.SwordColor.TEXT_ITEM_BASE).decoration(TextDecoration.ITALIC, false)),
-            Component.text("Shift + Left-click ", Config.SwordColor.TEXT_ITEM_CONTROLS).decoration(TextDecoration.ITALIC, false)
-                .append(Component.text("— Store all from inventory", Config.SwordColor.TEXT_ITEM_BASE).decoration(TextDecoration.ITALIC, false))
+            Component.text("Left-click ", ColorConfig.TEXT_ITEM_CONTROLS).decoration(TextDecoration.ITALIC, false)
+                .append(Component.text("(with item) — Store", ColorConfig.TEXT_ITEM_BASE).decoration(TextDecoration.ITALIC, false)),
+            Component.text("Left-click ", ColorConfig.TEXT_ITEM_CONTROLS).decoration(TextDecoration.ITALIC, false)
+                .append(Component.text("— Withdraw 1", ColorConfig.TEXT_ITEM_BASE).decoration(TextDecoration.ITALIC, false)),
+            Component.text("Right-click ", ColorConfig.TEXT_ITEM_CONTROLS).decoration(TextDecoration.ITALIC, false)
+                .append(Component.text("— Withdraw all", ColorConfig.TEXT_ITEM_BASE).decoration(TextDecoration.ITALIC, false)),
+            Component.text("Shift + Left-click ", ColorConfig.TEXT_ITEM_CONTROLS).decoration(TextDecoration.ITALIC, false)
+                .append(Component.text("— Store all from inventory", ColorConfig.TEXT_ITEM_BASE).decoration(TextDecoration.ITALIC, false))
         );
 
         ItemStack displayItem = new ItemStackBuilder(type.icon())
@@ -193,7 +194,7 @@ public class MaterialPouchMenu extends Menu {
     private void alertStored(Player player, MaterialType type, int amount) {
         player.sendActionBar(
             Component.text("[+", NamedTextColor.GREEN)
-                .append(Component.text(amount, Config.SwordColor.TEXT_COOL))
+                .append(Component.text(amount, ColorConfig.TEXT_COOL))
                 .append(Component.text(" ", NamedTextColor.GREEN))
                 .append(type.displayName())
                 .append(Component.text("] → Material Pouch", NamedTextColor.GREEN))

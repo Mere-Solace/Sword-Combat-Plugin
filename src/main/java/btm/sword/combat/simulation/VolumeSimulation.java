@@ -19,7 +19,7 @@ import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 import btm.sword.Sword;
-import btm.sword.config.Config;
+import btm.sword.config.section.DebugConfig;
 import btm.sword.util.display.ObbWireframe;
 import btm.sword.util.misc.Debug;
 
@@ -151,7 +151,7 @@ public final class VolumeSimulation {
 
             attack.getTrajectory().sample(t, worldTransform, attack.getVolume());
 
-            if (Config.Debug.VISUALIZATION_SHOW_HITBOXES
+            if (DebugConfig.VISUALIZATION_SHOW_HITBOXES
                     && attack.getVolume() instanceof ObbVolume obbSnapshot) {
                 World world = Bukkit.getWorld(attack.getWorldUuid());
                 if (world != null) {

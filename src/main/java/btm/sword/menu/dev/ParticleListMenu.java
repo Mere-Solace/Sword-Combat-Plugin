@@ -17,9 +17,9 @@ import btm.sword.combat.simulation.ParticleEffect;
 import btm.sword.combat.visuals.ParticleDisplay;
 import btm.sword.entity.player.SwordPlayer;
 import btm.sword.item.core.ItemStackBuilder;
-import btm.sword.menu.EnumPickerOptions;
-import btm.sword.menu.EnumSelectionMenu;
 import btm.sword.menu.Menu;
+import btm.sword.menu.selection.EnumPickerOptions;
+import btm.sword.menu.selection.EnumSelectionMenu;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -152,8 +152,8 @@ public class ParticleListMenu extends Menu {
             .addIngredient('X', clearButton)
             .addIngredient('A', addButton)
             .addIngredient('P', fromPreset)
-            .addIngredient('<', new btm.sword.menu.item.PreviousItem())
-            .addIngredient('>', new btm.sword.menu.item.ForwardItem())
+            .addIngredient('<', new btm.sword.menu.button.PreviousItem())
+            .addIngredient('>', new btm.sword.menu.button.ForwardItem())
             .setContent(items)
             .build();
 

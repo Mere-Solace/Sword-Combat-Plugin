@@ -20,7 +20,7 @@ import org.bukkit.util.Vector;
 
 import btm.sword.action.core.SwordAction;
 import btm.sword.combat.style.AttackProfile;
-import btm.sword.config.Config;
+import btm.sword.config.section.CombatConfig;
 import btm.sword.entity.arbiter.SwordEntityArbiter;
 import btm.sword.entity.base.Combatant;
 import btm.sword.entity.base.SwordEntity;
@@ -132,12 +132,12 @@ public class Attack extends SwordAction implements Runnable {
 
         curIteration = new AtomicInteger(0);
 
-        this.attackMilliseconds = Config.Combat.ATTACK_CLASS_TIMING_ATTACK_DURATION;
-        this.attackIterations = Config.Combat.ATTACK_CLASS_TIMING_ATTACK_ITERATIONS;
-        this.attackStartValue = Config.Combat.ATTACK_CLASS_TIMING_ATTACK_START_VALUE;
-        this.attackEndValue = Config.Combat.ATTACK_CLASS_TIMING_ATTACK_END_VALUE;
+        this.attackMilliseconds = CombatConfig.ATTACK_CLASS_TIMING_ATTACK_DURATION;
+        this.attackIterations = CombatConfig.ATTACK_CLASS_TIMING_ATTACK_ITERATIONS;
+        this.attackStartValue = CombatConfig.ATTACK_CLASS_TIMING_ATTACK_START_VALUE;
+        this.attackEndValue = CombatConfig.ATTACK_CLASS_TIMING_ATTACK_END_VALUE;
 
-        this.rangeMultiplier = Config.Combat.ATTACK_CLASS_MODIFIERS_RANGE_MULTIPLIER;
+        this.rangeMultiplier = CombatConfig.ATTACK_CLASS_MODIFIERS_RANGE_MULTIPLIER;
     }
 
     /**
@@ -440,7 +440,7 @@ public class Attack extends SwordAction implements Runnable {
         if (origin == null || origin.toVector().isZero() || !origin.isFinite()) {
             return new HashSet<>();
         }
-        double secantRadius = Config.Combat.HITBOXES_SECANT_RADIUS;
+        double secantRadius = CombatConfig.HITBOXES_SECANT_RADIUS;
         return HitboxUtil.secant(origin, attackLocation, secantRadius, filter);
     }
 
@@ -452,9 +452,9 @@ public class Attack extends SwordAction implements Runnable {
         RayTraceResult result = attackingEntity.getWorld().rayTraceBlocks(attackLocation, direction, 0.3);
         if (result != null) {
             // enter ground particles
-            new ParticleWrapper(() -> Particle.BLOCK, () -> Config.Combat.GROUND_HIT_PARTICLE_COUNT,
-                    () -> Config.Combat.GROUND_HIT_PARTICLE_OFFSET, () -> Config.Combat.GROUND_HIT_PARTICLE_OFFSET,
-                    () -> Config.Combat.GROUND_HIT_PARTICLE_OFFSET)
+            new ParticleWrapper(() -> Particle.BLOCK, () -> CombatConfig.GROUND_HIT_PARTICLE_COUNT,
+                    () -> CombatConfig.GROUND_HIT_PARTICLE_OFFSET, () -> CombatConfig.GROUND_HIT_PARTICLE_OFFSET,
+                    () -> CombatConfig.GROUND_HIT_PARTICLE_OFFSET)
                     .withBlockData(() -> Objects.requireNonNull(result.getHitBlock()).getBlockData())
                     .display(attackLocation);
             Prefab.Particles.COLLIDE.display(attackLocation);

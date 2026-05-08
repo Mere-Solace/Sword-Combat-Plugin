@@ -8,7 +8,8 @@ import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
 
-import btm.sword.config.Config;
+import btm.sword.config.section.ColorConfig;
+import btm.sword.config.section.MaterialConfig;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextDecoration;
 
@@ -39,7 +40,7 @@ public enum StorageCategory {
     CURRENCY(
         "currency",
         "Currency Storage",
-        () -> Config.Materials.CURRENCY_STORAGE_ITEM,
+        () -> MaterialConfig.CURRENCY_STORAGE_ITEM,
         35,
         List::of
     ),
@@ -48,7 +49,7 @@ public enum StorageCategory {
     MATERIAL(
         "material",
         "Material Storage",
-        () -> Config.Materials.MATERIAL_STORAGE_ITEM,
+        () -> MaterialConfig.MATERIAL_STORAGE_ITEM,
         26,
         List::of
     ),
@@ -57,7 +58,7 @@ public enum StorageCategory {
     QUEST(
         "quest",
         "Quest Storage",
-        () -> Config.Materials.QUEST_STORAGE_ITEM,
+        () -> MaterialConfig.QUEST_STORAGE_ITEM,
         17,
         List::of
     );
@@ -113,7 +114,7 @@ public enum StorageCategory {
 
     /** @return the display name {@link Component} for the button item. */
     public Component displayName() {
-        return Component.text("~ | " + displayName + " | ~", Config.SwordColor.TEXT_COOL, TextDecoration.BOLD)
+        return Component.text("~ | " + displayName + " | ~", ColorConfig.TEXT_COOL, TextDecoration.BOLD)
             .decoration(TextDecoration.ITALIC, false);
     }
 

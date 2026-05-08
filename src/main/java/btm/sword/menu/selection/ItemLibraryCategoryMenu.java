@@ -1,4 +1,4 @@
-package btm.sword.menu;
+package btm.sword.menu.selection;
 
 import java.util.List;
 import java.util.Map;
@@ -7,10 +7,12 @@ import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
-import btm.sword.config.Config;
+import btm.sword.config.section.ColorConfig;
 import btm.sword.entity.player.SwordPlayer;
 import btm.sword.item.core.ItemStackBuilder;
 import btm.sword.item.core.LibraryCategory;
+import btm.sword.menu.Menu;
+import btm.sword.menu.dev.ItemLibraryMenu;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -75,16 +77,15 @@ public class ItemLibraryCategoryMenu extends Menu {
                 ItemStack displayItem = new ItemStackBuilder(stack.getType())
                     .setMeta(stack.getItemMeta())
                     .lore(List.of(
-                        itemName,
+                        itemName == null ? Component.text("Null") : itemName,
                         Component.empty(),
-                        Component.text("Left-click \u2014 Give to inventory", Config.SwordColor.TEXT_ITEM_CONTROLS)
+                        Component.text("Left-click — Give to inventory", ColorConfig.TEXT_ITEM_CONTROLS)
                             .decoration(TextDecoration.ITALIC, false)))
                     .build();
                 displayItem.setAmount(stack.getAmount());
 
-                ItemStack finalStack = stack;
                 gui.setItem(slots[i], new SimpleItem(displayItem, click -> {
-                    Map<Integer, ItemStack> leftover = player.getInventory().addItem(finalStack.clone());
+                    Map<Integer, ItemStack> leftover = player.getInventory().addItem(stack.clone());
                     for (ItemStack overflow : leftover.values()) {
                         player.getWorld().dropItem(player.getLocation(), overflow);
                     }
@@ -94,7 +95,7 @@ public class ItemLibraryCategoryMenu extends Menu {
 
         Window.single()
             .setViewer(player)
-            .setTitle(category.displayName() + " \u2014 Item Library")
+            .setTitle(category.displayName() + " — Item Library")
             .setGui(gui)
             .build()
             .open();

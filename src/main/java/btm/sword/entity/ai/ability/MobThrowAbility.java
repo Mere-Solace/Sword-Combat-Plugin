@@ -9,7 +9,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
 
 import btm.sword.action.throwing.ThrowAction;
-import btm.sword.config.Config;
+import btm.sword.config.section.HostileConfig;
 import btm.sword.entity.ai.MobGoalArbiter;
 import btm.sword.entity.ai.goal.LookAtTargetGoal;
 import btm.sword.entity.mob.Hostile;
@@ -20,7 +20,7 @@ import btm.sword.runtime.scheduler.SwordScheduler;
  * A ranged throwing ability for hostile mobs.
  *
  * <p>Launches the mob's main-hand item as a projectile with a parabolic arc toward the
- * current target. The arc height and cooldown are controlled via {@link Config.Hostile}.
+ * current target. The arc height and cooldown are controlled via {@link HostileConfig}.
  *
  * <p>If the mob has nothing in its main hand, it performs a dirt-scoop animation:
  * looks down, punches the ground, picks up a dirt block, and throws it instead.
@@ -44,7 +44,7 @@ public class MobThrowAbility implements MobAbility {
 
     /**
      * Returns {@code true} if the ability is off cooldown and passes the
-     * {@link Config.Hostile#MOB_THROW_WEIGHT} probability roll, making throws rarer
+     * {@link HostileConfig#MOB_THROW_WEIGHT} probability roll, making throws rarer
      * than melee when both abilities are available.
      *
      * @param h the hostile mob
@@ -53,7 +53,7 @@ public class MobThrowAbility implements MobAbility {
     @Override
     public boolean canUse(Hostile h) {
         if (h.getAbilityCooldown(name()) > 0) return false;
-        return ThreadLocalRandom.current().nextDouble() < Config.Hostile.MOB_THROW_WEIGHT;
+        return ThreadLocalRandom.current().nextDouble() < HostileConfig.MOB_THROW_WEIGHT;
     }
 
     @Override
@@ -147,6 +147,6 @@ public class MobThrowAbility implements MobAbility {
 
     @Override
     public int cooldownTicks() {
-        return Config.Hostile.MOB_THROW_COOLDOWN_TICKS;
+        return HostileConfig.MOB_THROW_COOLDOWN_TICKS;
     }
 }

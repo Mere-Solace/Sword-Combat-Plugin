@@ -1,9 +1,12 @@
-package btm.sword.menu.item;
+package btm.sword.menu.button;
 
 import java.util.List;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Color;
+import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.ClickType;
@@ -15,8 +18,8 @@ import btm.sword.config.Config;
 import btm.sword.config.ConfigManager;
 import btm.sword.entity.player.SwordPlayer;
 import btm.sword.item.core.ItemStackBuilder;
-import btm.sword.menu.AnimationPickerMenu;
-import btm.sword.menu.EnumSelectionMenu;
+import btm.sword.menu.selection.AnimationPickerMenu;
+import btm.sword.menu.selection.EnumSelectionMenu;
 import btm.sword.util.misc.ChatInputCapture;
 import btm.sword.util.sound.SwordSoundType;
 import net.kyori.adventure.text.Component;
@@ -254,6 +257,27 @@ public class ConfigEntryItem extends AbstractItem {
                 .build());
         }
 
+        if (type == Location.class) {
+            Location val = Config.loadLocation(config, path, defaultLocation());
+            return new ItemWrapper(new ItemStackBuilder(Material.COMPASS)
+                .name(Component.text(path, NamedTextColor.WHITE))
+                .lore(List.of(
+                    Component.text("Type: ", NamedTextColor.GRAY)
+                        .append(Component.text("Location", NamedTextColor.WHITE)),
+                    Component.text("Value: ", NamedTextColor.GRAY)
+                        .append(Component.text(locationToString(val), NamedTextColor.YELLOW)),
+                    Component.text("Default: ", NamedTextColor.GRAY)
+                        .append(Component.text(locationToString(defaultLocation()), NamedTextColor.DARK_GRAY)),
+                    Component.text("Click to edit  (format: ", NamedTextColor.DARK_GRAY)
+                        .append(Component.text("world x y z yaw pitch", NamedTextColor.WHITE))
+                        .append(Component.text(")", NamedTextColor.DARK_GRAY)),
+                    Component.text("world: 0=overworld 1=nether 2=end", NamedTextColor.DARK_GRAY),
+                    Component.text("yaw: 0–360   pitch: -90–90", NamedTextColor.DARK_GRAY),
+                    REVERT_HINT
+                ))
+                .build());
+        }
+
         if (type == String.class) {
             String val = config.getString(path, (String) entry.defaultValue());
             return new ItemWrapper(new ItemStackBuilder(Material.RECOVERY_COMPASS)
@@ -333,6 +357,11 @@ public class ConfigEntryItem extends AbstractItem {
 
         if (type == Vector.class) {
             promptVectorInput(player, mgr, config);
+            return;
+        }
+
+        if (type == Location.class) {
+            promptLocationInput(player, mgr, config);
             return;
         }
 
@@ -543,6 +572,89 @@ public class ConfigEntryItem extends AbstractItem {
     }
 
     // -------------------------------------------------------------------------
+    //  Typed-input via chat — locations
+    // -------------------------------------------------------------------------
+
+    @SuppressWarnings("unchecked")
+    private void promptLocationInput(Player player, ConfigManager mgr, FileConfiguration config) {
+        String path = entry.path();
+        Location current = Config.loadLocation(config, path, defaultLocation());
+
+        Component prompt = Component.text("Enter ", NamedTextColor.YELLOW)
+            .append(Component.text("world x y z yaw pitch", NamedTextColor.WHITE))
+            .append(Component.text(" for ", NamedTextColor.YELLOW))
+            .append(Component.text(path, NamedTextColor.WHITE))
+            .append(Component.text(" (current: ", NamedTextColor.YELLOW))
+            .append(Component.text(locationToString(current), NamedTextColor.GREEN))
+            .append(Component.text("):", NamedTextColor.YELLOW));
+
+        ChatInputCapture.prompt(player, prompt, input -> {
+            if (input.equalsIgnoreCase("cancel")) {
+                swordPlayer.message(Component.text("Cancelled.", NamedTextColor.GRAY));
+                reopenMenu.run();
+                return;
+            }
+            try {
+                String[] parts = input.split("[,\\s]+");
+                if (parts.length != 6) {
+                    swordPlayer.message(Component.text("Expected format: ", NamedTextColor.RED)
+                        .append(Component.text("world x y z yaw pitch", NamedTextColor.WHITE))
+                        .append(Component.text(" — got: ", NamedTextColor.RED))
+                        .append(Component.text(input, NamedTextColor.WHITE)));
+                    reopenMenu.run();
+                    return;
+                }
+                int worldIdx = Integer.parseInt(parts[0].trim());
+                if (worldIdx < 0 || worldIdx > 2) {
+                    swordPlayer.message(Component.text("World must be 0 (overworld), 1 (nether), or 2 (end).", NamedTextColor.RED));
+                    reopenMenu.run();
+                    return;
+                }
+                World.Environment env = switch (worldIdx) {
+                    case 1 -> World.Environment.NETHER;
+                    case 2 -> World.Environment.THE_END;
+                    default -> World.Environment.NORMAL;
+                };
+                World world = Bukkit.getWorlds().stream()
+                    .filter(w -> w.getEnvironment() == env)
+                    .findFirst()
+                    .orElse(null);
+                if (world == null) {
+                    swordPlayer.message(Component.text("No loaded world matches environment ", NamedTextColor.RED)
+                        .append(Component.text(env.name(), NamedTextColor.WHITE)));
+                    reopenMenu.run();
+                    return;
+                }
+                double x = Double.parseDouble(parts[1].trim());
+                double y = Double.parseDouble(parts[2].trim());
+                double z = Double.parseDouble(parts[3].trim());
+                float yaw = Float.parseFloat(parts[4].trim());
+                float pitch = Float.parseFloat(parts[5].trim());
+                if (yaw < 0f || yaw > 360f) {
+                    swordPlayer.message(Component.text("Yaw must be between 0 and 360.", NamedTextColor.RED));
+                    reopenMenu.run();
+                    return;
+                }
+                if (pitch < -90f || pitch > 90f) {
+                    swordPlayer.message(Component.text("Pitch must be between -90 and 90.", NamedTextColor.RED));
+                    reopenMenu.run();
+                    return;
+                }
+                Location next = new Location(world, x, y, z, yaw, pitch);
+                mgr.setValue((Config.ConfigEntry<Location>) entry, next);
+                swordPlayer.message(Component.text("Set ", NamedTextColor.GREEN)
+                    .append(Component.text(path, NamedTextColor.WHITE))
+                    .append(Component.text(" = ", NamedTextColor.GREEN))
+                    .append(Component.text(locationToString(next), NamedTextColor.YELLOW)));
+            } catch (NumberFormatException ex) {
+                swordPlayer.message(Component.text("Invalid number in: ", NamedTextColor.RED)
+                    .append(Component.text(input, NamedTextColor.WHITE)));
+            }
+            reopenMenu.run();
+        });
+    }
+
+    // -------------------------------------------------------------------------
     //  Helpers
     // -------------------------------------------------------------------------
 
@@ -562,6 +674,17 @@ public class ConfigEntryItem extends AbstractItem {
 
     private static String vectorToString(Vector v) {
         return String.format("%.4f %.4f %.4f", v.getX(), v.getY(), v.getZ());
+    }
+
+    private static String locationToString(Location loc) {
+        World w = loc.getWorld();
+        int idx = w == null ? -1 : switch (w.getEnvironment()) {
+            case NETHER -> 1;
+            case THE_END -> 2;
+            default -> 0;
+        };
+        return String.format("w=%d %.2f %.2f %.2f yaw=%.1f pitch=%.1f",
+            idx, loc.getX(), loc.getY(), loc.getZ(), loc.getYaw(), loc.getPitch());
     }
 
     private static String colorToString(Color c) {
@@ -602,6 +725,12 @@ public class ConfigEntryItem extends AbstractItem {
 
     private Vector defaultVector() {
         return entry.defaultValue() instanceof Vector v ? v : new Vector();
+    }
+
+    private Location defaultLocation() {
+        if (entry.defaultValue() instanceof Location l) return l;
+        World fallback = Bukkit.getWorlds().isEmpty() ? null : Bukkit.getWorlds().getFirst();
+        return new Location(fallback, 0, 0, 0);
     }
 
     private Color defaultBukkitColor() {

@@ -13,7 +13,8 @@ import org.bukkit.util.Vector;
 
 import btm.sword.action.throwing.InteractiveItem;
 import btm.sword.action.throwing.InteractiveItemArbiter;
-import btm.sword.config.Config;
+import btm.sword.config.section.DirectionConfig;
+import btm.sword.config.section.MovementConfig;
 import btm.sword.entity.base.Combatant;
 import btm.sword.entity.player.SwordPlayer;
 import btm.sword.runtime.scheduler.PredicateRunnablePair;
@@ -55,11 +56,11 @@ public class Dash {
     private boolean holdingLink;
     private boolean itemRetrieved;
 
-    private static final Supplier<Double> MAX_STRAIGHT_DASH_DISTANCE = () -> Config.Movement.DASH_MAX_DISTANCE;
-    private static final Supplier<Double> NORMAL_ITEM_RAY_WIDTH = () -> Config.Movement.DASH_RAY_HITBOX_RADIUS;
-    private static final Supplier<Double> UMBRAL_RAY_WIDTH = () -> Config.Movement.DASH_UMBRAL_RAY_HITBOX_RADIUS;
+    private static final Supplier<Double> MAX_STRAIGHT_DASH_DISTANCE = () -> MovementConfig.DASH_MAX_DISTANCE;
+    private static final Supplier<Double> NORMAL_ITEM_RAY_WIDTH = () -> MovementConfig.DASH_RAY_HITBOX_RADIUS;
+    private static final Supplier<Double> UMBRAL_RAY_WIDTH = () -> MovementConfig.DASH_UMBRAL_RAY_HITBOX_RADIUS;
 
-    double flatDashPitchThreshold = Config.Movement.FLAT_DASH_PITCH_THRESHOLD;
+    double flatDashPitchThreshold = MovementConfig.FLAT_DASH_PITCH_THRESHOLD;
 
     /**
      * Creates a Dash action for the given combatant and direction.
@@ -148,8 +149,8 @@ public class Dash {
         //          |
         //           \   < flat when forwards and not targeting item, otherwise not flat
 
-        boolean belowForwardThreshold = executor.dir().dot(Config.Direction.up()) < flatDashPitchThreshold;
-        boolean aboveBackwardThreshold = executor.dir().dot(Config.Direction.up()) > -flatDashPitchThreshold * Config.Movement.DASH_DOWNWARD_FLAT_CHECK_MULTIPLIER;
+        boolean belowForwardThreshold = executor.dir().dot(DirectionConfig.up()) < flatDashPitchThreshold;
+        boolean aboveBackwardThreshold = executor.dir().dot(DirectionConfig.up()) > -flatDashPitchThreshold * MovementConfig.DASH_DOWNWARD_FLAT_CHECK_MULTIPLIER;
 
         flatDash = onGround && (
             (direction > 0 && belowForwardThreshold) ||
@@ -226,7 +227,7 @@ public class Dash {
     }
 
     private void dash() {
-        dashPower = flatDash ? Config.Movement.DASH_BASE_POWER * Config.Movement.FLAT_DASH_POWER_MULTIPLIER : Config.Movement.DASH_BASE_POWER;
+        dashPower = flatDash ? MovementConfig.DASH_BASE_POWER * MovementConfig.FLAT_DASH_POWER_MULTIPLIER : MovementConfig.DASH_BASE_POWER;
 
         dashEffects();
 
@@ -246,7 +247,7 @@ public class Dash {
         executor.setDashDirection(executor.dir().multiply(direction));
         double dashMag = dashPower * direction;
         Vector d = flatDash ? executor.getFlatDir() : executor.dir();
-        executor.setVelocity(d.multiply(dashMag).add(Config.Direction.up().multiply(Config.Movement.DASH_UPWARD_BOOST)));
+        executor.setVelocity(d.multiply(dashMag).add(DirectionConfig.up().multiply(MovementConfig.DASH_UPWARD_BOOST)));
     }
 
     private Vector calcVectorToItem() {
@@ -254,8 +255,8 @@ public class Dash {
     }
 
     private Vector calcPostRetrievalVector() {
-        return executor.getFlatDir().multiply(direction * Config.Movement.DASH_FORWARD_MULTIPLIER)
-            .add(Config.Direction.up().multiply(Config.Movement.DASH_UPWARD_MULTIPLIER));
+        return executor.getFlatDir().multiply(direction * MovementConfig.DASH_FORWARD_MULTIPLIER)
+            .add(DirectionConfig.up().multiply(MovementConfig.DASH_UPWARD_MULTIPLIER));
     }
 
     private void dashToItem() {
@@ -273,7 +274,7 @@ public class Dash {
     }
 
     private void performNormalDashToItem(double distanceToItem) {
-        executor.setVelocity(executor.dir().multiply(Math.log(distanceToItem / Config.Movement.DASH_NORMAL_ITEM_DISTANCE_DIVISOR)));
+        executor.setVelocity(executor.dir().multiply(Math.log(distanceToItem / MovementConfig.DASH_NORMAL_ITEM_DISTANCE_DIVISOR)));
     }
 
     // Dash up first, then dash to the item
@@ -287,11 +288,11 @@ public class Dash {
         final Vector exDir = executor.dir();
 
         if (umbralHeightBoost &&
-            heightDiff <= Config.Movement.DASH_FLAT_HEIGHT_UPPER &&
-            heightDiff > Config.Movement.DASH_FLAT_HEIGHT_LOWER) {
+            heightDiff <= MovementConfig.DASH_FLAT_HEIGHT_UPPER &&
+            heightDiff > MovementConfig.DASH_FLAT_HEIGHT_LOWER) {
 
             Vector dashVelocity = exDir.add(
-                Config.Direction.up().multiply(Config.Movement.DASH_FLAT_ITEM_DASH_UPWARD_SCALER)
+                DirectionConfig.up().multiply(MovementConfig.DASH_FLAT_ITEM_DASH_UPWARD_SCALER)
             );
             executor.setVelocity(dashVelocity);
         }
@@ -301,37 +302,37 @@ public class Dash {
 
         if (!itemRetrieved && distanceToItem > 3) { // TODO: COnfig
             SwordScheduler.runBukkitTaskLater(() -> // Velocity applied after the initial height boost
-                    executor.setVelocity(toItem.multiply(Math.log(distanceToItem * Config.Movement.DASH_FLAT_ITEM_DASH_DISTANCE_SCALER))),
-                !umbralHeightBoost ? 0 : Config.Movement.FLAT_DASH_HEIGHT_BOOST_DELAY_MS, TimeUnit.MILLISECONDS
+                    executor.setVelocity(toItem.multiply(Math.log(distanceToItem * MovementConfig.DASH_FLAT_ITEM_DASH_DISTANCE_SCALER))),
+                !umbralHeightBoost ? 0 : MovementConfig.FLAT_DASH_HEIGHT_BOOST_DELAY_MS, TimeUnit.MILLISECONDS
             );
         }
     }
 
     private void scheduleCheckForItemPickup() {
-        int period = Config.Movement.DASH_ITEM_CHECK_PERIOD_MS;
+        int period = MovementConfig.DASH_ITEM_CHECK_PERIOD_MS;
         TimeArbiter.runFixedIterationTaskTimer(
             null, null,
-            0, period, Config.Movement.DASH_ITEM_CHECK_DURATION_MS / period,
+            0, period, MovementConfig.DASH_ITEM_CHECK_DURATION_MS / period,
             Dash.class, "scheduleCheckForItemPickup",
             this::failureToReach,
             new PredicateRunnablePair(
-                () -> calcVectorToItem().lengthSquared() < Config.Movement.DASH_GRAB_DISTANCE_SQUARED,
+                () -> calcVectorToItem().lengthSquared() < MovementConfig.DASH_GRAB_DISTANCE_SQUARED,
                 this::onItemRetrieval
             )
         );
     }
 
     private void onItemRetrieval() {
-        BlockData blockData = ex.getLocation().add(new Vector(0, Config.Movement.DASH_BLOCK_CHECK_OFFSET_Y, 0)).getBlock().getBlockData();
+        BlockData blockData = ex.getLocation().add(new Vector(0, MovementConfig.DASH_BLOCK_CHECK_OFFSET_Y, 0)).getBlock().getBlockData();
         new ParticleWrapper(() -> Particle.BLOCK,
-            () -> Config.Movement.DASH_PARTICLE_COUNT,
-            () -> Config.Movement.DASH_PARTICLE_SPREAD_X,
-            () -> Config.Movement.DASH_PARTICLE_SPREAD_Y,
-            () -> Config.Movement.DASH_PARTICLE_SPREAD_Z)
+            () -> MovementConfig.DASH_PARTICLE_COUNT,
+            () -> MovementConfig.DASH_PARTICLE_SPREAD_X,
+            () -> MovementConfig.DASH_PARTICLE_SPREAD_Y,
+            () -> MovementConfig.DASH_PARTICLE_SPREAD_Z)
             .withBlockData(() -> blockData).display(ex.getLocation());
         Prefab.Particles.GRAB_ATTEMPT.display(targetedDisplay.getLocation());
-        SoundUtil.playSound(ex, SwordSoundType.ENTITY_ENDER_DRAGON_FLAP, Config.Movement.DASH_FLAP_SOUND_VOLUME, Config.Movement.DASH_FLAP_SOUND_PITCH);
-        SoundUtil.playSound(ex, SwordSoundType.ENTITY_PLAYER_ATTACK_SWEEP, Config.Movement.DASH_SWEEP_SOUND_VOLUME, Config.Movement.DASH_SWEEP_SOUND_PITCH);
+        SoundUtil.playSound(ex, SwordSoundType.ENTITY_ENDER_DRAGON_FLAP, MovementConfig.DASH_FLAP_SOUND_VOLUME, MovementConfig.DASH_FLAP_SOUND_PITCH);
+        SoundUtil.playSound(ex, SwordSoundType.ENTITY_PLAYER_ATTACK_SWEEP, MovementConfig.DASH_SWEEP_SOUND_VOLUME, MovementConfig.DASH_SWEEP_SOUND_PITCH);
         executor.setVelocity(calcPostRetrievalVector());
         itemRetrieved = true;
         InteractiveItemArbiter.onGrab(targetedDisplay, executor); // here is where the display is taken care of
@@ -339,7 +340,7 @@ public class Dash {
 
     private void failureToReach() {
         Vector v = ex.getVelocity();
-        double damping = Config.Movement.DASH_VELOCITY_DAMPING;
+        double damping = MovementConfig.DASH_VELOCITY_DAMPING;
         ex.setVelocity(new Vector(v.getX() * damping, v.getY() * damping, v.getZ() * damping));
     }
 
@@ -355,7 +356,7 @@ public class Dash {
     @SuppressWarnings("all")
     private boolean isDashToItemImpeded() {
         RayTraceResult impedanceCheck = ex.getWorld().rayTraceBlocks(
-            ex.getLocation().add(new Vector(0, Config.Movement.DASH_IMPEDANCE_CHECK_OFFSET_Y, 0)),
+            ex.getLocation().add(new Vector(0, MovementConfig.DASH_IMPEDANCE_CHECK_OFFSET_Y, 0)),
             targetedDisplay.getLocation().subtract(ex.getLocation()).toVector().normalize(),
             MAX_STRAIGHT_DASH_DISTANCE.get() / 2,
             FluidCollisionMode.NEVER,
@@ -381,7 +382,7 @@ public class Dash {
 
                 iteration[0]++;
             },
-            Config.Movement.DASH_VELOCITY_TASK_DELAY, Config.Movement.DASH_VELOCITY_TASK_PERIOD,
+            MovementConfig.DASH_VELOCITY_TASK_DELAY, MovementConfig.DASH_VELOCITY_TASK_PERIOD,
             maxIterations,
             MovementAction.class, "dashStraight", null
         );

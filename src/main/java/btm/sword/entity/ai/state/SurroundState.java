@@ -6,7 +6,7 @@ import java.util.List;
 
 import com.destroystokyo.paper.entity.ai.GoalType;
 
-import btm.sword.config.Config;
+import btm.sword.config.section.HostileConfig;
 import btm.sword.entity.ai.HostileAIFacade;
 import btm.sword.entity.ai.MobGoalArbiter;
 import btm.sword.entity.ai.goal.LookAtTargetGoal;
@@ -56,7 +56,7 @@ public class SurroundState extends HostileAIFacade {
     private void evaluateArcPosition(Hostile h) {
         if (h.getCurrentTarget() == null || !h.getCurrentTarget().self().isValid()) return;
 
-        double aggroRadius = Math.sqrt(Config.Hostile.AGGRO_RANGE_SQUARED);
+        double aggroRadius = Math.sqrt(HostileConfig.AGGRO_RANGE_SQUARED);
         List<Hostile> allies = h.self().getWorld().getNearbyLivingEntities(
                 h.getCurrentTarget().self().getLocation(), aggroRadius
             ).stream()

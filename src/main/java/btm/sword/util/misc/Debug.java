@@ -12,7 +12,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
 
 import btm.sword.Sword;
-import btm.sword.config.Config;
+import btm.sword.config.section.DebugConfig;
 import btm.sword.entity.arbiter.SwordEntityArbiter;
 import btm.sword.entity.base.SwordEntity;
 import btm.sword.entity.player.DevSwordPlayer;
@@ -22,7 +22,7 @@ import btm.sword.util.math.VectorUtil;
 import btm.sword.util.prefab.Prefab;
 
 /**
- * Centralized debug utility. Each category maps to a {@link Config.Debug} flag and a DevMenu toggle.
+ * Centralized debug utility. Each category maps to a {@link DebugConfig} flag and a DevMenu toggle.
  * <p>
  * All methods log to the server console and, if online, send a chat message to each player
  * listed in {@code devnames.txt} (plugin data folder). Caller class and line number are captured automatically via
@@ -90,24 +90,24 @@ public final class Debug {
     // Category methods
     // =========================================================================
 
-    /** General debug output. Gated by {@link Config.Debug#LOGGING_VERBOSE_DEBUG}. */
+    /** General debug output. Gated by {@link DebugConfig#LOGGING_VERBOSE_DEBUG}. */
     public static void debug(String message) {
-        emit(Config.Debug.LOGGING_VERBOSE_DEBUG, "Debug", message);
+        emit(DebugConfig.LOGGING_VERBOSE_DEBUG, "Debug", message);
     }
 
-    /** Combat-system debug. Gated by {@link Config.Debug#LOGGING_VERBOSE_COMBAT}. */
+    /** Combat-system debug. Gated by {@link DebugConfig#LOGGING_VERBOSE_COMBAT}. */
     public static void combat(String message) {
-        emit(Config.Debug.LOGGING_VERBOSE_COMBAT, "Combat", message);
+        emit(DebugConfig.LOGGING_VERBOSE_COMBAT, "Combat", message);
     }
 
-    /** Movement/dash debug. Gated by {@link Config.Debug#LOGGING_VERBOSE_MOVEMENT}. */
+    /** Movement/dash debug. Gated by {@link DebugConfig#LOGGING_VERBOSE_MOVEMENT}. */
     public static void movement(String message) {
-        emit(Config.Debug.LOGGING_VERBOSE_MOVEMENT, "Movement", message);
+        emit(DebugConfig.LOGGING_VERBOSE_MOVEMENT, "Movement", message);
     }
 
-    /** Inventory-interaction debug. Gated by {@link Config.Debug#LOGGING_VERBOSE_INVENTORY}. */
+    /** Inventory-interaction debug. Gated by {@link DebugConfig#LOGGING_VERBOSE_INVENTORY}. */
     public static void inventory(String message) {
-        emit(Config.Debug.LOGGING_VERBOSE_INVENTORY, "Inventory", message);
+        emit(DebugConfig.LOGGING_VERBOSE_INVENTORY, "Inventory", message);
     }
 
     /** Error-level debug. Always emits regardless of verbose flags. */
@@ -117,75 +117,75 @@ public final class Debug {
 
     /**
      * System-level debug (state machine transitions, scheduler tasks, display lifecycle).
-     * Gated by {@link Config.Debug#LOGGING_VERBOSE_SYSTEM}.
+     * Gated by {@link DebugConfig#LOGGING_VERBOSE_SYSTEM}.
      */
     public static void system(String message) {
-        emit(Config.Debug.LOGGING_VERBOSE_SYSTEM, "System", message);
+        emit(DebugConfig.LOGGING_VERBOSE_SYSTEM, "System", message);
     }
 
-    /** UmbralBlade-specific debug. Gated by {@link Config.Debug#LOGGING_VERBOSE_UMBRAL}. */
+    /** UmbralBlade-specific debug. Gated by {@link DebugConfig#LOGGING_VERBOSE_UMBRAL}. */
     public static void umbral(String message) {
-        emit(Config.Debug.LOGGING_VERBOSE_UMBRAL, "Umbral", message);
+        emit(DebugConfig.LOGGING_VERBOSE_UMBRAL, "Umbral", message);
     }
 
-    /** UmbralBlade FSM transition + lifecycle debug. Gated by {@link Config.Debug#LOGGING_VERBOSE_UMBRAL_STATES}. */
+    /** UmbralBlade FSM transition + lifecycle debug. Gated by {@link DebugConfig#LOGGING_VERBOSE_UMBRAL_STATES}. */
     public static void umbralStates(String message) {
-        emit(Config.Debug.LOGGING_VERBOSE_UMBRAL_STATES, "UmbralStates", message);
+        emit(DebugConfig.LOGGING_VERBOSE_UMBRAL_STATES, "UmbralStates", message);
     }
 
-    /** Hostile-entity debug. Gated by {@link Config.Debug#LOGGING_VERBOSE_HOSTILE}. */
+    /** Hostile-entity debug. Gated by {@link DebugConfig#LOGGING_VERBOSE_HOSTILE}. */
     public static void hostile(String message) {
-        emit(Config.Debug.LOGGING_VERBOSE_HOSTILE, "Hostile", message);
+        emit(DebugConfig.LOGGING_VERBOSE_HOSTILE, "Hostile", message);
     }
 
-    /** Bukkit/Packet listener debug. Gated by {@link Config.Debug#LOGGING_VERBOSE_LISTENER}. */
+    /** Bukkit/Packet listener debug. Gated by {@link DebugConfig#LOGGING_VERBOSE_LISTENER}. */
     public static void listener(String message) {
-        emit(Config.Debug.LOGGING_VERBOSE_LISTENER, "Listener", message);
+        emit(DebugConfig.LOGGING_VERBOSE_LISTENER, "Listener", message);
     }
 
-    /** DEU animation hook / weapon-slot display debug. Gated by {@link Config.Debug#LOGGING_VERBOSE_ANIMATION}. */
+    /** DEU animation hook / weapon-slot display debug. Gated by {@link DebugConfig#LOGGING_VERBOSE_ANIMATION}. */
     public static void animation(String message) {
-        emit(Config.Debug.LOGGING_VERBOSE_ANIMATION, "Animation", message);
+        emit(DebugConfig.LOGGING_VERBOSE_ANIMATION, "Animation", message);
     }
 
-    /** Input combo detection and trie traversal debug. Gated by {@link Config.Debug#LOGGING_VERBOSE_INPUT}. */
+    /** Input combo detection and trie traversal debug. Gated by {@link DebugConfig#LOGGING_VERBOSE_INPUT}. */
     public static void input(String message) {
-        emit(Config.Debug.LOGGING_VERBOSE_INPUT, "Input", message);
+        emit(DebugConfig.LOGGING_VERBOSE_INPUT, "Input", message);
     }
 
-    /** Skill slot resolution and {@link btm.sword.action.skill.container.PlayerSkillContainer} debug. Gated by {@link Config.Debug#LOGGING_VERBOSE_SKILL}. */
+    /** Skill slot resolution and {@link btm.sword.action.skill.container.PlayerSkillContainer} debug. Gated by {@link DebugConfig#LOGGING_VERBOSE_SKILL}. */
     public static void skill(String message) {
-        emit(Config.Debug.LOGGING_VERBOSE_SKILL, "Skill", message);
+        emit(DebugConfig.LOGGING_VERBOSE_SKILL, "Skill", message);
     }
 
-    /** Ability activation, soulfire cost, cooldown, and charge session debug. Gated by {@link Config.Debug#LOGGING_VERBOSE_ABILITY}. */
+    /** Ability activation, soulfire cost, cooldown, and charge session debug. Gated by {@link DebugConfig#LOGGING_VERBOSE_ABILITY}. */
     public static void ability(String message) {
-        emit(Config.Debug.LOGGING_VERBOSE_ABILITY, "Ability", message);
+        emit(DebugConfig.LOGGING_VERBOSE_ABILITY, "Ability", message);
     }
 
-    /** Grab action lifecycle debug (cast, hold, release, target). Gated by {@link Config.Debug#LOGGING_VERBOSE_GRAB}. */
+    /** Grab action lifecycle debug (cast, hold, release, target). Gated by {@link DebugConfig#LOGGING_VERBOSE_GRAB}. */
     public static void grab(String message) {
-        emit(Config.Debug.LOGGING_VERBOSE_GRAB, "Grab", message);
+        emit(DebugConfig.LOGGING_VERBOSE_GRAB, "Grab", message);
     }
 
-    /** Attack sweep, hitbox detection, and damage dispatch debug. Gated by {@link Config.Debug#LOGGING_VERBOSE_ATTACK}. */
+    /** Attack sweep, hitbox detection, and damage dispatch debug. Gated by {@link DebugConfig#LOGGING_VERBOSE_ATTACK}. */
     public static void attack(String message) {
-        emit(Config.Debug.LOGGING_VERBOSE_ATTACK, "Attack", message);
+        emit(DebugConfig.LOGGING_VERBOSE_ATTACK, "Attack", message);
     }
 
-    /** Thrown-item lifecycle debug (spawn, flight, collision, recall). Gated by {@link Config.Debug#LOGGING_VERBOSE_THROWING}. */
+    /** Thrown-item lifecycle debug (spawn, flight, collision, recall). Gated by {@link DebugConfig#LOGGING_VERBOSE_THROWING}. */
     public static void throwing(String message) {
-        emit(Config.Debug.LOGGING_VERBOSE_THROWING, "Throwing", message);
+        emit(DebugConfig.LOGGING_VERBOSE_THROWING, "Throwing", message);
     }
 
-    /** AttackDef volume simulation debug (launch, hit confirmation, expiry). Gated by {@link Config.Debug#LOGGING_VERBOSE_ATTACK_VOLUME}. */
+    /** AttackDef volume simulation debug (launch, hit confirmation, expiry). Gated by {@link DebugConfig#LOGGING_VERBOSE_ATTACK_VOLUME}. */
     public static void attackVolume(String message) {
-        emit(Config.Debug.LOGGING_VERBOSE_ATTACK_VOLUME, "AttackVolume", message);
+        emit(DebugConfig.LOGGING_VERBOSE_ATTACK_VOLUME, "AttackVolume", message);
     }
 
-    /** ParticleEffect → ParticleWrapper conversion debug (type, dustOptions, dispatch path). Gated by {@link Config.Debug#LOGGING_VERBOSE_PARTICLE_DISPLAY}. */
+    /** ParticleEffect → ParticleWrapper conversion debug (type, dustOptions, dispatch path). Gated by {@link DebugConfig#LOGGING_VERBOSE_PARTICLE_DISPLAY}. */
     public static void particleDisplay(String message) {
-        emit(Config.Debug.LOGGING_VERBOSE_PARTICLE_DISPLAY, "ParticleDisplay", message);
+        emit(DebugConfig.LOGGING_VERBOSE_PARTICLE_DISPLAY, "ParticleDisplay", message);
     }
 
     // =========================================================================
@@ -221,12 +221,12 @@ public final class Debug {
 
     /**
      * Sends a formatted dump of an {@link InventoryClickEvent} to the clicking player.
-     * No-ops if {@link Config.Debug#LOGGING_VERBOSE_INVENTORY} is disabled.
+     * No-ops if {@link DebugConfig#LOGGING_VERBOSE_INVENTORY} is disabled.
      *
      * @param event the inventory click event to describe
      */
     public static void sendInventoryClickDebugMessage(InventoryClickEvent event) {
-        if (!Config.Debug.LOGGING_VERBOSE_INVENTORY) return;
+        if (!DebugConfig.LOGGING_VERBOSE_INVENTORY) return;
 
         StringBuilder b = new StringBuilder("> Inventory Click <\n");
         b.append("Click: ").append(event.getClick())

@@ -18,13 +18,13 @@ import btm.sword.combat.dev.DevMode;
 import btm.sword.combat.simulation.ControlPointSequence;
 import btm.sword.combat.simulation.KeyframedSequence;
 import btm.sword.combat.simulation.SweepSequence;
-import btm.sword.config.Config;
+import btm.sword.config.section.DebugConfig;
 import btm.sword.entity.player.DevSwordPlayer;
 import btm.sword.entity.player.SwordPlayer;
 import btm.sword.item.core.ItemStackBuilder;
 import btm.sword.menu.Menu;
-import btm.sword.menu.item.ForwardItem;
-import btm.sword.menu.item.PreviousItem;
+import btm.sword.menu.button.ForwardItem;
+import btm.sword.menu.button.PreviousItem;
 import btm.sword.util.misc.ChatInputCapture;
 import btm.sword.util.prefab.Prefab;
 import net.kyori.adventure.text.Component;
@@ -97,8 +97,8 @@ public class AttackBrowserMenu extends Menu {
 
         SimpleItem showHitboxes = toggle(
             "Hitbox Outlines (live attacks)",
-            () -> Config.Debug.VISUALIZATION_SHOW_HITBOXES,
-            () -> Config.Debug.VISUALIZATION_SHOW_HITBOXES = !Config.Debug.VISUALIZATION_SHOW_HITBOXES
+            () -> DebugConfig.VISUALIZATION_SHOW_HITBOXES,
+            () -> DebugConfig.VISUALIZATION_SHOW_HITBOXES = !DebugConfig.VISUALIZATION_SHOW_HITBOXES
         );
 
         PagedGui<Item> gui = PagedGui.items()

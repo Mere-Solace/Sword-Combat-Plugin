@@ -14,7 +14,7 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.TextDisplay;
 
-import btm.sword.config.Config;
+import btm.sword.config.section.RoguelikeConfig;
 import btm.sword.entity.arbiter.SwordEntityArbiter;
 import btm.sword.entity.player.SwordPlayer;
 import btm.sword.gamemode.QueueManager;
@@ -32,7 +32,7 @@ import net.kyori.adventure.text.format.TextDecoration;
  * ({@value #MAX_DURATION_SECONDS}s) expires.
  * </p>
  *
- * <p>Spawn centre and per-wave enemy counts are configured via {@link Config.Roguelike}
+ * <p>Spawn centre and per-wave enemy counts are configured via {@link RoguelikeConfig}
  * and are hot-reloadable with {@code /sword reload}.</p>
  */
 public class RoguelikeRun extends Gamemode {
@@ -123,7 +123,7 @@ public class RoguelikeRun extends Gamemode {
 
         for (EnemySpec spec : getWaveSpec(currentWave)) {
             for (int i = 0; i < spec.count(); i++) {
-                Location spawnLoc = randomSpawnLocation(center, Config.Roguelike.SPAWN_RADIUS);
+                Location spawnLoc = randomSpawnLocation(center, RoguelikeConfig.SPAWN_RADIUS);
                 LivingEntity mob = (LivingEntity) world.spawnEntity(spawnLoc, spec.entityType());
                 SwordEntityArbiter.getOrAdd(mob);
                 currentWaveEnemies.add(mob);
@@ -156,10 +156,10 @@ public class RoguelikeRun extends Gamemode {
     }
 
     private Location getSpawnCenter() {
-        World tryWorld = Bukkit.getWorld(Config.Roguelike.SPAWN_WORLD);
+        World tryWorld = Bukkit.getWorld(RoguelikeConfig.SPAWN_WORLD);
         World world = tryWorld == null ? Bukkit.getWorlds().getFirst() : tryWorld;
 
-        return new Location(world, Config.Roguelike.SPAWN_X, Config.Roguelike.SPAWN_Y, Config.Roguelike.SPAWN_Z);
+        return new Location(world, RoguelikeConfig.SPAWN_X, RoguelikeConfig.SPAWN_Y, RoguelikeConfig.SPAWN_Z);
     }
 
     private Location randomSpawnLocation(Location center, double radius) {
@@ -173,14 +173,14 @@ public class RoguelikeRun extends Gamemode {
     private List<EnemySpec> getWaveSpec(int wave) {
         return switch (wave) {
             case 1 -> List.of(
-                new EnemySpec(EntityType.PILLAGER, Config.Roguelike.WAVE_1_PILLAGERS)
+                new EnemySpec(EntityType.PILLAGER, RoguelikeConfig.WAVE_1_PILLAGERS)
             );
             case 2 -> List.of(
-                new EnemySpec(EntityType.WITHER_SKELETON, Config.Roguelike.WAVE_2_WITHER_SKELETONS)
+                new EnemySpec(EntityType.WITHER_SKELETON, RoguelikeConfig.WAVE_2_WITHER_SKELETONS)
             );
             case 3 -> List.of(
-                new EnemySpec(EntityType.PILLAGER, Config.Roguelike.WAVE_3_PILLAGERS),
-                new EnemySpec(EntityType.WITHER_SKELETON, Config.Roguelike.WAVE_3_WITHER_SKELETONS)
+                new EnemySpec(EntityType.PILLAGER, RoguelikeConfig.WAVE_3_PILLAGERS),
+                new EnemySpec(EntityType.WITHER_SKELETON, RoguelikeConfig.WAVE_3_WITHER_SKELETONS)
             );
             default -> List.of();
         };

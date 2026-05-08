@@ -16,7 +16,7 @@ import btm.sword.combat.simulation.SweepSequence;
 import btm.sword.combat.simulation.Volume;
 import btm.sword.combat.simulation.VolumeKeyframe;
 import btm.sword.combat.simulation.VolumeSequence;
-import btm.sword.config.Config;
+import btm.sword.config.section.CombatConfig;
 import btm.sword.entity.base.SwordEntity;
 import lombok.Getter;
 
@@ -85,8 +85,8 @@ public final class AttackInstance {
         private HitValuePacket hitValue;
         private BiFunction<Vector3f, SwordEntity, Vector3f> knockbackFunction =
             (contact, src) -> new Vector3f();
-        private boolean orientWithPitch = Config.Combat.ATTACKS_ORIENT_WITH_PITCH;
-        private boolean lockOriginOnFire = Config.Combat.ATTACKS_LOCK_ORIGIN_ON_FIRE;
+        private boolean orientWithPitch = CombatConfig.ATTACKS_ORIENT_WITH_PITCH;
+        private boolean lockOriginOnFire = CombatConfig.ATTACKS_LOCK_ORIGIN_ON_FIRE;
 
         /**
          * @param id unique attack identifier; must not be null or empty
@@ -197,7 +197,7 @@ public final class AttackInstance {
 
         /**
          * Overrides whether OBBs are tilted by the attacker's pitch angle.
-         * Defaults to {@link Config.Combat#ATTACKS_ORIENT_WITH_PITCH}.
+         * Defaults to {@link CombatConfig#ATTACKS_ORIENT_WITH_PITCH}.
          *
          * @param orientWithPitch {@code true} to apply pitch rotation to the world transform
          * @return this builder
@@ -211,7 +211,7 @@ public final class AttackInstance {
          * Overrides whether the attack origin is locked at fire time.
          * When {@code true} the OBBs travel in the direction the player was facing when
          * the attack was launched, regardless of subsequent movement.
-         * Defaults to {@link Config.Combat#ATTACKS_LOCK_ORIGIN_ON_FIRE}.
+         * Defaults to {@link CombatConfig#ATTACKS_LOCK_ORIGIN_ON_FIRE}.
          *
          * @param lockOriginOnFire {@code true} to lock origin and direction at fire time
          * @return this builder

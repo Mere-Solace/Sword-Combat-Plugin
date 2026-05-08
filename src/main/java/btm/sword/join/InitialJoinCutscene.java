@@ -7,7 +7,7 @@ import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 
-import btm.sword.config.Config;
+import btm.sword.config.section.JoinSequenceConfig;
 import btm.sword.entity.player.SwordPlayer;
 import btm.sword.playerdata.PlayerData;
 import btm.sword.playerdata.PlayerDataManager;
@@ -23,12 +23,12 @@ import btm.sword.scene.camera.CameraSystem;
  *
  * <p>Sequence:</p>
  * <p><b>Phase 1</b> — Player teleports to the opening location; the opening animation plays
- * (looping, camera attached) for {@link Config.JoinSequence#PHASE1_DURATION_MS} ms.</p>
+ * (looping, camera attached) for {@link JoinSequenceConfig#PHASE1_DURATION_MS} ms.</p>
  * <p><b>Phase 2</b> — A lightning-effect strikes the opening location; the animation plays
- * again for {@link Config.JoinSequence#PHASE2_DURATION_MS} ms.</p>
+ * again for {@link JoinSequenceConfig#PHASE2_DURATION_MS} ms.</p>
  * <p><b>Phase 3</b> — The animation stops; a fake player NPC (real skin and equipment) spawns
  * at the opening location and the static camera locks onto it for
- * {@link Config.JoinSequence#PHASE3_DURATION_MS} ms.</p>
+ * {@link JoinSequenceConfig#PHASE3_DURATION_MS} ms.</p>
  * <p><b>Complete</b> — The scene exits, the NPC despawns, the player lands at the opening
  * location, and {@link PlayerData#setJoinSequenceCompleted} is called.</p>
  *
@@ -61,7 +61,7 @@ public final class InitialJoinCutscene {
         // Phase 1: play opening animation
         startAnimation(sp, def);
 
-        SwordScheduler.after(Config.JoinSequence.PHASE1_DURATION_MS, TimeUnit.MILLISECONDS, () -> {
+        SwordScheduler.after(JoinSequenceConfig.PHASE1_DURATION_MS, TimeUnit.MILLISECONDS, () -> {
             if (!player.isOnline()) return;
             CameraSystem.stopController(sp);
 
@@ -72,7 +72,7 @@ public final class InitialJoinCutscene {
             }
             startAnimation(sp, def);
 
-        }).andThen(Config.JoinSequence.PHASE2_DURATION_MS, TimeUnit.MILLISECONDS, () -> {
+        }).andThen(JoinSequenceConfig.PHASE2_DURATION_MS, TimeUnit.MILLISECONDS, () -> {
             if (!player.isOnline()) return;
             CameraSystem.stopController(sp);
 
@@ -81,7 +81,7 @@ public final class InitialJoinCutscene {
             // MenuSceneController.onStop teleports the player back to openingLoc.
             SceneManager.enterStaticMenuScene(sp, openingLoc);
 
-        }).andThen(Config.JoinSequence.PHASE3_DURATION_MS, TimeUnit.MILLISECONDS, () -> {
+        }).andThen(JoinSequenceConfig.PHASE3_DURATION_MS, TimeUnit.MILLISECONDS, () -> {
             if (!player.isOnline()) return;
             CameraSystem.stopController(sp);
             complete(sp);
@@ -125,7 +125,7 @@ public final class InitialJoinCutscene {
      * @return the animation def, or null if not found
      */
     private static AnimationDef resolveAnimation(SwordPlayer sp) {
-        String key = Config.JoinSequence.OPENING_ANIMATION_KEY;
+        String key = JoinSequenceConfig.OPENING_ANIMATION_KEY;
         AnimationDef def = AnimationRegistry.get(key).orElse(null);
         if (def == null) {
             sp.player().sendMessage("[JoinCutscene] Opening animation not found: " + key);
@@ -141,17 +141,17 @@ public final class InitialJoinCutscene {
      * @return the opening location, or null
      */
     static Location openingLocation() {
-        World world = Bukkit.getWorld(Config.JoinSequence.WORLD);
+        World world = Bukkit.getWorld(JoinSequenceConfig.WORLD);
         if (world == null && !Bukkit.getWorlds().isEmpty()) {
             world = Bukkit.getWorlds().getFirst();
         }
         if (world == null) return null;
         return new Location(
             world,
-            Config.JoinSequence.OPENING_X,
-            Config.JoinSequence.OPENING_Y,
-            Config.JoinSequence.OPENING_Z,
-            Config.JoinSequence.OPENING_YAW,
+            JoinSequenceConfig.OPENING_X,
+            JoinSequenceConfig.OPENING_Y,
+            JoinSequenceConfig.OPENING_Z,
+            JoinSequenceConfig.OPENING_YAW,
             0.0f
         );
     }

@@ -13,7 +13,8 @@ import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 import btm.sword.Sword;
-import btm.sword.config.Config;
+import btm.sword.config.section.ColorConfig;
+import btm.sword.config.section.HostileConfig;
 import btm.sword.entity.mob.AnimationSlots;
 import btm.sword.runtime.scheduler.SwordScheduler;
 import btm.sword.runtime.scheduler.TimeArbiter;
@@ -139,12 +140,12 @@ public final class DisplayRig {
         }
 
         for (Display display : group.getPartEntities(Display.class)) {
-            display.setTeleportDuration(Config.Hostile.DISPLAY_TELEPORT_DURATION);
+            display.setTeleportDuration(HostileConfig.DISPLAY_TELEPORT_DURATION);
         }
 
         GroupFollowProperties yawFollow = GroupFollowProperties.builder(FollowType.YAW)
             .setId("hostile_yaw")
-            .setTeleportationDuration(Config.Hostile.DISPLAY_TELEPORT_DURATION)
+            .setTeleportationDuration(HostileConfig.DISPLAY_TELEPORT_DURATION)
             .build();
         group.followEntityDirection(mob, yawFollow);
 
@@ -214,7 +215,7 @@ public final class DisplayRig {
         final ItemDisplay anchor = weaponAnchor;
 
         anchor.setGlowing(true);
-        anchor.setGlowColorOverride(Config.SwordColor.ATTACK_QUICK_GLOW);
+        anchor.setGlowColorOverride(ColorConfig.ATTACK_QUICK_GLOW);
         anchor.setItemDisplayTransform(ItemDisplay.ItemDisplayTransform.THIRDPERSON_LEFTHAND);
         anchor.setItemStack(item);
 //
@@ -224,7 +225,7 @@ public final class DisplayRig {
 //            () -> {
 //                if (!mob.isValid() || !anchor.isValid()) return;
 //                anchor.setGlowing(true);
-//                anchor.setGlowColorOverride(Config.SwordColor.ATTACK_QUICK_GLOW);
+//                anchor.setGlowColorOverride(ColorConfig.ATTACK_QUICK_GLOW);
 //                anchor.setItemDisplayTransform(ItemDisplay.ItemDisplayTransform.THIRDPERSON_LEFTHAND);
 //                anchor.setItemStack(item);
 //            },

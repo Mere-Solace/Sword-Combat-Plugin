@@ -14,7 +14,7 @@ import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.ProtocolManager;
 import com.comphenix.protocol.events.PacketContainer;
 
-import btm.sword.config.Config;
+import btm.sword.config.section.DirectionConfig;
 import btm.sword.entity.base.Combatant;
 import btm.sword.entity.player.SwordPlayer;
 import btm.sword.input.trie.InputRegistrar;
@@ -103,9 +103,9 @@ public final class Misc {
             null,
             () -> {
 
-                Location loc = marker.getLocation().add(Config.Direction.up().multiply(0.005));
+                Location loc = marker.getLocation().add(DirectionConfig.up().multiply(0.005));
                 Vector dir = loc.getDirection();
-                dir.rotateAroundAxis(Config.Direction.up(), Math.PI / 360);
+                dir.rotateAroundAxis(DirectionConfig.up(), Math.PI / 360);
 
                 loc.setDirection(dir);
                 marker.teleport(loc);

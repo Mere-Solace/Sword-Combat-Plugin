@@ -1,4 +1,4 @@
-package btm.sword.menu;
+package btm.sword.menu.character;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,6 +18,7 @@ import btm.sword.action.skill.container.SkillSlot;
 import btm.sword.entity.player.SwordPlayer;
 import btm.sword.item.core.ItemStackBuilder;
 import btm.sword.item.special.AbilitySlotManager;
+import btm.sword.menu.Menu;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import xyz.xenondevs.invui.gui.PagedGui;

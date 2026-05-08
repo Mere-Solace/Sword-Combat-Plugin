@@ -407,6 +407,13 @@ menu_grid:
 join_sequence:
   opening_x: -186.5
   opening_z: -1058.5
+  hub_spawn:
+    world: 0
+    x: -275.5
+    y: 138.5
+    z: -1245.5
+    yaw: 90.0
+    pitch: 25.0
 ctf:
   red_spawn_x: -209.0
   red_spawn_y: 105.0

@@ -1,13 +1,14 @@
-package btm.sword.menu;
+package btm.sword.menu.character;
 
 import java.util.List;
 
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 
-import btm.sword.config.Config;
+import btm.sword.config.section.ColorConfig;
 import btm.sword.entity.player.SwordPlayer;
 import btm.sword.item.core.ItemStackBuilder;
+import btm.sword.menu.Menu;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -46,7 +47,7 @@ public class ArtifactPouchMenu extends Menu {
         SimpleItem placeholder = new SimpleItem(
             new ItemStackBuilder(Material.WRITABLE_BOOK)
                 .hideAll()
-                .name(Component.text("Quest Items", Config.SwordColor.TEXT_COOL, TextDecoration.BOLD)
+                .name(Component.text("Quest Items", ColorConfig.TEXT_COOL, TextDecoration.BOLD)
                     .decoration(TextDecoration.ITALIC, false))
                 .lore(List.of(
                     Component.empty(),

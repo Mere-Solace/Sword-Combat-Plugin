@@ -12,7 +12,7 @@ import com.destroystokyo.paper.entity.ai.GoalKey;
 import com.destroystokyo.paper.entity.ai.GoalType;
 
 import btm.sword.Sword;
-import btm.sword.config.Config;
+import btm.sword.config.section.HostileConfig;
 import btm.sword.entity.mob.Hostile;
 
 /**
@@ -100,7 +100,7 @@ public class SurroundHoldGoal implements Goal<@NotNull Mob> {
     private void pathfindToArcPosition() {
         if (hostile.getCurrentTarget() == null || !hostile.getCurrentTarget().self().isValid()) return;
 
-        double radius = Math.sqrt(Config.Hostile.APPROACH_DISTANCE_SQUARED);
+        double radius = Math.sqrt(HostileConfig.APPROACH_DISTANCE_SQUARED);
         int totalMobs = Math.max(1, hostile.getNearbyAlliesCount() + 1);
         double angle = 2 * Math.PI * hostile.getArcSlotIndex() / totalMobs;
 

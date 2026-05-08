@@ -1,4 +1,4 @@
-package btm.sword.menu;
+package btm.sword.menu.selection;
 
 import java.util.function.Consumer;
 import java.util.function.Function;

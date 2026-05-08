@@ -13,7 +13,7 @@ import com.destroystokyo.paper.entity.ai.GoalKey;
 import com.destroystokyo.paper.entity.ai.GoalType;
 
 import btm.sword.Sword;
-import btm.sword.config.Config;
+import btm.sword.config.section.HostileConfig;
 import btm.sword.entity.mob.Hostile;
 
 /**
@@ -79,7 +79,7 @@ public class ApproachGoal implements Goal<@NotNull Mob> {
         if (hostile.getCurrentTarget() == null) return false;
         if (!hostile.getCurrentTarget().self().isValid()) return false;
         return mob.getLocation().distanceSquared(hostile.getCurrentTarget().self().getLocation())
-            <= Config.Hostile.AGGRO_RANGE_SQUARED;
+            <= HostileConfig.AGGRO_RANGE_SQUARED;
     }
 
     /**
@@ -117,7 +117,7 @@ public class ApproachGoal implements Goal<@NotNull Mob> {
         }
         if (hostile.getCurrentTarget() == null || !hostile.getCurrentTarget().self().isValid()) return;
         double distSq = mob.getLocation().distanceSquared(hostile.getCurrentTarget().self().getLocation());
-        if (distSq > Config.Hostile.APPROACH_DISTANCE_SQUARED + HYSTERESIS_SQ) {
+        if (distSq > HostileConfig.APPROACH_DISTANCE_SQUARED + HYSTERESIS_SQ) {
             pathfindToTarget();
         } else {
             mob.getPathfinder().stopPathfinding();

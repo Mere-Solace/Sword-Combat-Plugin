@@ -27,7 +27,8 @@ import btm.sword.combat.def.AttackInstance;
 import btm.sword.combat.simulation.EntitySnapshotMap;
 import btm.sword.combat.simulation.SimulationAttack;
 import btm.sword.combat.simulation.VolumeSimulation;
-import btm.sword.config.Config;
+import btm.sword.config.section.CombatConfig;
+import btm.sword.config.section.MovementConfig;
 import btm.sword.entity.aspect.AspectType;
 import btm.sword.entity.player.SwordPlayer;
 import btm.sword.entity.player.ThrowPhase;
@@ -463,7 +464,7 @@ public abstract class Combatant extends SwordEntity {
     public boolean canPerformHealAction() {
         return canPerformAction() &&
             isBladeInState(WieldState.class) &&
-            aspects.soulfireCur() >= Config.Combat.CHANNEL_SOULFIRE_COST &&
+            aspects.soulfireCur() >= CombatConfig.CHANNEL_SOULFIRE_COST &&
             aspects.shards().belowMax();
     }
 
@@ -476,7 +477,7 @@ public abstract class Combatant extends SwordEntity {
      */
     public boolean canPerformWieldAction() {
         if (isBladeInState(WaitingState.class)) {
-            return inRangeOfUmbralBlade(Config.Movement.DASH_GRAB_DISTANCE_SQUARED);
+            return inRangeOfUmbralBlade(MovementConfig.DASH_GRAB_DISTANCE_SQUARED);
         }
 
         return canPerformAction() &&
@@ -618,10 +619,10 @@ public abstract class Combatant extends SwordEntity {
     public void applyAttackCooldown() {
         setTimeOfLastAttack(System.currentTimeMillis());
         int cooldown = (int) calcValueReductive(AspectType.FINESSE,
-            Config.Combat.ATTACKS_CAST_TIMING_MIN_DURATION,
-            Config.Combat.ATTACKS_CAST_TIMING_MAX_DURATION,
-            Config.Combat.ATTACKS_CAST_TIMING_REDUCTION_RATE);
-        setDurationOfLastAttack((int) (cooldown * Config.Combat.ATTACKS_COOLDOWN_MULT));
+            CombatConfig.ATTACKS_CAST_TIMING_MIN_DURATION,
+            CombatConfig.ATTACKS_CAST_TIMING_MAX_DURATION,
+            CombatConfig.ATTACKS_CAST_TIMING_REDUCTION_RATE);
+        setDurationOfLastAttack((int) (cooldown * CombatConfig.ATTACKS_COOLDOWN_MULT));
     }
 
     /**

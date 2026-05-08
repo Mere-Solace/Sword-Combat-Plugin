@@ -7,6 +7,9 @@ import java.nio.file.Files;
 import java.util.logging.Level;
 
 import org.bukkit.Color;
+import org.bukkit.Location;
+import org.bukkit.World;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 
@@ -120,7 +123,7 @@ public final class ConfigManager {
             config = YamlConfiguration.loadConfiguration(configFile);
 
             // Load all configuration entries using the registration system
-            for (Config.ConfigEntry<?> entry : Config.ENTRIES) {
+            for (Config.ConfigEntry<?> entry : Config.entries()) {
                 loadEntry(entry);
             }
 
@@ -195,10 +198,26 @@ public final class ConfigManager {
                 config.set(entry.path(), String.format("#%06X", tc.value()));
             case org.bukkit.util.Vector v -> {
                 // Vector has no flat YAML representation; store as {x,y,z} section matching loadVector()
-                org.bukkit.configuration.ConfigurationSection sec = config.createSection(entry.path());
+                ConfigurationSection sec = config.createSection(entry.path());
                 sec.set("x", v.getX());
                 sec.set("y", v.getY());
                 sec.set("z", v.getZ());
+            }
+            case Location loc -> {
+                // Location has no flat YAML representation; store as {world,x,y,z,yaw,pitch} matching loadLocation()
+                ConfigurationSection sec = config.createSection(entry.path());
+                World w = loc.getWorld();
+                int worldIdx = w == null ? 0 : switch (w.getEnvironment()) {
+                    case NETHER -> 1;
+                    case THE_END -> 2;
+                    default -> 0;
+                };
+                sec.set("world", worldIdx);
+                sec.set("x", loc.getX());
+                sec.set("y", loc.getY());
+                sec.set("z", loc.getZ());
+                sec.set("yaw", (double) loc.getYaw());
+                sec.set("pitch", (double) loc.getPitch());
             }
             case null, default -> config.set(entry.path(), value);
         }

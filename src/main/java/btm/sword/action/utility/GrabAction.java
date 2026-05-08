@@ -15,7 +15,7 @@ import org.bukkit.util.Vector;
 
 import btm.sword.action.core.SwordAction;
 import btm.sword.action.throwing.InteractiveItemArbiter;
-import btm.sword.config.Config;
+import btm.sword.config.section.GrabConfig;
 import btm.sword.entity.arbiter.SwordEntityArbiter;
 import btm.sword.entity.aspect.AspectType;
 import btm.sword.entity.base.Combatant;
@@ -47,20 +47,20 @@ public class GrabAction extends SwordAction {
     // TODO: #147 clean this nest up
     public static void grab(Combatant executor) {
         // execute immediately; casting/ability blocking is managed by the InputAction's castDuration
-        int baseDuration = Config.Grab.BASE_DURATION;
-        double baseGrabRange = Config.Grab.BASE_RANGE;
-        double baseGrabThickness = Config.Grab.BASE_THICKNESS;
+        int baseDuration = GrabConfig.BASE_DURATION;
+        double baseGrabRange = GrabConfig.BASE_RANGE;
+        double baseGrabThickness = GrabConfig.BASE_THICKNESS;
 
         if (executor instanceof SwordPlayer sp) {
             sp.resetTree(); // TODO: find out why this is necessary and why the tree doesn't reset on its own...
         }
 
         long duration = (long) executor.calcValueAdditive(AspectType.MIGHT, 100L, baseDuration,
-            Config.Grab.DURATION_SCALING);
+            GrabConfig.DURATION_SCALING);
         double range = executor.calcValueAdditive(AspectType.WILLPOWER, 4.5, baseGrabRange,
-            Config.Grab.RANGE_SCALING);
+            GrabConfig.RANGE_SCALING);
         double grabThickness = executor.calcValueAdditive(AspectType.WILLPOWER, 0.75, baseGrabThickness,
-            Config.Grab.THICKNESS_SCALING);
+            GrabConfig.THICKNESS_SCALING);
 
         LivingEntity ex = executor.self();
         Location o = ex.getEyeLocation();
@@ -140,23 +140,23 @@ public class GrabAction extends SwordAction {
                 Vector v = ex.getVelocity();
                 ex.addPotionEffect(new PotionEffect(
                     PotionEffectType.JUMP_BOOST,
-                    Config.Grab.JUMP_BOOST_DURATION, Config.Grab.JUMP_BOOST_AMPLIFIER));
+                    GrabConfig.JUMP_BOOST_DURATION, GrabConfig.JUMP_BOOST_AMPLIFIER));
                 ex.setVelocity(new Vector(
-                    v.getX() * Config.Grab.EXECUTOR_HORIZONTAL_DAMPENING,
+                    v.getX() * GrabConfig.EXECUTOR_HORIZONTAL_DAMPENING,
                     v.getY(),
-                    v.getZ() * Config.Grab.EXECUTOR_HORIZONTAL_DAMPENING));
+                    v.getZ() * GrabConfig.EXECUTOR_HORIZONTAL_DAMPENING));
 
-                double holdDist = Config.Grab.HOLD_DISTANCE;
+                double holdDist = GrabConfig.HOLD_DISTANCE;
                 Vector direction = ex.getLocation().toVector().add(ex.getEyeLocation().getDirection().multiply(holdDist)).subtract(target.getLocation().toVector());
                 double distanceSquared = direction.lengthSquared();
-                double bufferDistance = Config.Grab.HOLD_BUFFER;
-                double pullSpeed = Config.Grab.PULL_SPEED;
+                double bufferDistance = GrabConfig.HOLD_BUFFER;
+                double pullSpeed = GrabConfig.PULL_SPEED;
 
                 if (distanceSquared < bufferDistance * bufferDistance) {
-                    target.setVelocity(new Vector(0, target.getVelocity().getY() * Config.Grab.CLOSE_Y_VELOCITY_SCALE, 0));
+                    target.setVelocity(new Vector(0, target.getVelocity().getY() * GrabConfig.CLOSE_Y_VELOCITY_SCALE, 0));
                 } else {
                     double force = pullSpeed;
-                    if (Math.abs(target.getEyeLocation().getY() - ex.getEyeLocation().getY()) > Config.Grab.VERTICAL_FORCE_THRESHOLD) {
+                    if (Math.abs(target.getEyeLocation().getY() - ex.getEyeLocation().getY()) > GrabConfig.VERTICAL_FORCE_THRESHOLD) {
                         force *= 2;
                     }
                     Vector velocity = direction.normalize().multiply(force);

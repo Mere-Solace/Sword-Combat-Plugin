@@ -19,12 +19,13 @@ import com.comphenix.protocol.wrappers.WrappedChatComponent;
 
 import btm.sword.Sword;
 import btm.sword.config.Config;
+import btm.sword.config.section.AnimationConfig;
 import btm.sword.entity.player.SwordPlayer;
 import btm.sword.item.core.ItemStackBuilder;
 import btm.sword.menu.Menu;
-import btm.sword.menu.item.ConfigEntryItem;
-import btm.sword.menu.item.ForwardItem;
-import btm.sword.menu.item.PreviousItem;
+import btm.sword.menu.button.ConfigEntryItem;
+import btm.sword.menu.button.ForwardItem;
+import btm.sword.menu.button.PreviousItem;
 import btm.sword.runtime.scheduler.SwordScheduler;
 import btm.sword.scene.animation.AnimationDef;
 import btm.sword.scene.animation.AnimationRegistry;
@@ -127,7 +128,7 @@ public class AnimationBrowserMenu extends Menu {
         );
 
         ConfigEntryItem conversionTimeout = new ConfigEntryItem(
-            Config.ENTRIES.stream()
+            Config.entries().stream()
                 .filter(e -> e.path().equals("animation.conversion_step_timeout_seconds"))
                 .findFirst().orElseThrow(),
             swordPlayer,
@@ -233,7 +234,7 @@ public class AnimationBrowserMenu extends Menu {
                 pm.removePacketListener(listener);
                 convertNext(player, remaining, converted);
             }
-        }, Config.Animation.ANIMATION_CONVERSION_STEP_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+        }, AnimationConfig.ANIMATION_CONVERSION_STEP_TIMEOUT_SECONDS, TimeUnit.SECONDS);
 
         player.sendMessage(Component.text(
             "[Sword] Converting: " + base + " (" + (converted.size()) + "/" + (converted.size() + remaining.size()) + ")...",

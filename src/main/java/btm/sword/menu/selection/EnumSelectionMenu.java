@@ -1,4 +1,4 @@
-package btm.sword.menu;
+package btm.sword.menu.selection;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -25,8 +25,9 @@ import btm.sword.config.Config;
 import btm.sword.config.ConfigManager;
 import btm.sword.entity.player.SwordPlayer;
 import btm.sword.item.core.ItemStackBuilder;
-import btm.sword.menu.item.ForwardItem;
-import btm.sword.menu.item.PreviousItem;
+import btm.sword.menu.Menu;
+import btm.sword.menu.button.ForwardItem;
+import btm.sword.menu.button.PreviousItem;
 import btm.sword.util.misc.ChatInputCapture;
 import btm.sword.util.sound.SoundUtil;
 import btm.sword.util.sound.SwordSoundType;

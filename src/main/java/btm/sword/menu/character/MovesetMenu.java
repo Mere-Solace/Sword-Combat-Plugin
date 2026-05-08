@@ -1,4 +1,4 @@
-package btm.sword.menu;
+package btm.sword.menu.character;
 
 import java.util.List;
 
@@ -8,9 +8,10 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.LeatherArmorMeta;
 
-import btm.sword.config.Config;
+import btm.sword.config.section.ColorConfig;
 import btm.sword.entity.player.SwordPlayer;
 import btm.sword.item.core.ItemStackBuilder;
+import btm.sword.menu.Menu;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextDecoration;
 import xyz.xenondevs.invui.gui.Gui;
@@ -41,10 +42,10 @@ public class MovesetMenu extends Menu {
         SimpleItem basicAttack = new SimpleItem(
             new ItemStackBuilder(Material.IRON_SWORD)
                 .hideAll()
-                .name(Component.text("Basic Attack Chain", Config.SwordColor.TEXT_ITEM_NAME))
+                .name(Component.text("Basic Attack Chain", ColorConfig.TEXT_ITEM_NAME))
                 .lore(List.of(
-                    Component.text("Left Click (× 3)", Config.SwordColor.TEXT_ITEM_CONTROLS),
-                    Component.text("  Chain up to 3 slashes.", Config.SwordColor.TEXT_ITEM_BASE)
+                    Component.text("Left Click (× 3)", ColorConfig.TEXT_ITEM_CONTROLS),
+                    Component.text("  Chain up to 3 slashes.", ColorConfig.TEXT_ITEM_BASE)
                 ))
                 .build()
         );
@@ -52,10 +53,10 @@ public class MovesetMenu extends Menu {
         SimpleItem grab = new SimpleItem(
             new ItemStackBuilder(Material.LEAD)
                 .hideAll()
-                .name(Component.text("Grab", Config.SwordColor.TEXT_ITEM_NAME))
+                .name(Component.text("Grab", ColorConfig.TEXT_ITEM_NAME))
                 .lore(List.of(
-                    Component.text("Shift + Left Click", Config.SwordColor.TEXT_ITEM_CONTROLS),
-                    Component.text("  Short-range control tool.", Config.SwordColor.TEXT_ITEM_BASE)
+                    Component.text("Shift + Left Click", ColorConfig.TEXT_ITEM_CONTROLS),
+                    Component.text("  Short-range control tool.", ColorConfig.TEXT_ITEM_BASE)
                 ))
                 .build()
         );
@@ -63,10 +64,10 @@ public class MovesetMenu extends Menu {
         SimpleItem throwItem = new SimpleItem(
             new ItemStackBuilder(Material.ARROW)
                 .hideAll()
-                .name(Component.text("Throw Weapon", Config.SwordColor.TEXT_ITEM_NAME))
+                .name(Component.text("Throw Weapon", ColorConfig.TEXT_ITEM_NAME))
                 .lore(List.of(
-                    Component.text("Drop + Right Click, hold to release", Config.SwordColor.TEXT_ITEM_CONTROLS),
-                    Component.text("  Deals Toughness / Shards damage on hit.", Config.SwordColor.TEXT_ITEM_BASE)
+                    Component.text("Drop + Right Click, hold to release", ColorConfig.TEXT_ITEM_CONTROLS),
+                    Component.text("  Deals Toughness / Shards damage on hit.", ColorConfig.TEXT_ITEM_BASE)
                 ))
                 .build()
         );
@@ -74,11 +75,11 @@ public class MovesetMenu extends Menu {
         SimpleItem bladeToggle = new SimpleItem(
             new ItemStackBuilder(Material.ECHO_SHARD)
                 .hideAll()
-                .name(Component.text("Blade: Toggle Standby / Sheathed", Config.SwordColor.TEXT_ITEM_NAME))
+                .name(Component.text("Blade: Toggle Standby / Sheathed", ColorConfig.TEXT_ITEM_NAME))
                 .lore(List.of(
-                    Component.text("Shift + Swap", Config.SwordColor.TEXT_ITEM_CONTROLS),
-                    Component.text("  Standby: blade hovers and awaits commands.", Config.SwordColor.TEXT_ITEM_BASE),
-                    Component.text("  Sheathed: blade returns to your hip.", Config.SwordColor.TEXT_ITEM_BASE)
+                    Component.text("Shift + Swap", ColorConfig.TEXT_ITEM_CONTROLS),
+                    Component.text("  Standby: blade hovers and awaits commands.", ColorConfig.TEXT_ITEM_BASE),
+                    Component.text("  Sheathed: blade returns to your hip.", ColorConfig.TEXT_ITEM_BASE)
                 ))
                 .build()
         );
@@ -86,10 +87,10 @@ public class MovesetMenu extends Menu {
         SimpleItem bladeWield = new SimpleItem(
             new ItemStackBuilder(Material.NETHERITE_SWORD)
                 .hideAll()
-                .name(Component.text("Blade: Wield", Config.SwordColor.TEXT_ITEM_NAME))
+                .name(Component.text("Blade: Wield", ColorConfig.TEXT_ITEM_NAME))
                 .lore(List.of(
-                    Component.text("Shift + Drop", Config.SwordColor.TEXT_ITEM_CONTROLS),
-                    Component.text("  Equips the Blade directly into your hand.", Config.SwordColor.TEXT_ITEM_BASE)
+                    Component.text("Shift + Drop", ColorConfig.TEXT_ITEM_CONTROLS),
+                    Component.text("  Equips the Blade directly into your hand.", ColorConfig.TEXT_ITEM_BASE)
                 ))
                 .build()
         );
@@ -97,10 +98,10 @@ public class MovesetMenu extends Menu {
         SimpleItem bladeQuickAttacks = new SimpleItem(
             new ItemStackBuilder(Material.PAPER)
                 .hideAll()
-                .name(Component.text("Blade: Quick Attack Chain", Config.SwordColor.TEXT_ITEM_NAME))
+                .name(Component.text("Blade: Quick Attack Chain", ColorConfig.TEXT_ITEM_NAME))
                 .lore(List.of(
-                    Component.text("Left Click (× 3)  (Standby, costs Soulfire)", Config.SwordColor.TEXT_ITEM_CONTROLS),
-                    Component.text("  Chain up to 3 remote slashes.", Config.SwordColor.TEXT_ITEM_BASE)
+                    Component.text("Left Click (× 3)  (Standby, costs Soulfire)", ColorConfig.TEXT_ITEM_CONTROLS),
+                    Component.text("  Chain up to 3 remote slashes.", ColorConfig.TEXT_ITEM_BASE)
                 ))
                 .build()
         );
@@ -108,10 +109,10 @@ public class MovesetMenu extends Menu {
         SimpleItem bladeHeavySweep = new SimpleItem(
             new ItemStackBuilder(Material.PAPER)
                 .hideAll()
-                .name(Component.text("Blade: Heavy Sweep", Config.SwordColor.TEXT_ITEM_NAME))
+                .name(Component.text("Blade: Heavy Sweep", ColorConfig.TEXT_ITEM_NAME))
                 .lore(List.of(
-                    Component.text("Drop + Left Click (× 3)", Config.SwordColor.TEXT_ITEM_CONTROLS),
-                    Component.text("  Repeated Left clicks increase sweep force.", Config.SwordColor.TEXT_ITEM_BASE)
+                    Component.text("Drop + Left Click (× 3)", ColorConfig.TEXT_ITEM_CONTROLS),
+                    Component.text("  Repeated Left clicks increase sweep force.", ColorConfig.TEXT_ITEM_BASE)
                 ))
                 .build()
         );
@@ -119,10 +120,10 @@ public class MovesetMenu extends Menu {
         SimpleItem bladeLunge = new SimpleItem(
             new ItemStackBuilder(Material.PAPER)
                 .hideAll()
-                .name(Component.text("Blade: Lunge", Config.SwordColor.TEXT_ITEM_NAME))
+                .name(Component.text("Blade: Lunge", ColorConfig.TEXT_ITEM_NAME))
                 .lore(List.of(
-                    Component.text("Drop + Right Click  (Standby, costs Soulfire)", Config.SwordColor.TEXT_ITEM_CONTROLS),
-                    Component.text("  Propel the blade at your target.", Config.SwordColor.TEXT_ITEM_BASE)
+                    Component.text("Drop + Right Click  (Standby, costs Soulfire)", ColorConfig.TEXT_ITEM_CONTROLS),
+                    Component.text("  Propel the blade at your target.", ColorConfig.TEXT_ITEM_BASE)
                 ))
                 .build()
         );
@@ -130,10 +131,10 @@ public class MovesetMenu extends Menu {
         SimpleItem umbralSkills = new SimpleItem(
             new ItemStackBuilder(Material.BOOK)
                 .hideAll()
-                .name(Component.text("Umbral Skill Slots", Config.SwordColor.TEXT_ITEM_NAME))
+                .name(Component.text("Umbral Skill Slots", ColorConfig.TEXT_ITEM_NAME))
                 .lore(List.of(
-                    Component.text("Swap + Left + Left / Right / Swap", Config.SwordColor.TEXT_ITEM_CONTROLS),
-                    Component.text("  Activate Umbral Skill slots 1, 2, or 3.", Config.SwordColor.TEXT_ITEM_BASE)
+                    Component.text("Swap + Left + Left / Right / Swap", ColorConfig.TEXT_ITEM_CONTROLS),
+                    Component.text("  Activate Umbral Skill slots 1, 2, or 3.", ColorConfig.TEXT_ITEM_BASE)
                 ))
                 .build()
         );
@@ -194,9 +195,9 @@ public class MovesetMenu extends Menu {
             .hideAll()
             .name(Component.text(
                 "Movement: " + (enabled ? "ON" : "OFF"),
-                enabled ? Config.SwordColor.TEXT_ITEM_HEADER : Config.SwordColor.TEXT_COOL_DARK,
+                enabled ? ColorConfig.TEXT_ITEM_HEADER : ColorConfig.TEXT_COOL_DARK,
                 TextDecoration.BOLD))
-            .lore(List.of(Component.text("Click to toggle dash inputs.", Config.SwordColor.TEXT_ITEM_BASE)))
+            .lore(List.of(Component.text("Click to toggle dash inputs.", ColorConfig.TEXT_ITEM_BASE)))
             .build();
     }
 }

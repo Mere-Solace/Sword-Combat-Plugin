@@ -5,7 +5,7 @@ import java.util.HashSet;
 import org.bukkit.entity.LivingEntity;
 
 import btm.sword.combat.style.AttackProfile;
-import btm.sword.config.Config;
+import btm.sword.config.section.CombatConfig;
 import btm.sword.umbral.UmbralBlade;
 import btm.sword.umbral.presentation.BladeDisplay;
 import btm.sword.util.entity.HitboxUtil;
@@ -48,8 +48,8 @@ public class UmbralBladeAttack extends ItemDisplayAttack {
             return new HashSet<>();
         }
 
-        double secantRadius = Config.Combat.HITBOXES_SECANT_RADIUS;
-        double rangeSquared = Config.Combat.UMBRAL_BLADE_ATTACK_RANGE_SQUARED;
+        double secantRadius = CombatConfig.HITBOXES_SECANT_RADIUS;
+        double rangeSquared = CombatConfig.UMBRAL_BLADE_ATTACK_RANGE_SQUARED;
         return HitboxUtil.secant(origin, attackLocation, secantRadius,
             entity -> filter.test(entity) && entity.getLocation().distanceSquared(attackLocation) < rangeSquared);
     }

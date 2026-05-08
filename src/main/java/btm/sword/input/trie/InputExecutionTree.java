@@ -14,7 +14,7 @@ import java.util.function.Supplier;
 
 import javax.annotation.Nullable;
 
-import btm.sword.config.Config;
+import btm.sword.config.section.ColorConfig;
 import btm.sword.entity.player.SwordPlayer;
 import btm.sword.input.InputType;
 import btm.sword.runtime.scheduler.SwordScheduler;
@@ -107,7 +107,7 @@ public class InputExecutionTree {
         currentAttempts = 0; // successful attempt
 
         baseSequenceToDisplay = baseSequenceToDisplay.append(Component.text(inputToString(input),
-            Config.SwordColor.TITLE_INPUT_STRING, TextDecoration.BOLD));
+            ColorConfig.TITLE_INPUT_STRING, TextDecoration.BOLD));
 
         currentNode = next;
 
@@ -126,7 +126,7 @@ public class InputExecutionTree {
             }
             else if (!alreadyAppendedArrow) {
                 baseSequenceToDisplay = baseSequenceToDisplay.append(Component.text(" ➞ ",
-                    Config.SwordColor.TITLE_INPUT_STRING, TextDecoration.ITALIC));
+                    ColorConfig.TITLE_INPUT_STRING, TextDecoration.ITALIC));
                 alreadyAppendedArrow = true;
             }
 
@@ -155,7 +155,7 @@ public class InputExecutionTree {
             }
 
             TextColor hudColor = switch (readiness) {
-                case READY -> Config.SwordColor.TEXT_ITEM_BASE;
+                case READY -> ColorConfig.TEXT_ITEM_BASE;
                 case ON_COOLDOWN -> {
                     long elapsed = System.currentTimeMillis() - action.getTimeLastExecuted();
                     long total = action.calcCooldown(owner);
@@ -169,7 +169,7 @@ public class InputExecutionTree {
                         : 1f;
                     yield InputActionExecutor.soulfireStatusColor(t);
                 }
-                case DISABLED -> Config.SwordColor.TEXT_COOL_DARK;
+                case DISABLED -> ColorConfig.TEXT_COOL_DARK;
             };
             TextDecoration hudDeco = (readiness == InputActionExecutor.ReadinessState.READY)
                 ? TextDecoration.BOLD : TextDecoration.STRIKETHROUGH;
@@ -177,7 +177,7 @@ public class InputExecutionTree {
             potentialInputSelectionText = potentialInputSelectionText
                 .append(Component.text(inputToString(entry.getKey()), hudColor, hudDeco))
                 .append(it.hasNext() ?
-                    Component.text(", ", Config.SwordColor.TEXT_COOL_DARK) :
+                    Component.text(", ", ColorConfig.TEXT_COOL_DARK) :
                     Component.text(""));
             inputAccepted = true;
         }

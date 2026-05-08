@@ -13,7 +13,7 @@ import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.events.PacketListener;
 
 import btm.sword.Sword;
-import btm.sword.config.Config;
+import btm.sword.config.section.DebugConfig;
 import btm.sword.util.misc.Debug;
 
 /**
@@ -74,7 +74,7 @@ public class MovementListener implements PacketListener {
             event.getPacketType() == PacketType.Play.Client.GROUND ||
             event.getPacketType() == PacketType.Play.Client.ARM_ANIMATION) {
 
-            if (Config.Debug.LOGGING_VERBOSE_LISTENER) {
+            if (DebugConfig.LOGGING_VERBOSE_LISTENER) {
                 Debug.listener("Received a packet.\nPacketType=" + event.getPacketType());
             }
 

@@ -1,13 +1,15 @@
-package btm.sword.menu;
+package btm.sword.menu.dev;
 
 import java.util.List;
 
 import org.bukkit.entity.Player;
 
-import btm.sword.config.Config;
+import btm.sword.config.section.ColorConfig;
 import btm.sword.entity.player.SwordPlayer;
 import btm.sword.item.core.ItemStackBuilder;
 import btm.sword.item.core.LibraryCategory;
+import btm.sword.menu.Menu;
+import btm.sword.menu.selection.ItemLibraryCategoryMenu;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -73,7 +75,7 @@ public class ItemLibraryMenu extends Menu {
         int count = cat.getItems().size();
         Component countLine = count == 0
             ? Component.text("No items yet", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false)
-            : Component.text(count + " item" + (count == 1 ? "" : "s"), Config.SwordColor.TEXT_COOL)
+            : Component.text(count + " item" + (count == 1 ? "" : "s"), ColorConfig.TEXT_COOL)
                 .decoration(TextDecoration.ITALIC, false);
 
         return new SimpleItem(

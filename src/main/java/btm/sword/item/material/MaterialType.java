@@ -6,7 +6,7 @@ import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
 
-import btm.sword.config.Config;
+import btm.sword.config.section.ColorConfig;
 import btm.sword.item.core.ItemStackBuilder;
 import btm.sword.item.core.KeyRegistry;
 import net.kyori.adventure.text.Component;
@@ -30,9 +30,9 @@ public enum MaterialType {
         "Metal Scrap",
         Material.NETHERITE_SCRAP,
         List.of(
-            Component.text("A fragment of ancient alloy.", Config.SwordColor.TEXT_ITEM_BASE)
+            Component.text("A fragment of ancient alloy.", ColorConfig.TEXT_ITEM_BASE)
                 .decoration(TextDecoration.ITALIC, false),
-            Component.text("Used in advanced forging recipes.", Config.SwordColor.TEXT_ITEM_BASE)
+            Component.text("Used in advanced forging recipes.", ColorConfig.TEXT_ITEM_BASE)
                 .decoration(TextDecoration.ITALIC, false)
         )
     );
@@ -61,7 +61,7 @@ public enum MaterialType {
 
     /** @return the display name {@link Component} for this material. */
     public Component displayName() {
-        return Component.text(displayName, Config.SwordColor.TEXT_COOL)
+        return Component.text(displayName, ColorConfig.TEXT_COOL)
             .decoration(TextDecoration.ITALIC, false)
             .decoration(TextDecoration.BOLD, false);
     }

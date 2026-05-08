@@ -5,7 +5,7 @@ import org.bukkit.util.Vector;
 
 import btm.sword.combat.attack.Blockability;
 import btm.sword.combat.hit.HitValuePacket;
-import btm.sword.config.Config;
+import btm.sword.config.section.CombatConfig;
 import btm.sword.entity.base.Combatant;
 import btm.sword.entity.base.SwordEntity;
 import btm.sword.entity.player.SwordPlayer;
@@ -24,7 +24,7 @@ import btm.sword.util.sound.SwordSoundType;
  * <h2>Block flow</h2>
  * <ol>
  *   <li>RIGHT pressed → {@link #startBlock} sets blocking and starts soulfire drain</li>
- *   <li>SWAP pressed within the trie timeout ({@link Config.Combat#PARRY_AVAILABLE_MS}) → {@link #parryAttempt}
+ *   <li>SWAP pressed within the trie timeout ({@link CombatConfig#PARRY_AVAILABLE_MS}) → {@link #parryAttempt}
  *       ends the block, opens hit-detection window, and puts the shield on cooldown</li>
  *   <li>Incoming hit during parry window → {@link #resolveBlock} applies parry or block result</li>
  * </ol>
@@ -104,9 +104,9 @@ public final class BlockAction {
      * @param player the blocking player who triggered the parry
      */
     public static void parryAttempt(SwordPlayer player) {
-        player.setParryWindowEnd(System.currentTimeMillis() + Config.Combat.PARRY_WINDOW_MS);
+        player.setParryWindowEnd(System.currentTimeMillis() + CombatConfig.PARRY_WINDOW_MS);
         player.setBlocking(false);
-        player.disableShield(Config.Combat.PARRY_SHIELD_COOLDOWN_TICKS);
+        player.disableShield(CombatConfig.PARRY_SHIELD_COOLDOWN_TICKS);
 
         Prefab.Sounds.PARRY_ATTEMPT.playForAllInRadius(player.getLocation(), 15);
     }
@@ -140,7 +140,7 @@ public final class BlockAction {
      * @param defender the player who blocked
      */
     private static void applyBlockSuccess(SwordPlayer defender) {
-        defender.getAspects().soulfire().remove(Config.Combat.BLOCK_SOULFIRE_COST_ON_HIT);
+        defender.getAspects().soulfire().remove(CombatConfig.BLOCK_SOULFIRE_COST_ON_HIT);
         SoundUtil.playSound(defender.self(), SwordSoundType.ITEM_SHIELD_BLOCK,
             1.0f, 0.9f);
 
@@ -157,10 +157,10 @@ public final class BlockAction {
      * @param attacker the combatant whose hit was parried
      */
     private static void applyParrySuccess(SwordPlayer defender, Combatant attacker) {
-        defender.getAspects().soulfire().add(Config.Combat.PARRY_SOULFIRE_GAIN);
+        defender.getAspects().soulfire().add(CombatConfig.PARRY_SOULFIRE_GAIN);
         SoundUtil.playSound(defender.self(), SwordSoundType.ITEM_SHIELD_BLOCK,
             1.5f, 2.0f);
-        ActionCaster.cast(attacker, Config.Combat.PARRY_STAGGER_MS, () -> {});
+        ActionCaster.cast(attacker, CombatConfig.PARRY_STAGGER_MS, () -> {});
     }
 
     /**
@@ -189,12 +189,12 @@ public final class BlockAction {
      * @param player the player whose block was broken
      */
     public static void onBlockBroken(SwordPlayer player) {
-        player.disableShield(Config.Combat.EXHAUSTED_BLOCKING_COOLDOWN_TICKS);
+        player.disableShield(CombatConfig.EXHAUSTED_BLOCKING_COOLDOWN_TICKS);
         player.setBlocking(false);
         player.cancelBlockDrainTask();
 
         Prefab.Sounds.BLOCK_BROKEN.playForAllInRadius(player.getLocation(), 15);
 
-        ActionCaster.cast(player, Config.Combat.BLOCK_BREAK_STAGGER_MS, () -> {});
+        ActionCaster.cast(player, CombatConfig.BLOCK_BREAK_STAGGER_MS, () -> {});
     }
 }

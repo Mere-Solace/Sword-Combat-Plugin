@@ -37,7 +37,12 @@ import btm.sword.action.throwing.types.DroppedItem;
 import btm.sword.combat.affliction.Affliction;
 import btm.sword.combat.hit.HitValuePacket;
 import btm.sword.combat.simulation.EntitySnapshotMap;
-import btm.sword.config.Config;
+import btm.sword.config.section.AudioConfig;
+import btm.sword.config.section.CombatConfig;
+import btm.sword.config.section.DebugConfig;
+import btm.sword.config.section.DirectionConfig;
+import btm.sword.config.section.DisplayConfig;
+import btm.sword.config.section.EntityConfig;
 import btm.sword.entity.arbiter.SwordEntityArbiter;
 import btm.sword.entity.aspect.AspectType;
 import btm.sword.entity.player.SwordPlayer;
@@ -297,7 +302,7 @@ public abstract class SwordEntity {
 
 //        if (self().getType() == EntityType.ITEM_DISPLAY || self().getType() == EntityType.ITEM) return;
 
-        statusDisplay = (TextDisplay) self().getWorld().spawnEntity(eyeLoc().setDirection(Config.Direction.north()), EntityType.TEXT_DISPLAY);
+        statusDisplay = (TextDisplay) self().getWorld().spawnEntity(eyeLoc().setDirection(DirectionConfig.north()), EntityType.TEXT_DISPLAY);
         if (self() instanceof Player p) {
             p.hideEntity(Sword.getInstance(), statusDisplay);
         }
@@ -314,8 +319,8 @@ public abstract class SwordEntity {
         );
         statusDisplay.setShadowed(true);
         statusDisplay.setBrightness(new Display.Brightness(
-            btm.sword.config.Config.Display.STATUS_DISPLAY_BLOCK_BRIGHTNESS,
-            btm.sword.config.Config.Display.STATUS_DISPLAY_SKY_BRIGHTNESS
+            DisplayConfig.STATUS_DISPLAY_BLOCK_BRIGHTNESS,
+            DisplayConfig.STATUS_DISPLAY_SKY_BRIGHTNESS
         ));
         statusDisplay.setPersistent(false);
 
@@ -584,7 +589,7 @@ public abstract class SwordEntity {
 
         Prefab.Particles.TEST_HIT.display(getChestLocation());
         SoundUtil.playSound(source.self(), SwordSoundType.ENTITY_PLAYER_ATTACK_STRONG,
-            Config.Audio.ENTITY_HIT_CONNECT_VOLUME, Config.Audio.ENTITY_HIT_CONNECT_PITCH);
+            AudioConfig.ENTITY_HIT_CONNECT_VOLUME, AudioConfig.ENTITY_HIT_CONNECT_PITCH);
 
         self.setVelocity(knockbackVelocity);
 
@@ -617,8 +622,8 @@ public abstract class SwordEntity {
             shardsLostDuringToughnessBreak += baseNumShards;
 
 
-            if (shardsLostDuringToughnessBreak >= Config.Combat.SHARDS_LOST_PERCENT_TOUGHNESS_RESET * aspects.shards().effectiveMaxValue()) {
-                aspects.toughness().setCurPercent(Config.Combat.TOUGHNESS_RECHARGE_PERCENT);
+            if (shardsLostDuringToughnessBreak >= CombatConfig.SHARDS_LOST_PERCENT_TOUGHNESS_RESET * aspects.shards().effectiveMaxValue()) {
+                aspects.toughness().setCurPercent(CombatConfig.TOUGHNESS_RECHARGE_PERCENT);
             }
         }
 
@@ -783,8 +788,8 @@ public abstract class SwordEntity {
      */
     public void onToughnessBroken() {
         toughnessBroken = true;
-        aspects.toughness().setEffAmountPercent(Config.Entity.HIT_TOUGH_BREAK_RECHARGE_AMOUNT_PERCENT);
-        aspects.toughness().setEffPeriodPercent(Config.Entity.HIT_TOUGH_BREAK_RECHARGE_PERIOD_PERCENT);
+        aspects.toughness().setEffAmountPercent(EntityConfig.HIT_TOUGH_BREAK_RECHARGE_AMOUNT_PERCENT);
+        aspects.toughness().setEffPeriodPercent(EntityConfig.HIT_TOUGH_BREAK_RECHARGE_PERIOD_PERCENT);
         TimeArbiter.runTimeIndependentBukkitTaskOnTimer(
             null,
             null,
@@ -799,7 +804,7 @@ public abstract class SwordEntity {
                 }
             ),
             new PredicateRunnablePair(
-                () -> aspects.toughness().curPercent() > Config.Entity.HIT_TOUGH_BREAK_RECHARGE_CUTOFF_PERCENT,
+                () -> aspects.toughness().curPercent() > EntityConfig.HIT_TOUGH_BREAK_RECHARGE_CUTOFF_PERCENT,
                 () -> {
                     aspects.toughness().setEffAmountPercent(1f);
                     aspects.toughness().setEffPeriodPercent(1f);
@@ -842,12 +847,12 @@ public abstract class SwordEntity {
 
     /**
      * Sends a debug message to this entity's chat and to the server console,
-     * gated by {@link Config.Debug#LOGGING_VERBOSE_INVENTORY}.
+     * gated by {@link DebugConfig#LOGGING_VERBOSE_INVENTORY}.
      *
      * @param message the inventory debug string to emit
      */
     public void inventoryInfo(String message) {
-        if (Config.Debug.LOGGING_VERBOSE_INVENTORY) {
+        if (DebugConfig.LOGGING_VERBOSE_INVENTORY) {
             this.message(message);
             Sword.print("[Inventory][" + self.getName() + "] " + message);
         }
@@ -893,7 +898,7 @@ public abstract class SwordEntity {
             // TODO: Convert this into a StuckItem
 
             if (!itemStack.isEmpty()) {
-                Vector dropVel = Config.Direction.down().multiply(0.5);
+                Vector dropVel = DirectionConfig.down().multiply(0.5);
 
                 DroppedItem stuck = new DroppedItem(getChestLocation(), dropVel, itemStack);
                 stuck.register();

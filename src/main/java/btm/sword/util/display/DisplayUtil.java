@@ -9,7 +9,8 @@ import org.bukkit.entity.Display;
 import org.bukkit.entity.ItemDisplay;
 import org.bukkit.util.Vector;
 
-import btm.sword.config.Config;
+import btm.sword.config.section.DirectionConfig;
+import btm.sword.config.section.DisplayConfig;
 import btm.sword.entity.base.SwordEntity;
 import btm.sword.runtime.scheduler.PredicateRunnablePair;
 import btm.sword.runtime.scheduler.TimeArbiter;
@@ -67,9 +68,9 @@ public final class DisplayUtil {
         Consumer<T> callback, T toConsume) {
 
         double originalYaw = Math.toRadians(entity.self().getBodyYaw());
-        Vector offset = Config.Direction.up().multiply(heightOffset);
+        Vector offset = DirectionConfig.up().multiply(heightOffset);
 
-        itemDisplay.setBillboard(Config.Display.ITEM_DISPLAY_FOLLOW_BILLBOARD_MODE);
+        itemDisplay.setBillboard(DisplayConfig.ITEM_DISPLAY_FOLLOW_BILLBOARD_MODE);
 
         AtomicInteger iteration = new AtomicInteger(0);
         return TimeArbiter.runTimeBoundBukkitTaskOnTimer(
@@ -87,11 +88,11 @@ public final class DisplayUtil {
                     DisplayUtil.class, 214
                 );
 
-                if (iteration.incrementAndGet() % Config.Display.ITEM_DISPLAY_FOLLOW_PARTICLE_INTERVAL == 0)
+                if (iteration.incrementAndGet() % DisplayConfig.ITEM_DISPLAY_FOLLOW_PARTICLE_INTERVAL == 0)
                     Prefab.Particles.BLEED.display(l);
             },
             null,
-            0,  Config.Display.ITEM_DISPLAY_FOLLOW_UPDATE_INTERVAL,
+            0,  DisplayConfig.ITEM_DISPLAY_FOLLOW_UPDATE_INTERVAL,
             DisplayUtil.class, "itemDisplayFollow",
             new PredicateRunnablePair(
                 () -> entity.isDead() || itemDisplay.isDead() || itemDisplay.getItemStack().getType().isAir(),

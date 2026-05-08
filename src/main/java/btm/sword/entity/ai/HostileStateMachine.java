@@ -6,7 +6,8 @@ import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 
-import btm.sword.config.Config;
+import btm.sword.config.section.DebugConfig;
+import btm.sword.config.section.HostileConfig;
 import btm.sword.entity.ai.state.ApproachState;
 import btm.sword.entity.ai.state.AttackReadyState;
 import btm.sword.entity.ai.state.AttackState;
@@ -46,14 +47,14 @@ public class HostileStateMachine extends StateMachine<Hostile> {
 
     @Override
     public void onAnyTransition() {
-        if (Config.Debug.LOGGING_VERBOSE_HOSTILE) {
+        if (DebugConfig.LOGGING_VERBOSE_HOSTILE) {
             context.broadcastMessage(20, "cur: " + currentState.name());
         }
     }
 
     @Override
     public void afterAnyTransition() {
-        if (Config.Debug.LOGGING_VERBOSE_HOSTILE) {
+        if (DebugConfig.LOGGING_VERBOSE_HOSTILE) {
             context.broadcastMessage(20, ">>> New State: " + currentState.name());
         }
     }
@@ -80,7 +81,7 @@ public class HostileStateMachine extends StateMachine<Hostile> {
                 if (h.getAiStateMachine().getState() instanceof FleeState) return false;
                 var attr = h.self().getAttribute(Attribute.MAX_HEALTH);
                 if (attr == null) return false;
-                return h.self().getHealth() / attr.getValue() < Config.Hostile.FLEE_HEALTH_FRACTION;
+                return h.self().getHealth() / attr.getValue() < HostileConfig.FLEE_HEALTH_FRACTION;
             },
             h -> {
                 h.setCurrentTarget(null);
@@ -133,7 +134,7 @@ public class HostileStateMachine extends StateMachine<Hostile> {
         addTransition(new Transition<>(
             ApproachState.class,
             SurroundState.class,
-            h -> h.getNearbyAlliesCount() >= Config.Hostile.SURROUND_MIN_ALLIES,
+            h -> h.getNearbyAlliesCount() >= HostileConfig.SURROUND_MIN_ALLIES,
             h -> {}
         ));
 
@@ -143,7 +144,7 @@ public class HostileStateMachine extends StateMachine<Hostile> {
             PreAttackState.class,
             h -> {
                 if (h.getCurrentTarget() == null || !h.getCurrentTarget().self().isValid()) return false;
-                return h.getCachedDistSqToTarget() < Config.Hostile.APPROACH_DISTANCE_SQUARED;
+                return h.getCachedDistSqToTarget() < HostileConfig.APPROACH_DISTANCE_SQUARED;
             },
             h -> {}
         ));
@@ -152,7 +153,7 @@ public class HostileStateMachine extends StateMachine<Hostile> {
         addTransition(new Transition<>(
             SurroundState.class,
             ApproachState.class,
-            h -> h.getNearbyAlliesCount() < Config.Hostile.SURROUND_MIN_ALLIES,
+            h -> h.getNearbyAlliesCount() < HostileConfig.SURROUND_MIN_ALLIES,
             h -> {}
         ));
 
@@ -179,7 +180,7 @@ public class HostileStateMachine extends StateMachine<Hostile> {
             h -> {
                 if (!h.isAttackDone() || h.getAttackPostRoll() != 0) return false;
                 if (h.getCurrentTarget() == null || !h.getCurrentTarget().self().isValid()) return false;
-                return h.getCachedDistSqToTarget() <= Config.Hostile.AGGRO_RANGE_SQUARED;
+                return h.getCachedDistSqToTarget() <= HostileConfig.AGGRO_RANGE_SQUARED;
             },
             h -> {}
         ));
@@ -191,7 +192,7 @@ public class HostileStateMachine extends StateMachine<Hostile> {
             h -> {
                 if (!h.isAttackDone() || h.getAttackPostRoll() != 1) return false;
                 if (h.getCurrentTarget() == null || !h.getCurrentTarget().self().isValid()) return false;
-                return h.getCachedDistSqToTarget() <= Config.Hostile.AGGRO_RANGE_SQUARED;
+                return h.getCachedDistSqToTarget() <= HostileConfig.AGGRO_RANGE_SQUARED;
             },
             h -> {}
         ));
@@ -203,7 +204,7 @@ public class HostileStateMachine extends StateMachine<Hostile> {
             h -> {
                 if (!h.isAttackDone() || h.getAttackPostRoll() != 2) return false;
                 if (h.getCurrentTarget() == null || !h.getCurrentTarget().self().isValid()) return false;
-                return h.getCachedDistSqToTarget() <= Config.Hostile.AGGRO_RANGE_SQUARED;
+                return h.getCachedDistSqToTarget() <= HostileConfig.AGGRO_RANGE_SQUARED;
             },
             h -> h.setCombo(true)
         ));
@@ -215,7 +216,7 @@ public class HostileStateMachine extends StateMachine<Hostile> {
             h -> {
                 if (!h.isAttackDone()) return false;
                 if (h.getCurrentTarget() == null || !h.getCurrentTarget().self().isValid()) return true;
-                return h.getCachedDistSqToTarget() > Config.Hostile.AGGRO_RANGE_SQUARED;
+                return h.getCachedDistSqToTarget() > HostileConfig.AGGRO_RANGE_SQUARED;
             },
             h -> {
                 h.setCurrentTarget(null);
@@ -235,7 +236,7 @@ public class HostileStateMachine extends StateMachine<Hostile> {
             h -> {
                 if (h.getOnGuardTimer() > 0) return false;
                 if (h.getCurrentTarget() == null || !h.getCurrentTarget().self().isValid()) return false;
-                return h.getCachedDistSqToTarget() <= Config.Hostile.AGGRO_RANGE_SQUARED;
+                return h.getCachedDistSqToTarget() <= HostileConfig.AGGRO_RANGE_SQUARED;
             },
             h -> {}
         ));
@@ -247,7 +248,7 @@ public class HostileStateMachine extends StateMachine<Hostile> {
             h -> {
                 if (h.getOnGuardTimer() > 0) return false;
                 if (h.getCurrentTarget() == null || !h.getCurrentTarget().self().isValid()) return true;
-                return h.getCachedDistSqToTarget() > Config.Hostile.AGGRO_RANGE_SQUARED;
+                return h.getCachedDistSqToTarget() > HostileConfig.AGGRO_RANGE_SQUARED;
             },
             h -> {
                 h.setCurrentTarget(null);
@@ -264,7 +265,7 @@ public class HostileStateMachine extends StateMachine<Hostile> {
             h -> {
                 if (h.getAttackReadyTimer() > 0) return false;
                 if (h.getCurrentTarget() == null || !h.getCurrentTarget().self().isValid()) return false;
-                return h.getCachedDistSqToTarget() <= Config.Hostile.AGGRO_RANGE_SQUARED;
+                return h.getCachedDistSqToTarget() <= HostileConfig.AGGRO_RANGE_SQUARED;
             },
             h -> {}
         ));
@@ -276,7 +277,7 @@ public class HostileStateMachine extends StateMachine<Hostile> {
             h -> {
                 if (h.getAttackReadyTimer() > 0) return false;
                 if (h.getCurrentTarget() == null || !h.getCurrentTarget().self().isValid()) return true;
-                return h.getCachedDistSqToTarget() > Config.Hostile.AGGRO_RANGE_SQUARED;
+                return h.getCachedDistSqToTarget() > HostileConfig.AGGRO_RANGE_SQUARED;
             },
             h -> {
                 h.setCurrentTarget(null);
@@ -293,7 +294,7 @@ public class HostileStateMachine extends StateMachine<Hostile> {
             h -> {
                 if (h.getRetreatTimer() > 0) return false;
                 if (h.getCurrentTarget() == null || !h.getCurrentTarget().self().isValid()) return false;
-                return h.getCachedDistSqToTarget() < Config.Hostile.AGGRO_RANGE_SQUARED;
+                return h.getCachedDistSqToTarget() < HostileConfig.AGGRO_RANGE_SQUARED;
             },
             h -> {}
         ));
@@ -305,7 +306,7 @@ public class HostileStateMachine extends StateMachine<Hostile> {
             h -> {
                 if (h.getRetreatTimer() > 0) return false;
                 if (h.getCurrentTarget() == null || !h.getCurrentTarget().self().isValid()) return true;
-                return h.getCachedDistSqToTarget() >= Config.Hostile.AGGRO_RANGE_SQUARED;
+                return h.getCachedDistSqToTarget() >= HostileConfig.AGGRO_RANGE_SQUARED;
             },
             h -> {
                 h.setCurrentTarget(null);
@@ -322,7 +323,7 @@ public class HostileStateMachine extends StateMachine<Hostile> {
             FleeState.class,
             IdleState.class,
             h -> {
-                double aggroRadius = Math.sqrt(Config.Hostile.AGGRO_RANGE_SQUARED);
+                double aggroRadius = Math.sqrt(HostileConfig.AGGRO_RANGE_SQUARED);
                 Collection<Entity> nearby = h.self().getWorld().getNearbyEntities(
                     h.self().getLocation(), aggroRadius, aggroRadius, aggroRadius,
                     e -> e instanceof Player
@@ -339,7 +340,7 @@ public class HostileStateMachine extends StateMachine<Hostile> {
             h -> {
                 if (h.getLodgedThrowItem() != null) return false;
                 if (h.getCurrentTarget() == null || !h.getCurrentTarget().self().isValid()) return false;
-                return h.getCachedDistSqToTarget() <= Config.Hostile.AGGRO_RANGE_SQUARED;
+                return h.getCachedDistSqToTarget() <= HostileConfig.AGGRO_RANGE_SQUARED;
             },
             h -> {}
         ));
@@ -351,7 +352,7 @@ public class HostileStateMachine extends StateMachine<Hostile> {
             h -> {
                 if (h.getLodgedThrowItem() != null) return false;
                 if (h.getCurrentTarget() == null || !h.getCurrentTarget().self().isValid()) return true;
-                return h.getCachedDistSqToTarget() > Config.Hostile.AGGRO_RANGE_SQUARED;
+                return h.getCachedDistSqToTarget() > HostileConfig.AGGRO_RANGE_SQUARED;
             },
             h -> {
                 h.setCurrentTarget(null);

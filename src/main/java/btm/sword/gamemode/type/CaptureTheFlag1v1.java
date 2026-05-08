@@ -8,7 +8,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.bukkit.Location;
 
-import btm.sword.config.Config;
+import btm.sword.config.section.CtfConfig;
 import btm.sword.entity.player.SwordPlayer;
 import btm.sword.gamemode.ctf.CtfTeam;
 import btm.sword.gamemode.ctf.FlagEntity;
@@ -24,16 +24,16 @@ import net.kyori.adventure.title.Title;
  * <h3>Rules</h3>
  * <ul>
  *   <li>Each team has a flag at their base. Carry the enemy flag back to your base to score.</li>
- *   <li>First team to {@link Config.Ctf#CAPTURES_TO_WIN} captures wins. If {@code CAPTURES_TO_WIN}
+ *   <li>First team to {@link CtfConfig#CAPTURES_TO_WIN} captures wins. If {@code CAPTURES_TO_WIN}
  *       is 0, the match runs for its full duration and the team with more captures at expiry wins.</li>
  *   <li>On death: the flag is dropped at the death location and a
- *       {@link Config.Ctf#RESPAWN_DELAY_SECONDS}-second respawn timer fires before the player
+ *       {@link CtfConfig#RESPAWN_DELAY_SECONDS}-second respawn timer fires before the player
  *       is returned to their team spawn.</li>
  * </ul>
  *
  * <h3>Capture detection</h3>
  * <p>Checked each tick: a carrier of the <em>enemy</em> flag standing within
- * {@link Config.Ctf#CAPTURE_RADIUS} blocks of their <em>own</em> team's spawn location scores.</p>
+ * {@link CtfConfig#CAPTURE_RADIUS} blocks of their <em>own</em> team's spawn location scores.</p>
  *
  * <h3>Solo / debug mode</h3>
  * <p>Supports a single player (RED team only) for testing flag mechanics without a second player.</p>
@@ -140,7 +140,7 @@ public class CaptureTheFlag1v1 extends Gamemode {
         if (redFlag.isCarriedBy(dead)) redFlag.drop(deathLoc);
         if (blueFlag.isCarriedBy(dead)) blueFlag.drop(deathLoc);
 
-        int delaySeconds = Config.Ctf.RESPAWN_DELAY_SECONDS;
+        int delaySeconds = CtfConfig.RESPAWN_DELAY_SECONDS;
         SwordScheduler.runBukkitTaskLater(() -> {
             dead.player().spigot().respawn();
             SwordScheduler.runBukkitTask(() -> {
@@ -170,7 +170,7 @@ public class CaptureTheFlag1v1 extends Gamemode {
 
             if (enemyFlag.getState() == FlagEntity.State.IDLE
                     && sp.player().getLocation().distance(team.enemy().getSpawnLocation())
-                        <= Config.Ctf.CAPTURE_RADIUS) {
+                        <= CtfConfig.CAPTURE_RADIUS) {
                 enemyFlag.pickup(sp);
             }
         }
@@ -183,7 +183,7 @@ public class CaptureTheFlag1v1 extends Gamemode {
 
             if (enemyFlag.isCarriedBy(sp)) {
                 Location ownBase = team.getSpawnLocation();
-                if (sp.player().getLocation().distance(ownBase) <= Config.Ctf.CAPTURE_RADIUS) {
+                if (sp.player().getLocation().distance(ownBase) <= CtfConfig.CAPTURE_RADIUS) {
                     score(team, sp, enemyFlag);
                 }
             }
@@ -203,7 +203,7 @@ public class CaptureTheFlag1v1 extends Gamemode {
             sp.message(captureMsg);
         }
 
-        int threshold = Config.Ctf.CAPTURES_TO_WIN;
+        int threshold = CtfConfig.CAPTURES_TO_WIN;
         if (threshold > 0 && newScore >= threshold) {
             stop();
         }

@@ -1,4 +1,4 @@
-package btm.sword.menu.item;
+package btm.sword.menu.button;
 
 import org.bukkit.Material;
 

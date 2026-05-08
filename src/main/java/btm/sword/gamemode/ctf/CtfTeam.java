@@ -12,7 +12,7 @@ import org.bukkit.block.banner.PatternType;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BannerMeta;
 
-import btm.sword.config.Config;
+import btm.sword.config.section.CtfConfig;
 import lombok.Getter;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -21,7 +21,7 @@ import net.kyori.adventure.text.format.TextDecoration;
 /**
  * Represents one of the two teams in a Capture the Flag match.
  * <p>
- * Each team owns a banner colour, a spawn location (read from {@link Config.Ctf}), and a
+ * Each team owns a banner colour, a spawn location (read from {@link CtfConfig}), and a
  * flag spawn location (same point — the base zone center). Call {@link #createFlagItem()} to
  * produce a patterned banner {@link ItemStack} suitable for a player helmet or an
  * {@link org.bukkit.entity.ArmorStand} helmet.
@@ -29,10 +29,10 @@ import net.kyori.adventure.text.format.TextDecoration;
  */
 public enum CtfTeam {
 
-    /** The red team. Spawn located at {@code Config.Ctf.RED_SPAWN_*}. */
+    /** The red team. Spawn located at {@code CtfConfig.RED_SPAWN_*}. */
     RED(DyeColor.RED, Material.RED_BANNER, NamedTextColor.RED),
 
-    /** The blue team. Spawn located at {@code Config.Ctf.BLUE_SPAWN_*}. */
+    /** The blue team. Spawn located at {@code CtfConfig.BLUE_SPAWN_*}. */
     BLUE(DyeColor.BLUE, Material.BLUE_BANNER, NamedTextColor.BLUE);
 
     /**
@@ -65,7 +65,7 @@ public enum CtfTeam {
     }
 
     /**
-     * Returns the team's spawn location, read live from {@link Config.Ctf}.
+     * Returns the team's spawn location, read live from {@link CtfConfig}.
      * <p>
      * Falls back to the server's first world if the configured world name is not loaded.
      * </p>
@@ -73,13 +73,13 @@ public enum CtfTeam {
      * @return team spawn {@link Location}
      */
     public Location getSpawnLocation() {
-        World tryWorld = Bukkit.getWorld(Config.Ctf.SPAWN_WORLD);
+        World tryWorld = Bukkit.getWorld(CtfConfig.SPAWN_WORLD);
         World world = tryWorld == null ? Bukkit.getWorlds().getFirst() : tryWorld;
 
         if (this == RED) {
-            return new Location(world, Config.Ctf.RED_SPAWN_X, Config.Ctf.RED_SPAWN_Y, Config.Ctf.RED_SPAWN_Z);
+            return new Location(world, CtfConfig.RED_SPAWN_X, CtfConfig.RED_SPAWN_Y, CtfConfig.RED_SPAWN_Z);
         } else {
-            return new Location(world, Config.Ctf.BLUE_SPAWN_X, Config.Ctf.BLUE_SPAWN_Y, Config.Ctf.BLUE_SPAWN_Z);
+            return new Location(world, CtfConfig.BLUE_SPAWN_X, CtfConfig.BLUE_SPAWN_Y, CtfConfig.BLUE_SPAWN_Z);
         }
     }
 

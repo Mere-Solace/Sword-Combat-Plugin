@@ -6,7 +6,8 @@ import java.util.function.Supplier;
 import org.bukkit.Location;
 import org.bukkit.util.Vector;
 
-import btm.sword.config.Config;
+import btm.sword.config.section.DirectionConfig;
+import btm.sword.config.section.DisplayConfig;
 import btm.sword.entity.base.SwordEntity;
 import btm.sword.umbral.motion.BladeMotionContext;
 import btm.sword.umbral.motion.BladeMotionDriver;
@@ -22,7 +23,7 @@ import btm.sword.util.prefab.Prefab;
  * <p>
  * Reports {@link Status#DONE DONE} when the host becomes invalid or the externally-supplied
  * {@code exitCondition} returns {@code true}. Visual flair (bleed particles every
- * {@link Config.Display#ITEM_DISPLAY_FOLLOW_PARTICLE_INTERVAL}-th tick) is preserved from the
+ * {@link DisplayConfig#ITEM_DISPLAY_FOLLOW_PARTICLE_INTERVAL}-th tick) is preserved from the
  * original utility.
  */
 public final class ImpalementFollowDriver implements BladeMotionDriver {
@@ -68,7 +69,7 @@ public final class ImpalementFollowDriver implements BladeMotionDriver {
         if (host.isInvalid() || host.isDead()) return Status.DONE;
         if (exitCondition != null && Boolean.TRUE.equals(exitCondition.get())) return Status.DONE;
 
-        Vector verticalOffset = Config.Direction.up().multiply(heightOffset);
+        Vector verticalOffset = DirectionConfig.up().multiply(heightOffset);
         Location target = host.self().getLocation().add(verticalOffset);
 
         double currentYawRadians = Math.toRadians(followHead ? host.self().getYaw() : host.self().getBodyYaw());
@@ -76,7 +77,7 @@ public final class ImpalementFollowDriver implements BladeMotionDriver {
 
         context.teleportTo(target, currentDirection, teleportDuration);
 
-        if (context.tickCount() % Config.Display.ITEM_DISPLAY_FOLLOW_PARTICLE_INTERVAL == 0) {
+        if (context.tickCount() % DisplayConfig.ITEM_DISPLAY_FOLLOW_PARTICLE_INTERVAL == 0) {
             Prefab.Particles.BLEED.display(target);
         }
         return Status.RUNNING;

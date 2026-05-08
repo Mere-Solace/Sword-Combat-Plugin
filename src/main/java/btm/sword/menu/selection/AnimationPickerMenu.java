@@ -1,4 +1,4 @@
-package btm.sword.menu;
+package btm.sword.menu.selection;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,8 +13,9 @@ import btm.sword.config.Config;
 import btm.sword.config.ConfigManager;
 import btm.sword.entity.player.SwordPlayer;
 import btm.sword.item.core.ItemStackBuilder;
-import btm.sword.menu.item.ForwardItem;
-import btm.sword.menu.item.PreviousItem;
+import btm.sword.menu.Menu;
+import btm.sword.menu.button.ForwardItem;
+import btm.sword.menu.button.PreviousItem;
 import btm.sword.scene.animation.AnimationDef;
 import btm.sword.scene.animation.AnimationRegistry;
 import net.kyori.adventure.text.Component;
@@ -35,7 +36,7 @@ import xyz.xenondevs.invui.window.Window;
  * {@link Config.ConfigEntry}{@code <String>} to the selected anim key, saves the config,
  * and returns to the parent menu via {@code reopenMenu}.
  *
- * <p>Opened by {@link btm.sword.menu.item.ConfigEntryItem} when the user
+ * <p>Opened by {@link btm.sword.menu.button.ConfigEntryItem} when the user
  * clicks a {@code String}-typed config entry.</p>
  */
 public class AnimationPickerMenu extends Menu {

@@ -14,7 +14,9 @@ import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
 
 import btm.sword.action.throwing.ProjectileManager;
-import btm.sword.config.Config;
+import btm.sword.config.section.DetectionConfig;
+import btm.sword.config.section.DirectionConfig;
+import btm.sword.config.section.PhysicsConfig;
 import btm.sword.entity.arbiter.SwordEntityArbiter;
 import btm.sword.entity.base.SwordEntity;
 import lombok.Getter;
@@ -78,22 +80,22 @@ public class Projectile {
         Vector dir = direction.clone().normalize();
         this.velocity = dir.clone().multiply(speed);
 
-        double gravDamper = Config.Physics.THROWN_ITEMS_GRAVITY_DAMPER;
+        double gravDamper = PhysicsConfig.THROWN_ITEMS_GRAVITY_DAMPER;
         double horiz = Math.sqrt(dir.getX() * dir.getX() + dir.getZ() * dir.getZ());
         double phi = Math.atan2(dir.getY(), horiz);
         double forwardCoef = speed * Math.cos(phi);
         double upwardCoef = speed * Math.sin(phi);
         Vector flat = dir.clone().setY(0).normalize();
         Vector fwdVel = flat.clone().multiply(forwardCoef);
-        Vector upVel = Config.Direction.up().multiply(upwardCoef);
+        Vector upVel = DirectionConfig.up().multiply(upwardCoef);
 
         positionFunction = t -> flat.clone().multiply(forwardCoef * t)
-            .add(Config.Direction.up().multiply(
+            .add(DirectionConfig.up().multiply(
                 (upwardCoef * t) - (speed * (1.0 / gravDamper) * t * t)));
 
         velocityFunction = t -> fwdVel.clone()
             .add(upVel.clone()
-                .add(Config.Direction.up().multiply(-speed * (2.0 / gravDamper) * t)));
+                .add(DirectionConfig.up().multiply(-speed * (2.0 / gravDamper) * t)));
     }
 
     /**
@@ -156,8 +158,8 @@ public class Projectile {
         RayTraceResult result = world.rayTraceEntities(
             prevLoc,
             velocity,
-            dist * Config.Detection.THROW_HIT_CHECK_DIST_MULTIPLIER,
-            Config.Detection.THROW_HIT_CHECK_DIST_MULTIPLIER,
+            dist * DetectionConfig.THROW_HIT_CHECK_DIST_MULTIPLIER,
+            DetectionConfig.THROW_HIT_CHECK_DIST_MULTIPLIER,
             entity -> entity instanceof LivingEntity l && !l.isDead()
                 && !hitEntities.contains(entity.getUniqueId())
         );
@@ -180,7 +182,7 @@ public class Projectile {
         Location prevLoc = previousPosition.toLocation(world);
         RayTraceResult result = world.rayTraceBlocks(
             prevLoc, velocity,
-            dist * Config.Detection.THROW_GROUND_CHECK_MULTIPLIER,
+            dist * DetectionConfig.THROW_GROUND_CHECK_MULTIPLIER,
             FluidCollisionMode.NEVER, true);
 
         if (result == null || result.getHitBlock() == null || result.getHitBlock().getType().isAir()) return;

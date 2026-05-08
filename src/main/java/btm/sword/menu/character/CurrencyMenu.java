@@ -1,4 +1,4 @@
-package btm.sword.menu;
+package btm.sword.menu.character;
 
 import java.util.List;
 
@@ -7,11 +7,13 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.ClickType;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
+import org.jetbrains.annotations.NotNull;
 
-import btm.sword.config.Config;
+import btm.sword.config.section.ColorConfig;
 import btm.sword.entity.player.SwordPlayer;
 import btm.sword.item.core.ItemStackBuilder;
 import btm.sword.item.core.KeyRegistry;
+import btm.sword.menu.Menu;
 import btm.sword.playerdata.PlayerStorage;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -75,23 +77,11 @@ public class CurrencyMenu extends Menu {
     }
 
     private SimpleItem buildCreditDisplay(Player player, PlayerStorage storage) {
-        int credits = storage.getSteelCredits();
-
-        List<Component> lore = List.of(
-            Component.empty(),
-            Component.text("Balance: ", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false)
-                .append(Component.text(credits + " ✦", Config.SwordColor.TEXT_COOL)
-                    .decoration(TextDecoration.ITALIC, false)
-                    .decoration(TextDecoration.BOLD, false)),
-            Component.empty(),
-            Component.text("Shift + Left-click ", Config.SwordColor.TEXT_ITEM_CONTROLS).decoration(TextDecoration.ITALIC, false)
-                .append(Component.text("— Collect credit items from inventory", Config.SwordColor.TEXT_ITEM_BASE)
-                    .decoration(TextDecoration.ITALIC, false))
-        );
+        final List<Component> lore = getLoreComponents(storage);
 
         ItemStack displayItem = new ItemStackBuilder(Material.NETHERITE_INGOT)
             .hideAll()
-            .name(Component.text("Steel Credits", Config.SwordColor.TEXT_COOL, TextDecoration.BOLD)
+            .name(Component.text("Steel Credits", ColorConfig.TEXT_COOL, TextDecoration.BOLD)
                 .decoration(TextDecoration.ITALIC, false))
             .lore(lore)
             .build();
@@ -102,12 +92,28 @@ public class CurrencyMenu extends Menu {
             if (collected > 0) {
                 player.sendActionBar(
                     Component.text("[+", NamedTextColor.GREEN)
-                        .append(Component.text(collected + " ✦", Config.SwordColor.TEXT_COOL))
+                        .append(Component.text(collected + " ✦", ColorConfig.TEXT_COOL))
                         .append(Component.text("] → Currency Pouch", NamedTextColor.GREEN))
                 );
             }
             this.open();
         });
+    }
+
+    private static @NotNull List<Component> getLoreComponents(PlayerStorage storage) {
+        int credits = storage.getSteelCredits();
+
+        return List.of(
+            Component.empty(),
+            Component.text("Balance: ", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false)
+                .append(Component.text(credits + " ✦", ColorConfig.TEXT_COOL)
+                    .decoration(TextDecoration.ITALIC, false)
+                    .decoration(TextDecoration.BOLD, false)),
+            Component.empty(),
+            Component.text("Shift + Left-click ", ColorConfig.TEXT_ITEM_CONTROLS).decoration(TextDecoration.ITALIC, false)
+                .append(Component.text("— Collect credit items from inventory", ColorConfig.TEXT_ITEM_BASE)
+                    .decoration(TextDecoration.ITALIC, false))
+        );
     }
 
     /**

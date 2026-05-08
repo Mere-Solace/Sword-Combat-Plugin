@@ -1,8 +1,10 @@
 package btm.sword.join;
 
-import java.util.Optional;
+import java.util.HashMap;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
@@ -16,15 +18,25 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.util.Vector;
 
-import btm.sword.config.Config;
+import btm.sword.Sword;
+import btm.sword.config.section.JoinSequenceConfig;
+import btm.sword.config.section.MenuGridConfig;
 import btm.sword.entity.arbiter.SwordEntityArbiter;
 import btm.sword.entity.player.SwordPlayer;
+import btm.sword.join.menu.JoinRouterMenu;
 import btm.sword.playerdata.PlayerData;
 import btm.sword.playerdata.PlayerDataManager;
+import btm.sword.runtime.scheduler.PredicateRunnablePair;
 import btm.sword.runtime.scheduler.SwordScheduler;
+import btm.sword.runtime.scheduler.TimeArbiter;
 import btm.sword.scene.camera.CameraSystem;
 import btm.sword.ui.bossbar.BossBarManager;
 import btm.sword.ui.scoreboard.ScoreboardManager;
+
+import org.spigotmc.event.player.PlayerSpawnLocationEvent;
+
+import xyz.xenondevs.invui.window.Window;
+import xyz.xenondevs.invui.window.WindowManager;
 
 /**
  * Manages the full server-join lifecycle for each player.
@@ -36,7 +48,7 @@ import btm.sword.ui.scoreboard.ScoreboardManager;
  *   <li><b>Stage</b> (deferred 1 tick) — claim a {@link MenuSlotGrid} dark-room slot,
  *       teleport the player there, set them invisible and zero their velocity. The player
  *       waits here while the client loads chunks and terrain.</li>
- *   <li><b>Route</b> (deferred {@link Config.MenuGrid#LOADING_WAIT_MS} after staging) —
+ *   <li><b>Route</b> (deferred {@link MenuGridConfig#LOADING_WAIT_MS} after staging) —
  *       check the player's {@link PlayerData#isJoinSequenceCompleted()} flag and send them
  *       to either:
  *       <ul>
@@ -52,27 +64,40 @@ import btm.sword.ui.scoreboard.ScoreboardManager;
  */
 public final class ServerJoinArbiter implements Listener {
 
+    private static final HashMap<UUID, Integer> joins = new HashMap<>();
+
     /** Time (ms) after join before staging the player in their dark-room slot. */
     private static final int STAGE_DELAY_MS = 50;
 
-    /**
-     * Registers the player with core systems, then defers the staging + routing sequence.
-     *
-     * @param event the join event
-     */
-    @EventHandler(priority = EventPriority.NORMAL)
-    public void onPlayerJoin(PlayerJoinEvent event) {
+    @EventHandler
+    public void onSpawnLocation(PlayerSpawnLocationEvent event) {
         Player player = event.getPlayer();
         UUID uuid = player.getUniqueId();
+
+        MenuSlotGrid.acquireSlot(uuid).ifPresentOrElse(
+            event::setSpawnLocation,
+            () -> {} // put player into a waiting loop that checks for an open slot.
+        );
+
+        joins.merge(uuid, 1, Integer::sum); // either add a new entry with 1 join, or sum the joins
+
+
 
         SwordEntityArbiter.register(player);
         PlayerDataManager.register(player);
 
         SwordScheduler.runBukkitTaskLater(() -> {
-            if (!player.isOnline()) return;
-            stagePlayer(player, uuid);
+//            if (!player.isValid()) return;
+            try {
+                SwordEntityArbiter.getOrAdd(player).message("Joins: " + joins.get(uuid));
+                stagePlayer(player, uuid);
+            }
+            catch (Exception e) {
+
+            }
         }, STAGE_DELAY_MS, TimeUnit.MILLISECONDS);
     }
+
 
     /**
      * Releases the player's grid slot, stops any active camera controller, and cleans up
@@ -108,22 +133,65 @@ public final class ServerJoinArbiter implements Listener {
 
     /**
      * Teleports the player into their assigned dark-room staging slot, makes them invisible,
-     * and zeroes their velocity. Then waits {@link Config.MenuGrid#LOADING_WAIT_MS} for the
+     * and zeroes their velocity. Then waits {@link MenuGridConfig#LOADING_WAIT_MS} for the
      * client to finish loading before routing to the join sequence.
      */
     private static void stagePlayer(Player player, UUID uuid) {
-        Optional<Location> slot = MenuSlotGrid.acquireSlot(uuid);
-        slot.ifPresent(player::teleport);
+//        MenuSlotGrid.acquireSlot(uuid).ifPresent(player::teleport);
 
-        player.setGameMode(GameMode.SURVIVAL);
+        // clear and save their inventory, turn off all special item checks, disallow everything,
+        // fill their inventory with dark gray items
+
+        player.setGameMode(GameMode.CREATIVE);
         player.setInvisible(true);
-        player.setVelocity(new Vector(0, 0, 0));
+        Sword.getInstance().getLogger().info("player got staged");
 
         SwordScheduler.runBukkitTaskLater(() -> {
             if (!player.isOnline()) return;
-            SwordPlayer sp = (SwordPlayer) SwordEntityArbiter.getOrAdd(player);
-            routePlayer(sp);
-        }, Config.MenuGrid.LOADING_WAIT_MS, TimeUnit.MILLISECONDS);
+            beginMainMenuSelectionTask(player);
+        }, MenuGridConfig.LOADING_WAIT_MS, TimeUnit.MILLISECONDS);
+    }
+
+    /**
+     *
+     * @param player
+     */
+    private static void beginMainMenuSelectionTask(Player player) {
+        SwordPlayer swordPlayer = (SwordPlayer) SwordEntityArbiter.getOrAdd(player);
+        AtomicBoolean madeSelection = new AtomicBoolean(false);
+        AtomicReference<Window> openWindow = new AtomicReference<>();
+
+        // Selection Type that allows for dynamic resolving of location & world
+        // and maybe routing with Velocity (if need be, once we get there...)
+
+
+        // Join menu defines all 'places for player to go'
+        JoinRouterMenu joinRouterMenu = new JoinRouterMenu(swordPlayer, madeSelection);
+
+        // zero velocity and display a selection menu consistently
+        TimeArbiter.runTimeIndependentBukkitTaskOnTimer(
+            null,
+            () -> {
+                openWindow.set(WindowManager.getInstance().getOpenWindow(player));
+                if (openWindow.get() == null) {
+                    joinRouterMenu.open();
+                }
+                player.setVelocity(new Vector(0, 0, 0));
+            },
+            0, 50,
+            ServerJoinArbiter.class, "stagePlayer",
+            new PredicateRunnablePair(
+                madeSelection::get,
+                () -> {
+                    if (openWindow.get() != null) {
+                        openWindow.get().close();
+
+                        player.setGameMode(GameMode.SURVIVAL);
+                        player.setInvisible(false);
+                    }
+                }
+            )
+        );
     }
 
     /**
@@ -164,17 +232,17 @@ public final class ServerJoinArbiter implements Listener {
      * Returns {@code null} if the configured world cannot be resolved.
      */
     private static Location spawnpointLocation() {
-        World world = Bukkit.getWorld(Config.JoinSequence.WORLD);
+        World world = Bukkit.getWorld(JoinSequenceConfig.WORLD);
         if (world == null && !Bukkit.getWorlds().isEmpty()) {
             world = Bukkit.getWorlds().getFirst();
         }
         if (world == null) return null;
         return new Location(
             world,
-            Config.JoinSequence.SPAWNPOINT_X,
-            Config.JoinSequence.SPAWNPOINT_Y,
-            Config.JoinSequence.SPAWNPOINT_Z,
-            Config.JoinSequence.SPAWNPOINT_YAW,
+            JoinSequenceConfig.SPAWNPOINT_X,
+            JoinSequenceConfig.SPAWNPOINT_Y,
+            JoinSequenceConfig.SPAWNPOINT_Z,
+            JoinSequenceConfig.SPAWNPOINT_YAW,
             0.0f
         );
     }

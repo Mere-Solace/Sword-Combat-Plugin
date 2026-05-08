@@ -19,7 +19,6 @@ import org.bukkit.event.inventory.InventoryEvent;
 import org.bukkit.event.inventory.InventoryOpenEvent;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.player.PlayerGameModeChangeEvent;
-import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.inventory.ItemStack;
@@ -30,7 +29,8 @@ import btm.sword.Sword;
 import btm.sword.combat.dev.AnimationMode;
 import btm.sword.combat.dev.AttackDevSession;
 import btm.sword.combat.dev.DevMode;
-import btm.sword.config.Config;
+import btm.sword.config.section.ColorConfig;
+import btm.sword.config.section.DebugConfig;
 import btm.sword.entity.arbiter.SwordEntityArbiter;
 import btm.sword.entity.base.SwordEntity;
 import btm.sword.entity.player.DevSwordPlayer;
@@ -138,7 +138,7 @@ public class PlayerListener implements Listener {
                     storage.addMaterial(materialType, toStore);
                     sp.player().sendActionBar(
                         Component.text("[+", NamedTextColor.GREEN)
-                            .append(Component.text(toStore, Config.SwordColor.TEXT_COOL))
+                            .append(Component.text(toStore, ColorConfig.TEXT_COOL))
                             .append(Component.text(" ", NamedTextColor.GREEN))
                             .append(materialType.displayName())
                             .append(Component.text("] → Material Pouch", NamedTextColor.GREEN))
@@ -159,7 +159,7 @@ public class PlayerListener implements Listener {
                 storage.addCredits(total);
                 sp.player().sendActionBar(
                     Component.text("[+", NamedTextColor.GREEN)
-                        .append(Component.text(total + " ✦", Config.SwordColor.TEXT_COOL))
+                        .append(Component.text(total + " ✦", ColorConfig.TEXT_COOL))
                         .append(Component.text("] → Currency Pouch", NamedTextColor.GREEN))
                 );
                 event.setCancelled(true);
@@ -186,7 +186,7 @@ public class PlayerListener implements Listener {
      */
     @EventHandler
     public void inventoryEvent(InventoryEvent event) {
-        if (!Config.Debug.LOGGING_VERBOSE_INVENTORY) return;
+        if (!DebugConfig.LOGGING_VERBOSE_INVENTORY) return;
         for (HumanEntity human : event.getViewers()) {
             if (human instanceof Player) {
                 SwordEntityArbiter.get(human)
@@ -435,9 +435,4 @@ public class PlayerListener implements Listener {
     public void gameChangeEvent(PlayerGameModeChangeEvent event) {
         // intentionally empty
     }
-
-//    @EventHandler
-//    public void onItemBreak(PlayerItemBreakEvent event) {
-//
-//    }
 }

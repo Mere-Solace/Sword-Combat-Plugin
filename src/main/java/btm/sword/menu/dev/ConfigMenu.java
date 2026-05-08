@@ -12,11 +12,12 @@ import org.bukkit.entity.Player;
 
 import btm.sword.config.Config;
 import btm.sword.config.ConfigManager;
+import btm.sword.config.section.MenuConfig;
 import btm.sword.entity.player.SwordPlayer;
 import btm.sword.item.core.ItemStackBuilder;
 import btm.sword.menu.Menu;
-import btm.sword.menu.item.ForwardItem;
-import btm.sword.menu.item.PreviousItem;
+import btm.sword.menu.button.ForwardItem;
+import btm.sword.menu.button.PreviousItem;
 import btm.sword.util.misc.ChatInputCapture;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -43,30 +44,30 @@ import xyz.xenondevs.invui.window.Window;
  */
 public class ConfigMenu extends Menu {
 
-    /** Section-icon suppliers — each reads the live {@link Config.Menu} field so hot-reload is reflected. */
+    /** Section-icon suppliers — each reads the live {@link MenuConfig} field so hot-reload is reflected. */
     private static final Map<String, Supplier<Material>> SECTION_MATERIALS = new LinkedHashMap<>();
     static {
-        SECTION_MATERIALS.put("umbral",        () -> Config.Menu.UMBRAL_ICON);
-        SECTION_MATERIALS.put("umbral-blade",   () -> Config.Menu.UMBRAL_BLADE_ICON);
-        SECTION_MATERIALS.put("hostile",       () -> Config.Menu.HOSTILE_ICON);
-        SECTION_MATERIALS.put("grab",          () -> Config.Menu.GRAB_ICON);
-        SECTION_MATERIALS.put("debug",         () -> Config.Menu.DEBUG_ICON);
-        SECTION_MATERIALS.put("world",         () -> Config.Menu.WORLD_ICON);
-        SECTION_MATERIALS.put("movement",      () -> Config.Menu.MOVEMENT_ICON);
-        SECTION_MATERIALS.put("entity",        () -> Config.Menu.ENTITY_ICON);
-        SECTION_MATERIALS.put("audio",         () -> Config.Menu.AUDIO_ICON);
-        SECTION_MATERIALS.put("detection",     () -> Config.Menu.DETECTION_ICON);
-        SECTION_MATERIALS.put("display",       () -> Config.Menu.DISPLAY_ICON);
-        SECTION_MATERIALS.put("timing",        () -> Config.Menu.TIMING_ICON);
-        SECTION_MATERIALS.put("combat",        () -> Config.Menu.COMBAT_ICON);
-        SECTION_MATERIALS.put("physics",       () -> Config.Menu.PHYSICS_ICON);
-        SECTION_MATERIALS.put("angle",         () -> Config.Menu.ANGLE_ICON);
-        SECTION_MATERIALS.put("angles",        () -> Config.Menu.ANGLES_ICON);
-        SECTION_MATERIALS.put("color",         () -> Config.Menu.COLOR_ICON);
-        SECTION_MATERIALS.put("attack_curves", () -> Config.Menu.ATTACK_CURVES_ICON);
-        SECTION_MATERIALS.put("materials",     () -> Config.Menu.MATERIALS_ICON);
-        SECTION_MATERIALS.put("particles",     () -> Config.Menu.PARTICLES_ICON);
-        SECTION_MATERIALS.put("animation",     () -> Config.Menu.SECTION_ICON);
+        SECTION_MATERIALS.put("umbral",        () -> MenuConfig.UMBRAL_ICON);
+        SECTION_MATERIALS.put("umbral-blade",  () -> MenuConfig.UMBRAL_BLADE_ICON);
+        SECTION_MATERIALS.put("hostile",       () -> MenuConfig.HOSTILE_ICON);
+        SECTION_MATERIALS.put("grab",          () -> MenuConfig.GRAB_ICON);
+        SECTION_MATERIALS.put("debug",         () -> MenuConfig.DEBUG_ICON);
+        SECTION_MATERIALS.put("world",         () -> MenuConfig.WORLD_ICON);
+        SECTION_MATERIALS.put("movement",      () -> MenuConfig.MOVEMENT_ICON);
+        SECTION_MATERIALS.put("entity",        () -> MenuConfig.ENTITY_ICON);
+        SECTION_MATERIALS.put("audio",         () -> MenuConfig.AUDIO_ICON);
+        SECTION_MATERIALS.put("detection",     () -> MenuConfig.DETECTION_ICON);
+        SECTION_MATERIALS.put("display",       () -> MenuConfig.DISPLAY_ICON);
+        SECTION_MATERIALS.put("timing",        () -> MenuConfig.TIMING_ICON);
+        SECTION_MATERIALS.put("combat",        () -> MenuConfig.COMBAT_ICON);
+        SECTION_MATERIALS.put("physics",       () -> MenuConfig.PHYSICS_ICON);
+        SECTION_MATERIALS.put("angle",         () -> MenuConfig.ANGLE_ICON);
+        SECTION_MATERIALS.put("angles",        () -> MenuConfig.ANGLES_ICON);
+        SECTION_MATERIALS.put("color",         () -> MenuConfig.COLOR_ICON);
+        SECTION_MATERIALS.put("attack_curves", () -> MenuConfig.ATTACK_CURVES_ICON);
+        SECTION_MATERIALS.put("materials",     () -> MenuConfig.MATERIALS_ICON);
+        SECTION_MATERIALS.put("particles",     () -> MenuConfig.PARTICLES_ICON);
+        SECTION_MATERIALS.put("animation",     () -> MenuConfig.SECTION_ICON);
     }
 
     /**
@@ -82,7 +83,7 @@ public class ConfigMenu extends Menu {
 
         // Group entries by section (first path segment before the first '.')
         Map<String, List<Config.ConfigEntry<?>>> sections = new LinkedHashMap<>();
-        for (Config.ConfigEntry<?> entry : Config.ENTRIES) {
+        for (Config.ConfigEntry<?> entry : Config.entries()) {
             String section = entry.path().contains(".")
                 ? entry.path().substring(0, entry.path().indexOf('.'))
                 : entry.path();
@@ -148,7 +149,7 @@ public class ConfigMenu extends Menu {
                         return;
                     }
                     String term = input.toLowerCase();
-                    List<Config.ConfigEntry<?>> matches = Config.ENTRIES.stream()
+                    List<Config.ConfigEntry<?>> matches = Config.entries().stream()
                         .filter(e -> e.path().toLowerCase().contains(term))
                         .collect(Collectors.toList());
                     new ConfigSectionMenu(swordPlayer, "search: " + term, matches).open();

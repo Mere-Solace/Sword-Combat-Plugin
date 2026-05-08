@@ -18,7 +18,7 @@ import org.bukkit.inventory.ItemStack;
 
 import com.destroystokyo.paper.event.player.PlayerAttackEntityCooldownResetEvent;
 
-import btm.sword.config.Config;
+import btm.sword.config.section.TimingConfig;
 import btm.sword.entity.arbiter.SwordEntityArbiter;
 import btm.sword.entity.player.SwordPlayer;
 import btm.sword.input.intent.InputIntent;
@@ -113,7 +113,7 @@ public class InputListener implements Listener {
         // the correct InventoryMode flags on the player.
         SwordScheduler.runBukkitTaskLater(
             () -> applyDecision(event, InputRouter.route(intent, player)),
-            Config.Timing.RIGHT_INTERACT_DELAY,
+            TimingConfig.RIGHT_INTERACT_DELAY,
             TimeUnit.MILLISECONDS
         );
     }

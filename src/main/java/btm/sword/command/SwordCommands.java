@@ -18,6 +18,7 @@ import btm.sword.Sword;
 import btm.sword.combat.def.ParticleDisplayLibrary;
 import btm.sword.config.Config;
 import btm.sword.config.ConfigManager;
+import btm.sword.config.section.DebugConfig;
 import btm.sword.entity.arbiter.SwordEntityArbiter;
 import btm.sword.entity.display.WeaponDisplayRegistry;
 import btm.sword.entity.mob.MobTypeRegistry;
@@ -295,7 +296,7 @@ public final class SwordCommands {
 
     /**
      * Handles {@code /sword dev skipload}.
-     * Toggles {@link Config.Debug#SKIP_DATA_LOAD} and immediately persists the change to config.yaml.
+     * Toggles {@link DebugConfig#SKIP_DATA_LOAD} and immediately persists the change to config.yaml.
      * Console-compatible — no player entity required.
      *
      * @param source the command source
@@ -304,11 +305,11 @@ public final class SwordCommands {
     private static int handleDevSkipLoad(CommandSourceStack source) {
         CommandSender sender = source.getSender();
         @SuppressWarnings("unchecked")
-        Config.ConfigEntry<Boolean> entry = (Config.ConfigEntry<Boolean>) Config.ENTRIES.stream()
+        Config.ConfigEntry<Boolean> entry = (Config.ConfigEntry<Boolean>) Config.entries().stream()
             .filter(e -> e.path().equals("debug.skip_data_load"))
             .findFirst()
             .orElseThrow();
-        boolean newValue = !Config.Debug.SKIP_DATA_LOAD;
+        boolean newValue = !DebugConfig.SKIP_DATA_LOAD;
         ConfigManager.getInstance().setValue(entry, newValue);
         ConfigManager.getInstance().saveConfig();
         sender.sendMessage(Component.text(
@@ -320,7 +321,7 @@ public final class SwordCommands {
 
     /**
      * Handles {@code /sword dev skipsave}.
-     * Toggles {@link Config.Debug#SKIP_DATA_SAVE} and immediately persists the change to config.yaml.
+     * Toggles {@link DebugConfig#SKIP_DATA_SAVE} and immediately persists the change to config.yaml.
      * Console-compatible — no player entity required.
      *
      * @param source the command source
@@ -329,11 +330,11 @@ public final class SwordCommands {
     private static int handleDevSkipSave(CommandSourceStack source) {
         CommandSender sender = source.getSender();
         @SuppressWarnings("unchecked")
-        Config.ConfigEntry<Boolean> entry = (Config.ConfigEntry<Boolean>) Config.ENTRIES.stream()
+        Config.ConfigEntry<Boolean> entry = (Config.ConfigEntry<Boolean>) Config.entries().stream()
             .filter(e -> e.path().equals("debug.skip_data_save"))
             .findFirst()
             .orElseThrow();
-        boolean newValue = !Config.Debug.SKIP_DATA_SAVE;
+        boolean newValue = !DebugConfig.SKIP_DATA_SAVE;
         ConfigManager.getInstance().setValue(entry, newValue);
         ConfigManager.getInstance().saveConfig();
         sender.sendMessage(Component.text(

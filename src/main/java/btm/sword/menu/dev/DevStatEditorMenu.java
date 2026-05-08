@@ -1,4 +1,4 @@
-package btm.sword.menu;
+package btm.sword.menu.dev;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,6 +16,8 @@ import btm.sword.entity.aspect.Resource;
 import btm.sword.entity.base.EntityAspects;
 import btm.sword.entity.player.SwordPlayer;
 import btm.sword.item.core.ItemStackBuilder;
+import btm.sword.menu.Menu;
+import btm.sword.menu.character.CharacterMenu;
 import btm.sword.util.misc.ChatInputCapture;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;

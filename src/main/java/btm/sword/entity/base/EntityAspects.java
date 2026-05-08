@@ -7,7 +7,7 @@ import java.util.function.Function;
 
 import org.bukkit.scheduler.BukkitTask;
 
-import btm.sword.config.Config;
+import btm.sword.config.section.ColorConfig;
 import btm.sword.entity.aspect.Aspect;
 import btm.sword.entity.aspect.AspectType;
 import btm.sword.entity.aspect.Resource;
@@ -348,8 +348,8 @@ public class EntityAspects {
     public List<Component> toComponentList() {
         List<Component> lines = new ArrayList<>();
 
-        TextColor r = Config.SwordColor.TEXT_RESOURCE_COLOR;
-        TextColor a = Config.SwordColor.TEXT_ASPECT_COLOR;
+        TextColor r = ColorConfig.TEXT_RESOURCE_COLOR;
+        TextColor a = ColorConfig.TEXT_ASPECT_COLOR;
 
         // Resources header
         lines.add(Component.text("Resources", NamedTextColor.GOLD, TextDecoration.BOLD));

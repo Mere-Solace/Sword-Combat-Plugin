@@ -13,7 +13,9 @@ import btm.sword.combat.dev.VolumeEditorMode;
 import btm.sword.combat.style.AttackProfile;
 import btm.sword.combat.style.AttackType;
 import btm.sword.combat.style.WeaponAttackStyle;
-import btm.sword.config.Config;
+import btm.sword.config.section.CombatConfig;
+import btm.sword.config.section.DebugConfig;
+import btm.sword.config.section.DirectionConfig;
 import btm.sword.entity.aspect.AspectType;
 import btm.sword.entity.base.Combatant;
 import btm.sword.entity.player.SwordPlayer;
@@ -85,7 +87,7 @@ public class AttackAction extends SwordAction {
             return;
         }
 
-        double dot = executor.dir().dot(Config.Direction.up());
+        double dot = executor.dir().dot(DirectionConfig.up());
 
         if (executor.isGrounded()) {
             switch (weaponAttackStyle) {
@@ -96,7 +98,7 @@ public class AttackAction extends SwordAction {
             ((SwordPlayer) executor).resetTree(); // can't combo aerials
 
             AttackProfile attacktype;
-            double downAirThreshold = Config.Combat.ATTACKS_DOWN_AIR_THRESHOLD;
+            double downAirThreshold = CombatConfig.ATTACKS_DOWN_AIR_THRESHOLD;
             if (dot < downAirThreshold) {
                 attacktype = weaponAttackStyle.downAir();
             }
@@ -120,9 +122,9 @@ public class AttackAction extends SwordAction {
         new SweepAttack(itemUsedInAttack, profile, orientWithPitch)
             .setAttackDuration(attacker -> (int) attacker.calcValueReductive(
                 AspectType.CELERITY,
-                Config.Combat.ATTACKS_CAST_TIMING_MIN_DURATION,
-                Config.Combat.ATTACKS_CAST_TIMING_MAX_DURATION,
-                Config.Combat.ATTACKS_CAST_TIMING_REDUCTION_RATE))
+                CombatConfig.ATTACKS_CAST_TIMING_MIN_DURATION,
+                CombatConfig.ATTACKS_CAST_TIMING_MAX_DURATION,
+                CombatConfig.ATTACKS_CAST_TIMING_REDUCTION_RATE))
             .setAttackConnectInstructions(
                 new ConsumerToConsumePair<>(
                     itemStack -> ItemUsageManager.damageItemStack(itemStack, 20, executor.self()),
@@ -135,7 +137,7 @@ public class AttackAction extends SwordAction {
     private static void fireWandDef(Combatant executor, AttackInstance def) {
         long startMs = System.currentTimeMillis();
         executor.launchAttack(def);
-        if (executor instanceof SwordPlayer sp && Config.Debug.VISUALIZATION_SHOW_HITBOXES) {
+        if (executor instanceof SwordPlayer sp && DebugConfig.VISUALIZATION_SHOW_HITBOXES) {
             VolumeEditorMode.startPlaybackVisualization(
                 sp.player(), def.getTrajectory(), startMs, def.getDurationMs(),
                 def.isLockOriginOnFire(), def.isOrientWithPitch());

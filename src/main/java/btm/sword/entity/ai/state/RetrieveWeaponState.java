@@ -6,7 +6,7 @@ import com.destroystokyo.paper.entity.ai.GoalType;
 
 import btm.sword.action.throwing.InteractiveItemArbiter;
 import btm.sword.action.throwing.types.ThrownItem;
-import btm.sword.config.Config;
+import btm.sword.config.section.HostileConfig;
 import btm.sword.entity.ai.HostileAIFacade;
 import btm.sword.entity.ai.MobGoalArbiter;
 import btm.sword.entity.ai.goal.LookAtTargetGoal;
@@ -20,7 +20,7 @@ import btm.sword.util.prefab.Prefab;
  * <p>Entered when a mob's thrown weapon lands and becomes lodged in the world.
  * Adds a {@link RetrieveWeaponGoal} to pathfind toward the item's display entity.
  * Each tick checks whether the mob is within pickup range
- * ({@link Config.Hostile#MOB_RETRIEVE_PICKUP_RANGE_SQUARED}); on proximity,
+ * ({@link btm.sword.config.section.HostileConfig#MOB_RETRIEVE_PICKUP_RANGE_SQUARED}); on proximity,
  * retrieves the item back into the mob's main hand.
  *
  * <p>Exits via FSM transition once {@code lodgedThrowItem} is cleared (either by pickup
@@ -54,7 +54,7 @@ public class RetrieveWeaponState extends HostileAIFacade {
         }
 
         double distSq = h.self().getLocation().distanceSquared(display.getLocation());
-        if (distSq <= Config.Hostile.MOB_RETRIEVE_PICKUP_RANGE_SQUARED) {
+        if (distSq <= HostileConfig.MOB_RETRIEVE_PICKUP_RANGE_SQUARED) {
             retrieveItem(h, lodged);
         }
     }
