@@ -34,7 +34,6 @@ nbdist/
 
 # Compiled class file
 *.class
-libs/
 
 # Log file
 *.log
