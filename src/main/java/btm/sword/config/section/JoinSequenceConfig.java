@@ -92,7 +92,47 @@ public final class JoinSequenceConfig {
     }
 
 
-    public static Location HUB_SPAWN = new Location(Bukkit.getWorlds().getFirst(), -271.5, 138, -1242.5);
-    static { register("join_sequence.hub_spawn", HUB_SPAWN, Location.class,
-        v -> HUB_SPAWN = v, Config::loadLocation); }
+    /** Destination for the {@code Hub} button — the central social area. */
+    public static Location DESTINATION_HUB =
+        new Location(Bukkit.getWorlds().getFirst(), -271.5, 138, -1242.5);
+
+    /** Destination for the {@code Quick-Join} button — the matchmaking waiting room. */
+    public static Location DESTINATION_QUICK_JOIN =
+        new Location(Bukkit.getWorlds().getFirst(), 0.5, 100, 0.5);
+
+    /** Destination for the {@code Adventure} button — the adventure-mode world entry point. */
+    public static Location DESTINATION_ADVENTURE =
+        new Location(Bukkit.getWorlds().getFirst(), 100.5, 100, 100.5);
+
+    /** Destination for the {@code Roguelike} button — the roguelike-mode world entry point. */
+    public static Location DESTINATION_ROGUELIKE =
+        new Location(Bukkit.getWorlds().getFirst(), -100.5, 100, -100.5);
+
+    /**
+     * Total duration (ms) of the routing countdown after the player picks a destination.
+     * The player is held in place with the title-countdown overlay for this long before
+     * they are teleported and handed their loadout.
+     */
+    public static int ROUTING_DURATION_MS = 5000;
+
+    /**
+     * Tick period (ms) for the routing countdown. The countdown title is refreshed once per
+     * period, and the total iteration count is {@code ROUTING_DURATION_MS / ROUTING_TICK_PERIOD_MS}.
+     */
+    public static int ROUTING_TICK_PERIOD_MS = 1000;
+
+    static {
+        register("join_sequence.destination.hub", DESTINATION_HUB, Location.class,
+            v -> DESTINATION_HUB = v, Config::loadLocation);
+        register("join_sequence.destination.quick_join", DESTINATION_QUICK_JOIN, Location.class,
+            v -> DESTINATION_QUICK_JOIN = v, Config::loadLocation);
+        register("join_sequence.destination.adventure", DESTINATION_ADVENTURE, Location.class,
+            v -> DESTINATION_ADVENTURE = v, Config::loadLocation);
+        register("join_sequence.destination.roguelike", DESTINATION_ROGUELIKE, Location.class,
+            v -> DESTINATION_ROGUELIKE = v, Config::loadLocation);
+        register("join_sequence.routing.duration_ms", ROUTING_DURATION_MS, Integer.class,
+            v -> ROUTING_DURATION_MS = v, ConfigurationSection::getInt);
+        register("join_sequence.routing.tick_period_ms", ROUTING_TICK_PERIOD_MS, Integer.class,
+            v -> ROUTING_TICK_PERIOD_MS = v, ConfigurationSection::getInt);
+    }
 }
