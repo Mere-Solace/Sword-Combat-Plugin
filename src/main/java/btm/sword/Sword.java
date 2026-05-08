@@ -41,8 +41,9 @@ import btm.sword.input.binding.InputBindingsRegistrar;
 import btm.sword.input.binding.ItemInputDispatchTable;
 import btm.sword.input.transport.InputListener;
 import btm.sword.interaction.CustomInteractionManager;
+import btm.sword.join.JoinSessionArbiter;
 import btm.sword.join.MenuSlotGrid;
-import btm.sword.join.ServerJoinArbiter;
+import btm.sword.join.PlayerWaitingGate;
 import btm.sword.join.stash.InMemoryInventoryStashRepository;
 import btm.sword.join.stash.InventoryStashRepository;
 import btm.sword.menu.InventoryMenuManager;
@@ -110,7 +111,8 @@ public final class Sword extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new InputListener(), this);
         getServer().getPluginManager().registerEvents(new PlayerListener(), this);
         getServer().getPluginManager().registerEvents(new CustomInteractionListener(), this);
-        getServer().getPluginManager().registerEvents(new ServerJoinArbiter(), this);
+        getServer().getPluginManager().registerEvents(
+            new JoinSessionArbiter(new PlayerWaitingGate(inventoryStashRepository)), this);
         getServer().getPluginManager().registerEvents(new EntityListener(), this);
         getServer().getPluginManager().registerEvents(new DEUAnimationHook(), this);
         WeaponAnchorPacketHook.register();

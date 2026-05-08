@@ -122,16 +122,22 @@ public final class JoinSession {
     // ── Public transition API ─────────────────────────────────────────────────
 
     /**
-     * Schedules the deferred transition to {@link JoinPhase#WAITING} after the configured
-     * load-wait. Idempotent — repeat calls are ignored.
+     * Engages the {@link PlayerWaitingGate} immediately and schedules the deferred
+     * transition to {@link JoinPhase#WAITING} after the configured load-wait. Idempotent
+     * — repeat calls are ignored.
      *
-     * <p>The deferral exists because the spawn-location override sent to the client by
-     * {@code PlayerSpawnLocationEvent} needs a moment to propagate and for the staging
-     * chunk to load. {@link MenuGridConfig#LOADING_WAIT_MS} is the wait duration.</p>
+     * <p>The gate is engaged <em>on entry</em> to staging so the player's inventory,
+     * gamemode, blade, and {@link btm.sword.input.trie.ActivationContext} are locked down
+     * at the earliest possible moment. The deferred transition exists only to keep the
+     * router menu hidden until {@link MenuGridConfig#LOADING_WAIT_MS} elapses, so the
+     * client has time to receive the spawn-location packet and load chunks before the
+     * GUI appears.</p>
      */
     public void enterStaging() {
         if (terminated) return;
         if (phase != JoinPhase.STAGING) return;
+
+        gate.engage(swordPlayer);
 
         SwordScheduler.runBukkitTaskLater(() -> {
             if (terminated) return;
@@ -145,12 +151,12 @@ public final class JoinSession {
      * happy path) or from {@link JoinPhase#ROUTING} (sneak-cancel). No-op when already in
      * {@link JoinPhase#WAITING} or when the session has been terminated.
      *
-     * <p>From STAGING this engages the {@link PlayerWaitingGate}, opens a fresh router
-     * menu, and starts the waiting ticker.</p>
+     * <p>From STAGING this opens a fresh router menu and starts the waiting ticker. The
+     * gate has already been engaged in {@link #enterStaging()}.</p>
      *
      * <p>From ROUTING this cancels the in-flight countdown, clears the chosen destination,
-     * and opens a fresh router menu. The waiting ticker is already running and continues
-     * uninterrupted; the gate is already engaged.</p>
+     * and opens a fresh router menu. The waiting ticker continues uninterrupted; the gate
+     * is already engaged.</p>
      */
     public void enterWaiting() {
         if (terminated) return;
@@ -158,7 +164,6 @@ public final class JoinSession {
 
         switch (phase) {
             case STAGING -> {
-                gate.engage(swordPlayer);
                 phase = JoinPhase.WAITING;
                 waitingTicker = startWaitingTicker();
                 displayMenu();
