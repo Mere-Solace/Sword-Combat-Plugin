@@ -538,9 +538,17 @@ public class SwordPlayer extends Combatant {
      * based on the input execution tree. Handles interrupting throwing, grabbing, swapping,
      * and cooldowns.
      *
+     * <p><b>Hard waiting-phase gate.</b> If this player's activation context is
+     * {@link ActivationContext#WAITING}, this method returns immediately without dispatching
+     * to the input tree, ability cast paths, or cutscene handler. This is the second of two
+     * structural enforcement points (the first being the early return inside
+     * {@link btm.sword.input.intent.InputRouter#route}). It catches any callers that bypass
+     * the router — for example, programmatic re-entries from action code paths.</p>
+     *
      * @param input the input type from the player to process
      */
     public void act(InputType input) {
+        if (activationContext == ActivationContext.WAITING) return;
         if (ItemClassifier.isBlocked(getItemStackInHand(true))) return;
 
         if (activationContext == ActivationContext.CUTSCENE) {

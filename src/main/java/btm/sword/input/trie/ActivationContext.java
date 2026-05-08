@@ -54,7 +54,21 @@ public enum ActivationContext {
      * Only dashing (F→F, S→S) and the debug kill (D→D) remain accessible;
      * all combat, skill, and blade inputs are suppressed.
      */
-    BUILDING;
+    BUILDING,
+
+    /**
+     * Player is in the join-sequence waiting phase (dark-room staging slot, router menu open).
+     *
+     * <p><b>Hard invariant:</b> while a player is in this context the
+     * {@link btm.sword.input.intent.InputRouter} dispatches <em>no</em> intents — every
+     * {@code route(..)} call short-circuits to {@link btm.sword.input.transport.InputDecision#CANCEL}.
+     * No combat, blade, skill, ability, dash, swap, drop, or sneak action runs. This is
+     * structural enforcement at the dispatch chokepoint and is not opt-out per node.</p>
+     *
+     * <p>Set on enter staging by the join lifecycle; cleared on transition to {@link #NORMAL}
+     * when the player exits the routing phase.</p>
+     */
+    WAITING;
 
     /**
      * Returns a {@link Predicate} that passes only when the player's current context

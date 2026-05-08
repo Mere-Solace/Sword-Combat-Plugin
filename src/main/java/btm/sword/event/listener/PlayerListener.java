@@ -40,6 +40,7 @@ import btm.sword.gamemode.type.CaptureTheFlag1v1;
 import btm.sword.item.core.KeyRegistry;
 import btm.sword.item.material.MaterialType;
 import btm.sword.item.special.NonMovableItem;
+import btm.sword.join.WaitingPhaseGuard;
 import btm.sword.playerdata.PlayerStorage;
 import btm.sword.util.misc.ChatInputCapture;
 import btm.sword.util.misc.Debug;
@@ -119,6 +120,11 @@ public class PlayerListener implements Listener {
     @EventHandler
     public void onItemPickup(EntityPickupItemEvent event) {
         SwordEntity e = SwordEntityArbiter.getOrAdd(event.getEntity());
+
+        if (WaitingPhaseGuard.isLocked(e)) {
+            event.setCancelled(true);
+            return;
+        }
 
         if (!e.isAbleToPickup()) {
             event.setCancelled(true);
@@ -234,6 +240,13 @@ public class PlayerListener implements Listener {
      */
     @EventHandler
     public void inventoryDragEvent(InventoryDragEvent event) {
+        if (event.getWhoClicked() instanceof Player p) {
+            SwordEntity e = SwordEntityArbiter.getOrAdd(p);
+            if (WaitingPhaseGuard.isLocked(e)) {
+                event.setCancelled(true);
+                return;
+            }
+        }
         if (NonMovableItem.isNonMovable(event.getOldCursor())) {
             event.setCancelled(true);
         }
@@ -258,6 +271,13 @@ public class PlayerListener implements Listener {
             e.fillInStackTrace();
             return;
         }
+
+        if (WaitingPhaseGuard.isLocked(sp)) {
+            event.setCancelled(true);
+            event.setResult(Event.Result.DENY);
+            return;
+        }
+
         Debug.sendInventoryClickDebugMessage(event);
 
         if (sp.handleInventoryInput(event)) {
