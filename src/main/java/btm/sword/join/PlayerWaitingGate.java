@@ -91,6 +91,9 @@ public final class PlayerWaitingGate {
      *
      * <p>Order of operations:</p>
      * <ol>
+     *   <li>Suppress {@link SwordPlayer#setAllAnchoredItemUpkeep(boolean) anchored-item upkeep}
+     *       so the periodic {@code inventoryUpkeep} tick does not re-populate the main menu
+     *       button, ability slots, or storage buttons after we clear them.</li>
      *   <li>Snapshot the player's current 41-slot inventory and stash it under their UUID.</li>
      *   <li>Clear hotbar (0–8), offhand (40), and armour (36–39) to AIR.</li>
      *   <li>Fill main inventory (9–35) with black-stained-glass placeholder panes tagged
@@ -98,7 +101,8 @@ public final class PlayerWaitingGate {
      *   <li>Set {@link ActivationContext#WAITING} on the player — this engages the structural
      *       input-dispatch suppression at every chokepoint.</li>
      *   <li>Deactivate the umbral blade so any in-flight blade state terminates and no new
-     *       blade can spawn.</li>
+     *       blade can spawn. Nulling the blade reference also short-circuits the umbral-blade
+     *       link-anchor branch in {@code inventoryUpkeep}.</li>
      *   <li>Switch gamemode to creative and set invisible.</li>
      * </ol>
      *
@@ -108,6 +112,11 @@ public final class PlayerWaitingGate {
         Objects.requireNonNull(sp, "sp");
         Player player = sp.player();
         PlayerInventory inv = player.getInventory();
+
+        // Disable anchored-item upkeep BEFORE clearing the inventory so there is no race
+        // window in which the next 5-tick inventoryUpkeep fires between our clear and the
+        // suppression toggle and re-restores the special items.
+        sp.setAllAnchoredItemUpkeep(false);
 
         ItemStack[] snapshot = inv.getContents();
         stashRepository.stash(player.getUniqueId(), snapshot);
@@ -161,6 +170,11 @@ public final class PlayerWaitingGate {
         sp.activateUmbralBlade();
         sp.setActivationContext(ActivationContext.NORMAL);
 
+        // Re-enable anchored-item upkeep — the next inventoryUpkeep tick (≤250ms) will
+        // restore the main menu button, ability buttons, and storage buttons into their
+        // anchor slots.
+        sp.setAllAnchoredItemUpkeep(true);
+
         player.setInvisible(false);
         player.setGameMode(GameMode.SURVIVAL);
     }
@@ -185,6 +199,10 @@ public final class PlayerWaitingGate {
 
         sp.activateUmbralBlade();
         sp.setActivationContext(ActivationContext.NORMAL);
+
+        // Re-enable anchored-item upkeep so the player's UI items return to their anchor
+        // slots on the next inventoryUpkeep tick.
+        sp.setAllAnchoredItemUpkeep(true);
 
         player.setInvisible(false);
         player.setGameMode(GameMode.SURVIVAL);
